@@ -1,33 +1,12 @@
-kpmg-code/metadata_version: https://github.com/KPMG-UK/kpmg-metadata-schema/blob/main/versions/v1.0/kpmg-schema.yml
+kpmg-code/metadata_version: https://github.com/KPMG-UK/kpmg-metadata-schema/blob/main/versions/v1.1/kpmg-schema.yml
 kpmg-code/service_name: DfT - BODS Backend
-kpmg-code/category: client
+kpmg-code/category: source-code
 kpmg-code/cmdb:
   kpmg-uk/inventory:
     url: https://inventory.customappsteam.co.uk/service/502
 kpmg-code/service_description:  |
-    The Devolved Registrations Portal is a services offered by the Department for Transport (DfT)
-    that allows Enhanced Partnerships the opportunity to register, maintain, and publish registrations
-    with the benefit of such data being fully integrated with the existing Bus Open Data Service (BODS).
-    This repository is concerned primarily with supporting application infrastructure services.
-kpmg-code/contacts:
-    -   contact_name: Rob Steel
-        contact_email: robert.steel@kpmg.co.uk
-    -   contact_name: Pete Cridland
-        contact_email: peter.cridland@kpmg.co.uk
-kpmg-code/technologies:
-    - serverless
-    - python
-
-
-kpmg-code/category: "infrastructure-code"
-kpmg-code/cmdb:
-  kpmg-uk/inventory:
-    url: https://inventory.customappsteam.co.uk/service/502
-kpmg-code/service_description:  |
-    The Devolved Registrations Portal is a services offered by the Department for Transport (DfT)
-    that allows Enhanced Partnerships the opportunity to register, maintain, and publish registrations
-    with the benefit of such data being fully integrated with the existing Bus Open Data Service (BODS).
-    This repository is concerned primarily with supporting application infrastructure services.
+    The Bus Open Data Service is a service offered by the Department for Transport (DfT).
+    This repository is concerned primarily with supporting backend application services.
 kpmg-code/contacts:
     -   contact_name: Rob Steel
         contact_email: robert.steel@kpmg.co.uk
