@@ -1,0 +1,162 @@
+name: build application
+run-name: build application from ${{ github.ref_name }}
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+    - 'dev'
+    paths:
+    - 'VERSION'
+
+concurrency:
+  group: ${{ github.workflow }}-dev
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  RC_DST: ${{ vars.DEPLOYMENT_ARTEFACTS_S3_BUCKET }}
+
+jobs:
+  validation:
+    runs-on: pcoe-runner-linux-small-prod
+    outputs:
+      VERSION: ${{ steps.validate.outputs.VERSION }}
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/${{ vars.AWS_ASSUME_ROLE_NAME }}
+          role-session-name: ${{ vars.PROJECT_NAME }}-app-build-validation
+          role-duration-seconds: 3600
+          role-skip-session-tagging: true
+
+      - name: validate job parameters
+        id: validate
+        run: |
+          if [[ ${{ !(contains(fromJSON('["test", "main"]'), github.ref_name) || startsWith(github.ref, 'refs/tags/v')) }} ]]; then
+            if [[ ${GITHUB_REF_NAME} == 'dev' ]]; then
+              # install yq for parsing yaml files
+              sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/itm/latest/download/yq_linux_amd64 -O /usr/bin/yq && \
+                sudo chmod 755 /usr/bin/yq
+              new_version=$(yq e '.version' VERSION)
+              echo "VERSION=${new_version}" >> "$GITHUB_OUTPUT"
+
+              rc_path="$RC_DST/bods/releases/$new_version"
+              if [[ `aws s3 ls s3://$rc_path|head` ]]; then
+                echo "[INFO] Release candidate version [${new_version}] already exists. Version number must be incremented to allow for a new build. Exiting"
+                exit 1
+              else
+                echo "[INFO] Running on development branch, building as release for promotion through to live"
+              fi
+            else
+              echo "[INFO] Running on feature branch, building as release for development environment"
+              echo "VERSION=${GITHUB_REF_NAME//\//-}" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "[ERROR] It is only possible to build from dev/a feature branch. Exiting"
+            exit 1
+          fi
+
+  build:
+    runs-on: pcoe-runner-linux-small-prod
+    needs: validation
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+
+      - name: setup sam
+        uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/${{ vars.AWS_ASSUME_ROLE_NAME }}
+          role-session-name: ${{ vars.PROJECT_NAME }}-app-build
+          role-duration-seconds: 3600
+          role-skip-session-tagging: true
+
+      - name: package and push code
+        env: 
+          VERSION: ${{ needs.validation.outputs.VERSION }}
+        run: |
+          [[ $VERSION =~ ^v[0-9]+(\.[0-9]+){2}$ ]] && rc_path="bods/releases/$VERSION" || rc_path="bods/releases-dev/$VERSION"
+
+          sam build && \
+            sam package \
+              --s3-bucket $RC_DST \
+              --s3-prefix $rc_path \
+              --output-template-file packaged.yaml
+
+          aws s3 cp packaged.yaml s3://$RC_DST/$rc_path/
+          aws s3 cp samconfig.yaml s3://$RC_DST/$rc_path/
+
+          echo "[INFO] Application with version [${VERSION}] successfully build and uploaded to deployment artefacts storage"
+
+  commit-and-tag:
+    if: ${{ always() && !cancelled() && !contains(needs.*.result, 'failure') && contains(github.ref, 'dev') }}
+    runs-on: pcoe-runner-linux-small-prod
+    needs:
+      - validation
+      - build
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: commit and push changes
+        env:
+          VERSION: ${{ needs.validation.outputs.VERSION }}
+        run: |
+          echo "[INFO] Tagging commit as version [${VERSION}]"
+
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          git config --global url.https://${{ github.token }}@github.com/.insteadOf https://github.com/
+
+          git tag $VERSION
+          git push --tags --force
+
+  trigger-deploy-dev:
+    if: ${{ always() && !cancelled() && !contains(needs.*.result, 'failure') && !(contains(fromJSON('["test", "main"]'), github.ref_name) || startsWith(github.ref, 'refs/tags/v')) }}
+    runs-on: pcoe-runner-linux-small-prod
+    needs: 
+      - validation
+      - build
+      - commit-and-tag
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: trigger remote
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          repository: ${{ github.repository }}
+          event-type: automated-deploy-dev
+          client-payload: '{ "environment": "dev", "release_version": "${{ needs.validation.outputs.VERSION }}" }'
