@@ -1,0 +1,333 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  This SAM template deploys backend resources associated with the BODS (Bus Open Data Service) service
+
+Parameters:
+  Environment:
+    Type: String
+    Description: The environment into which the stack is being deployed
+  ProjectName:
+    Description: The name of the project
+    Type: String
+  AvlConsumerApiBaseUrl:
+    Type: String
+    Default: 'https://ya6tiqlzae.execute-api.eu-west-2.amazonaws.com/v1'
+  GtfsApiBaseUrl:
+    Type: String
+    Default: 'https://gtfs.test.integrated-data.dft-create-data.com'
+  RdsDbHostAddr:
+    Type: String
+    Default: ''
+  RdsDbPassword:
+    Type: String
+    Default: ''
+  RdsDbPort:
+    Type: Number
+    Default: 5432
+
+Conditions:
+  IsNotLocal: !Not [!Equals [!Ref Environment, 'local']]
+
+Globals:
+  Function:
+    Architectures:
+      - x86_64
+    Runtime: python3.11
+    Timeout: 60
+    MemorySize: 512
+    VpcConfig:
+      SubnetIds:
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-0}}'
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-1}}'
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-2}}'
+      SecurityGroupIds:
+        - !GetAtt CommonLambdaSecurityGroup.GroupId
+
+Resources:
+  #########################################
+  #### GENERAL CONFIGURATION RESOURCES ####
+  #########################################
+  CommonLambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Condition: IsNotLocal
+    Properties:
+      GroupDescription: !Sub 'Security group for ${ProjectName}-${Environment} related lambda functions'
+      GroupName: !Sub '${ProjectName}-${Environment}-common-lambda'
+      SecurityGroupEgress: 
+        - IpProtocol: '-1'
+          CidrIp: '0.0.0.0/0'
+      VpcId: !Sub '{{resolve:ssm:/bodds/${Environment}/vpc-id}}'
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-common-lambda'
+
+  CommonLambdaSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Condition: IsNotLocal
+    Properties:
+      GroupId: !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-sg-id}}'
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432
+      SourceSecurityGroupId: !GetAtt CommonLambdaSecurityGroup.GroupId
+
+  BoilerplateLambdaLayer: 
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: !Sub '${ProjectName}-${Environment}-boilerplate-layer'
+      ContentUri: ./src/boilerplate
+      CompatibleRuntimes:
+        - python3.11
+    Metadata:
+      BuildMethod: python3.11
+
+  ###################################
+  #### PT ITERATOR STATE MACHINE ####
+  ###################################
+  PtIteratorStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Name: !Sub '${ProjectName}-${Environment}-pt-iterator-sm'
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref PtIteratorLambda
+      Events:
+        Scheduler:
+          Type: Schedule
+          Properties:
+            Name: !Sub '${ProjectName}-${Environment}-pt-iterator-sm-scheduler'
+            Schedule: rate(1 minute)
+      Definition:
+        StartAt: ConfigureCount
+        States:
+          ConfigureCount:
+            Type: Pass
+            Result:
+              index: 0
+              count: 6
+            ResultPath: $.iterator
+            Next: Iterator
+          Iterator:
+            Type: Task
+            Resource: !GetAtt PtIteratorLambda.Arn
+            ResultPath: $.iterator
+            Next: IsCountReached
+          IsCountReached:
+            Type: Choice
+            Choices:
+              - Variable: $.iterator.continue
+                BooleanEquals: true
+                Next: Wait
+            Default: Done
+          Wait:
+            Type: Wait
+            Seconds: 10
+            Next: Iterator
+          Done:
+            Type: Pass
+            End: true
+
+  ############################
+  #### PT ITERATOR LAMBDA ####
+  ############################
+  PtIteratorLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-pt-iterator-lambda'
+      CodeUri: ./src/backend
+      Handler: pt_iterator.lambda_handler
+      MemorySize: 128
+      VpcConfig:
+      Policies:
+        - 'AWSLambdaBasicExecutionRole'
+        - LambdaInvokePolicy:
+            FunctionName: !Ref GenerateGtfsRtLambda
+        - LambdaInvokePolicy:
+            FunctionName: !Ref GenerateSiriVmLambda
+        - LambdaInvokePolicy:
+            FunctionName: !Ref GenerateSiriVmTflLambda
+      Environment:
+        Variables:
+          TARGET_FUNCTION_NAMES: !Join 
+            - ','
+            - 
+              - !Ref GenerateGtfsRtLambda
+              - !Ref GenerateSiriVmLambda
+              - !Ref GenerateSiriVmTflLambda
+      LoggingConfig:
+        LogGroup: !Ref PtIteratorLambdaLogGroup
+
+  PtIteratorLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-pt-iterator-lambda'
+      RetentionInDays: 30
+
+  ################################
+  #### GENERATE GTFSRT LAMBDA ####
+  ################################
+  GenerateGtfsRtLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-generate-gtfsrt-lambda'
+      CodeUri: ./src/backend
+      Handler: create_gtfsrt_zip.lambda_handler
+      Layers:
+        - !Ref BoilerplateLambdaLayer
+      Policies:
+        - 'AWSLambdaBasicExecutionRole'
+        - 'AWSLambdaVPCAccessExecutionRole'
+        - S3WritePolicy:
+            BucketName: !Sub 'bodds-${Environment}-sirivm'
+        - Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+              - kms:GenerateDataKey
+            Resource: !Sub '{{resolve:ssm:/bodds/${Environment}/s3-kms-key-arn}}'
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
+      Environment:
+        Variables:
+          AWS_SIRIVM_STORAGE_BUCKET_NAME: !Sub 'bodds-${Environment}-sirivm'
+          GTFS_API_BASE_URL: !Ref GtfsApiBaseUrl
+          HTTPS_PROXY: !If
+            - IsNotLocal
+            - !Sub 'http://squid.bodds.${Environment}:3128'
+            - !Ref AWS::NoValue
+          PROJECT_ENV: !Ref Environment
+          PROJECT_NAME: !Ref ProjectName
+          POSTGRES_HOST: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
+            - !Ref RdsDbHostAddr
+          POSTGRES_PORT: !Ref RdsDbPort
+          POSTGRES_DB: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
+            - postgres
+          POSTGRES_USER: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
+            - bodds_rw
+      LoggingConfig:
+        LogGroup: !Ref GenerateGtfsRtLambdaLogGroup
+
+  GenerateGtfsRtLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-generate-gtfsrt-lambda'
+      RetentionInDays: 30
+
+  ################################
+  #### GENERATE SIRIVM LAMBDA ####
+  ################################
+  GenerateSiriVmLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-generate-sirivm-lambda'
+      CodeUri: ./src/backend
+      Handler: create_sirivm_zip.lambda_handler
+      Layers:
+        - !Ref BoilerplateLambdaLayer
+      Policies:
+        - 'AWSLambdaBasicExecutionRole'
+        - 'AWSLambdaVPCAccessExecutionRole'
+        - S3WritePolicy:
+            BucketName: !Sub 'bodds-${Environment}-sirivm'
+        - Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+              - kms:GenerateDataKey
+            Resource: !Sub '{{resolve:ssm:/bodds/${Environment}/s3-kms-key-arn}}'
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
+      Environment:
+        Variables:
+          AWS_SIRIVM_STORAGE_BUCKET_NAME: !Sub 'bodds-${Environment}-sirivm'
+          AVL_CONSUMER_API_BASE_URL: !Ref AvlConsumerApiBaseUrl
+          HTTPS_PROXY: !If
+            - IsNotLocal
+            - !Sub 'http://squid.bodds.${Environment}:3128'
+            - !Ref AWS::NoValue
+          PROJECT_ENV: !Ref Environment
+          PROJECT_NAME: !Ref ProjectName
+          POSTGRES_HOST: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
+            - !Ref RdsDbHostAddr
+          POSTGRES_PORT: !Ref RdsDbPort
+          POSTGRES_DB: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
+            - postgres
+          POSTGRES_USER: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
+            - bodds_rw
+      LoggingConfig:
+        LogGroup: !Ref GenerateSiriVmLambdaLogGroup
+
+  GenerateSiriVmLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-generate-sirivm-lambda'
+      RetentionInDays: 30
+
+  ####################################
+  #### GENERATE SIRIVM TFL LAMBDA ####
+  ####################################
+  GenerateSiriVmTflLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-generate-sirivm-tfl-lambda'
+      CodeUri: ./src/backend
+      Handler: create_sirivm_tfl_zip.lambda_handler
+      Layers:
+        - !Ref BoilerplateLambdaLayer
+      Policies:
+        - 'AWSLambdaBasicExecutionRole'
+        - 'AWSLambdaVPCAccessExecutionRole'
+        - S3WritePolicy:
+            BucketName: !Sub 'bodds-${Environment}-sirivm'
+        - Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+              - kms:GenerateDataKey
+            Resource: !Sub '{{resolve:ssm:/bodds/${Environment}/s3-kms-key-arn}}'
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
+      Environment:
+        Variables:
+          AWS_SIRIVM_STORAGE_BUCKET_NAME: !Sub 'bodds-${Environment}-sirivm'
+          AVL_CONSUMER_API_BASE_URL: !Ref AvlConsumerApiBaseUrl
+          HTTPS_PROXY: !If
+            - IsNotLocal
+            - !Sub 'http://squid.bodds.${Environment}:3128'
+            - !Ref AWS::NoValue
+          PROJECT_ENV: !Ref Environment
+          PROJECT_NAME: !Ref ProjectName
+          POSTGRES_HOST: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
+            - !Ref RdsDbHostAddr
+          POSTGRES_PORT: !Ref RdsDbPort
+          POSTGRES_DB: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
+            - postgres
+          POSTGRES_USER: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
+            - bodds_rw
+      LoggingConfig:
+        LogGroup: !Ref GenerateSiriVmTflLambdaLogGroup
+
+  GenerateSiriVmTflLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-generate-sirivm-tfl-lambda'
+      RetentionInDays: 30
