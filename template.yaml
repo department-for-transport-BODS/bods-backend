@@ -35,7 +35,8 @@ Globals:
       - x86_64
     Runtime: python3.11
     Timeout: 60
-    MemorySize: 512
+    MemorySize: 1024
+    ReservedConcurrentExecutions: 3
     VpcConfig:
       SubnetIds:
         - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-0}}'
