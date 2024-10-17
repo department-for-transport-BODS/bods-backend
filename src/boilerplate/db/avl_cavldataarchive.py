@@ -1,5 +1,7 @@
+import time
 from common import LambdaEvent
 from datetime import datetime, timezone
+from logger import logger
 
 
 def get_cavl_db_object(event: LambdaEvent, data_format: str):
@@ -10,21 +12,26 @@ def get_cavl_db_object(event: LambdaEvent, data_format: str):
         data_format (str): value of the dataformat for which record is required
 
     Returns:
-        database record for the object
+        archive: database record for the object
     """
     cavl_data_archive = event.db.classes.avl_cavldataarchive
-    archive = (
-        event.db.session.query(cavl_data_archive)
-        .where(cavl_data_archive.data_format == data_format)
-        .first()
-    )
-    if archive is None:
-        archive = cavl_data_archive(
-            data_format=data_format,
-            created=datetime.now(timezone.utc),
-            last_updated=datetime.now(timezone.utc),
+
+    with event.db.session as session:
+        start_query_op = time.time()
+        archive = (
+            session.query(cavl_data_archive)
+            .where(cavl_data_archive.data_format == data_format)
+            .first()
         )
-    return archive
+        end_query_op = time.time()
+        logger.info(f"Query execution time: {end_query_op-start_query_op:.2f} seconds")    
+        if archive is None:
+            archive = cavl_data_archive(
+                data_format=data_format,
+                created=datetime.now(timezone.utc),
+                last_updated=datetime.now(timezone.utc),
+            )
+        return archive
 
 
 def update_cavl_db_object(event: LambdaEvent, filename: str, data_format: str):
@@ -49,5 +56,11 @@ def update_record_in_db(record, event: LambdaEvent):
         record : Database record object to be updated
         event (LambdaEvent): Lambda event object contains database connection.
     """
-    event.db.session.add(record)
-    event.db.session.commit()
+    with event.db.session as session:
+        try:
+            session.add(record)
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Failed to update record: {e}")
+            raise
