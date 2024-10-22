@@ -52,7 +52,7 @@ dev:
       parameter_overrides: 
         ProjectName='bods-backend'
         Environment='dev'
-        AvlConsumerApiBaseUrl='https://s2sv0crhhf.execute-api.eu-west-2.amazonaws.com/v1'
+        AvlConsumerApiBaseUrl='https://x87vl7rpc0.execute-api.eu-west-2.amazonaws.com/v1'
 
 test:
   deploy:
@@ -63,7 +63,7 @@ test:
       parameter_overrides:
         ProjectName='bods-backend'
         Environment='test'
-        AvlConsumerApiBaseUrl='https://s2sv0crhhf.execute-api.eu-west-2.amazonaws.com/v1'
+        AvlConsumerApiBaseUrl='https://x87vl7rpc0.execute-api.eu-west-2.amazonaws.com/v1'
 
 uat:
   deploy:
@@ -74,7 +74,7 @@ uat:
       parameter_overrides:
         ProjectName='bods-backend'
         Environment='uat'
-        AvlConsumerApiBaseUrl='https://s2sv0crhhf.execute-api.eu-west-2.amazonaws.com/v1'
+        AvlConsumerApiBaseUrl='https://x87vl7rpc0.execute-api.eu-west-2.amazonaws.com/v1'
 
 prod:
   sync:

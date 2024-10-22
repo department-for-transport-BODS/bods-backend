@@ -12,7 +12,7 @@ Parameters:
     Type: String
   AvlConsumerApiBaseUrl:
     Type: String
-    Default: 'https://ya6tiqlzae.execute-api.eu-west-2.amazonaws.com/v1'
+    Default: 'https://6tfu67dcng.execute-api.eu-west-2.amazonaws.com/v1'
   GtfsApiBaseUrl:
     Type: String
     Default: 'https://gtfs.test.integrated-data.dft-create-data.com'

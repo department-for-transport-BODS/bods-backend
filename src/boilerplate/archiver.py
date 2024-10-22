@@ -2,19 +2,18 @@ import io
 import requests
 import time
 import pytz
+from common import LambdaEvent
 from datetime import datetime, timezone
+from db.avl_cavldataarchive import (
+    get_cavl_db_object,
+    update_record_in_db,
+)
 from enums import CAVLDataFormat
 from logger import logger
 from os import environ
 from requests import RequestException
 from s3 import S3
 from zipfile import ZIP_DEFLATED, ZipFile
-
-from db.avl_cavldataarchive import (
-    get_cavl_db_object,
-    update_record_in_db,
-)
-from common import LambdaEvent
 
 
 class ArchivingError(Exception):
@@ -78,6 +77,7 @@ class ConsumerAPIArchiver:
             logger.info(
                 f"{self.logger_prefix} Total time elapsed to get response from {self.url} is {response.elapsed.total_seconds()} for job-task_create_{self.filename_prefix}_zipfile"
             )
+            logger.info(f"Content Log: For url {self.url} and module {self.filename_prefix} Received content {response.content}")
             return response.content
 
     def get_file(self, content):
