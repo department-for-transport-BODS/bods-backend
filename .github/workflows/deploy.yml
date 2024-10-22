@@ -44,7 +44,7 @@ env:
 
 jobs:
   validation:
-    runs-on: pcoe-runner-linux-small-prod
+    runs-on: ubuntu-latest
     environment: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.environment ||
       github.event_name == 'release' && 'prod' ||
       contains(fromJSON('["workflow_dispatch", "push"]'), github.event_name) && (
@@ -84,9 +84,6 @@ jobs:
             """
             echo "VERSION=${RC_VER//\//-}" >> "$GITHUB_OUTPUT"
           else
-            # install yq for parsing yaml files
-            sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && \
-              sudo chmod 755 /usr/bin/yq
             current_version=$(yq e '.version' VERSION)
 
             echo """ \
@@ -112,7 +109,7 @@ jobs:
           fi
 
   deploy:
-    runs-on: pcoe-runner-linux-small-prod
+    runs-on: ubuntu-latest
     needs: validation
 
     permissions:
