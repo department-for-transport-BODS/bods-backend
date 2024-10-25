@@ -1,6 +1,7 @@
 import boto3
 from os import environ
 from logger import logger
+import io
 
 
 class S3:
@@ -34,3 +35,10 @@ class S3:
         )
         logger.info("File uploaded to S3 successfully.")
         return
+
+    def get_fileobj(self, file_path):
+        file_stream = io.BytesIO()
+        self._client.download_fileobj(Bucket=self._bucket_name, Key=file_path, Fileobj=file_stream)
+        file_stream.seek(0)
+        return file_stream
+
