@@ -12,16 +12,17 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 
-
 class LoggerContext(BaseModel):
     component_name: str = ""
     class_name: str = ""
     object_id: int = -1
 
+
 class DatasetPipelineLoggerContext(LoggerContext):
     class_name: str = "Dataset"
     component_name: str = "TimetablePipeline"
     revision_id: int = -1
+
 
 class PipelineAdapter(logging.LoggerAdapter):
     def process(self, msg, kwargs):
@@ -34,10 +35,10 @@ class PipelineAdapter(logging.LoggerAdapter):
             msg = prefix + msg
         return msg, kwargs
 
+
 def get_dataset_adapter_from_revision(revision) -> PipelineAdapter:
     context = DatasetPipelineLoggerContext(
-        revision_id =revision.id,
-        object_id=revision.dataset_id
+        revision_id=revision.id, object_id=revision.dataset_id
     )
     adapter: PipelineAdapter = PipelineAdapter(logger, {"context": context})
     return adapter
