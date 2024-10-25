@@ -29,7 +29,7 @@ class PipelineAdapter(logging.LoggerAdapter):
         if "context" in self.extra:
             context: LoggerContext = kwargs.pop("context", self.extra["context"])
 
-            prefix = "[{component_name}] {class_name} {object_id} => ".format(
+            prefix = "[{component_name}] {class_name} {object_id} (Revision {revision_id}) => ".format(
                 **context.model_dump()
             )
             msg = prefix + msg
