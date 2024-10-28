@@ -9,7 +9,7 @@ default:
       parallel: true
   deploy:
     parameters:
-      capabilities: "CAPABILITY_NAMED_IAM"
+      capabilities: "CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND"
       confirm_changeset: true
       region: "eu-west-2"
       resolve_s3: false
@@ -38,7 +38,7 @@ local:
     parameters:
       stack_name: "bods-backend-local-app-stack"
       s3_prefix: dev
-      capabilities: "CAPABILITY_NAMED_IAM"
+      capabilities: "CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND"
       parameter_overrides:
         ProjectName='bods-backend'
         Environment='local'
@@ -48,7 +48,7 @@ dev:
     parameters:
       stack_name: "bods-backend-dev-app-stack"
       s3_prefix: dev
-      capabilities: "CAPABILITY_NAMED_IAM"
+      capabilities: "CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND"
       parameter_overrides: 
         ProjectName='bods-backend'
         Environment='dev'
@@ -59,7 +59,7 @@ test:
     parameters:
       stack_name: "bods-backend-test-app-stack"
       s3_prefix: test
-      capabilities: "CAPABILITY_NAMED_IAM"
+      capabilities: "CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND"
       parameter_overrides:
         ProjectName='bods-backend'
         Environment='test'
@@ -70,7 +70,7 @@ uat:
     parameters:
       stack_name: "bods-backend-uat-app-stack"
       s3_prefix: uat
-      capabilities: "CAPABILITY_NAMED_IAM"
+      capabilities: "CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND"
       parameter_overrides:
         ProjectName='bods-backend'
         Environment='uat'
@@ -84,7 +84,7 @@ prod:
     parameters:
       stack_name: "bods-backend-prod-app-stack"
       s3_prefix: prod
-      capabilities: "CAPABILITY_NAMED_IAM"
+      capabilities: "CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND"
       parameter_overrides:
         ProjectName='bods-backend'
         Environment='prod'
