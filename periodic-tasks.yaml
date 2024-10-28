@@ -48,12 +48,12 @@ Resources:
       Policies:
         - LambdaInvokePolicy:
             FunctionName: !Ref PtIteratorLambda
-      # Events:
-      #   Scheduler:
-      #     Type: Schedule
-      #     Properties:
-      #       Name: !Sub '${ProjectName}-${Environment}-pt-iterator-sm-scheduler'
-      #       Schedule: rate(1 minute)
+      Events:
+        Scheduler:
+          Type: Schedule
+          Properties:
+            Name: !Sub '${ProjectName}-${Environment}-pt-iterator-sm-scheduler'
+            Schedule: rate(1 minute)
       Definition:
         StartAt: ConfigureCount
         States:
