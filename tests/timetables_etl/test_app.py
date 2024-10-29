@@ -1,4 +1,4 @@
-from src.timetables_etl.app import lambda_handler
+from timetables_etl.app import lambda_handler
 
 
 def test_app():
