@@ -5,8 +5,8 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
 
-from src.boilerplate.archiver import GTFSRTArchiver
-from src.boilerplate.enums import CAVLDataFormat
+from boilerplate.archiver import GTFSRTArchiver
+from boilerplate.enums import CAVLDataFormat
 from tests.mock_db import MockedDB
 
 ARCHIVE_MODULE = "src.boilerplate.archiver"
