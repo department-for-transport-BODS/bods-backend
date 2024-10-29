@@ -1,22 +1,20 @@
 import unittest
-from unittest.mock import MagicMock, patch
-from requests import RequestException
-from src.backend.create_sirivm_zip import lambda_handler
-from src.boilerplate.archiver import ArchivingError
+from unittest.mock import patch
+from src.periodic_tasks.create_gtfsrt_zip import lambda_handler
 
-MODULE_PATH = "src.backend.create_sirivm_zip"
+MODULE_PATH = "src.periodic_tasks.create_gtfsrt_zip"
 
 
-class TestSIRIVMZipfile(unittest.TestCase):
+class TestGtfsrtZipfile(unittest.TestCase):
 
-    @patch(f"{MODULE_PATH}.SiriVMArchiver")
+    @patch(f"{MODULE_PATH}.GTFSRTArchiver")
     def test_archiver_called(self, MockArchiver):
         mock_instance = MockArchiver.return_value
         lambda_handler({}, "")
         mock_instance.archive.assert_called_once()
 
     @patch(f"{MODULE_PATH}.logger")
-    @patch(f"{MODULE_PATH}.SiriVMArchiver")
+    @patch(f"{MODULE_PATH}.GTFSRTArchiver")
     def test_general_exception(self, mock_archiver, mock_logger):
         mock_instance = mock_archiver.return_value
         mock_instance.url = "http://fakeurl.com"
@@ -24,5 +22,5 @@ class TestSIRIVMZipfile(unittest.TestCase):
 
         lambda_handler({}, "")
         mock_logger.error.assert_called_once_with(
-            "SIRIVM zip task failed due to General error"
+            "GTFSRT zip task failed due to General error"
         )
