@@ -38,7 +38,7 @@ def get_connection_string():
     port = os.getenv("POSTGRES_PORT")
     return f"postgresql://{user}:{password}@{host}:{port}/{db}" 
 
-def sqlalchmy_model_generator() -> None:
+def sqlalchemy_model_generator() -> None:
     generators = {ep.name: ep for ep in entry_points(group="sqlacodegen.generators")}
     url = get_connection_string()
     options = ""
@@ -90,4 +90,4 @@ def sqlalchmy_model_generator() -> None:
         outfile.write(generator.generate())
 
 
-sqlalchmy_model_generator()
+sqlalchemy_model_generator()
