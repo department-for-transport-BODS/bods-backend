@@ -8,12 +8,13 @@ logger = logging.getLogger(__name__)
 
 class DatasetETLTaskResultRepository:
 
-    @staticmethod
-    def get_by_id(id: int):
+    def __init__(self, db):
+        self._db = db
+
+    def get_by_id(self, id: int):
         try:
-            db = BodsDB()
-            with db.session as session:
-                task = session.query(db.classes.pipelines_datasetetltaskresult).filter_by(id=id).one()
+            with self._db.session as session:
+                task = session.query(self._db.classes.pipelines_datasetetltaskresult).filter_by(id=id).one()
         except NoResultFound as exc:
             message = f"DatasetETLTaskResult {id} does not exist."
             logger.exception(message, exc_info=True)
@@ -21,6 +22,14 @@ class DatasetETLTaskResultRepository:
         else:
             return task
 
-    @staticmethod
-    def update(record):
-        raise NotImplementedError("TODO")
+    def update(self, record):
+        with self._db.session as session:
+            try:
+                session.add(record)
+                session.commit()
+            except Exception as exc:
+                session.rollback()
+                message = f"Failed to update DatasetETLTaskResult: {exc}"
+                logger.error(message)
+                raise PipelineException(message) from exc
+
