@@ -4,31 +4,16 @@ from os import environ
 from pytest import raises
 from psycopg2.errors import OperationalError
 
+# Define test environment variables and expected output values
 ENVIRONMENT_INPUT_TEST_VALUES = {
     "POSTGRES_HOST": "host",
     "POSTGRES_DB": "db",
     "POSTGRES_USER": "user",
     "POSTGRES_PORT": "5432",
-    "POSTGRES_PASSWORD_ARN": "my_password_location_arn",
+    "POSTGRES_PASSWORD": "my_password"
 }
 
 ENVIRONMENT_OUTPUT_TEST_VALUES = {
-    "POSTGRES_HOST": "host",
-    "POSTGRES_DB": "db",
-    "POSTGRES_USER": "user",
-    "POSTGRES_PORT": "5432",
-    "POSTGRES_PASSWORD": "my_password",
-}
-
-ENVIRONMENT_INPUT_CONNECTION_VALUES = {
-    "host": "host",
-    "dbname": "db",
-    "user": "user",
-    "port": "5432",
-    "password": "my_password",
-}
-
-ENVIRONMENT_OUTPUT_CONNECTION_VALUES = {
     "host": "host",
     "dbname": "db",
     "user": "user",
@@ -37,74 +22,53 @@ ENVIRONMENT_OUTPUT_CONNECTION_VALUES = {
     "sslmode": "require",
 }
 
-
-@patch("src.boilerplate.common.BodsDB._generate_rds_iam_auth_token")
-@patch.dict(environ, ENVIRONMENT_INPUT_TEST_VALUES)
-def test_connection_details_valid(mocked_db):
-    mocked_db.return_value = "my_password"
+@patch("src.boilerplate.common.BodsDB._generate_rds_iam_auth_token", return_value="my_password")
+@patch.dict(environ, ENVIRONMENT_INPUT_TEST_VALUES, clear=True)
+def test_connection_details_valid(mocked_db_token):
+    # Initialise DB and fetch connection details
     db = BodsDB()
-    assert db._get_connection_details() == ENVIRONMENT_OUTPUT_CONNECTION_VALUES
+    connection_details = db._get_connection_details()
+    # Validate the output matches the expected environment values
+    assert connection_details == ENVIRONMENT_OUTPUT_TEST_VALUES
 
-
-environment_missing_test_values = dict(ENVIRONMENT_INPUT_TEST_VALUES)
-environment_missing_test_values.pop("POSTGRES_HOST")
-
-
-@patch("src.boilerplate.common.create_engine")
-@patch("src.boilerplate.common.automap_base")
-@patch.dict(environ, environment_missing_test_values)
-def test_connection_details_missing(mock_automap_base, mock_create_engine, caplog):
+# Test case for missing environment variable scenario
+@patch.dict(environ, {k: v for k, v in ENVIRONMENT_INPUT_TEST_VALUES.items() if k != "POSTGRES_HOST"}, clear=True)
+def test_connection_details_missing(caplog):
     db = BodsDB()
     with raises(ValueError):
-        print(db._get_connection_details())
-    assert "host" in caplog.text
+        db._get_connection_details()
+    # Check that the appropriate error message is logged
+    assert "Missing connection details value: host" in caplog.text
 
-
-@patch(
-    "src.boilerplate.common.BodsDB._get_connection_details",
-    return_value=ENVIRONMENT_INPUT_CONNECTION_VALUES,
-)
+@patch("src.boilerplate.common.BodsDB._get_connection_details", return_value=ENVIRONMENT_OUTPUT_TEST_VALUES)
 @patch("src.boilerplate.common.create_engine")
 @patch("src.boilerplate.common.automap_base")
-@patch("src.boilerplate.common.Session")
-def test_database_initialisation(
-    mock_session, mock_automap_base, mock_create_engine, connection_details
-):
-    mock_engine = mock_create_engine.return_value
-    mock_base = mock_automap_base.return_value
-    mock_session_instance = mock_session.return_value
-
+@patch("src.boilerplate.common.sessionmaker")
+def test_database_initialisation(mock_sessionmaker, mock_automap_base, mock_create_engine, mock_connection_details):
+    # Initialise DB and trigger engine initialisation
     db = BodsDB()
-    db._initialise_database()
-    assert connection_details.called
-    assert mock_create_engine.called
-    assert mock_automap_base.called
-    assert mock_session.called
+    db._initialise_engine()
+    
+    # Check that the engine is created with the expected connection string
     mock_create_engine.assert_called_once_with(
         f"postgresql+psycopg2://{ENVIRONMENT_INPUT_TEST_VALUES['POSTGRES_USER']}:"
-        f"{ENVIRONMENT_OUTPUT_TEST_VALUES['POSTGRES_PASSWORD']}@"
-        f"{ENVIRONMENT_OUTPUT_TEST_VALUES['POSTGRES_HOST']}:"
-        f"{ENVIRONMENT_OUTPUT_TEST_VALUES['POSTGRES_PORT']}/"
-        f"{ENVIRONMENT_OUTPUT_TEST_VALUES['POSTGRES_DB']}"
+        f"{ENVIRONMENT_INPUT_TEST_VALUES['POSTGRES_PASSWORD']}@"
+        f"{ENVIRONMENT_INPUT_TEST_VALUES['POSTGRES_HOST']}:"
+        f"{ENVIRONMENT_INPUT_TEST_VALUES['POSTGRES_PORT']}/"
+        f"{ENVIRONMENT_INPUT_TEST_VALUES['POSTGRES_DB']}?sslmode=require"
     )
-    mock_session.assert_called_once_with(mock_engine)
+    # Verify that session and classes properties are accessible and initialised
     assert db.session is not None
     assert db.classes is not None
 
-
-@patch(
-    "src.boilerplate.common.BodsDB._get_connection_details",
-    return_value=ENVIRONMENT_OUTPUT_TEST_VALUES,
-)
-@patch("src.boilerplate.common.create_engine")
+@patch("src.boilerplate.common.BodsDB._get_connection_details", return_value=ENVIRONMENT_OUTPUT_TEST_VALUES)
+@patch("src.boilerplate.common.create_engine", side_effect=OperationalError)
 @patch("src.boilerplate.common.automap_base")
-@patch("src.boilerplate.common.Session", side_effect=OperationalError())
-def test_database_initialisation_failed(
-    connection_details, create_engine, automap_base, session, caplog
-):
-    # connection_details.return_value = ENVIRONMENT_INPUT_TEST_VALUES
-    automap_base.prepare.return_value = True
+@patch("src.boilerplate.common.sessionmaker")
+def test_database_initialisation_failed(mock_sessionmaker, mock_automap_base, mock_create_engine, mock_connection_details, caplog):
     db = BodsDB()
+    # Attempting to initialise the engine should raise an OperationalError
     with raises(OperationalError):
-        db._initialise_database()
-        assert "Failed to connect to DB" in caplog.text
+        db._initialise_engine()
+    # Ensure the appropriate error message is logged
+    assert "Failed to initialise SQLAlchemy engine" in caplog.text
