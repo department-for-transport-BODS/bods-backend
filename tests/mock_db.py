@@ -8,7 +8,7 @@ from sqlalchemy import (
     create_engine,
     ForeignKey,
 )
-from sqlalchemy.orm import Session, declarative_base, relationship
+from sqlalchemy.orm import sessionmaker, Session, declarative_base, relationship
 from types import SimpleNamespace
 
 Base = declarative_base()
@@ -25,9 +25,10 @@ class avl_cavldataarchive(Base):
 
 class MockedDB:
     def __init__(self):
-        engine = create_engine("sqlite:///:memory:")
-        self.session = Session(engine)
-        Base.metadata.create_all(engine)
+        self.engine = create_engine("sqlite:///:memory:")
+        SessionLocal = sessionmaker(bind=self.engine)
+        self.session = SessionLocal()
+        Base.metadata.create_all(self.engine)
         self.classes = SimpleNamespace(
             avl_cavldataarchive=avl_cavldataarchive,
         )
