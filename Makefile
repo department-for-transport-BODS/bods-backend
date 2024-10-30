@@ -26,7 +26,10 @@ clean-services: ## Stop and remove all related Docker container services
 	docker rm -f postgres pgadmin 2>/dev/null
 	docker volume rm ${DIRNAME}_postgres-data 2>/dev/null
 
-build-backend: ## Build the backend functions using sam
+generate-models: ## Generate models.py from BODs DB (DB must be running)
+	python ./src/model_gen.py
+
+build-backend: generate-models ## Build the backend functions using sam
 	@sam build
 
 build-backend-sync: ## Build the backend api using sam and keep contents synced for test
