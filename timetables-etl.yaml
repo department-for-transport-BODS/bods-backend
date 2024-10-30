@@ -160,8 +160,6 @@ Resources:
           - id: CKV_AWS_53
             comment: 'Ensure S3 bucket has block public ACLs enabled'
     Type: AWS::S3::Bucket
-    
-    
 
   PlaceholderSNSTopic:
     # Temporarily suppress warning on placeholder items
