@@ -159,6 +159,8 @@ Resources:
             comment: 'Ensure the S3 bucket has versioning enabled'
           - id: CKV_AWS_53
             comment: 'Ensure S3 bucket has block public ACLs enabled'
+          - id: CKV_AWS_18
+            comment: 'Ensure the S3 bucket has access logging enabled'
     Type: AWS::S3::Bucket
 
   PlaceholderSNSTopic:
