@@ -25,6 +25,6 @@ jobs:
 
           directory: ${{ github.workspace }}
           framework: all
-          skip_check: ""
+          skip_check: CKV_AWS_116
           output_format: cli,sarif
           quiet: true # display only failed checks

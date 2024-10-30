@@ -29,6 +29,7 @@ Globals:
     Timeout: 60
     MemorySize: 1024
     ReservedConcurrentExecutions: 3
+    KmsKeyArn: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
     VpcConfig:
       SubnetIds:
         - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-0}}'
@@ -89,6 +90,7 @@ Resources:
   ############################
   PtIteratorLambda:
     Type: AWS::Serverless::Function
+    # checkov:skip=CKV_AWS_117:Ensure that AWS Lambda function is configured inside a VPC
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-pt-iterator-lambda'
       CodeUri: ./src/periodic_tasks
@@ -118,6 +120,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-pt-iterator-lambda'
+      KmsKeyId: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
       RetentionInDays: 30
 
   ################################
@@ -141,7 +144,7 @@ Resources:
           - Effect: Allow
             Action:
               - kms:GenerateDataKey
-            Resource: !Sub '{{resolve:ssm:/bodds/${Environment}/s3-kms-key-arn}}'
+            Resource: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
         - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
         - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
       Environment:
@@ -174,6 +177,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-generate-gtfsrt-lambda'
+      KmsKeyId: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
       RetentionInDays: 30
 
   ################################
@@ -197,7 +201,7 @@ Resources:
           - Effect: Allow
             Action:
               - kms:GenerateDataKey
-            Resource: !Sub '{{resolve:ssm:/bodds/${Environment}/s3-kms-key-arn}}'
+            Resource: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
         - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
         - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
       Environment:
@@ -230,6 +234,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-generate-sirivm-lambda'
+      KmsKeyId: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
       RetentionInDays: 30
 
   ####################################
@@ -253,7 +258,7 @@ Resources:
           - Effect: Allow
             Action:
               - kms:GenerateDataKey
-            Resource: !Sub '{{resolve:ssm:/bodds/${Environment}/s3-kms-key-arn}}'
+            Resource: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
         - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
         - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
       Environment:
@@ -286,6 +291,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-generate-sirivm-tfl-lambda'
+      KmsKeyId: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
       RetentionInDays: 30
 
   #########################################

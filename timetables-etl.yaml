@@ -24,6 +24,7 @@ Globals:
     Runtime: python3.11
     Timeout: 60
     MemorySize: 256
+    KmsKeyArn: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
     VpcConfig:
       SubnetIds:
         - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-0}}'
@@ -31,6 +32,27 @@ Globals:
         - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-2}}'
       SecurityGroupIds:
         - !GetAtt CommonLambdaSecurityGroup.GroupId
+    Environment:
+      Variables:
+        HTTPS_PROXY: !If
+          - IsNotLocal
+          - !Sub 'http://squid.bodds.${Environment}:3128'
+          - !Ref AWS::NoValue
+        PROJECT_ENV: !Ref Environment
+        PROJECT_NAME: !Ref ProjectName
+        POSTGRES_HOST: !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
+          - !Ref RdsDbHostAddr
+        POSTGRES_PORT: !Ref RdsDbPort
+        POSTGRES_DB: !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
+          - postgres
+        POSTGRES_USER: !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
+          - bodds_rw
 
 Resources:
   ###########################
@@ -105,30 +127,9 @@ Resources:
           - Effect: Allow
             Action:
               - kms:GenerateDataKey
-            Resource: !Sub '{{resolve:ssm:/bodds/${Environment}/s3-kms-key-arn}}'
+            Resource: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
         - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
         - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
-      Environment:
-        Variables:
-          HTTPS_PROXY: !If
-            - IsNotLocal
-            - !Sub 'http://squid.bodds.${Environment}:3128'
-            - !Ref AWS::NoValue
-          PROJECT_ENV: !Ref Environment
-          PROJECT_NAME: !Ref ProjectName
-          POSTGRES_HOST: !If
-            - IsNotLocal
-            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
-            - !Ref RdsDbHostAddr
-          POSTGRES_PORT: !Ref RdsDbPort
-          POSTGRES_DB: !If
-            - IsNotLocal
-            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
-            - postgres
-          POSTGRES_USER: !If
-            - IsNotLocal
-            - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
-            - bodds_rw
       LoggingConfig:
         LogGroup: !Ref PlaceholderLambdaLogGroup
 
@@ -136,6 +137,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-placeholder-lambda'
+      KmsKeyId: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
       RetentionInDays: 30
 
   #########################################
