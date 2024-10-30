@@ -1,10 +1,5 @@
 import logging
 from typing import Optional
-from sqlalchemy.orm.exc import NoResultFound
-
-from common import BodsDB
-
-db = BodsDB()
 
 logger = logging.getLogger(__name__)
 
