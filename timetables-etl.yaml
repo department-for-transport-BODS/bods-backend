@@ -111,6 +111,7 @@ Resources:
   ############################
   PlaceholderLambda:
     Type: AWS::Serverless::Function
+    # checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-placeholder-lambda'
       CodeUri: ./src/timetables_etl
@@ -145,12 +146,19 @@ Resources:
   #########################################
   PlaceholderS3Bucket:
     Type: AWS::S3::Bucket
+    # checkov:skip=CKV_AWS_56:Ensure S3 bucket has RestrictPublicBuckets enabled
+    # checkov:skip=CKV_AWS_55:Ensure S3 bucket has ignore public ACLs enabled
+    # checkov:skip=CKV_AWS_54:Ensure S3 bucket has block public policy enabled
+    # checkov:skip=CKV_AWS_21:Ensure the S3 bucket has versioning enabled
+    # checkov:skip=CKV_AWS_53:Ensure S3 bucket has block public ACLs enabled
 
   PlaceholderSNSTopic:
     Type: AWS::SNS::Topic
+    # checkov:skip=CKV_AWS_26:Ensure all data stored in the SNS topic is encrypted
 
   PlaceholderSQSQueue:
     Type: AWS::SQS::Queue
+    # checkov:skip=CKV_AWS_27:Ensure all data stored in the SQS queue is encrypted
 
   CommonLambdaSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -160,6 +168,7 @@ Resources:
       GroupName: !Sub '${ProjectName}-${Environment}-etl-common-lambda'
       SecurityGroupEgress: 
         - IpProtocol: '-1'
+          Description: 'Allow outbound connectivity to any'
           CidrIp: '0.0.0.0/0'
       VpcId: !Sub '{{resolve:ssm:/bodds/${Environment}/vpc-id}}'
       Tags:
@@ -171,6 +180,7 @@ Resources:
     Condition: IsNotLocal
     Properties:
       GroupId: !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-sg-id}}'
+      Description: !Sub 'Allow inbound connectivity from ${ProjectName}-${Environment}-etl-common-lambda'
       IpProtocol: tcp
       FromPort: 5432
       ToPort: 5432

@@ -305,6 +305,7 @@ Resources:
       GroupName: !Sub '${ProjectName}-${Environment}-pt-common-lambda'
       SecurityGroupEgress: 
         - IpProtocol: '-1'
+          Description: 'Allow outbound connectivity to any'
           CidrIp: '0.0.0.0/0'
       VpcId: !Sub '{{resolve:ssm:/bodds/${Environment}/vpc-id}}'
       Tags:
@@ -316,6 +317,7 @@ Resources:
     Condition: IsNotLocal
     Properties:
       GroupId: !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-sg-id}}'
+      Description: !Sub 'Allow inbound connectivity from ${ProjectName}-${Environment}-pt-common-lambda'
       IpProtocol: tcp
       FromPort: 5432
       ToPort: 5432

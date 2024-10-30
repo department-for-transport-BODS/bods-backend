@@ -1,4 +1,4 @@
-FROM dpage/pgadmin4
+FROM dpage/pgadmin4:8
 
 ARG POSTGRES_PORT POSTGRES_USER POSTGRES_HOST
 
@@ -22,3 +22,5 @@ RUN cat <<EOF > /pgadmin4/servers.json
 EOF
 
 USER pgadmin
+
+HEALTHCHECK CMD curl --fail http://localhost:5050 || exit 1",
