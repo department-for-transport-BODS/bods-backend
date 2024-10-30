@@ -1,4 +1,4 @@
-# PDBRD Infrastructure
+# BODS Backend
 
 Repository relating to the Bus Open Data service that is offerred by DfT (Department for Transport), more specifically the backend lambda functions
 
@@ -10,9 +10,10 @@ Supporting application lambda processes
  - Python
 
 ## Links
- - [Bus Open Data Service Application](https://github.com/department-for-transport-BODS/bods)
+[Bus Open Data Service Application](https://github.com/department-for-transport-BODS/bods)
+GitHub repository containing code relating to the associated application services for BODS.
 
-   GitHub repository containing code relating to the associated application services for BODS.
+[Initial Setup](./docs/setup.md)
 
 ## Documentation
 

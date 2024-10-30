@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Backend resources associated with the BODS (Bus Open Data Service) service
+
+Parameters:
+  Environment:
+    Type: String
+    Description: The environment into which the stack is being deployed
+  ProjectName:
+    Description: The name of the project
+    Type: String
+  AvlConsumerApiBaseUrl:
+    Type: String
+    Default: 'https://6tfu67dcng.execute-api.eu-west-2.amazonaws.com/v1'
+  GtfsApiBaseUrl:
+    Type: String
+    Default: 'https://gtfs.test.integrated-data.dft-create-data.com'
+  RdsDbHostAddr:
+    Type: String
+    Default: ''
+  RdsDbPort:
+    Type: Number
+    Default: 5432
+
+Resources:
+  PeriodicTasks:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: './periodic-tasks.yaml'
+      Parameters:
+        Environment: !Ref Environment
+        ProjectName: !Ref ProjectName
+        AvlConsumerApiBaseUrl: !Ref AvlConsumerApiBaseUrl
+        GtfsApiBaseUrl: !Ref GtfsApiBaseUrl
+        RdsDbHostAddr: !Ref RdsDbHostAddr
+        RdsDbPort: !Ref RdsDbPort
+
+  # TimetablesEtl:
+  #   Type: AWS::Serverless::Application
+  #   Properties:
+  #     Location: './timetables-etl.yaml'
+  #     Parameters:
+  #       Environment: !Ref Environment
+  #       ProjectName: !Ref ProjectName
+  #       RdsDbHostAddr: !Ref RdsDbHostAddr
+  #       RdsDbPort: !Ref RdsDbPort
