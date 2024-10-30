@@ -1,3 +1,4 @@
+import os
 import sys
 from contextlib import ExitStack
 from typing import TextIO
@@ -31,18 +32,14 @@ load_dotenv()
 
 def sqlalchmy_model_generator() -> None:
     generators = {ep.name: ep for ep in entry_points(group="sqlacodegen.generators")}
-    url = "postgresql://brahmaduttau:root123@localhost:5432/bodds"
+    url = os.getenv("DATABASE_URL")
     options = ""
-    versions = ""
     schemas = "public"
     generator = "dataclasses"
     tables = "users_user,auth_group,django_site"
     noviews = False
     outfile = "models.py"
 
-    if versions:
-        print(version("sqlacodegen"))
-        return
 
     if not url:
         print("You must supply a url\n", file=sys.stderr)
