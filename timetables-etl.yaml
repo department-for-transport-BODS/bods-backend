@@ -111,7 +111,7 @@ Resources:
   ############################
   PlaceholderLambda:
     Type: AWS::Serverless::Function
-    # checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
+    ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-placeholder-lambda'
       CodeUri: ./src/timetables_etl
@@ -145,20 +145,41 @@ Resources:
   #### GENERAL CONFIGURATION RESOURCES ####
   #########################################
   PlaceholderS3Bucket:
+    # Temporarily suppress warning on placeholder items
+    Metadata:
+      checkov:
+        skip:
+          - id: CKV_AWS_56
+            comment: 'Ensure S3 bucket has RestrictPublicBuckets enabled'
+          - id: CKV_AWS_55
+            comment: 'Ensure S3 bucket has ignore public ACLs enabled'
+          - id: CKV_AWS_54
+            comment: 'Ensure S3 bucket has block public policy enabled'
+          - id: CKV_AWS_21
+            comment: 'Ensure the S3 bucket has versioning enabled'
+          - id: CKV_AWS_53
+            comment: 'Ensure S3 bucket has block public ACLs enabled'
     Type: AWS::S3::Bucket
-    # checkov:skip=CKV_AWS_56:Ensure S3 bucket has RestrictPublicBuckets enabled
-    # checkov:skip=CKV_AWS_55:Ensure S3 bucket has ignore public ACLs enabled
-    # checkov:skip=CKV_AWS_54:Ensure S3 bucket has block public policy enabled
-    # checkov:skip=CKV_AWS_21:Ensure the S3 bucket has versioning enabled
-    # checkov:skip=CKV_AWS_53:Ensure S3 bucket has block public ACLs enabled
+    
+    
 
   PlaceholderSNSTopic:
+    # Temporarily suppress warning on placeholder items
+    Metadata:
+      checkov:
+        skip:
+          - id: CKV_AWS_26
+            comment: 'Ensure all data stored in the SNS topic is encrypted'
     Type: AWS::SNS::Topic
-    # checkov:skip=CKV_AWS_26:Ensure all data stored in the SNS topic is encrypted
 
   PlaceholderSQSQueue:
+    # Temporarily suppress warning on placeholder items
+    Metadata:
+      checkov:
+        skip:
+          - id: CKV_AWS_27
+            comment: 'Ensure all data stored in the SQS queue is encrypted'
     Type: AWS::SQS::Queue
-    # checkov:skip=CKV_AWS_27:Ensure all data stored in the SQS queue is encrypted
 
   CommonLambdaSecurityGroup:
     Type: AWS::EC2::SecurityGroup
