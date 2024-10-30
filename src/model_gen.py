@@ -30,13 +30,21 @@ else:
 load_dotenv()
 
 
+def get_connection_string():
+    db = os.getenv("POSTGRES_DB")
+    user = os.getenv("POSTGRES_USER")
+    password = os.getenv("POSTGRES_PASSWORD")
+    host = os.getenv("POSTGRES_HOST")
+    port = os.getenv("POSTGRES_PORT")
+    return f"postgresql://{user}:{password}@{host}:{port}/{db}" 
+
 def sqlalchmy_model_generator() -> None:
     generators = {ep.name: ep for ep in entry_points(group="sqlacodegen.generators")}
-    url = os.getenv("DATABASE_URL")
+    url = get_connection_string()
     options = ""
     schemas = "public"
     generator = "dataclasses"
-    tables = "users_user,auth_group,django_site"
+    tables = os.getenv("MODEL_GEN_TABLES")
     noviews = False
     outfile = "models.py"
 
@@ -60,8 +68,9 @@ def sqlalchmy_model_generator() -> None:
     tables = tables.split(",") if tables else None
     schemas = schemas.split(",") if schemas else [None]
     options = set(options.split(",")) if options else set()
+    
     for schema in schemas:
-        metadata.reflect(engine, schema, not noviews, tables)
+        metadata.reflect(engine, schema, not noviews, only=tables)
 
     # Instantiate the generator
     generator_class = generators[generator].load()
@@ -77,6 +86,7 @@ def sqlalchmy_model_generator() -> None:
             outfile = sys.stdout
 
         # Write the generated model code to the specified file or standard output
+        print(f"Generating models for tables: {tables}")
         outfile.write(generator.generate())
 
 
