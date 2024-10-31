@@ -1,22 +1,32 @@
+"""
+Description: Module to provide access to S3 objects
+"""
+from io import BytesIO
+import os
 import boto3
-from os import environ
+from botocore.response import StreamingBody
+from botocore.exceptions import ClientError, BotoCoreError
 from logger import logger
-import io
 
 
 class S3:
-    def __init__(self, filename: str, zipfile, bucket_name: str):
-        self._filename = filename
-        self._zipfile = zipfile
+    """
+    Description: Class to provide access to S3 objects
+    """
+    def __init__(self, bucket_name: str):
         self._client = self._create_s3_client()
         self._bucket_name = bucket_name
 
-    def _create_s3_client(self):
+    @property
+    def bucket_name(self) -> str:
+        return self._bucket_name
+
+    def _create_s3_client(self):# noqa
         """
         Creates an S3 client. If running locally (PROJECT_ENV=local),
         it points to the LocalStack S3 service; otherwise, it connects to AWS S3.
         """
-        if environ.get("PROJECT_ENV") == "local":
+        if os.environ.get("PROJECT_ENV") == "local":
             logger.info("Using LocalStack for S3 (local environment)")
             return boto3.client(
                 "s3",
@@ -28,17 +38,53 @@ class S3:
             logger.info("Using AWS S3 (production or non-local environment)")
             return boto3.client("s3")
 
-    def upload_file(self):
-        logger.info("Uploading file to S3")
-        self._client.put_object(
-            Bucket=self._bucket_name, Key=self._filename, Body=self._zipfile.getvalue()
-        )
-        logger.info("File uploaded to S3 successfully.")
-        return
+    def put_object(self, file_path: str, file_data: bytes):
+        logger.info(f"Uploading file to {self.bucket_name}/{file_path}")
 
-    def get_fileobj(self, file_path):
-        file_stream = io.BytesIO()
-        self._client.download_fileobj(Bucket=self._bucket_name, Key=file_path, Fileobj=file_stream)
-        file_stream.seek(0)
-        return file_stream
+        # Determine the content type based on file extension
+        content_type = None
+        extension = os.path.splitext(file_path)[-1].lower()
 
+        if extension == '.zip':
+            content_type = 'application/zip'
+        elif extension == '.xml':
+            content_type = 'application/xml'
+        elif extension == '.csv':
+            content_type = 'text/csv'
+        elif extension == '.txt':
+            content_type = 'text/plain'
+
+        try:
+            # Upload the file with appropriate content type
+            self._client.put_object(
+                Bucket=self.bucket_name,
+                Key=file_path,
+                Body=file_data,
+                ContentType=content_type
+            )
+            logger.info(f"Uploaded file successfully to {self.bucket_name}/{file_path}")
+            return True
+        except (ClientError, BotoCoreError) as err:
+            logger.error(f"Error uploading file {file_path}: {e}")
+            raise err
+
+    def download_fileobj(self, file_path) -> BytesIO: # noqa
+        try:
+            file_stream = BytesIO()
+            self._client.download_fileobj(
+                Bucket=self._bucket_name,
+                Key=file_path,
+                Fileobj=file_stream
+            )
+            file_stream.seek(0)
+            return file_stream
+        except (ClientError, BotoCoreError) as err:
+            logger.error(f"Error downloading file {self.bucket_name}/{file_path}: {err}")
+
+    def get_object(self, file_path: str) -> StreamingBody:
+        try:
+            response = self._client.get_object(Bucket=self._bucket_name,
+                                               Key=file_path)
+            return response["Body"]
+        except (ClientError, BotoCoreError) as err:
+            logger.error(f"Error downloading file object {self.bucket_name}/{file_path}: {err}")

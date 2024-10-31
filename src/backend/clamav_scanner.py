@@ -1,7 +1,14 @@
-import logging
-from dataclasses import dataclass
-from typing import BinaryIO, Optional
+"""
+Description: Module to scan incoming s3 file object for vulnerabilities.
+Lambda handle is triggered by S3 event
+"""
 
+import io
+import json
+import logging
+import os
+from typing import BinaryIO, Optional
+from dataclasses import dataclass
 from clamd import BufferTooLongError, ClamdNetworkSocket
 from clamd import ConnectionError as ClamdConnectionError
 from tenacity import (
@@ -11,13 +18,25 @@ from tenacity import (
     stop_after_attempt,
     wait_random_exponential,
 )
-
-from transit_odp.validate.exceptions import ValidationException
-
-logger = logging.getLogger(__name__)
+from logger import logger
+from s3 import S3
 
 SCAN_ATTEMPTS = 5
 MULTIPLIER = 1
+
+
+# TODO: removed this class import the exception from boilerplate/exceptions
+class ValidationException(Exception):
+    code = "VALIDATION_FAILED"
+    message_template = "Validation failed for {filename}."
+
+    def __init__(self, filename, line=1, message=None):
+        self.filename = filename
+        if message is None:
+            self.message = self.message_template.format(filename=filename)
+        else:
+            self.message = message
+        self.line = line
 
 
 class AntiVirusError(ValidationException):
@@ -38,7 +57,8 @@ class ClamConnectionError(AntiVirusError):
     """Exception for when we can't connect to the ClamAV server."""
 
     code = "AV_CONNECTION_ERROR"
-    message_template = "Could not connect to Clam daemon when testing {filename}."
+    message_template = "Could not connect to Clam daemon when \
+                        testing {filename}."
 
 
 @dataclass
@@ -72,26 +92,10 @@ class FileScanner:
         logger.info("Antivirus scan: Started")
         self.clamav = ClamdNetworkSocket(host=host, port=port)
 
-    @retry(
-        reraise=True,
-        retry=retry_if_exception_type(ClamConnectionError),
-        wait=wait_random_exponential(multiplier=MULTIPLIER, max=10),
-        stop=stop_after_attempt(SCAN_ATTEMPTS),
-        before=before_log(logger, logging.DEBUG),
-    )
     def scan(self, file_: BinaryIO):
-        """
-        Retrieves and returns the result of the scanned file. A maxiumum
-        of 5 scan attempts will occur if a connection to ClamAV cannot be
-        established (leading to ClamConnectionError exception).
-
-        Args:
-            file_: File being scanned
-        """
         try:
             result = self._perform_scan(file_)
         except ClamdConnectionError as exc:
-            logger.info("Issue wih ClamAV connection: Re-attempting connection.")
             raise ClamConnectionError(file_.name) from exc
 
         if result.status == "ERROR":
@@ -104,32 +108,63 @@ class FileScanner:
 
     @retry(
         reraise=True,
-        retry=retry_if_exception_type(TypeError),
+        retry=retry_if_exception_type(ClamdConnectionError),
         wait=wait_random_exponential(multiplier=MULTIPLIER, max=10),
         stop=stop_after_attempt(SCAN_ATTEMPTS),
         before=before_log(logger, logging.DEBUG),
     )
     def _perform_scan(self, file_: BinaryIO) -> ScanResult:
-        """
-        Returns response from ClamAV. A maxiumum of 5 scan attempts will occur
-        if no response is received from ClamAV (leading to TypeError exception).
-
-        Args:
-            file_: File being scanned
-
-        Returns:
-            ScanResult: Result from response
-        """
-
         try:
             response = self.clamav.instream(file_)
             status, reason = response["stream"]
             return ScanResult(status=status, reason=reason)
-        except TypeError as exc:
-            msg = "Issue with the ClamAV response: Re-requesting response."
-            logger.info(msg)
-            raise TypeError(exc)
         except BufferTooLongError as e:
             msg = "Antivirus scan failed due to BufferTooLongError"
             logger.exception(msg, exc_info=True)
             raise AntiVirusError(file_.name, message=msg) from e
+
+
+def lambda_handler(event, context):
+    """
+    Main lambda handler
+    """
+    logger.info(f"Received event:{json.dumps(event, indent=2)}")
+
+    # Extract the bucket name and object key from the S3 event
+    bucket = event["Records"][0]["s3"]["bucket"]["name"]
+    key = event["Records"][0]["s3"]["object"]["key"]
+
+    # URL-decode the key if it has special characters
+    key = key.replace("+", " ")
+
+    try:
+        # Get S3 handler
+        s3_handler = S3(bucket_name=bucket)
+
+        # Fetch the object from S3
+        file_object = s3_handler.get_object(file_path=key)
+
+        # Connect/Scan the file object
+        av_scanner = FileScanner(
+            os.environ["CLAMAV_HOST"], int(os.environ["CLAMAV_PORT"])
+        )
+
+        # Check if ClamAV is responding
+        if not av_scanner.clamav.ping():
+            raise Exception("ClamAV is not running or accessible.")
+
+        # Backward compatibility with python file handler
+        file_object.name = key
+        av_scanner.scan(file_object)  # noqa
+    except ValidationException as err:
+        logger.error(err.message, exc_info=True)
+        raise err
+    except Exception as e:
+        logger.error(f"Error scanning object '{key}' from bucket '{bucket}'")
+        raise e
+
+    # Return a success message
+    return {
+        "statusCode": 200,
+        "body": f"Successfully scanned the file '{key}' from bucket '{bucket}'",
+    }

@@ -1,7 +1,6 @@
 import io
 import requests
 import time
-import pytz
 from common import LambdaEvent
 from datetime import datetime, timezone
 from db.avl_cavldataarchive import (
@@ -77,7 +76,9 @@ class ConsumerAPIArchiver:
             logger.info(
                 f"{self.logger_prefix} Total time elapsed to get response from {self.url} is {response.elapsed.total_seconds()} for job-task_create_{self.filename_prefix}_zipfile"
             )
-            logger.info(f"Content Log: For url {self.url} and module {self.filename_prefix} Received content {response.content}")
+            logger.info(
+                f"Content Log: For url {self.url} and module {self.filename_prefix} Received content {response.content}"
+            )
             return response.content
 
     def get_file(self, content):
@@ -113,8 +114,8 @@ class ConsumerAPIArchiver:
 
     def upload_file_to_s3(self, bytesio):
         BUCKET_NAME = environ.get("AWS_SIRIVM_STORAGE_BUCKET_NAME", default="")
-        s3 = S3(self.filename, bytesio, BUCKET_NAME)
-        s3.upload_file()
+        s3 = S3(BUCKET_NAME)
+        s3.put_object(self.filename, bytesio)
         return
 
 
