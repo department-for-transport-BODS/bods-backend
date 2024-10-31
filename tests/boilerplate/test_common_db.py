@@ -1,4 +1,4 @@
-from src.boilerplate.common import BodsDB
+from boilerplate.common import BodsDB
 from unittest.mock import patch
 from os import environ
 from pytest import raises
@@ -22,7 +22,7 @@ ENVIRONMENT_OUTPUT_TEST_VALUES = {
     "sslmode": "require",
 }
 
-@patch("src.boilerplate.common.BodsDB._generate_rds_iam_auth_token", return_value="my_password")
+@patch("boilerplate.common.BodsDB._generate_rds_iam_auth_token", return_value="my_password")
 @patch.dict(environ, ENVIRONMENT_INPUT_TEST_VALUES, clear=True)
 def test_connection_details_valid(mocked_db_token):
     # Initialise DB and fetch connection details
@@ -40,10 +40,10 @@ def test_connection_details_missing(caplog):
     # Check that the appropriate error message is logged
     assert "Missing connection details value: host" in caplog.text
 
-@patch("src.boilerplate.common.BodsDB._get_connection_details", return_value=ENVIRONMENT_OUTPUT_TEST_VALUES)
-@patch("src.boilerplate.common.create_engine")
-@patch("src.boilerplate.common.automap_base")
-@patch("src.boilerplate.common.sessionmaker")
+@patch("boilerplate.common.BodsDB._get_connection_details", return_value=ENVIRONMENT_OUTPUT_TEST_VALUES)
+@patch("boilerplate.common.create_engine")
+@patch("boilerplate.common.automap_base")
+@patch("boilerplate.common.sessionmaker")
 def test_database_initialisation(mock_sessionmaker, mock_automap_base, mock_create_engine, mock_connection_details):
     # Initialise DB and trigger engine initialisation
     db = BodsDB()
@@ -61,10 +61,10 @@ def test_database_initialisation(mock_sessionmaker, mock_automap_base, mock_crea
     assert db.session is not None
     assert db.classes is not None
 
-@patch("src.boilerplate.common.BodsDB._get_connection_details", return_value=ENVIRONMENT_OUTPUT_TEST_VALUES)
-@patch("src.boilerplate.common.create_engine", side_effect=OperationalError)
-@patch("src.boilerplate.common.automap_base")
-@patch("src.boilerplate.common.sessionmaker")
+@patch("boilerplate.common.BodsDB._get_connection_details", return_value=ENVIRONMENT_OUTPUT_TEST_VALUES)
+@patch("boilerplate.common.create_engine", side_effect=OperationalError)
+@patch("boilerplate.common.automap_base")
+@patch("boilerplate.common.sessionmaker")
 def test_database_initialisation_failed(mock_sessionmaker, mock_automap_base, mock_create_engine, mock_connection_details, caplog):
     db = BodsDB()
     # Attempting to initialise the engine should raise an OperationalError

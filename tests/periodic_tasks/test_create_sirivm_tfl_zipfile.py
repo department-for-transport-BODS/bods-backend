@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch
 from periodic_tasks.create_sirivm_tfl_zip import lambda_handler
 
-MODULE_PATH = "src.periodic_tasks.create_sirivm_tfl_zip"
+MODULE_PATH = "periodic_tasks.create_sirivm_tfl_zip"
 
 
 class TestSIRIVMTFLZipfile(unittest.TestCase):

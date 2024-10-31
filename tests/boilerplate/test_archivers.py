@@ -9,7 +9,7 @@ from boilerplate.archiver import GTFSRTArchiver
 from boilerplate.enums import CAVLDataFormat
 from tests.mock_db import MockedDB
 
-ARCHIVE_MODULE = "src.boilerplate.archiver"
+ARCHIVE_MODULE = "boilerplate.archiver"
 
 
 @patch(ARCHIVE_MODULE + ".LambdaEvent")

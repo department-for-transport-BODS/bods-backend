@@ -1,5 +1,4 @@
-import pytest
-from src.boilerplate.logger import (
+from boilerplate.logger import (
     get_dataset_adapter_from_revision,
     DatasetPipelineLoggerContext,
 )
