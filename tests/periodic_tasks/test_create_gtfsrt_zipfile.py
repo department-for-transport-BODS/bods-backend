@@ -1,10 +1,8 @@
 import unittest
-from unittest.mock import MagicMock, patch
-from requests import RequestException
-from src.backend.create_gtfsrt_zip import lambda_handler
-from src.boilerplate.archiver import ArchivingError
+from unittest.mock import patch
+from periodic_tasks.create_gtfsrt_zip import lambda_handler
 
-MODULE_PATH = "src.backend.create_gtfsrt_zip"
+MODULE_PATH = "periodic_tasks.create_gtfsrt_zip"
 
 
 class TestGtfsrtZipfile(unittest.TestCase):

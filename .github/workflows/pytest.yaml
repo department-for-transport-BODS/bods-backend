@@ -1,0 +1,38 @@
+name: pytest
+on:
+  pull_request:
+    branches:
+    - 'dev'
+    - '!test'
+    - '!main'
+    paths:
+    - 'src/**'
+    - 'tests/**'
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+
+    - name: setup python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.11
+        cache: 'pip'
+        cache-dependency-path: ./src/boilerplate/requirements.txt
+
+    - name: install dependencies
+      run: |
+        sudo apt update -y && \
+          sudo apt install -y libpq-dev
+
+        python -m pip install --upgrade pip
+        pip install pytest pytest-cov
+        pip install -r ./src/boilerplate/requirements.txt
+
+    - name: test with pytest
+      run: |
+        pytest

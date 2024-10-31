@@ -24,7 +24,7 @@ def get_cavl_db_object(event: LambdaEvent, data_format: str):
             .first()
         )
         end_query_op = time.time()
-        logger.info(f"Query execution time: {end_query_op-start_query_op:.2f} seconds")    
+        logger.info(f"Query execution time: {end_query_op-start_query_op:.2f} seconds")
         if archive is None:
             archive = cavl_data_archive(
                 data_format=data_format,
