@@ -12,7 +12,7 @@ formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-client = boto3.client("lambda")
+client = boto3.client("lambda", region_name=os.environ.get("AWS_REGION", "eu-west-2"))
 
 
 def lambda_handler(event, context):
@@ -20,6 +20,9 @@ def lambda_handler(event, context):
     index = event["iterator"]["index"] + 1
 
     target_functions = os.environ.get("TARGET_FUNCTION_NAMES")
+    if not target_functions:
+        logger.info("No target functions specified.")
+        return {"index": index, "continue": index < count, "count": count}
     logger.info(f"Target functions to invoke: {target_functions}")
 
     function_names = target_functions.split(",")
