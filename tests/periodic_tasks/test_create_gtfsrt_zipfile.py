@@ -5,7 +5,7 @@ from periodic_tasks.create_gtfsrt_zip import lambda_handler
 MODULE_PATH = "periodic_tasks.create_gtfsrt_zip"
 
 
-class TestGtfsrtZipfile(unittest.TestCase):
+class TestGTFSRTZipfile(unittest.TestCase):
 
     @patch(f"{MODULE_PATH}.GTFSRTArchiver")
     def test_archiver_called(self, MockArchiver):
