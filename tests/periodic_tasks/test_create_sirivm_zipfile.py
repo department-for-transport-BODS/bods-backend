@@ -5,7 +5,7 @@ from periodic_tasks.create_sirivm_zip import lambda_handler
 MODULE_PATH = "periodic_tasks.create_sirivm_zip"
 
 
-class TestSIRIVMZipfile(unittest.TestCase):
+class TestSiriVMZipfile(unittest.TestCase):
 
     @patch(f"{MODULE_PATH}.SiriVMArchiver")
     def test_archiver_called(self, MockArchiver):
