@@ -59,7 +59,7 @@ def file_processing_result_to_db(func):
                 task_id=uuid,
                 status="STARTED",
                 filename=file_name,
-                pipeline_processing_step=step,
+                pipeline_processing_step=step.id,
                 revision=revision
             )
             fpr_ins = PipelineFileProcessingResult(_db)
@@ -72,7 +72,7 @@ def file_processing_result_to_db(func):
             # Add lambda exit
             params = dict(
                 status="SUCCESS",
-                completed = datetime.now()
+                completed=datetime.now()
             )
             fpr_ins.update(uuid, **params)
 
@@ -85,7 +85,7 @@ def file_processing_result_to_db(func):
             params = dict(
                 status=e.status,
                 completed=datetime.now(),
-                error_code = get_file_processing_error_code(_db, e.error_status)
+                error_code=get_file_processing_error_code(_db, e.error_status)
             )
             fpr_excep.update(uuid, **params)
             return e

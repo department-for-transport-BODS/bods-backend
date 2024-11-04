@@ -7,6 +7,8 @@ from boilerplate.db.file_processing_result import (
     PipelineFileProcessingResult,
     get_file_processing_result_obj,
     get_file_processing_step,
+    get_file_processing_error_code,
+    file_processing_result_to_db
 )
 from tests.mock_db import MockedDB
 
@@ -115,9 +117,8 @@ class TestFileProcessingResult(unittest.TestCase):
         mock_db.session.add(result_data)
         mock_db.session.commit()
 
-        buf_ = mock_db.classes.pipeline_processing_step
-        result = mock_db.session.query(buf_).filter(buf_.name == "FARES").one()
-        self.assertTrue(result.id, 1)
+        buf_ = get_file_processing_step(mock_db, name="FARES")
+        self.assertTrue(buf_.id, 1)
 
     def test_get_file_processing_error_code(self):
         error_status = "NO_DATA_FOUND"
@@ -126,9 +127,91 @@ class TestFileProcessingResult(unittest.TestCase):
         mock_db.session.add(result_data)
         mock_db.session.commit()
 
-        buf_ = mock_db.classes.pipeline_error_code
-        result = mock_db.session.query(buf_).filter(buf_.status == error_status).one()
-        self.assertTrue(result.id, 1)
+        buf_ = get_file_processing_error_code(mock_db, error_status)
+        self.assertTrue(buf_.id, 1)
+
+    def test_get_file_processing_step_exception(self):
+        mock_db = MockedDB()
+        mock_db.session = MagicMock()
+        mock_db.session.__enter__.return_value.query.side_effect = \
+            NoResultFound("No record found")
+        test_obj = PipelineFileProcessingResult(mock_db)
+        with self.assertRaises(NoResultFound) as _context:
+            get_file_processing_step(mock_db, name="FARES")
+
+        self.assertEqual(str(_context.exception), "No record found")
+        mock_db.session.__enter__.return_value.query.assert_called_once()
+
+    def test_get_file_processing_error_code_exception(self):
+        error_status = "NO_DATA_FOUND"
+        mock_db = MockedDB()
+        mock_db.session = MagicMock()
+        mock_db.session.__enter__.return_value.query.side_effect = \
+            NoResultFound("No record found")
+        test_obj = PipelineFileProcessingResult(mock_db)
+        with self.assertRaises(NoResultFound) as _context:
+            get_file_processing_error_code(mock_db, error_status)
+
+        self.assertEqual(str(_context.exception), "No record found")
+        mock_db.session.__enter__.return_value.query.assert_called_once()
+
+    @patch('boilerplate.db.file_processing_result.BodsDB')
+    def test_file_processing_result_to_db(self, mock_db):
+        def test_lambda(event, context):
+            return True
+
+        event = {
+            "Records": [
+                {
+                    "s3": {
+                        "bucket": {
+                            "name": "bodds-dev",
+                        },
+                        "object": {"key": "3657/16012023095023.zip"},
+                    },
+                }
+            ]
+        }
+
+        step = MagicMock()
+        step.id = 1
+        error_code = MagicMock()
+        error_code.id = 1
+        step_patch = patch('boilerplate.db.file_processing_result.get_file_processing_step')
+        step_patch.return_value = step
+        error_code_patch = patch('boilerplate.db.file_processing_result.get_file_processing_error_code')
+        error_code_patch.return_value = error_code
+
+        get_file_processing_step.return_value = MagicMock()
+        get_file_processing_step.return_value.id = 1
+        decrator_obj = file_processing_result_to_db(test_lambda)
+        result = decrator_obj(event, None)
+        self.assertTrue(result)
+
+    @patch('boilerplate.db.file_processing_result.BodsDB')
+    @patch('boilerplate.db.file_processing_result.get_file_processing_step')
+    def test_file_processing_result_to_db_exception(self, mock_step, mock_db):
+        def test_lambda(event, context):
+            return True
+
+        event = {
+            "Records": [
+                {
+                    "s3": {
+                        "bucket": {
+                            "name": "bodds-dev",
+                        },
+                        "object": {"key": "3675/16012023095023.zip"},
+                    },
+                }
+            ]
+        }
+        mock_step.side_effect = Exception("Test exception")
+        mock_step.side_effect.status = "500"
+        mock_step.side_effect.error_status = "edf"
+        decrator_obj = file_processing_result_to_db(test_lambda)
+        result = decrator_obj(event, None)
+        self.assertTrue(str(result), 'Test exception')
 
 
 if __name__ == "__main__":
