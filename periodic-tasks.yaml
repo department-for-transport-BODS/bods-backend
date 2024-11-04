@@ -105,6 +105,8 @@ Resources:
             FunctionName: !Ref GenerateSiriVmLambda
         - LambdaInvokePolicy:
             FunctionName: !Ref GenerateSiriVmTflLambda
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ClamAvScannerLambda
       Environment:
         Variables:
           TARGET_FUNCTION_NAMES: !Join 
@@ -113,6 +115,7 @@ Resources:
               - !Ref GenerateGtfsRtLambda
               - !Ref GenerateSiriVmLambda
               - !Ref GenerateSiriVmTflLambda
+              - !Ref ClamAvScannerLambda
       LoggingConfig:
         LogGroup: !Ref PtIteratorLambdaLogGroup
 
