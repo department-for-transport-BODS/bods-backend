@@ -1,6 +1,9 @@
 from io import BytesIO
 import unittest
 from unittest.mock import patch, MagicMock
+from botocore.exceptions import (
+    ClientError,
+    BotoCoreError)
 from src.boilerplate.s3 import S3
 
 
@@ -18,6 +21,10 @@ class TestS3(unittest.TestCase):
         self.s3 = S3(bucket_name=self._bucket)
         self.assertEqual(self.s3._client.meta.endpoint_url,
                          "http://localstack:4566")
+
+    def test_bucket_name(self):
+        self.s3 = S3(bucket_name=self._bucket)
+        self.assertEqual(self.s3.bucket_name, self._bucket)
 
     def test_put_object(self):
         self.mock_s3_client.put_object.return_value = None  # No exception = success
@@ -44,6 +51,45 @@ class TestS3(unittest.TestCase):
         self.mock_s3_client.get_object.assert_called_once_with(Bucket=self._bucket,
                                                                Key="test_file.txt")
         self.assertEqual(content, b'This is a test file content')
+
+    def test_put_object_exception(self):
+        error_response = {
+            'Error': {
+                'Code': 'NoSuchKey',
+                'Message': 'Put object failed'
+            }
+        }
+        self.mock_s3_client.put_object.side_effect = ClientError(error_response,
+                                                                 "PutObject")
+        with self.assertRaises(ClientError) as context:
+            self.s3.put_object(f"test_file.zip", b"test string")
+        self.assertIn("Put object failed", str(context.exception))
+
+    def test_get_object_exception(self):
+        error_response = {
+            'Error': {
+                'Code': 'NoSuchKey',
+                'Message': 'Get object failed'
+            }
+        }
+        self.mock_s3_client.get_object.side_effect = ClientError(error_response,
+                                                                 "GetObject")
+        with self.assertRaises(ClientError) as context:
+            self.s3.get_object("test_file.txt")
+        self.assertIn("Get object failed", str(context.exception))
+
+    def test_download_fileobj_exception(self):
+        error_response = {
+            'Error': {
+                'Code': 'NoSuchKey',
+                'Message': 'Get object failed'
+            }
+        }
+        self.mock_s3_client.download_fileobj.side_effect = ClientError(error_response,
+                                                                       "GetObject")
+        with self.assertRaises(ClientError) as context:
+            self.s3.download_fileobj("test_file.txt")
+        self.assertIn("Get object failed", str(context.exception))
 
 
 if __name__ == "__main__":

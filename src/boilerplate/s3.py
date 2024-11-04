@@ -5,7 +5,9 @@ from io import BytesIO
 import os
 import boto3
 from botocore.response import StreamingBody
-from botocore.exceptions import ClientError, BotoCoreError
+from botocore.exceptions import (
+    ClientError,
+    BotoCoreError)
 from logger import logger
 
 
@@ -65,7 +67,7 @@ class S3:
             logger.info(f"Uploaded file successfully to {self.bucket_name}/{file_path}")
             return True
         except (ClientError, BotoCoreError) as err:
-            logger.error(f"Error uploading file {file_path}: {e}")
+            logger.error(f"Error uploading file {file_path}: {err}")
             raise err
 
     def download_fileobj(self, file_path) -> BytesIO: # noqa
@@ -80,6 +82,7 @@ class S3:
             return file_stream
         except (ClientError, BotoCoreError) as err:
             logger.error(f"Error downloading file {self.bucket_name}/{file_path}: {err}")
+            raise err
 
     def get_object(self, file_path: str) -> StreamingBody:
         try:
@@ -88,3 +91,4 @@ class S3:
             return response["Body"]
         except (ClientError, BotoCoreError) as err:
             logger.error(f"Error downloading file object {self.bucket_name}/{file_path}: {err}")
+            raise err
