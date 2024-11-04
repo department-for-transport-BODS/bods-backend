@@ -294,6 +294,70 @@ Resources:
       KmsKeyId: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
       RetentionInDays: 30
 
+  ################################
+  #### CLAM AV SCANNER LAMBDA ####
+  ################################
+  ClamAvScannerLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-clam-av-scanner-lambda'
+      CodeUri: ./src/backend
+      Handler: clam_av_scanner.lambda_handler
+      Layers:
+        - !Ref BoilerplateLambdaLayer
+      Policies:
+        - 'AWSLambdaBasicExecutionRole'
+        - 'AWSLambdaVPCAccessExecutionRole'
+      Environment:
+        Variables:
+          CLAMAV_HOST: !Sub 'http://clamav.bodds.${Environment}'
+          CLAMAV_PORT: 3310
+          PROJECT_ENV: !Ref Environment
+          PROJECT_NAME: !Ref ProjectName
+          POSTGRES_HOST: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
+            - !Ref RdsDbHostAddr
+          POSTGRES_PORT: !Ref RdsDbPort
+          POSTGRES_DB: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
+            - postgres
+          POSTGRES_USER: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
+            - bodds_rw
+      Events:
+        S3EventForZipFile:
+          Type: S3
+          Properties:
+            Bucket:
+              - !Sub 'bodds-${Environment}'
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .zip
+        S3EventForZipXml:
+          Type: S3
+          Properties:
+            Bucket:
+              - !Sub 'bodds-${Environment}'
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .xml
+      LoggingConfig:
+        LogGroup: !Ref ClamAvScannerLambdaLogGroup
+  ClamAvScannerLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-clam-av-scanner-lambda'
+      RetentionInDays: 30
+
   #########################################
   #### GENERAL CONFIGURATION RESOURCES ####
   #########################################
