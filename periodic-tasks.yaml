@@ -29,14 +29,20 @@ Globals:
     Timeout: 60
     MemorySize: 1024
     ReservedConcurrentExecutions: 3
-    KmsKeyArn: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-    VpcConfig:
-      SubnetIds:
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-0}}'
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-1}}'
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-2}}'
-      SecurityGroupIds:
-        - !GetAtt CommonLambdaSecurityGroup.GroupId
+    KmsKeyArn: !If
+      - IsNotLocal
+      - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+      - !Ref AWS::NoValue
+    VpcConfig: !If
+      - IsNotLocal
+      - 
+        SubnetIds:
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-0}}'
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-1}}'
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-2}}'
+        SecurityGroupIds:
+          - !GetAtt CommonLambdaSecurityGroup.GroupId
+      - !Ref AWS::NoValue
 
 Resources:
   ###################################
@@ -120,7 +126,10 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-pt-iterator-lambda'
-      KmsKeyId: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+      KmsKeyId: !If
+        - IsNotLocal
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Ref AWS::NoValue
       RetentionInDays: 30
 
   ################################
@@ -144,9 +153,18 @@ Resources:
           - Effect: Allow
             Action:
               - kms:GenerateDataKey
-            Resource: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
+            Resource: !If
+              - IsNotLocal
+              - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+              - "*"
+        - !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
+          - "arn:aws:iam::aws:policy/AmazonRDSFullAccess" # Is this right? No such role as ReadWrite
+        - !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
+          - "arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess"
       Environment:
         Variables:
           AWS_SIRIVM_STORAGE_BUCKET_NAME: !Sub 'bodds-${Environment}-sirivm'
@@ -177,7 +195,10 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-generate-gtfsrt-lambda'
-      KmsKeyId: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+      KmsKeyId: !If
+        - IsNotLocal
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Ref AWS::NoValue
       RetentionInDays: 30
 
   ################################
@@ -201,9 +222,18 @@ Resources:
           - Effect: Allow
             Action:
               - kms:GenerateDataKey
-            Resource: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
+            Resource: !If
+              - IsNotLocal
+              - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+              - "*"
+        - !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
+          - "arn:aws:iam::aws:policy/AmazonRDSFullAccess" # Is this right? No such role as ReadWrite
+        - !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
+          - "arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess"
       Environment:
         Variables:
           AWS_SIRIVM_STORAGE_BUCKET_NAME: !Sub 'bodds-${Environment}-sirivm'
@@ -234,7 +264,10 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-generate-sirivm-lambda'
-      KmsKeyId: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+      KmsKeyId: !If
+        - IsNotLocal
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Ref AWS::NoValue
       RetentionInDays: 30
 
   ####################################
@@ -258,9 +291,18 @@ Resources:
           - Effect: Allow
             Action:
               - kms:GenerateDataKey
-            Resource: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
+            Resource: !If
+              - IsNotLocal
+              - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+              - "*"
+        - !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
+          - "arn:aws:iam::aws:policy/AmazonRDSFullAccess" # Is this right? No such role as ReadWrite
+        - !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
+          - "arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess"
       Environment:
         Variables:
           AWS_SIRIVM_STORAGE_BUCKET_NAME: !Sub 'bodds-${Environment}-sirivm'
@@ -291,7 +333,10 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-generate-sirivm-tfl-lambda'
-      KmsKeyId: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+      KmsKeyId: !If
+        - IsNotLocal
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Ref AWS::NoValue
       RetentionInDays: 30
 
   #########################################
