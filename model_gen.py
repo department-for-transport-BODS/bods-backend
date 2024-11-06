@@ -46,7 +46,7 @@ def sqlalchemy_model_generator() -> None:
     generator = "dataclasses"
     tables = os.getenv("MODEL_GEN_TABLES")
     noviews = False
-    outfile = "models.py"
+    outfile = "./src/boilerplate/db/models.py"
 
 
     if not url:
@@ -66,6 +66,7 @@ def sqlalchemy_model_generator() -> None:
     engine = create_engine(url)
     metadata = MetaData()
     tables = tables.split(",") if tables else None
+    tables = [table.lower() for table in tables]
     schemas = schemas.split(",") if schemas else [None]
     options = set(options.split(",")) if options else set()
     
