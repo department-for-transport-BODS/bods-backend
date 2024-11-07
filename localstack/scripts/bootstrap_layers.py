@@ -15,34 +15,54 @@ logger.addHandler(stream_handler)
 
 class SamTemplate:
     def __init__(self, file):
+
         with open(file, "r") as sam_template_file:
             logger.info(f"Parsing template {file}")
             self.sam_template = load_yaml(sam_template_file)
             self.handle_resources()
-            for function in self.functions:
-                for ref in function.layer_refs:
-                    if ref in self.layers:
-                        logger.info(
-                            f"Updating function build for {function.name} with layer {ref}"
-                        )
-                        copy_tree(
-                            f".aws-sam/build/{ref}/python",
-                            f".aws-sam/build/{function.name}",
-                            update=1,
-                        )
+
+            for application_name, application in self.applications.items():
+                logger.info(f"Updating functions for {application_name}")
+                for function in application["functions"]:
+                    for ref in function.layer_refs:
+                        if ref in application["layers"]:
+                            logger.info(f"Updating function build for {function.name} with layer {ref}")
+                            copy_tree(
+                                f".aws-sam/build/{application_name}/{ref}/python",
+                                f".aws-sam/build/{application_name}/{function.name}",
+                                update=1,
+                            )
 
     def handle_resources(self):
+        """
+        Populate resources: Applications, Functions, and Layers
+        """
         logger.debug("Finding Resources")
+        self.applications = {}
         self.functions = []
         self.layers = []
         for resource, resource_values in self.sam_template["Resources"].items():
-            if resource_values["Type"] == "AWS::Serverless::Function":
+            resource_type = resource_values["Type"]
+
+            # If this is an Application, we parse the nested template to get the Functions/Layers for the Application
+            if resource_type == "AWS::Serverless::Application":
+                nested_template_location = resource_values.get("Properties", {}).get("Location")
+                if nested_template_location and os.path.exists(nested_template_location):
+                    logger.info(f"Found nested template: {nested_template_location}")
+                    nested_template = SamTemplate(nested_template_location)
+                    self.applications[resource] = {
+                        "functions": nested_template.functions,
+                        "layers": nested_template.layers,
+                    }
+                else:
+                    logger.warning(f"Nested template {nested_template_location} not found")
+
+            if resource_type == "AWS::Serverless::Function":
                 logger.debug(f"Found function {resource}")
                 self.functions.append(Function(resource, resource_values))
-            elif resource_values["Type"] == "AWS::Serverless::LayerVersion":
+            elif resource_type == "AWS::Serverless::LayerVersion":
                 logger.debug(f"Found layer {resource}")
                 self.layers.append(resource)
-
 
 class Function:
     def __init__(self, name, values):
@@ -54,17 +74,8 @@ class Function:
     def handle_layers(self):
         logger.debug(f"Looking for layers associated with function {self.name}")
         self.layer_refs = []
-        layers_construct = self.properties.get("Layers", None)
-        list_of_potential_layers = []
-        if isinstance(layers_construct, ODict):
-            if_values = layers_construct.get("Fn::If", [])
-            if len(if_values) > 0:
-                potential_layers = if_values[1]
-                if potential_layers:
-                    list_of_potential_layers = potential_layers[:1]
-            else:
-                logger.debug(f"No layers found for function {self.name}")
-        for layer in list_of_potential_layers:
+        layers = self.properties.get("Layers", [])
+        for layer in layers:
             if isinstance(layer, ODict):
                 logger.debug(f"Found layer {layer.get('Ref')} for function {self.name}")
                 self.layer_refs.append(layer.get("Ref"))
@@ -72,6 +83,7 @@ class Function:
                 logger.debug(f"Found layer {layer} for function {self.name}")
                 self.layer_refs.append(layer)
 
+
 if __name__ == "__main__":
     template_path = Path(os.getcwd()) / "template.yaml"
-    template = SamTemplate(template_path) # this should be the template.yaml in the top level directory
+    template = SamTemplate(template_path)  # this should be the template.yaml in the top level directory
