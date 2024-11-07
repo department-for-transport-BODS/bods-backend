@@ -38,16 +38,18 @@ build-backend-sync: ## Build the backend api using sam and keep contents synced 
 	@nodemon --watch './src/**/*.py' --signal SIGTERM --exec 'sam' build -e "py"
 
 deploy-backend: ## Deploy the backend functions to target environment using sam
-	@samlocal deploy --config-env=$(ENV) --confirm-changeset --resolve-s3
+	@samlocal deploy --config-env=$(ENV) --resolve-s3
 
 run-backend-function: ## Runs a standalone backend function locally using sam (default: GenerateSiriVmLambda)
 	@sam local invoke $(FUNC)
 
 run-timetables-etl: ## Start execution of the timetables etl stepfunction
-	./scripts/run-timetables-etl.sh
+	$(eval CURRENT_STEP_FUNCTION_EXECUTION_ARN := $(shell ./localstack/scripts/run-timetables-etl.sh))
+	@echo $(CURRENT_STEP_FUNCTION_EXECUTION_ARN) > current_execution_arn
+	@echo "Execution ARN set to: $(CURRENT_STEP_FUNCTION_EXECUTION_ARN)"
 
 check-timetables-etl: ## Check the status of the last timetables stepfunction execution
-	./scripts/check-timetables-etl.sh
+	./localstack/scripts/check-timetables-etl.sh "$$(cat current_execution_arn)"
 
 run-db-initialise: cmd-exists-psql ## Initialise the database with users/roles and schema
 	@echo "Initialising the database..."
