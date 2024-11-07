@@ -1,19 +1,16 @@
 import boto3
 import datetime
-import pandas as pd
 import time
 import urllib.parse
-from json import loads
 from logger import logger
 from os import environ
-from pydantic import BaseModel
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine, select
-
+from sqlalchemy import create_engine
 
 db_instance = None
 token_expiration_time = None
+
 
 class LambdaEvent:
     """
@@ -39,8 +36,14 @@ class LambdaEvent:
 
         current_time = time.time()
 
-        if db_instance is None or token_expiration_time is None or current_time >= token_expiration_time:
-            logger.debug("Initialising new BodsDB instance with refreshed IAM authentication token")
+        if (
+            db_instance is None
+            or token_expiration_time is None
+            or current_time >= token_expiration_time
+        ):
+            logger.debug(
+                "Initialising new BodsDB instance with refreshed IAM authentication token"
+            )
             db_instance, token_expiration_time = self._initialise_db()
         else:
             logger.debug("Re-using cached BodsDB instance as still valid")
@@ -52,8 +55,12 @@ class LambdaEvent:
         Initialises the BodsDB instance and sets the token expiration time.
         """
         db = BodsDB()
-        token_expiration = time.time() + (15 * 60) - 30 # AWS default token expiration is 15 minutes. Settings to time less 30s as safeguard
-        logger.debug(f"New token expiration set for {datetime.datetime.utcfromtimestamp(token_expiration)}")
+        token_expiration = (
+            time.time() + (15 * 60) - 30
+        )  # AWS default token expiration is 15 minutes. Settings to time less 30s as safeguard
+        logger.debug(
+            f"New token expiration set for {datetime.datetime.utcfromtimestamp(token_expiration)}"
+        )
         return db, token_expiration
 
 
@@ -77,7 +84,7 @@ class BodsDB:
         """
         if self._engine is None:
             self._initialise_engine()
-        
+
         if self._session is None:
             SessionMaker = sessionmaker(bind=self._engine)
             self._session = SessionMaker()
@@ -99,21 +106,23 @@ class BodsDB:
         """
         connection_details = self._get_connection_details()
         logger.info("Connecting to DB")
-        
+
         try:
             start_init_op = time.time()
             self._engine = create_engine(
                 self._generate_connection_string(**connection_details)
             )
             end_init_op = time.time()
-            logger.info(f"DB initialisation operation took {end_init_op-start_init_op:.2f} seconds")
+            logger.info(
+                f"DB initialisation operation took {end_init_op-start_init_op:.2f} seconds"
+            )
         except Exception as e:
             logger.error(f"Failed to initialise SQLAlchemy engine: {e}")
             raise
 
     def _initialise_database_classes(self):
         """
-        Initialises the SQLAlchemy base (metadata/classes). This is done once per Lambda 
+        Initialises the SQLAlchemy base (metadata/classes). This is done once per Lambda
         execution environment
         """
         if self._engine is None:
@@ -124,7 +133,6 @@ class BodsDB:
         self._sqlalchemy_base.prepare(autoload_with=self._engine)
         self._classes = self._sqlalchemy_base.classes
         logger.info("Set DB classes")
-
 
     def _get_connection_details(self):
         """
@@ -145,13 +153,17 @@ class BodsDB:
                     connection_details["user"],
                 )
                 end_auth_op = time.time()
-                logger.debug(f"DB IAM authentication token generation took {end_auth_op-start_auth_op:.2f} seconds")
+                logger.debug(
+                    f"DB IAM authentication token generation took {end_auth_op-start_auth_op:.2f} seconds"
+                )
                 connection_details["sslmode"] = "require"
             else:
                 logger.debug(
                     "Running in local environment, using DB password obtained from environment variables"
                 )
-                connection_details["password"] = environ.get("POSTGRES_PASSWORD", "password")
+                connection_details["password"] = environ.get(
+                    "POSTGRES_PASSWORD", "password"
+                )
                 logger.debug("Got DB password")
                 connection_details["sslmode"] = "disable"
 

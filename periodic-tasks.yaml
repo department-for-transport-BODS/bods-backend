@@ -111,6 +111,8 @@ Resources:
             FunctionName: !Ref GenerateSiriVmLambda
         - LambdaInvokePolicy:
             FunctionName: !Ref GenerateSiriVmTflLambda
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ClamAvScannerLambda
       Environment:
         Variables:
           TARGET_FUNCTION_NAMES: !Join 
@@ -119,6 +121,7 @@ Resources:
               - !Ref GenerateGtfsRtLambda
               - !Ref GenerateSiriVmLambda
               - !Ref GenerateSiriVmTflLambda
+              - !Ref ClamAvScannerLambda
       LoggingConfig:
         LogGroup: !Ref PtIteratorLambdaLogGroup
 
@@ -337,6 +340,79 @@ Resources:
         - IsNotLocal
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
         - !Ref AWS::NoValue
+      RetentionInDays: 30
+
+  ################################
+  #### CLAM AV SCANNER LAMBDA ####
+  ################################
+  ClamAvScannerLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-clam-av-scanner-lambda'
+      CodeUri: ./src/periodic_tasks
+      Handler: clam_av_scanner.lambda_handler
+      Layers:
+        - !Ref BoilerplateLambdaLayer
+      Policies:
+        - 'AWSLambdaBasicExecutionRole'
+        - 'AWSLambdaVPCAccessExecutionRole'
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - kms:GenerateDataKey
+              Resource: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
+      Environment:
+        Variables:
+          CLAMAV_HOST: !Sub 'http://clamav.bodds.${Environment}'
+          CLAMAV_PORT: 3310
+          PROJECT_ENV: !Ref Environment
+          PROJECT_NAME: !Ref ProjectName
+          POSTGRES_HOST: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
+            - !Ref RdsDbHostAddr
+          POSTGRES_PORT: !Ref RdsDbPort
+          POSTGRES_DB: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
+            - postgres
+          POSTGRES_USER: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
+            - bodds_rw
+      Events:
+        S3EventForZipFile:
+          Type: S3
+          Properties:
+            Bucket:
+              - !Sub 'bodds-${Environment}'
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .zip
+        S3EventForZipXml:
+          Type: S3
+          Properties:
+            Bucket:
+              - !Sub 'bodds-${Environment}'
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .xml
+      LoggingConfig:
+        LogGroup: !Ref ClamAvScannerLambdaLogGroup
+  ClamAvScannerLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-clam-av-scanner-lambda'
+      KmsKeyId: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
       RetentionInDays: 30
 
   #########################################
