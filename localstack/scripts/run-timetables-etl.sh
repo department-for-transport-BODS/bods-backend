@@ -10,7 +10,8 @@ awslocal stepfunctions --endpoint http://localhost:4566 start-execution \
         },
         "object": {
             "key": "object-key"
-        }
+        },
+        "dataset_etl_task_result_id": 123
     }
 }
 EOF
