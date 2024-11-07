@@ -8,8 +8,7 @@ import logging
 import os
 from typing import BinaryIO, Optional
 from dataclasses import dataclass
-from clamd import BufferTooLongError, ClamdNetworkSocket
-from clamd import ConnectionError as ClamdConnectionError
+from clamd import BufferTooLongError, ClamdNetworkSocket, ConnectionError
 from tenacity import (
     before_log,
     retry,
@@ -19,45 +18,16 @@ from tenacity import (
 )
 from logger import logger
 from s3 import S3
+from boilerplate.db.file_processing_result import file_processing_result_to_db
+from boilerplate.bods_exception import (
+    AntiVirusError,
+    ClamConnectionError,
+    SuspiciousFile,
+    ValidationException
+)
 
 SCAN_ATTEMPTS = 5
 MULTIPLIER = 1
-
-
-# TODO: removed this class import the exception from boilerplate/exceptions
-class ValidationException(Exception):
-    code = "VALIDATION_FAILED"
-    message_template = "Validation failed for {filename}."
-
-    def __init__(self, filename, line=1, message=None):
-        self.filename = filename
-        if message is None:
-            self.message = self.message_template.format(filename=filename)
-        else:
-            self.message = message
-        self.line = line
-
-
-class AntiVirusError(ValidationException):
-    """Base exception for antivirus scans."""
-
-    code = "ANTIVIRUS_FAILURE"
-    message_template = "Antivirus failed validating file {filename}."
-
-
-class SuspiciousFile(AntiVirusError):
-    """Exception for when a suspicious file is found."""
-
-    code = "SUSPICIOUS_FILE"
-    message_template = "Anti-virus alert triggered for file {filename}."
-
-
-class ClamConnectionError(AntiVirusError):
-    """Exception for when we can't connect to the ClamAV server."""
-
-    code = "AV_CONNECTION_ERROR"
-    message_template = "Could not connect to Clam daemon when \
-                        testing {filename}."
 
 
 @dataclass
@@ -94,8 +64,8 @@ class FileScanner:
     def scan(self, file_: BinaryIO):
         try:
             result = self._perform_scan(file_)
-        except ClamdConnectionError as exc:
-            raise ClamConnectionError(file_.name) from exc
+        except Exception as exc:
+            raise exc
 
         if result.status == "ERROR":
             logger.info("Antivirus scan: FAILED")
@@ -105,13 +75,6 @@ class FileScanner:
             raise SuspiciousFile(file_.name, result.reason)
         logger.info("Antivirus scan: OK")
 
-    @retry(
-        reraise=True,
-        retry=retry_if_exception_type(ClamdConnectionError),
-        wait=wait_random_exponential(multiplier=MULTIPLIER, max=10),
-        stop=stop_after_attempt(SCAN_ATTEMPTS),
-        before=before_log(logger, logging.DEBUG),
-    )
     def _perform_scan(self, file_: BinaryIO) -> ScanResult:
         try:
             response = self.clamav.instream(file_)
@@ -121,8 +84,13 @@ class FileScanner:
             msg = "Antivirus scan failed due to BufferTooLongError"
             logger.exception(msg, exc_info=True)
             raise AntiVirusError(file_.name, message=msg) from e
+        except ConnectionError as e:
+            msg = "Antivirus scan failed due to ConnectionError"
+            logger.exception(msg, exc_info=True)
+            raise ClamConnectionError(file_.name, message=msg) from e
 
 
+@file_processing_result_to_db(step_name="Clam AV Scanner")
 def lambda_handler(event, context):
     """
     Main lambda handler
@@ -150,14 +118,11 @@ def lambda_handler(event, context):
 
         # Check if ClamAV is responding
         if not av_scanner.clamav.ping():
-            raise Exception("ClamAV is not running or accessible.")
+            raise ClamConnectionError("ClamAV is not running or accessible.")
 
         # Backward compatibility with python file handler
         file_object.name = key
         av_scanner.scan(file_object)  # noqa
-    except ValidationException as err:
-        logger.error(err.message, exc_info=True)
-        raise err
     except Exception as e:
         logger.error(f"Error scanning object '{key}' from bucket '{bucket}'")
         raise e
