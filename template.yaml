@@ -35,12 +35,12 @@ Resources:
         RdsDbHostAddr: !Ref RdsDbHostAddr
         RdsDbPort: !Ref RdsDbPort
 
-  # TimetablesEtl:
-  #   Type: AWS::Serverless::Application
-  #   Properties:
-  #     Location: './timetables-etl.yaml'
-  #     Parameters:
-  #       Environment: !Ref Environment
-  #       ProjectName: !Ref ProjectName
-  #       RdsDbHostAddr: !Ref RdsDbHostAddr
-  #       RdsDbPort: !Ref RdsDbPort
+  TimetablesEtl:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: './timetables-etl.yaml'
+      Parameters:
+        Environment: !Ref Environment
+        ProjectName: !Ref ProjectName
+        RdsDbHostAddr: !Ref RdsDbHostAddr
+        RdsDbPort: !Ref RdsDbPort

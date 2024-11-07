@@ -24,14 +24,20 @@ Globals:
     Runtime: python3.11
     Timeout: 60
     MemorySize: 256
-    KmsKeyArn: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-    VpcConfig:
-      SubnetIds:
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-0}}'
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-1}}'
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-2}}'
-      SecurityGroupIds:
-        - !GetAtt CommonLambdaSecurityGroup.GroupId
+    KmsKeyArn: !If
+      - IsNotLocal
+      - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+      - !Ref AWS::NoValue
+    VpcConfig: !If
+      - IsNotLocal
+      - 
+        SubnetIds:
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-0}}'
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-1}}'
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-2}}'
+        SecurityGroupIds:
+          - !GetAtt CommonLambdaSecurityGroup.GroupId
+      - !Ref AWS::NoValue
     Environment:
       Variables:
         HTTPS_PROXY: !If
@@ -100,9 +106,10 @@ Resources:
                 bucket:
                   name:
                     - !Ref PlaceholderS3Bucket
-      DefinitionUri: './src/timetables_etl.statemachine.yaml'
+      DefinitionUri: './src/timetables_etl.statemachine.json'
       DefinitionSubstitutions:
         PlaceholderLambdaArn: !GetAtt PlaceholderLambda.Arn
+        ExceptionHandlerLambdaArn: !GetAtt ExceptionHandlerLambda.Arn
         PlaceholderSNSTopicArn: !GetAtt PlaceholderSNSTopic.TopicArn
         PlaceholderSQSQueueUrl: !GetAtt PlaceholderSQSQueue.QueueUrl
 
@@ -128,9 +135,18 @@ Resources:
           - Effect: Allow
             Action:
               - kms:GenerateDataKey
-            Resource: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
+            Resource: !If
+              - IsNotLocal
+              - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+              - "*"
+        - !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
+          - "arn:aws:iam::aws:policy/AmazonRDSFullAccess" # Is this right? No such role as ReadWrite
+        - !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
+          - "arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess"
       LoggingConfig:
         LogGroup: !Ref PlaceholderLambdaLogGroup
 
@@ -138,7 +154,57 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-placeholder-lambda'
-      KmsKeyId: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+      KmsKeyId: !If
+      - IsNotLocal
+      - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+      - !Ref AWS::NoValue 
+      RetentionInDays: 30
+
+  ############################
+  #### EXCEPTION HANDLER LAMBDA ####
+  ############################
+  ExceptionHandlerLambda:
+    Type: AWS::Serverless::Function
+    ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-exception-handler-lambda'
+      CodeUri: ./src/timetables_etl
+      Handler: exception_handler.lambda_handler
+      Layers:
+        - !Ref BoilerplateLambdaLayer
+      Policies:
+        - 'AWSLambdaBasicExecutionRole'
+        - 'AWSLambdaVPCAccessExecutionRole'
+        - S3CrudPolicy:
+            BucketName: !Ref PlaceholderS3Bucket
+        - Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+              - kms:GenerateDataKey
+            Resource: !If
+              - IsNotLocal
+              - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+              - "*"
+        - !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
+          - "arn:aws:iam::aws:policy/AmazonRDSFullAccess" # Is this right? No such role as ReadWrite
+        - !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
+          - "arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess"
+      LoggingConfig:
+        LogGroup: !Ref ExceptionHandlerLogGroup
+
+  ExceptionHandlerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-exception-handler-lambda'
+      KmsKeyId: !If
+      - IsNotLocal
+      - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+      - !Ref AWS::NoValue 
       RetentionInDays: 30
 
   #########################################
@@ -187,7 +253,7 @@ Resources:
     Properties:
       GroupDescription: !Sub 'Security group for ${ProjectName}-${Environment} ETL related lambda functions'
       GroupName: !Sub '${ProjectName}-${Environment}-etl-common-lambda'
-      SecurityGroupEgress: 
+      SecurityGroupEgress:
         - IpProtocol: '-1'
           Description: 'Allow outbound connectivity to any'
           CidrIp: '0.0.0.0/0'
@@ -207,7 +273,7 @@ Resources:
       ToPort: 5432
       SourceSecurityGroupId: !GetAtt CommonLambdaSecurityGroup.GroupId
 
-  BoilerplateLambdaLayer: 
+  BoilerplateLambdaLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
       LayerName: !Sub '${ProjectName}-${Environment}-etl-boilerplate-layer'
