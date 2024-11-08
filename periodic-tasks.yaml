@@ -415,6 +415,63 @@ Resources:
       KmsKeyId: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
       RetentionInDays: 30
 
+  ####################################
+  #### TxC FILE VALIDATOR LAMBDA ####
+  ####################################
+  TxCFileValidatorLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-generate-sirivm-tfl-lambda'
+      CodeUri: ./src/periodic_tasks
+      Handler: txc_file_validator.lambda_handler
+      Layers:
+        - !Ref BoilerplateLambdaLayer
+      Policies:
+        - 'AWSLambdaBasicExecutionRole'
+        - 'AWSLambdaVPCAccessExecutionRole'
+        - S3WritePolicy:
+            BucketName: !Sub 'bodds-${Environment}-sirivm'
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - kms:GenerateDataKey
+              Resource: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
+      Environment:
+        Variables:
+          AWS_SIRIVM_STORAGE_BUCKET_NAME: !Sub 'bodds-${Environment}-sirivm'
+          AVL_CONSUMER_API_BASE_URL: !Ref AvlConsumerApiBaseUrl
+          HTTPS_PROXY: !If
+            - IsNotLocal
+            - !Sub 'http://squid.bodds.${Environment}:3128'
+            - !Ref AWS::NoValue
+          PROJECT_ENV: !Ref Environment
+          PROJECT_NAME: !Ref ProjectName
+          POSTGRES_HOST: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
+            - !Ref RdsDbHostAddr
+          POSTGRES_PORT: !Ref RdsDbPort
+          POSTGRES_DB: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
+            - postgres
+          POSTGRES_USER: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
+            - bodds_rw
+      LoggingConfig:
+        LogGroup: !Ref TxCFileValidatorLambdaLogGroup
+
+  TxCFileValidatorLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-txc-file-validator-lambda'
+      KmsKeyId: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+      RetentionInDays: 30
+
   #########################################
   #### GENERAL CONFIGURATION RESOURCES ####
   #########################################
