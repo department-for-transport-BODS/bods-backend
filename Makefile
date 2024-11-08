@@ -30,7 +30,7 @@ generate-models: ## Generate models.py from BODs DB (DB must be running)
 	python model_gen.py
 
 build-backend: generate-models ## Build the backend functions using sam
-	@sam build
+	@samlocal build
 	python localstack/scripts/bootstrap_layers.py 
 
 
