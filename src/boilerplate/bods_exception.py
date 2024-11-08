@@ -36,3 +36,53 @@ class ClamConnectionError(AntiVirusError):
     code = "AV_CONNECTION_ERROR"
     message_template = "Could not connect to Clam daemon when \
                         testing {filename}."
+
+
+class NoSchemaDefinitionError(Exception):
+    code = "NO_SCHEMA_FOUND"
+    message_template = "No schema found for category {category}."
+
+    def __init__(self, category, line=1, message=None):
+        self.category = category
+        if message is None:
+            self.message = self.message_template.format(filename=category)
+        else:
+            self.message = message
+        self.line = line
+
+
+class NoDataFoundError(Exception):
+    code = "NO_DATA_FOUND"
+    message_template = "No data found for {field_name} {field_value}."
+
+    def __init__(self, field_name, field_value, line=1, message=None):
+        self.field_name = field_name
+        self.field_value = field_value
+        if message is None:
+            self.message = self.message_template.format(
+                field_name=field_name, field_value=field_value
+            )
+        else:
+            self.message = message
+        self.line = line
+
+
+class XMLValidationException(ValidationException):
+    code = "XML_VALIDATION_ERROR"
+    message_template = "Unable to validate xml in {filename}."
+
+
+class FileTooLarge(XMLValidationException):
+    code = "FILE_TOO_LARGE"
+    message_template = "XML file {filename} is too large."
+
+
+class XMLSyntaxError(XMLValidationException):
+    code = "XML_SYNTAX_ERROR"
+    message_template = "File {filename} is not valid XML."
+    line = ""
+
+
+class DangerousXML(XMLValidationException):
+    code = "DANGEROUS_XML_ERROR"
+    message_template = "XML file {filename} contains dangerous XML."
