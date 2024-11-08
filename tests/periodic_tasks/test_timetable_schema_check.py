@@ -12,9 +12,8 @@ from periodic_tasks.timetable_schema_check import (
 
 
 class TestGetTransxchangeSchema(unittest.TestCase):
-
-    @patch("module.get_schema_definition_db_object")
-    @patch("module.SchemaLoader")
+    @patch("periodic_tasks.timetable_schema_check.get_schema_definition_db_object")
+    @patch("periodic_tasks.timetable_schema_check.SchemaLoader")
     def test_get_transxchange_schema_success(
         self, MockSchemaLoader, MockGetSchemaDefinitionDbObject
     ):
@@ -39,7 +38,7 @@ class TestGetTransxchangeSchema(unittest.TestCase):
         )
         self.assertEqual(result, "some_schema_object")
 
-    @patch("module.get_schema_definition_db_object")
+    @patch("periodic_tasks.timetable_schema_check.get_schema_definition_db_object")
     def test_get_transxchange_schema_missing_definition(
         self, MockGetSchemaDefinitionDbObject
     ):
@@ -57,8 +56,8 @@ class TestGetTransxchangeSchema(unittest.TestCase):
 
 class TestSchemaLoader(unittest.TestCase):
 
-    @patch("module.ZipFile")
-    @patch("module.Path.mkdir")
+    @patch("periodic_tasks.timetable_schema_check.ZipFile")
+    @patch("periodic_tasks.timetable_schema_check.Path.mkdir")
     def test_path_creation_and_extraction(self, MockMkdir, MockZipFile):
         # Arrange
         mock_definition = MagicMock()
@@ -86,7 +85,7 @@ class TestSchemaLoader(unittest.TestCase):
         MockZipFile.assert_called_once_with(mock_definition.schema)
         self.assertTrue(mock_path.mkdir.called)
 
-    @patch("module.ZipFile")
+    @patch("periodic_tasks.timetable_schema_check.ZipFile")
     def test_schema_extraction_error(self, MockZipFile):
         # Arrange
         mock_definition = MagicMock()
@@ -107,7 +106,7 @@ class TestSchemaLoader(unittest.TestCase):
 
 class TestDatasetTXCValidator(unittest.TestCase):
 
-    @patch("module.get_transxchange_schema")
+    @patch("periodic_tasks.timetable_schema_check.get_transxchange_schema")
     def test_get_violations_no_violations(self, MockGetTransxchangeSchema):
         # Arrange
         mock_schema = MagicMock()
@@ -128,7 +127,7 @@ class TestDatasetTXCValidator(unittest.TestCase):
         # Assert
         self.assertEqual(result, [])
 
-    @patch("module.get_transxchange_schema")
+    @patch("periodic_tasks.timetable_schema_check.get_transxchange_schema")
     def test_get_violations_with_violations(self, MockGetTransxchangeSchema):
         # Arrange
         mock_schema = MagicMock()
@@ -153,10 +152,10 @@ class TestDatasetTXCValidator(unittest.TestCase):
 
 class TestLambdaHandler(unittest.TestCase):
 
-    @patch("module.S3")
-    @patch("module.get_dataset_revision")
-    @patch("module.DatasetTXCValidator")
-    @patch("module.SchemaViolation")
+    @patch("periodic_tasks.timetable_schema_check.S3")
+    @patch("periodic_tasks.timetable_schema_check.get_dataset_revision")
+    @patch("periodic_tasks.timetable_schema_check.DatasetTXCValidator")
+    @patch("periodic_tasks.timetable_schema_check.SchemaViolation")
     def test_lambda_handler_success(
         self,
         MockSchemaViolation,
