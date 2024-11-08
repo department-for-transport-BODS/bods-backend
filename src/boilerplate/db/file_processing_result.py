@@ -6,22 +6,30 @@ from datetime import datetime
 from uuid import uuid4
 from sqlalchemy.exc import SQLAlchemyError, NoResultFound
 from common import BodsDB
-from boilerplate.bods_exception import (
-    AntiVirusError,
-    ClamConnectionError,
-    SuspiciousFile
-)
+from boilerplate.bods_exception import *
 from logger import logger
 
 
 def write_error_to_db(db, uuid, exceptions):
     status, error_status = "FAILURE", "SUSPICIOUS_FILE"
     if isinstance(exceptions, ClamConnectionError):
-        status, error_status = "FAILURE", "SUSPICIOUS_FILE"
+        status, error_status = "FAILURE", "SYSTEM_ERROR"
     elif isinstance(exceptions, SuspiciousFile):
         status, error_status = "FAILURE", "SUSPICIOUS_FILE"
     elif isinstance(exceptions, AntiVirusError):
         status, error_status = "FAILURE", "SUSPICIOUS_FILE"
+    elif isinstance(exceptions, NestedZipForbidden):
+        status, error_status = "FAILURE", "NESTED_ZIP_FORBIDDEN"
+    elif isinstance(exceptions, ZipTooLarge):
+        status, error_status = "FAILURE", "ZIP_TOO_LARGE"
+    elif isinstance(exceptions, NoDataFound):
+        status, error_status = "FAILURE", "NO_DATA_FOUND"
+    elif isinstance(exceptions, FileTooLarge):
+        status, error_status = "FAILURE", "FILE_TOO_LARGE"
+    elif isinstance(exceptions, XMLSyntaxError):
+        status, error_status = "FAILURE", "XML_SYNTAX_ERROR"
+    elif isinstance(exceptions, DangerousXML):
+        status, error_status = "FAILURE", "DANGEROUS_XML_ERROR"
 
     result_obj = PipelineFileProcessingResult(db)
     result = dict(

@@ -36,3 +36,44 @@ class ClamConnectionError(AntiVirusError):
     code = "AV_CONNECTION_ERROR"
     message_template = "Could not connect to Clam daemon when \
                         testing {filename}."
+
+
+class XMLValidationException(ValidationException):
+    code = "XML_VALIDATION_ERROR"
+    message_template = "Unable to validate xml in {filename}."
+
+
+class FileTooLarge(XMLValidationException):
+    code = "FILE_TOO_LARGE"
+    message_template = "XML file {filename} is too large."
+
+
+class XMLSyntaxError(XMLValidationException):
+    code = "XML_SYNTAX_ERROR"
+    message_template = "File {filename} is not valid XML."
+    line = ""
+
+
+class DangerousXML(XMLValidationException):
+    code = "DANGEROUS_XML_ERROR"
+    message_template = "XML file {filename} contains dangerous XML."
+
+
+class ZipValidationException(ValidationException):
+    code = "ZIP_VALIDATION_FAILED"
+    message_template = "Unable to validate zip {filename}."
+
+
+class NestedZipForbidden(ZipValidationException):
+    code = "NESTED_ZIP_FORBIDDEN"
+    message_template = "Zip file {filename} contains another zip file."
+
+
+class ZipTooLarge(ZipValidationException):
+    code = "ZIP_TOO_LARGE"
+    message_template = "Zip file {filename} is too large."
+
+
+class NoDataFound(ZipValidationException):
+    message_template = "Zip file {filename} contains no data files"
+    code = "NO_DATA_FOUND"
