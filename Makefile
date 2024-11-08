@@ -30,16 +30,24 @@ generate-models: ## Generate models.py from BODs DB (DB must be running)
 	python model_gen.py
 
 build-backend: generate-models ## Build the backend functions using sam
-	@sam build
+	@samlocal build
+	python localstack/scripts/bootstrap_layers.py 
+
 
 build-backend-sync: ## Build the backend api using sam and keep contents synced for test
 	@nodemon --watch './src/**/*.py' --signal SIGTERM --exec 'sam' build -e "py"
 
 deploy-backend: ## Deploy the backend functions to target environment using sam
-	@sam deploy --config-env=$(ENV) --confirm-changeset --resolve-s3
+	@samlocal deploy --config-env=$(ENV) --confirm-changeset --resolve-s3
 
 run-backend-function: ## Runs a standalone backend function locally using sam (default: GenerateSiriVmLambda)
 	@sam local invoke $(FUNC)
+
+run-timetables-etl: ## Start execution of the timetables etl stepfunction
+	./scripts/run-timetables-etl.sh
+
+check-timetables-etl: ## Check the status of the last timetables stepfunction execution
+	./scripts/check-timetables-etl.sh
 
 run-db-initialise: cmd-exists-psql ## Initialise the database with users/roles and schema
 	@echo "Initialising the database..."

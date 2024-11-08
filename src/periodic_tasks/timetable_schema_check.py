@@ -8,7 +8,7 @@ from lxml import etree
 
 from boilerplate.db.file_processing_result import file_processing_result_to_db
 from boilerplate.db.dataset_revision import get_dataset_revision
-from boilerplate.db.schema_defination import get_schema_definition_db_object
+from src.boilerplate.db.schema_definition import get_schema_definition_db_object
 from boilerplate.constants import SCHEMA_DIR
 from boilerplate.violations import BaseSchemaViolation
 from boilerplate.xml import XMLValidator
