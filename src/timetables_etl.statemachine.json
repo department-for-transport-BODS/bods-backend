@@ -6,14 +6,16 @@
       "Resource": "${PlaceholderLambdaArn}",
       "Parameters": {
         "Bucket.$": "$.detail.bucket.name",
-        "ObjectKey.$": "$.detail.object.key"
+        "ObjectKey.$": "$.detail.object.key",
+        "DatasetEtlTaskResultId.$": "$.detail.dataset_etl_task_result_id"
       },
       "ResultPath": "$.scanAndUnpack",
       "Next": "fileLevelProcessing",
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
-          "Next": "exceptionHandler"
+          "Next": "ParseError",
+          "ResultPath": "$.error_info"
         }
       ]
     },
@@ -160,14 +162,22 @@
       "MaxConcurrency": 1000,
       "End": true
     },
+    "ParseError": {
+      "Type": "Pass",
+      "Parameters": {
+        "ParsedCause.$": "States.StringToJson($.error_info.Cause)"
+      },
+      "ResultPath": "$.parsed_error",
+      "Next": "exceptionHandler"
+    },
     "exceptionHandler": {
       "Type": "Task",
       "Resource": "${ExceptionHandlerLambdaArn}",
       "Parameters": {
-        "Bucket.$": "$.Bucket",
-        "ObjectKey.$": "$.Key"
+        "DatasetEtlTaskResultId.$": "$.detail.dataset_etl_task_result_id",
+        "ErrorInfo.$": "States.StringToJson($.parsed_error.ParsedCause.errorMessage)"
       },
-      "Next": "None"
+      "End": true
     }
   }
 }
