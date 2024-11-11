@@ -72,9 +72,9 @@ class SchemaLoader:
 
 
 class DatasetTXCValidator:
-    def __init__(self, revison):
+    def __init__(self, revision):
         self._schema = get_transxchange_schema()
-        self.revision = revison
+        self.revision = revision
 
     def get_violations(self, file_):
         violations = []
@@ -104,22 +104,18 @@ def lambda_handler(event, context):
     logger.info(f"Received event:{json.dumps(event, indent=2)}")
 
     # Extract the bucket name and object key from the S3 event
-    # bucket = event["Records"][0]["s3"]["bucket"]["name"]
-    # key = event["Records"][0]["s3"]["object"]["key"]
-    # revision_id = event["Records"][0]["s3"]["object"]["revision_id"]
-
-    bucket = "bodds-local"  # event["Records"][0]["s3"]["bucket"]["name"]
-    key = "Valid_file.xml"  # event["Records"][0]["s3"]["object"]["key"]
-    revision_id = 3454  # event["Records"][0]["s3"]["object"]["revision_id"]
+    bucket = event["Records"][0]["s3"]["bucket"]["name"]
+    key = event["Records"][0]["s3"]["object"]["key"]
+    filename = key.split("/")[-1]
+    revision_id = key.split("/")[0]
 
     revision = get_dataset_revision(revision_id=revision_id)
     # URL-decode the key if it has special characters
-    key = key.replace("+", " ")
-
+    filename = filename.replace("+", " ")
     try:
         s3_handler = S3(bucket_name=bucket)
-        file_object = s3_handler.get_object(file_path=key)
-        validator = DatasetTXCValidator(revision_id=revision)
+        file_object = s3_handler.get_object(file_path=filename)
+        validator = DatasetTXCValidator(revision=revision)
         violations = validator.get_violations(file_object)
         lambda_event = LambdaEvent(event)
         schema_violation = SchemaViolation(lambda_event.db)

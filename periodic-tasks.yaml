@@ -514,7 +514,7 @@ Resources:
             - IsNotLocal
             - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
             - bodds_rw
-          TXC_XSD_PATH: TransXChange_general.xsd
+          TXC_XSD_PATH: 'TransXChange_general.xsd'
       Events:
         S3EventForZipFile:
           Type: S3
