@@ -1,0 +1,76 @@
+"""
+Database Calls
+"""
+
+import logging
+from datetime import UTC, datetime
+
+from src.boilerplate.common import BodsDB
+
+from .model_pipelines import DatasetETLTaskResult, ETLErrorCode, TaskState
+from .repo_common import BaseRepository, handle_repository_errors
+
+logger = logging.getLogger(__name__)
+
+
+class ETLTaskResultRepository(BaseRepository[DatasetETLTaskResult]):
+    """
+    Repository for managing ETLTaskResult entities
+    Table: pipelines_datasetetltaskresult
+    """
+
+    def __init__(self, db: BodsDB):
+        super().__init__(db, DatasetETLTaskResult)
+
+    @handle_repository_errors
+    def get_by_id(self, task_id: int) -> DatasetETLTaskResult | None:
+        """
+        Get ETL Task by ID
+        """
+        statement = self._build_query().where(self._model.id == task_id)
+        return self._fetch_one(statement)
+
+    @handle_repository_errors
+    def mark_success(self, task_id: int) -> None:
+        """
+        Mark task as successful and clear error fields
+        """
+
+        def update_func(task: DatasetETLTaskResult) -> None:
+            task.status = TaskState.SUCCESS
+            task.completed = datetime.now(UTC)
+            task.task_name_failed = ""
+            task.error_code = None
+
+        statement = self._build_query().where(self._model.id == task_id)
+        self._update_one(statement, update_func)
+
+    @handle_repository_errors
+    def mark_error(
+        self, task_id: int, task_name: str, error_code: ETLErrorCode
+    ) -> None:
+        """
+        Mark task as failed with specific error information
+        """
+
+        def update_func(task: DatasetETLTaskResult) -> None:
+            if task.status != TaskState.FAILURE:
+                task.status = TaskState.FAILURE
+                task.completed = datetime.now(UTC)
+                task.task_name_failed = task_name
+                task.error_code = error_code
+
+        statement = self._build_query().where(self._model.id == task_id)
+        self._update_one(statement, update_func)
+
+    @handle_repository_errors
+    def update_progress(self, task_id: int, progress: int) -> None:
+        """
+        Update the progress of an ETL task
+        """
+
+        def update_func(task: DatasetETLTaskResult) -> None:
+            task.progress = progress
+
+        statement = self._build_query().where(self._model.id == task_id)
+        self._update_one(statement, update_func)
