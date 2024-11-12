@@ -15,3 +15,16 @@ class DatasetETLResultStatus(str, Enum):
     SUCCESS = "SUCCESS"
     FAILURE = "FAILURE"
     READY = "READY"
+
+class FeedStatus(str, Enum):
+    pending = "pending"
+    draft = "draft"
+    indexing = "indexing"
+    live = "live"
+    success = "success"
+    expiring = "expiring"
+    warning = "warning"
+    error = "error"
+    expired = "expired"
+    deleted = "deleted"
+    inactive = "inactive"
