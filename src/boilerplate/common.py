@@ -123,8 +123,6 @@ class BodsDB:
 
         self._sqlalchemy_base = automap_base()
         logger.info("Preparing SQLAlchemy base")
-        # import ipdb;ipdb.set_trace()
-        # breakpoint()
         self._sqlalchemy_base.prepare(autoload_with=self._engine)
         self._classes = self._sqlalchemy_base.classes
         logger.info("Set DB classes")
@@ -202,9 +200,6 @@ class BodsDB:
         connection_string += f"/{kwargs.get('dbname', '')}"
         if other_parts:
             connection_string += f"?{other_parts[:-1]}"
-
-
-        logger.info(f"CONNECTION STRING: {connection_string}")
 
         return connection_string
 
