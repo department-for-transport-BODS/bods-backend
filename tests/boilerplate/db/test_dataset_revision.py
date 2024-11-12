@@ -23,7 +23,8 @@ def test_get_by_id():
     repo = DatasetRevisionRepository(mock_db)
     result = repo.get_by_id(dataset_revision_id)
 
-    assert result == dataset_revision
+    assert result.id == dataset_revision_id
+    assert result.status == FeedStatus.pending
 
 
 def test_get_by_id_not_found():
