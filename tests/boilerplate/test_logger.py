@@ -2,7 +2,6 @@ from boilerplate.logger import (
     get_dataset_adapter_from_revision,
     DatasetPipelineLoggerContext,
 )
-from unittest.mock import MagicMock
 
 
 def test_get_dataset_adapter_from_revision(caplog):
