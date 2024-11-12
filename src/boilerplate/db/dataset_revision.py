@@ -5,17 +5,19 @@ from bods_exception import NoDataFoundError
 
 
 def get_dataset_revision(event: LambdaEvent, revision_id: int):
-    """Get Cavl record from the db given the data_format value
+    """Get Organisation revison record from the db given the revision id value
 
     Args:
         event (LambdaEvent): Event object which contains the db connection details
-        data_format (str): value of the dataformat for which record is required
+        revision_id (int): value of the revision id for which record is required
 
     Returns:
         archive: database record for the object
     """
+    if not event.db.session:
+        raise ValueError("No database session provided")
+    
     dataset_revision = event.db.classes.organisation_datasetrevision
-
     with event.db.session as session:
         start_query_op = time.time()
         dataset_revision_obj = (

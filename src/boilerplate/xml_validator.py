@@ -1,15 +1,8 @@
-from defusedxml import (
-    DefusedXmlException,
-    ElementTree as detree
-)
+from defusedxml import DefusedXmlException, ElementTree as detree
 from lxml import etree
-from bods_exception import (
-    FileTooLarge,
-    XMLSyntaxError,
-    DangerousXML
-)
+from bods_exception import FileTooLarge, XMLSyntaxError, DangerousXML
 from logger import logger
-from .utils import get_file_size
+from bods_utils import get_file_size
 
 
 class FileValidator:

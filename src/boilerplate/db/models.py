@@ -299,3 +299,20 @@ class PipelinesDatasetetltaskresult(Base):
     additional_info: Mapped[Optional[str]] = mapped_column(String(512))
 
     revision: Mapped['OrganisationDatasetrevision'] = relationship('OrganisationDatasetrevision', back_populates='pipelines_datasetetltaskresult')
+
+
+class PipelinesSchemadefinition(Base):
+    __tablename__ = 'pipelines_schemadefinition'
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='pipelines_schemadefinition_pkey'),
+        UniqueConstraint('category', name='pipelines_schemadefinition_category_key'),
+        Index('pipelines_schemadefinition_category_bfea9f81_like', 'category'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created: Mapped[datetime.datetime] = mapped_column(DateTime(True))
+    modified: Mapped[datetime.datetime] = mapped_column(DateTime(True))
+    category: Mapped[str] = mapped_column(String(6))
+    checksum: Mapped[str] = mapped_column(String(40))
+    schema: Mapped[str] = mapped_column(String(100))

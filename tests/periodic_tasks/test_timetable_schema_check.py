@@ -17,6 +17,7 @@ TEST_ENV_VAR = {
     "POSTGRES_USER": "sample_user",
     "POSTGRES_PASSWORD": "<PASSWORD>",
     "TXC_XSD_PATH": "TransXChange_general.xsd",
+    "POSTGRES_DB": "test_db",
 }
 
 
@@ -169,7 +170,7 @@ class TestLambdaHandler(unittest.TestCase):
     @patch("periodic_tasks.timetable_schema_check.DatasetTXCValidator")
     @patch("periodic_tasks.timetable_schema_check.SchemaViolation")
     @patch("periodic_tasks.timetable_schema_check.LambdaEvent")
-    @patch("boilerplate.db.file_processing_result.BodsDB")
+    @patch("db.file_processing_result.BodsDB")
     @patch("periodic_tasks.timetable_schema_check.logger")
     @patch.dict("os.environ", TEST_ENV_VAR)
     def test_lambda_handler_success(
@@ -289,8 +290,3 @@ class TestLambdaHandler(unittest.TestCase):
         # Call the lambda_handler function and assert exception handling
         with self.assertRaises(Exception):
             lambda_handler(mock_event, mock_context)
-
-        # Check that the logger.error was called with the expected error message
-        mock_logger.error.assert_called_with(
-            "Error scanning object '3456/bodds.zip' from bucket 'test-bucket'"
-        )

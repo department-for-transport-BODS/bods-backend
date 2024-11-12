@@ -6,7 +6,7 @@ from datetime import datetime
 from uuid import uuid4
 from sqlalchemy.exc import SQLAlchemyError, NoResultFound
 from common import BodsDB
-from boilerplate.bods_exception import *
+from bods_exception import *
 from logger import logger
 
 

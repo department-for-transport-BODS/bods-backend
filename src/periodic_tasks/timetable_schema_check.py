@@ -1,19 +1,19 @@
 import os
 import json
 from pathlib import Path
-from boilerplate.logger import logger
-from boilerplate.s3 import S3
+from logger import logger
+from s3 import S3
 from zipfile import ZipFile
 from lxml import etree
 
-from boilerplate.db.file_processing_result import file_processing_result_to_db
-from boilerplate.db.dataset_revision import get_dataset_revision
-from boilerplate.db.schema_definition import get_schema_definition_db_object
-from boilerplate.constants import SCHEMA_DIR
-from boilerplate.violations import BaseSchemaViolation
-from boilerplate.xml_validator import XMLValidator
-from boilerplate.db.schema_violation import SchemaViolation
-from boilerplate.common import LambdaEvent
+from db.file_processing_result import file_processing_result_to_db
+from db.dataset_revision import get_dataset_revision
+from db.schema_definition import get_schema_definition_db_object
+from constants import SCHEMA_DIR
+from violations import BaseSchemaViolation
+from xml_validator import XMLValidator
+from db.schema_violation import SchemaViolation
+from common import LambdaEvent
 
 
 def get_transxchange_schema():

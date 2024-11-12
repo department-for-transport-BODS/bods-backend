@@ -1,6 +1,6 @@
 import unittest
 from io import BytesIO
-from boilerplate.utils import get_file_size
+from bods_utils import get_file_size
 import tempfile
 import os
 
@@ -48,5 +48,5 @@ class TestGetFileSize(unittest.TestCase):
                 os.remove(temp_file.name)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

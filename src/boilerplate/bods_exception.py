@@ -45,7 +45,7 @@ class NoSchemaDefinitionError(Exception):
     def __init__(self, category, line=1, message=None):
         self.category = category
         if message is None:
-            self.message = self.message_template.format(filename=category)
+            self.message = self.message_template.format(category=category)
         else:
             self.message = message
         self.line = line

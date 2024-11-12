@@ -12,17 +12,19 @@ class SchemaCategory(TextChoices):
 
 
 def get_schema_definition_db_object(event: LambdaEvent, category: SchemaCategory):
-    """Get Cavl record from the db given the data_format value
+    """Get TXC Schema record from the db given the category value
 
     Args:
         event (LambdaEvent): Event object which contains the db connection details
-        data_format (str): value of the dataformat for which record is required
+        category (SchemaCategory): value of the SchemaCategory for which record is required
 
     Returns:
         archive: database record for the object
     """
-    schema_definition = event.db.classes.pipelines_schemadefinition
+    if not event.db.session:
+        raise ValueError("No database session provided")
 
+    schema_definition = event.db.classes.pipelines_schemadefinition
     with event.db.session as session:
         start_query_op = time.time()
         schema_definition_obj = (
