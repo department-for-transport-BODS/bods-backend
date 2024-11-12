@@ -12,21 +12,13 @@ db_instance = None
 token_expiration_time = None
 
 
-class LambdaEvent:
+class DbManager:
     """
-    Class to handle request for the lambda function
-    Properties:
-    db: Database connection object with session management and caching
+    Class to manage DB as a global object
     """
 
-    def __init__(self, lambda_event):
-        self._lambda_event = lambda_event
-
-    def __str__(self) -> str:
-        return f"Lambda event occured"
-
-    @property
-    def db(self):
+    @staticmethod
+    def get_db():
         """
         Property to access the database connection object with token expiration handling,
         reusing the global database engine while creating a new session per invocation
@@ -44,13 +36,14 @@ class LambdaEvent:
             logger.debug(
                 "Initialising new BodsDB instance with refreshed IAM authentication token"
             )
-            db_instance, token_expiration_time = self._initialise_db()
+            db_instance, token_expiration_time = DbManager._initialise_db()
         else:
             logger.debug("Re-using cached BodsDB instance as still valid")
 
         return db_instance
 
-    def _initialise_db(self):
+    @staticmethod
+    def _initialise_db():
         """
         Initialises the BodsDB instance and sets the token expiration time.
         """
@@ -130,6 +123,8 @@ class BodsDB:
 
         self._sqlalchemy_base = automap_base()
         logger.info("Preparing SQLAlchemy base")
+        # import ipdb;ipdb.set_trace()
+        # breakpoint()
         self._sqlalchemy_base.prepare(autoload_with=self._engine)
         self._classes = self._sqlalchemy_base.classes
         logger.info("Set DB classes")
@@ -144,28 +139,24 @@ class BodsDB:
         connection_details["user"] = environ.get("POSTGRES_USER")
         connection_details["port"] = environ.get("POSTGRES_PORT")
         try:
-            if environ.get("PROJECT_ENV") != "local":
-                logger.debug("Getting DB IAM authentication token")
-                start_auth_op = time.time()
-                connection_details["password"] = self._generate_rds_iam_auth_token(
-                    connection_details["host"],
-                    connection_details["port"],
-                    connection_details["user"],
-                )
-                end_auth_op = time.time()
-                logger.debug(
-                    f"DB IAM authentication token generation took {end_auth_op-start_auth_op:.2f} seconds"
-                )
-                connection_details["sslmode"] = "require"
-            else:
-                logger.debug(
-                    "Running in local environment, using DB password obtained from environment variables"
-                )
-                connection_details["password"] = environ.get(
-                    "POSTGRES_PASSWORD", "password"
-                )
-                logger.debug("Got DB password")
-                connection_details["sslmode"] = "disable"
+            # if environ.get("PROJECT_ENV") != "local":
+            #     logger.debug("Getting DB IAM authentication token")
+            #     start_auth_op = time.time()
+            #     connection_details["password"] = self._generate_rds_iam_auth_token(
+            #         connection_details["host"],
+            #         connection_details["port"],
+            #         connection_details["user"],
+            #     )
+            #     end_auth_op = time.time()
+            #     logger.debug(f"DB IAM authentication token generation took {end_auth_op-start_auth_op:.2f} seconds")
+            #     connection_details["sslmode"] = "require"
+            # else:
+            logger.debug(
+                "Running in local environment, using DB password obtained from environment variables"
+            )
+            connection_details["password"] = environ.get("POSTGRES_PASSWORD", "password")
+            logger.debug("Got DB password")
+            connection_details["sslmode"] = "disable"
 
             for key, value in connection_details.items():
                 if value is None:
@@ -208,6 +199,9 @@ class BodsDB:
         connection_string += f"/{kwargs.get('dbname', '')}"
         if other_parts:
             connection_string += f"?{other_parts[:-1]}"
+
+
+        logger.info(f"CONNECTION STRING: {connection_string}")
 
         return connection_string
 
