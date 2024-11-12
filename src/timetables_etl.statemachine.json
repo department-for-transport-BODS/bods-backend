@@ -177,7 +177,19 @@
         "DatasetEtlTaskResultId.$": "$.detail.dataset_etl_task_result_id",
         "ErrorInfo.$": "States.StringToJson($.parsed_error.ParsedCause.errorMessage)"
       },
-      "End": true
+      "Next": "notifyFailure"
+    },
+    "notifyFailure": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "TopicArn": "${PlaceholderSNSTopicArn}",
+        "Message.$": "$.input.message"
+      },
+      "Next": "fail"
+    },
+    "fail": {
+      "Type": "Fail"
     }
   }
 }
