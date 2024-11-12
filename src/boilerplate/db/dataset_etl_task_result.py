@@ -1,14 +1,14 @@
 import logging
-from boilerplate.common import BodsDB
-from boilerplate.exception import PipelineException
+
+from common import BodsDB
+from exception import PipelineException
 from sqlalchemy.orm.exc import NoResultFound
 
 logger = logging.getLogger(__name__)
 
-
 class DatasetETLTaskResultRepository:
 
-    def __init__(self, db):
+    def __init__(self, db: BodsDB):
         self._db = db
 
     def get_by_id(self, id: int):
