@@ -4,8 +4,7 @@ from datetime import datetime
 from db.dataset_etl_task_result import DatasetETLTaskResultRepository
 from db.dataset_revision import DatasetRevisionRepository
 from enums import DatasetETLResultStatus, FeedStatus
-from logger import get_dataset_adapter_from_revision, logger
-from utils.example_utils import my_util
+from logger import get_dataset_adapter_from_revision
 
 
 class ErrorInfo(BaseModel):
