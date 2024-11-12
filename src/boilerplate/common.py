@@ -139,25 +139,28 @@ class BodsDB:
         connection_details["user"] = environ.get("POSTGRES_USER")
         connection_details["port"] = environ.get("POSTGRES_PORT")
         try:
-            # if environ.get("PROJECT_ENV") != "local":
-            #     logger.debug("Getting DB IAM authentication token")
-            #     start_auth_op = time.time()
-            #     connection_details["password"] = self._generate_rds_iam_auth_token(
-            #         connection_details["host"],
-            #         connection_details["port"],
-            #         connection_details["user"],
-            #     )
-            #     end_auth_op = time.time()
-            #     logger.debug(f"DB IAM authentication token generation took {end_auth_op-start_auth_op:.2f} seconds")
-            #     connection_details["sslmode"] = "require"
-            # else:
-            logger.debug(
-                "Running in local environment, using DB password obtained from environment variables"
-            )
-            connection_details["password"] = environ.get("POSTGRES_PASSWORD", "password")
-            logger.debug("Got DB password")
-            connection_details["sslmode"] = "disable"
-
+            if environ.get("PROJECT_ENV") != "local":
+                logger.debug("Getting DB IAM authentication token")
+                start_auth_op = time.time()
+                connection_details["password"] = self._generate_rds_iam_auth_token(
+                    connection_details["host"],
+                    connection_details["port"],
+                    connection_details["user"],
+                )
+                end_auth_op = time.time()
+                logger.debug(
+                    f"DB IAM authentication token generation took {end_auth_op-start_auth_op:.2f} seconds"
+                )
+                connection_details["sslmode"] = "require"
+            else:
+                logger.debug(
+                    "Running in local environment, using DB password obtained from environment variables"
+                )
+                connection_details["password"] = environ.get(
+                    "POSTGRES_PASSWORD", "password"
+                )
+                logger.debug("Got DB password")
+                connection_details["sslmode"] = "disable"
             for key, value in connection_details.items():
                 if value is None:
                     logger.error(f"Missing connection details value: {key}")
