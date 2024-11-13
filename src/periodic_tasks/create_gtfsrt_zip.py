@@ -11,7 +11,7 @@ def lambda_handler(event, context):
         _prefix = f"[GTFSRTArchiving] URL {url} => "
         logger.info(_prefix + "Begin archiving GTFSRT data.")
         start = time.time()
-        archiver = GTFSRTArchiver(event, url)
+        archiver = GTFSRTArchiver(url)
         archiver.archive()
         end = time.time()
         logger.info(_prefix + f"Finished archiving in {end-start:.2f} seconds.")

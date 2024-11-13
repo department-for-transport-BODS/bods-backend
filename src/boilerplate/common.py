@@ -12,21 +12,13 @@ db_instance = None
 token_expiration_time = None
 
 
-class LambdaEvent:
+class DbManager:
     """
-    Class to handle request for the lambda function
-    Properties:
-    db: Database connection object with session management and caching
+    Class to manage DB as a global object
     """
 
-    def __init__(self, lambda_event):
-        self._lambda_event = lambda_event
-
-    def __str__(self) -> str:
-        return f"Lambda event occured"
-
-    @property
-    def db(self):
+    @staticmethod
+    def get_db():
         """
         Property to access the database connection object with token expiration handling,
         reusing the global database engine while creating a new session per invocation
@@ -44,13 +36,14 @@ class LambdaEvent:
             logger.debug(
                 "Initialising new BodsDB instance with refreshed IAM authentication token"
             )
-            db_instance, token_expiration_time = self._initialise_db()
+            db_instance, token_expiration_time = DbManager._initialise_db()
         else:
             logger.debug("Re-using cached BodsDB instance as still valid")
 
         return db_instance
 
-    def _initialise_db(self):
+    @staticmethod
+    def _initialise_db():
         """
         Initialises the BodsDB instance and sets the token expiration time.
         """
@@ -166,7 +159,6 @@ class BodsDB:
                 )
                 logger.debug("Got DB password")
                 connection_details["sslmode"] = "disable"
-
             for key, value in connection_details.items():
                 if value is None:
                     logger.error(f"Missing connection details value: {key}")
