@@ -19,7 +19,7 @@ def mock_db_manager():
 
 def test_filename():
     url = "https://fakeurl.zz/datafeed"
-    archiver = GTFSRTArchiver({}, url)
+    archiver = GTFSRTArchiver(url)
     archiver._access_time = datetime(2020, 1, 1, 1, 1, 1, tzinfo=timezone.utc)
     archiver._content = b"fakedata"
     expected_filename = "gtfsrt_2020-01-01_010101.zip"
@@ -28,14 +28,14 @@ def test_filename():
 
 def test_data_format_value():
     url = "https://fakeurl.zz/datafeed"
-    archiver = GTFSRTArchiver({}, url)
+    archiver = GTFSRTArchiver(url)
     assert archiver.data_format_value == "gtfsrt"
 
 
 def test_access_time_value_error():
     url = "https://fakeurl.zz/datafeed"
 
-    archiver = GTFSRTArchiver({}, url)
+    archiver = GTFSRTArchiver(url)
     with pytest.raises(ValueError) as exc:
         _ = archiver.access_time
     assert str(exc.value) == "`content` has not been fetched yet."
@@ -45,20 +45,20 @@ def test_access_time_value_error():
 def test_access_time(mock_requests):
     mock_requests.get.return_value = Mock(content=b"response")
     url = "https://fakeurl.zz/datafeed"
-    archiver = GTFSRTArchiver({}, url)
+    archiver = GTFSRTArchiver(url)
     _ = archiver.content
     assert archiver.access_time is not None
 
 
 def test_content_filename():
     url = "https://fakeurl.zz/datafeed"
-    archiver = GTFSRTArchiver({}, url)
+    archiver = GTFSRTArchiver(url)
     assert archiver.content_filename == "gtfsrt.bin"
 
 
 def test_get_file():
     url = "https://fakeurl.zz/datafeed"
-    archiver = GTFSRTArchiver({}, url)
+    archiver = GTFSRTArchiver(url)
     archiver._content = b"content"
     bytesio = archiver.get_file(archiver._content)
 
@@ -77,7 +77,7 @@ def test_archive(mock_upload_to_s3, mock_db_manager):
     mock_upload_to_s3.return_value = None
 
     url = "https://fakeurl.zz/datafeed"
-    archiver = GTFSRTArchiver({}, url)
+    archiver = GTFSRTArchiver(url)
 
     content = b"newcontent"
     access_time = datetime(2020, 1, 1, 12, 1, 1, tzinfo=timezone.utc)
@@ -113,7 +113,7 @@ def test_archive_if_existing_file(mock_upload_to_s3, mock_db_manager):
         session.add(test_cavldataarchive)
         session.commit()
 
-    archiver = GTFSRTArchiver({}, url)
+    archiver = GTFSRTArchiver(url)
 
     content = b"newcontent"
     access_time = datetime(2020, 1, 1, 12, 1, 1, tzinfo=timezone.utc)

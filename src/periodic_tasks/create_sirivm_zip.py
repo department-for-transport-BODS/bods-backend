@@ -11,7 +11,7 @@ def lambda_handler(event, context):
         _prefix = f"[SIRIVM_Archiving] URL {url} => "
         logger.info(_prefix + "Begin archiving SIRIVM data.")
         start = time.time()
-        archiver = SiriVMArchiver(event, url)
+        archiver = SiriVMArchiver(url)
         archiver.archive()
         end = time.time()
         logger.info(_prefix + f"Finished archiving in {end-start:.2f} seconds.")

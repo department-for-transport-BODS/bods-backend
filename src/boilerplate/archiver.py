@@ -24,7 +24,7 @@ class ConsumerAPIArchiver:
     extension = ".xml"
     filename_prefix = "sirivm"
 
-    def __init__(self, event, url):
+    def __init__(self, url):
         self.url = url
         self.db = DbManager.get_db()
         self._archive = self.get_object()
