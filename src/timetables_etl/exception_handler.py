@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from common import LambdaEvent
+from common import DbManager
 from datetime import datetime
 from db.dataset_etl_task_result import DatasetETLTaskResultRepository
 from db.dataset_revision import DatasetRevisionRepository
@@ -19,12 +19,12 @@ class ExceptionEvent(BaseModel):
 
 def lambda_handler(event, context):
     parsed_event = ExceptionEvent(**event)
-    lambda_event = LambdaEvent(event)
 
-    task_result_repo = DatasetETLTaskResultRepository(lambda_event.db)
+    db = DbManager.get_db()
+    task_result_repo = DatasetETLTaskResultRepository(db)
     dataset_etl_task_result = task_result_repo.get_by_id(parsed_event.DatasetEtlTaskResultId)
 
-    dataset_revision_repo = DatasetRevisionRepository(lambda_event.db)
+    dataset_revision_repo = DatasetRevisionRepository(db)
     revision = dataset_revision_repo.get_by_id(dataset_etl_task_result.revision_id)
 
     adapter = get_dataset_adapter_from_revision(revision.id, revision.dataset_id)
