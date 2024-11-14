@@ -6,6 +6,7 @@ from .model_naptan import NaptanAdminArea, NaptanLocality, NaptanStopPoint
 from .model_organisation import (
     OrganisationDataset,
     OrganisationDatasetrevision,
+    OrganisationOrganisation,
     OrganisationTXCFileAttributes,
 )
 from .model_pipelines import DatasetETLTaskResult
@@ -41,6 +42,7 @@ __all__ = [
     "OrganisationDatasetrevision",
     "OrganisationDataset",
     "OrganisationTXCFileAttributes",
+    "OrganisationOrganisation",
     "NaptanAdminArea",
     "NaptanLocality",
     "NaptanStopPoint",

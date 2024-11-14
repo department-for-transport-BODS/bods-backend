@@ -8,6 +8,7 @@ from ..client import BodsDB
 from ..models import (
     OrganisationDataset,
     OrganisationDatasetrevision,
+    OrganisationOrganisation,
     OrganisationTXCFileAttributes,
 )
 from .exceptions import RevisionNotFoundException
@@ -73,4 +74,17 @@ class OrganisationTXCFileAttributesRepo(BaseRepository[OrganisationTXCFileAttrib
     def get_by_id(self, attributes_id: int) -> OrganisationTXCFileAttributes | None:
         """Get by ID"""
         statement = self._build_query().where(self._model.id == attributes_id)
+        return self._fetch_one(statement)
+
+
+class OrganisationOrganisationRepo(BaseRepository[OrganisationOrganisation]):
+    """Repository for managing Organisation entities"""
+
+    def __init__(self, db: BodsDB):
+        super().__init__(db, OrganisationOrganisation)
+
+    @handle_repository_errors
+    def get_by_id(self, org_id: int) -> OrganisationOrganisation | None:
+        """Get by ID"""
+        statement = self._build_query().where(self._model.id == org_id)
         return self._fetch_one(statement)

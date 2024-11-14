@@ -6,7 +6,6 @@ SQLAlchemy Models
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Optional
 
 from sqlalchemy import (
     ARRAY,
@@ -16,179 +15,105 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
-    Text,
     UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .common import BaseSQLModel, TimeStampedMixin
-from .db_enums import DatasetType
 
 
-class OrganisationDataset(BaseSQLModel):
+class OrganisationDataset(TimeStampedMixin, BaseSQLModel):
     __tablename__ = "organisation_dataset"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    created: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    modified: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    organisation_id: Mapped[int] = mapped_column(
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
+    live_revision_id: Mapped[int | None] = mapped_column(
         Integer,
-        ForeignKey("organisation_organisation.id", ondelete="CASCADE"),
-        nullable=False,
-        kw_only=True,
-        doc="Bus portal organisation",
+        ForeignKey("organisation_datasetrevision.id"),
+        nullable=True,
+        unique=True,
+    )
+    organisation_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("organisation_organisation.id"), nullable=False
     )
     contact_id: Mapped[int] = mapped_column(
-        Integer,
-        ForeignKey("users_user.id", ondelete="CASCADE"),
-        nullable=False,
-        kw_only=True,
-        doc="This user will receive all notifications",
+        Integer, ForeignKey("users_user.id"), nullable=False
     )
-    live_revision_id: Mapped[Optional[int]] = mapped_column(
-        Integer,
-        ForeignKey("organisation_datasetrevision.id", ondelete="SET NULL"),
-        nullable=True,
-        kw_only=True,
+    dataset_type: Mapped[int] = mapped_column(Integer, nullable=False)
+    avl_feed_status: Mapped[str] = mapped_column(String(20), nullable=False)
+    avl_feed_last_checked: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )
-    dataset_type: Mapped[DatasetType] = mapped_column(
-        Integer,
-        nullable=False,
-        default=DatasetType.TIMETABLE,
-        server_default=str(DatasetType.TIMETABLE.value),
-        kw_only=True,
-    )
-    avl_feed_status: Mapped[str] = mapped_column(
-        Text, nullable=False, unique=True, kw_only=True
-    )
-    is_dummy: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False, server_default="false", kw_only=True
-    )
-    avl_feed_last_checked: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True),
-        nullable=True,
-        kw_only=True,
-        doc="The time when the AVL feed status was last checked",
-    )
+    is_dummy: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
 
 class OrganisationDatasetrevision(TimeStampedMixin, BaseSQLModel):
     """
-    SQLAlchemy model for Dataset Revision that mirrors the Django model.
+    Revision data
     """
 
     __tablename__ = "organisation_datasetrevision"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
-
-    # Foreign Keys
+    upload_file: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    description: Mapped[str] = mapped_column(String(255), nullable=False)
+    comment: Mapped[str] = mapped_column(String(255), nullable=False)
+    is_published: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    url_link: Mapped[str] = mapped_column(String(500), nullable=False)
+    num_of_lines: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    num_of_operators: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    transxchange_version: Mapped[str] = mapped_column(String(8), nullable=False)
+    imported: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    bounding_box: Mapped[str | None] = mapped_column(String(8096), nullable=True)
+    publisher_creation_datetime: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    publisher_modified_datetime: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    first_expiring_service: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    last_expiring_service: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    first_service_start: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    num_of_bus_stops: Mapped[int | None] = mapped_column(Integer, nullable=True)
     dataset_id: Mapped[int] = mapped_column(
-        Integer,
-        ForeignKey("organisation_dataset.id", ondelete="CASCADE"),
-        nullable=False,
-        kw_only=True,
-        doc="The parent dataset",
+        Integer, ForeignKey("organisation_dataset.id"), nullable=False
     )
-
-    published_by_id: Mapped[Optional[int]] = mapped_column(
-        Integer,
-        ForeignKey("users_user.id", ondelete="PROTECT"),
-        nullable=True,
-        kw_only=True,
+    last_modified_user_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("users_user.id"), nullable=True
     )
-
-    last_modified_user_id: Mapped[Optional[int]] = mapped_column(
-        Integer,
-        ForeignKey("users_user.id", ondelete="DO_NOTHING"),
-        nullable=True,
-        kw_only=True,
+    published_by_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("users_user.id"), nullable=True
     )
-
-    # Basic fields
-    name: Mapped[str] = mapped_column(
-        String(255), unique=True, nullable=False, kw_only=True, doc="Feed name"
+    published_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )
-
-    description: Mapped[str] = mapped_column(
-        String(255), nullable=False, kw_only=True, doc="Any description for the feed"
-    )
-
-    short_description: Mapped[str] = mapped_column(
-        String(30), nullable=False, kw_only=True, doc="Short description for the feed"
-    )
-
-    comment: Mapped[str] = mapped_column(
-        String(255),
-        default="",
-        server_default="",
-        kw_only=True,
-        doc="Any comments for the feed",
-    )
-
-    url_link: Mapped[str] = mapped_column(
-        String(500),
-        default="",
-        server_default="",
-        kw_only=True,
-        doc="URL link to feed, if any",
-    )
-
-    is_published: Mapped[bool] = mapped_column(
-        Boolean,
-        default=False,
-        server_default="false",
-        nullable=False,
-        kw_only=True,
-        doc="Whether the feed is published or not",
-    )
-
-    published_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True),
-        nullable=True,
-        kw_only=True,
-        doc="The time when this change was published",
-    )
-
-    username: Mapped[str] = mapped_column(
-        String(255),
-        default="",
-        server_default="",
-        kw_only=True,
-        doc="Username required to access the resource, if any",
-    )
-
-    password: Mapped[str] = mapped_column(
-        String(255),
-        default="",
-        server_default="",
-        kw_only=True,
-        doc="Password required to access the resource, if any",
-    )
-
-    requestor_ref: Mapped[str] = mapped_column(
-        String(255),
-        default="",
-        server_default="",
-        kw_only=True,
-        doc="Requestor ref to access the resource, if any",
-    )
+    password: Mapped[str] = mapped_column(String(255), nullable=False)
+    requestor_ref: Mapped[str] = mapped_column(String(255), nullable=False)
+    username: Mapped[str] = mapped_column(String(255), nullable=False)
+    short_description: Mapped[str] = mapped_column(String(30), nullable=False)
+    num_of_timing_points: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
 
-class OrganisationOrganisation(BaseSQLModel):
+class OrganisationOrganisation(TimeStampedMixin, BaseSQLModel):
     __tablename__ = "organisation_organisation"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    created: Mapped[datetime] = mapped_column(DateTime(True))
-    modified: Mapped[datetime] = mapped_column(DateTime(True))
-    name: Mapped[str] = mapped_column(String(255))
-    short_name: Mapped[str] = mapped_column(String(255))
-    is_active: Mapped[bool] = mapped_column(Boolean)
-    is_abods_global_viewer: Mapped[bool] = mapped_column(Boolean)
-    key_contact_id: Mapped[Optional[int]] = mapped_column(
-        Integer, ForeignKey("users_user.id"), nullable=True, kw_only=True
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    short_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    key_contact_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("users_user.id"), nullable=True, unique=True
     )
-
-    licence_required: Mapped[Optional[bool]] = mapped_column(Boolean)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    licence_required: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    is_abods_global_viewer: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
 
 class OrganisationDatasetSubscription(TimeStampedMixin, BaseSQLModel):
