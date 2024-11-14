@@ -1,8 +1,8 @@
 from pydantic import BaseModel
 from common import DbManager
 from datetime import datetime
-from db.dataset_etl_task_result import DatasetETLTaskResultRepository
-from db.dataset_revision import DatasetRevisionRepository
+from db.repositories.dataset_etl_task_result import DatasetETLTaskResultRepository
+from db.repositories.dataset_revision import DatasetRevisionRepository
 from enums import DatasetETLResultStatus, FeedStatus
 from logger import get_dataset_adapter_from_revision
 

@@ -1,6 +1,6 @@
 import pytest
-from unittest.mock import MagicMock, patch
-from db.dataset_etl_task_result import DatasetETLTaskResultRepository
+from unittest.mock import MagicMock
+from db.repositories.dataset_etl_task_result import DatasetETLTaskResultRepository
 from exception import PipelineException
 from sqlalchemy.orm.exc import NoResultFound
 

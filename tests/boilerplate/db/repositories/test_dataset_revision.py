@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 from enums import FeedStatus
 from exception import PipelineException
 
-from db.dataset_revision import DatasetRevisionRepository
+from db.repositories.dataset_revision import DatasetRevisionRepository
 from tests.mock_db import MockedDB, organisation_datasetrevision
 
 
