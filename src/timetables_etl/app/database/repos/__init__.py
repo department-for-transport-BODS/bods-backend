@@ -3,6 +3,7 @@ Exported repos
 """
 
 from .repo_etl_task import ETLTaskResultRepo
+from .repo_naptan import NaptanAdminAreaRepo, NaptanLocalityRepo, NaptanStopPointRepo
 from .repo_organisation import (
     OrganisationDatasetRepo,
     OrganisationDatasetRevisionRepo,
@@ -40,4 +41,7 @@ __all__ = [
     "TransmodelBookingArrangementsRepo",
     "TransmodelServicePatternRepo",
     "ETLTaskResultRepo",
+    "NaptanAdminAreaRepo",
+    "NaptanLocalityRepo",
+    "NaptanStopPointRepo",
 ]

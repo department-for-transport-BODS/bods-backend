@@ -2,6 +2,7 @@
 Export models for DB queries
 """
 
+from .model_naptan import NaptanAdminArea, NaptanLocality, NaptanStopPoint
 from .model_organisation import (
     OrganisationDataset,
     OrganisationDatasetrevision,
@@ -40,4 +41,7 @@ __all__ = [
     "OrganisationDatasetrevision",
     "OrganisationDataset",
     "OrganisationTXCFileAttributes",
+    "NaptanAdminArea",
+    "NaptanLocality",
+    "NaptanStopPoint",
 ]
