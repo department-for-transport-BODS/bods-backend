@@ -5,13 +5,14 @@ SQLAlchemy Models
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, List
+from datetime import date, datetime, time, timedelta
+from typing import List
 
 from geoalchemy2 import Geometry
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
+    Date,
     DateTime,
     Float,
     ForeignKey,
@@ -19,16 +20,14 @@ from sqlalchemy import (
     Interval,
     String,
     Text,
+    Time,
     UniqueConstraint,
 )
-from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
+from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.orm import Mapped, mapped_column, validates
 from sqlalchemy.sql import text
 
 from .common import BaseSQLModel
-
-if TYPE_CHECKING:
-    from .model_organisation import OrganisationDatasetrevision
-    from .model_transmodel import TransmodelService, TransmodelVehicleJourney
 
 
 class DataQualityReport(BaseSQLModel):
@@ -71,23 +70,6 @@ class DataQualityReport(BaseSQLModel):
         nullable=False,
         kw_only=True,
         doc="Path to the JSON file",
-    )
-
-    # Relationships
-    revision: Mapped["OrganisationDatasetrevision"] = relationship(
-        "OrganisationDatasetrevision",
-        back_populates="report",
-        default=None,
-        kw_only=True,
-    )
-
-    # Many-to-many relationship with Service
-    services: Mapped[list["TransmodelService"]] = relationship(
-        "Service",
-        secondary="service_dataquality_report",
-        back_populates="reports",
-        default_factory=list,
-        kw_only=True,
     )
 
     # Constraints and ordering
@@ -135,34 +117,6 @@ class DataQualityServicePatternStop(BaseSQLModel):
         doc="Position of the stop in the service pattern",
     )
 
-    # Relationships
-    service_pattern: Mapped["DataQualityServicepattern"] = relationship(
-        "DataQualityServicepattern",
-        back_populates="service_pattern_stops",
-        default=None,
-        kw_only=True,
-    )
-
-    stop: Mapped["DataQualityStopPoint"] = relationship(
-        "DataQualityStopPoint",
-        back_populates="service_pattern_stops",
-        default=None,
-        kw_only=True,
-    )
-
-    # Added relationship for TimingPatternStop
-    timings: Mapped[list["DataQualityTimingPatternStop"]] = relationship(
-        "DataQualityTimingPatternStop",
-        back_populates="service_pattern_stop",
-        default_factory=list,
-        kw_only=True,
-    )
-    timing_pattern: Mapped["DataQualityTimingPattern"] = relationship(
-        "DataQualityTimingPattern",
-        back_populates="service_pattern_stops",
-        default=None,
-        kw_only=True,
-    )
     # Unique constraint
     __table_args__ = (
         UniqueConstraint(
@@ -200,21 +154,6 @@ class DataQualityServicePatternServiceLink(BaseSQLModel):
         nullable=False,
         kw_only=True,
         doc="Position of the service link in the service pattern",
-    )
-
-    # Relationships
-    service_pattern: Mapped["DataQualityServicepattern"] = relationship(
-        "ServicePattern",
-        back_populates="service_pattern_service_links",
-        default=None,
-        kw_only=True,
-    )
-
-    service_link: Mapped["DataQualityServiceLink"] = relationship(
-        "ServiceLink",
-        back_populates="service_pattern_service_links",
-        default=None,
-        kw_only=True,
     )
 
     # Unique constraint equivalent to Django's unique_together
@@ -264,33 +203,6 @@ class DataQualityServiceLink(BaseSQLModel):
         doc="Reference to the destination stop point",
     )
 
-    # Relationships
-    from_stop: Mapped["DataQualityStopPoint"] = relationship(
-        "DataQualityStopPoint",
-        foreign_keys=[from_stop_id],
-        back_populates="from_service_links",
-        default=None,
-        kw_only=True,
-    )
-
-    to_stop: Mapped["DataQualityStopPoint"] = relationship(
-        "DataQualityStopPoint",
-        foreign_keys=[to_stop_id],
-        back_populates="to_service_links",
-        default=None,
-        kw_only=True,
-    )
-
-    # Relationships for the through tables
-    service_pattern_service_links: Mapped[
-        List["DataQualityServicePatternServiceLink"]
-    ] = relationship(
-        "DataQualityServicePatternServiceLink",
-        back_populates="service_link",
-        default_factory=list,
-        kw_only=True,
-    )
-
     # Unique constraint
     __table_args__ = (
         UniqueConstraint("from_stop_id", "to_stop_id", name="uix_service_link_stops"),
@@ -329,58 +241,6 @@ class DataQualityServicepattern(BaseSQLModel):
         doc="Geometric representation of the service pattern",
     )
 
-    # Relationships
-    service: Mapped["TransmodelService"] = relationship(
-        "Service", back_populates="service_patterns", default=None, kw_only=True
-    )
-
-    timing_patterns: Mapped[list["DataQualityTimingPattern"]] = relationship(
-        "DataQualityTimingPattern",
-        back_populates="service_pattern",
-        default_factory=list,
-        kw_only=True,
-    )
-
-    service_pattern_stops: Mapped[list["DataQualityServicePatternStop"]] = relationship(
-        "DataQualityServicePatternStop",
-        back_populates="service_pattern",
-        default_factory=list,
-        kw_only=True,
-    )
-
-    service_pattern_service_links: Mapped[
-        list["DataQualityServicePatternServiceLink"]
-    ] = relationship(
-        "ServicePatternServiceLink",
-        back_populates="service_pattern",
-        default_factory=list,
-        kw_only=True,
-    )
-
-    # Through relationships
-    stops: Mapped[list["DataQualityStopPoint"]] = relationship(
-        "DataQualityStopPoint",
-        secondary="service_pattern_stop",
-        back_populates="service_patterns",
-        default_factory=list,
-        kw_only=True,
-    )
-
-    service_links: Mapped[list["DataQualityServiceLink"]] = relationship(
-        "DataQualityServiceLink",
-        secondary="service_pattern_service_link",
-        back_populates="service_patterns",
-        default_factory=list,
-        kw_only=True,
-    )
-
-    timing_pattern_stops: Mapped[list["DataQualityTimingPatternStop"]] = relationship(
-        "DataQualityTimingPatternStop",
-        back_populates="service_pattern",
-        default_factory=list,
-        kw_only=True,
-    )
-
 
 class DataQualityTimingPattern(BaseSQLModel):
     __tablename__ = "data_quality_timingpattern"
@@ -401,28 +261,6 @@ class DataQualityTimingPattern(BaseSQLModel):
         nullable=False,
         kw_only=True,
         doc="Reference to the associated service pattern",
-    )
-
-    # Relationships
-    service_pattern: Mapped["DataQualityServicepattern"] = relationship(
-        "DataQualityServicepattern",
-        back_populates="timing_patterns",
-        default=None,
-        kw_only=True,
-    )
-
-    # Reverse relationship to VehicleJourney
-    vehicle_journeys: Mapped[list["TransmodelVehicleJourney"]] = relationship(
-        "TransmodelVehicleJourney",
-        back_populates="timing_pattern",
-        default_factory=list,
-        kw_only=True,
-    )
-    timing_pattern_stops: Mapped[list["DataQualityTimingPatternStop"]] = relationship(
-        "DataQualityTimingPatternStop",
-        back_populates="timing_pattern",
-        default_factory=list,
-        kw_only=True,
     )
 
 
@@ -471,21 +309,6 @@ class DataQualityTimingPatternStop(BaseSQLModel):
         Boolean, default=False, server_default="false", nullable=False, kw_only=True
     )
 
-    # Relationships
-    timing_pattern: Mapped["DataQualityTimingPattern"] = relationship(
-        "DataQualityTimingPattern",
-        back_populates="timing_pattern_stops",
-        default=None,
-        kw_only=True,
-    )
-
-    service_pattern_stop: Mapped["DataQualityServicePatternStop"] = relationship(
-        "DataQualityServicePatternStop",
-        back_populates="timings",
-        default=None,
-        kw_only=True,
-    )
-
 
 class DataQualityStopPoint(BaseSQLModel):
     __tablename__ = "data_quality_stoppoint"
@@ -532,29 +355,42 @@ class DataQualityStopPoint(BaseSQLModel):
         doc="Geographic location of the stop point",
     )
 
-    # Relationships for the reverse foreign keys
-    from_service_links: Mapped[list["DataQualityServiceLink"]] = relationship(
-        "DataQualityServiceLink",
-        foreign_keys="[ServiceLink.from_stop_id]",
-        back_populates="from_stop",
-        default_factory=list,
-        kw_only=True,
-    )
-
-    to_service_links: Mapped[list["DataQualityServiceLink"]] = relationship(
-        "DataQualityServiceLink",
-        foreign_keys="[ServiceLink.to_stop_id]",
-        back_populates="to_stop",
-        default_factory=list,
-        kw_only=True,
-    )
-
-    service_pattern_stops: Mapped[list["DataQualityServicePatternStop"]] = relationship(
-        "ServicePatternStop", back_populates="stop", default_factory=list, kw_only=True
-    )
-
     __table_args__ = (
         UniqueConstraint(
             "ito_id", "atco_code", "is_provisional", name="uix_stop_point_unique"
         ),
+    )
+
+
+class DataQualityVehicleJourney(BaseSQLModel):
+    __tablename__ = "data_quality_vehiclejourney"
+
+    id: Mapped[int] = mapped_column(primary_key=True, init=False)
+
+    ito_id: Mapped[str] = mapped_column(
+        Text,
+        unique=True,
+        nullable=False,
+        kw_only=True,
+        doc="Unique identifier from ITO",
+    )
+
+    timing_pattern_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("timing_pattern.id", ondelete="CASCADE"),
+        nullable=False,
+        kw_only=True,
+        doc="Reference to the associated timing pattern",
+    )
+
+    start_time: Mapped[time] = mapped_column(
+        Time, nullable=False, kw_only=True, doc="Start time of the vehicle journey"
+    )
+
+    dates: Mapped[List[date]] = mapped_column(
+        ARRAY(Date),
+        nullable=False,
+        default_factory=list,
+        kw_only=True,
+        doc="List of dates for this vehicle journey",
     )

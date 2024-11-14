@@ -5,9 +5,8 @@ Database Calls
 import logging
 from datetime import UTC, datetime
 
-from src.boilerplate.common import BodsDB
-
-from .model_pipelines import DatasetETLTaskResult, ETLErrorCode, TaskState
+from ..client import BodsDB
+from ..models.model_pipelines import DatasetETLTaskResult, ETLErrorCode, TaskState
 from .repo_common import BaseRepository, handle_repository_errors
 
 logger = logging.getLogger(__name__)

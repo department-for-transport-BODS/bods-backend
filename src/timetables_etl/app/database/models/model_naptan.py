@@ -30,11 +30,6 @@ class UILta(BaseSQLModel):
     # Basic Fields
     name: Mapped[str] = mapped_column(Text, nullable=False, unique=True, kw_only=True)
 
-    # Relationships
-    admin_areas: Mapped[list["AdminArea"]] = relationship(
-        "AdminArea", back_populates="ui_lta", default_factory=list, kw_only=True
-    )
-
 
 class AdminArea(BaseSQLModel):
     """
@@ -64,17 +59,6 @@ class AdminArea(BaseSQLModel):
         kw_only=True,
     )
 
-    # Relationships
-    ui_lta: Mapped[Optional[UILta]] = relationship(
-        UILta, back_populates="admin_areas", default=None, kw_only=True
-    )
-    localities: Mapped[list["Locality"]] = relationship(
-        "Locality", back_populates="admin_area", default_factory=list, kw_only=True
-    )
-    stops: Mapped[list["StopPoint"]] = relationship(
-        "StopPoint", back_populates="admin_area", default_factory=list, kw_only=True
-    )
-
 
 class District(BaseSQLModel):
     """
@@ -89,11 +73,6 @@ class District(BaseSQLModel):
 
     # Basic Fields
     name: Mapped[str] = mapped_column(String(255), nullable=False, kw_only=True)
-
-    # Relationships
-    localities: Mapped[list["Locality"]] = relationship(
-        "Locality", back_populates="district", default_factory=list, kw_only=True
-    )
 
 
 class Locality(BaseSQLModel):
@@ -120,17 +99,6 @@ class Locality(BaseSQLModel):
     )
     admin_area_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("admin_areas.id", ondelete="SET NULL"), nullable=True, kw_only=True
-    )
-
-    # Relationships
-    district: Mapped[Optional["District"]] = relationship(
-        "District", back_populates="localities", default=None, kw_only=True
-    )
-    admin_area: Mapped[Optional["AdminArea"]] = relationship(
-        "AdminArea", back_populates="localities", default=None, kw_only=True
-    )
-    stops: Mapped[list["StopPoint"]] = relationship(
-        "StopPoint", back_populates="locality", default_factory=list, kw_only=True
     )
 
 
@@ -181,12 +149,4 @@ class StopPoint(BaseSQLModel):
     )
     bus_stop_type: Mapped[Optional[str]] = mapped_column(
         String(255), nullable=True, kw_only=True
-    )
-
-    # Relationships
-    locality: Mapped[Optional["Locality"]] = relationship(
-        "Locality", back_populates="stops", default=None, kw_only=True
-    )
-    admin_area: Mapped[Optional["AdminArea"]] = relationship(
-        "AdminArea", back_populates="stops", default=None, kw_only=True
     )

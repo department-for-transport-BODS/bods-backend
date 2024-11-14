@@ -4,25 +4,22 @@ SQL Alchemy models for tables starting with transmodel_
 
 from __future__ import annotations
 
-from datetime import date, time
-from typing import List, Optional
+from datetime import date, datetime, time
 
-from sqlalchemy import Date, ForeignKey, Integer, String, Text, Time
+from geoalchemy2 import Geometry
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text, Time
 from sqlalchemy.dialects.postgresql import ARRAY
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from timetables_etl.app.database.models.model_data_quality import (
-    DataQualityTimingPattern,
-)
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .common import BaseSQLModel
-from .model_organisation import (
-    OrganisationDatasetrevision,
-    OrganisationTxcFileAttributes,
-)
 
 
 class TransmodelService(BaseSQLModel):
+    """
+    Transmodel Service Table
+    ETL Output
+    """
+
     __tablename__ = "transmodel_service"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
@@ -31,55 +28,173 @@ class TransmodelService(BaseSQLModel):
     other_names: Mapped[list[str]] = mapped_column(ARRAY(String(255)), nullable=False)
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     service_type: Mapped[str] = mapped_column(String(255), nullable=False)
-    end_date: Mapped[Optional[date]] = mapped_column(Date)
-    revision_id: Mapped[Optional[int]] = mapped_column(Integer)
-    txcfileattributes_id: Mapped[Optional[int]] = mapped_column(Integer)
-
-    revision: Mapped["OrganisationDatasetrevision"] = relationship(
-        "OrganisationDatasetrevision", back_populates="transmodel_service", init=False
-    )
-    txcfileattributes: Mapped["OrganisationTxcFileAttributes"] = relationship(
-        "OrganisationTxcfileattributes", back_populates="transmodel_service", init=False
-    )
+    end_date: Mapped[date | None] = mapped_column(Date)
+    revision_id: Mapped[int | None] = mapped_column(Integer)
+    txcfileattributes_id: Mapped[int | None] = mapped_column(Integer)
 
 
 class TransmodelVehicleJourney(BaseSQLModel):
+    """
+    Transmodel Vehicle Journey Table
+    ETL Output
+    """
+
     __tablename__ = "transmodel_vehiclejourney"
 
-    id: Mapped[int] = mapped_column(primary_key=True, init=False)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
+    start_time: Mapped[time | None] = mapped_column(Time, nullable=True)
+    direction: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    journey_code: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    line_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    departure_day_shift: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    service_pattern_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    block_number: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
-    ito_id: Mapped[str] = mapped_column(
-        Text,
-        unique=True,
-        nullable=False,
-        kw_only=True,
-        doc="Unique identifier from ITO",
+
+class TransmodelServicePattern(BaseSQLModel):
+    """
+    Transmodel Service Pattern Table
+    """
+
+    __tablename__ = "transmodel_servicepattern"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
+    service_pattern_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    origin: Mapped[str] = mapped_column(String(255), nullable=False)
+    destination: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    geom: Mapped[str | None] = mapped_column(
+        Geometry("LINESTRING", 4326), nullable=True
+    )
+    revision_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    line_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+
+class TransmodelServicedOrganisations(BaseSQLModel):
+    """Transmodel Serviced Organisations Table"""
+
+    __tablename__ = "transmodel_servicedorganisations"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
+    name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    organisation_code: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+
+class TransmodelFlexibleServiceOperationPeriod(BaseSQLModel):
+    """Transmodel Flexible Service Operation Period Table"""
+
+    __tablename__ = "transmodel_flexibleserviceoperationperiod"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
+    vehicle_journey_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("transmodel_vehiclejourney.id"), nullable=False
+    )
+    end_time: Mapped[time | None] = mapped_column(Time, nullable=True)
+    start_time: Mapped[time | None] = mapped_column(Time, nullable=True)
+
+
+class TransmodelOperatingProfile(BaseSQLModel):
+    """Transmodel Operating Profile Table"""
+
+    __tablename__ = "transmodel_operatingprofile"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
+    day_of_week: Mapped[str] = mapped_column(String(20), nullable=False)
+    vehicle_journey_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("transmodel_vehiclejourney.id"), nullable=False
     )
 
-    timing_pattern_id: Mapped[int] = mapped_column(
+
+class TransmodelOperatingDatesExceptions(BaseSQLModel):
+    """Transmodel Operating Dates Exceptions Table"""
+
+    __tablename__ = "transmodel_operatingdatesexceptions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
+    operating_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    vehicle_journey_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("transmodel_vehiclejourney.id"), nullable=False
+    )
+
+
+class TransmodelNonOperatingDatesExceptions(BaseSQLModel):
+    """Transmodel Non Operating Dates Exceptions Table"""
+
+    __tablename__ = "transmodel_nonoperatingdatesexceptions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
+    non_operating_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    vehicle_journey_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("transmodel_vehiclejourney.id"), nullable=False
+    )
+
+
+class TransmodelServicedOrganisationVehicleJourney(BaseSQLModel):
+    """Transmodel Serviced Organisation Vehicle Journey Table"""
+
+    __tablename__ = "transmodel_servicedorganisationvehiclejourney"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
+    operating_on_working_days: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    serviced_organisation_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("transmodel_servicedorganisations.id"), nullable=False
+    )
+    vehicle_journey_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("transmodel_vehiclejourney.id"), nullable=False
+    )
+
+
+class TransmodelServicedOrganisationWorkingDays(BaseSQLModel):
+    """Transmodel Serviced Organisation Working Days Table"""
+
+    __tablename__ = "transmodel_servicedorganisationworkingdays"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
+    start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    serviced_organisation_vehicle_journey_id: Mapped[int | None] = mapped_column(
         Integer,
-        ForeignKey("timing_pattern.id", ondelete="CASCADE"),
-        nullable=False,
-        kw_only=True,
-        doc="Reference to the associated timing pattern",
+        ForeignKey("transmodel_servicedorganisationvehiclejourney.id"),
+        nullable=True,
     )
 
-    start_time: Mapped[time] = mapped_column(
-        Time, nullable=False, kw_only=True, doc="Start time of the vehicle journey"
-    )
 
-    dates: Mapped[List[date]] = mapped_column(
-        ARRAY(Date),
-        nullable=False,
-        default_factory=list,
-        kw_only=True,
-        doc="List of dates for this vehicle journey",
-    )
+class TransmodelServicePatternStop(BaseSQLModel):
+    """Transmodel Service Pattern Stop Table"""
 
-    # Relationships
-    timing_pattern: Mapped["DataQualityTimingPattern"] = relationship(
-        "DataQualityTimingPattern",
-        back_populates="vehicle_journeys",
-        default=None,
-        kw_only=True,
+    __tablename__ = "transmodel_servicepatternstop"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
+    sequence_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    atco_code: Mapped[str] = mapped_column(String(255), nullable=False)
+    naptan_stop_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    service_pattern_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("transmodel_servicepattern.id"), nullable=False
+    )
+    departure_time: Mapped[time | None] = mapped_column(Time, nullable=True)
+    is_timing_point: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    txc_common_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    vehicle_journey_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("transmodel_vehiclejourney.id"), nullable=True
+    )
+    stop_activity_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    auto_sequence_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+
+class TransmodelBookingArrangements(BaseSQLModel):
+    """Transmodel Booking Arrangements Table"""
+
+    __tablename__ = "transmodel_bookingarrangements"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    email: Mapped[str | None] = mapped_column(String(254), nullable=True)
+    phone_number: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    web_address: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    created: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_updated: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    service_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("transmodel_service.id"), nullable=False
     )

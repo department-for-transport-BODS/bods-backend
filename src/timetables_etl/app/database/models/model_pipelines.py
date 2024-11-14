@@ -10,10 +10,9 @@ from typing import Optional
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy import Enum as SQLEnum
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .common import BaseSQLModel, TimeStampedMixin
-from .model_organisation import OrganisationDatasetrevision
 
 
 class TaskState(str, Enum):
@@ -128,12 +127,4 @@ class DatasetETLTaskResult(TaskResult):
 
     additional_info: Mapped[Optional[str]] = mapped_column(
         String(512), default=None, nullable=True, kw_only=True
-    )
-
-    # Relationships
-    revision: Mapped["OrganisationDatasetrevision"] = relationship(
-        "OrganisationDatasetrevision",
-        back_populates="etl_results",
-        default=None,
-        kw_only=True,
     )

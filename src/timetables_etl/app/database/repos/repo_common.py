@@ -10,7 +10,7 @@ from typing import Callable, Generic, ParamSpec, Type, TypeVar
 from sqlalchemy import Select, select
 from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
 
-from src.boilerplate.common import BodsDB
+from ..client import BodsDB
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +56,7 @@ def handle_repository_errors(func: Callable[P, T]) -> Callable[P, T]:
 
         try:
             return func(*args, **kwargs)
-        except Exception as exc:
+        except Exception as exc:  # noqa
             match exc:
                 case NoResultFound():
                     message = f"Failed in {operation}: Resource not found"
