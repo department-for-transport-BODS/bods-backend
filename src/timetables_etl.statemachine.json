@@ -71,21 +71,6 @@
               "Bucket.$": "$.Bucket",
               "ObjectKey.$": "$.Key"
             },
-            "Next": "ptiValidation",
-            "Catch": [
-              {
-                "ErrorEquals": ["States.ALL"],
-                "Next": "exceptionHandler"
-              }
-            ]
-          },
-          "ptiValidation": {
-            "Type": "Task",
-            "Resource": "${PlaceholderLambdaArn}",
-            "Parameters": {
-              "Bucket.$": "$.Bucket",
-              "ObjectKey.$": "$.Key"
-            },
             "Next": "fileAttributesEtl",
             "Catch": [
               {
@@ -95,6 +80,21 @@
             ]
           },
           "fileAttributesEtl": {
+            "Type": "Task",
+            "Resource": "${PlaceholderLambdaArn}",
+            "Parameters": {
+              "Bucket.$": "$.Bucket",
+              "ObjectKey.$": "$.Key"
+            },
+            "Next": "ptiValidation",
+            "Catch": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "Next": "exceptionHandler"
+              }
+            ]
+          },
+          "ptiValidation": {
             "Type": "Task",
             "Resource": "${PlaceholderLambdaArn}",
             "Parameters": {
