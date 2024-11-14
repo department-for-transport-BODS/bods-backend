@@ -48,6 +48,11 @@ class pipeline_error_code(Base):
     id = Column(Integer, primary_key=True)
     status = Column(String(255))
 
+class organisation_datasetrevision(Base):
+    __tablename__ = "organization_datasetrevision"
+
+    id = Column(Integer, primary_key=True)
+    status = Column(String(20))
 
 class MockedDB:
     def __init__(self):
@@ -60,6 +65,7 @@ class MockedDB:
             pipelines_fileprocessingresult=pipelines_fileprocessingresult,
             pipeline_processing_step = pipeline_processing_step,
             pipeline_error_code=pipeline_error_code,
+            organisation_datasetrevision=organisation_datasetrevision
         )
 
 

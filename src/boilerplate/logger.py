@@ -36,9 +36,9 @@ class PipelineAdapter(logging.LoggerAdapter):
         return msg, kwargs
 
 
-def get_dataset_adapter_from_revision(revision) -> PipelineAdapter:
+def get_dataset_adapter_from_revision(revision_id: int, dataset_id: int) -> PipelineAdapter:
     context = DatasetPipelineLoggerContext(
-        revision_id=revision.id, object_id=revision.dataset_id
+        revision_id=revision_id, object_id=dataset_id
     )
     adapter: PipelineAdapter = PipelineAdapter(logger, {"context": context})
     return adapter
