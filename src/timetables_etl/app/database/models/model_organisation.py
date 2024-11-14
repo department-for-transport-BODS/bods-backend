@@ -14,18 +14,15 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
-    ForeignKeyConstraint,
     Integer,
-    PrimaryKeyConstraint,
     String,
     Text,
     UniqueConstraint,
 )
-from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .common import BaseSQLModel, TimeStampedMixin
-from .db_enums import AVLFeedStatus, DatasetType
+from .db_enums import DatasetType
 
 
 class OrganisationDataset(BaseSQLModel):
@@ -223,35 +220,32 @@ class OrganisationDatasetSubscription(TimeStampedMixin, BaseSQLModel):
     )
 
 
-class OrganisationTxcFileAttributes(BaseSQLModel):
-    __tablename__ = "organisation_txcfileattributes"
-    __table_args__ = (
-        ForeignKeyConstraint(
-            ["revision_id"],
-            ["public.organisation_datasetrevision.id"],
-            deferrable=True,
-            initially="DEFERRED",
-            name="organisation_txcfile_revision_id_ddb2f841_fk_organisat",
-        ),
-        PrimaryKeyConstraint("id", name="organisation_txcfileattributes_pkey"),
-        {"schema": "public"},
-    )
+class OrganisationTXCFileAttributes(BaseSQLModel):
+    """Organisation TXC File Attributes Table"""
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    schema_version: Mapped[str] = mapped_column(String(10))
-    revision_number: Mapped[int] = mapped_column(Integer)
-    creation_datetime: Mapped[datetime] = mapped_column(DateTime(True))
-    modification_datetime: Mapped[datetime] = mapped_column(DateTime(True))
-    filename: Mapped[str] = mapped_column(String(512))
-    service_code: Mapped[str] = mapped_column(String(100))
-    revision_id: Mapped[int] = mapped_column(Integer)
-    modification: Mapped[str] = mapped_column(String(28))
-    national_operator_code: Mapped[str] = mapped_column(String(100))
-    licence_number: Mapped[str] = mapped_column(String(56))
-    public_use: Mapped[bool] = mapped_column(Boolean)
-    line_names: Mapped[list] = mapped_column(ARRAY(String(length=255)))
-    destination: Mapped[str] = mapped_column(String(512))
-    origin: Mapped[str] = mapped_column(String(512))
-    hash: Mapped[str] = mapped_column(String(40))
-    operating_period_end_date: Mapped[Optional[date]] = mapped_column(Date)
-    operating_period_start_date: Mapped[Optional[date]] = mapped_column(Date)
+    __tablename__ = "organisation_txcfileattributes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
+    schema_version: Mapped[str] = mapped_column(String(10), nullable=False)
+    revision_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    creation_datetime: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    modification_datetime: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    filename: Mapped[str] = mapped_column(String(512), nullable=False)
+    service_code: Mapped[str] = mapped_column(String(100), nullable=False)
+    revision_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    modification: Mapped[str] = mapped_column(String(28), nullable=False)
+    national_operator_code: Mapped[str] = mapped_column(String(100), nullable=False)
+    licence_number: Mapped[str] = mapped_column(String(56), nullable=False)
+    operating_period_end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    operating_period_start_date: Mapped[date | None] = mapped_column(
+        Date, nullable=True
+    )
+    public_use: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    line_names: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=False)
+    destination: Mapped[str] = mapped_column(String(512), nullable=False)
+    origin: Mapped[str] = mapped_column(String(512), nullable=False)
+    hash: Mapped[str] = mapped_column(String(40), nullable=False)

@@ -7,12 +7,13 @@ from datetime import UTC, datetime
 
 from ..client import BodsDB
 from ..models.model_pipelines import DatasetETLTaskResult, ETLErrorCode, TaskState
+from .exceptions import TaskNotFoundException
 from .repo_common import BaseRepository, handle_repository_errors
 
 logger = logging.getLogger(__name__)
 
 
-class ETLTaskResultRepository(BaseRepository[DatasetETLTaskResult]):
+class ETLTaskResultRepo(BaseRepository[DatasetETLTaskResult]):
     """
     Repository for managing ETLTaskResult entities
     Table: pipelines_datasetetltaskresult
@@ -22,12 +23,15 @@ class ETLTaskResultRepository(BaseRepository[DatasetETLTaskResult]):
         super().__init__(db, DatasetETLTaskResult)
 
     @handle_repository_errors
-    def get_by_id(self, task_id: int) -> DatasetETLTaskResult | None:
+    def get_by_id(self, task_id: int) -> DatasetETLTaskResult:
         """
         Get ETL Task by ID
         """
         statement = self._build_query().where(self._model.id == task_id)
-        return self._fetch_one(statement)
+        task = self._fetch_one(statement)
+        if task is None:
+            raise TaskNotFoundException()
+        return task
 
     @handle_repository_errors
     def mark_success(self, task_id: int) -> None:

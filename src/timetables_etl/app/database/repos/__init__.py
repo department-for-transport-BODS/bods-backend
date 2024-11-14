@@ -2,7 +2,12 @@
 Exported repos
 """
 
-from .repo_organisation import OrganisationDatasetRepo, OrganisationDatasetRevisionRepo
+from .repo_etl_task import ETLTaskResultRepo
+from .repo_organisation import (
+    OrganisationDatasetRepo,
+    OrganisationDatasetRevisionRepo,
+    OrganisationTXCFileAttributesRepo,
+)
 from .repo_transmodel import (
     TransmodelBookingArrangementsRepo,
     TransmodelFlexibleServiceOperationPeriodRepo,
@@ -21,6 +26,7 @@ from .repo_transmodel import (
 __all__ = [
     "OrganisationDatasetRepo",
     "OrganisationDatasetRevisionRepo",
+    "OrganisationTXCFileAttributesRepo",
     "TransmodelServicedOrganisationsRepo",
     "TransmodelVehicleJourneyRepo",
     "TransmodelFlexibleServiceOperationPeriodRepo",
@@ -33,4 +39,5 @@ __all__ = [
     "TransmodelServiceRepo",
     "TransmodelBookingArrangementsRepo",
     "TransmodelServicePatternRepo",
+    "ETLTaskResultRepo",
 ]

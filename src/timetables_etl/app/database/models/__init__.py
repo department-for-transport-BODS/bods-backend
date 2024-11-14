@@ -2,7 +2,11 @@
 Export models for DB queries
 """
 
-from .model_organisation import OrganisationDataset, OrganisationDatasetrevision
+from .model_organisation import (
+    OrganisationDataset,
+    OrganisationDatasetrevision,
+    OrganisationTXCFileAttributes,
+)
 from .model_pipelines import DatasetETLTaskResult
 from .model_transmodel import (
     TransmodelBookingArrangements,
@@ -35,4 +39,5 @@ __all__ = [
     "TransmodelServicePatternStop",
     "OrganisationDatasetrevision",
     "OrganisationDataset",
+    "OrganisationTXCFileAttributes",
 ]

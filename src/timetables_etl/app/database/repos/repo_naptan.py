@@ -6,7 +6,7 @@ from typing import Optional
 
 from sqlalchemy import Select, select
 
-from ..models import AdminArea, District, Locality, StopPoint, UILta
+from ..models.model_naptan import AdminArea, District, Locality, StopPoint, UILta
 from .repo_common import BaseRepository, BodsDB, handle_repository_errors
 
 
