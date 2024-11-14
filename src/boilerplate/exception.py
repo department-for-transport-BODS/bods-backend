@@ -16,3 +16,18 @@ class PipelineException(Exception):
         self.error_info = json.dumps({"error_message": message, "step_name": step_name})
 
         super().__init__(self.error_info)
+
+class XMLElementException(Exception):
+    pass
+
+class XMLAttributeError(XMLElementException):
+    pass
+
+class NoElement(XMLElementException):
+    pass
+
+class TooManyElements(XMLElementException):
+    pass
+
+class ParentDoesNotExist(XMLElementException):
+    pass
