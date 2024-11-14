@@ -2,9 +2,11 @@ from sqlalchemy import (
     Column,
     Integer,
     String,
+    Boolean,
+    JSON,
     TIMESTAMP,
     Text,
-    create_engine,
+    create_engine
 )
 from sqlalchemy.orm import sessionmaker, declarative_base
 from types import SimpleNamespace
@@ -49,6 +51,27 @@ class pipeline_error_code(Base):
     status = Column(String(255))
 
 
+class organisation_txcfileattributes(Base):
+    __tablename__ = "organisation_txcfileattributes"
+    revision_id = Column(Integer, primary_key=True)
+    schema_version = Column(String(10))
+    revision_number = Column(Integer)
+    modification = Column(String(28))
+    creation_datetime = Column(TIMESTAMP)
+    modification_datetime = Column(TIMESTAMP)
+    filename = Column(String(512))
+    service_code = Column(String(100))
+    national_operator_code = Column(String(100))
+    licence_number = Column(String(56))
+    operating_period_start_date = Column(TIMESTAMP)
+    operating_period_end_date = Column(TIMESTAMP)
+    public_use = Column(Boolean, default=True)
+    line_names = Column(JSON)
+    origin = Column(String(512))
+    destination = Column(String(512))
+    hash = Column(String(40))
+
+
 class MockedDB:
     def __init__(self):
         self.engine = create_engine("sqlite:///:memory:")
@@ -60,6 +83,7 @@ class MockedDB:
             pipelines_fileprocessingresult=pipelines_fileprocessingresult,
             pipeline_processing_step = pipeline_processing_step,
             pipeline_error_code=pipeline_error_code,
+            organisation_txcfileattributes=organisation_txcfileattributes,
         )
 
 

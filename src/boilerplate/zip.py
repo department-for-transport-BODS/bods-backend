@@ -1,10 +1,9 @@
-
 from zipfile import ZipFile, is_zipfile
-from bods_exception import (
+from exceptions.zip_file_exceptions import (
     NestedZipForbidden,
     ZipValidationException,
     ZipTooLarge,
-    NoDataFound
+    NoDataFound,
 )
 from boilerplate.utils import get_file_size
 

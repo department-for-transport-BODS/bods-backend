@@ -4,7 +4,7 @@ from boilerplate.xml_validator import (
     FileValidator,
     XMLValidator
 )
-from bods_exception import (
+from exceptions.xml_file_exceptions import (
     FileTooLarge,
     XMLSyntaxError,
     DangerousXML

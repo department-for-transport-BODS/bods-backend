@@ -1,8 +1,14 @@
 import unittest
+from unittest.mock import patch, mock_open
 from io import BytesIO
 from zipfile import ZipFile, ZIP_DEFLATED
 from boilerplate.zip import ZippedValidator
-from bods_exception import NestedZipForbidden, ZipTooLarge, NoDataFound
+from exceptions.zip_file_exceptions import (
+    NestedZipForbidden,
+    ZipTooLarge,
+    NoDataFound,
+    ZipValidationException
+)
 
 
 class TestZippedValidator(unittest.TestCase):
@@ -74,6 +80,29 @@ class TestZippedValidator(unittest.TestCase):
         with validator.open("file1.xml") as f:
             content = f.read()
             self.assertEqual(content, b"Test content")
+
+    @patch("boilerplate.utils.get_file_size", return_value=500)
+    @patch("boilerplate.zip.ZipFile")
+    def test_context_manager(self, mock_zipfile, mock_get_file_size):
+        # Create a dummy zip file using mock_open
+        mock_file = mock_open(read_data=b"dummy data")
+        with mock_file() as file:
+            # Test __enter__ and __exit__ with context manager
+            with ZippedValidator(file) as validator:
+                self.assertTrue(mock_zipfile.call_count == 2)
+            # Ensure zip_file was closed on __exit__
+            mock_zipfile.return_value.close.assert_called_once()
+
+    @patch("boilerplate.utils.get_file_size", return_value=500)
+    @patch("boilerplate.zip.ZipFile")
+    def test_is_valid_with_exception(self, mock_zipfile, mock_get_file_size):
+        mock_file = mock_open(read_data=b"dummy data")
+        with mock_file() as file:
+            validator = ZippedValidator(file)
+            # Mock the validate method to raise a ZipValidationException
+            with patch.object(validator, "validate",
+                              side_effect=ZipValidationException("abc.xml")):
+                self.assertFalse(validator.is_valid())
 
 
 if __name__ == "__main__":

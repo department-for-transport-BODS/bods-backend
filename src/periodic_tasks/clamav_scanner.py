@@ -4,26 +4,17 @@ Description: Module to scan incoming s3 file object for vulnerabilities.
 Lambda handle is triggered by S3 event
 """
 import json
-import logging
 import os
 from typing import BinaryIO, Optional
 from dataclasses import dataclass
 from clamd import BufferTooLongError, ClamdNetworkSocket, ConnectionError
-from tenacity import (
-    before_log,
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_random_exponential,
-)
 from logger import logger
 from s3 import S3
 from boilerplate.db.file_processing_result import file_processing_result_to_db
-from boilerplate.bods_exception import (
+from boilerplate.exceptions.file_exceptions import (
     AntiVirusError,
     ClamConnectionError,
-    SuspiciousFile,
-    ValidationException
+    SuspiciousFile
 )
 
 SCAN_ATTEMPTS = 5

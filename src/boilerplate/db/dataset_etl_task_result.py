@@ -1,6 +1,5 @@
 import logging
-from boilerplate.common import BodsDB
-from boilerplate.exception import PipelineException
+from exceptions.pipeline_exceptions import PipelineException
 from sqlalchemy.orm.exc import NoResultFound
 
 logger = logging.getLogger(__name__)
@@ -14,7 +13,8 @@ class DatasetETLTaskResultRepository:
     def get_by_id(self, id: int):
         try:
             with self._db.session as session:
-                task = session.query(self._db.classes.pipelines_datasetetltaskresult).filter_by(id=id).one()
+                class_ = self._db.classes.pipelines_datasetetltaskresult
+                task = session.query(class_).filter_by(id=id).one()
         except NoResultFound as exc:
             message = f"DatasetETLTaskResult {id} does not exist."
             logger.exception(message, exc_info=True)
