@@ -3,7 +3,7 @@ import requests
 import time
 from common import DbManager
 from datetime import datetime, timezone
-from db.avl_cavldataarchive import (
+from db.repositories.avl_cavldataarchive import (
     get_cavl_db_object,
     update_record_in_db,
 )
