@@ -23,3 +23,4 @@ class PostSchemaViolationRepository:
                     logger.error(f" Failed to add record {err}", exc_info=True)
                     raise err
         return True
+    

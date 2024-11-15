@@ -6,14 +6,15 @@ from s3 import S3
 from zipfile import ZipFile
 from lxml import etree
 from boilerplate.transxchange import TransXChangeDocument
-from db.post_schema_violation import PostSchemaViolationRepository
-#from db.dataset_revision import DatasetRevisionRepository
+from db.repositories.post_schema_violation import PostSchemaViolationRepository
+from db.repositories.dataset_revision import DatasetRevisionRepository
 from common import BodsDB
     
 class PostSchemaValidator:
     def __init__(self, file_object):
         self.violations = []
         self.txc_doc = TransXChangeDocument(file_object)
+        
     def check_file_names_pii_information(self):
         """
         Checks if FileName attribute within the TransXchange root
@@ -24,6 +25,7 @@ class PostSchemaValidator:
         if len(file_name_pii_check) > 0:
             return True
         return False
+    
     def get_violations(self):
         """
         Returns any revision violations.
@@ -32,6 +34,7 @@ class PostSchemaValidator:
         if result:
             self.violations.append('PII_ERROR')
         return self.violations
+    
 @file_processing_result_to_db(step_name="Timetable Post Schema Check")
 def lambda_handler(event, context):
     """
@@ -45,7 +48,10 @@ def lambda_handler(event, context):
     revision_id = key.split("/")[0]
     
     db = DbManager.get_db()
-    revision = get_dataset_revision(revision_id=revision_id)
+    
+    dataset_revision_repo = DatasetRevisionRepository(db)
+    revision = dataset_revision_repo.get_by_id(revision_id)
+    
     # URL-decode the key if it has special characters
     filename = filename.replace("+", " ")
     try:
