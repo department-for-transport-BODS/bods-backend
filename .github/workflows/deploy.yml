@@ -161,3 +161,15 @@ jobs:
             --s3-bucket $RC_SRC --s3-prefix bods-backend/deployments/$RC_ENV \
             --tags "BuiltFrom=${VERSION} ProjectName=${{ vars.PROJECT_NAME }} Environment=${RC_ENV}"
           echo "[INFO] Application with version [${VERSION}] successfully deployed into ${RC_ENV^^}"
+
+      - name: update confluence page
+        uses: robsteel24/update-confluence@v1
+        with:
+          confluence_base_url: ${{ vars.CONFLUENCE_BASE_URL }}
+          confluence_page_id: ${{ vars.CONFLUENCE_PAGE_ID }}
+          atlassian_username: ${{ secrets.ATLASSIAN_USERNAME }}
+          atlassian_api_token: ${{ secrets.ATLASSIAN_API_TOKEN }}
+          component: 'bods-backend'
+          environment: ${{ env.RC_ENV }}
+          version: ${{ needs.validation.outputs.VERSION }}
+        continue-on-error: true
