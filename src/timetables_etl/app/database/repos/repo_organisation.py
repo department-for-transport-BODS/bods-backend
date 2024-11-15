@@ -11,7 +11,7 @@ from ..models import (
     OrganisationOrganisation,
     OrganisationTXCFileAttributes,
 )
-from .exceptions import RevisionNotFoundException
+from . import exceptions
 from .repo_common import BaseRepository, handle_repository_errors
 
 logger = logging.getLogger(__name__)
@@ -45,14 +45,14 @@ class OrganisationDatasetRevisionRepo(BaseRepository[OrganisationDatasetrevision
         super().__init__(db, OrganisationDatasetrevision)
 
     @handle_repository_errors
-    def get_by_id(self, revision_id: int) -> OrganisationDatasetrevision | None:
+    def get_by_id(self, revision_id: int) -> OrganisationDatasetrevision:
         """
         Get OrganisationDatasetrevision by ID
         """
         statement = self._build_query().where(self._model.id == revision_id)
         revision = self._fetch_one(statement)
         if revision is None:
-            raise RevisionNotFoundException()
+            raise exceptions.RevisionNotFoundException()
         return revision
 
     @handle_repository_errors
@@ -71,10 +71,13 @@ class OrganisationTXCFileAttributesRepo(BaseRepository[OrganisationTXCFileAttrib
         super().__init__(db, OrganisationTXCFileAttributes)
 
     @handle_repository_errors
-    def get_by_id(self, attributes_id: int) -> OrganisationTXCFileAttributes | None:
+    def get_by_id(self, attributes_id: int) -> OrganisationTXCFileAttributes:
         """Get by ID"""
         statement = self._build_query().where(self._model.id == attributes_id)
-        return self._fetch_one(statement)
+        file = self._fetch_one(statement)
+        if file is None:
+            raise exceptions.FileAttributesNotFoundException()
+        return file
 
 
 class OrganisationOrganisationRepo(BaseRepository[OrganisationOrganisation]):

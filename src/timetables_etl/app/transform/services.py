@@ -2,19 +2,20 @@
 Processing of Services
 """
 
-from timetables_etl.app.convertor.utils import get_line_names
 from timetables_etl.app.database.models import (
     OrganisationDatasetrevision,
+    OrganisationTXCFileAttributes,
     TransmodelService,
 )
 from timetables_etl.app.pipeline import MissingLines
+from timetables_etl.app.transform.utils import get_line_names
 from timetables_etl.app.txc.models.txc_service import TXCService
 
 
 def make_transmodel_services(
     services: list[TXCService],
     revision: OrganisationDatasetrevision,
-    txc_file_id: int | None = None,
+    file_attributes: OrganisationTXCFileAttributes,
 ) -> list[TransmodelService]:
     """
     Convert TXCService objects to TransmodelService objects for database insertion.
@@ -37,7 +38,7 @@ def make_transmodel_services(
             service_type=service_type,
             end_date=service.EndDate,
             revision_id=revision.id,
-            txcfileattributes_id=txc_file_id,
+            txcfileattributes_id=file_attributes.id,
         )
 
         transmodel_services.append(transmodel_service)

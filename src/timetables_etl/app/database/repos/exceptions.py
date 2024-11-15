@@ -22,3 +22,10 @@ class RevisionNotFoundException(DBBaseException):
 
     error_code = "REVISION_NOT_FOUND"
     error_message = "Revision not found in database"
+
+
+class FileAttributesNotFoundException(DBBaseException):
+    """Raised when an ETL task is not found"""
+
+    error_code = "FILEATTRIBUTES_NOT_FOUND"
+    error_message = "File Attributes not found in database"
