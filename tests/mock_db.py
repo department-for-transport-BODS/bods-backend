@@ -2,6 +2,8 @@ from sqlalchemy import (
     Column,
     Integer,
     String,
+    Boolean,
+    JSON,
     TIMESTAMP,
     Text,
     create_engine
@@ -86,7 +88,8 @@ class MockedDB:
             pipelines_fileprocessingresult=pipelines_fileprocessingresult,
             pipeline_processing_step = pipeline_processing_step,
             pipeline_error_code=pipeline_error_code,
-            organisation_txcfileattributes=organisation_txcfileattributes,
+            organisation_datasetrevision=organisation_datasetrevision,
+            organisation_txcfileattributes=organisation_txcfileattributes
         )
 
 
