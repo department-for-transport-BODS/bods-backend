@@ -8,7 +8,15 @@ from boilerplate.db.file_processing_result import (
     get_file_processing_result_obj,
     write_processing_step,
     get_file_processing_error_code,
-    file_processing_result_to_db
+    file_processing_result_to_db,
+    txc_file_attributes_to_db
+)
+from boilerplate.timetables.dataclasses.transxchange import (
+    TXCFile,
+    Header,
+    Operator,
+    Service,
+    Line
 )
 from tests.mock_db import MockedDB
 
@@ -224,6 +232,114 @@ class TestFileProcessingResult(unittest.TestCase):
         # Assert create was called, but update was not (due to the exception)
         mock_pipeline_result_instance.create.assert_called_once_with(mock_result_obj)
         mock_pipeline_result_instance.update.assert_not_called()
+
+    @patch("boilerplate.db.file_processing_result.BodsDB")
+    def test_txc_file_attributes_to_db(self, mock_bods_db):
+        mock_db_instance = mock_bods_db.return_value
+
+        # Mock the session context manager
+        mock_session = MagicMock()
+        mock_db_instance.session.__enter__.return_value = mock_session
+        mock_db_instance.session.__exit__.return_value = None  # Ensure context manager exits cleanly
+
+        # Mock the organisation_txcfileattributes class
+        mock_class = MagicMock()
+        mock_db_instance.classes.organisation_txcfileattributes = mock_class
+
+        # Create a mock TXCFile attribute
+        date_time_ = datetime.now()
+        mock_attribute = MagicMock()
+        mock_attribute.header.schema_version = "1.0"
+        mock_attribute.header.modification = "new"
+        mock_attribute.header.revision_number = "2"
+        mock_attribute.header.creation_datetime = date_time_
+        mock_attribute.header.modification_datetime = date_time_
+        mock_attribute.header.filename = "file.xml"
+        mock_attribute.operator.national_operator_code = "ABC123"
+        mock_attribute.operator.licence_number = "LIC123"
+        mock_attribute.service.service_code = "SERV123"
+        mock_attribute.service.origin = "Origin"
+        mock_attribute.service.destination = "Destination"
+        mock_attribute.service.operating_period_start_date = date_time_.date()
+        mock_attribute.service.operating_period_end_date = date_time_.date()
+        mock_attribute.service.public_use = True
+        mock_attribute.service.lines = [MagicMock(line_name="Line1"), MagicMock(line_name="Line2")]
+        mock_attribute.hash = "hash123"
+
+        # Call the function with mock data
+        txc_file_attributes_to_db(revision_id=1, attributes=[mock_attribute])
+
+        # Check that the db class constructor was called correctly
+        mock_class.assert_called_with(
+            revision_id=1,
+            schema_version="1.0",
+            modification="new",
+            revision_number="2",
+            creation_datetime=date_time_,
+            modification_datetime=date_time_,
+            filename="file.xml",
+            national_operator_code="ABC123",
+            licence_number="LIC123",
+            service_code="SERV123",
+            origin="Origin",
+            destination="Destination",
+            operating_period_start_date=date_time_.date(),
+            operating_period_end_date=date_time_.date(),
+            public_use=True,
+            line_names=["Line1", "Line2"],
+            hash="hash123"
+        )
+
+        # Check that bulk_save_objects and commit were called
+        mock_session.bulk_save_objects.assert_called_once()
+        mock_session.commit.assert_called_once()
+
+    @patch("boilerplate.db.file_processing_result.BodsDB")
+    def test_txc_file_attributes_to_db_exception(self, mock_bods_db):
+        mock_db_instance = mock_bods_db.return_value
+
+        # Mock the session context manager
+        mock_session = MagicMock()
+        mock_db_instance.session.__enter__.return_value.bulk_save_objects.side_effect = \
+            Exception("An error occurred")
+
+        # Mock the organisation_txcfileattributes class
+        mock_class = MagicMock()
+        mock_db_instance.classes.organisation_txcfileattributes = mock_class
+
+        # Create a mock TXCFile attribute
+        date_time_ = datetime.now()
+        mock_attribute = MagicMock()
+        mock_attribute.header.schema_version = "1.0"
+        mock_attribute.header.modification = "new"
+        mock_attribute.header.revision_number = "2"
+        mock_attribute.header.creation_datetime = date_time_
+        mock_attribute.header.modification_datetime = date_time_
+        mock_attribute.header.filename = "file.xml"
+        mock_attribute.operator.national_operator_code = "ABC123"
+        mock_attribute.operator.licence_number = "LIC123"
+        mock_attribute.service.service_code = "SERV123"
+        mock_attribute.service.origin = "Origin"
+        mock_attribute.service.destination = "Destination"
+        mock_attribute.service.operating_period_start_date = date_time_.date()
+        mock_attribute.service.operating_period_end_date = date_time_.date()
+        mock_attribute.service.public_use = True
+        mock_attribute.service.lines = [MagicMock(line_name="Line1"), MagicMock(line_name="Line2")]
+        mock_attribute.hash = "hash123"
+
+        # Call the function with mock data
+        # txc_file_attributes_to_db(revision_id=1, attributes=[mock_attribute])
+
+
+
+        # Check that bulk_save_objects and commit were called
+        # mock_session.bulk_save_objects.assert_called_once()
+        # mock_session.commit.assert_called_once()
+        with self.assertRaises(Exception) as _context:
+            txc_file_attributes_to_db(revision_id=1, attributes=[mock_attribute])
+
+        self.assertEqual(str(_context.exception), "An error occurred")
+        mock_db_instance.session.__enter__.return_value.bulk_save_objects.assert_called_once()
 
 
 if __name__ == "__main__":

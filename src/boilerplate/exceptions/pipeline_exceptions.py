@@ -5,6 +5,7 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 
+# Exception for Pipeline
 class PipelineException(Exception):
     """Basic exception for errors raised by a pipeline"""
 

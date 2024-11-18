@@ -1,7 +1,7 @@
 from io import BytesIO
 import unittest
 from unittest.mock import patch, MagicMock
-from clamd import BufferTooLongError, ClamdNetworkSocket, ConnectionError
+from clamd import BufferTooLongError, ConnectionError
 from periodic_tasks.clamav_scanner import (
     FileScanner,
     lambda_handler,
