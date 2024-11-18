@@ -14,8 +14,8 @@ def get_schema_violation_obj(db, **kwargs):
 
 
 class SchemaViolation:
-    def __init__(self, db):
-        self._db: BodsDB = db
+    def __init__(self, db: BodsDB):
+        self._db = db
 
     def create(self, violations):
         with self._db.session as session:

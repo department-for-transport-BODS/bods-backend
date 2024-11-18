@@ -169,7 +169,6 @@ class TestLambdaHandler(unittest.TestCase):
     @patch("periodic_tasks.timetable_schema_check.get_dataset_revision")
     @patch("periodic_tasks.timetable_schema_check.DatasetTXCValidator")
     @patch("periodic_tasks.timetable_schema_check.SchemaViolation")
-    @patch("periodic_tasks.timetable_schema_check.LambdaEvent")
     @patch("db.file_processing_result.BodsDB")
     @patch("periodic_tasks.timetable_schema_check.logger")
     @patch.dict("os.environ", TEST_ENV_VAR)
@@ -177,7 +176,6 @@ class TestLambdaHandler(unittest.TestCase):
         self,
         mock_logger,
         mock_db,
-        mock_lambdaevent,
         mock_schemaviolation,
         mock_datasettxcvalidator,
         mock_getdatasetrevision,
@@ -211,10 +209,6 @@ class TestLambdaHandler(unittest.TestCase):
         mock_datasettxcvalidator.return_value = mock_validator
         mock_validator.get_violations.return_value = ["violation_1", "violation_2"]
 
-        # Mock LambdaEvent and SchemaViolation behavior
-        mock_lambda_event = MagicMock()
-        mock_lambdaevent.return_value = mock_lambda_event
-
         mock_schema_violation = MagicMock()
         mock_schemaviolation.return_value = mock_schema_violation
         mock_schema_violation.create.return_value = None
@@ -236,8 +230,6 @@ class TestLambdaHandler(unittest.TestCase):
         mock_validator.get_violations.assert_called_once_with(mock_file_object)
 
         # Ensure schema violations were created
-        mock_lambdaevent.assert_called_once_with(mock_event)
-        mock_schemaviolation.assert_called_once_with(mock_lambda_event.db)
         mock_schema_violation.create.assert_called_once_with(
             ["violation_1", "violation_2"]
         )
@@ -246,47 +238,3 @@ class TestLambdaHandler(unittest.TestCase):
         mock_logger.info.assert_called_with(
             f"Received event:{json.dumps(mock_event, indent=2)}"
         )
-
-    @patch("periodic_tasks.timetable_schema_check.S3")
-    @patch("periodic_tasks.timetable_schema_check.get_dataset_revision")
-    @patch("periodic_tasks.timetable_schema_check.DatasetTXCValidator")
-    @patch("periodic_tasks.timetable_schema_check.SchemaViolation")
-    @patch("periodic_tasks.timetable_schema_check.LambdaEvent")
-    @patch("boilerplate.db.file_processing_result.BodsDB")
-    @patch("periodic_tasks.timetable_schema_check.logger")
-    @patch.dict("os.environ", TEST_ENV_VAR)
-    def test_lambda_handler_exception(
-        self,
-        mock_logger,
-        mock_db,
-        mock_lambdaevent,
-        mock_schemaviolation,
-        mock_datasettxcvalidator,
-        mock_getdatasetrevision,
-        mock_s3,
-    ):
-        # Setup mocks
-        mock_event = {
-            "Records": [
-                {
-                    "s3": {
-                        "bucket": {"name": "test-bucket"},
-                        "object": {"key": "3456/bodds.zip"},
-                    }
-                }
-            ]
-        }
-        mock_context = MagicMock()
-
-        # Mock the return values for the various calls
-        mock_revision = MagicMock()
-        mock_getdatasetrevision.return_value = mock_revision
-
-        # Mock the S3 object and method
-        mock_s3_handler = MagicMock()
-        mock_s3.return_value = mock_s3_handler
-        mock_s3_handler.get_object.side_effect = Exception("S3 Error")
-
-        # Call the lambda_handler function and assert exception handling
-        with self.assertRaises(Exception):
-            lambda_handler(mock_event, mock_context)

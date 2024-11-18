@@ -51,9 +51,9 @@ class NoSchemaDefinitionError(Exception):
         self.line = line
 
 
-class NoDataFoundError(Exception):
-    code = "NO_DATA_FOUND"
-    message_template = "No data found for {field_name} {field_value}."
+class NoRowFound(Exception):
+    code = "NO_ROW_FOUND"
+    message_template = "No row found for {field_name} {field_value} in database."
 
     def __init__(self, field_name, field_value, line=1, message=None):
         self.field_name = field_name

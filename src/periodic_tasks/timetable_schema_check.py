@@ -13,7 +13,7 @@ from constants import SCHEMA_DIR
 from violations import BaseSchemaViolation
 from xml_validator import XMLValidator
 from db.schema_violation import SchemaViolation
-from common import LambdaEvent
+from common import DbManager
 
 
 def get_transxchange_schema():
@@ -117,8 +117,8 @@ def lambda_handler(event, context):
         file_object = s3_handler.get_object(file_path=filename)
         validator = DatasetTXCValidator(revision=revision)
         violations = validator.get_violations(file_object)
-        lambda_event = LambdaEvent(event)
-        schema_violation = SchemaViolation(lambda_event.db)
+        db_obj = DbManager.get_db()
+        schema_violation = SchemaViolation(db_obj)
         schema_violation.create(violations)
     except Exception as e:
         logger.error(f"Error scanning object '{key}' from bucket '{bucket}'")

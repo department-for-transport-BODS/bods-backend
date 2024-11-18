@@ -1,5 +1,5 @@
 import time
-from common import LambdaEvent
+from common import BodsDB
 from logger import logger
 from django.db.models import TextChoices
 from django.utils.translation import gettext_lazy as _
@@ -11,21 +11,21 @@ class SchemaCategory(TextChoices):
     NETEX = ("netex", _("NeTeX"))
 
 
-def get_schema_definition_db_object(event: LambdaEvent, category: SchemaCategory):
+def get_schema_definition_db_object(db: BodsDB, category: SchemaCategory):
     """Get TXC Schema record from the db given the category value
 
     Args:
-        event (LambdaEvent): Event object which contains the db connection details
+        db: BODs DB instance
         category (SchemaCategory): value of the SchemaCategory for which record is required
 
     Returns:
         archive: database record for the object
     """
-    if not event.db.session:
+    if not db.session:
         raise ValueError("No database session provided")
 
-    schema_definition = event.db.classes.pipelines_schemadefinition
-    with event.db.session as session:
+    schema_definition = db.classes.pipelines_schemadefinition
+    with db.session as session:
         start_query_op = time.time()
         schema_definition_obj = (
             session.query(schema_definition)

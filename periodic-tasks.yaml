@@ -114,7 +114,7 @@ Resources:
         - LambdaInvokePolicy:
             FunctionName: !Ref ClamAvScannerLambda
         - LambdaInvokePolicy:
-            FunctionName: !Ref FileSchemaCheck
+            FunctionName: !Ref TxCFileSchemaCheck
       Environment:
         Variables:
           TARGET_FUNCTION_NAMES: !Join 
@@ -124,7 +124,7 @@ Resources:
               - !Ref GenerateSiriVmLambda
               - !Ref GenerateSiriVmTflLambda
               - !Ref ClamAvScannerLambda
-              - !Ref FileSchemaCheck
+              - !Ref TxCFileSchemaCheck
       LoggingConfig:
         LogGroup: !Ref PtIteratorLambdaLogGroup
 
@@ -478,7 +478,7 @@ Resources:
   ################################
   #### Basic File Schema Check ####
   ################################
-  FileSchemaCheck:
+  TxCFileSchemaCheck:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-file-schema-check-lambda'
@@ -515,32 +515,9 @@ Resources:
             - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
             - bodds_rw
           TXC_XSD_PATH: 'TransXChange_general.xsd'
-      Events:
-        S3EventForZipFile:
-          Type: S3
-          Properties:
-            Bucket:
-              - !Sub 'bodds-${Environment}'
-            Events: s3:ObjectCreated:*
-            Filter:
-              S3Key:
-                Rules:
-                  - Name: suffix
-                    Value: .zip
-        S3EventForZipXml:
-          Type: S3
-          Properties:
-            Bucket:
-              - !Sub 'bodds-${Environment}'
-            Events: s3:ObjectCreated:*
-            Filter:
-              S3Key:
-                Rules:
-                  - Name: suffix
-                    Value: .xml
       LoggingConfig:
-        LogGroup: !Ref FileSchemaCheckLambdaLogGroup
-  FileSchemaCheckLambdaLogGroup:
+        LogGroup: !Ref TxCFileSchemaCheckLambdaLogGroup
+  TxCFileSchemaCheckLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-file-schema-check-lambda'

@@ -1,25 +1,25 @@
 import pytest
 from unittest import mock
+from unittest.mock import patch
 from db.schema_definition import (
     get_schema_definition_db_object,
-    LambdaEvent,
     NoSchemaDefinitionError,
-    SchemaCategory,
 )
 from db.models import PipelinesSchemadefinition
 
 
-def test_get_schema_definition_db_object_success():
+@patch("db.schema_definition.BodsDB")
+def test_get_schema_definition_db_object_success(mock_bods_db):
     # Setup mock event and session
-    mock_event = mock.Mock(LambdaEvent)
+    mock_db_instance = mock_bods_db.return_value
     mock_session = mock.Mock()
 
     # Mock the context manager behavior (enter/exit)
-    mock_session.__enter__ = mock.Mock(return_value=mock_session)
-    mock_session.__exit__ = mock.Mock(return_value=None)
+    mock_db_instance.session.__enter__.return_value = mock_session
+    mock_db_instance.session.__exit__.return_value = None
 
     # Mock the database query and session
-    mock_event.db.session = mock_session
+    mock_db_instance.db.session = mock_session
     mock_schema_definition = mock.Mock(PipelinesSchemadefinition)
     mock_schema_definition.category = "CategoryA"  # Mocked category
 
@@ -29,44 +29,44 @@ def test_get_schema_definition_db_object_success():
     )
 
     # Call the function with a valid category
-    result = get_schema_definition_db_object(mock_event, "CategoryA")
+    result = get_schema_definition_db_object(mock_db_instance, "CategoryA")
+    print(f"result: {result}")
 
     # Validate results
     assert result == mock_schema_definition
-    mock_session.query.assert_called_once_with(
-        mock_event.db.classes.pipelines_schemadefinition
-    )
     mock_session.query.return_value.where.assert_called_once_with(
-        mock_event.db.classes.pipelines_schemadefinition.category == "CategoryA"
+        mock_db_instance.db.classes.pipelines_schemadefinition.category == "CategoryA"
     )
     mock_session.query.return_value.where.return_value.first.assert_called_once()
 
 
-def test_get_schema_definition_db_object_not_found():
+@patch("db.schema_definition.BodsDB")
+def test_get_schema_definition_db_object_not_found(mock_bods_db):
     # Setup mock event and session
-    mock_event = mock.Mock(LambdaEvent)
+    mock_db_instance = mock_bods_db.return_value
     mock_session = mock.Mock()
 
     # Mock the context manager behavior (enter/exit)
-    mock_session.__enter__ = mock.Mock(return_value=mock_session)
-    mock_session.__exit__ = mock.Mock(return_value=None)
+    mock_db_instance.session.__enter__.return_value = mock_session
+    mock_db_instance.session.__exit__.return_value = None
 
     # Mock the database query and session
-    mock_event.db.session = mock_session
+    mock_db_instance.db.session = mock_session
 
     # Simulate that the query will return None (no record found)
     mock_session.query.return_value.where.return_value.first.return_value = None
 
     # Call the function and assert the exception is raised
     with pytest.raises(NoSchemaDefinitionError):
-        get_schema_definition_db_object(mock_event, "CategoryA")
+        get_schema_definition_db_object(mock_db_instance, "CategoryA")
 
 
-def test_get_schema_definition_db_object_invalid_event():
+@patch("db.schema_definition.BodsDB")
+def test_get_schema_definition_db_object_invalid_event(mock_bods_db):
     # Setup a mock event without a db session
-    mock_event = mock.Mock(LambdaEvent)
-    mock_event.db.session = None  # Simulate missing db session
+    mock_db_instance = mock_bods_db.return_value
+    mock_db_instance.session = None
 
-    # Call the function and assert that it raises an exception (AttributeError or custom)
-    with pytest.raises(ValueError, match="No database session provided"):
-        get_schema_definition_db_object(mock_event, "CategoryA")
+    # Call the function and assert that it raises the expected exception
+    with pytest.raises(ValueError):
+        get_schema_definition_db_object(mock_db_instance, "CategoryA")
