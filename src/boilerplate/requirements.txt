@@ -8,7 +8,7 @@ urllib3==2.2.3
 citext==0.1.0
 sqlacodegen==3.0.0rc5
 sqlalchemy-citext==1.8.0
-GeoAlchemy2==0.15.2
+GeoAlchemy2==0.16.0
 pgvector==0.3.6
 clamd==1.0.2
 tenacity==8.2.3
