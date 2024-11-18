@@ -10,7 +10,7 @@ from timetables_etl.app.database.models import (
     TransmodelService,
 )
 from timetables_etl.app.pipeline import MissingLines
-from timetables_etl.app.transform.utils import get_line_names
+from timetables_etl.app.txc.helpers.service import get_line_names
 from timetables_etl.app.txc.models.txc_service import TXCService
 
 log = get_logger()

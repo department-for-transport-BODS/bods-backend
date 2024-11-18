@@ -90,6 +90,7 @@ def parse_modification(tag: _Element) -> ModificationType | None:
     modification = parse_xml_attribute(tag, "Modification")
     if modification:
         return cast(ModificationType, modification)
+    log.info("Unknown Modification Type defaulting to none", modification=modification)
     return None
 
 
