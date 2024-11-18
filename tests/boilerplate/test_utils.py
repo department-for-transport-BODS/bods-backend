@@ -1,6 +1,6 @@
 import unittest
 from io import BytesIO
-from boilerplate.utils import get_file_size, sha1sum
+from boilerplate.bods_utils import get_file_size, sha1sum
 import tempfile
 import os
 
