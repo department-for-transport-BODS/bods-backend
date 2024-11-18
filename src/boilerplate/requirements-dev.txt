@@ -2,6 +2,7 @@
 pytest==8.3.3
 pytest-mock==3.14.0
 pytest-cov==6.0.0
+freezegun==1.5.1
 
 awscli-local==0.22.0
 aws-sam-cli-local==1.70.0

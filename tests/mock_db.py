@@ -2,8 +2,6 @@ from sqlalchemy import (
     Column,
     Integer,
     String,
-    Boolean,
-    JSON,
     TIMESTAMP,
     Text,
     create_engine
@@ -50,6 +48,11 @@ class pipeline_error_code(Base):
     id = Column(Integer, primary_key=True)
     status = Column(String(255))
 
+class organisation_datasetrevision(Base):
+    __tablename__ = "organization_datasetrevision"
+
+    id = Column(Integer, primary_key=True)
+    status = Column(String(20))
 
 class organisation_txcfileattributes(Base):
     __tablename__ = "organisation_txcfileattributes"
