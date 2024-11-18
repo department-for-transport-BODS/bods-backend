@@ -2,6 +2,8 @@
 Processing of Services
 """
 
+from structlog.stdlib import get_logger
+
 from timetables_etl.app.database.models import (
     OrganisationDatasetrevision,
     OrganisationTXCFileAttributes,
@@ -10,6 +12,8 @@ from timetables_etl.app.database.models import (
 from timetables_etl.app.pipeline import MissingLines
 from timetables_etl.app.transform.utils import get_line_names
 from timetables_etl.app.txc.models.txc_service import TXCService
+
+log = get_logger()
 
 
 def make_transmodel_services(
@@ -42,5 +46,5 @@ def make_transmodel_services(
         )
 
         transmodel_services.append(transmodel_service)
-
+    log.info("Generated Transmodel Services", count=len(transmodel_services))
     return transmodel_services

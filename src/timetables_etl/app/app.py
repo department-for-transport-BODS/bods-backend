@@ -9,6 +9,7 @@ from structlog.stdlib import get_logger
 
 from timetables_etl.app.exception_handler import handle_lambda_errors
 from timetables_etl.app.models import ETLInputData, TaskData
+from timetables_etl.app.pipeline import transform_data
 from timetables_etl.app.txc.models.txc_data import TXCData
 
 from .database import BodsDB
@@ -79,5 +80,5 @@ def lambda_handler(event, context):
     txc_data = extract_txc_data(input_data.s3_bucket_name, input_data.s3_file_key)
 
     task_data = get_task_data(input_data, db)
-
+    transformed_data = transform_data(txc_data, task_data)
     return
