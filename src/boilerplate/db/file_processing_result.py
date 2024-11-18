@@ -210,9 +210,9 @@ def txc_file_attributes_to_db(revision_id, attributes):
     try:
         db_: BodsDB = BodsDB()
         with db_.session as session_:
-            db_class = db_.classes.organisation_txcfileattributes
+            db_table = db_.classes.organisation_txcfileattributes
             buffer = [
-                db_class(
+                db_table(
                     revision_id=revision_id,
                     schema_version=it.header.schema_version,
                     modification=it.header.modification,
