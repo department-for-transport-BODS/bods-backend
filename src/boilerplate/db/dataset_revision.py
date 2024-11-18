@@ -1,7 +1,7 @@
 import time
 from common import BodsDB
 from logger import logger
-from bods_exception import NoRowFound
+from exceptions.db_exceptions import NoRowFound
 
 
 def get_dataset_revision(db: BodsDB, revision_id: int):

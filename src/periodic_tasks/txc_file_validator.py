@@ -1,9 +1,7 @@
 from io import BytesIO
 from zipfile import is_zipfile
-from boilerplate.bods_exception import (
-    ZipValidationException,
-    XMLValidationException
-)
+from boilerplate.exceptions.zip_file_exceptions import ZipValidationException
+from boilerplate.exceptions.xml_file_exceptions import XMLValidationException
 from boilerplate.db.file_processing_result import file_processing_result_to_db
 from boilerplate.logger import logger
 from boilerplate.s3 import S3

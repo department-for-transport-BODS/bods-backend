@@ -3,7 +3,7 @@ from common import BodsDB
 from logger import logger
 from django.db.models import TextChoices
 from django.utils.translation import gettext_lazy as _
-from bods_exception import NoSchemaDefinitionError
+from exceptions.schema_exceptions import NoSchemaDefinition
 
 
 class SchemaCategory(TextChoices):
@@ -35,5 +35,5 @@ def get_schema_definition_db_object(db: BodsDB, category: SchemaCategory):
         end_query_op = time.time()
         logger.info(f"Query execution time: {end_query_op-start_query_op:.2f} seconds")
         if schema_definition_obj is None:
-            raise NoSchemaDefinitionError(category=category)
+            raise NoSchemaDefinition(category=category)
         return schema_definition_obj

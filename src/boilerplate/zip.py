@@ -1,5 +1,5 @@
 from zipfile import ZipFile, is_zipfile
-from bods_exception import (
+from exceptions.zip_file_exceptions import (
     NestedZipForbidden,
     ZipValidationException,
     ZipTooLarge,

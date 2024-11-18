@@ -1,7 +1,16 @@
 import unittest
+from unittest.mock import patch, MagicMock
 from io import BytesIO
-from boilerplate.xml_validator import FileValidator, XMLValidator, get_file_size
-from bods_exception import FileTooLarge, XMLSyntaxError, DangerousXML
+from boilerplate.xml_validator import (
+    FileValidator,
+    XMLValidator,
+    get_lxml_schema
+)
+from exceptions.xml_file_exceptions import (
+    FileTooLarge,
+    XMLSyntaxError,
+    DangerousXML
+)
 from lxml import etree
 
 
@@ -113,6 +122,19 @@ class TestXMLValidator(unittest.TestCase):
 
         violations = validator.validate()
         self.assertTrue(any(isinstance(v, FileTooLarge) for v in violations))
+
+    def test_get_lxml_schema_none(self):
+        # Test with schema = None, expecting None as the result
+        result = get_lxml_schema(None)
+        self.assertIsNone(result)
+
+    def test_get_lxml_schema_already_xmlschema(self):
+        # Test with an etree.XMLSchema instance
+        mock_schema = MagicMock(spec=etree.XMLSchema)
+
+        # Should return the same schema instance without parsing
+        result = get_lxml_schema(mock_schema)
+        self.assertIs(result, mock_schema)
 
 
 if __name__ == "__main__":

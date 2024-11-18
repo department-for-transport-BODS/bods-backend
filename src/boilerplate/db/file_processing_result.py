@@ -7,7 +7,11 @@ from datetime import datetime
 from uuid import uuid4
 from sqlalchemy.exc import SQLAlchemyError, NoResultFound
 from common import BodsDB
-from bods_exception import *
+from exceptions.file_exceptions import *
+from exceptions.xml_file_exceptions import *
+from exceptions.zip_file_exceptions import *
+from exceptions.db_exceptions import *
+from exceptions.schema_exceptions import *
 from logger import logger
 
 
@@ -31,10 +35,10 @@ def write_error_to_db(db, uuid, exceptions):
         status, error_status = "FAILURE", "XML_SYNTAX_ERROR"
     elif isinstance(exceptions, DangerousXML):
         status, error_status = "FAILURE", "DANGEROUS_XML_ERROR"
-    elif isinstance(exceptions, NoSchemaDefinitionError):
-        status, error_status = "FAILURE", "No_Schema_Definition_Error"
+    elif isinstance(exceptions, NoSchemaDefinition):
+        status, error_status = "FAILURE", "NO_SCHEMA_DEFINITION"
     elif isinstance(exceptions, NoRowFound):
-        status, error_status = "FAILURE", "No_Row_Found"
+        status, error_status = "FAILURE", "NO_ROW_FOUND"
 
     result_obj = PipelineFileProcessingResult(db)
     result = dict(
@@ -203,3 +207,45 @@ class PipelineFileProcessingResult:
                 msg = f"Failed to update file processing result for task {task_id} {error}"
                 logger.error(msg)
                 raise error
+
+
+def txc_file_attributes_to_db(revision_id, attributes):
+    """
+    Writes attributes to database
+    :param revision_id: int value of revision id
+    :param attributes: List of attributes type TXCFile
+    :return: None, Raise exception when not successful
+
+    """
+    try:
+        db_: BodsDB = BodsDB()
+        with db_.session as session_:
+            db_table = db_.classes.organisation_txcfileattributes
+            buffer = [
+                db_table(
+                    revision_id=revision_id,
+                    schema_version=it.header.schema_version,
+                    modification=it.header.modification,
+                    revision_number=it.header.revision_number,
+                    creation_datetime=it.header.creation_datetime,
+                    modification_datetime=it.header.modification_datetime,
+                    filename=it.header.filename,
+                    national_operator_code=it.operator.national_operator_code,
+                    licence_number=it.operator.licence_number,
+                    service_code=it.service.service_code,
+                    origin=it.service.origin,
+                    destination=it.service.destination,
+                    operating_period_start_date=it.service.operating_period_start_date,
+                    operating_period_end_date=it.service.operating_period_end_date,
+                    public_use=it.service.public_use,
+                    line_names=[line.line_name for line in it.service.lines],
+                    hash=it.hash,
+                )
+                for it in attributes
+            ]
+            session_.bulk_save_objects(buffer)
+            session_.commit()
+    except Exception as error:
+        session_.rollback()
+        logger.error(f"Failed to add record {error}", exc_info=True)
+        raise error
