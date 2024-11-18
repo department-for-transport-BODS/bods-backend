@@ -238,3 +238,45 @@ class TestLambdaHandler(unittest.TestCase):
         mock_logger.info.assert_called_with(
             f"Received event:{json.dumps(mock_event, indent=2)}"
         )
+
+    @patch("periodic_tasks.timetable_schema_check.S3")
+    @patch("periodic_tasks.timetable_schema_check.get_dataset_revision")
+    @patch("periodic_tasks.timetable_schema_check.DatasetTXCValidator")
+    @patch("periodic_tasks.timetable_schema_check.SchemaViolation")
+    @patch("boilerplate.db.file_processing_result.BodsDB")
+    @patch("periodic_tasks.timetable_schema_check.logger")
+    @patch.dict("os.environ", {"TEST_ENV_VAR": "value"})
+    def test_lambda_handler_exception(
+        self,
+        mock_logger,
+        mock_db,
+        mock_schemaviolation,
+        mock_datasettxcvalidator,
+        mock_getdatasetrevision,
+        mock_s3,
+    ):
+        # Setup mocks
+        mock_event = {
+            "Records": [
+                {
+                    "s3": {
+                        "bucket": {"name": "test-bucket"},
+                        "object": {"key": "3456/bodds.zip"},
+                    }
+                }
+            ]
+        }
+        mock_context = MagicMock()
+
+        # Mock the return values for the various calls
+        mock_revision = MagicMock()
+        mock_getdatasetrevision.return_value = mock_revision
+
+        # Mock the S3 object and method
+        mock_s3_handler = MagicMock()
+        mock_s3.return_value = mock_s3_handler
+        mock_s3_handler.get_object.side_effect = Exception("S3 Error")
+
+        # Call the lambda_handler function and assert exception handling
+        with self.assertRaises(Exception):
+            lambda_handler(mock_event, mock_context)
