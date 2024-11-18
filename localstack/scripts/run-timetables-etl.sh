@@ -1,4 +1,6 @@
-CURRENT_STEP_FUNCTION_EXECUTION_ARN=$(awslocal stepfunctions --endpoint http://localhost:4566 start-execution \
+#!/bin/bash
+
+awslocal stepfunctions --endpoint http://localhost:4566 start-execution \
     --state-machine arn:aws:states:eu-west-2:000000000000:stateMachine:bods-backend-local-timetables-etl-sm \
     --input "$(cat <<EOF
 {
@@ -8,11 +10,9 @@ CURRENT_STEP_FUNCTION_EXECUTION_ARN=$(awslocal stepfunctions --endpoint http://l
         },
         "object": {
             "key": "object-key"
-        }
+        },
+        "dataset_etl_task_result_id": 2
     }
 }
 EOF
-)" | jq -r '.executionArn')
-    
-export CURRENT_STEP_FUNCTION_EXECUTION_ARN
-echo "Execution ARN set to: $CURRENT_STEP_FUNCTION_EXECUTION_ARN"
+)" | jq -r '.executionArn'

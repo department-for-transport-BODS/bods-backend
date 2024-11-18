@@ -1,9 +1,9 @@
 import io
 import requests
 import time
-from common import LambdaEvent
+from common import DbManager
 from datetime import datetime, timezone
-from db.avl_cavldataarchive import (
+from db.repositories.avl_cavldataarchive import (
     get_cavl_db_object,
     update_record_in_db,
 )
@@ -24,9 +24,9 @@ class ConsumerAPIArchiver:
     extension = ".xml"
     filename_prefix = "sirivm"
 
-    def __init__(self, event, url):
+    def __init__(self, url):
         self.url = url
-        self.event = LambdaEvent(event)
+        self.db = DbManager.get_db()
         self._archive = self.get_object()
         self._access_time = None
         self._content = None
@@ -94,7 +94,7 @@ class ConsumerAPIArchiver:
 
     def get_object(self):
         start_db_op = time.time()
-        archive = get_cavl_db_object(self.event, self.data_format)
+        archive = get_cavl_db_object(self.db, self.data_format)
         end_db_op = time.time()
         logger.info(
             f"{self.logger_prefix} File operation took {end_db_op-start_db_op:.2f} seconds for job-task_create_{self.filename_prefix}_zipfile"
@@ -106,7 +106,7 @@ class ConsumerAPIArchiver:
         self.upload_file_to_s3(bytesio)
         self._archive.data = self.filename
         self._archive.last_updated = datetime.now(timezone.utc)
-        update_record_in_db(self._archive, self.event)
+        update_record_in_db(self._archive, self.db)
         end_s3_op = time.time()
         logger.info(
             f"{self.logger_prefix} S3 archive operation took {end_s3_op-start_s3_op:.2f} seconds for job-task_create_{self.filename_prefix}_zipfile"

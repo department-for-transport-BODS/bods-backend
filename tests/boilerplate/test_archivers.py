@@ -5,62 +5,60 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
 
-from boilerplate.archiver import GTFSRTArchiver
-from boilerplate.enums import CAVLDataFormat
+from archiver import GTFSRTArchiver
+from enums import CAVLDataFormat
 from tests.mock_db import MockedDB
 
-ARCHIVE_MODULE = "boilerplate.archiver"
+ARCHIVE_MODULE = "archiver"
+
+@pytest.fixture(scope="module", autouse=True)
+def mock_db_manager():
+    with patch(ARCHIVE_MODULE + ".DbManager") as m_db_manager:
+        yield m_db_manager
 
 
-@patch(ARCHIVE_MODULE + ".LambdaEvent")
-def test_filename(mock_lambda_event):
-
+def test_filename():
     url = "https://fakeurl.zz/datafeed"
-    archiver = GTFSRTArchiver({}, url)
+    archiver = GTFSRTArchiver(url)
     archiver._access_time = datetime(2020, 1, 1, 1, 1, 1, tzinfo=timezone.utc)
     archiver._content = b"fakedata"
     expected_filename = "gtfsrt_2020-01-01_010101.zip"
     assert expected_filename == archiver.filename
 
 
-@patch(ARCHIVE_MODULE + ".LambdaEvent")
-def test_data_format_value(mock_lambda_event):
+def test_data_format_value():
     url = "https://fakeurl.zz/datafeed"
-    archiver = GTFSRTArchiver({}, url)
+    archiver = GTFSRTArchiver(url)
     assert archiver.data_format_value == "gtfsrt"
 
 
-@patch(ARCHIVE_MODULE + ".LambdaEvent")
-def test_access_time_value_error(mock_lambda_event):
+def test_access_time_value_error():
     url = "https://fakeurl.zz/datafeed"
 
-    archiver = GTFSRTArchiver({}, url)
+    archiver = GTFSRTArchiver(url)
     with pytest.raises(ValueError) as exc:
         _ = archiver.access_time
     assert str(exc.value) == "`content` has not been fetched yet."
 
 
-@patch(ARCHIVE_MODULE + ".LambdaEvent")
 @patch(ARCHIVE_MODULE + ".requests")
-def test_access_time(mock_requests, mock_lambda_event):
+def test_access_time(mock_requests):
     mock_requests.get.return_value = Mock(content=b"response")
     url = "https://fakeurl.zz/datafeed"
-    archiver = GTFSRTArchiver({}, url)
+    archiver = GTFSRTArchiver(url)
     _ = archiver.content
     assert archiver.access_time is not None
 
 
-@patch(ARCHIVE_MODULE + ".LambdaEvent")
-def test_content_filename(mock_lambda_event):
+def test_content_filename():
     url = "https://fakeurl.zz/datafeed"
-    archiver = GTFSRTArchiver({}, url)
+    archiver = GTFSRTArchiver(url)
     assert archiver.content_filename == "gtfsrt.bin"
 
 
-@patch(ARCHIVE_MODULE + ".LambdaEvent")
-def test_get_file(mock_lambda_event):
+def test_get_file():
     url = "https://fakeurl.zz/datafeed"
-    archiver = GTFSRTArchiver({}, url)
+    archiver = GTFSRTArchiver(url)
     archiver._content = b"content"
     bytesio = archiver.get_file(archiver._content)
 
@@ -72,19 +70,14 @@ def test_get_file(mock_lambda_event):
     bytesio.seek(0)
     assert expected.read() == bytesio.read()
 
-
 @patch(ARCHIVE_MODULE + ".GTFSRTArchiver.upload_file_to_s3")
-@patch(ARCHIVE_MODULE + ".LambdaEvent")
-def test_archive(mock_lambda_event, mock_upload_to_s3):
+def test_archive(mock_upload_to_s3, mock_db_manager):
     db_object = MockedDB()
-    mock_object = MagicMock()
-    mock_object.event = {}
-    mock_object.db = db_object
-    mock_lambda_event.return_value = mock_object
+    mock_db_manager.get_db.return_value = db_object
     mock_upload_to_s3.return_value = None
 
     url = "https://fakeurl.zz/datafeed"
-    archiver = GTFSRTArchiver({}, url)
+    archiver = GTFSRTArchiver(url)
 
     content = b"newcontent"
     access_time = datetime(2020, 1, 1, 12, 1, 1, tzinfo=timezone.utc)
@@ -102,13 +95,9 @@ def test_archive(mock_lambda_event, mock_upload_to_s3):
 
 
 @patch(ARCHIVE_MODULE + ".GTFSRTArchiver.upload_file_to_s3")
-@patch(ARCHIVE_MODULE + ".LambdaEvent")
-def test_archive_if_existing_file(mock_lambda_event, mock_upload_to_s3):
+def test_archive_if_existing_file(mock_upload_to_s3, mock_db_manager):
     db_object = MockedDB()
-    mock_object = MagicMock()
-    mock_object.event = {}
-    mock_object.db = db_object
-    mock_lambda_event.return_value = mock_object
+    mock_db_manager.get_db.return_value = db_object
     mock_upload_to_s3.return_value = None
 
     url = "https://fakeurl.zz/datafeed"
@@ -124,7 +113,7 @@ def test_archive_if_existing_file(mock_lambda_event, mock_upload_to_s3):
         session.add(test_cavldataarchive)
         session.commit()
 
-    archiver = GTFSRTArchiver({}, url)
+    archiver = GTFSRTArchiver(url)
 
     content = b"newcontent"
     access_time = datetime(2020, 1, 1, 12, 1, 1, tzinfo=timezone.utc)
