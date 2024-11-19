@@ -3,9 +3,12 @@ from logging import getLogger
 from typing import IO, Any, List
 
 from botocore.response import StreamingBody
-from logger import get_dataset_adapter_from_revision
+from db.repositories.dataset import DatasetRepository
+from db.repositories.txc_file_attributes import TxcFileAttributesRepository
+from logger import PipelineAdapter, get_dataset_adapter_from_revision
 from pti.models import Violation
 from pti.validators.pti import PTIValidator
+from utils import sha1sum
 
 logger = getLogger(__name__)
 
