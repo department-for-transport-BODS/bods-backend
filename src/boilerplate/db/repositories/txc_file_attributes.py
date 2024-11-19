@@ -2,7 +2,7 @@ import logging
 from typing import List, Optional
 from common import BodsDB
 from db.models import OrganisationTxcfileattributes
-from exception import PipelineException
+from exceptions.pipeline_exceptions import PipelineException
 from sqlalchemy.orm.exc import NoResultFound
 
 logger = logging.getLogger(__name__)
