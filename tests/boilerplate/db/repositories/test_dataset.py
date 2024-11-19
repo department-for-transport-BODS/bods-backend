@@ -1,7 +1,7 @@
 
 import pytest
 from db.repositories.dataset import DatasetRepository
-from exception import PipelineException
+from exceptions.pipeline_exceptions import PipelineException
 from tests.mock_db import MockedDB, organisation_dataset
 
 

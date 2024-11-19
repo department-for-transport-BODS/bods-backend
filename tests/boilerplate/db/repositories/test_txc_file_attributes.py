@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import MagicMock
 import pytest
 from db.repositories.txc_file_attributes import TxcFileAttributesRepository
-from exception import PipelineException
+from exceptions.pipeline_exceptions import PipelineException
 from tests.mock_db import MockedDB, organisation_txcfileattributes
 
 
