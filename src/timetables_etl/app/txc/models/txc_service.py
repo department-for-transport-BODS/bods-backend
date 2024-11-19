@@ -6,6 +6,7 @@ from datetime import date
 
 from pydantic import BaseModel, Field
 
+from .txc_service_flexible import TXCFlexibleService
 from .txc_types import TransportModeType
 
 
@@ -96,7 +97,8 @@ class TXCService(BaseModel):
     PublicUse: bool = Field(default=True)
     StartDate: date = Field(...)
     EndDate: date | None = Field(default=None)
-    StandardService: TXCStandardService = Field(...)
+    StandardService: TXCStandardService | None = Field(default=None)
+    FlexibleService: TXCFlexibleService | None = Field(default=None)
     Lines: list[TXCLine] = Field(default=[])
     Mode: TransportModeType = Field(
         default="coach",
