@@ -43,20 +43,36 @@ def get_service_end_dates(services: list[TXCService]) -> list[date]:
 
 
 def get_service_origins(services: list[TXCService]) -> list[str]:
-    """
-    TODO: Handle Flexible Service Origins
-    """
-    origins = [service.StandardService.Origin for service in services]
+    """Get origins from both standard and flexible services."""
+    origins = [
+        origin
+        for service in services
+        if (
+            origin := (
+                (service.StandardService and service.StandardService.Origin)
+                or (service.FlexibleService and service.FlexibleService.Origin)
+            )
+        )
+    ]
+
     if not origins:
         log.warning("No services with origins found")
     return origins
 
 
 def get_service_destinations(services: list[TXCService]) -> list[str]:
-    """
-    TODO: Handle Flexible Service Origins
-    """
-    destinations = [service.StandardService.Destination for service in services]
+    """Get destinations from both standard and flexible services."""
+    destinations = [
+        destination
+        for service in services
+        if (
+            destination := (
+                (service.StandardService and service.StandardService.Destination)
+                or (service.FlexibleService and service.FlexibleService.Destination)
+            )
+        )
+    ]
+
     if not destinations:
-        log.warning("No services with Destinations found")
+        log.warning("No services with destinations found")
     return destinations
