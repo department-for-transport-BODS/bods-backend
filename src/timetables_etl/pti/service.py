@@ -4,9 +4,10 @@ from db.models import OrganisationDatasetrevision, OrganisationTxcfileattributes
 from db.repositories.dataset import DatasetRepository
 from db.repositories.txc_file_attributes import TxcFileAttributesRepository
 from logger import PipelineAdapter, get_dataset_adapter_from_revision
+from pti.models import Violation
 from pti.validators.factory import get_xml_file_pti_validator
 from pti.validators.txc_revision import TXCRevisionValidator
-from bods_utils import sha1sum
+from utils import sha1sum
 
 
 class PTIValidationService:
