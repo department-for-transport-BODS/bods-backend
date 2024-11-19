@@ -1,4 +1,3 @@
-
 from typing import List, Optional
 
 from common import BodsDB
@@ -23,9 +22,10 @@ REVISION_NUMBER_OBSERVATION = Observation(
 )
 
 
-
 class TXCRevisionValidator:
-    def __init__(self, revision: OrganisationDatasetrevision, txc_file_attributes: OrganisationTxcfileattributes, db: BodsDB):
+    def __init__(
+        self, revision: OrganisationDatasetrevision, txc_file_attributes: OrganisationTxcfileattributes, db: BodsDB
+    ):
         self.revision = revision
         self.txc_file_attributes = txc_file_attributes
         self.violations = []
@@ -61,14 +61,12 @@ class TXCRevisionValidator:
         """
         if self._live_attributes is not None:
             return self._live_attributes
-        
+
         repo = TxcFileAttributesRepository(self.db)
         self._live_attributes = repo.get_all(revision_id=self.live_revision.id)
         return self._live_attributes
 
-    def get_live_attributes_by_service_code_and_lines(
-        self, code, lines
-    ) -> List[OrganisationTxcfileattributes]:
+    def get_live_attributes_by_service_code_and_lines(self, code, lines) -> List[OrganisationTxcfileattributes]:
         """
         Returns TXCFileAttributes with source_code equal to code and lines_names equal
         to lines.
