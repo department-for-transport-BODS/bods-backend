@@ -173,8 +173,8 @@ def test_revision_number_violation(
         m_file_attributes_repo.return_value.get_all.return_value = [live_revision_file_attributes]
 
         validator = TXCRevisionValidator(draft_revision, draft_file_attributes, MagicMock())
-        violations = validator.get_violations()
-        assert len(violations) == violation_count
+        validator.validate_revision_number()
+        assert len(validator.violations) == violation_count
 
 
 @patch("pti.validators.txc_revision.DatasetRepository")
@@ -254,5 +254,5 @@ def test_revision_number_service_and_line_violation(
         m_file_attributes_repo.return_value.get_all.return_value = [live_revision_file_attributes]
 
         validator = TXCRevisionValidator(draft_revision, draft_file_attributes, MagicMock())
-        violations = validator.get_violations()
-        assert len(violations) == violation_count
+        validator.validate_revision_number()
+        assert len(validator.violations) == violation_count
