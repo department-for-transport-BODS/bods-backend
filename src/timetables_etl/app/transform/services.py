@@ -5,7 +5,7 @@ Processing of Services
 from structlog.stdlib import get_logger
 
 from timetables_etl.app.database.models import (
-    OrganisationDatasetrevision,
+    OrganisationDatasetRevision,
     OrganisationTXCFileAttributes,
     TransmodelService,
 )
@@ -18,7 +18,7 @@ log = get_logger()
 
 def make_transmodel_services(
     services: list[TXCService],
-    revision: OrganisationDatasetrevision,
+    revision: OrganisationDatasetRevision,
     file_attributes: OrganisationTXCFileAttributes,
 ) -> list[TransmodelService]:
     """

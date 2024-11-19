@@ -46,7 +46,7 @@ class OrganisationDataset(TimeStampedMixin, BaseSQLModel):
     is_dummy: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
 
-class OrganisationDatasetrevision(TimeStampedMixin, BaseSQLModel):
+class OrganisationDatasetRevision(TimeStampedMixin, BaseSQLModel):
     """
     Revision data
     """

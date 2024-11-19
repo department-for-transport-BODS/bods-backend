@@ -7,7 +7,7 @@ import logging
 from ..client import BodsDB
 from ..models import (
     OrganisationDataset,
-    OrganisationDatasetrevision,
+    OrganisationDatasetRevision,
     OrganisationOrganisation,
     OrganisationTXCFileAttributes,
 )
@@ -35,17 +35,17 @@ class OrganisationDatasetRepo(BaseRepository[OrganisationDataset]):
         return self._fetch_one(statement)
 
 
-class OrganisationDatasetRevisionRepo(BaseRepository[OrganisationDatasetrevision]):
+class OrganisationDatasetRevisionRepo(BaseRepository[OrganisationDatasetRevision]):
     """
     Repository for managing OrganisationDatasetrevision entities
     Table: organisation_datasetrevision
     """
 
     def __init__(self, db: BodsDB):
-        super().__init__(db, OrganisationDatasetrevision)
+        super().__init__(db, OrganisationDatasetRevision)
 
     @handle_repository_errors
-    def get_by_id(self, revision_id: int) -> OrganisationDatasetrevision:
+    def get_by_id(self, revision_id: int) -> OrganisationDatasetRevision:
         """
         Get OrganisationDatasetrevision by ID
         """
@@ -56,7 +56,7 @@ class OrganisationDatasetRevisionRepo(BaseRepository[OrganisationDatasetrevision
         return revision
 
     @handle_repository_errors
-    def get_by_dataset_id(self, dataset_id: int) -> list[OrganisationDatasetrevision]:
+    def get_by_dataset_id(self, dataset_id: int) -> list[OrganisationDatasetRevision]:
         """
         Get all revisions for a dataset
         """

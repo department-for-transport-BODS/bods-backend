@@ -8,7 +8,7 @@ from timetables_etl.app.database.models.model_transmodel import TransmodelServic
 
 from .database.models import (
     DatasetETLTaskResult,
-    OrganisationDatasetrevision,
+    OrganisationDatasetRevision,
     OrganisationTXCFileAttributes,
 )
 
@@ -33,7 +33,7 @@ class TaskData(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     etl_task: DatasetETLTaskResult
-    revision: OrganisationDatasetrevision
+    revision: OrganisationDatasetRevision
     file_attributes: OrganisationTXCFileAttributes
     input_data: ETLInputData
 

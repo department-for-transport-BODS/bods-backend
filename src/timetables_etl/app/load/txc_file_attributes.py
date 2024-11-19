@@ -5,7 +5,7 @@ Generation of a TXC File Attributes from a TXC File
 from structlog.stdlib import get_logger
 
 from ..database.models.model_organisation import (
-    OrganisationDatasetrevision,
+    OrganisationDatasetRevision,
     OrganisationTXCFileAttributes,
 )
 from ..txc.helpers.operator import get_licence_number, get_national_operator_code
@@ -31,7 +31,7 @@ def validate_schema_version(schema_version: str | None) -> str:
 
 
 def make_txc_file_attributes(
-    txc: TXCData, revision: OrganisationDatasetrevision
+    txc: TXCData, revision: OrganisationDatasetRevision
 ) -> OrganisationTXCFileAttributes:
     """
     Construct row data for a TXC File

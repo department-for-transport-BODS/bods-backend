@@ -5,7 +5,7 @@ Pydantic Model to Transmodel for Vehicle Journeys
 from timetables_etl.app.database.models.model_transmodel import TransmodelVehicleJourney
 from timetables_etl.app.txc.models.txc_vehicle_journey import TXCVehicleJourney
 
-from .utils import parse_departure_time
+from ..txc.helpers.utils import parse_departure_time
 
 
 def transform_vehicle_journeys(
