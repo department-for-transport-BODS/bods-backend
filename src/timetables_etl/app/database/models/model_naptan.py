@@ -6,6 +6,7 @@ SQLAlchemy Models
 import logging
 
 from geoalchemy2 import Geometry
+from geoalchemy2.elements import WKBElement
 from sqlalchemy import Integer, String
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column
@@ -51,7 +52,9 @@ class NaptanStopPoint(BaseSQLModel):
     common_name: Mapped[str] = mapped_column(String(255), nullable=False)
     street: Mapped[str | None] = mapped_column(String(255), nullable=True)
     indicator: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    location: Mapped[str] = mapped_column(Geometry("POINT", 4326), nullable=False)
+    location: Mapped[WKBElement] = mapped_column(
+        Geometry("POINT", 4326), nullable=False
+    )
     admin_area_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     locality_id: Mapped[str | None] = mapped_column(String(8), nullable=True)
     stop_areas: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=False)

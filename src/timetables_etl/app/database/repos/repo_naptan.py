@@ -37,6 +37,24 @@ class NaptanStopPointRepo(BaseRepository[NaptanStopPoint]):
         return self._fetch_one(statement)
 
     @handle_repository_errors
+    def get_by_atco_codes(
+        self, atco_codes: list[str]
+    ) -> tuple[list[NaptanStopPoint], list[str]]:
+        """
+        Get stop points by their ATCO codes
+        Returns tuple of (found_stops, missing_atco_codes)
+        """
+        statement = self._build_query().where(self._model.atco_code.in_(atco_codes))
+        found_stops = self._fetch_all(statement)
+
+        found_atco_codes = {stop.atco_code for stop in found_stops}
+        missing_atco_codes = [
+            code for code in atco_codes if code not in found_atco_codes
+        ]
+
+        return found_stops, missing_atco_codes
+
+    @handle_repository_errors
     def get_by_admin_area(
         self, admin_area_id: int, limit: int | None = None
     ) -> list[NaptanStopPoint]:

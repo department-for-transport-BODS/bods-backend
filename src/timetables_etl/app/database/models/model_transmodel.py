@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from datetime import date, datetime, time
 
-from geoalchemy2 import Geometry
+from geoalchemy2 import Geometry, WKBElement
 from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text, Time
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column
@@ -54,6 +54,8 @@ class TransmodelVehicleJourney(BaseSQLModel):
 class TransmodelServicePattern(BaseSQLModel):
     """
     Transmodel Service Pattern Table
+
+    The geom field uses SRID 4326 (WGS84) which is Longitude / Latitude
     """
 
     __tablename__ = "transmodel_servicepattern"
@@ -63,7 +65,7 @@ class TransmodelServicePattern(BaseSQLModel):
     origin: Mapped[str] = mapped_column(String(255), nullable=False)
     destination: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    geom: Mapped[str | None] = mapped_column(
+    geom: Mapped[WKBElement] = mapped_column(
         Geometry("LINESTRING", 4326), nullable=True
     )
     revision_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
