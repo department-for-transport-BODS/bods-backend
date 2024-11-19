@@ -58,6 +58,7 @@ class organisation_datasetrevision(Base):
 
 class organisation_txcfileattributes(Base):
     __tablename__ = "organisation_txcfileattributes"
+    id = Column(Integer, primary_key=True)
     revision_id = Column(Integer, primary_key=True)
     schema_version = Column(String(10))
     revision_number = Column(Integer)
