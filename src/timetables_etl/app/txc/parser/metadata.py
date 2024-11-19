@@ -40,7 +40,6 @@ def parse_metadata(
     modification_dt = parse_modification_datetime(xml_data)
     creation_dt = parse_creation_datetime(xml_data)
     modification = parse_modification(xml_data)
-
     try:
         revision_number = parse_revision_number(xml_data)
     except ValueError:
