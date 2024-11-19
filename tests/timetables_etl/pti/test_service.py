@@ -5,12 +5,6 @@ from pti.service import PTIValidationService
 
 
 @pytest.fixture(autouse=True, scope="module")
-def m_db_manager():
-    with patch("pti.service.DbManager") as m_db:
-        yield m_db
-
-
-@pytest.fixture(autouse=True, scope="module")
 def m_dataset_repository():
     with patch("pti.service.DatasetRepository") as m_repo:
         yield m_repo
