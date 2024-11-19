@@ -26,9 +26,9 @@ class TestZippedValidator(unittest.TestCase):
     def test_is_too_large(self):
         """Test that ZipTooLarge is raised if the file size exceeds the max size."""
         large_zip = self.create_zip_file(
-            ["file1.xml"], file_sizes=[int(1e10) + 1]
+            ["file1.xml"], file_sizes=[int(2)]
         )  # Larger than 1e10 bytes
-        validator = ZippedValidator(large_zip, max_file_size=1e10)
+        validator = ZippedValidator(large_zip, max_file_size=int(1))
 
         with self.assertRaises(ZipTooLarge):
             validator.validate()
