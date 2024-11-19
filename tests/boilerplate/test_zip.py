@@ -27,7 +27,7 @@ class TestZippedValidator(unittest.TestCase):
         """Test that ZipTooLarge is raised if the file size exceeds the max size."""
         large_zip = self.create_zip_file(
             ["file1.xml"], file_sizes=[int(2)]
-        )  # Larger than 1e10 bytes
+        )  # Larger than max_file_size
         validator = ZippedValidator(large_zip, max_file_size=int(1))
 
         with self.assertRaises(ZipTooLarge):
@@ -61,9 +61,9 @@ class TestZippedValidator(unittest.TestCase):
     def test_exceeds_uncompressed_size(self):
         """Test that ZipTooLarge is raised if the sum of uncompressed files exceeds max_file_size."""
         oversized_zip = self.create_zip_file(
-            ["file1.xml", "file2.xml"], file_sizes=[int(5e7), int(5e7)]
-        )  # Total > 1e10 bytes
-        validator = ZippedValidator(oversized_zip, max_file_size=5e6)
+            ["file1.xml", "file2.xml"], file_sizes=[int(2), int(2)]
+        )  # Total > max_file_size
+        validator = ZippedValidator(oversized_zip, max_file_size=int(3))
 
         with self.assertRaises(ZipTooLarge):
             validator.validate()
