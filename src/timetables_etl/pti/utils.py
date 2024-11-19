@@ -6,7 +6,6 @@ from django.utils import timezone
 PTI_ENFORCED_DATE = date(2025, 1, 1)
 
 
-# TODO: Test
 def get_important_note():
     pti_enforced_date = PTI_ENFORCED_DATE
     if pti_enforced_date.date() > timezone.localdate():
