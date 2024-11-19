@@ -6,7 +6,7 @@ from typing import List, Optional
 from lxml import etree
 from pydantic import BaseModel
 from logger import logger
-from boilerplate.utils import sha1sum
+from boilerplate.bods_utils import sha1sum
 from boilerplate.xmlelements import XMLElement
 from zip import ZippedValidator
 

@@ -5,7 +5,7 @@ from exceptions.zip_file_exceptions import (
     ZipTooLarge,
     NoDataFound,
 )
-from boilerplate.utils import get_file_size
+from bods_utils import get_file_size
 
 
 class ZippedValidator:

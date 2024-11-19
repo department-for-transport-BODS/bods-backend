@@ -1,6 +1,6 @@
 import unittest
 from io import BytesIO
-from boilerplate.utils import get_file_size, sha1sum
+from boilerplate.bods_utils import get_file_size, sha1sum
 import tempfile
 import os
 
@@ -53,5 +53,5 @@ class TestGetFileSize(unittest.TestCase):
         self.assertEqual(result, "b42616bc4884db35e6f24a5803b3c65333fd4bd5")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

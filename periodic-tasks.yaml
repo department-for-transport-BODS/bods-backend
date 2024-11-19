@@ -113,6 +113,8 @@ Resources:
             FunctionName: !Ref GenerateSiriVmTflLambda
         - LambdaInvokePolicy:
             FunctionName: !Ref ClamAvScannerLambda
+        - LambdaInvokePolicy:
+            FunctionName: !Ref TxCFileSchemaCheck
       Environment:
         Variables:
           TARGET_FUNCTION_NAMES: !Join 
@@ -122,6 +124,7 @@ Resources:
               - !Ref GenerateSiriVmLambda
               - !Ref GenerateSiriVmTflLambda
               - !Ref ClamAvScannerLambda
+              - !Ref TxCFileSchemaCheck
       LoggingConfig:
         LogGroup: !Ref PtIteratorLambdaLogGroup
 
@@ -469,6 +472,55 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-txc-file-validator-lambda'
+      KmsKeyId: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+      RetentionInDays: 30
+  
+  ################################
+  #### Basic File Schema Check ####
+  ################################
+  TxCFileSchemaCheck:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-file-schema-check-lambda'
+      CodeUri: ./src/periodic_tasks
+      Handler: timetable_schema_check.lambda_handler
+      Layers:
+        - !Ref BoilerplateLambdaLayer
+      Policies:
+        - 'AWSLambdaBasicExecutionRole'
+        - 'AWSLambdaVPCAccessExecutionRole'
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - kms:GenerateDataKey
+              Resource: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
+      Environment:
+        Variables:
+          PROJECT_ENV: !Ref Environment
+          PROJECT_NAME: !Ref ProjectName
+          POSTGRES_HOST: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
+            - !Ref RdsDbHostAddr
+          POSTGRES_PORT: !Ref RdsDbPort
+          POSTGRES_DB: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
+            - postgres
+          POSTGRES_USER: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
+            - bodds_rw
+          TXC_XSD_PATH: 'TransXChange_general.xsd'
+      LoggingConfig:
+        LogGroup: !Ref TxCFileSchemaCheckLambdaLogGroup
+  TxCFileSchemaCheckLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-file-schema-check-lambda'
       KmsKeyId: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
       RetentionInDays: 30
 

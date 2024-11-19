@@ -2,6 +2,7 @@
 Description: Module contains the database functionality for
              FileProcessingResult table
 """
+
 from datetime import datetime
 from uuid import uuid4
 from sqlalchemy.exc import SQLAlchemyError, NoResultFound
@@ -9,6 +10,8 @@ from common import BodsDB
 from exceptions.file_exceptions import *
 from exceptions.xml_file_exceptions import *
 from exceptions.zip_file_exceptions import *
+from exceptions.db_exceptions import *
+from exceptions.schema_exceptions import *
 from logger import logger
 
 
@@ -32,23 +35,27 @@ def write_error_to_db(db, uuid, exceptions):
         status, error_status = "FAILURE", "XML_SYNTAX_ERROR"
     elif isinstance(exceptions, DangerousXML):
         status, error_status = "FAILURE", "DANGEROUS_XML_ERROR"
+    elif isinstance(exceptions, NoSchemaDefinition):
+        status, error_status = "FAILURE", "NO_SCHEMA_DEFINITION"
+    elif isinstance(exceptions, NoRowFound):
+        status, error_status = "FAILURE", "NO_ROW_FOUND"
 
     result_obj = PipelineFileProcessingResult(db)
     result = dict(
         status=status,
         completed=datetime.now(),
-        error_code=get_file_processing_error_code(db, error_status)
+        error_code=get_file_processing_error_code(db, error_status),
     )
     result_obj.update(uuid, **result)
 
 
 def get_file_processing_result_obj(db, **kwargs):
     return db.classes.pipelines_fileprocessingresult(
-        task_id=kwargs.get('task_id'),
-        status=kwargs.get('status'),
-        filename=kwargs.get('filename'),
-        pipeline_processing_step_id=kwargs.get('step'),
-        revision_id=kwargs.get('revision')
+        task_id=kwargs.get("task_id"),
+        status=kwargs.get("status"),
+        filename=kwargs.get("filename"),
+        pipeline_processing_step_id=kwargs.get("step"),
+        revision_id=kwargs.get("revision"),
     )
 
 
@@ -99,7 +106,7 @@ def file_processing_result_to_db(step_name):
                     status="STARTED",
                     filename=file_name,
                     pipeline_processing_step_id=step,
-                    revision_id=revision
+                    revision_id=revision,
                 )
                 fpr_ins = PipelineFileProcessingResult(_db)
                 # Add lambda entry
@@ -109,17 +116,16 @@ def file_processing_result_to_db(step_name):
                 result = func(event, context)
 
                 # Add lambda exit
-                params = dict(
-                    status="SUCCESS",
-                    completed=datetime.now()
-                )
+                params = dict(status="SUCCESS", completed=datetime.now())
                 fpr_ins.update(uuid, **params)
 
                 return result
             except Exception as error:
                 write_error_to_db(_db, uuid, error)
                 raise error
+
         return wrapper
+
     return decorator
 
 
@@ -157,7 +163,9 @@ class PipelineFileProcessingResult:
         with self._db.session as session:
             try:
                 buf_ = self._db.classes.pipelines_fileprocessingresult
-                result = session.query(buf_).filter(buf_.revision_id == revision_id).one()
+                result = (
+                    session.query(buf_).filter(buf_.revision_id == revision_id).one()
+                )
             except NoResultFound as error:
                 msg = f"Revision {revision_id } doesn't exist pipelines_fileprocessingresult"
                 logger.error(msg)
@@ -179,7 +187,9 @@ class PipelineFileProcessingResult:
                 buf_ = self._db.classes.pipelines_fileprocessingresult
                 result = session.query(buf_).filter(buf_.task_id == task_id).one()
                 if not result:
-                    logger.warning(f"No file processing result found for task {task_id}")
+                    logger.warning(
+                        f"No file processing result found for task {task_id}"
+                    )
                     return None
                 # update the record
                 if kwargs.get("status"):
@@ -229,7 +239,9 @@ def txc_file_attributes_to_db(revision_id, attributes):
                     operating_period_end_date=it.service.operating_period_end_date,
                     public_use=it.service.public_use,
                     line_names=[line.line_name for line in it.service.lines],
-                    hash=it.hash) for it in attributes
+                    hash=it.hash,
+                )
+                for it in attributes
             ]
             session_.bulk_save_objects(buffer)
             session_.commit()

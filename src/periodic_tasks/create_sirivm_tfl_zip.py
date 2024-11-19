@@ -1,6 +1,6 @@
 import time
-from archiver import SiriVMTFLArchiver
-from logger import logger
+from boilerplate.archiver import SiriVMTFLArchiver
+from boilerplate.logger import logger
 from os import environ
 
 

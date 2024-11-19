@@ -46,7 +46,9 @@ class TestFileValidator(unittest.TestCase):
 class TestXMLValidator(unittest.TestCase):
     def test_dangerous_xml(self):
         """Test that dangerous XML raises DangerousXML exception."""
-        dangerous_xml = BytesIO(b"<!DOCTYPE foo [<!ENTITY xxe SYSTEM 'file:///etc/passwd'> ]><foo>&xxe;</foo>")
+        dangerous_xml = BytesIO(
+            b"<!DOCTYPE foo [<!ENTITY xxe SYSTEM 'file:///etc/passwd'> ]><foo>&xxe;</foo>"
+        )
         dangerous_xml.name = "dangerous.xml"
         validator = XMLValidator(dangerous_xml)
 
@@ -55,7 +57,9 @@ class TestXMLValidator(unittest.TestCase):
 
     def test_invalid_xml_syntax(self):
         """Test that invalid XML syntax raises XMLSyntaxError."""
-        invalid_xml = BytesIO(b"<root><element></root>")  # Missing closing tag for <element>
+        invalid_xml = BytesIO(
+            b"<root><element></root>"
+        )  # Missing closing tag for <element>
         invalid_xml.name = "invalid.xml"
         validator = XMLValidator(invalid_xml)
 
