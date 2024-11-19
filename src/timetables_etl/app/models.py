@@ -4,12 +4,12 @@ Pydantic Models
 
 from pydantic import BaseModel, ConfigDict
 
-from timetables_etl.app.database.models.model_transmodel import TransmodelService
-
 from .database.models import (
     DatasetETLTaskResult,
     OrganisationDatasetRevision,
     OrganisationTXCFileAttributes,
+    TransmodelService,
+    TransmodelServicePattern,
 )
 
 
@@ -44,3 +44,4 @@ class TransformedData(BaseModel):
     """
 
     transmodel_service: list[TransmodelService]
+    transmodel_servicepatterns: list[TransmodelServicePattern]

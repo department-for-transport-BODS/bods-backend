@@ -80,5 +80,5 @@ def lambda_handler(event, context):
     txc_data = extract_txc_data(input_data.s3_bucket_name, input_data.s3_file_key)
 
     task_data = get_task_data(input_data, db)
-    transformed_data = transform_data(txc_data, task_data)
+    transformed_data = transform_data(txc_data, task_data, db)
     return

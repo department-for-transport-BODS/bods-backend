@@ -4,14 +4,13 @@ Processing of Services
 
 from structlog.stdlib import get_logger
 
-from timetables_etl.app.database.models import (
+from ..database.models import (
     OrganisationDatasetRevision,
     OrganisationTXCFileAttributes,
     TransmodelService,
 )
-from timetables_etl.app.pipeline import MissingLines
-from timetables_etl.app.txc.helpers.service import get_line_names
-from timetables_etl.app.txc.models.txc_service import TXCService
+from ..txc.helpers.service import get_line_names
+from ..txc.models.txc_service import TXCService
 
 log = get_logger()
 
@@ -28,8 +27,6 @@ def make_transmodel_services(
 
     for service in services:
         line_names = get_line_names(services)
-        if len(line_names) < 1:
-            raise MissingLines(service=service.ServiceCode)
 
         # TODO: Handle flexible service when implemented in parser
         service_type = "standard"
