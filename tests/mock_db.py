@@ -81,6 +81,10 @@ class organisation_dataset(Base):
     __tablename__ = 'organisation_dataset'
     id = Column(Integer, primary_key=True)
 
+class organisation_dataset(Base):
+    __tablename__ = 'organisation_dataset'
+    id = Column(Integer, primary_key=True)
+
 class MockedDB:
     def __init__(self):
         self.engine = create_engine("sqlite:///:memory:")
