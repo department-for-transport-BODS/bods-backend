@@ -1,7 +1,7 @@
 import time
-from logger import logger
+from boilerplate.logger import logger
 from os import environ
-from archiver import SiriVMArchiver
+from boilerplate.archiver import SiriVMArchiver
 
 
 def lambda_handler(event, context):

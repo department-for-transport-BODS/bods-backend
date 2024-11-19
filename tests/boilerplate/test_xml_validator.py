@@ -1,10 +1,12 @@
 import unittest
+from unittest.mock import patch, MagicMock
 from io import BytesIO
 from boilerplate.xml_validator import (
     FileValidator,
-    XMLValidator
+    XMLValidator,
+    get_lxml_schema
 )
-from bods_exception import (
+from exceptions.xml_file_exceptions import (
     FileTooLarge,
     XMLSyntaxError,
     DangerousXML
@@ -44,7 +46,9 @@ class TestFileValidator(unittest.TestCase):
 class TestXMLValidator(unittest.TestCase):
     def test_dangerous_xml(self):
         """Test that dangerous XML raises DangerousXML exception."""
-        dangerous_xml = BytesIO(b"<!DOCTYPE foo [<!ENTITY xxe SYSTEM 'file:///etc/passwd'> ]><foo>&xxe;</foo>")
+        dangerous_xml = BytesIO(
+            b"<!DOCTYPE foo [<!ENTITY xxe SYSTEM 'file:///etc/passwd'> ]><foo>&xxe;</foo>"
+        )
         dangerous_xml.name = "dangerous.xml"
         validator = XMLValidator(dangerous_xml)
 
@@ -53,7 +57,9 @@ class TestXMLValidator(unittest.TestCase):
 
     def test_invalid_xml_syntax(self):
         """Test that invalid XML syntax raises XMLSyntaxError."""
-        invalid_xml = BytesIO(b"<root><element></root>")  # Missing closing tag for <element>
+        invalid_xml = BytesIO(
+            b"<root><element></root>"
+        )  # Missing closing tag for <element>
         invalid_xml.name = "invalid.xml"
         validator = XMLValidator(invalid_xml)
 
@@ -116,6 +122,19 @@ class TestXMLValidator(unittest.TestCase):
 
         violations = validator.validate()
         self.assertTrue(any(isinstance(v, FileTooLarge) for v in violations))
+
+    def test_get_lxml_schema_none(self):
+        # Test with schema = None, expecting None as the result
+        result = get_lxml_schema(None)
+        self.assertIsNone(result)
+
+    def test_get_lxml_schema_already_xmlschema(self):
+        # Test with an etree.XMLSchema instance
+        mock_schema = MagicMock(spec=etree.XMLSchema)
+
+        # Should return the same schema instance without parsing
+        result = get_lxml_schema(mock_schema)
+        self.assertIs(result, mock_schema)
 
 
 if __name__ == "__main__":

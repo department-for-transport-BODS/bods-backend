@@ -3,9 +3,11 @@ pytest==8.3.3
 pytest-mock==3.14.0
 pytest-cov==6.0.0
 freezegun==1.5.1
-
 awscli-local==0.22.0
 aws-sam-cli-local==1.70.0
 pyyaml==6.0.2
 cfn-flip==1.3.0
 cfn-tools==0.1.6
+citext==0.1.0
+sqlacodegen==3.0.0rc5
+pgvector==0.3.6

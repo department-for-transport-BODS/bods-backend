@@ -1,6 +1,6 @@
 import unittest
 from io import BytesIO
-from boilerplate.utils import get_file_size
+from boilerplate.bods_utils import get_file_size, sha1sum
 import tempfile
 import os
 
@@ -47,6 +47,11 @@ class TestGetFileSize(unittest.TestCase):
                 # Clean up by deleting the temporary file
                 os.remove(temp_file.name)
 
+    def test_sha1sum(self):
+        text = "Hash Test"
+        result = sha1sum(text.encode("utf-8"))
+        self.assertEqual(result, "b42616bc4884db35e6f24a5803b3c65333fd4bd5")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

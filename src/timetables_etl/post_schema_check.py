@@ -1,15 +1,14 @@
-import os
 import json
-from pathlib import Path
+import re
+from boilerplate.transxchange import TransXChangeDocument
+from common import DbManager
+from db.file_processing_result import file_processing_result_to_db
+from db.repositories.post_schema_check import PostSchemaViolationRepository
+from db.repositories.dataset_revision import DatasetRevisionRepository
 from logger import logger
 from s3 import S3
-from zipfile import ZipFile
-from lxml import etree
-from boilerplate.transxchange import TransXChangeDocument
-from db.repositories.post_schema_violation import PostSchemaViolationRepository
-from db.repositories.dataset_revision import DatasetRevisionRepository
-from common import BodsDB
-    
+
+
 class PostSchemaValidator:
     def __init__(self, file_object):
         self.violations = []
@@ -34,7 +33,8 @@ class PostSchemaValidator:
         if result:
             self.violations.append('PII_ERROR')
         return self.violations
-    
+
+
 @file_processing_result_to_db(step_name="Timetable Post Schema Check")
 def lambda_handler(event, context):
     """

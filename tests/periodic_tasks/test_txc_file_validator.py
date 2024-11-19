@@ -4,7 +4,8 @@ from periodic_tasks.txc_file_validator import (
     TimetableFileValidator,
     lambda_handler
 )
-from boilerplate.bods_exception import *
+from boilerplate.exceptions.zip_file_exceptions import *
+from boilerplate.exceptions.xml_file_exceptions import *
 from tests.mock_db import MockedDB
 
 TEST_MODULE = "periodic_tasks.txc_file_validator"
