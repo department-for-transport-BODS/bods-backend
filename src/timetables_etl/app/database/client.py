@@ -6,11 +6,11 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta
 from enum import Enum
 from logging import getLogger
-from typing import Any, Generator
+from typing import Any, Callable, Generator
 from urllib.parse import quote_plus
 
 import boto3
-from pydantic import Field
+from pydantic import BaseModel, Field
 from pydantic_core import MultiHostUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import Engine, create_engine
@@ -18,6 +18,13 @@ from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session, sessionmaker
 
 logger = getLogger()
+
+
+class DatabaseBackend(str, Enum):
+    """Supported database dialects."""
+
+    POSTGRESQL = "postgresql"
+    SQLITE = "sqlite"
 
 
 class ProjectEnvironment(str, Enum):
@@ -35,7 +42,7 @@ class PostgresSettings(BaseSettings):
     Automatically loads env vars
     """
 
-    model_config = SettingsConfigDict(case_sensitive=False)
+    model_config = SettingsConfigDict(case_sensitive=False, extra="allow")
 
     POSTGRES_HOST: str | None = Field(default=None, description="Database host address")
     POSTGRES_DB: str | None = Field(default=None, description="Database name")
@@ -71,7 +78,6 @@ class PostgresSettings(BaseSettings):
         """
         if self.use_iam_auth and not iam_token:
             raise ValueError("IAM token required for non-local environment")
-
         url = MultiHostUrl.build(
             scheme="postgresql+psycopg2",
             username=self.POSTGRES_USER,
@@ -85,14 +91,47 @@ class PostgresSettings(BaseSettings):
         return str(url)
 
 
+class SqliteSettings(BaseSettings):
+    """SQLite specific configuration settings."""
+
+    model_config = SettingsConfigDict(case_sensitive=False)
+
+    SQLLITE_DB_FILE_PATH: str | None = Field(
+        default=None,
+        description="SQLite database file path. If None, uses in-memory database",
+    )
+
+    def get_connection_url(self) -> str:
+        """Generate SQLite connection URL."""
+        return f"sqlite:///{self.SQLLITE_DB_FILE_PATH or ':memory:'}"
+
+
+class DatabaseSettings(BaseModel):
+    """Main database configuration settings."""
+
+    model_config = SettingsConfigDict(case_sensitive=False)
+
+    postgres: PostgresSettings
+    sqlite: SqliteSettings
+
+
 class BodsDB:
     """Manages database connections and sessions using SQLAlchemy."""
 
-    def __init__(self, settings: PostgresSettings | None = None) -> None:
-        self._settings: PostgresSettings = settings if settings else PostgresSettings()
+    def __init__(
+        self,
+        backend: DatabaseBackend = DatabaseBackend.POSTGRESQL,
+        settings: DatabaseSettings | None = None,
+    ) -> None:
+        self.backend: DatabaseBackend = backend
+        self._settings: DatabaseSettings = (
+            settings
+            if settings
+            else DatabaseSettings(postgres=PostgresSettings(), sqlite=SqliteSettings())
+        )
         self._engine: Engine | None = None
-        self._session_factory = None
-        self._classes = None
+        self._session_factory: Callable[[], Session] | None = None
+        self._classes: Any | None = None
         self._token_expiration: datetime | None = None
         self._refresh_token_threshold = timedelta(seconds=30)
         self._token_lifetime = timedelta(minutes=15)
@@ -140,16 +179,31 @@ class BodsDB:
         """Initializes SQLAlchemy engine with connection details."""
         try:
             iam_token = None
-            if self._settings.use_iam_auth:
+            if (
+                self.backend == DatabaseBackend.POSTGRESQL
+                and self._settings.postgres.use_iam_auth
+            ):
                 iam_token = self._generate_rds_iam_token()
                 if not iam_token:
                     raise ValueError("Failed to generate IAM token")
 
-            connection_url = self._settings.get_connection_url(iam_token)
+            connection_url = (
+                self._settings.sqlite.get_connection_url()
+                if self.backend == DatabaseBackend.SQLITE
+                else self._settings.postgres.get_connection_url(iam_token)
+            )
 
             self._engine = create_engine(connection_url)
-            self._token_expiration = datetime.now() + self._token_lifetime
-            logger.info("Database engine initialized successfully")
+
+            if self.backend == DatabaseBackend.POSTGRESQL:
+                self._token_expiration = datetime.now() + self._token_lifetime
+            else:
+                self._token_expiration = datetime.max
+
+            logger.info(
+                "Database engine initialized successfully using %s",
+                self.backend,
+            )
         except Exception:
             logger.exception("Failed to initialize SQLAlchemy engine")
             raise
@@ -158,6 +212,8 @@ class BodsDB:
         """Determines if IAM token needs refresh."""
         if not self._engine or not self._token_expiration:
             return True
+        if self.backend == DatabaseBackend.SQLITE:
+            return False
         return datetime.now() >= (
             self._token_expiration - self._refresh_token_threshold
         )
@@ -167,17 +223,17 @@ class BodsDB:
         Generates AWS RDS IAM authentication token.
         """
         try:
-            if not self._settings.AWS_REGION:
+            if not self._settings.postgres.AWS_REGION:
                 raise ValueError("AWS_REGION is required for IAM authentication")
 
             rds_client = boto3.session.Session().client(
-                "rds", region_name=self._settings.AWS_REGION
+                "rds", region_name=self._settings.postgres.AWS_REGION
             )
 
             token = rds_client.generate_db_auth_token(
-                DBHostname=self._settings.POSTGRES_HOST,
-                DBUsername=self._settings.POSTGRES_USER,
-                Port=self._settings.POSTGRES_PORT,
+                DBHostname=self._settings.postgres.POSTGRES_HOST,
+                DBUsername=self._settings.postgres.POSTGRES_USER,
+                Port=self._settings.postgres.POSTGRES_PORT,
             )
             return quote_plus(token)
         except Exception:
