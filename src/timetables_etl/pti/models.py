@@ -21,6 +21,23 @@ class Observation(BaseModel):
     number: int
     rules: List[Rule]
 
+class Header(BaseModel):
+    namespaces: Dict[str, str]
+    version: str
+    notes: str
+    guidance_document: str
+
+
+class Schema(BaseModel):
+    observations: List[Observation]
+    header: Header
+
+    @classmethod
+    def from_path(cls, path: Path):
+        with path.open("r") as f:
+            d = json.load(f)
+            return cls(**d)
+
 
 class Header(BaseModel):
     namespaces: Dict[str, str]
