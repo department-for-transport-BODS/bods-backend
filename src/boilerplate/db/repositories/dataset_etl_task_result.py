@@ -15,7 +15,9 @@ class DatasetETLTaskResultRepository:
     def get_by_id(self, id: int):
         try:
             with self._db.session as session:
-                task = session.query(self._db.classes.pipelines_datasetetltaskresult).filter_by(id=id).one()
+                task = session.query(
+                    self._db.classes.pipelines_datasetetltaskresult).\
+                    filter_by(id=id).one()
         except NoResultFound as exc:
             message = f"DatasetETLTaskResult {id} does not exist."
             logger.exception(message, exc_info=True)
