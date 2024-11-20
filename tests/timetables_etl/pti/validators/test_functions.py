@@ -1,29 +1,19 @@
-from freezegun import freeze_time
-import pytest
 from unittest.mock import Mock
+
+import pytest
+from dateutil import parser
+from freezegun import freeze_time
 from lxml import etree
 from lxml.etree import Element
-
-from dateutil import parser
 from pti.validators.functions import (
-    cast_to_bool,
-    cast_to_date,
-    check_description_for_inbound_description,
-    check_description_for_outbound_description,
-    check_flexible_service_times,
-    check_flexible_service_timing_status,
-    check_inbound_outbound_description,
-    check_service_group_validations,
-    check_vehicle_journey_timing_links,
-    contains_date,
-    has_flexible_or_standard_service,
-    has_flexible_service_classification,
-    has_name,
-    has_prohibited_chars,
-    is_member_of,
-    today,
-    validate_licence_number,
-)
+    cast_to_bool, cast_to_date, check_description_for_inbound_description,
+    check_description_for_outbound_description, check_flexible_service_times,
+    check_flexible_service_timing_status, check_inbound_outbound_description,
+    check_service_group_validations, check_vehicle_journey_timing_links,
+    contains_date, has_flexible_or_standard_service,
+    has_flexible_service_classification, has_name, has_prohibited_chars,
+    is_member_of, today, validate_licence_number)
+
 from tests.timetables_etl.pti.validators.constants import TXC_END, TXC_START
 
 
@@ -917,6 +907,7 @@ def test_check_service_group_validations_with_registered_standard_and_registered
     elements = doc.xpath("//x:Services", namespaces=NAMESPACE)
     actual = check_service_group_validations("", elements)
     assert actual == False
+
 
 @pytest.mark.parametrize(
     ("value", "list_items", "expected"),

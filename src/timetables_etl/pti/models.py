@@ -1,13 +1,9 @@
 import json
 from pathlib import Path
-from pydantic import BaseModel
 from typing import Dict, List, Optional
-from pti.constants import (
-    NO_REF,
-    REF_PREFIX,
-    REF_SUFFIX,
-    REF_URL,
-)
+
+from pti.constants import NO_REF, REF_PREFIX, REF_SUFFIX, REF_URL
+from pydantic import BaseModel
 
 GENERAL_REF = NO_REF + REF_URL
 
@@ -24,6 +20,7 @@ class Observation(BaseModel):
     context: str
     number: int
     rules: List[Rule]
+
 
 class Header(BaseModel):
     namespaces: Dict[str, str]
@@ -66,6 +63,7 @@ class Violation(BaseModel):
             "reference": ref,
         }
 
+
 class VehicleJourney(BaseModel):
     code: str
     line_ref: str
@@ -78,12 +76,8 @@ class VehicleJourney(BaseModel):
         namespaces = {"x": xml.nsmap.get(None)}
         code = xml.xpath("string(x:VehicleJourneyCode)", namespaces=namespaces)
         line_ref = xml.xpath("string(x:LineRef)", namespaces=namespaces)
-        journey_pattern_ref = xml.xpath(
-            "string(x:JourneyPatternRef)", namespaces=namespaces
-        )
-        vehicle_journey_ref = xml.xpath(
-            "string(x:VehicleJourneyRef)", namespaces=namespaces
-        )
+        journey_pattern_ref = xml.xpath("string(x:JourneyPatternRef)", namespaces=namespaces)
+        vehicle_journey_ref = xml.xpath("string(x:VehicleJourneyRef)", namespaces=namespaces)
         service_ref = xml.xpath("string(x:ServiceRef)", namespaces=namespaces)
         return cls(
             code=code,
@@ -92,6 +86,7 @@ class VehicleJourney(BaseModel):
             vehicle_journey_ref=vehicle_journey_ref,
             service_ref=service_ref,
         )
+
 
 class Line(BaseModel):
     ref: str

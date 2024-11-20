@@ -1,4 +1,5 @@
 import itertools
+
 from pti.validators.base import BaseValidator
 
 

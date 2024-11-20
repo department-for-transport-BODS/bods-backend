@@ -6,23 +6,18 @@ from dateutil import parser
 from isoduration import DurationParsingException, parse_duration
 from isoduration.types import TimeDuration
 from lxml import etree
+from pti.constants import (BANK_HOLIDAYS, BANK_HOLIDAYS_ONLY_ENGLISH,
+                           BANK_HOLIDAYS_ONLY_SCOTTISH,
+                           OLD_HOLIDAYS_ALREADY_REMOVED, OPERATION_DAYS,
+                           OTHER_PUBLIC_HOLIDAYS, SCOTTISH_BANK_HOLIDAYS)
 from pti.validators.destination_display import DestinationDisplayValidator
 from pti.validators.lines import LinesValidator
 from pti.validators.stop_point import StopPointValidator
 
-from pti.constants import (
-    BANK_HOLIDAYS,
-    BANK_HOLIDAYS_ONLY_ENGLISH,
-    BANK_HOLIDAYS_ONLY_SCOTTISH,
-    OPERATION_DAYS,
-    OTHER_PUBLIC_HOLIDAYS,
-    SCOTTISH_BANK_HOLIDAYS,
-    OLD_HOLIDAYS_ALREADY_REMOVED,
-)
-
 ElementsOrStr = Union[List[etree.Element], List[str], str]
 PROHIBITED_CHARS = r",[]{}^=@:;#$£?%+<>«»\/|~_¬"
 ZERO_TIME_DURATION = TimeDuration(hours=0, minutes=0, seconds=0)
+
 
 def _extract_text(elements, default=None):
     if isinstance(elements, list) and len(elements) > 0:
@@ -188,6 +183,7 @@ def has_destination_display(context, patterns):
     pattern = patterns[0]
     validator = DestinationDisplayValidator(pattern)
     return validator.validate()
+
 
 def validate_lines(context, lines: List[etree._Element]) -> bool:
     lines = lines[0]
@@ -368,6 +364,7 @@ def validate_modification_date_time(context, roots):
     else:
         return creation_date < modification_date
 
+
 def validate_non_naptan_stop_points(context, points):
     point = points[0]
     validator = StopPointValidator(point)
@@ -404,6 +401,7 @@ def validate_run_time(context, timing_links):
         return False
 
     return True
+
 
 # TODO: No tests found for this function
 def validate_timing_link_stops(context, sections):
@@ -457,11 +455,7 @@ def validate_bank_holidays(context, bank_holidays):
     # .getchildren() will return comments: this filters out the comments.
     # It also removes occurrences of OTHER_PUBLIC_HOLIDAYS and OLD_HOLIDAYS_ALREADY_REMOVED of which there may be many or
     # none.
-    holidays = [
-        h
-        for h in holidays
-        if h and h not in OTHER_PUBLIC_HOLIDAYS + OLD_HOLIDAYS_ALREADY_REMOVED
-    ]
+    holidays = [h for h in holidays if h and h not in OTHER_PUBLIC_HOLIDAYS + OLD_HOLIDAYS_ALREADY_REMOVED]
 
     # duplicate check
     if sorted(list(set(holidays))) != sorted(holidays):
@@ -481,9 +475,7 @@ def validate_bank_holidays(context, bank_holidays):
 
 
 # TODO: Add tests (need to move XML fixtures)
-def check_vehicle_journey_timing_links(
-    context, vehicleJourney: List[etree._Element]
-) -> bool:
+def check_vehicle_journey_timing_links(context, vehicleJourney: List[etree._Element]) -> bool:
     """Validation for VehicleJourneyTimingLink and JourneyPatternTimingLink
     If VehicleJourneyTimingLink is provided, then number of JourneyPatternTimingLink
     in the vehicleJourney must be equal. No validation is VehicleJourneyTimingLink is
@@ -503,9 +495,7 @@ def check_vehicle_journey_timing_links(
     if len(vehicle_journey_timing_links) == 0:
         return True
 
-    journey_pattern_ref = vehicleJourney[0].xpath("x:JourneyPatternRef", namespaces=ns)[
-        0
-    ]
+    journey_pattern_ref = vehicleJourney[0].xpath("x:JourneyPatternRef", namespaces=ns)[0]
 
     services_xpath = "../../x:Services"
     services = vehicleJourney[0].xpath(services_xpath, namespaces=ns)[0]
@@ -519,10 +509,10 @@ def check_vehicle_journey_timing_links(
 
     journey_pattern_sections_refs_ids = 0
     for jpsr in journey_pattern_sections_refs:
-        journey_pattern_sections_xpath = f"../../x:JourneyPatternSections/x:JourneyPatternSection[@id='{jpsr.text}']/x:JourneyPatternTimingLink"
-        journey_pattern_timing_lists = vehicleJourney[0].xpath(
-            journey_pattern_sections_xpath, namespaces=ns
+        journey_pattern_sections_xpath = (
+            f"../../x:JourneyPatternSections/x:JourneyPatternSection[@id='{jpsr.text}']/x:JourneyPatternTimingLink"
         )
+        journey_pattern_timing_lists = vehicleJourney[0].xpath(journey_pattern_sections_xpath, namespaces=ns)
         journey_pattern_sections_refs_ids += len(journey_pattern_timing_lists)
 
     if len(vehicle_journey_timing_links) != journey_pattern_sections_refs_ids:
@@ -554,6 +544,7 @@ def validate_licence_number(context, elements: List[etree._Element]) -> bool:
         elif not (licence_number and licence_number[0].text):
             return False
     return True
+
 
 # TODO: Add tests (need to move XML fixtures)
 def has_servicedorganisation_working_days(context, service_organisations):

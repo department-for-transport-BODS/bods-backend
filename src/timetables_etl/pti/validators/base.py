@@ -1,6 +1,8 @@
 from typing import Optional
+
 from pti.models import Line, VehicleJourney
 from timetables.transxchange import TransXChangeElement
+
 
 # TODO: No tests found for this class
 class BaseValidator:
@@ -58,9 +60,7 @@ class BaseValidator:
         if vj.journey_pattern_ref != "":
             return vj.journey_pattern_ref
         elif vj.vehicle_journey_ref != "":
-            return self.get_journey_pattern_ref_by_vehicle_journey_code(
-                vj.vehicle_journey_ref
-            )
+            return self.get_journey_pattern_ref_by_vehicle_journey_code(vj.vehicle_journey_ref)
         else:
             return ""
 
@@ -89,9 +89,7 @@ class BaseValidator:
         """
         return [vj for vj in self.vehicle_journeys if vj.journey_pattern_ref == ref]
 
-    def get_service_by_vehicle_journey(
-        self, service_ref: str
-    ) -> Optional[TransXChangeElement]:
+    def get_service_by_vehicle_journey(self, service_ref: str) -> Optional[TransXChangeElement]:
         """Find service for vehicle journey based on service ref
 
         Args:
@@ -101,9 +99,7 @@ class BaseValidator:
             Optional[TransXChangeElement]: service element
         """
         for service in self.services:
-            service_code = service.xpath(
-                "string(x:ServiceCode)", namespaces=self.namespaces
-            )
+            service_code = service.xpath("string(x:ServiceCode)", namespaces=self.namespaces)
             if service_code is not None and service_ref == service_code:
                 return service
         return None
@@ -137,10 +133,7 @@ class BaseValidator:
         return list(set(journey_pattern_refs))
 
     def get_stop_point_ref_from_journey_pattern_ref(self, ref):
-        xpath = (
-            f"//x:StandardService/x:JourneyPattern[@id='{ref}']"
-            "/x:JourneyPatternSectionRefs/text()"
-        )
+        xpath = f"//x:StandardService/x:JourneyPattern[@id='{ref}']" "/x:JourneyPatternSectionRefs/text()"
         section_refs = self.root.xpath(xpath, namespaces=self.namespaces)
 
         all_stop_refs = []
@@ -159,10 +152,7 @@ class BaseValidator:
         """
         Get the LocalityName of an AnnotatedStopPointRef from its StopPointRef.
         """
-        xpath = (
-            "//x:StopPoints//x:AnnotatedStopPointRef[string(x:StopPointRef)"
-            f" = '{ref}']/x:LocalityName/text()"
-        )
+        xpath = "//x:StopPoints//x:AnnotatedStopPointRef[string(x:StopPointRef)" f" = '{ref}']/x:LocalityName/text()"
         names = self.root.xpath(xpath, namespaces=self.namespaces)
         if names:
             return names[0]
