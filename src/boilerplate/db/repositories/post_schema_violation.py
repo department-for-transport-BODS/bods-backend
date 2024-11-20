@@ -7,7 +7,7 @@ def get_post_schema_check_obj(db, **kwargs):
     return db.classes.data_quality_postschemaviolation(
         revision_id=kwargs.get("revision_id"),
         filename=kwargs.get("filename"),
-        details=kwargs.get("details"),
+        details=kwargs.get("details")
     )
 
 
@@ -29,4 +29,3 @@ class PostSchemaViolationRepository:
                     logger.error(f" Failed to add record {err}", exc_info=True)
                     raise err
         return True
-    

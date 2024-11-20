@@ -1,12 +1,12 @@
 import json
 import re
-from boilerplate.transxchange import TransXChangeDocument
 from common import DbManager
 from db.file_processing_result import file_processing_result_to_db
-from db.repositories.post_schema_check import PostSchemaViolationRepository
+from db.repositories.post_schema_violation import PostSchemaViolationRepository
 from db.repositories.dataset_revision import DatasetRevisionRepository
 from logger import logger
 from s3 import S3
+from timetables.transxchange import TransXChangeDocument
 
 
 class PostSchemaValidator:
@@ -20,7 +20,8 @@ class PostSchemaValidator:
         element has personal identifiable information (PII).
         """
         result = []
-        file_name_pii_check = re.findall("\\\\", self.txc_doc.get_file_name())
+        file_name_pii_check = re.findall("\\\\",
+                                         self.txc_doc.get_file_name())
         if len(file_name_pii_check) > 0:
             return True
         return False
@@ -58,7 +59,7 @@ def lambda_handler(event, context):
         s3_handler = S3(bucket_name=bucket)
         file_object = s3_handler.get_object(file_path=filename)
         validator = PostSchemaValidator(file_object)
-        violations += validator.get_violations()
+        violations = validator.get_violations()
         
         post_schema_violation = PostSchemaViolationRepository(db)
         post_schema_violation.create(violations)

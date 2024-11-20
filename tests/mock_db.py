@@ -76,6 +76,15 @@ class organisation_txcfileattributes(Base):
     destination = Column(String(512))
     hash = Column(String(40))
 
+class data_quality_postschemaviolation(Base):
+    __tablename__ = "data_quality_postschemaviolation"
+
+    id = Column(Integer, primary_key=True)
+    filename = Column(String(512))
+    line = Column(Integer)
+    details = Column(String(1024))
+    revision_id = Column(Integer)
+
 
 class MockedDB:
     def __init__(self):
@@ -89,7 +98,8 @@ class MockedDB:
             pipeline_processing_step = pipeline_processing_step,
             pipeline_error_code=pipeline_error_code,
             organisation_datasetrevision=organisation_datasetrevision,
-            organisation_txcfileattributes=organisation_txcfileattributes
+            organisation_txcfileattributes=organisation_txcfileattributes,
+            data_quality_postschemaviolation=data_quality_postschemaviolation
         )
 
 
