@@ -2,6 +2,7 @@
 Export models for DB queries
 """
 
+from .model_junction import TransmodelServiceServicePattern
 from .model_naptan import NaptanAdminArea, NaptanLocality, NaptanStopPoint
 from .model_organisation import (
     OrganisationDataset,
@@ -46,4 +47,5 @@ __all__ = [
     "NaptanAdminArea",
     "NaptanLocality",
     "NaptanStopPoint",
+    "TransmodelServiceServicePattern",
 ]
