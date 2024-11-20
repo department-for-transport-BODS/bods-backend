@@ -6,7 +6,6 @@ from pti.constants import (
     REF_SUFFIX,
     REF_URL,
 )
-from pti.utils import get_important_note
 
 GENERAL_REF = NO_REF + REF_URL
 
@@ -46,5 +45,4 @@ class Violation(BaseModel):
             "observation_category": self.observation.category,
             "observation_details": self.observation.details.format(element_text=self.element_text),
             "reference": ref,
-            "note": get_important_note(),
         }
