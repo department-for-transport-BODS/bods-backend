@@ -59,7 +59,6 @@ class DataQualityReport(BaseSQLModel):
 
     revision_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("organisation_datasetrevision.id", ondelete="CASCADE"),
         nullable=False,
         kw_only=True,
         doc="Reference to the associated dataset revision",
@@ -70,13 +69,6 @@ class DataQualityReport(BaseSQLModel):
         nullable=False,
         kw_only=True,
         doc="Path to the JSON file",
-    )
-
-    # Constraints and ordering
-    __table_args__ = (
-        CheckConstraint(
-            "score >= 0.0 AND score <= 1.0", name="dq_score_must_be_between_0_and_1"
-        ),
     )
 
     @validates("file")
@@ -96,7 +88,6 @@ class DataQualityServicePatternStop(BaseSQLModel):
 
     service_pattern_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("service_pattern.id", ondelete="CASCADE"),
         nullable=False,
         kw_only=True,
         doc="Reference to the associated service pattern",
@@ -135,7 +126,6 @@ class DataQualityServicePatternServiceLink(BaseSQLModel):
 
     service_pattern_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("service_pattern.id", ondelete="CASCADE"),
         nullable=False,
         kw_only=True,
         doc="Reference to the associated service pattern",
@@ -143,7 +133,6 @@ class DataQualityServicePatternServiceLink(BaseSQLModel):
 
     service_link_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("service_link.id", ondelete="PROTECT"),
         nullable=False,
         kw_only=True,
         doc="Reference to the associated service link",
@@ -154,16 +143,6 @@ class DataQualityServicePatternServiceLink(BaseSQLModel):
         nullable=False,
         kw_only=True,
         doc="Position of the service link in the service pattern",
-    )
-
-    # Unique constraint equivalent to Django's unique_together
-    __table_args__ = (
-        UniqueConstraint(
-            "service_pattern_id",
-            "service_link_id",
-            "position",
-            name="uix_service_pattern_service_link_unique",
-        ),
     )
 
 
@@ -189,7 +168,6 @@ class DataQualityServiceLink(BaseSQLModel):
 
     from_stop_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("stop_point.id", ondelete="PROTECT"),
         nullable=False,
         kw_only=True,
         doc="Reference to the origin stop point",
@@ -197,15 +175,9 @@ class DataQualityServiceLink(BaseSQLModel):
 
     to_stop_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("stop_point.id", ondelete="PROTECT"),
         nullable=False,
         kw_only=True,
         doc="Reference to the destination stop point",
-    )
-
-    # Unique constraint
-    __table_args__ = (
-        UniqueConstraint("from_stop_id", "to_stop_id", name="uix_service_link_stops"),
     )
 
 
@@ -224,7 +196,6 @@ class DataQualityServicepattern(BaseSQLModel):
 
     service_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("service.id", ondelete="CASCADE"),
         nullable=False,
         kw_only=True,
         doc="Reference to the associated service",
@@ -257,7 +228,6 @@ class DataQualityTimingPattern(BaseSQLModel):
 
     service_pattern_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("service_pattern.id", ondelete="CASCADE"),
         nullable=False,
         kw_only=True,
         doc="Reference to the associated service pattern",
@@ -271,14 +241,12 @@ class DataQualityTimingPatternStop(BaseSQLModel):
 
     timing_pattern_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("timing_pattern.id", ondelete="CASCADE"),
         nullable=False,
         kw_only=True,
     )
 
     service_pattern_stop_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("service_pattern_stop.id", ondelete="CASCADE"),
         nullable=False,
         kw_only=True,
     )
@@ -355,12 +323,6 @@ class DataQualityStopPoint(BaseSQLModel):
         doc="Geographic location of the stop point",
     )
 
-    __table_args__ = (
-        UniqueConstraint(
-            "ito_id", "atco_code", "is_provisional", name="uix_stop_point_unique"
-        ),
-    )
-
 
 class DataQualityVehicleJourney(BaseSQLModel):
     __tablename__ = "data_quality_vehiclejourney"
@@ -377,7 +339,6 @@ class DataQualityVehicleJourney(BaseSQLModel):
 
     timing_pattern_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("timing_pattern.id", ondelete="CASCADE"),
         nullable=False,
         kw_only=True,
         doc="Reference to the associated timing pattern",

@@ -28,13 +28,10 @@ class OrganisationDataset(TimeStampedMixin, BaseSQLModel):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
     live_revision_id: Mapped[int | None] = mapped_column(
         Integer,
-        ForeignKey("organisation_datasetrevision.id"),
         nullable=True,
         unique=True,
     )
-    organisation_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("organisation_organisation.id"), nullable=False
-    )
+    organisation_id: Mapped[int] = mapped_column(Integer, nullable=False)
     contact_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("users_user.id"), nullable=False
     )

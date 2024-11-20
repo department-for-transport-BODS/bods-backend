@@ -102,12 +102,6 @@ class DatasetETLTaskResult(TaskResult):
 
     revision_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey(
-            "organisation_datasetrevision.id",
-            ondelete="CASCADE",
-            deferrable=True,
-            initially="DEFERRED",
-        ),
         nullable=False,
         kw_only=True,
     )
