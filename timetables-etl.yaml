@@ -71,6 +71,7 @@ Resources:
       Policies:
         - LambdaInvokePolicy:
             FunctionName: !Ref PlaceholderLambda
+
         # - LambdaInvokePolicy:
         #     FunctionName: !Ref ScanAndUnpackLambda
         # - LambdaInvokePolicy:
@@ -160,9 +161,55 @@ Resources:
       - !Ref AWS::NoValue 
       RetentionInDays: 30
 
-  ############################
+  ##################################
+  #### POST SCHEMA CHECK LAMBDA ####
+  ##################################
+  TimetablePostSchemaCheckLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-timetable-post-schema-check-lambda'
+      CodeUri: ./src/timetables_etl
+      Handler: app.lambda_handler
+      Layers:
+        - !Ref BoilerplateLambdaLayer
+      Policies:
+        - 'AWSLambdaBasicExecutionRole'
+        - 'AWSLambdaVPCAccessExecutionRole'
+        - S3CrudPolicy:
+            BucketName: !Ref PlaceholderS3Bucket
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - kms:GenerateDataKey
+              Resource: !If
+                - IsNotLocal
+                - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+                - "*"
+        - !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
+          - "arn:aws:iam::aws:policy/AmazonRDSFullAccess" # Is this right? No such role as ReadWrite
+        - !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
+          - "arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess"
+      LoggingConfig:
+        LogGroup: !Ref TimetablePostSchemaCheckLambdaLogGroup
+
+  TimetablePostSchemaCheckLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-timetable-post-schema-check-lambda'
+      KmsKeyId: !If
+        - IsNotLocal
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Ref AWS::NoValue
+      RetentionInDays: 30
+
+  ##################################
   #### EXCEPTION HANDLER LAMBDA ####
-  ############################
+  ##################################
   ExceptionHandlerLambda:
     Type: AWS::Serverless::Function
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit

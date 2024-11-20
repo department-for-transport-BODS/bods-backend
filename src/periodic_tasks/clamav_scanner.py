@@ -89,8 +89,9 @@ def lambda_handler(event, context):
     logger.info(f"Received event:{json.dumps(event, indent=2)}")
 
     # Extract the bucket name and object key from the S3 event
-    bucket = event["Records"][0]["s3"]["bucket"]["name"]
-    key = event["Records"][0]["s3"]["object"]["key"]
+    event_details = event["detail"]
+    bucket = event_details["bucket"]["name"]
+    key = event_details["object"]["key"]
 
     # URL-decode the key if it has special characters
     key = key.replace("+", " ")

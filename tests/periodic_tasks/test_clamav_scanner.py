@@ -75,9 +75,19 @@ class TestClamAVScanner(unittest.TestCase):
 
     @patch("periodic_tasks.clamav_scanner.S3")
     @patch("periodic_tasks.clamav_scanner.FileScanner")
-    @patch('boilerplate.db.file_processing_result.BodsDB')
+    @patch("boilerplate.db.file_processing_result.BodsDB")
+    @patch("boilerplate.db.file_processing_result.get_revision")
     @patch.dict("os.environ", TEST_ENV_VAR)
-    def test_lambda_handler_success(self, mock_db, mock_file_scanner, mock_s3):
+    def test_lambda_handler_success(self,
+                                    mock_get_revision,
+                                    mock_db,
+                                    mock_file_scanner,
+                                    mock_s3):
+        # Mock get revision
+        mock_revision = MagicMock()
+        mock_revision.id = 1
+        mock_get_revision.return_value = mock_revision
+
         # Mock S3 behavior
         mock_s3_instance = mock_s3.return_value
         mock_file_object = MagicMock()
@@ -86,18 +96,14 @@ class TestClamAVScanner(unittest.TestCase):
         # Mock FileScanner behavior
         mock_scanner_instance = mock_file_scanner.return_value
         mock_scanner_instance.clamav.ping.return_value = True
-        filename = f"3456/{self.file_name}"
 
         # Define a sample Lambda event
         event = {
-            "Records": [
-                {
-                    "s3": {
-                        "bucket": {"name": "test-bucket"},
-                        "object": {"key": filename}
-                    }
-                }
-            ]
+            "detail": {
+                "bucket": {"name": "test-bucket"},
+                "object": {"key": self.file_name},
+                "dataset_etl_task_result_id": 123,
+            }
         }
 
         # Mock write_processing_step
@@ -116,15 +122,25 @@ class TestClamAVScanner(unittest.TestCase):
 
             # Verify S3 and FileScanner were called correctly
             mock_s3.assert_called_once_with(bucket_name="test-bucket")
-            mock_s3_instance.get_object.assert_called_once_with(file_path=filename)
+            mock_s3_instance.get_object.assert_called_once_with(file_path=self.file_name)
             mock_scanner_instance.clamav.ping.assert_called_once()
             mock_scanner_instance.scan.assert_called_once_with(mock_file_object)
 
     @patch("periodic_tasks.clamav_scanner.S3")
     @patch("periodic_tasks.clamav_scanner.FileScanner")
     @patch('boilerplate.db.file_processing_result.BodsDB')
+    @patch("boilerplate.db.file_processing_result.get_revision")
     @patch.dict("os.environ", TEST_ENV_VAR)
-    def test_lambda_handler_clamav_unreachable(self, mock_db, mock_file_scanner, mock_s3):
+    def test_lambda_handler_clamav_unreachable(self,
+                                               mock_get_revision,
+                                               mock_db,
+                                               mock_file_scanner,
+                                               mock_s3):
+        # Mock get revision
+        mock_revision = MagicMock()
+        mock_revision.id = 1
+        mock_get_revision.return_value = mock_revision
+
         # Mock S3 behavior
         mock_s3_instance = mock_s3.return_value
         mock_file_object = MagicMock()
@@ -137,14 +153,11 @@ class TestClamAVScanner(unittest.TestCase):
 
         # Define a sample Lambda event
         event = {
-            "Records": [
-                {
-                    "s3": {
-                        "bucket": {"name": "test-bucket"},
-                        "object": {"key": filename}
-                    }
-                }
-            ]
+            "detail": {
+                "bucket": {"name": "test-bucket"},
+                "object": {"key": self.file_name},
+                "dataset_etl_task_result_id": 123,
+            }
         }
 
         # Mock write_processing_step
@@ -167,8 +180,18 @@ class TestClamAVScanner(unittest.TestCase):
     @patch("periodic_tasks.clamav_scanner.S3")
     @patch("periodic_tasks.clamav_scanner.FileScanner")
     @patch('boilerplate.db.file_processing_result.BodsDB')
+    @patch("boilerplate.db.file_processing_result.get_revision")
     @patch.dict("os.environ", TEST_ENV_VAR)
-    def test_lambda_handler_scan_error(self, mock_db, mock_file_scanner, mock_s3):
+    def test_lambda_handler_scan_error(self,
+                                       mock_get_revision,
+                                       mock_db,
+                                       mock_file_scanner,
+                                       mock_s3):
+        # Mock get revision
+        mock_revision = MagicMock()
+        mock_revision.id = 1
+        mock_get_revision.return_value = mock_revision
+
         # Mock S3 behavior
         mock_s3_instance = mock_s3.return_value
         mock_file_object = MagicMock()
@@ -178,18 +201,14 @@ class TestClamAVScanner(unittest.TestCase):
         mock_scanner_instance = mock_file_scanner.return_value
         mock_scanner_instance.clamav.ping.return_value = True
         mock_scanner_instance.scan.side_effect = AntiVirusError("Scan failed")
-        filename = f"3456/{self.file_name}"
 
         # Define a sample Lambda event
         event = {
-            "Records": [
-                {
-                    "s3": {
-                        "bucket": {"name": "test-bucket"},
-                        "object": {"key": filename}
-                    }
-                }
-            ]
+            "detail": {
+                "bucket": {"name": "test-bucket"},
+                "object": {"key": self.file_name},
+                "dataset_etl_task_result_id": 123,
+            }
         }
         # Mock write_processing_step
         buf_ = "boilerplate.db.file_processing_result.write_processing_step"

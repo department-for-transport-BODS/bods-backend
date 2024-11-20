@@ -9,14 +9,7 @@ from boilerplate.db.file_processing_result import (
     write_processing_step,
     get_file_processing_error_code,
     file_processing_result_to_db,
-    txc_file_attributes_to_db
-)
-from boilerplate.timetables.dataclasses.transxchange import (
-    TXCFile,
-    Header,
-    Operator,
-    Service,
-    Line
+    txc_file_attributes_to_db,
 )
 from tests.mock_db import MockedDB
 
@@ -27,40 +20,55 @@ class TestFileProcessingResult(unittest.TestCase):
         result_data = mock_db.classes.pipelines_fileprocessingresult()
         test_obj = PipelineFileProcessingResult(mock_db)
         result = test_obj.create(result_data)
-        self.assertTrue(result, "File processing entity created successfully!")
+        self.assertTrue(result,
+                        "File processing entity created successfully!")
 
     def test_read_result(self):
         mock_db = MockedDB()
-        params = dict(task_id=str(uuid.uuid4()),
-                      status="READY",
-                      pipeline_processing_step_id=1,
-                      revision_id=3467)
+        params = dict(
+            task_id=str(uuid.uuid4()),
+            status="READY",
+            pipeline_processing_step_id=1,
+            revision_id=3467,
+        )
         result_data = mock_db.classes.pipelines_fileprocessingresult(**params)
         test_obj = PipelineFileProcessingResult(mock_db)
         result = test_obj.create(result_data)
-        self.assertTrue(result, "File processing entity created successfully!")
+        self.assertTrue(result,
+                        "File processing entity created successfully!")
         ret_obj = test_obj.read(revision_id=3467)
-        self.assertTrue(params, dict(task_id=ret_obj.task_id,
-                                     status=ret_obj.status,
-                                     pipeline_processing_ste_id=ret_obj.pipeline_processing_step_id,
-                                     revision_id=ret_obj.revision_id))
+        self.assertTrue(
+            params,
+            dict(
+                task_id=ret_obj.task_id,
+                status=ret_obj.status,
+                pipeline_processing_ste_id=ret_obj.pipeline_processing_step_id,
+                revision_id=ret_obj.revision_id,
+            ),
+        )
 
     def test_update_result(self):
         mock_db = MockedDB()
         task_id = str(uuid.uuid4())
-        params = dict(task_id=task_id,
-                      status="READY",
-                      pipeline_processing_step_id=1,
-                      revision_id=3467)
+        params = dict(
+            task_id=task_id,
+            status="READY",
+            pipeline_processing_step_id=1,
+            revision_id=3467,
+        )
         result_data = mock_db.classes.pipelines_fileprocessingresult(**params)
         test_obj = PipelineFileProcessingResult(mock_db)
         result = test_obj.create(result_data)
-        self.assertTrue(result, "File processing entity created successfully!")
-        update_params = dict(status="UPDATED",
-                             completed=datetime.now(),
-                             error_message="DATASET_EXPIRED")
+        self.assertTrue(result,
+                        "File processing entity created successfully!")
+        update_params = dict(
+            status="UPDATED",
+            completed=datetime.now(),
+            error_message="DATASET_EXPIRED",
+        )
         result = test_obj.update(task_id, **update_params)
-        self.assertTrue(result, "File processing result updated successfully!")
+        self.assertTrue(result,
+                        "File processing result updated successfully!")
 
         ret_obj = test_obj.read(revision_id=3467)
         self.assertTrue(task_id, ret_obj.task_id)
@@ -68,11 +76,15 @@ class TestFileProcessingResult(unittest.TestCase):
     def test_create_raises_exception(self):
         mock_db = MockedDB()
         mock_db.session = MagicMock()
-        mock_db.session.__enter__.return_value.add.side_effect = SQLAlchemyError("Add failed")
-        params = dict(task_id=str(uuid.uuid4()),
-                      status="READY",
-                      pipeline_processing_step_id=1,
-                      revision_id=3467)
+        mock_db.session.__enter__.return_value.add.side_effect = (
+            SQLAlchemyError("Add failed")
+        )
+        params = dict(
+            task_id=str(uuid.uuid4()),
+            status="READY",
+            pipeline_processing_step_id=1,
+            revision_id=3467,
+        )
         result_data = mock_db.classes.pipelines_fileprocessingresult(**params)
         test_obj = PipelineFileProcessingResult(mock_db)
         with self.assertRaises(SQLAlchemyError) as _context:
@@ -85,8 +97,9 @@ class TestFileProcessingResult(unittest.TestCase):
     def test_read_raises_exception(self):
         mock_db = MockedDB()
         mock_db.session = MagicMock()
-        mock_db.session.__enter__.return_value.query.side_effect = \
+        mock_db.session.__enter__.return_value.query.side_effect = (
             NoResultFound("No record found")
+        )
         test_obj = PipelineFileProcessingResult(mock_db)
         with self.assertRaises(NoResultFound) as _context:
             test_obj.read(1234)
@@ -97,9 +110,11 @@ class TestFileProcessingResult(unittest.TestCase):
     def test_update_raises_exception(self):
         mock_db = MockedDB()
         mock_db.session = MagicMock()
-        mock_db.session.__enter__.return_value.add.side_effect = Exception("Update failed")
+        mock_db.session.__enter__.return_value.add.side_effect = Exception(
+            "Update failed"
+        )
         test_obj = PipelineFileProcessingResult(mock_db)
-        data = {'a': "Test"}
+        data = {"a": "Test"}
         with self.assertRaises(Exception) as _context:
             test_obj.update(3467, **data)
 
@@ -109,21 +124,26 @@ class TestFileProcessingResult(unittest.TestCase):
 
     def test_get_file_processing_result_obj(self):
         mock_db = MockedDB()
-        params = dict(task_id="4f52d7f5-cc5c-457a-8227-8e4d02ce8840",
-                      status="PENDING",
-                      filename="test.zip",
-                      pipeline_processing_step_id=1,
-                      revision_id=3467)
+        params = dict(
+            task_id="4f52d7f5-cc5c-457a-8227-8e4d02ce8840",
+            status="PENDING",
+            filename="test.zip",
+            pipeline_processing_step_id=1,
+            revision_id=3467,
+        )
         ret_instance = get_file_processing_result_obj(mock_db, **params)
-        self.assertTrue(isinstance(ret_instance,
-                                   mock_db.classes.pipelines_fileprocessingresult),
-                        True)
+        self.assertTrue(
+            isinstance(
+                ret_instance, mock_db.classes.pipelines_fileprocessingresult
+            ),
+            True,
+        )
 
     def test_write_processing_step(self):
         mock_db = MockedDB()
-        result_data = write_processing_step(mock_db,
-                                            name="Test Scanner",
-                                            category="FARES")
+        result_data = write_processing_step(
+            mock_db, name="Test Scanner", category="FARES"
+        )
 
         self.assertTrue(result_data, 1)
 
@@ -140,12 +160,13 @@ class TestFileProcessingResult(unittest.TestCase):
     def test_write_processing_step_exception(self):
         mock_db = MockedDB()
         mock_db.session = MagicMock()
-        mock_db.session.__enter__.return_value.add.side_effect = \
+        mock_db.session.__enter__.return_value.add.side_effect = (
             SQLAlchemyError("Add failed")
+        )
         with self.assertRaises(SQLAlchemyError) as _context:
-            write_processing_step(mock_db,
-                                  name="Test Scanner",
-                                  category="FARES")
+            write_processing_step(
+                mock_db, name="Test Scanner", category="FARES"
+            )
 
         self.assertEqual(str(_context.exception), "Add failed")
         mock_db.session.__enter__.return_value.add.assert_called_once()
@@ -154,8 +175,9 @@ class TestFileProcessingResult(unittest.TestCase):
         error_status = "NO_DATA_FOUND"
         mock_db = MockedDB()
         mock_db.session = MagicMock()
-        mock_db.session.__enter__.return_value.query.side_effect = \
+        mock_db.session.__enter__.return_value.query.side_effect = (
             NoResultFound("No record found")
+        )
         test_obj = PipelineFileProcessingResult(mock_db)
         with self.assertRaises(NoResultFound) as _context:
             get_file_processing_error_code(mock_db, error_status)
@@ -164,12 +186,17 @@ class TestFileProcessingResult(unittest.TestCase):
         mock_db.session.__enter__.return_value.query.assert_called_once()
 
     @patch("boilerplate.db.file_processing_result.BodsDB")
-    @patch("boilerplate.db.file_processing_result.get_file_processing_result_obj")
+    @patch(
+        "boilerplate.db.file_processing_result.get_file_processing_result_obj"
+    )
     @patch("boilerplate.db.file_processing_result.PipelineFileProcessingResult")
     @patch("boilerplate.db.file_processing_result.write_error_to_db")
     def test_file_processing_result_to_db_success(
-            self, mock_write_error_to_db, mock_file_proc_result,
-            mock_get_file_processing_result_obj, mock_bods_db
+        self,
+        mock_write_error_to_db,
+        mock_file_proc_result,
+        mock_get_file_processing_result_obj,
+        mock_bods_db,
     ):
         # Configure mocks
         mock_db_instance = mock_bods_db.return_value
@@ -178,7 +205,13 @@ class TestFileProcessingResult(unittest.TestCase):
         mock_pipeline_result_instance = mock_file_proc_result.return_value
 
         # Create a sample event and context
-        event = {"Records": [{"s3": {"object": {"key": "3456/test_file.zip"}}}]}
+        event = {
+            "detail": {
+                "bucket": {"name": "test-bucket"},
+                "object": {"key": "test-key"},
+                "dataset_etl_task_result_id": 123,
+            }
+        }
         context = {}
 
         # Define a simple lambda handler to use with the decorator
@@ -192,20 +225,29 @@ class TestFileProcessingResult(unittest.TestCase):
         # Assert expected result
         self.assertEqual(result, "Handler executed successfully")
 
-        # Assert create and update methods were called on PipelineFileProcessingResult
-        mock_pipeline_result_instance.create.assert_called_once_with(mock_result_obj)
+        # Assert create and update methods were called on
+        # PipelineFileProcessingResult
+        mock_pipeline_result_instance.create.assert_called_once_with(
+            mock_result_obj
+        )
         mock_pipeline_result_instance.update.assert_called_once()
 
         # Assert write_error_to_db was not called
         mock_write_error_to_db.assert_not_called()
 
     @patch("boilerplate.db.file_processing_result.BodsDB")
-    @patch("boilerplate.db.file_processing_result.get_file_processing_result_obj")
+    @patch(
+        "boilerplate.db.file_processing_result."
+        "get_file_processing_result_obj"
+    )
     @patch("boilerplate.db.file_processing_result.PipelineFileProcessingResult")
     @patch("boilerplate.db.file_processing_result.write_error_to_db")
     def test_file_processing_result_to_db_failure(
-            self, mock_write_error_to_db, mock_file_proc_result,
-            mock_get_file_processing_result_obj, mock_bods_db
+        self,
+        mock_write_error_to_db,
+        mock_file_proc_result,
+        mock_get_file_processing_result_obj,
+        mock_bods_db,
     ):
         # Configure mocks
         mock_db_instance = mock_bods_db.return_value
@@ -214,10 +256,17 @@ class TestFileProcessingResult(unittest.TestCase):
         mock_pipeline_result_instance = mock_file_proc_result.return_value
 
         # Create a sample event and context
-        event = {"Records": [{"s3": {"object": {"key": "revision/test_file.zip"}}}]}
+        event = {
+            "detail": {
+                "bucket": {"name": "test-bucket"},
+                "object": {"key": "test-key"},
+                "dataset_etl_task_result_id": 123,
+            }
+        }
         context = {}
 
-        # Define a lambda handler that raises an exception to trigger the error path
+        # Define a lambda handler that raises an exception to trigger the error
+        # path
         @file_processing_result_to_db(step_name="TIMETABLES")
         def lambda_handler(event, context):
             raise ValueError("An error occurred")
@@ -230,7 +279,9 @@ class TestFileProcessingResult(unittest.TestCase):
         mock_write_error_to_db.assert_called_once()
 
         # Assert create was called, but update was not (due to the exception)
-        mock_pipeline_result_instance.create.assert_called_once_with(mock_result_obj)
+        mock_pipeline_result_instance.create.assert_called_once_with(
+            mock_result_obj
+        )
         mock_pipeline_result_instance.update.assert_not_called()
 
     @patch("boilerplate.db.file_processing_result.BodsDB")
@@ -240,7 +291,9 @@ class TestFileProcessingResult(unittest.TestCase):
         # Mock the session context manager
         mock_session = MagicMock()
         mock_db_instance.session.__enter__.return_value = mock_session
-        mock_db_instance.session.__exit__.return_value = None  # Ensure context manager exits cleanly
+        mock_db_instance.session.__exit__.return_value = (
+            None  # Ensure context manager exits cleanly
+        )
 
         # Mock the organisation_txcfileattributes class
         mock_class = MagicMock()
@@ -263,7 +316,10 @@ class TestFileProcessingResult(unittest.TestCase):
         mock_attribute.service.operating_period_start_date = date_time_.date()
         mock_attribute.service.operating_period_end_date = date_time_.date()
         mock_attribute.service.public_use = True
-        mock_attribute.service.lines = [MagicMock(line_name="Line1"), MagicMock(line_name="Line2")]
+        mock_attribute.service.lines = [
+            MagicMock(line_name="Line1"),
+            MagicMock(line_name="Line2"),
+        ]
         mock_attribute.hash = "hash123"
 
         # Call the function with mock data
@@ -287,7 +343,7 @@ class TestFileProcessingResult(unittest.TestCase):
             operating_period_end_date=date_time_.date(),
             public_use=True,
             line_names=["Line1", "Line2"],
-            hash="hash123"
+            hash="hash123",
         )
 
         # Check that bulk_save_objects and commit were called
@@ -300,8 +356,8 @@ class TestFileProcessingResult(unittest.TestCase):
 
         # Mock the session context manager
         mock_session = MagicMock()
-        mock_db_instance.session.__enter__.return_value.bulk_save_objects.side_effect = \
-            Exception("An error occurred")
+        mock_db_instance.session.__enter__.return_value.bulk_save_objects.\
+            side_effect = Exception("An error occurred")
 
         # Mock the organisation_txcfileattributes class
         mock_class = MagicMock()
@@ -324,22 +380,26 @@ class TestFileProcessingResult(unittest.TestCase):
         mock_attribute.service.operating_period_start_date = date_time_.date()
         mock_attribute.service.operating_period_end_date = date_time_.date()
         mock_attribute.service.public_use = True
-        mock_attribute.service.lines = [MagicMock(line_name="Line1"), MagicMock(line_name="Line2")]
+        mock_attribute.service.lines = [
+            MagicMock(line_name="Line1"),
+            MagicMock(line_name="Line2"),
+        ]
         mock_attribute.hash = "hash123"
 
         # Call the function with mock data
         # txc_file_attributes_to_db(revision_id=1, attributes=[mock_attribute])
 
-
-
         # Check that bulk_save_objects and commit were called
         # mock_session.bulk_save_objects.assert_called_once()
         # mock_session.commit.assert_called_once()
         with self.assertRaises(Exception) as _context:
-            txc_file_attributes_to_db(revision_id=1, attributes=[mock_attribute])
+            txc_file_attributes_to_db(
+                revision_id=1, attributes=[mock_attribute]
+            )
 
         self.assertEqual(str(_context.exception), "An error occurred")
-        mock_db_instance.session.__enter__.return_value.bulk_save_objects.assert_called_once()
+        mock_db_instance.session.__enter__.return_value.\
+            bulk_save_objects.assert_called_once()
 
 
 if __name__ == "__main__":

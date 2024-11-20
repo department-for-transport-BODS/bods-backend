@@ -26,19 +26,18 @@ def lambda_handler(event, context):
     """
     Main lambda handler
     """
-    logger.info(f"Received event:{json.dumps(event, indent=2)}")
     # Extract the bucket name and object key from the S3 event
-    bucket = event["Records"][0]["s3"]["bucket"]["name"]
-    key = event["Records"][0]["s3"]["object"]["key"]
-    filename = key.split("/")[-1]
-    dataset_etl_task_result_id = key.split("/")[0]
+    event_details = event["detail"]
+    bucket = event_details["bucket"]["name"]
+    key = event_details["object"]["key"]
+    dataset_etl_task_result_id = event_details["dataset_etl_task_result_id"]
 
     # Get revision
     db = DbManager.get_db()
     revision = get_revision(db, dataset_etl_task_result_id)
 
     # URL-decode the key if it has special characters
-    filename = filename.replace("+", " ")
+    filename = key.replace("+", " ")
     try:
         s3_handler = S3(bucket_name=bucket)
         violation = get_violation(s3_handler.get_object(file_path=filename))

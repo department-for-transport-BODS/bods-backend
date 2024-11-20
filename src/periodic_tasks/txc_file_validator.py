@@ -11,8 +11,8 @@ from boilerplate.zip import ZippedValidator
 
 class TimetableFileValidator:
     def __init__(self, event):
-        self._s3_obj = S3(event["Records"][0]["s3"]["bucket"]["name"])
-        self._key = event["Records"][0]["s3"]["object"]["key"]
+        self._s3_obj = S3(event["detail"]["bucket"]["name"])
+        self._key = event["detail"]["object"]["key"]
 
     @property
     def is_zip(self):
@@ -50,8 +50,9 @@ class TimetableFileValidator:
 
 @file_processing_result_to_db(step_name="TxC File Validator")
 def lambda_handler(event, context):
-    bucket = event["Records"][0]["s3"]["bucket"]["name"]
-    key = event["Records"][0]["s3"]["object"]["key"]
+    event_details = event["detail"]
+    bucket = event_details["bucket"]["name"]
+    key = event_details["object"]["key"]
     try:
         validator = TimetableFileValidator(event)
         validator.validate()

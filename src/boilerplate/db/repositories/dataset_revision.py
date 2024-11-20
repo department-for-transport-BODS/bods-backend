@@ -1,6 +1,8 @@
 import logging
 from common import BodsDB
-from dataset_etl_task_result import DatasetETLTaskResultRepository
+from db.repositories.dataset_etl_task_result import (
+    DatasetETLTaskResultRepository
+)
 from exceptions.pipeline_exceptions import PipelineException
 from sqlalchemy.orm.exc import NoResultFound
 

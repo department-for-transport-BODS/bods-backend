@@ -21,7 +21,8 @@ class SchemaViolation:
         with self._db.session as session:
             for violation in violations:
                 try:
-                    violation_obj = get_schema_violation_obj(self._db, violation)
+                    violation_obj = get_schema_violation_obj(self._db,
+                                                             **violation)
                     session.add(violation_obj)
                     session.commit()
                 except SQLAlchemyError as err:
