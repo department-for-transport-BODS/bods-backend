@@ -1,9 +1,6 @@
-import json
-from pathlib import Path
-from typing import Dict, List, Optional
 
-from pti.constants import NO_REF, REF_PREFIX, REF_SUFFIX, REF_URL
 from pydantic import BaseModel
+
 
 GENERAL_REF = NO_REF + REF_URL
 
@@ -20,6 +17,23 @@ class Observation(BaseModel):
     context: str
     number: int
     rules: List[Rule]
+
+class Header(BaseModel):
+    namespaces: Dict[str, str]
+    version: str
+    notes: str
+    guidance_document: str
+
+
+class Schema(BaseModel):
+    observations: List[Observation]
+    header: Header
+
+    @classmethod
+    def from_path(cls, path: Path):
+        with path.open("r") as f:
+            d = json.load(f)
+            return cls(**d)
 
 
 class Header(BaseModel):

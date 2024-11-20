@@ -1184,3 +1184,4 @@ def test_check_flexible_service_stop_point_flexible_zone_stop_type(
     assert sorted(m_stop_point_repo.return_value.get_count.call_args[1]["atco_codes"]) == sorted(stop_point_ref_values)
     assert m_stop_point_repo.return_value.get_count.call_args[1]["bus_stop_type"] == "FLX"
     assert m_stop_point_repo.return_value.get_count.call_args[1]["stop_type"] == "BCT"
+
