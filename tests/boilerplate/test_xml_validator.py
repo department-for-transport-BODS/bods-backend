@@ -35,9 +35,9 @@ class TestFileValidator(unittest.TestCase):
 
     def test_validate_too_large(self):
         """Test that validate raises FileTooLarge if file is too big."""
-        large_file = BytesIO(b"A" * int(1e9 + 1))
+        large_file = BytesIO(b"A" * int(2))
         large_file.name = "sample.zip"
-        validator = FileValidator(large_file, max_file_size=1e9)
+        validator = FileValidator(large_file, max_file_size=1)
 
         with self.assertRaises(FileTooLarge):
             validator.validate()
