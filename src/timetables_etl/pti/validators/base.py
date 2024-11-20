@@ -3,7 +3,6 @@ from typing import List, Optional
 from pti.models import Line, VehicleJourney
 from timetables.transxchange import TransXChangeElement
 
-
 class BaseValidator:
     def __init__(self, root):
         self.root = root
