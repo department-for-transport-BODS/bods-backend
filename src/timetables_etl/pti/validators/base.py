@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from pti.models import Line, VehicleJourney
 from timetables.transxchange import TransXChangeElement
