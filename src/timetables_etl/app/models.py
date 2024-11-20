@@ -8,8 +8,6 @@ from .database.models import (
     DatasetETLTaskResult,
     OrganisationDatasetRevision,
     OrganisationTXCFileAttributes,
-    TransmodelService,
-    TransmodelServicePattern,
 )
 
 
@@ -36,12 +34,3 @@ class TaskData(BaseModel):
     revision: OrganisationDatasetRevision
     file_attributes: OrganisationTXCFileAttributes
     input_data: ETLInputData
-
-
-class TransformedData(BaseModel):
-    """
-    TXC Data transformed into the SQLAlchemy models to be applied on the DB
-    """
-
-    transmodel_service: list[TransmodelService]
-    transmodel_servicepatterns: list[TransmodelServicePattern]

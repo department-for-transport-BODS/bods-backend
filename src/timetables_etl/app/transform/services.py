@@ -17,7 +17,6 @@ log = get_logger()
 
 def make_transmodel_service(
     service: TXCService,
-    line_names: list[str],
     revision: OrganisationDatasetRevision,
     file_attributes: OrganisationTXCFileAttributes,
 ) -> TransmodelService:
@@ -26,7 +25,7 @@ def make_transmodel_service(
     """
     # TODO: Handle flexible service when implemented in parser
     service_type = "standard"
-
+    line_names = get_line_names(service)
     return TransmodelService(
         service_code=service.ServiceCode,
         name=line_names[0],
@@ -47,9 +46,9 @@ def make_transmodel_services(
     """
     Convert multiple TXCService objects to TransmodelService objects for database insertion.
     """
-    line_names = get_line_names(services)
+
     transmodel_services = [
-        make_transmodel_service(service, line_names, revision, file_attributes)
+        make_transmodel_service(service, revision, file_attributes)
         for service in services
     ]
     log.info("Generated Transmodel Services", count=len(transmodel_services))

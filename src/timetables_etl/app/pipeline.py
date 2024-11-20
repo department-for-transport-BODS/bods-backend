@@ -2,18 +2,27 @@
 ETL Pipeline
 """
 
-from timetables_etl.app.transform.service_patterns import (
-    make_transmodels_service_patterns,
+from structlog.stdlib import get_logger
+
+from timetables_etl.app.load.transmodel.transmodel_service import (
+    load_transmodel_service,
 )
-from timetables_etl.app.transform.services import make_transmodel_services
+from timetables_etl.app.load.transmodel.transmodel_service_service_patterns import (
+    link_service_to_service_patterns,
+)
+from timetables_etl.app.load.transmodel.transmodel_servicepatterns import (
+    load_transmodel_service_patterns,
+)
 from timetables_etl.app.transform.stop_points import (
     create_stop_point_location_mapping,
     get_naptan_stops_from_db,
 )
 
 from .database import BodsDB
-from .models import TaskData, TransformedData
+from .models import TaskData
 from .txc.models.txc_data import TXCData
+
+log = get_logger()
 
 
 class MissingLines(Exception):
@@ -30,13 +39,11 @@ def transform_data(txc: TXCData, task_data: TaskData, db: BodsDB):
     """
     db_stops = get_naptan_stops_from_db(txc.StopPoints, db)
     stop_mapping = create_stop_point_location_mapping(txc.StopPoints, db_stops)
-    transmodel_services = make_transmodel_services(
-        txc.Services, task_data.revision, task_data.file_attributes
-    )
-    service_patterns = make_transmodels_service_patterns(
-        txc, task_data.revision, stop_mapping
-    )
-    return TransformedData(
-        transmodel_service=transmodel_services,
-        transmodel_servicepatterns=service_patterns,
-    )
+
+    for service in txc.Services:
+
+        transmodel_services = load_transmodel_service(service, task_data, db)
+        service_patterns = load_transmodel_service_patterns(
+            service, txc, task_data, stop_mapping, db
+        )
+        link_service_to_service_patterns(transmodel_services, service_patterns, db)

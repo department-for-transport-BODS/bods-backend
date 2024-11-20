@@ -76,20 +76,26 @@ class TransmodelServiceServicePatternRepo(
         return self._fetch_all(statement)
 
     @handle_repository_errors
-    def add_association(self, service_id: int, pattern_id: int) -> None:
+    def add_association(
+        self, service_id: int, pattern_id: int
+    ) -> TransmodelServiceServicePattern:
         """
-        Add Association between a row in transmodel_service and transmodel_servicepattern
+        Add Association between service and pattern and return the created record
         """
         with self._db.session_scope() as session:
             association = TransmodelServiceServicePattern(
                 service_id=service_id, servicepattern_id=pattern_id
             )
             session.add(association)
+            session.flush()
+            return association
 
     @handle_repository_errors
-    def add_associations(self, associations: list[ServicePatternAssociation]) -> None:
+    def add_associations(
+        self, associations: list[ServicePatternAssociation]
+    ) -> list[TransmodelServiceServicePattern]:
         """
-        Bulk insert multiple service-pattern associations
+        Bulk insert multiple service-pattern associations and return the created records
         """
         with self._db.session_scope() as session:
             records = [
@@ -99,3 +105,5 @@ class TransmodelServiceServicePatternRepo(
                 for assoc in associations
             ]
             session.bulk_save_objects(records)
+            session.flush()
+            return records

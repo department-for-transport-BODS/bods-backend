@@ -107,21 +107,45 @@ def make_transmodel_service_pattern(
     )
 
 
+def make_service_patterns_from_service(
+    service: TXCService,
+    revision: OrganisationDatasetRevision,
+    journey_pattern_sections: list[TXCJourneyPatternSection],
+    atco_location_mapping: dict[str, Point],
+) -> list[TransmodelServicePattern]:
+    """
+    Create TransmodelServicePatterns for a single service
+    TODO: Add error handling for when mapping is missing
+    """
+    if not service.StandardService:
+        return []
+
+    patterns = [
+        make_transmodel_service_pattern(
+            service, jp, revision, journey_pattern_sections, atco_location_mapping
+        )
+        for jp in service.StandardService.JourneyPattern
+    ]
+    log.info(
+        "Created Service Patterns for service",
+        service_code=service.ServiceCode,
+        count=len(patterns),
+    )
+    return patterns
+
+
 def make_transmodels_service_patterns(
     txc: TXCData,
     revision: OrganisationDatasetRevision,
     atco_location_mapping: dict[str, Point],
 ) -> list[TransmodelServicePattern]:
-    """
-    Create TransmodelServicePatterns containing points for particular services
-    """
+    """Create TransmodelServicePatterns for all services"""
     service_patterns = [
-        make_transmodel_service_pattern(
-            service, jp, revision, txc.JourneyPatternSections, atco_location_mapping
-        )
+        pattern
         for service in txc.Services
-        if service.StandardService
-        for jp in service.StandardService.JourneyPattern
+        for pattern in make_service_patterns_from_service(
+            service, revision, txc.JourneyPatternSections, atco_location_mapping
+        )
     ]
     log.info("Created Service Patterns", count=len(service_patterns))
     return service_patterns

@@ -142,3 +142,29 @@ class BaseRepository(Generic[DBModelT]):
             except Exception:
                 logger.error("Could not update data")
                 raise
+
+    @handle_repository_errors
+    def insert(self, record: DBModelT) -> DBModelT:
+        """
+        Insert a single record and return it with generated ID
+        """
+        with self._db.session_scope() as session:
+            session.add(record)
+            session.flush()
+            session.expunge(record)
+            return record
+
+    @handle_repository_errors
+    def bulk_insert(self, records: list[DBModelT]) -> list[DBModelT]:
+        """
+        Insert multiple records and return them with generated IDs
+        flush() may be needed to ensure IDs are generated
+        """
+        with self._db.session_scope() as session:
+            for record in records:
+                session.add(record)
+            session.flush()
+            results = list(records)
+            for result in results:
+                session.expunge(result)
+            return results

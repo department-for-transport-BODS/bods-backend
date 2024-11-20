@@ -10,7 +10,7 @@ from ..database.models.model_organisation import (
 )
 from ..txc.helpers.operator import get_licence_number, get_national_operator_code
 from ..txc.helpers.service import (
-    get_line_names,
+    get_all_line_names,
     get_service_destinations,
     get_service_end_dates,
     get_service_origins,
@@ -54,7 +54,7 @@ def make_txc_file_attributes(
         creation_datetime=metadata.CreationDateTime,
         national_operator_code=get_national_operator_code(txc.Operators) or "",
         licence_number=get_licence_number(txc.Operators) or "",
-        line_names=get_line_names(txc.Services),
+        line_names=get_all_line_names(txc.Services),
         operating_period_start_date=min(start_dates) if start_dates else None,
         operating_period_end_date=max(end_dates) if end_dates else None,
         origin=next(iter(get_service_origins(txc.Services)), ""),

@@ -11,14 +11,22 @@ from ..models.txc_service import TXCService
 log = get_logger()
 
 
-def get_line_names(services: list[TXCService]) -> list[str]:
-    """
-    Get a list of line names from a TXC's Services
-    """
-    line_names = [line.LineName for service in services for line in service.Lines]
+def get_line_names(service: TXCService) -> list[str]:
+    """Get all line names from a single TXC Service"""
+    line_names = [line.LineName for line in service.Lines]
 
     if not line_names:
-        log.warning("No line names found")
+        log.warning("No line names found for service", service_code=service.ServiceCode)
+
+    return line_names
+
+
+def get_all_line_names(services: list[TXCService]) -> list[str]:
+    """Get all line names across multiple TXC Services"""
+    line_names = [name for service in services for name in get_line_names(service)]
+
+    if not line_names:
+        log.warning("No line names found across services")
 
     return line_names
 
