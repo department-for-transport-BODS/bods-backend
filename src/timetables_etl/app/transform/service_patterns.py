@@ -82,34 +82,46 @@ def generate_service_pattern_geometry(
     return from_shape(line, srid=4326)
 
 
+def make_transmodel_service_pattern(
+    service: TXCService,
+    jp: TXCJourneyPattern,
+    revision: OrganisationDatasetRevision,
+    journey_pattern_sections: list[TXCJourneyPatternSection],
+    atco_location_mapping: dict[str, Point],
+) -> TransmodelServicePattern:
+    """
+    Create a single TransmodelServicePattern from a TXC journey pattern
+    """
+    origin, destination, description = get_jp_origin_destination(service, jp)
+
+    return TransmodelServicePattern(
+        service_pattern_id=make_service_pattern_id(service, jp),
+        origin=origin,
+        destination=destination,
+        description=description,
+        revision_id=revision.id,
+        line_name=service.Lines[0].LineName,
+        geom=generate_service_pattern_geometry(
+            jp, journey_pattern_sections, atco_location_mapping
+        ),
+    )
+
+
 def make_transmodels_service_patterns(
     txc: TXCData,
     revision: OrganisationDatasetRevision,
     atco_location_mapping: dict[str, Point],
 ) -> list[TransmodelServicePattern]:
     """
-    Transmodel Service Patterns contain the points for particular service
+    Create TransmodelServicePatterns containing points for particular services
     """
-
-    service_patterns: list[TransmodelServicePattern] = []
-    for service in txc.Services:
-        if service.StandardService:
-            for jp in service.StandardService.JourneyPattern:
-                origin, destination, description = get_jp_origin_destination(
-                    service, jp
-                )
-                service_patterns.append(
-                    TransmodelServicePattern(
-                        service_pattern_id=make_service_pattern_id(service, jp),
-                        origin=origin,
-                        destination=destination,
-                        description=description,
-                        revision_id=revision.id,
-                        line_name=service.Lines[0].LineName,
-                        geom=generate_service_pattern_geometry(
-                            jp, txc.JourneyPatternSections, atco_location_mapping
-                        ),
-                    )
-                )
-
+    service_patterns = [
+        make_transmodel_service_pattern(
+            service, jp, revision, txc.JourneyPatternSections, atco_location_mapping
+        )
+        for service in txc.Services
+        if service.StandardService
+        for jp in service.StandardService.JourneyPattern
+    ]
+    log.info("Created Service Patterns", count=len(service_patterns))
     return service_patterns

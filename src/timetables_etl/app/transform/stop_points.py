@@ -77,7 +77,8 @@ def get_naptan_stops_from_db(
     stop_points: list[AnnotatedStopPointRef | TXCStopPoint], db: BodsDB
 ) -> list[NaptanStopPoint]:
     """
-    Filter the TXC Stop Points for AnnotatedStopPointRef and query the DB
+    Filter the TXC Stop Points for AnnotatedStopPointRef and query the DB for them
+
     """
     stop_refs: list[str] = []
     for stop in stop_points:
