@@ -18,6 +18,7 @@ class Observation(BaseModel):
     number: int
     rules: List[Rule]
 
+
 class Header(BaseModel):
     namespaces: Dict[str, str]
     version: str

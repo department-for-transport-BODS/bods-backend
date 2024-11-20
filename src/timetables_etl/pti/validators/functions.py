@@ -223,6 +223,7 @@ def has_destination_display(context, patterns):
     return validator.validate()
 
 
+
 def has_name(context, elements, *args):
     """
     Checks if elements are in the list of names.
@@ -429,7 +430,6 @@ def validate_licence_number(context, elements: List[etree._Element]) -> bool:
         elif not (licence_number and licence_number[0].text):
             return False
     return True
-
 
 def has_servicedorganisation_working_days(context, service_organisations):
     """

@@ -12,10 +12,7 @@ class StopPointValidator(BaseValidator):
         return self.root.xpath(xpath, namespaces=self.namespaces)
 
     def get_operating_profile_by_vehicle_journey_code(self, ref):
-        xpath = (
-            f"//x:VehicleJourney[string(x:VehicleJourneyCode) = '{ref}']"
-            "//x:OperatingProfile"
-        )
+        xpath = f"//x:VehicleJourney[string(x:VehicleJourneyCode) = '{ref}']" "//x:OperatingProfile"
         profiles = self.root.xpath(xpath, namespaces=self.namespaces)
         return profiles
 
@@ -42,13 +39,9 @@ class StopPointValidator(BaseValidator):
             if len(periods) > 0:
                 period = periods[0]
                 if start_date == "":
-                    start_date = period.xpath(
-                        "string(./x:StartDate)", namespaces=self.namespaces
-                    )
+                    start_date = period.xpath("string(./x:StartDate)", namespaces=self.namespaces)
                 if end_date == "":
-                    end_date = period.xpath(
-                        "string(./x:EndDate)", namespaces=self.namespaces
-                    )
+                    end_date = period.xpath("string(./x:EndDate)", namespaces=self.namespaces)
 
         if start_date == "" or end_date == "":
             return False
@@ -77,24 +70,15 @@ class StopPointValidator(BaseValidator):
         all_vj = []
 
         for link_ref in route_link_refs:
-            section_refs = self.get_journey_pattern_section_refs_by_route_link_ref(
-                link_ref
-            )
+            section_refs = self.get_journey_pattern_section_refs_by_route_link_ref(link_ref)
             for section_ref in section_refs:
-                jp_refs = self.get_journey_pattern_ref_by_journey_pattern_section_ref(
-                    section_ref
-                )
+                jp_refs = self.get_journey_pattern_ref_by_journey_pattern_section_ref(section_ref)
                 for jp_ref in jp_refs:
                     jp_vjs = []
-                    vehicle_journies = self.get_vehicle_journey_by_pattern_journey_ref(
-                        jp_ref
-                    )
+                    vehicle_journies = self.get_vehicle_journey_by_pattern_journey_ref(jp_ref)
                     for vj in vehicle_journies:
                         service = self.get_service_by_vehicle_journey(vj.service_ref)
-                        if not (
-                            service is not None
-                            and self.has_coach_as_service_mode(service)
-                        ):
+                        if not (service is not None and self.has_coach_as_service_mode(service)):
                             jp_vjs.append(vj)
 
                     all_vj += jp_vjs
