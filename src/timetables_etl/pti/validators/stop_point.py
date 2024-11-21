@@ -5,7 +5,6 @@ from pti.validators.base import BaseValidator
 from timetables.transxchange import TransXChangeElement
 
 
-# TODO: Move transit_odp/data_quality/pti/tests/test_stops.py + fixture files over
 class StopPointValidator(BaseValidator):
     @property
     def stop_point_ref(self):
