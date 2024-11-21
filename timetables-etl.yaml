@@ -110,18 +110,6 @@ Resources:
                 Resource:
                   - !GetAtt ClamAvScannerLambda.Arn
                   - !GetAtt TimetablePostSchemaCheckLambda.Arn
-        - PolicyName: S3ReadWriteAccess
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - s3:GetObject
-                  - s3:PutObject
-                  - s3:ListBucket
-                Resource:
-                  - !Sub arn:aws:s3:::${PlaceholderS3Bucket}
-                  - !Sub arn:aws:s3:::${PlaceholderS3Bucket}/*
         - PolicyName: SNSPublishPolicy
           PolicyDocument:
             Version: "2012-10-17"
@@ -129,7 +117,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - sns:Publish
-                Resource: !Ref PlaceholderSNSTopic
+                Resource: !GetAtt PlaceholderSNSTopic.TopicArn
         - PolicyName: SQSSendMessagePolicy
           PolicyDocument:
             Version: "2012-10-17"
@@ -137,7 +125,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - sqs:SendMessage
-                Resource: !Ref PlaceholderSQSQueue
+                Resource: !GetAtt PlaceholderSQSQueue.Arn
 
   ################################
   #### CLAM AV SCANNER LAMBDA ####
@@ -150,47 +138,11 @@ Resources:
       Handler: clam_av_scanner.lambda_handler
       Layers:
         - !Ref BoilerplateLambdaLayer
-      Policies:
-        - 'AWSLambdaBasicExecutionRole'
-        - 'AWSLambdaVPCAccessExecutionRole'
-        - S3CrudPolicy:
-            BucketName: !Ref PlaceholderS3Bucket
-        - Version: '2012-10-17'
-          Statement:
-            - Effect: Allow
-              Action:
-                - kms:GenerateDataKey
-              Resource: !If
-                - IsNotLocal
-                - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-                - "*"
-        - !If
-          - IsNotLocal
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
-          - "arn:aws:iam::aws:policy/AmazonRDSFullAccess" # Is this right? No such role as ReadWrite
-        - !If
-          - IsNotLocal
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
-          - "arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess"
+      Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
           CLAMAV_HOST: !Sub 'http://clamav.bodds.${Environment}'
           CLAMAV_PORT: 3310
-          PROJECT_ENV: !Ref Environment
-          PROJECT_NAME: !Ref ProjectName
-          POSTGRES_HOST: !If
-            - IsNotLocal
-            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
-            - !Ref RdsDbHostAddr
-          POSTGRES_PORT: !Ref RdsDbPort
-          POSTGRES_DB: !If
-            - IsNotLocal
-            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
-            - postgres
-          POSTGRES_USER: !If
-            - IsNotLocal
-            - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
-            - bodds_rw
       LoggingConfig:
         LogGroup: !Ref ClamAvScannerLambdaLogGroup
 
@@ -215,28 +167,7 @@ Resources:
       Handler: timetable_post_schema_check.lambda_handler
       Layers:
         - !Ref BoilerplateLambdaLayer
-      Policies:
-        - 'AWSLambdaBasicExecutionRole'
-        - 'AWSLambdaVPCAccessExecutionRole'
-        - S3CrudPolicy:
-            BucketName: !Ref PlaceholderS3Bucket
-        - Version: '2012-10-17'
-          Statement:
-            - Effect: Allow
-              Action:
-                - kms:GenerateDataKey
-              Resource: !If
-                - IsNotLocal
-                - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-                - "*"
-        - !If
-          - IsNotLocal
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
-          - "arn:aws:iam::aws:policy/AmazonRDSFullAccess" # Is this right? No such role as ReadWrite
-        - !If
-          - IsNotLocal
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
-          - "arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess"
+      Role: !GetAtt LambdaExecutionRole.Arn
       LoggingConfig:
         LogGroup: !Ref TimetablePostSchemaCheckLambdaLogGroup
 
@@ -262,28 +193,7 @@ Resources:
       Handler: exception_handler.lambda_handler
       Layers:
         - !Ref BoilerplateLambdaLayer
-      Policies:
-        - 'AWSLambdaBasicExecutionRole'
-        - 'AWSLambdaVPCAccessExecutionRole'
-        - S3CrudPolicy:
-            BucketName: !Ref PlaceholderS3Bucket
-        - Version: '2012-10-17'
-          Statement:
-          - Effect: Allow
-            Action:
-              - kms:GenerateDataKey
-            Resource: !If
-              - IsNotLocal
-              - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-              - "*"
-        - !If
-          - IsNotLocal
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
-          - "arn:aws:iam::aws:policy/AmazonRDSFullAccess" # Is this right? No such role as ReadWrite
-        - !If
-          - IsNotLocal
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
-          - "arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess"
+      Role: !GetAtt LambdaExecutionRole.Arn
       LoggingConfig:
         LogGroup: !Ref ExceptionHandlerLogGroup
 
@@ -296,6 +206,69 @@ Resources:
       - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
       - !Ref AWS::NoValue 
       RetentionInDays: 30
+
+  ###############################
+  #### LAMBDA EXECUTION ROLE ####
+  ###############################
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
+          - "arn:aws:iam::aws:policy/AmazonRDSFullAccess"  # Full access fallback
+        - !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
+          - "arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess"  # Read-only fallback
+      Policies:
+        - PolicyName: LambdaLogGroupPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:PutRetentionPolicy
+                  - logs:DeleteLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*"
+        - PolicyName: S3AccessPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:Get*
+                  - s3:List*
+                  - s3:PutObject
+                Resource:
+                  - !Sub "arn:aws:s3:::${PlaceholderS3Bucket}"
+                  - !Sub "arn:aws:s3:::${PlaceholderS3Bucket}/*"
+        - PolicyName: KMSAccessPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kms:GenerateDataKey
+                  - kms:Decrypt
+                  - kms:Encrypt
+                Resource: !If
+                  - IsNotLocal
+                  - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+                  - "*"
 
   #########################################
   #### GENERAL CONFIGURATION RESOURCES ####

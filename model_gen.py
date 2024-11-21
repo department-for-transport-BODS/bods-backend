@@ -91,4 +91,4 @@ def sqlalchemy_model_generator() -> None:
         outfile.write(generator.generate())
 
 
-sqlalchemy_model_generator()
+# sqlalchemy_model_generator()

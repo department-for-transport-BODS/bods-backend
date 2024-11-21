@@ -112,8 +112,6 @@ Resources:
         - LambdaInvokePolicy:
             FunctionName: !Ref GenerateSiriVmTflLambda
         - LambdaInvokePolicy:
-            FunctionName: !Ref ClamAvScannerLambda
-        - LambdaInvokePolicy:
             FunctionName: !Ref TxCFileSchemaCheck
       Environment:
         Variables:
