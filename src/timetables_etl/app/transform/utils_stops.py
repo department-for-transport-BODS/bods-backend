@@ -2,6 +2,8 @@
 Stop Calculation Utilities
 """
 
+from typing import Sequence
+
 from timetables_etl.app.database.models.model_naptan import NaptanStopPoint
 from timetables_etl.app.txc.helpers.jps import (
     get_jps_by_id,
@@ -15,7 +17,7 @@ def get_pattern_stops(
     jp: TXCJourneyPattern,
     journey_pattern_sections: list[TXCJourneyPatternSection],
     atco_location_mapping: dict[str, NaptanStopPoint],
-) -> list[NaptanStopPoint]:
+) -> Sequence[NaptanStopPoint]:
     """
     Get all NaptanStopPoint DB Models for a journey pattern's stop sequence
     """
