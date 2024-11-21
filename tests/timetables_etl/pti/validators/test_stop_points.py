@@ -8,7 +8,6 @@ from pti.validators.pti import PTIValidator
 from tests.timetables_etl.pti.validators.conftest import JSONFile
 from tests.timetables_etl.pti.validators.factories import SchemaFactory
 
-# Define the directory for test data
 DATA_DIR = Path(__file__).parent / "data/stop_points"
 
 
