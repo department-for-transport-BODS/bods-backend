@@ -2,7 +2,6 @@ from pathlib import Path
 
 from timetables_etl.pti.validators.xml_file import XmlFilePTIValidator
 
-# TODO: Add this static file
 PTI_SCHEMA_PATH = Path(__file__) / "pti_schema.json"
 
 

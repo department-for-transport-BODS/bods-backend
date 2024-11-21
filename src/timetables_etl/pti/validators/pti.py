@@ -31,7 +31,6 @@ from pti.validators.functions import (
     validate_bank_holidays,
     validate_licence_number,
     validate_line_id,
-    validate_lines,
     validate_modification_date_time,
     validate_non_naptan_stop_points,
     validate_run_time,
@@ -89,7 +88,10 @@ class PTIValidator:
         self.register_function("strip", strip)
         self.register_function("today", today)
         self.register_function("validate_line_id", validate_line_id)
-        self.register_function("validate_lines", validate_lines)
+
+        # TODO: Requires DB interaction
+        # self.register_function("validate_lines", validate_lines)
+
         self.register_function("validate_modification_date_time", validate_modification_date_time)
         self.register_function("validate_non_naptan_stop_points", validate_non_naptan_stop_points)
         self.register_function("validate_run_time", validate_run_time)

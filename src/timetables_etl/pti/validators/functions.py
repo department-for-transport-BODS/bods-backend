@@ -179,19 +179,8 @@ def has_destination_display(context, patterns):
     If both conditions above fail, then DestinationDisplay should
     mandatory nside VehicleJourney.
     """
-    # TODO: There are no tests covering this function or class
     pattern = patterns[0]
     validator = DestinationDisplayValidator(pattern)
-    return validator.validate()
-
-
-def validate_lines(context, lines: List[etree._Element]) -> bool:
-    lines = lines[0]
-    # TODO: Requires DB interaction
-    # stops = StopPoint.objects.exclude(stop_areas=[]).values("atco_code", "stop_areas")
-    stops = []
-    stop_area_map = {stop["atco_code"]: stop["stop_areas"] for stop in stops}
-    validator = LinesValidator(lines, stop_area_map=stop_area_map)
     return validator.validate()
 
 
