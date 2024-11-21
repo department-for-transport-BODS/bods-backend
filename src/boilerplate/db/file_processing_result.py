@@ -95,6 +95,7 @@ def write_processing_step(db, name, category):
 def file_processing_result_to_db(step_name):
     def decorator(func):
         def wrapper(event, context):
+            logger.info(f"step: {step_name}, event: {event}")
             _db = BodsDB()
             uuid = str(uuid4())
             try:

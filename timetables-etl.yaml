@@ -137,7 +137,7 @@ Resources:
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-clam-av-scanner-lambda'
       CodeUri: ./src/timetables_etl
-      Handler: clam_av_scanner.lambda_handler
+      Handler: clamav_scanner.lambda_handler
       Layers:
         - !Ref BoilerplateLambdaLayer
       Role: !GetAtt LambdaExecutionRole.Arn

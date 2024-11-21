@@ -86,8 +86,6 @@ def lambda_handler(event, context):
     """
     Main lambda handler
     """
-    logger.info(f"Received event:{json.dumps(event, indent=2)}")
-
     # Extract the bucket name and object key from the S3 event
     bucket = event["Bucket"]
     key = event["ObjectKey"]
