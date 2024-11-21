@@ -41,17 +41,21 @@ class UpdateError(RepositoryError):
 ErrorMapping: TypeAlias = dict[type[Exception], tuple[type[RepositoryError], str]]
 
 
-def get_operation_name(func: Callable, args: tuple[Any, ...]) -> str:
-    """Safely extract operation name from args"""
+def get_operation_name(func: Callable, args: tuple[Any, ...]) -> tuple[str | None, str]:
+    """
+    Safely extract repository and operation names
+    Returns: (repository_name, operation_name)
+    """
     try:
         instance = args[0] if args else None
-        return (
-            f"{instance.__class__.__name__}.{func.__name__}"
-            if instance
-            else func.__name__
+        repo_name = (
+            instance.__class__.__name__
+            if instance and hasattr(instance, "__class__")
+            else None
         )
-    except Exception:
-        return func.__name__
+        return repo_name, func.__name__
+    except AttributeError:
+        return None, func.__name__
 
 
 def extract_error_details(exc: Exception) -> tuple[str, dict[str, Any]]:
@@ -81,12 +85,12 @@ def handle_repository_errors(func: Callable[P, T]) -> Callable[P, T]:
 
     @wraps(func)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
-        operation = get_operation_name(func, args)
-        log = logger.bind(operation=operation)
+        repo_name, operation = get_operation_name(func, args)
+        log = logger.bind(repo=repo_name, operation=operation)
 
         try:
             result = func(*args, **kwargs)
-            log.debug("repository.operation.success")
+            log.debug("Database Operation Sucessful")
             return result
 
         except Exception as exc:
