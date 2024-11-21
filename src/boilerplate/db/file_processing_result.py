@@ -98,8 +98,8 @@ def file_processing_result_to_db(step_name):
             _db = BodsDB()
             uuid = str(uuid4())
             try:
-                _id = event["detail"]["dataset_etl_task_result_id"]
-                revision = get_revision(_db, _id)
+                revision = get_revision(_db,
+                                        int(event["DatasetEtlTaskResultId"]))
                 step = write_processing_step(_db,
                                              step_name,
                                              "TIMETABLES")
@@ -107,7 +107,7 @@ def file_processing_result_to_db(step_name):
                     db=_db,
                     task_id=uuid,
                     status="STARTED",
-                    filename=event["detail"]["object"]["key"].split("/")[-1],
+                    filename=event["ObjectKey"].split("/")[-1],
                     pipeline_processing_step_id=step,
                     revision_id=revision.id
                 )

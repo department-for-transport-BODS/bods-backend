@@ -68,32 +68,7 @@ Resources:
     Type: AWS::Serverless::StateMachine
     Properties:
       Name: !Sub '${ProjectName}-${Environment}-timetables-etl-sm'
-      Policies:
-        - LambdaInvokePolicy:
-            FunctionName: !Ref PlaceholderLambda
-
-        # - LambdaInvokePolicy:
-        #     FunctionName: !Ref ScanAndUnpackLambda
-        # - LambdaInvokePolicy:
-        #     FunctionName: !Ref BasicFileValidationLambda
-        # - LambdaInvokePolicy:
-        #     FunctionName: !Ref SchemaValidationLambda
-        # - LambdaInvokePolicy:
-        #     FunctionName: !Ref PiiCheckLambda
-        # - LambdaInvokePolicy:
-        #     FunctionName: !Ref PtiValidationLambda
-        # - LambdaInvokePolicy:
-        #     FunctionName: !Ref FileAttributesEtlLambda
-        # - LambdaInvokePolicy:
-        #     FunctionName: !Ref TimetablesEtlLambda
-        # - LambdaInvokePolicy:
-        #     FunctionName: !Ref ExceptionHandlerLambda
-        - S3ReadPolicy:
-            BucketName: !Ref PlaceholderS3Bucket
-        - SNSPublishMessagePolicy:
-            TopicName: !GetAtt PlaceholderSNSTopic.TopicName
-        - SQSSendMessagePolicy:
-            QueueName: !GetAtt PlaceholderSQSQueue.QueueName
+      Role: !GetAtt EtlStateMachineRole.Arn
       Events:
         S3ObjectCreatedEvent:
           Type: EventBridgeRule
@@ -109,21 +84,70 @@ Resources:
                     - !Ref PlaceholderS3Bucket
       DefinitionUri: './src/timetables_etl.statemachine.json'
       DefinitionSubstitutions:
-        PlaceholderLambdaArn: !GetAtt PlaceholderLambda.Arn
         ExceptionHandlerLambdaArn: !GetAtt ExceptionHandlerLambda.Arn
         PlaceholderSNSTopicArn: !GetAtt PlaceholderSNSTopic.TopicArn
         PlaceholderSQSQueueUrl: !GetAtt PlaceholderSQSQueue.QueueUrl
-
-  ############################
-  #### PLACEHOLDER LAMBDA ####
-  ############################
-  PlaceholderLambda:
-    Type: AWS::Serverless::Function
-    ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
+        ClamAvScannerLambdaArn: !GetAtt ClamAvScannerLambda.Arn
+        TimetablePostSchemaCheckLambdaArn: !GetAtt TimetablePostSchemaCheckLambda.Arn
+  EtlStateMachineRole:
+    Type: AWS::IAM::Role
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-placeholder-lambda'
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: states.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: StateMachineLambdaInvokePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource:
+                  - !GetAtt ClamAvScannerLambda.Arn
+                  - !GetAtt TimetablePostSchemaCheckLambda.Arn
+        - PolicyName: S3ReadWriteAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub arn:aws:s3:::${PlaceholderS3Bucket}
+                  - !Sub arn:aws:s3:::${PlaceholderS3Bucket}/*
+        - PolicyName: SNSPublishPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !Ref PlaceholderSNSTopic
+        - PolicyName: SQSSendMessagePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                Resource: !Ref PlaceholderSQSQueue
+
+  ################################
+  #### CLAM AV SCANNER LAMBDA ####
+  ################################
+  ClamAvScannerLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-clam-av-scanner-lambda'
       CodeUri: ./src/timetables_etl
-      Handler: app.lambda_handler
+      Handler: clam_av_scanner.lambda_handler
       Layers:
         - !Ref BoilerplateLambdaLayer
       Policies:
@@ -133,13 +157,13 @@ Resources:
             BucketName: !Ref PlaceholderS3Bucket
         - Version: '2012-10-17'
           Statement:
-          - Effect: Allow
-            Action:
-              - kms:GenerateDataKey
-            Resource: !If
-              - IsNotLocal
-              - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-              - "*"
+            - Effect: Allow
+              Action:
+                - kms:GenerateDataKey
+              Resource: !If
+                - IsNotLocal
+                - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+                - "*"
         - !If
           - IsNotLocal
           - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
@@ -148,17 +172,36 @@ Resources:
           - IsNotLocal
           - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
           - "arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess"
+      Environment:
+        Variables:
+          CLAMAV_HOST: !Sub 'http://clamav.bodds.${Environment}'
+          CLAMAV_PORT: 3310
+          PROJECT_ENV: !Ref Environment
+          PROJECT_NAME: !Ref ProjectName
+          POSTGRES_HOST: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
+            - !Ref RdsDbHostAddr
+          POSTGRES_PORT: !Ref RdsDbPort
+          POSTGRES_DB: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
+            - postgres
+          POSTGRES_USER: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
+            - bodds_rw
       LoggingConfig:
-        LogGroup: !Ref PlaceholderLambdaLogGroup
+        LogGroup: !Ref ClamAvScannerLambdaLogGroup
 
-  PlaceholderLambdaLogGroup:
+  ClamAvScannerLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-placeholder-lambda'
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-clam-av-scanner-lambda'
       KmsKeyId: !If
-      - IsNotLocal
-      - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-      - !Ref AWS::NoValue 
+        - IsNotLocal
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Ref AWS::NoValue
       RetentionInDays: 30
 
   ##################################
@@ -169,7 +212,7 @@ Resources:
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-timetable-post-schema-check-lambda'
       CodeUri: ./src/timetables_etl
-      Handler: app.lambda_handler
+      Handler: timetable_post_schema_check.lambda_handler
       Layers:
         - !Ref BoilerplateLambdaLayer
       Policies:

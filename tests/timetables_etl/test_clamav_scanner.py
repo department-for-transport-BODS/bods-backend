@@ -2,7 +2,7 @@ from io import BytesIO
 import unittest
 from unittest.mock import patch, MagicMock
 from clamd import BufferTooLongError, ConnectionError
-from periodic_tasks.clamav_scanner import (
+from timetables_etl.clamav_scanner import (
     FileScanner,
     lambda_handler,
     AntiVirusError,
@@ -21,7 +21,7 @@ TEST_ENV_VAR = {"PROJECT_ENV": "dev",
 
 
 class TestClamAVScanner(unittest.TestCase):
-    @patch("periodic_tasks.clamav_scanner.ClamdNetworkSocket")
+    @patch("timetables_etl.clamav_scanner.ClamdNetworkSocket")
     def setUp(self, mock_clamd):
         self.file_name = 'bodds.zip' # noqa
         self.mock_clamd_instance = mock_clamd.return_value
@@ -73,10 +73,10 @@ class TestClamAVScanner(unittest.TestCase):
 
         self.assertIn(self.file_name, str(context.exception))
 
-    @patch("periodic_tasks.clamav_scanner.S3")
-    @patch("periodic_tasks.clamav_scanner.FileScanner")
-    @patch("boilerplate.db.file_processing_result.BodsDB")
-    @patch("boilerplate.db.file_processing_result.get_revision")
+    @patch("timetables_etl.clamav_scanner.S3")
+    @patch("timetables_etl.clamav_scanner.FileScanner")
+    @patch("db.file_processing_result.BodsDB")
+    @patch("db.file_processing_result.get_revision")
     @patch.dict("os.environ", TEST_ENV_VAR)
     def test_lambda_handler_success(self,
                                     mock_get_revision,
@@ -99,15 +99,13 @@ class TestClamAVScanner(unittest.TestCase):
 
         # Define a sample Lambda event
         event = {
-            "detail": {
-                "bucket": {"name": "test-bucket"},
-                "object": {"key": self.file_name},
-                "dataset_etl_task_result_id": 123,
-            }
+            "Bucket": "test-bucket",
+            "ObjectKey": self.file_name,
+            "DatasetEtlTaskResultId": 123,
         }
 
         # Mock write_processing_step
-        buf_ = "boilerplate.db.file_processing_result.write_processing_step"
+        buf_ = "db.file_processing_result.write_processing_step"
 
         with patch(buf_) as mock_step:
             mock_step.return_value = MagicMock(id=1)
@@ -126,10 +124,10 @@ class TestClamAVScanner(unittest.TestCase):
             mock_scanner_instance.clamav.ping.assert_called_once()
             mock_scanner_instance.scan.assert_called_once_with(mock_file_object)
 
-    @patch("periodic_tasks.clamav_scanner.S3")
-    @patch("periodic_tasks.clamav_scanner.FileScanner")
-    @patch('boilerplate.db.file_processing_result.BodsDB')
-    @patch("boilerplate.db.file_processing_result.get_revision")
+    @patch("timetables_etl.clamav_scanner.S3")
+    @patch("timetables_etl.clamav_scanner.FileScanner")
+    @patch('db.file_processing_result.BodsDB')
+    @patch("db.file_processing_result.get_revision")
     @patch.dict("os.environ", TEST_ENV_VAR)
     def test_lambda_handler_clamav_unreachable(self,
                                                mock_get_revision,
@@ -149,24 +147,21 @@ class TestClamAVScanner(unittest.TestCase):
         # Mock FileScanner to simulate ClamAV being unreachable
         mock_scanner_instance = mock_file_scanner.return_value
         mock_scanner_instance.clamav.ping.return_value = False
-        filename = f"3456/{self.file_name}"
 
         # Define a sample Lambda event
         event = {
-            "detail": {
-                "bucket": {"name": "test-bucket"},
-                "object": {"key": self.file_name},
-                "dataset_etl_task_result_id": 123,
-            }
+            "Bucket": "test-bucket",
+            "ObjectKey": self.file_name,
+            "DatasetEtlTaskResultId": 123,
         }
 
         # Mock write_processing_step
-        buf_ = "boilerplate.db.file_processing_result.write_processing_step"
+        buf_ = "db.file_processing_result.write_processing_step"
         with patch(buf_) as mock_step:
             mock_step.return_value = MagicMock(id=1)
             mock_db.return_value = MockedDB()
             # Mock write_error_to_db
-            buf_ = "boilerplate.db.file_processing_result.write_error_to_db"
+            buf_ = "db.file_processing_result.write_error_to_db"
             with patch(buf_) as mock_write_db:
                 mock_write_db.return_value = "Transaction committed"
                 # Assert exception due to ClamAV unreachability
@@ -177,10 +172,10 @@ class TestClamAVScanner(unittest.TestCase):
                 self.assertIn("ClamAV is not running or accessible.",
                               str(context.exception))
 
-    @patch("periodic_tasks.clamav_scanner.S3")
-    @patch("periodic_tasks.clamav_scanner.FileScanner")
-    @patch('boilerplate.db.file_processing_result.BodsDB')
-    @patch("boilerplate.db.file_processing_result.get_revision")
+    @patch("timetables_etl.clamav_scanner.S3")
+    @patch("timetables_etl.clamav_scanner.FileScanner")
+    @patch('db.file_processing_result.BodsDB')
+    @patch("db.file_processing_result.get_revision")
     @patch.dict("os.environ", TEST_ENV_VAR)
     def test_lambda_handler_scan_error(self,
                                        mock_get_revision,
@@ -204,19 +199,17 @@ class TestClamAVScanner(unittest.TestCase):
 
         # Define a sample Lambda event
         event = {
-            "detail": {
-                "bucket": {"name": "test-bucket"},
-                "object": {"key": self.file_name},
-                "dataset_etl_task_result_id": 123,
-            }
+            "Bucket": "test-bucket",
+            "ObjectKey": self.file_name,
+            "DatasetEtlTaskResultId": 123,
         }
         # Mock write_processing_step
-        buf_ = "boilerplate.db.file_processing_result.write_processing_step"
+        buf_ = "db.file_processing_result.write_processing_step"
         with patch(buf_) as mock_step:
             mock_step.return_value = MagicMock(id=1)
             mock_db.return_value = MockedDB()
             # Mock write_error_to_db
-            buf_ = "boilerplate.db.file_processing_result.write_error_to_db"
+            buf_ = "db.file_processing_result.write_error_to_db"
             with patch(buf_) as mock_write_db:
                 mock_write_db.return_value = "Transaction committed"
                 # Assert exception due to scan error
