@@ -7,7 +7,9 @@ import boilerplate.timetables.transxchange
 from boilerplate.timetables.transxchange import (
     TransXChangeDocument,
     TransXChangeZip,
-    TransXChangeDatasetParser
+    TransXChangeDatasetParser,
+    BaseSchemaViolation,
+    TXCPostSchemaViolation
 )
 
 
@@ -382,6 +384,151 @@ class TestTransXChangeDatasetParser(unittest.TestCase):
 
         self.assertEqual(line_names, ["Line1", "Line2", "Line1", "Line2"])
         mock_doc.get_all_line_names.assert_called()
+
+    @patch(f"{PTH_}.TransXChangeZip")
+    @patch(f"{PTH_}.TransXChangeDocument")
+    def test_iter_docs_with_zipfile(self, mock_document, mock_zip):
+        """
+        Test _iter_docs when the source is a zip file.
+        """
+        # Mock source and zip file behavior
+        mock_source = "mock_source.zip"
+        mock_zip_instance = MagicMock()
+        mock_zip_instance.iter_doc.return_value = ["doc1", "doc2"]
+        mock_zip.return_value.__enter__.return_value = mock_zip_instance
+
+        # Instance of the class to test
+        instance = TransXChangeDatasetParser(mock_source)
+        instance.is_zipfile = MagicMock(
+            return_value=True)  # Mock is_zipfile to return True
+
+        # Collect documents
+        docs = list(instance._iter_docs())
+
+        # Assertions
+        assert docs == ["doc1", "doc2"]
+        instance.is_zipfile.assert_called_once()
+        mock_zip.assert_called_once_with(mock_source)
+        mock_zip_instance.iter_doc.assert_called_once()
+
+    @patch(f"{PTH_}.TransXChangeDocument")
+    def test_iter_docs_without_zipfile(self, mock_document):
+        """
+        Test _iter_docs when the source is not a zip file.
+        """
+        # Mock source and document behavior
+        mock_source = "mock_source.xml"
+        mock_document_instance = MagicMock()
+        mock_document.return_value = mock_document_instance
+
+        # Instance of the class to test
+        instance = TransXChangeDatasetParser(mock_source)
+        instance.is_zipfile = MagicMock(
+            return_value=False)  # Mock is_zipfile to return False
+
+        # Collect documents
+        docs = list(instance._iter_docs())
+
+        # Assertions
+        assert docs == [mock_document_instance]
+        instance.is_zipfile.assert_called_once()
+        mock_document.assert_called_once_with(mock_source)
+
+    @patch(f"{PTH_}.zipfile.is_zipfile")
+    def test_is_zipfile_true(self, mock_is_zipfile):
+        """
+        Test is_zipfile returns True when the source is a valid zip file.
+        """
+        # Mock zipfile.is_zipfile to return True
+        mock_is_zipfile.return_value = True
+
+        # Instance of the class to test
+        instance = TransXChangeDatasetParser("mock_source.zip")
+
+        # Call the method
+        result = instance.is_zipfile()
+
+        # Assertions
+        assert result is True
+        mock_is_zipfile.assert_called_once_with("mock_source.zip")
+
+
+class TestBaseSchemaViolation(unittest.TestCase):
+
+    def test_from_error(self):
+        """
+        Test BaseSchemaViolation.from_error correctly initializes the
+        object from an error.
+        """
+        # Mock the error object
+        mock_error = MagicMock()
+        mock_error.filename = "/path/to/test_file.xml"
+        mock_error.line = 42
+        mock_error.message = "An error occurred."
+
+        # Call the method
+        violation = BaseSchemaViolation.from_error(mock_error)
+
+        # Assertions
+        self.assertEqual(violation.filename, "test_file.xml")
+        self.assertEqual(violation.line, 42)
+        self.assertEqual(violation.details, "An error occurred.")
+
+    def test_from_error_with_no_path(self):
+        """
+        Test BaseSchemaViolation.from_error when the filename has
+        no directory path.
+        """
+        # Mock the error object
+        mock_error = MagicMock()
+        mock_error.filename = "simple_file.xml"
+        mock_error.line = 99
+        mock_error.message = "Another error occurred."
+
+        # Call the method
+        violation = BaseSchemaViolation.from_error(mock_error)
+
+        # Assertions
+        self.assertEqual(violation.filename, "simple_file.xml")
+        self.assertEqual(violation.line, 99)
+        self.assertEqual(violation.details, "Another error occurred.")
+
+
+class TestTXCPostSchemaViolation(unittest.TestCase):
+
+    def test_from_error(self):
+        """
+        Test TXCPostSchemaViolation.from_error correctly initializes the object
+        from an error.
+        """
+        # Mock the error object
+        mock_error = MagicMock()
+        mock_error.filename = "/path/to/test_file.xml"
+        mock_error.message = "Schema violation occurred."
+
+        # Call the method
+        violation = TXCPostSchemaViolation.from_error(mock_error)
+
+        # Assertions
+        self.assertEqual(violation.filename, "test_file.xml")
+        self.assertEqual(violation.details, "Schema violation occurred.")
+
+    def test_from_error_with_no_path(self):
+        """
+        Test TXCPostSchemaViolation.from_error when the filename has no
+        directory path.
+        """
+        # Mock the error object
+        mock_error = MagicMock()
+        mock_error.filename = "simple_file.xml"
+        mock_error.message = "Another schema violation."
+
+        # Call the method
+        violation = TXCPostSchemaViolation.from_error(mock_error)
+
+        # Assertions
+        self.assertEqual(violation.filename, "simple_file.xml")
+        self.assertEqual(violation.details, "Another schema violation.")
 
 
 if __name__ == "__main__":
