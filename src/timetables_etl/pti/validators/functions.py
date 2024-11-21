@@ -223,7 +223,6 @@ def has_destination_display(context, patterns):
     return validator.validate()
 
 
-
 def has_name(context, elements, *args):
     """
     Checks if elements are in the list of names.
