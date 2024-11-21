@@ -20,11 +20,9 @@ class TestTimetableFileValidator(unittest.TestCase):
 
         # Create a sample S3 event
         self.event = {
-            "detail": {
-                "bucket": {"name": "bodds-dev"},
-                "object": {"key": "22122022105110.zip"},
-                "dataset_etl_task_result_id": 123,
-            }
+            "Bucket": "bodds-dev",
+            "ObjectKey": "22122022105110.zip",
+            "DatasetEtlTaskResultId": 123
         }
 
         # Initialize TimetableFileValidator with the mocked S3 object
@@ -92,11 +90,9 @@ class TestLambdaHandler(unittest.TestCase):
 
         # Create a sample S3 event
         event = {
-            "detail": {
-                "bucket": {"name": "bodds-dev"},
-                "object": {"key": "22122022105110.zip"},
-                "dataset_etl_task_result_id": 123,
-            },
+            "Bucket": "bodds-dev",
+            "ObjectKey": "22122022105110.zip",
+            "DatasetEtlTaskResultId": 123
         }
 
         # Call the lambda_handler and verify the response
@@ -127,11 +123,9 @@ class TestLambdaHandler(unittest.TestCase):
             mock_validator.validate.side_effect = excep("Zip validation failed")
 
             event = {
-                "detail": {
-                    "bucket": {"name": "bodds-dev"},
-                    "object": {"key": "22122022105110.zip"},
-                    "dataset_etl_task_result_id": 123,
-                }
+                "Bucket": "bodds-dev",
+                "ObjectKey": "22122022105110.zip",
+                "DatasetEtlTaskResultId": 123
             }
             mock_db.return_value = MockedDB()
             mock_pipeline_file_processing = mock_pipeline_file_processing.return_value
@@ -171,11 +165,9 @@ class TestLambdaHandler(unittest.TestCase):
             mock_validator.validate.side_effect = excep("XML validation failed")
 
             event = {
-                "detail": {
-                    "bucket": {"name": "bodds-dev"},
-                    "object": {"key": "22122022105110.zip"},
-                    "dataset_etl_task_result_id": 123,
-                }
+                "Bucket": "bodds-dev",
+                "ObjectKey": "22122022105110.zip",
+                "DatasetEtlTaskResultId": 123
             }
             mock_db.return_value = MockedDB()
             mock_pipeline_file_processing = mock_pipeline_file_processing.return_value

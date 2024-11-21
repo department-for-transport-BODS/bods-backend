@@ -41,11 +41,9 @@ class TestLambdaHandler(unittest.TestCase):
         """
         # Mock inputs
         mock_event = {
-            "detail": {
-                "bucket": {"name": "test-bucket"},
-                "object": {"key": "test-key"},
-                "dataset_etl_task_result_id": 123,
-            },
+            "Bucket": "test-bucket",
+            "ObjectKey": "test-key",
+            "DatasetEtlTaskResultId": 123
         }
         mock_context = {}
 
@@ -129,12 +127,11 @@ class TestLambdaHandler(unittest.TestCase):
         """
         # Mock inputs
         mock_event = {
-            "detail": {
-                "bucket": {"name": "test-bucket"},
-                "object": {"key": "test-key"},
-                "dataset_etl_task_result_id": 123,
-            },
+            "Bucket": "test-bucket",
+            "ObjectKey": "test-key",
+            "DatasetEtlTaskResultId": 123
         }
+
         mock_context = {}
 
         # Mock S3 exception

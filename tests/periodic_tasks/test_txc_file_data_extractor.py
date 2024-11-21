@@ -21,11 +21,9 @@ class TestLambdaHandler(unittest.TestCase):
                                     mock_logger):
         # Event structure with a test bucket and key
         event = {
-            "detail": {
-                "bucket": {"name": "test-bucket"},
-                "object": {"key": "test-key"},
-                "dataset_etl_task_result_id": 123,
-            }
+            "Bucket": "test-bucket",
+            "ObjectKey": "test-key",
+            "DatasetEtlTaskResultId": 123
         }
         # Mock get revision for TxC attributes
         mock_txc_revision = MagicMock()
@@ -82,11 +80,9 @@ class TestLambdaHandler(unittest.TestCase):
                                      mock_logger):
         # Event structure with a test bucket and key
         event = {
-            "detail": {
-                "bucket": {"name": "test-bucket"},
-                "object": {"key": "test-key"},
-                "dataset_etl_task_result_id": 123,
-            }
+            "Bucket": "test-bucket",
+            "ObjectKey": "test-key",
+            "DatasetEtlTaskResultId": 123
         }
         # Mock get revision for TxC attributes
         mock_txc_revision = MagicMock()

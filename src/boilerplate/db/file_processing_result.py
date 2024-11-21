@@ -171,7 +171,7 @@ class PipelineFileProcessingResult:
                         buf_.revision_id == revision_id).one()
                 )
             except NoResultFound as error:
-                msg = (f"Revision {revision_id } "
+                msg = (f"Revision {revision_id} "
                        f"doesn't exist pipelines_fileprocessingresult")
                 logger.error(msg)
                 raise error
@@ -242,10 +242,10 @@ def txc_file_attributes_to_db(revision_id, attributes):
                     service_code=it.service.service_code,
                     origin=it.service.origin,
                     destination=it.service.destination,
-                    operating_period_start_date=it.service.\
-                        operating_period_start_date,
-                    operating_period_end_date=it.service.\
-                        operating_period_end_date,
+                    operating_period_start_date=it.service.
+                    operating_period_start_date,
+                    operating_period_end_date=it.service.
+                    operating_period_end_date,
                     public_use=it.service.public_use,
                     line_names=[line.line_name for line in it.service.lines],
                     hash=it.hash,

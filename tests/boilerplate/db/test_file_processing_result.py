@@ -206,12 +206,11 @@ class TestFileProcessingResult(unittest.TestCase):
 
         # Create a sample event and context
         event = {
-            "detail": {
-                "bucket": {"name": "test-bucket"},
-                "object": {"key": "test-key"},
-                "dataset_etl_task_result_id": 123,
-            }
+            "Bucket": "test-bucket",
+            "ObjectKey": "test-key",
+            "DatasetEtlTaskResultId": 123
         }
+
         context = {}
 
         # Define a simple lambda handler to use with the decorator
@@ -257,11 +256,9 @@ class TestFileProcessingResult(unittest.TestCase):
 
         # Create a sample event and context
         event = {
-            "detail": {
-                "bucket": {"name": "test-bucket"},
-                "object": {"key": "test-key"},
-                "dataset_etl_task_result_id": 123,
-            }
+            "Bucket": "test-bucket",
+            "ObjectKey": "test-key",
+            "DatasetEtlTaskResultId": 123
         }
         context = {}
 

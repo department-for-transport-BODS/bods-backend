@@ -186,12 +186,11 @@ class TestLambdaHandler(unittest.TestCase):
                                     mock_s3):
         # Setup mocks
         mock_event = {
-            "detail": {
-                "bucket": {"name": "test-bucket"},
-                "object": {"key": "bodds.zip"},
-                "dataset_etl_task_result_id": 123,
-            }
+            "Bucket": "test-bucket",
+            "ObjectKey": "bodds.zip",
+            "DatasetEtlTaskResultId": 123
         }
+
         mock_context = MagicMock()
 
         # Mock the return values for the various calls
@@ -256,11 +255,9 @@ class TestLambdaHandler(unittest.TestCase):
                                       mock_s3):
         # Setup mocks
         mock_event = {
-            "detail": {
-                "bucket": {"name": "test-bucket"},
-                "object": {"key": "bodds.zip"},
-                "dataset_etl_task_result_id": 123,
-            }
+            "Bucket": "test-bucket",
+            "ObjectKey": "bodds.zip",
+            "DatasetEtlTaskResultId": 123
         }
         mock_context = MagicMock()
 
