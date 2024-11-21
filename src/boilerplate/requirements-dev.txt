@@ -11,3 +11,4 @@ cfn-tools==0.1.6
 citext==0.1.0
 sqlacodegen==3.0.0rc5
 pgvector==0.3.6
+factory-boy===3.3.1

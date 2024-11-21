@@ -1,3 +1,8 @@
+from pathlib import Path
+
+
+PTI_PATH = Path(__file__).parent / "pti_schema.json"
+
 OPERATION_DAYS = ("DaysOfOperation", "DaysOfNonOperation")
 
 # holidays common for english and scottish regions
@@ -44,4 +49,6 @@ REF_PREFIX = "Please refer to section "
 REF_SUFFIX = " in the BODS PTI profile v1.1 document: "
 NO_REF = "Please refer to the BODS PTI profile v1.1 document: "
 
+FLEXIBLE_SERVICE = "FlexibleService"
+STANDARD_SERVICE = "StandardService"
 MODE_COACH = "coach"
