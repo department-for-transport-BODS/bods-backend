@@ -84,6 +84,7 @@ Resources:
                     - !Ref PlaceholderS3Bucket
       DefinitionUri: './src/timetables_etl.statemachine.json'
       DefinitionSubstitutions:
+        PlaceholderLambdaArn: !GetAtt PlaceholderLambda.Arn
         ExceptionHandlerLambdaArn: !GetAtt ExceptionHandlerLambda.Arn
         PlaceholderSNSTopicArn: !GetAtt PlaceholderSNSTopic.TopicArn
         PlaceholderSQSQueueUrl: !GetAtt PlaceholderSQSQueue.QueueUrl
@@ -109,7 +110,7 @@ Resources:
                   - lambda:InvokeFunction
                 Resource:
                   - !GetAtt ClamAvScannerLambda.Arn
-                  - !GetAtt TimetablePostSchemaCheckLambda.Arn
+#                  - !GetAtt TimetablePostSchemaCheckLambda.Arn
         - PolicyName: SNSPublishPolicy
           PolicyDocument:
             Version: "2012-10-17"
@@ -132,6 +133,7 @@ Resources:
   ################################
   ClamAvScannerLambda:
     Type: AWS::Serverless::Function
+    DependsOn: ClamAvScannerLambdaLogGroup
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-clam-av-scanner-lambda'
       CodeUri: ./src/timetables_etl
@@ -181,11 +183,39 @@ Resources:
         - !Ref AWS::NoValue
       RetentionInDays: 30
 
+  ############################
+  #### PLACEHOLDER LAMBDA ####
+  ############################
+  PlaceholderLambda:
+    Type: AWS::Serverless::Function
+    DependsOn: PlaceholderLambdaLogGroup
+    ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-placeholder-lambda'
+      CodeUri: ./src/timetables_etl
+      Handler: app.lambda_handler
+      Layers:
+        - !Ref BoilerplateLambdaLayer
+      Role: !GetAtt LambdaExecutionRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref PlaceholderLambdaLogGroup
+
+  PlaceholderLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-placeholder-lambda'
+      KmsKeyId: !If
+        - IsNotLocal
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Ref AWS::NoValue
+      RetentionInDays: 30
+
   ##################################
   #### EXCEPTION HANDLER LAMBDA ####
   ##################################
   ExceptionHandlerLambda:
     Type: AWS::Serverless::Function
+    DependsOn: ExceptionHandlerLogGroup
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-exception-handler-lambda'
