@@ -3,17 +3,18 @@ Naptan Models
 SQLAlchemy Models
 """
 
-import logging
+from functools import cached_property
+from typing import cast
 
 from geoalchemy2 import Geometry
 from geoalchemy2.elements import WKBElement
+from geoalchemy2.shape import to_shape
+from shapely.geometry import Point
 from sqlalchemy import Integer, String
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .common import BaseSQLModel
-
-logger = logging.getLogger(__name__)
 
 
 class NaptanAdminArea(BaseSQLModel):
@@ -29,7 +30,10 @@ class NaptanAdminArea(BaseSQLModel):
 
 
 class NaptanLocality(BaseSQLModel):
-    """Naptan Locality Table"""
+    """
+    Naptan Locality Table
+    Lists all localities with gazetteer_id being the primary key
+    """
 
     __tablename__ = "naptan_locality"
 
@@ -60,3 +64,11 @@ class NaptanStopPoint(BaseSQLModel):
     stop_areas: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=False)
     bus_stop_type: Mapped[str | None] = mapped_column(String(255), nullable=True)
     stop_type: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    @cached_property
+    def shape(self) -> Point:
+        """
+        Returns the shapely geometry of the location.
+        Cached to avoid repeated conversions of the same geometry.
+        """
+        return cast(Point, to_shape(self.location))

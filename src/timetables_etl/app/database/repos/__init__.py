@@ -4,7 +4,8 @@ Exported repos
 
 from .repo_etl_task import ETLTaskResultRepo
 from .repo_junction import (
-    ServicePatternAssociation,
+    TransmodelServicePatternAdminAreaRepo,
+    TransmodelServicePatternLocalityRepo,
     TransmodelServiceServicePatternRepo,
 )
 from .repo_naptan import NaptanAdminAreaRepo, NaptanLocalityRepo, NaptanStopPointRepo
@@ -48,6 +49,10 @@ __all__ = [
     "NaptanAdminAreaRepo",
     "NaptanLocalityRepo",
     "NaptanStopPointRepo",
-    "ServicePatternAssociation",
     "TransmodelServiceServicePatternRepo",
+    "NaptanLocalityRepo",
+    "NaptanStopPointRepo",
+    "TransmodelServiceServicePatternRepo",
+    "TransmodelServicePatternAdminAreaRepo",
+    "TransmodelServicePatternLocalityRepo",
 ]

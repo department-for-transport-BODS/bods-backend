@@ -10,10 +10,7 @@ from timetables_etl.app.database.models import (
     TransmodelServicePattern,
     TransmodelServiceServicePattern,
 )
-from timetables_etl.app.database.repos import (
-    ServicePatternAssociation,
-    TransmodelServiceServicePatternRepo,
-)
+from timetables_etl.app.database.repos import TransmodelServiceServicePatternRepo
 
 log = get_logger()
 
@@ -27,9 +24,11 @@ def link_service_to_service_patterns(
     Associative table between service and service pattern
     """
     associations = [
-        ServicePatternAssociation(service_id=service.id, pattern_id=pattern.id)
+        TransmodelServiceServicePattern(
+            service_id=service.id, servicepattern_id=pattern.id
+        )
         for pattern in service_patterns
     ]
-    result = TransmodelServiceServicePatternRepo(db).add_associations(associations)
+    result = TransmodelServiceServicePatternRepo(db).bulk_insert(associations)
     log.info("Associations between Service and Service Pattern Created")
     return result
