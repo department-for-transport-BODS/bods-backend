@@ -17,7 +17,8 @@ from .common import BaseSQLModel
 class TransmodelService(BaseSQLModel):
     """
     Transmodel Service Table
-    ETL Output
+    Each Service in a TXC file is an instance of this
+    PTI states there should only be one per file
     """
 
     __tablename__ = "transmodel_service"
@@ -36,7 +37,7 @@ class TransmodelService(BaseSQLModel):
 class TransmodelVehicleJourney(BaseSQLModel):
     """
     Transmodel Vehicle Journey Table
-    ETL Output
+    Each TXC Vehicle journey has a mapping to a Transmodel Service Pattern
     """
 
     __tablename__ = "transmodel_vehiclejourney"
@@ -162,7 +163,10 @@ class TransmodelServicedOrganisationWorkingDays(BaseSQLModel):
 
 
 class TransmodelServicePatternStop(BaseSQLModel):
-    """Transmodel Service Pattern Stop Table"""
+    """
+    Transmodel Service Pattern Stop Table
+    Each Row is a stop for a particular vehicle journey
+    """
 
     __tablename__ = "transmodel_servicepatternstop"
 
@@ -170,15 +174,11 @@ class TransmodelServicePatternStop(BaseSQLModel):
     sequence_number: Mapped[int] = mapped_column(Integer, nullable=False)
     atco_code: Mapped[str] = mapped_column(String(255), nullable=False)
     naptan_stop_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    service_pattern_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("transmodel_servicepattern.id"), nullable=False
-    )
+    service_pattern_id: Mapped[int] = mapped_column(Integer, nullable=False)
     departure_time: Mapped[time | None] = mapped_column(Time, nullable=True)
     is_timing_point: Mapped[bool] = mapped_column(Boolean, nullable=False)
     txc_common_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    vehicle_journey_id: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("transmodel_vehiclejourney.id"), nullable=True
-    )
+    vehicle_journey_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     stop_activity_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     auto_sequence_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
@@ -200,3 +200,18 @@ class TransmodelBookingArrangements(BaseSQLModel):
     service_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("transmodel_service.id"), nullable=False
     )
+
+
+class TransmodelStopActivity(BaseSQLModel):
+    """
+    Transmodel Stop Activity Table
+    Can't guarantee the order, so need to fetch and reference when making stop points
+    """
+
+    __tablename__ = "transmodel_stopactivity"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    is_pickup: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    is_setdown: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    is_driverrequest: Mapped[bool] = mapped_column(Boolean, nullable=False)

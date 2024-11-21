@@ -7,13 +7,9 @@ from typing import cast
 
 from structlog.stdlib import get_logger
 
-from timetables_etl.app.database.client import BodsDB
 from timetables_etl.app.database.models.model_transmodel import (
     TransmodelServicePattern,
     TransmodelVehicleJourney,
-)
-from timetables_etl.app.database.repos.repo_transmodel import (
-    TransmodelVehicleJourneyRepo,
 )
 from timetables_etl.app.txc.models.txc_service import TXCJourneyPattern
 from timetables_etl.app.txc.models.txc_vehicle_journey import TXCVehicleJourney
@@ -111,24 +107,3 @@ def generate_pattern_vehicle_journeys(
     )
 
     return journeys
-
-
-def process_service_pattern_vehicle_journeys(
-    txc_vjs: list[TXCVehicleJourney],
-    txc_jp: TXCJourneyPattern,
-    tm_service_pattern: TransmodelServicePattern,
-    db: BodsDB,
-) -> list[TransmodelVehicleJourney]:
-    """
-    Generate and save to DB Transmodel Vehicle Journeys for a Service Pattern
-    """
-    tm_vjs = generate_pattern_vehicle_journeys(txc_vjs, txc_jp, tm_service_pattern)
-    results = TransmodelVehicleJourneyRepo(db).bulk_insert(tm_vjs)
-
-    log.info(
-        "Saved vehicle journeys",
-        pattern_id=results[0].service_pattern_id if results else None,
-        count=len(results),
-    )
-
-    return results

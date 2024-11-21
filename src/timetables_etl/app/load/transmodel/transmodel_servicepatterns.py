@@ -18,14 +18,14 @@ from timetables_etl.app.database.repos.repo_junction import (
     TransmodelServicePatternAdminAreaRepo,
     TransmodelServicePatternLocalityRepo,
 )
+from timetables_etl.app.load.transmodel.transmodel_vehicle_journey import (
+    process_service_pattern_vehicle_journeys,
+)
 from timetables_etl.app.transform.service_pattern_associations import (
     generate_pattern_admin_areas,
     generate_pattern_localities,
 )
 from timetables_etl.app.transform.utils_stops import get_pattern_stops
-from timetables_etl.app.transform.vehicle_journeys import (
-    process_service_pattern_vehicle_journeys,
-)
 from timetables_etl.app.txc.models.txc_journey_pattern import TXCJourneyPatternSection
 from timetables_etl.app.txc.models.txc_service import TXCJourneyPattern, TXCService
 
@@ -143,7 +143,7 @@ def load_transmodel_service_patterns(
         process_pattern_admin_areas(service_pattern, stops, db)
 
         process_service_pattern_vehicle_journeys(
-            txc.VehicleJourneys, txc_jp, service_pattern, db
+            txc, txc_jp, service_pattern, stops, db
         )
 
         patterns.append(service_pattern)

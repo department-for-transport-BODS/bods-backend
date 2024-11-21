@@ -4,7 +4,7 @@ Instead of having try/except blocks for each repo call, define a decorator to ha
 
 from dataclasses import dataclass
 from functools import wraps
-from typing import Any, Callable, Generic, ParamSpec, Type, TypeAlias, TypeVar
+from typing import Any, Callable, Generic, ParamSpec, Sequence, Type, TypeAlias, TypeVar
 
 from sqlalchemy import Select, select
 from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
@@ -176,10 +176,15 @@ class BaseRepository(Generic[DBModelT]):
 
     @handle_repository_errors
     def get_all(self) -> list[DBModelT]:
-        """Get all entities"""
+        """
+        Get all rows in a table
+        """
+        statement = select(self._model)
         with self._db.session_scope() as session:
-            statement = self._build_query()
-            return list(session.execute(statement).scalars().all())
+            results: Sequence[DBModelT] = session.execute(statement).scalars().all()
+            for result in results:
+                session.expunge(result)
+            return list(results)
 
     @handle_repository_errors
     def update(self, record: DBModelT) -> None:

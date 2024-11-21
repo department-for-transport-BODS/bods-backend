@@ -27,6 +27,7 @@ from .model_transmodel import (
     TransmodelServicedOrganisationWorkingDays,
     TransmodelServicePattern,
     TransmodelServicePatternStop,
+    TransmodelStopActivity,
     TransmodelVehicleJourney,
 )
 
@@ -57,4 +58,5 @@ __all__ = [
     "TransmodelServiceServicePattern",
     "TransmodelServicePatternAdminAreas",
     "TransmodelServicePatternLocality",
+    "TransmodelStopActivity",
 ]

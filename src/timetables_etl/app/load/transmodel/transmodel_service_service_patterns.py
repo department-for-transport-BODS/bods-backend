@@ -23,12 +23,17 @@ def link_service_to_service_patterns(
     """
     Associative table between service and service pattern
     """
+    pattern_ids = [pattern.id for pattern in service_patterns]
     associations = [
         TransmodelServiceServicePattern(
-            service_id=service.id, servicepattern_id=pattern.id
+            service_id=service.id, servicepattern_id=pattern_id
         )
-        for pattern in service_patterns
+        for pattern_id in pattern_ids
     ]
     result = TransmodelServiceServicePatternRepo(db).bulk_insert(associations)
-    log.info("Associations between Service and Service Pattern Created")
+    log.info(
+        "Associations between Service and Service Pattern Created",
+        service_id=service.id,
+        service_pattern_ids=pattern_ids,
+    )
     return result

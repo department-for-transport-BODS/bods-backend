@@ -15,6 +15,7 @@ from ..models import (
     TransmodelServicedOrganisationWorkingDays,
     TransmodelServicePattern,
     TransmodelServicePatternStop,
+    TransmodelStopActivity,
     TransmodelVehicleJourney,
 )
 from .repo_common import BaseRepository, handle_repository_errors
@@ -208,3 +209,27 @@ class TransmodelBookingArrangementsRepo(BaseRepository[TransmodelBookingArrangem
         """Get by ID"""
         statement = self._build_query().where(self._model.id == arrangement_id)
         return self._fetch_one(statement)
+
+
+class TransmodelStopActivityRepo(BaseRepository[TransmodelStopActivity]):
+    """
+    Repository for managing TransmodelStopActivity Stop usages
+    e.g. pickup, setDown
+    """
+
+    def __init__(self, db: BodsDB):
+        super().__init__(db, TransmodelStopActivity)
+
+    def get_by_name(self, name: str) -> TransmodelStopActivity | None:
+        """Get activity by name"""
+        statement = self._build_query().where(self._model.name == name)
+        return self._fetch_one(statement)
+
+    def get_activity_map(self) -> dict[str, TransmodelStopActivity]:
+        """
+        Get mapping of activity name to TransmodelStopActivity model
+        The ID ordering can't be guaranteed so needs to be fetched as a reference
+        """
+
+        activities = self.get_all()
+        return {activity.name: activity for activity in activities}
