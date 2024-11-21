@@ -474,7 +474,6 @@ def validate_bank_holidays(context, bank_holidays):
     return sorted(BANK_HOLIDAYS) == sorted(scottish_removed)
 
 
-# TODO: Add tests (need to move XML fixtures)
 def check_vehicle_journey_timing_links(context, vehicleJourney: List[etree._Element]) -> bool:
     """Validation for VehicleJourneyTimingLink and JourneyPatternTimingLink
     If VehicleJourneyTimingLink is provided, then number of JourneyPatternTimingLink
