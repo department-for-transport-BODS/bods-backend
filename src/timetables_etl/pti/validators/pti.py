@@ -96,7 +96,8 @@ class PTIValidator:
         self.register_function("validate_non_naptan_stop_points", validate_non_naptan_stop_points)
         self.register_function("validate_run_time", validate_run_time)
         self.register_function("validate_timing_link_stops", validate_timing_link_stops)
-        self.register_function("validate_bank_holidays", validate_bank_holidays)
+        # TODO: Requires DB interaction
+        # self.register_function("validate_bank_holidays", validate_bank_holidays)
 
         # TODO: Requires DB interaction
         # self.register_function("validate_service_code", validate_service_codes)
