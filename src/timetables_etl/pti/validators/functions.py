@@ -359,10 +359,6 @@ def validate_modification_date_time(context, roots):
         return creation_date < modification_date
 
 
-def validate_non_naptan_stop_points(context, points):
-    point = points[0]
-    validator = StopPointValidator(point)
-    return validator.validate()
 
 
 def validate_run_time(context, timing_links):

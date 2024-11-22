@@ -1,5 +1,5 @@
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock
 
 import pytest
 from dateutil import parser
@@ -23,6 +23,7 @@ from pti.validators.functions import (
     is_member_of,
     today,
     validate_licence_number,
+    validate_modification_date_time,
 )
 
 from tests.timetables_etl.pti.validators.constants import TXC_END, TXC_START
@@ -985,3 +986,32 @@ def test_validate_licence_number_non_coach_data_failed():
         elements = doc.xpath("//x:Operator", namespaces=NAMESPACE)
         actual = validate_licence_number("", elements)
         assert actual == False
+
+
+@pytest.mark.parametrize(
+    "attributes, expected_result",
+    [
+        # Case 1: revision_number = "0" and dates are equal
+        ({"RevisionNumber": "0", "ModificationDateTime": "2024-11-14T12:00:00", "CreationDateTime": "2024-11-14T12:00:00"}, True),
+        # Case 2: revision_number = "0" and dates are not equal
+        ({"RevisionNumber": "0", "ModificationDateTime": "2024-11-14T12:00:00", "CreationDateTime": "2024-11-14T11:00:00"}, False),
+        # Case 3: revision_number != "0" and creation_date < modification_date
+        ({"RevisionNumber": "1", "ModificationDateTime": "2024-11-14T12:00:00", "CreationDateTime": "2024-11-14T11:00:00"}, True),
+        # Case 4: revision_number != "0" and creation_date >= modification_date
+        ({"RevisionNumber": "1", "ModificationDateTime": "2024-11-14T12:00:00", "CreationDateTime": "2024-11-14T12:00:00"}, False),
+    ],
+)
+def test_validate_modification_date_time(attributes, expected_result):
+    """
+    Test the `validate_modification_date_time` function with various cases.
+    """
+    # Mock the root element with attributes
+    mock_root = MagicMock()
+    mock_root.attrib = attributes
+
+    # Call the function
+    context = MagicMock()  # Assuming context is unused in this function
+    result = validate_modification_date_time(context, [mock_root])
+
+    # Assert the result
+    assert result == expected_result
