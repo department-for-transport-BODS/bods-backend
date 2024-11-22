@@ -6,10 +6,15 @@ from dateutil import parser
 from isoduration import DurationParsingException, parse_duration
 from isoduration.types import TimeDuration
 from lxml import etree
-from pti.constants import (BANK_HOLIDAYS, BANK_HOLIDAYS_ONLY_ENGLISH,
-                           BANK_HOLIDAYS_ONLY_SCOTTISH,
-                           OLD_HOLIDAYS_ALREADY_REMOVED, OPERATION_DAYS,
-                           OTHER_PUBLIC_HOLIDAYS, SCOTTISH_BANK_HOLIDAYS)
+from pti.constants import (
+    BANK_HOLIDAYS,
+    BANK_HOLIDAYS_ONLY_ENGLISH,
+    BANK_HOLIDAYS_ONLY_SCOTTISH,
+    OLD_HOLIDAYS_ALREADY_REMOVED,
+    OPERATION_DAYS,
+    OTHER_PUBLIC_HOLIDAYS,
+    SCOTTISH_BANK_HOLIDAYS,
+)
 from pti.validators.destination_display import DestinationDisplayValidator
 from pti.validators.lines import LinesValidator
 from pti.validators.stop_point import StopPointValidator
@@ -360,7 +365,6 @@ def validate_non_naptan_stop_points(context, points):
     return validator.validate()
 
 
-# TODO: No tests found for this function
 def validate_run_time(context, timing_links):
     """
     Validates journey timings.
@@ -392,7 +396,6 @@ def validate_run_time(context, timing_links):
     return True
 
 
-# TODO: No tests found for this function
 def validate_timing_link_stops(context, sections):
     """
     Validates that all links in a section are ordered coherently by
@@ -428,53 +431,6 @@ def get_service_ref_from_element(element, ns):
     return service_ref
 
 
-
-def check_vehicle_journey_timing_links(context, vehicleJourney: List[etree._Element]) -> bool:
-    """Validation for VehicleJourneyTimingLink and JourneyPatternTimingLink
-    If VehicleJourneyTimingLink is provided, then number of JourneyPatternTimingLink
-    in the vehicleJourney must be equal. No validation is VehicleJourneyTimingLink is
-    missing
-
-    Args:
-        context : Context object for xml
-        vehicleJourney (_Element): Vehicle Journey object
-
-    Returns:
-        bool: False if validation failed, True is validation passed
-    """
-    ns = {"x": vehicleJourney[0].nsmap.get(None)}
-    xpath = "x:VehicleJourneyTimingLink"
-    vehicle_journey_timing_links = vehicleJourney[0].xpath(xpath, namespaces=ns)
-
-    if len(vehicle_journey_timing_links) == 0:
-        return True
-
-    journey_pattern_ref = vehicleJourney[0].xpath("x:JourneyPatternRef", namespaces=ns)[0]
-
-    services_xpath = "../../x:Services"
-    services = vehicleJourney[0].xpath(services_xpath, namespaces=ns)[0]
-    journey_pattern_sections_refs = services.xpath(
-        f"//x:JourneyPattern[@id='{journey_pattern_ref.text}']/x:JourneyPatternSectionRefs",
-        namespaces=ns,
-    )
-
-    if len(journey_pattern_sections_refs) == 0:
-        return False
-
-    journey_pattern_sections_refs_ids = 0
-    for jpsr in journey_pattern_sections_refs:
-        journey_pattern_sections_xpath = (
-            f"../../x:JourneyPatternSections/x:JourneyPatternSection[@id='{jpsr.text}']/x:JourneyPatternTimingLink"
-        )
-        journey_pattern_timing_lists = vehicleJourney[0].xpath(journey_pattern_sections_xpath, namespaces=ns)
-        journey_pattern_sections_refs_ids += len(journey_pattern_timing_lists)
-
-    if len(vehicle_journey_timing_links) != journey_pattern_sections_refs_ids:
-        return False
-    return True
-
-
-# TODO: Add tests (need to move XML fixtures)
 def validate_licence_number(context, elements: List[etree._Element]) -> bool:
     """
     Validate the license number within a list of XML elements if Primary Mode is not coach.
@@ -500,7 +456,6 @@ def validate_licence_number(context, elements: List[etree._Element]) -> bool:
     return True
 
 
-# TODO: Add tests (need to move XML fixtures)
 def has_servicedorganisation_working_days(context, service_organisations):
     """
     Checks if all service organisations have defined working days.

@@ -15,7 +15,6 @@ from pti.validators.functions import (
     check_flexible_service_timing_status,
     check_inbound_outbound_description,
     check_service_group_validations,
-    check_vehicle_journey_timing_links,
     contains_date,
     has_destination_display,
     has_flexible_or_standard_service,
@@ -101,7 +100,9 @@ class PTIValidator:
         # TODO: Requires DB interaction
         # self.register_function("validate_service_code", validate_service_codes)
 
-        self.register_function("check_vehicle_journey_timing_links", check_vehicle_journey_timing_links)
+        # TODO: It doesn't seem like this function is actually being called
+        # self.register_function("check_vehicle_journey_timing_links", check_vehicle_journey_timing_links)
+
         self.register_function("validate_licence_number", validate_licence_number)
 
         self.register_function(

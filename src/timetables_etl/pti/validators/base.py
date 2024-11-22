@@ -4,7 +4,6 @@ from pti.models import Line, VehicleJourney
 from timetables.transxchange import TransXChangeElement
 
 
-# TODO: No tests found for this class
 class BaseValidator:
     def __init__(self, root):
         self.root = root
