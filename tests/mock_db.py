@@ -58,7 +58,8 @@ class organisation_datasetrevision(Base):
 
 class organisation_txcfileattributes(Base):
     __tablename__ = "organisation_txcfileattributes"
-    revision_id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True)
+    revision_id = Column(Integer)
     schema_version = Column(String(10))
     revision_number = Column(Integer)
     modification = Column(String(28))
@@ -85,6 +86,9 @@ class data_quality_postschemaviolation(Base):
     details = Column(String(1024))
     revision_id = Column(Integer)
 
+class organisation_dataset(Base):
+    __tablename__ = 'organisation_dataset'
+    id = Column(Integer, primary_key=True)
 
 class MockedDB:
     def __init__(self):
@@ -99,7 +103,8 @@ class MockedDB:
             pipelines_pipelineerrorcode=pipeline_error_code,
             organisation_datasetrevision=organisation_datasetrevision,
             organisation_txcfileattributes=organisation_txcfileattributes,
-            data_quality_postschemaviolation=data_quality_postschemaviolation
+            data_quality_postschemaviolation=data_quality_postschemaviolation,
+            organisation_dataset=organisation_dataset
         )
 
 
