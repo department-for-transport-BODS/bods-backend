@@ -5,6 +5,7 @@ SQL Alchemy models for tables starting with transmodel_
 from __future__ import annotations
 
 from datetime import date, datetime, time
+from enum import Enum
 
 from geoalchemy2 import Geometry, WKBElement
 from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text, Time
@@ -96,13 +97,27 @@ class TransmodelFlexibleServiceOperationPeriod(BaseSQLModel):
     start_time: Mapped[time | None] = mapped_column(Time, nullable=True)
 
 
+class TMDayOfWeek(str, Enum):
+    """
+    Days of the Wek Enum for transmodel_operating profile
+    """
+
+    MONDAY = "Monday"
+    TUESDAY = "Tuesday"
+    WEDNESDAY = "Wednesday"
+    THURSDAY = "Thursday"
+    FRIDAY = "Friday"
+    SATURDAY = "Saturday"
+    SUNDAY = "Sunday"
+
+
 class TransmodelOperatingProfile(BaseSQLModel):
     """Transmodel Operating Profile Table"""
 
     __tablename__ = "transmodel_operatingprofile"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
-    day_of_week: Mapped[str] = mapped_column(String(20), nullable=False)
+    day_of_week: Mapped[TMDayOfWeek] = mapped_column(String(20), nullable=False)
     vehicle_journey_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("transmodel_vehiclejourney.id"), nullable=False
     )

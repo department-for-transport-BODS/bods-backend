@@ -14,12 +14,16 @@ from timetables_etl.app.database.models.model_transmodel import (
     TransmodelVehicleJourney,
 )
 from timetables_etl.app.database.repos.repo_transmodel import (
+    TransmodelNonOperatingDatesExceptionsRepo,
+    TransmodelOperatingDatesExceptionsRepo,
+    TransmodelOperatingProfileRepo,
     TransmodelServicePatternStopRepo,
     TransmodelStopActivityRepo,
     TransmodelVehicleJourneyRepo,
 )
 from timetables_etl.app.transform.service_pattern_stops import generate_pattern_stops
 from timetables_etl.app.transform.vehicle_journeys import (
+    create_vehicle_journey_operations,
     generate_pattern_vehicle_journeys,
 )
 from timetables_etl.app.txc.models.txc_data import TXCData
@@ -40,7 +44,6 @@ def process_pattern_stops(
 ) -> list[TransmodelServicePatternStop]:
     """
     Process and insert transmodel_servicepatternstop
-
     """
     activity_map = TransmodelStopActivityRepo(db).get_activity_map()
 
@@ -65,6 +68,84 @@ def process_pattern_stops(
     return results
 
 
+def process_vehicle_journey_operations(
+    journey_results: list[tuple[TransmodelVehicleJourney, TXCVehicleJourney]],
+    db: BodsDB,
+) -> None:
+    """
+    Process and save operations data for vehicle journeys
+
+    Args:
+        journey_results: List of (TransmodelVehicleJourney, TXCVehicleJourney) tuples
+        db: Database connection
+    """
+    profile_repo = TransmodelOperatingProfileRepo(db)
+    operating_dates_repo = TransmodelOperatingDatesExceptionsRepo(db)
+    non_operating_dates_repo = TransmodelNonOperatingDatesExceptionsRepo(db)
+
+    for tm_journey, txc_journey in journey_results:
+        try:
+            operations = create_vehicle_journey_operations(txc_journey, tm_journey.id)
+
+            if operations.operating_profiles:
+                profile_repo.bulk_insert(operations.operating_profiles)
+
+            if operations.operating_dates:
+                operating_dates_repo.bulk_insert(operations.operating_dates)
+
+            if operations.non_operating_dates:
+                non_operating_dates_repo.bulk_insert(operations.non_operating_dates)
+
+            log.info(
+                "Processed journey operations",
+                journey_id=tm_journey.id,
+                profiles=len(operations.operating_profiles),
+                op_dates=len(operations.operating_dates),
+                non_op_dates=len(operations.non_operating_dates),
+            )
+
+        except Exception as e:
+            log.error(
+                "Failed to process journey operations",
+                error=str(e),
+                journey_id=tm_journey.id,
+            )
+            continue
+
+
+def process_vehicle_journeys(
+    txc_vjs: list[TXCVehicleJourney],
+    txc_jp: TXCJourneyPattern,
+    tm_service_pattern: TransmodelServicePattern,
+    db: BodsDB,
+) -> list[TransmodelVehicleJourney]:
+    """
+    Generate and insert Transmodel Vehicle Journeys
+    """
+    journey_results = generate_pattern_vehicle_journeys(
+        txc_vjs, txc_jp, tm_service_pattern
+    )
+
+    if not journey_results:
+        log.warning("No vehicle journeys generated")
+        return []
+
+    tm_journeys = [result[0] for result in journey_results]
+
+    results = TransmodelVehicleJourneyRepo(db).bulk_insert(tm_journeys)
+
+    process_vehicle_journey_operations(journey_results, db)
+
+    log.info(
+        "Processed vehicle journeys",
+        pattern_id=results[0].service_pattern_id if results else None,
+        count=len(results),
+        vj_ids=[vj.id for vj in results],
+    )
+
+    return results
+
+
 def process_service_pattern_vehicle_journeys(
     txc: TXCData,
     txc_jp: TXCJourneyPattern,
@@ -75,17 +156,10 @@ def process_service_pattern_vehicle_journeys(
     """
     Generate and save to DB Transmodel Vehicle Journeys for a Service Pattern
     """
-    tm_vjs = generate_pattern_vehicle_journeys(
-        txc.VehicleJourneys, txc_jp, tm_service_pattern
+    tm_vjs = process_vehicle_journeys(
+        txc.VehicleJourneys, txc_jp, tm_service_pattern, db
     )
-    results = TransmodelVehicleJourneyRepo(db).bulk_insert(tm_vjs)
 
-    log.info(
-        "Inserted Transmodel vehicle journeys",
-        pattern_id=results[0].service_pattern_id if results else None,
-        count=len(results),
-        vj_ids=[vj.id for vj in results],
-    )
     jp_sections = [
         section
         for section in txc.JourneyPatternSections
@@ -108,4 +182,5 @@ def process_service_pattern_vehicle_journeys(
             stop_sequence=stops,
             db=db,
         )
-    return results
+
+    return tm_vjs
