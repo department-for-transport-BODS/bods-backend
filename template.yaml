@@ -23,17 +23,17 @@ Parameters:
     Default: 5432
 
 Resources:
-#  PeriodicTasks:
-#    Type: AWS::Serverless::Application
-#    Properties:
-#      Location: './periodic-tasks.yaml'
-#      Parameters:
-#        Environment: !Ref Environment
-#        ProjectName: !Ref ProjectName
-#        AvlConsumerApiBaseUrl: !Ref AvlConsumerApiBaseUrl
-#        GtfsApiBaseUrl: !Ref GtfsApiBaseUrl
-#        RdsDbHostAddr: !Ref RdsDbHostAddr
-#        RdsDbPort: !Ref RdsDbPort
+  PeriodicTasks:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: './periodic-tasks.yaml'
+      Parameters:
+        Environment: !Ref Environment
+        ProjectName: !Ref ProjectName
+        AvlConsumerApiBaseUrl: !Ref AvlConsumerApiBaseUrl
+        GtfsApiBaseUrl: !Ref GtfsApiBaseUrl
+        RdsDbHostAddr: !Ref RdsDbHostAddr
+        RdsDbPort: !Ref RdsDbPort
 
   TimetablesEtl:
     Type: AWS::Serverless::Application
