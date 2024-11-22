@@ -47,7 +47,7 @@ def get_task_data(input_data: ETLInputData, db: BodsDB) -> TaskData:
     """
 
     task = ETLTaskResultRepo(db).get_by_id(input_data.task_id)
-    revision = OrganisationDatasetRevisionRepo(db).get_by_id(input_data.revision_id)
+    revision = OrganisationDatasetRevisionRepo(db).get_by_id(task.revision_id)
     file_attributes = OrganisationTXCFileAttributesRepo(db).get_by_id(
         input_data.file_attributes_id
     )

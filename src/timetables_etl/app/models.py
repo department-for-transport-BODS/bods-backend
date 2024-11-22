@@ -16,7 +16,6 @@ class ETLInputData(BaseModel):
     Input data for the ETL Function
     """
 
-    revision_id: int
     task_id: int
     file_attributes_id: int
     s3_bucket_name: str
