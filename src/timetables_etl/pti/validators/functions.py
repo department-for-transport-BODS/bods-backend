@@ -348,61 +348,6 @@ def validate_modification_date_time(context, roots):
         return creation_date < modification_date
 
 
-
-
-def validate_run_time(context, timing_links):
-    """
-    Validates journey timings.
-    """
-    timing_link = timing_links[0]
-    ns = {"x": timing_link.nsmap.get(None)}
-    run_time = timing_link.xpath("string(x:RunTime)", namespaces=ns)
-    try:
-        time_duration = parse_duration(run_time).time
-    except DurationParsingException:
-        has_run_time = False
-    else:
-        has_run_time = not time_duration == ZERO_TIME_DURATION
-
-    journey_pattern_timing_link_ref = timing_link.xpath("string(@id)", namespaces=ns)
-    xpath = (
-        "//x:VehicleJourney/x:VehicleJourneyTimingLink"
-        f"[x:JourneyPatternTimingLinkRef='{journey_pattern_timing_link_ref}']"
-    )
-
-    vj_timing_link = timing_link.xpath(xpath, namespaces=ns)
-    if has_run_time and len(vj_timing_link) == 0:
-        return True
-    elif has_run_time and vj_timing_link[0].xpath("x:From", namespaces=ns):
-        return False
-    elif has_run_time and vj_timing_link[0].xpath("x:To", namespaces=ns):
-        return False
-
-    return True
-
-
-def validate_timing_link_stops(context, sections):
-    """
-    Validates that all links in a section are ordered coherently by
-    stop point ref.
-    """
-    section = sections[0]
-    ns = {"x": section.nsmap.get(None)}
-    links = section.xpath("x:JourneyPatternTimingLink", namespaces=ns)
-
-    prev_link = links[0]
-    for curr_link in links[1:]:
-        to_ = prev_link.xpath("string(x:To/x:StopPointRef)", namespaces=ns)
-        from_ = curr_link.xpath("string(x:From/x:StopPointRef)", namespaces=ns)
-
-        if from_ != to_:
-            return False
-
-        prev_link = curr_link
-
-    return True
-
-
 def get_service_ref_from_element(element, ns):
     vj = element.xpath("ancestor::x:VehicleJourney", namespaces=ns)
     service_ref = None
