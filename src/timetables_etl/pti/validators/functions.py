@@ -6,10 +6,15 @@ from dateutil import parser
 from isoduration import DurationParsingException, parse_duration
 from isoduration.types import TimeDuration
 from lxml import etree
-from pti.constants import (BANK_HOLIDAYS, BANK_HOLIDAYS_ONLY_ENGLISH,
-                           BANK_HOLIDAYS_ONLY_SCOTTISH,
-                           OLD_HOLIDAYS_ALREADY_REMOVED, OPERATION_DAYS,
-                           OTHER_PUBLIC_HOLIDAYS, SCOTTISH_BANK_HOLIDAYS)
+from pti.constants import (
+    BANK_HOLIDAYS,
+    BANK_HOLIDAYS_ONLY_ENGLISH,
+    BANK_HOLIDAYS_ONLY_SCOTTISH,
+    OLD_HOLIDAYS_ALREADY_REMOVED,
+    OPERATION_DAYS,
+    OTHER_PUBLIC_HOLIDAYS,
+    SCOTTISH_BANK_HOLIDAYS,
+)
 from pti.validators.destination_display import DestinationDisplayValidator
 ElementsOrStr = Union[List[etree.Element], List[str], str]
 PROHIBITED_CHARS = r",[]{}^=@:;#$£?%+<>«»\/|~_¬"
@@ -387,6 +392,7 @@ def validate_licence_number(context, elements: List[etree._Element]) -> bool:
         elif not (licence_number and licence_number[0].text):
             return False
     return True
+
 
 def has_servicedorganisation_working_days(context, service_organisations):
     """
