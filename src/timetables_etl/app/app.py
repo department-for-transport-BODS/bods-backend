@@ -18,6 +18,7 @@ from .database.repos import (
     OrganisationDatasetRevisionRepo,
     OrganisationTXCFileAttributesRepo,
 )
+from .log_setup import configure_logging
 from .txc.parser.parser_txc import load_xml_data, parse_txc_from_element
 
 log = get_logger()
@@ -71,14 +72,15 @@ def extract_txc_data(s3_bucket: str, s3_key: str) -> TXCData:
 
 
 @handle_lambda_errors
-def lambda_handler(event, context):
+def lambda_handler(event, _):
     """
     Timetable ETL
     """
+    configure_logging()
     input_data = ETLInputData(**event)
     db = BodsDB()
     txc_data = extract_txc_data(input_data.s3_bucket_name, input_data.s3_file_key)
 
     task_data = get_task_data(input_data, db)
-    transformed_data = transform_data(txc_data, task_data, db)
+    transform_data(txc_data, task_data, db)
     return
