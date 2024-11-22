@@ -39,14 +39,14 @@ class pipelines_fileprocessingresult(Base):
 
 
 class pipeline_processing_step(Base):
-    __tablename__ = "pipeline_processing_step"
+    __tablename__ = "pipelines_pipelineprocessingstep"
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
     category = Column(String(20))
 
 
 class pipeline_error_code(Base):
-    __tablename__ = "pipeline_error_code"
+    __tablename__ = "pipelines_pipelineerrorcode"
     id = Column(Integer, primary_key=True)
     status = Column(String(255))
 
@@ -95,8 +95,8 @@ class MockedDB:
         self.classes = SimpleNamespace(
             avl_cavldataarchive=avl_cavldataarchive,
             pipelines_fileprocessingresult=pipelines_fileprocessingresult,
-            pipeline_processing_step = pipeline_processing_step,
-            pipeline_error_code=pipeline_error_code,
+            pipelines_pipelineprocessingstep=pipeline_processing_step,
+            pipelines_pipelineerrorcode=pipeline_error_code,
             organisation_datasetrevision=organisation_datasetrevision,
             organisation_txcfileattributes=organisation_txcfileattributes,
             data_quality_postschemaviolation=data_quality_postschemaviolation

@@ -72,7 +72,7 @@ def get_record(db, class_name, filter_condition, error_message):
 
 
 def get_file_processing_error_code(db, status):
-    class_name = db.classes.pipeline_error_code
+    class_name = db.classes.pipelines_pipelineerrorcode
     filter_condition = class_name.status == status
     error_message = f"Processing error status {status} doesn't exist"
     return get_record(db, class_name, filter_condition, error_message)
@@ -81,7 +81,7 @@ def get_file_processing_error_code(db, status):
 def write_processing_step(db, name, category):
     with db.session as session_:
         try:
-            class_name = db.classes.pipeline_processing_step
+            class_name = db.classes.pipelines_pipelineprocessingstep
             new_step = class_name(name=name, category=category)
             session_.add(new_step)
             session_.commit()

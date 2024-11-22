@@ -150,7 +150,7 @@ class TestFileProcessingResult(unittest.TestCase):
     def test_get_file_processing_error_code(self):
         error_status = "NO_DATA_FOUND"
         mock_db = MockedDB()
-        result_data = mock_db.classes.pipeline_error_code(status=error_status)
+        result_data = mock_db.classes.pipelines_pipelineerrorcode(status=error_status)
         mock_db.session.add(result_data)
         mock_db.session.commit()
 
