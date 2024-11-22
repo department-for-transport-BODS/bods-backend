@@ -7,18 +7,17 @@ from lxml.etree import _Element
 from s3 import S3
 from structlog.stdlib import get_logger
 
-from timetables_etl.app.exception_handler import handle_lambda_errors
-from timetables_etl.app.models import ETLInputData, TaskData
-from timetables_etl.app.pipeline import transform_data
-from timetables_etl.app.txc.models.txc_data import TXCData
-
 from .database import BodsDB
 from .database.repos import (
     ETLTaskResultRepo,
     OrganisationDatasetRevisionRepo,
     OrganisationTXCFileAttributesRepo,
 )
+from .exception_handler import handle_lambda_errors
 from .log_setup import configure_logging
+from .models import ETLInputData, TaskData
+from .pipeline import transform_data
+from .txc.models import TXCData
 from .txc.parser.parser_txc import load_xml_data, parse_txc_from_element
 
 log = get_logger()

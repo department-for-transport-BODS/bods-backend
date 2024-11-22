@@ -6,14 +6,14 @@ from typing import Sequence
 
 from structlog.stdlib import get_logger
 
-from timetables_etl.app.database.client import BodsDB
-from timetables_etl.app.database.models.model_naptan import NaptanStopPoint
-from timetables_etl.app.database.models.model_transmodel import (
+from ..database.client import BodsDB
+from ..database.models.model_naptan import NaptanStopPoint
+from ..database.models.model_transmodel import (
     TransmodelServicePattern,
     TransmodelServicePatternStop,
     TransmodelVehicleJourney,
 )
-from timetables_etl.app.database.repos.repo_transmodel import (
+from ..database.repos.repo_transmodel import (
     TransmodelNonOperatingDatesExceptionsRepo,
     TransmodelOperatingDatesExceptionsRepo,
     TransmodelOperatingProfileRepo,
@@ -21,15 +21,15 @@ from timetables_etl.app.database.repos.repo_transmodel import (
     TransmodelStopActivityRepo,
     TransmodelVehicleJourneyRepo,
 )
-from timetables_etl.app.transform.service_pattern_stops import generate_pattern_stops
-from timetables_etl.app.transform.vehicle_journeys import (
+from ..transform.service_pattern_stops import generate_pattern_stops
+from ..transform.vehicle_journeys import (
     create_vehicle_journey_operations,
     generate_pattern_vehicle_journeys,
 )
-from timetables_etl.app.txc.models.txc_data import TXCData
-from timetables_etl.app.txc.models.txc_journey_pattern import TXCJourneyPatternSection
-from timetables_etl.app.txc.models.txc_service import TXCJourneyPattern
-from timetables_etl.app.txc.models.txc_vehicle_journey import TXCVehicleJourney
+from ..txc.models.txc_data import TXCData
+from ..txc.models.txc_journey_pattern import TXCJourneyPatternSection
+from ..txc.models.txc_service import TXCJourneyPattern
+from ..txc.models.txc_vehicle_journey import TXCVehicleJourney
 
 log = get_logger()
 

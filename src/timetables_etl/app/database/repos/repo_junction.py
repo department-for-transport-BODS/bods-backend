@@ -5,12 +5,11 @@ AKA: Associative Entity, Junction Tables, Jump Tables
 
 from sqlalchemy import select
 
-from timetables_etl.app.database.models.model_junction import (
+from ..models import (
     TransmodelServicePatternAdminAreas,
     TransmodelServicePatternLocality,
+    TransmodelServiceServicePattern,
 )
-
-from ..models import TransmodelServiceServicePattern
 from .repo_common import BaseRepository, BodsDB, handle_repository_errors
 
 

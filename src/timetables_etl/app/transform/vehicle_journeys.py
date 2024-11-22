@@ -8,7 +8,7 @@ from typing import Sequence, cast
 
 from structlog.stdlib import get_logger
 
-from timetables_etl.app.database.models.model_transmodel import (
+from ..database.models.model_transmodel import (
     TMDayOfWeek,
     TransmodelNonOperatingDatesExceptions,
     TransmodelOperatingDatesExceptions,
@@ -16,14 +16,13 @@ from timetables_etl.app.database.models.model_transmodel import (
     TransmodelServicePattern,
     TransmodelVehicleJourney,
 )
-from timetables_etl.app.txc.models.txc_service import TXCJourneyPattern
-from timetables_etl.app.txc.models.txc_vehicle_journey import (
+from ..txc.helpers.utils import parse_departure_time
+from ..txc.models import (
     TXCDateRange,
     TXCDaysOfWeek,
+    TXCJourneyPattern,
     TXCVehicleJourney,
 )
-
-from ..txc.helpers.utils import parse_departure_time
 
 log = get_logger()
 

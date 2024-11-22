@@ -4,13 +4,13 @@ Association Table Linking transmodel_service and transmodel_servicepattern
 
 from structlog.stdlib import get_logger
 
-from timetables_etl.app.database.client import BodsDB
-from timetables_etl.app.database.models import (
+from ..database.client import BodsDB
+from ..database.models import (
     TransmodelService,
     TransmodelServicePattern,
     TransmodelServiceServicePattern,
 )
-from timetables_etl.app.database.repos import TransmodelServiceServicePatternRepo
+from ..database.repos import TransmodelServiceServicePatternRepo
 
 log = get_logger()
 

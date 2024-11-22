@@ -18,4 +18,10 @@ from .txc_service import (
     TXCStandardService,
 )
 from .txc_stoppoint import AnnotatedStopPointRef, TXCStopPoint
-from .txc_vehicle_journey import TXCOperational, TXCTicketMachine, TXCVehicleJourney
+from .txc_vehicle_journey import (
+    TXCDateRange,
+    TXCDaysOfWeek,
+    TXCOperational,
+    TXCTicketMachine,
+    TXCVehicleJourney,
+)

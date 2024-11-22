@@ -2,7 +2,7 @@
 Functions that get the counts 
 """
 
-from timetables_etl.app.txc.models import TXCJourneyPatternSection
+from ..txc.models import TXCJourneyPatternSection
 
 
 def count_principle_timing_points(jps_list: list[TXCJourneyPatternSection]) -> int:

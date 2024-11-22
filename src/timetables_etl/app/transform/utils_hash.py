@@ -4,8 +4,7 @@ Hash Functions used by the ETL Pipeline
 
 from structlog.stdlib import get_logger
 
-from timetables_etl.app.txc.models.txc_journey_pattern import TXCJourneyPatternSection
-from timetables_etl.app.txc.models.txc_service import TXCJourneyPattern
+from ..txc.models import TXCJourneyPattern, TXCJourneyPatternSection
 
 log = get_logger()
 

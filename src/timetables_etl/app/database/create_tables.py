@@ -12,10 +12,9 @@ from sqlalchemy import Table as SQLTable
 from sqlalchemy.sql.schema import Table
 from structlog.stdlib import get_logger
 
-from timetables_etl.app.database.models.common import BaseSQLModel
-
 from . import models
 from .client import BodsDB
+from .models.common import BaseSQLModel
 
 log = get_logger()
 

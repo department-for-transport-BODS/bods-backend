@@ -6,12 +6,12 @@ from typing import Sequence
 
 from structlog.stdlib import get_logger
 
-from timetables_etl.app.database.models.model_junction import (
+from ..database.models.model_junction import (
     TransmodelServicePatternAdminAreas,
     TransmodelServicePatternLocality,
 )
-from timetables_etl.app.database.models.model_naptan import NaptanStopPoint
-from timetables_etl.app.database.models.model_transmodel import TransmodelServicePattern
+from ..database.models.model_naptan import NaptanStopPoint
+from ..database.models.model_transmodel import TransmodelServicePattern
 
 log = get_logger()
 

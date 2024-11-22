@@ -6,11 +6,11 @@ from structlog.stdlib import get_logger
 
 from timetables_etl.app.txc.models.txc_service import TXCService
 
-from ...database import BodsDB
-from ...database.models import TransmodelService
-from ...database.repos import TransmodelServiceRepo
-from ...models import TaskData
-from ...transform.services import make_transmodel_service
+from ..database import BodsDB
+from ..database.models import TransmodelService
+from ..database.repos import TransmodelServiceRepo
+from ..models import TaskData
+from ..transform.services import make_transmodel_service
 
 log = get_logger()
 

@@ -8,19 +8,18 @@ from typing import Sequence
 
 from structlog.stdlib import get_logger
 
-from timetables_etl.app.database.models.model_naptan import NaptanStopPoint
-from timetables_etl.app.database.models.model_transmodel import (
+from ..database.models.model_naptan import NaptanStopPoint
+from ..database.models.model_transmodel import (
     TransmodelServicePattern,
     TransmodelServicePatternStop,
     TransmodelStopActivity,
     TransmodelVehicleJourney,
 )
-from timetables_etl.app.txc.models.txc_journey_pattern import (
+from ..txc.models import TXCVehicleJourney
+from ..txc.models.txc_journey_pattern import (
     TXCJourneyPatternSection,
     TXCJourneyPatternStopUsage,
 )
-
-from ..txc.models import TXCVehicleJourney
 
 log = get_logger()
 

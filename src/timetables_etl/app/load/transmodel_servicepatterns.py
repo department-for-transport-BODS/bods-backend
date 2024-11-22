@@ -6,35 +6,30 @@ from typing import Sequence
 
 from structlog.stdlib import get_logger
 
-from timetables_etl.app.database.models.model_junction import (
+from ..database import BodsDB
+from ..database.models import TransmodelServicePattern
+from ..database.models.model_junction import (
     TransmodelServicePatternAdminAreas,
     TransmodelServicePatternLocality,
 )
-from timetables_etl.app.database.models.model_naptan import NaptanStopPoint
-from timetables_etl.app.database.models.model_organisation import (
-    OrganisationDatasetRevision,
-)
-from timetables_etl.app.database.repos.repo_junction import (
+from ..database.models.model_naptan import NaptanStopPoint
+from ..database.models.model_organisation import OrganisationDatasetRevision
+from ..database.repos import TransmodelServicePatternRepo
+from ..database.repos.repo_junction import (
     TransmodelServicePatternAdminAreaRepo,
     TransmodelServicePatternLocalityRepo,
 )
-from timetables_etl.app.load.transmodel.transmodel_vehicle_journey import (
-    process_service_pattern_vehicle_journeys,
-)
-from timetables_etl.app.transform.service_pattern_associations import (
+from ..models import TaskData
+from ..transform.service_pattern_associations import (
     generate_pattern_admin_areas,
     generate_pattern_localities,
 )
-from timetables_etl.app.transform.utils_stops import get_pattern_stops
-from timetables_etl.app.txc.models.txc_journey_pattern import TXCJourneyPatternSection
-from timetables_etl.app.txc.models.txc_service import TXCJourneyPattern, TXCService
-
-from ...database import BodsDB
-from ...database.models import TransmodelServicePattern
-from ...database.repos import TransmodelServicePatternRepo
-from ...models import TaskData
-from ...transform.service_patterns import create_service_pattern
-from ...txc.models.txc_data import TXCData
+from ..transform.service_patterns import create_service_pattern
+from ..transform.utils_stops import get_pattern_stops
+from ..txc.models.txc_data import TXCData
+from ..txc.models.txc_journey_pattern import TXCJourneyPatternSection
+from ..txc.models.txc_service import TXCJourneyPattern, TXCService
+from .transmodel_vehicle_journey import process_service_pattern_vehicle_journeys
 
 log = get_logger()
 

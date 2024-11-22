@@ -11,7 +11,6 @@ from typing import List
 from geoalchemy2 import Geometry
 from sqlalchemy import (
     Boolean,
-    CheckConstraint,
     Date,
     DateTime,
     Float,

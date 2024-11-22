@@ -11,17 +11,13 @@ from shapely import Point
 from shapely.geometry import LineString
 from structlog.stdlib import get_logger
 
-from timetables_etl.app.database.models.model_naptan import NaptanStopPoint
-from timetables_etl.app.database.models.model_organisation import (
+from ..database.models import (
+    NaptanStopPoint,
     OrganisationDatasetRevision,
+    TransmodelServicePattern,
 )
-from timetables_etl.app.database.models.model_transmodel import TransmodelServicePattern
-from timetables_etl.app.txc.helpers.jps import (
-    get_jps_by_id,
-    get_stops_from_journey_pattern_section,
-)
-from timetables_etl.app.txc.models.txc_journey_pattern import TXCJourneyPatternSection
-from timetables_etl.app.txc.models.txc_service import TXCJourneyPattern, TXCService
+from ..txc.helpers.jps import get_jps_by_id, get_stops_from_journey_pattern_section
+from ..txc.models import TXCJourneyPattern, TXCJourneyPatternSection, TXCService
 
 log = get_logger()
 
