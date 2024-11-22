@@ -6,16 +6,11 @@ import traceback
 from functools import wraps
 from typing import Any, Dict
 
-from logger import logger
+from structlog.stdlib import get_logger
 
 from .database.repos.exceptions import DBBaseException
 
-
-class InvalidXMLException(DBBaseException):
-    """Raised when XML parsing fails"""
-
-    error_code = "INVALID_XML"
-    error_message = "Failed to parse XML data"
+log = get_logger()
 
 
 def handle_lambda_errors(func):
@@ -28,14 +23,14 @@ def handle_lambda_errors(func):
         try:
             return {"statusCode": 200, "body": func(*args, **kwargs)}
         except DBBaseException as e:
-            logger.error("Known error occurred", exc_info=True)
+            log.error("Known error occurred", exc_info=True)
             return {
                 "statusCode": 400,
                 "body": {"error": {"code": e.error_code, "message": e.error_message}},
             }
         except Exception:
-            logger.error("Unexpected error occurred", exc_info=True)
-            logger.error(traceback.format_exc())
+            log.error("Unexpected error occurred", exc_info=True)
+            log.error(traceback.format_exc())
             return {
                 "statusCode": 500,
                 "body": {
