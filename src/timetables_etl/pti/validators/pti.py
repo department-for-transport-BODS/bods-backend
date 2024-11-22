@@ -28,7 +28,6 @@ from pti.validators.functions import (
     strip,
     to_days,
     today,
-    validate_bank_holidays,
     validate_licence_number,
     validate_line_id,
     validate_modification_date_time,
