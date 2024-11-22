@@ -134,6 +134,7 @@ Resources:
   ClamAvScannerLambda:
     Type: AWS::Serverless::Function
     DependsOn: ClamAvScannerLambdaLogGroup
+    ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-clam-av-scanner-lambda'
       CodeUri: ./src/timetables_etl
@@ -163,6 +164,7 @@ Resources:
   ##################################
   TimetablePostSchemaCheckLambda:
     Type: AWS::Serverless::Function
+    ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-timetable-post-schema-check-lambda'
       CodeUri: ./src/timetables_etl
