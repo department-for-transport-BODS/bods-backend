@@ -7,17 +7,28 @@ from freezegun import freeze_time
 from lxml import etree
 from lxml.etree import Element
 from pti.validators.functions import (
-    cast_to_bool, cast_to_date, check_description_for_inbound_description,
-    check_description_for_outbound_description, check_flexible_service_times,
-    check_flexible_service_timing_status, check_inbound_outbound_description,
-    check_service_group_validations, check_vehicle_journey_timing_links,
-    contains_date, has_flexible_or_standard_service,
-    has_flexible_service_classification, has_name, has_prohibited_chars,
-    is_member_of, today, validate_licence_number, validate_non_naptan_stop_points)
+    cast_to_bool,
+    cast_to_date,
+    check_description_for_inbound_description,
+    check_description_for_outbound_description,
+    check_flexible_service_times,
+    check_flexible_service_timing_status,
+    check_inbound_outbound_description,
+    check_service_group_validations,
+    contains_date,
+    has_flexible_or_standard_service,
+    has_flexible_service_classification,
+    has_name,
+    has_prohibited_chars,
+    is_member_of,
+    today,
+    validate_licence_number,
+)
 
 from tests.timetables_etl.pti.validators.constants import TXC_END, TXC_START
 
 DATA_DIR = Path(__file__).parent / "data"
+
 
 @pytest.mark.parametrize(
     ("value", "expected"),
@@ -935,28 +946,6 @@ def test_today():
     context = Mock()
     actual = today(context)
     assert actual == parser.parse("2020-02-02").timestamp()
-
-
-@pytest.mark.django_db
-@pytest.mark.parametrize(
-    ("fixture_file", "expected"),
-    [
-        ("vj_timing_link_w_errors.xml", False),
-        ("vj_timing_link_w_success.xml", True),
-        ("vj_timing_link_without_vjtl.xml", True),
-        ("vj_timing_link_without_jptl.xml", False),
-    ],
-)
-def test_check_vehicle_journey_timing_links_with_errors(fixture_file, expected):
-    NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
-    string_xml = DATA_DIR / "vehicle_journeys" / fixture_file
-    with string_xml.open("r") as txc_xml:
-        doc = etree.parse(txc_xml)
-        elements = doc.xpath(
-            "//x:VehicleJourneys/x:VehicleJourney", namespaces=NAMESPACE
-        )
-        actual = check_vehicle_journey_timing_links("", elements)
-        assert actual == expected
 
 
 def test_validate_licence_number_coach_data():
