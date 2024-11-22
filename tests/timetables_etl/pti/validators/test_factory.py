@@ -1,0 +1,28 @@
+from unittest.mock import MagicMock, mock_open, patch
+from pathlib import Path
+import pytest
+from pti.validators.xml_file import XmlFilePTIValidator
+from pti.validators.factory import get_xml_file_pti_validator
+
+
+@patch("pti.validators.factory.PTI_SCHEMA_PATH", new_callable=MagicMock)
+@patch("builtins.open", new_callable=mock_open, read_data='{"key": "value"}')
+@patch("pti.validators.factory.XmlFilePTIValidator")
+def test_get_xml_file_pti_validator(mock_validator_class, mock_open_fn, mock_schema_path):
+    """
+    Test the `get_xml_file_pti_validator` function.
+    """
+    mock_schema_path.return_value = MagicMock(spec=Path)
+    mock_open_fn = mock_open(read_data='{"key": "value"}')
+    mock_schema_path.open = mock_open_fn
+
+    mock_validator_instance = MagicMock(spec=XmlFilePTIValidator)
+    mock_validator_class.return_value = mock_validator_instance
+
+    # Call the function
+    result = get_xml_file_pti_validator()
+
+    # Assertions
+    mock_open_fn.assert_called_once_with("r")
+    mock_validator_class.assert_called_once_with(mock_open_fn())
+    assert result == mock_validator_instance

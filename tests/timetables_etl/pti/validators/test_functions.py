@@ -20,6 +20,7 @@ from pti.validators.functions import (
     has_flexible_service_classification,
     has_name,
     has_prohibited_chars,
+    has_servicedorganisation_working_days,
     is_member_of,
     today,
     validate_licence_number,
@@ -992,13 +993,41 @@ def test_validate_licence_number_non_coach_data_failed():
     "attributes, expected_result",
     [
         # Case 1: revision_number = "0" and dates are equal
-        ({"RevisionNumber": "0", "ModificationDateTime": "2024-11-14T12:00:00", "CreationDateTime": "2024-11-14T12:00:00"}, True),
+        (
+            {
+                "RevisionNumber": "0",
+                "ModificationDateTime": "2024-11-14T12:00:00",
+                "CreationDateTime": "2024-11-14T12:00:00",
+            },
+            True,
+        ),
         # Case 2: revision_number = "0" and dates are not equal
-        ({"RevisionNumber": "0", "ModificationDateTime": "2024-11-14T12:00:00", "CreationDateTime": "2024-11-14T11:00:00"}, False),
+        (
+            {
+                "RevisionNumber": "0",
+                "ModificationDateTime": "2024-11-14T12:00:00",
+                "CreationDateTime": "2024-11-14T11:00:00",
+            },
+            False,
+        ),
         # Case 3: revision_number != "0" and creation_date < modification_date
-        ({"RevisionNumber": "1", "ModificationDateTime": "2024-11-14T12:00:00", "CreationDateTime": "2024-11-14T11:00:00"}, True),
+        (
+            {
+                "RevisionNumber": "1",
+                "ModificationDateTime": "2024-11-14T12:00:00",
+                "CreationDateTime": "2024-11-14T11:00:00",
+            },
+            True,
+        ),
         # Case 4: revision_number != "0" and creation_date >= modification_date
-        ({"RevisionNumber": "1", "ModificationDateTime": "2024-11-14T12:00:00", "CreationDateTime": "2024-11-14T12:00:00"}, False),
+        (
+            {
+                "RevisionNumber": "1",
+                "ModificationDateTime": "2024-11-14T12:00:00",
+                "CreationDateTime": "2024-11-14T12:00:00",
+            },
+            False,
+        ),
     ],
 )
 def test_validate_modification_date_time(attributes, expected_result):
@@ -1015,3 +1044,31 @@ def test_validate_modification_date_time(attributes, expected_result):
 
     # Assert the result
     assert result == expected_result
+
+
+@pytest.mark.django_db
+def test_has_servicedorganisation_working_days_not_present():
+    """
+    This test case validates working days tag is present for ServicedOrganisation
+    """
+    NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
+    string_xml = DATA_DIR / "servicedorganisations" / "servicedorganisation_working_days_not_present.xml"
+    with string_xml.open("r") as txc_xml:
+        doc = etree.parse(txc_xml)
+        elements = doc.xpath("//x:ServicedOrganisations/x:ServicedOrganisation", namespaces=NAMESPACE)
+        actual = has_servicedorganisation_working_days("", elements)
+        assert actual == False
+
+
+@pytest.mark.django_db
+def test_has_servicedorganisation_working_days_present():
+    """
+    This test case validates working days tag is present for ServicedOrganisation
+    """
+    NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
+    string_xml = DATA_DIR / "servicedorganisations" / "servicedorganisation_working_days_present.xml"
+    with string_xml.open("r") as txc_xml:
+        doc = etree.parse(txc_xml)
+        elements = doc.xpath("//x:ServicedOrganisations/x:ServicedOrganisation", namespaces=NAMESPACE)
+        actual = has_servicedorganisation_working_days("", elements)
+        assert actual == True
