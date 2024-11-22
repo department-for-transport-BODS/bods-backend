@@ -90,7 +90,6 @@ class PTIValidator:
         # self.register_function("validate_lines", validate_lines)
 
         self.register_function("validate_modification_date_time", validate_modification_date_time)
-
         # TODO: Requires DB interaction
         # self.register_function("validate_bank_holidays", validate_bank_holidays)
 
