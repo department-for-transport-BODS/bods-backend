@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from datetime import date, datetime, time
 from enum import Enum
+from typing import Literal
 
 from geoalchemy2 import Geometry, WKBElement
 from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text, Time
@@ -29,7 +30,9 @@ class TransmodelService(BaseSQLModel):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     other_names: Mapped[list[str]] = mapped_column(ARRAY(String(255)), nullable=False)
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
-    service_type: Mapped[str] = mapped_column(String(255), nullable=False)
+    service_type: Mapped[Literal["standard", "flexible"]] = mapped_column(
+        String(255), nullable=False
+    )
     end_date: Mapped[date | None] = mapped_column(Date)
     revision_id: Mapped[int | None] = mapped_column(Integer)
     txcfileattributes_id: Mapped[int | None] = mapped_column(Integer)

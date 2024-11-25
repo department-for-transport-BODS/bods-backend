@@ -23,8 +23,9 @@ def make_transmodel_service(
     """
     Convert a single TXCService object to a TransmodelService object.
     """
-    # TODO: Handle flexible service when implemented in parser
     service_type = "standard"
+    if service.FlexibleService:
+        service_type = "flexible"
     line_names = get_line_names(service)
     return TransmodelService(
         service_code=service.ServiceCode,

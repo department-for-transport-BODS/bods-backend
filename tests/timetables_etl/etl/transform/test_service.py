@@ -19,6 +19,14 @@ from timetables_etl.etl.app.txc.models.txc_service import (
     TXCService,
     TXCStandardService,
 )
+from timetables_etl.etl.app.txc.models.txc_service_flexible import (
+    TXCBookingArrangements,
+    TXCFixedStopUsage,
+    TXCFlexibleJourneyPattern,
+    TXCFlexibleService,
+    TXCFlexibleStopUsage,
+    TXCPhone,
+)
 
 
 def get_revision_id(request: pytest.FixtureRequest) -> int:
@@ -78,7 +86,51 @@ def get_file_attrs_id(request: pytest.FixtureRequest) -> int:
                 revision_id=get_revision_id(r),
                 txcfileattributes_id=get_file_attrs_id(r),
             ),
-            id="Flixbus UK045",
+            id="Standard Service",
+        ),
+        pytest.param(
+            TXCService(
+                ServiceCode="PB0002032:467",
+                RegisteredOperatorRef="O1",
+                PublicUse=True,
+                StartDate=date(2022, 1, 1),
+                Lines=[TXCLine(id="ARBB:PB0002032:467:53M", LineName="53M")],
+                FlexibleService=TXCFlexibleService(
+                    Origin="Market Rasen",
+                    Destination="Market Rasen",
+                    UseAllStopPoints=False,
+                    FlexibleJourneyPattern=[
+                        TXCFlexibleJourneyPattern(
+                            id="jp_1",
+                            Direction="outbound",
+                            StopPointsInSequence=[
+                                TXCFixedStopUsage(
+                                    StopPointRef="02903501", TimingStatus="otherPoint"
+                                ),
+                                TXCFlexibleStopUsage(StopPointRef="02901353"),
+                            ],
+                            BookingArrangements=TXCBookingArrangements(
+                                Description="The booking office is open Monday to Friday 8:30am - 6:30pm",
+                                Phone=TXCPhone(TelNationalNumber="0000 000 0000"),
+                                Email="example@example.com",
+                                WebAddress="https://example.com/",
+                                AllBookingsTaken=True,
+                            ),
+                        )
+                    ],
+                ),
+            ),
+            lambda r: TransmodelService(
+                service_code="PB0002032:467",
+                name="53M",
+                other_names=[],
+                start_date=date(2022, 1, 1),
+                end_date=None,
+                service_type="flexible",
+                revision_id=get_revision_id(r),
+                txcfileattributes_id=get_file_attrs_id(r),
+            ),
+            id="Flexible Service",
         ),
     ],
 )
