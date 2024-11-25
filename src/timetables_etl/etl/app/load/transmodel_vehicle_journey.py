@@ -74,10 +74,6 @@ def process_vehicle_journey_operations(
 ) -> None:
     """
     Process and save operations data for vehicle journeys
-
-    Args:
-        journey_results: List of (TransmodelVehicleJourney, TXCVehicleJourney) tuples
-        db: Database connection
     """
     profile_repo = TransmodelOperatingProfileRepo(db)
     operating_dates_repo = TransmodelOperatingDatesExceptionsRepo(db)
