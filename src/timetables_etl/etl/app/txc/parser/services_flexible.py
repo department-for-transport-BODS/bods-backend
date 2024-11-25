@@ -70,9 +70,7 @@ def parse_booking_arrangements(booking_xml: _Element) -> TXCBookingArrangements 
 def parse_flexible_journey_pattern(
     pattern_xml: _Element,
 ) -> TXCFlexibleJourneyPattern | None:
-    """
-    Parse flexible journey patterns defining possible stop combinations for flexible routes
-    """
+    """Parse flexible journey patterns defining possible stop combinations for flexible routes"""
     pattern_id: str | None = pattern_xml.get("id")
     direction: str | None = get_element_text(pattern_xml, "Direction")
 
@@ -80,10 +78,17 @@ def parse_flexible_journey_pattern(
         return None
 
     stop_points: list[TXCFlexibleStopUsage | TXCFixedStopUsage] = []
+    flexible_zones: list[TXCFlexibleStopUsage] = []
+
     for stop_xml in pattern_xml.findall("StopPointsInSequence/*"):
         stop = parse_flexible_stop_usage(stop_xml)
         if stop:
             stop_points.append(stop)
+
+    for stop_xml in pattern_xml.findall("FlexibleZones/*"):
+        stop = parse_flexible_stop_usage(stop_xml)
+        if isinstance(stop, TXCFlexibleStopUsage):
+            flexible_zones.append(stop)
 
     booking_xml: _Element | None = pattern_xml.find("BookingArrangements")
     booking: TXCBookingArrangements | None = (
@@ -94,6 +99,7 @@ def parse_flexible_journey_pattern(
         id=pattern_id,
         Direction=direction,
         StopPointsInSequence=stop_points,
+        FlexibleZones=flexible_zones,
         BookingArrangements=booking,
     )
 

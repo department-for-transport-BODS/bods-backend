@@ -548,7 +548,8 @@ def test_parse_line(xml_string, expected_result):
                         TXCFlexibleJourneyPattern(
                             id="jp_2",
                             Direction="outbound",
-                            StopPointsInSequence=[
+                            StopPointsInSequence=[],
+                            FlexibleZones=[
                                 TXCFlexibleStopUsage(StopPointRef="02901278")
                             ],
                             BookingArrangements=TXCBookingArrangements(

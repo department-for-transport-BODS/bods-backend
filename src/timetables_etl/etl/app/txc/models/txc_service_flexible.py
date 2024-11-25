@@ -50,6 +50,7 @@ class TXCFlexibleJourneyPattern(BaseModel):
     id: str
     Direction: str
     StopPointsInSequence: list[TXCFixedStopUsage | TXCFlexibleStopUsage]
+    FlexibleZones: list[TXCFlexibleStopUsage] = Field(default=[])
     BookingArrangements: TXCBookingArrangements | None = None
 
 
@@ -62,4 +63,5 @@ class TXCFlexibleService(BaseModel):
     Origin: str
     Destination: str
     FlexibleJourneyPattern: list[TXCFlexibleJourneyPattern] = Field(default=[])
+
     UseAllStopPoints: bool
