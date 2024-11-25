@@ -11,12 +11,15 @@ from shapely import Point
 from shapely.geometry import LineString
 from structlog.stdlib import get_logger
 
+from timetables_etl.etl.app.transform.utils_stops import get_first_last_stops
+from timetables_etl.etl.app.txc.models.txc_service import TXCLine
+
 from ..database.models import (
     NaptanStopPoint,
     OrganisationDatasetRevision,
     TransmodelServicePattern,
 )
-from ..txc.helpers.jps import get_jps_by_id, get_stops_from_journey_pattern_section
+from ..txc.helpers.jps import get_stops_from_sections
 from ..txc.models import TXCJourneyPattern, TXCJourneyPatternSection, TXCService
 
 log = get_logger()
@@ -42,37 +45,79 @@ class PatternMetadata:
         )
 
 
+@dataclass(frozen=True)
+class LineDescription:
+    """Wrapper for line description data"""
+
+    origin: str | None
+    destination: str | None
+    description: str
+
+
+def get_line_description(line: TXCLine, direction: str) -> LineDescription | None:
+    """
+    Extract relevant direction description from line
+    """
+    description = (
+        line.InboundDescription if direction == "inbound" else line.OutboundDescription
+    )
+    if not description:
+        return None
+    return LineDescription(
+        origin=description.Origin,
+        destination=description.Destination,
+        description=description.Description,
+    )
+
+
 def extract_pattern_metadata(
-    service: TXCService, jp: TXCJourneyPattern
+    service: TXCService,
+    jp: TXCJourneyPattern,
+    journey_pattern_sections: list[TXCJourneyPatternSection],
+    stop_mapping: dict[str, NaptanStopPoint],
 ) -> PatternMetadata:
     """
-    Extract pattern metadata from service and journey pattern
+    Extract pattern metadata with priority:
+    1. Line description data if available
+    2. First/last stop names with generated description
+    3. Unknown pattern as fallback
     """
-    if len(service.Lines) == 0:
+    first_stop, last_stop = get_first_last_stops(
+        jp, journey_pattern_sections, stop_mapping
+    )
+
+    if not service.Lines:
         log.warning("No Lines in TXC Service")
-        return PatternMetadata.unknown("unknown")
+        return PatternMetadata(
+            origin=first_stop,
+            destination=last_stop,
+            description=f"{first_stop} - {last_stop}",
+            line_name="unknown",
+        )
 
     line = service.Lines[0]
     if len(service.Lines) > 1:
         log.warning("More than 1 Line using first for Service Patterns")
 
-    description = (
-        line.InboundDescription
-        if jp.Direction == "inbound"
-        else line.OutboundDescription
-    )
-    if description:
+    line_desc = get_line_description(line, jp.Direction)
+
+    if line_desc and line_desc.origin and line_desc.destination:
         return PatternMetadata(
-            origin=description.Origin,
-            destination=description.Destination,
-            description=description.Description,
+            origin=line_desc.origin,
+            destination=line_desc.destination,
+            description=line_desc.description,
             line_name=line.LineName,
         )
 
-    log.warning(
-        "Direction or Inbound/Outbound Direction Missing", direction=jp.Direction
+    if not first_stop and not last_stop:
+        return PatternMetadata.unknown(line.LineName)
+
+    return PatternMetadata(
+        origin=first_stop,
+        destination=last_stop,
+        description=f"{first_stop} - {last_stop}",
+        line_name=line.LineName,
     )
-    return PatternMetadata.unknown(line.LineName)
 
 
 def make_service_pattern_id(service: TXCService, jp: TXCJourneyPattern):
@@ -80,37 +125,6 @@ def make_service_pattern_id(service: TXCService, jp: TXCJourneyPattern):
     Generate a Unique Service Pattern ID to be used
     """
     return f"{service.ServiceCode}-{jp.id}-{uuid4()}"
-
-
-def get_jp_origin_destination(
-    service: TXCService, jp: TXCJourneyPattern
-) -> tuple[str, str, str]:
-    """
-    Get the Origin, Destination and Description for a Journey Pattern
-    """
-    if len(service.Lines) > 1:
-        log.warning("More than 1 Line using first for Service Patterns")
-    if len(service.Lines) == 0:
-        log.warning("No Lines in TXC Service")
-    line = service.Lines[0]
-    if jp.Direction == "inbound":
-        if line.InboundDescription:
-            return (
-                line.InboundDescription.Origin,
-                line.InboundDescription.Destination,
-                line.InboundDescription.Description,
-            )
-    if jp.Direction == "outbound":
-        if line.OutboundDescription:
-            return (
-                line.OutboundDescription.Origin,
-                line.OutboundDescription.Destination,
-                line.OutboundDescription.Description,
-            )
-    log.warning(
-        "Direction or Inbound/Outbound Direction Missing", direction=jp.Direction
-    )
-    return "unknown", "unknown", "unknown"
 
 
 def generate_service_pattern_geometry(
@@ -122,14 +136,11 @@ def generate_service_pattern_geometry(
     Generate the Stop Linestring for a JourneyPattern
     SRID 4326 (WGS84) which is Longitude / Latitude
     """
-    route_points: list[Point] = []
-    for jps_id in jp.JourneyPatternSectionRefs:
-        jps = get_jps_by_id(jps_id, journey_pattern_sections)
-        stops = get_stops_from_journey_pattern_section(jps)
-        for stop in stops:
-            route_points.append(atco_location_mapping[stop].shape)
-    line = LineString(route_points)
-    return from_shape(line, srid=4326)
+    stops: list[str] = get_stops_from_sections(
+        jp.JourneyPatternSectionRefs, journey_pattern_sections
+    )
+    route_points: list[Point] = [atco_location_mapping[stop].shape for stop in stops]
+    return from_shape(LineString(route_points), srid=4326)
 
 
 def create_service_pattern(
@@ -142,7 +153,9 @@ def create_service_pattern(
     """
     Create a single TransmodelServicePattern from a TXC journey pattern
     """
-    metadata = extract_pattern_metadata(service, jp)
+    metadata = extract_pattern_metadata(
+        service, jp, journey_pattern_sections, stop_mapping
+    )
 
     pattern = TransmodelServicePattern(
         service_pattern_id=make_service_pattern_id(service, jp),

@@ -15,7 +15,7 @@ class BaseSQLModel(MappedAsDataclass, DeclarativeBase):
     """
 
 
-class TimeStampedMixin:
+class TimeStampedMixin(MappedAsDataclass):
     """
     A mixin that adds self-managed created and modified fields.
     All timestamps are stored in UTC.
@@ -25,11 +25,12 @@ class TimeStampedMixin:
     @classmethod
     def created(cls) -> Mapped[datetime]:
         """
-        Generate the created timestamp
+        Generate the created timestamp when inserting
         """
         return mapped_column(
             DateTime(timezone=True),
-            default=lambda: datetime.now(UTC),
+            insert_default=datetime.now(UTC),
+            default_factory=datetime.now,
             nullable=False,
             kw_only=True,
         )
@@ -42,8 +43,9 @@ class TimeStampedMixin:
         """
         return mapped_column(
             DateTime(timezone=True),
-            default=lambda: datetime.now(UTC),
-            onupdate=lambda: datetime.now(UTC),
+            insert_default=datetime.now(UTC),
+            default_factory=datetime.now,
+            onupdate=datetime.now(UTC),
             nullable=False,
             kw_only=True,
         )
