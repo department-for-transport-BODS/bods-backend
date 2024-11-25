@@ -3,11 +3,12 @@
   "States": {
     "scanAndUnpack": {
       "Type": "Task",
-      "Resource": "${PlaceholderLambdaArn}",
+      "Resource": "${ClamAvScannerLambdaArn}",
       "Parameters": {
         "Bucket.$": "$.detail.bucket.name",
         "ObjectKey.$": "$.detail.object.key",
-        "DatasetEtlTaskResultId.$": "$.detail.dataset_etl_task_result_id"
+        "DatasetRevisionId.$": "$.detail.dataset_revision_id",
+        "DatasetType.$": "$.detail.dataset_type"
       },
       "ResultPath": "$.scanAndUnpack",
       "Next": "fileLevelProcessing",

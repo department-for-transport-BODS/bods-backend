@@ -4,8 +4,8 @@ from periodic_tasks.txc_file_validator import (
     TimetableFileValidator,
     lambda_handler
 )
-from boilerplate.exceptions.zip_file_exceptions import *
-from boilerplate.exceptions.xml_file_exceptions import *
+from exceptions.zip_file_exceptions import *
+from exceptions.xml_file_exceptions import *
 from tests.mock_db import MockedDB
 
 TEST_MODULE = "periodic_tasks.txc_file_validator"
@@ -20,20 +20,10 @@ class TestTimetableFileValidator(unittest.TestCase):
 
         # Create a sample S3 event
         self.event = {
-            "Records": [
-                {
-                    "eventVersion": "2.2",
-                    "eventSource": "aws:s3",
-                    "awsRegion": "us-west-2",
-                    "s3": {
-                        "s3SchemaVersion": "1.0",
-                        "bucket": {
-                            "name": "bodds-dev",
-                        },
-                        "object": {"key": "22122022105110.zip"},
-                    },
-                }
-            ]
+            "Bucket": "bodds-dev",
+            "ObjectKey": "22122022105110.zip",
+            "DatasetRevisionId": 123,
+            "DatasetType": "timetables"
         }
 
         # Initialize TimetableFileValidator with the mocked S3 object
@@ -80,28 +70,32 @@ class TestTimetableFileValidator(unittest.TestCase):
 
 class TestLambdaHandler(unittest.TestCase):
     @patch(f"{TEST_MODULE}.TimetableFileValidator")
-    @patch('boilerplate.db.file_processing_result.BodsDB')
+    @patch("boilerplate.db.file_processing_result.BodsDB")
+    @patch("boilerplate.db.file_processing_result.get_revision")
     def test_lambda_handler_success(self,
+                                    mock_get_revision,
                                     mock_db,
                                     mock_timetable_file_validator):
         """Test lambda_handler success response when validation passes."""
+        # Mock the return values for the various calls
+        mock_revision = MagicMock()
+        mock_revision.id = 1
+        mock_get_revision.return_value = mock_revision
+
+        mock_db.return_value = MockedDB()
+
+
         # Mock TimetableFileValidator to simulate successful validation
         mock_validator = mock_timetable_file_validator.return_value
         mock_validator.validate.return_value = None  # No exception means success
 
         # Create a sample S3 event
         event = {
-            "Records": [
-                {
-                    "s3": {
-                        "bucket": {"name": "bodds-dev"},
-                        "object": {"key": "3456/22122022105110.zip"},
-                    }
-                }
-            ]
+            "Bucket": "bodds-dev",
+            "ObjectKey": "22122022105110.zip",
+            "DatasetRevisionId": 123,
+            "DatasetType": "timetables"
         }
-
-        mock_db.return_value = MockedDB()
 
         # Call the lambda_handler and verify the response
         response = lambda_handler(event=event, context=None)
@@ -109,29 +103,32 @@ class TestLambdaHandler(unittest.TestCase):
         self.assertIn("File validation completed", response["body"])
 
     @patch(f"{TEST_MODULE}.TimetableFileValidator")
-    @patch('boilerplate.db.file_processing_result.PipelineFileProcessingResult')
-    @patch('boilerplate.db.file_processing_result.BodsDB')
+    @patch("boilerplate.db.file_processing_result.PipelineFileProcessingResult")
+    @patch("boilerplate.db.file_processing_result.BodsDB")
+    @patch("boilerplate.db.file_processing_result.get_revision")
     def test_lambda_handler_zip_validation_exception(self,
+                                                     mock_get_revision,
                                                      mock_db,
                                                      mock_pipeline_file_processing,
                                                      mock_timetable_file_validator):
         """Test lambda_handler raises ZipValidationException and logs the error."""
         # Mock TimetableFileValidator to raise ZipValidationException
         mock_validator = mock_timetable_file_validator.return_value
+
+        mock_revision = MagicMock()
+        mock_revision.id = 1
+        mock_get_revision.return_value = mock_revision
+
         for excep in (ZipTooLarge,
                       NestedZipForbidden,
                       NoDataFound):
             mock_validator.validate.side_effect = excep("Zip validation failed")
 
             event = {
-                "Records": [
-                    {
-                        "s3": {
-                            "bucket": {"name": "bodds-dev"},
-                            "object": {"key": "2345/22122022105110.zip"},
-                        }
-                    }
-                ]
+                "Bucket": "bodds-dev",
+                "ObjectKey": "22122022105110.zip",
+                "DatasetRevisionId": 123,
+                "DatasetType": "timetables"
             }
             mock_db.return_value = MockedDB()
             mock_pipeline_file_processing = mock_pipeline_file_processing.return_value
@@ -149,29 +146,32 @@ class TestLambdaHandler(unittest.TestCase):
                     lambda_handler(event=event, context=None)
 
     @patch(f"{TEST_MODULE}.TimetableFileValidator")
-    @patch('boilerplate.db.file_processing_result.PipelineFileProcessingResult')
-    @patch('boilerplate.db.file_processing_result.BodsDB')
+    @patch("boilerplate.db.file_processing_result.PipelineFileProcessingResult")
+    @patch("boilerplate.db.file_processing_result.BodsDB")
+    @patch("boilerplate.db.file_processing_result.get_revision")
     def test_lambda_handler_xml_validation_exception(self,
+                                                     mock_get_revision,
                                                      mock_db,
                                                      mock_pipeline_file_processing,
                                                      mock_timetable_file_validator):
         """Test lambda_handler raises XMLValidationException and logs the error."""
         # Mock TimetableFileValidator to raise XMLValidationException
         mock_validator = mock_timetable_file_validator.return_value
+
+        mock_revision = MagicMock()
+        mock_revision.id = 1
+        mock_get_revision.return_value = mock_revision
+
         for excep in (XMLSyntaxError,
                       DangerousXML,
                       FileTooLarge):
             mock_validator.validate.side_effect = excep("XML validation failed")
 
             event = {
-                "Records": [
-                    {
-                        "s3": {
-                            "bucket": {"name": "bodds-dev"},
-                            "object": {"key": "8799/22122022105110.zip"},
-                        }
-                    }
-                ]
+                "Bucket": "bodds-dev",
+                "ObjectKey": "22122022105110.zip",
+                "DatasetRevisionId": 123,
+                "DatasetType": "timetables"
             }
             mock_db.return_value = MockedDB()
             mock_pipeline_file_processing = mock_pipeline_file_processing.return_value

@@ -10,8 +10,8 @@ from dataclasses import dataclass
 from clamd import BufferTooLongError, ClamdNetworkSocket, ConnectionError
 from logger import logger
 from s3 import S3
-from boilerplate.db.file_processing_result import file_processing_result_to_db
-from boilerplate.exceptions.file_exceptions import (
+from db.file_processing_result import file_processing_result_to_db
+from exceptions.file_exceptions import (
     AntiVirusError,
     ClamConnectionError,
     SuspiciousFile
@@ -86,11 +86,9 @@ def lambda_handler(event, context):
     """
     Main lambda handler
     """
-    logger.info(f"Received event:{json.dumps(event, indent=2)}")
-
     # Extract the bucket name and object key from the S3 event
-    bucket = event["Records"][0]["s3"]["bucket"]["name"]
-    key = event["Records"][0]["s3"]["object"]["key"]
+    bucket = event["Bucket"]
+    key = event["ObjectKey"]
 
     # URL-decode the key if it has special characters
     key = key.replace("+", " ")

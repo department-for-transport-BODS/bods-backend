@@ -39,14 +39,14 @@ class pipelines_fileprocessingresult(Base):
 
 
 class pipeline_processing_step(Base):
-    __tablename__ = "pipeline_processing_step"
+    __tablename__ = "pipelines_pipelineprocessingstep"
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
     category = Column(String(20))
 
 
 class pipeline_error_code(Base):
-    __tablename__ = "pipeline_error_code"
+    __tablename__ = "pipelines_pipelineerrorcode"
     id = Column(Integer, primary_key=True)
     status = Column(String(255))
 
@@ -59,7 +59,7 @@ class organisation_datasetrevision(Base):
 class organisation_txcfileattributes(Base):
     __tablename__ = "organisation_txcfileattributes"
     id = Column(Integer, primary_key=True)
-    revision_id = Column(Integer, primary_key=True)
+    revision_id = Column(Integer)
     schema_version = Column(String(10))
     revision_number = Column(Integer)
     modification = Column(String(28))
@@ -77,6 +77,15 @@ class organisation_txcfileattributes(Base):
     destination = Column(String(512))
     hash = Column(String(40))
 
+class data_quality_postschemaviolation(Base):
+    __tablename__ = "data_quality_postschemaviolation"
+
+    id = Column(Integer, primary_key=True)
+    filename = Column(String(512))
+    line = Column(Integer)
+    details = Column(String(1024))
+    revision_id = Column(Integer)
+
 class organisation_dataset(Base):
     __tablename__ = 'organisation_dataset'
     id = Column(Integer, primary_key=True)
@@ -90,10 +99,11 @@ class MockedDB:
         self.classes = SimpleNamespace(
             avl_cavldataarchive=avl_cavldataarchive,
             pipelines_fileprocessingresult=pipelines_fileprocessingresult,
-            pipeline_processing_step = pipeline_processing_step,
-            pipeline_error_code=pipeline_error_code,
+            pipelines_pipelineprocessingstep=pipeline_processing_step,
+            pipelines_pipelineerrorcode=pipeline_error_code,
             organisation_datasetrevision=organisation_datasetrevision,
             organisation_txcfileattributes=organisation_txcfileattributes,
+            data_quality_postschemaviolation=data_quality_postschemaviolation,
             organisation_dataset=organisation_dataset
         )
 

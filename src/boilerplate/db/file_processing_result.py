@@ -7,6 +7,7 @@ from datetime import datetime
 from uuid import uuid4
 from sqlalchemy.exc import SQLAlchemyError, NoResultFound
 from common import BodsDB
+from db.repositories.dataset_revision import get_revision
 from exceptions.file_exceptions import *
 from exceptions.xml_file_exceptions import *
 from exceptions.zip_file_exceptions import *
@@ -71,7 +72,7 @@ def get_record(db, class_name, filter_condition, error_message):
 
 
 def get_file_processing_error_code(db, status):
-    class_name = db.classes.pipeline_error_code
+    class_name = db.classes.pipelines_pipelineerrorcode
     filter_condition = class_name.status == status
     error_message = f"Processing error status {status} doesn't exist"
     return get_record(db, class_name, filter_condition, error_message)
@@ -80,7 +81,7 @@ def get_file_processing_error_code(db, status):
 def write_processing_step(db, name, category):
     with db.session as session_:
         try:
-            class_name = db.classes.pipeline_processing_step
+            class_name = db.classes.pipelines_pipelineprocessingstep
             new_step = class_name(name=name, category=category)
             session_.add(new_step)
             session_.commit()
@@ -91,22 +92,30 @@ def write_processing_step(db, name, category):
             raise err
 
 
+def get_dataset_type(event):
+    dataset_type = event.get("dataset_type", "timetables")
+    return "TIMETABLES" if dataset_type.startswith("timetable") else "FARES"
+
+
 def file_processing_result_to_db(step_name):
     def decorator(func):
         def wrapper(event, context):
+            logger.info(f"step: {step_name}, event: {event}")
             _db = BodsDB()
             uuid = str(uuid4())
             try:
-                file_path = event["Records"][0]["s3"]["object"]["key"]
-                revision, file_name = file_path.split("/")
-                step = write_processing_step(_db, step_name, "TIMETABLES")
+                revision = get_revision(_db,
+                                        int(event["DatasetRevisionId"]))
+                step = write_processing_step(_db,
+                                             step_name,
+                                             get_dataset_type(event))
                 result = get_file_processing_result_obj(
                     db=_db,
                     task_id=uuid,
                     status="STARTED",
-                    filename=file_name,
+                    filename=event["ObjectKey"].split("/")[-1],
                     pipeline_processing_step_id=step,
-                    revision_id=revision,
+                    revision_id=revision.id
                 )
                 fpr_ins = PipelineFileProcessingResult(_db)
                 # Add lambda entry
@@ -164,10 +173,12 @@ class PipelineFileProcessingResult:
             try:
                 buf_ = self._db.classes.pipelines_fileprocessingresult
                 result = (
-                    session.query(buf_).filter(buf_.revision_id == revision_id).one()
+                    session.query(buf_).filter(
+                        buf_.revision_id == revision_id).one()
                 )
             except NoResultFound as error:
-                msg = f"Revision {revision_id } doesn't exist pipelines_fileprocessingresult"
+                msg = (f"Revision {revision_id} "
+                       f"doesn't exist pipelines_fileprocessingresult")
                 logger.error(msg)
                 raise error
             else:
@@ -185,7 +196,8 @@ class PipelineFileProcessingResult:
             try:
                 # Get the record using task_id
                 buf_ = self._db.classes.pipelines_fileprocessingresult
-                result = session.query(buf_).filter(buf_.task_id == task_id).one()
+                result = session.query(buf_).filter(
+                    buf_.task_id == task_id).one()
                 if not result:
                     logger.warning(
                         f"No file processing result found for task {task_id}"
@@ -204,7 +216,8 @@ class PipelineFileProcessingResult:
                 return "File processing result updated successfully!"
             except Exception as error:
                 session.rollback()
-                msg = f"Failed to update file processing result for task {task_id} {error}"
+                msg = (f"Failed to update file processing result for task "
+                       f"{task_id} {error}")
                 logger.error(msg)
                 raise error
 
@@ -235,8 +248,10 @@ def txc_file_attributes_to_db(revision_id, attributes):
                     service_code=it.service.service_code,
                     origin=it.service.origin,
                     destination=it.service.destination,
-                    operating_period_start_date=it.service.operating_period_start_date,
-                    operating_period_end_date=it.service.operating_period_end_date,
+                    operating_period_start_date=it.service.
+                    operating_period_start_date,
+                    operating_period_end_date=it.service.
+                    operating_period_end_date,
                     public_use=it.service.public_use,
                     line_names=[line.line_name for line in it.service.lines],
                     hash=it.hash,

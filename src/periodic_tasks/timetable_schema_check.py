@@ -7,7 +7,7 @@ from zipfile import ZipFile
 from lxml import etree
 
 from db.file_processing_result import file_processing_result_to_db
-from db.dataset_revision import get_dataset_revision
+from db.repositories.dataset_revision import get_revision
 from db.schema_definition import get_schema_definition_db_object
 from constants import SCHEMA_DIR
 from violations import BaseSchemaViolation
@@ -49,15 +49,15 @@ class SchemaLoader:
             with ZipFile(self.definition.schema) as zin:
                 for filepath in zin.namelist():
                     # Not sure why this is necessary but the netex zip triggers
-                    # zip bomb warning and a couple of examples cant be extracted
-                    # This is probably fine because these are known zip files from
-                    # DfT
+                    # zip bomb warning and a couple of examples cant be
+                    # extracted This is probably fine because these are known
+                    # zip files from DfT
                     try:
                         zin.extract(filepath, directory)
                     except (OSError, ValueError) as e:
                         logger.warning(f"Could not extract {filepath} - {e}")
-                        # We probably want to fail the pipeline if there are any other
-                        # exceptions
+                        # We probably want to fail the pipeline if there are
+                        # any other exceptions
 
         return path
 
@@ -82,7 +82,8 @@ class DatasetTXCValidator:
         if error:
             file_.seek(0)
             violations.append(
-                BaseSchemaViolation.from_error(error[0], revision_id=self.revision.id)
+                BaseSchemaViolation.from_error(error[0],
+                                               revision_id=self.revision.id)
             )
             return violations
         file_.seek(0)
@@ -91,7 +92,8 @@ class DatasetTXCValidator:
         if not is_valid:
             for error in self._schema.error_log:
                 violations.append(
-                    BaseSchemaViolation.from_error(error, revision_id=self.revision.id)
+                    BaseSchemaViolation.from_error(error,
+                                                   revision_id=self.revision.id)
                 )
         return violations
 
@@ -104,14 +106,15 @@ def lambda_handler(event, context):
     logger.info(f"Received event:{json.dumps(event, indent=2)}")
 
     # Extract the bucket name and object key from the S3 event
-    bucket = event["Records"][0]["s3"]["bucket"]["name"]
-    key = event["Records"][0]["s3"]["object"]["key"]
-    filename = key.split("/")[-1]
-    revision_id = key.split("/")[0]
+    bucket = event["Bucket"]
+    key = event["ObjectKey"]
 
-    revision = get_dataset_revision(revision_id=revision_id)
+    # Get revision
+    db = DbManager.get_db()
+    revision = get_revision(db, int(event["DatasetRevisionId"]))
+
     # URL-decode the key if it has special characters
-    filename = filename.replace("+", " ")
+    filename = key.replace("+", " ")
     try:
         s3_handler = S3(bucket_name=bucket)
         file_object = s3_handler.get_object(file_path=filename)
@@ -125,5 +128,6 @@ def lambda_handler(event, context):
         raise e
     return {
         "statusCode": 200,
-        "body": f"Successfully ran the file schema check for file '{key}' from bucket '{bucket}' with {len(violations)} violations",
+        "body": f"Successfully ran the file schema check for file '{key}' "
+                f"from bucket '{bucket}' with {len(violations)} violations"
     }

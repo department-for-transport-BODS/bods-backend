@@ -22,12 +22,14 @@ TEST_ENV_VAR = {
 
 
 class TestGetTransxchangeSchema(unittest.TestCase):
-    @patch("periodic_tasks.timetable_schema_check.get_schema_definition_db_object")
+    @patch(
+        "periodic_tasks.timetable_schema_check.get_schema_definition_db_object"
+    )
     @patch("periodic_tasks.timetable_schema_check.SchemaLoader")
     @patch.dict("os.environ", TEST_ENV_VAR)
-    def test_get_transxchange_schema_success(
-        self, mock_schemaloader, mock_getschemadefinitiondbobject
-    ):
+    def test_get_transxchange_schema_success(self,
+                                             mock_schemaloader,
+                                             mock_getschemadefinitiondbobject):
         mock_definition = MagicMock()
         mock_definition.category = "category1"
         mock_definition.schema = "some_schema.zip"
@@ -46,10 +48,13 @@ class TestGetTransxchangeSchema(unittest.TestCase):
         )
         self.assertEqual(result, "some_schema_object")
 
-    @patch("periodic_tasks.timetable_schema_check.get_schema_definition_db_object")
+    @patch(
+        "periodic_tasks.timetable_schema_check.get_schema_definition_db_object"
+    )
     @patch.dict("os.environ", TEST_ENV_VAR)
     def test_get_transxchange_schema_missing_definition(
-        self, mock_getschemadefinitiondbobject
+            self,
+            mock_getschemadefinitiondbobject
     ):
         mock_getschemadefinitiondbobject.return_value = None
 
@@ -166,36 +171,32 @@ class TestDatasetTXCValidator(unittest.TestCase):
 class TestLambdaHandler(unittest.TestCase):
 
     @patch("periodic_tasks.timetable_schema_check.S3")
-    @patch("periodic_tasks.timetable_schema_check.get_dataset_revision")
+    @patch("periodic_tasks.timetable_schema_check.get_revision")
     @patch("periodic_tasks.timetable_schema_check.DatasetTXCValidator")
     @patch("periodic_tasks.timetable_schema_check.SchemaViolation")
     @patch("db.file_processing_result.BodsDB")
     @patch("periodic_tasks.timetable_schema_check.logger")
     @patch.dict("os.environ", TEST_ENV_VAR)
-    def test_lambda_handler_success(
-        self,
-        mock_logger,
-        mock_db,
-        mock_schemaviolation,
-        mock_datasettxcvalidator,
-        mock_getdatasetrevision,
-        mock_s3,
-    ):
+    def test_lambda_handler_success(self,
+                                    mock_logger,
+                                    mock_db,
+                                    mock_schemaviolation,
+                                    mock_datasettxcvalidator,
+                                    mock_getdatasetrevision,
+                                    mock_s3):
         # Setup mocks
         mock_event = {
-            "Records": [
-                {
-                    "s3": {
-                        "bucket": {"name": "test-bucket"},
-                        "object": {"key": "3456/bodds.zip"},
-                    }
-                }
-            ]
+            "Bucket": "test-bucket",
+            "ObjectKey": "bodds.zip",
+            "DatasetRevisionId": 123,
+            "DatasetType": "timetables"
         }
+
         mock_context = MagicMock()
 
         # Mock the return values for the various calls
         mock_revision = MagicMock()
+        mock_getdatasetrevision.id = 1
         mock_getdatasetrevision.return_value = mock_revision
 
         # Mock the S3 object and method
@@ -240,36 +241,32 @@ class TestLambdaHandler(unittest.TestCase):
         )
 
     @patch("periodic_tasks.timetable_schema_check.S3")
-    @patch("periodic_tasks.timetable_schema_check.get_dataset_revision")
+    @patch("periodic_tasks.timetable_schema_check.get_revision")
     @patch("periodic_tasks.timetable_schema_check.DatasetTXCValidator")
     @patch("periodic_tasks.timetable_schema_check.SchemaViolation")
     @patch("boilerplate.db.file_processing_result.BodsDB")
     @patch("periodic_tasks.timetable_schema_check.logger")
     @patch.dict("os.environ", {"TEST_ENV_VAR": "value"})
-    def test_lambda_handler_exception(
-        self,
-        mock_logger,
-        mock_db,
-        mock_schemaviolation,
-        mock_datasettxcvalidator,
-        mock_getdatasetrevision,
-        mock_s3,
-    ):
+    def test_lambda_handler_exception(self,
+                                      mock_logger,
+                                      mock_db,
+                                      mock_schemaviolation,
+                                      mock_datasettxcvalidator,
+                                      mock_getdatasetrevision,
+                                      mock_s3):
         # Setup mocks
         mock_event = {
-            "Records": [
-                {
-                    "s3": {
-                        "bucket": {"name": "test-bucket"},
-                        "object": {"key": "3456/bodds.zip"},
-                    }
-                }
-            ]
+            "Bucket": "test-bucket",
+            "ObjectKey": "bodds.zip",
+            "DatasetRevisionId": 123,
+            "DatasetType": "timetables"
         }
         mock_context = MagicMock()
 
         # Mock the return values for the various calls
+        # Mock get revision
         mock_revision = MagicMock()
+        mock_revision.id = 1
         mock_getdatasetrevision.return_value = mock_revision
 
         # Mock the S3 object and method
