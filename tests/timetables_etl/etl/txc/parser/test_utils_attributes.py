@@ -18,17 +18,23 @@ from timetables_etl.etl.app.txc.parser.utils_attributes import (
 @pytest.mark.parametrize(
     "xml_string, expected",
     [
-        ("<tag></tag>", None),
-        ("<tag CreationDateTime=''>CreationDateTime</tag>", None),
-        ("<tag CreationDateTime='invalid_date'>CreationDateTime</tag>", None),
-        (
+        pytest.param("<tag></tag>", None, id="No Attributes"),
+        pytest.param(
+            "<tag CreationDateTime=''>CreationDateTime</tag>", None, id="Empty String"
+        ),
+        pytest.param(
+            "<tag CreationDateTime='invalid_date'>CreationDateTime</tag>",
+            None,
+            id="Invalid Date",
+        ),
+        pytest.param(
             "<tag CreationDateTime='2023-05-15T10:30:00+00:00'>CreationDateTime</tag>",
             datetime(2023, 5, 15, 10, 30, tzinfo=timezone.utc),
+            id="Valid Date",
         ),
     ],
-    ids=["No Attributes", "Empty String", "Invalid Date", "Valid Date"],
 )
-def test_parse_creation_datetime(xml_string, expected):
+def test_parse_creation_datetime(xml_string: str, expected: datetime | None):
     """
     Parse CreationDateTime on a attribute
     """
@@ -39,17 +45,25 @@ def test_parse_creation_datetime(xml_string, expected):
 @pytest.mark.parametrize(
     "xml_string, expected",
     [
-        ("<tag></tag>", None),
-        ("<tag ModificationDateTime=''>ModificationDateTime</tag>", None),
-        ("<tag ModificationDateTime='invalid_date'>ModificationDateTime</tag>", None),
-        (
+        pytest.param("<tag></tag>", None, id="No Attributes"),
+        pytest.param(
+            "<tag ModificationDateTime=''>ModificationDateTime</tag>",
+            None,
+            id="Empty String",
+        ),
+        pytest.param(
+            "<tag ModificationDateTime='invalid_date'>ModificationDateTime</tag>",
+            None,
+            id="Invalid Date",
+        ),
+        pytest.param(
             "<tag ModificationDateTime='2023-05-15T10:30:00+00:00'>ModificationDateTime</tag>",
             datetime(2023, 5, 15, 10, 30, tzinfo=timezone.utc),
+            id="Valid Date",
         ),
     ],
-    ids=["No Attributes", "Empty String", "Invalid Date", "Valid Date"],
 )
-def test_parse_modification_datetime(xml_string, expected):
+def test_parse_modification_datetime(xml_string: str, expected: datetime | None):
     """
     Test that modificationdatetime attribute is parsed correctly
     """
@@ -60,14 +74,21 @@ def test_parse_modification_datetime(xml_string, expected):
 @pytest.mark.parametrize(
     "xml_string, expected",
     [
-        ("<tag></tag>", None),
-        ("<tag RevisionNumber=''>RevisionNumber</tag>", None),
-        ("<tag RevisionNumber='invalid_int'>RevisionNumber</tag>", None),
-        ("<tag RevisionNumber='42'>RevisionNumber</tag>", 42),
+        pytest.param("<tag></tag>", None, id="No Attributes"),
+        pytest.param(
+            "<tag RevisionNumber=''>RevisionNumber</tag>", None, id="Empty String"
+        ),
+        pytest.param(
+            "<tag RevisionNumber='invalid_int'>RevisionNumber</tag>",
+            None,
+            id="Not a number",
+        ),
+        pytest.param(
+            "<tag RevisionNumber='42'>RevisionNumber</tag>", 42, id="Correctly Parsing"
+        ),
     ],
-    ids=["No Attributes", "Empty String", "Not a number", "Correctly Parsing"],
 )
-def test_parse_revision_number(xml_string, expected):
+def test_parse_revision_number(xml_string: str, expected: int | None):
     """
     Test extracting the Revision Number
     """
@@ -78,19 +99,21 @@ def test_parse_revision_number(xml_string, expected):
 @pytest.mark.parametrize(
     "xml_string, expected",
     [
-        ("<tag></tag>", None),
-        ("<tag Modification=''>Modification</tag>", None),
-        ("<tag Modification='revise'>Modification</tag>", "revise"),
-        ("<tag other='value'>Modification</tag>", None),
-    ],
-    ids=[
-        "No Attributes",
-        "Empty String",
-        "Valid Modification",
-        "Non-existent Attribute",
+        pytest.param("<tag></tag>", None, id="No Attributes"),
+        pytest.param(
+            "<tag Modification=''>Modification</tag>", None, id="Empty String"
+        ),
+        pytest.param(
+            "<tag Modification='revise'>Modification</tag>",
+            "revise",
+            id="Valid Modification",
+        ),
+        pytest.param(
+            "<tag other='value'>Modification</tag>", None, id="Non-existent Attribute"
+        ),
     ],
 )
-def test_parse_modification(xml_string, expected):
+def test_parse_modification(xml_string: str, expected: str):
     """
     Parse the Modification data
     """

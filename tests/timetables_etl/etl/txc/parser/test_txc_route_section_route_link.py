@@ -19,7 +19,7 @@ from timetables_etl.etl.app.txc.parser.route_sections import (
 @pytest.mark.parametrize(
     "xml_string, expected",
     [
-        (
+        pytest.param(
             """
         <RouteLink>
             <Track>
@@ -46,8 +46,9 @@ from timetables_etl.etl.app.txc.parser.route_sections import (
                     ]
                 )
             ),
+            id="Valid Track",
         ),
-        (
+        pytest.param(
             """
         <RouteLink>
             <Track>
@@ -61,8 +62,9 @@ from timetables_etl.etl.app.txc.parser.route_sections import (
         </RouteLink>
         """,
             None,
+            id="Missing Location ID",
         ),
-        (
+        pytest.param(
             """
         <RouteLink>
             <Track>
@@ -88,8 +90,9 @@ from timetables_etl.etl.app.txc.parser.route_sections import (
                     ]
                 )
             ),
+            id="Mixed Valid and Invalid Locations",
         ),
-        (
+        pytest.param(
             """
         <RouteLink>
             <InvalidElement>
@@ -103,23 +106,18 @@ from timetables_etl.etl.app.txc.parser.route_sections import (
         </RouteLink>
         """,
             None,
+            id="Invalid Track Element",
         ),
-        (
+        pytest.param(
             """
         <RouteLink></RouteLink>
         """,
             None,
+            id="No Track Element",
         ),
     ],
-    ids=[
-        "Valid Track",
-        "Missing Location ID",
-        "Mixed Valid and Invalid Locations",
-        "Invalid Track Element",
-        "No Track Element",
-    ],
 )
-def test_parse_track(xml_string, expected):
+def test_parse_track(xml_string: str, expected: TXCTrack | None):
     """
     Test the parsing of TXCTrack from XML.
     """
@@ -130,7 +128,7 @@ def test_parse_track(xml_string, expected):
 @pytest.mark.parametrize(
     "xml_string, expected",
     [
-        (
+        pytest.param(
             """
         <RouteLink id="RL1"
                 CreationDateTime="2023-05-15T10:30:00+00:00"
@@ -178,8 +176,9 @@ def test_parse_track(xml_string, expected):
                     )
                 ),
             ),
+            id="Valid RouteLink",
         ),
-        (
+        pytest.param(
             """
         <RouteLink>
             <From>
@@ -191,8 +190,9 @@ def test_parse_track(xml_string, expected):
         </RouteLink>
         """,
             None,
+            id="Missing ID",
         ),
-        (
+        pytest.param(
             """
         <RouteLink id="RL2">
             <To>
@@ -201,8 +201,9 @@ def test_parse_track(xml_string, expected):
         </RouteLink>
         """,
             None,
+            id="Missing From StopPointRef",
         ),
-        (
+        pytest.param(
             """
         <RouteLink id="RL3">
             <From>
@@ -211,8 +212,9 @@ def test_parse_track(xml_string, expected):
         </RouteLink>
         """,
             None,
+            id="Missing To StopPointRef",
         ),
-        (
+        pytest.param(
             """
         <RouteLink id="RL4">
             <From>
@@ -244,17 +246,11 @@ def test_parse_track(xml_string, expected):
                 Distance=None,
                 Track=None,
             ),
+            id="Invalid Track Element",
         ),
     ],
-    ids=[
-        "Valid RouteLink",
-        "Missing ID",
-        "Missing From StopPointRef",
-        "Missing To StopPointRef",
-        "Invalid Track Element",
-    ],
 )
-def test_parse_route_link(xml_string, expected):
+def test_parse_route_link(xml_string: str, expected: TXCRouteLink | None):
     """
     Test the parsing of TXCRouteLink from XML.
     """
@@ -265,7 +261,7 @@ def test_parse_route_link(xml_string, expected):
 @pytest.mark.parametrize(
     "xml_string, expected",
     [
-        (
+        pytest.param(
             """
         <RouteSection>
             <RouteLink id="RL1"
@@ -321,8 +317,9 @@ def test_parse_route_link(xml_string, expected):
                     ),
                 )
             ],
+            id="Single Valid RouteLink",
         ),
-        (
+        pytest.param(
             """
         <RouteSection>
             <RouteLink id="RL1">
@@ -374,30 +371,27 @@ def test_parse_route_link(xml_string, expected):
                     Track=None,
                 ),
             ],
+            id="Multiple RouteLinks",
         ),
-        (
+        pytest.param(
             """
         <RouteSection>
             <InvalidElement />
         </RouteSection>
         """,
             [],
+            id="Invalid RouteLink Element",
         ),
-        (
+        pytest.param(
             """
         <InvalidTopLevel />
         """,
             [],
+            id="Invalid Top-level Element",
         ),
     ],
-    ids=[
-        "Single Valid RouteLink",
-        "Multiple RouteLinks",
-        "Invalid RouteLink Element",
-        "Invalid Top-level Element",
-    ],
 )
-def test_parse_route_links(xml_string, expected):
+def test_parse_route_links(xml_string: str, expected: list[TXCRouteLink]):
     """
     Test the parsing of TXCRouteLink list from XML.
     """

@@ -15,7 +15,7 @@ from timetables_etl.etl.app.txc.parser.route_sections import (
 @pytest.mark.parametrize(
     "xml_string, expected",
     [
-        (
+        pytest.param(
             """
         <Location id="loc1">
             <Longitude>-0.1234567</Longitude>
@@ -23,8 +23,9 @@ from timetables_etl.etl.app.txc.parser.route_sections import (
         </Location>
         """,
             TXCLocation(id="loc1", Longitude="-0.1234567", Latitude="51.9876543"),
+            id="Valid Location",
         ),
-        (
+        pytest.param(
             """
         <Location id="loc2">
             <Longitude>0.0</Longitude>
@@ -32,8 +33,9 @@ from timetables_etl.etl.app.txc.parser.route_sections import (
         </Location>
         """,
             TXCLocation(id="loc2", Longitude="0.0", Latitude="0.0"),
+            id="Valid Location with 0 Coordinates",
         ),
-        (
+        pytest.param(
             """
         <Location>
             <Longitude>-0.1234567</Longitude>
@@ -41,24 +43,27 @@ from timetables_etl.etl.app.txc.parser.route_sections import (
         </Location>
         """,
             None,
+            id="Missing Location ID",
         ),
-        (
+        pytest.param(
             """
         <Location id="loc3">
             <Latitude>51.9876543</Latitude>
         </Location>
         """,
             None,
+            id="Missing Longitude",
         ),
-        (
+        pytest.param(
             """
         <Location id="loc4">
             <Longitude>-0.1234567</Longitude>
         </Location>
         """,
             None,
+            id="Missing Latitude",
         ),
-        (
+        pytest.param(
             """
         <InvalidElement>
             <Longitude>-0.1234567</Longitude>
@@ -66,15 +71,8 @@ from timetables_etl.etl.app.txc.parser.route_sections import (
         </InvalidElement>
         """,
             None,
+            id="Invalid Top-level Element",
         ),
-    ],
-    ids=[
-        "Valid Location",
-        "Valid Location with 0 Coordinates",
-        "Missing Location ID",
-        "Missing Longitude",
-        "Missing Latitude",
-        "Invalid Top-level Element",
     ],
 )
 def test_parse_location(xml_string, expected):
@@ -88,7 +86,7 @@ def test_parse_location(xml_string, expected):
 @pytest.mark.parametrize(
     "xml_string, expected",
     [
-        (
+        pytest.param(
             """
         <Track>
             <Mapping>
@@ -107,8 +105,9 @@ def test_parse_location(xml_string, expected):
                 TXCLocation(id="loc1", Longitude="-0.1234567", Latitude="51.9876543"),
                 TXCLocation(id="loc2", Longitude="0.0", Latitude="0.0"),
             ],
+            id="Multiple Valid Locations",
         ),
-        (
+        pytest.param(
             """
         <Track>
             <Mapping>
@@ -120,8 +119,9 @@ def test_parse_location(xml_string, expected):
         </Track>
         """,
             [],
+            id="Missing Location ID",
         ),
-        (
+        pytest.param(
             """
         <Track>
             <Mapping>
@@ -137,8 +137,9 @@ def test_parse_location(xml_string, expected):
         </Track>
         """,
             [TXCLocation(id="loc1", Longitude="-0.1234567", Latitude="51.9876543")],
+            id="Mixed Valid and Invalid Locations",
         ),
-        (
+        pytest.param(
             """
         <InvalidTopLevel>
             <Mapping>
@@ -150,20 +151,15 @@ def test_parse_location(xml_string, expected):
         </InvalidTopLevel>
         """,
             None,
+            id="Invalid Top-level Element",
         ),
-        (
+        pytest.param(
             """
         <Track></Track>
         """,
             None,
+            id="No Locations",
         ),
-    ],
-    ids=[
-        "Multiple Valid Locations",
-        "Missing Location ID",
-        "Mixed Valid and Invalid Locations",
-        "Invalid Top-level Element",
-        "No Locations",
     ],
 )
 def test_parse_locations(xml_string, expected):

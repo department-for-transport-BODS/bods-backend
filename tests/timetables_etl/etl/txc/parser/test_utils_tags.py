@@ -50,16 +50,22 @@ def test_does_element_exist(xml_string: str, element_name: str, expected_result:
 @pytest.mark.parametrize(
     "xml_string, field_name, expected",
     [
-        ("<tag></tag>", "element", None),
-        ("<tag><element></element></tag>", "element", None),
-        ("<tag><element>value</element></tag>", "element", "value"),
-        ("<tag><other>value</other></tag>", "element", None),
-    ],
-    ids=[
-        "No Elements",
-        "Empty Element",
-        "Valid Element Text",
-        "Non-existent Element",
+        pytest.param("<tag></tag>", "element", None, id="No Elements"),
+        pytest.param(
+            "<tag><element></element></tag>", "element", None, id="Empty Element"
+        ),
+        pytest.param(
+            "<tag><element>value</element></tag>",
+            "element",
+            "value",
+            id="Valid Element Text",
+        ),
+        pytest.param(
+            "<tag><other>value</other></tag>",
+            "element",
+            None,
+            id="Non-existent Element",
+        ),
     ],
 )
 def test_get_element_text(xml_string: str, field_name: str, expected: str | None):
