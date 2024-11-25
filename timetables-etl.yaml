@@ -299,7 +299,7 @@ Resources:
                   - s3:ListBucket
                 Resource: !If
                   - IsNotLocal
-                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3-app-bucket}}'
+                  - !Sub 'arn:aws:s3:::bodds-${Environment}'
                   - '*'
               - Effect: Allow
                 Action:
@@ -307,7 +307,7 @@ Resources:
                   - s3:PutObject*
                 Resource: !If
                   - IsNotLocal
-                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3-app-bucket}}/*'
+                  - !Sub 'arn:aws:s3:::bodds-${Environment}/*'
                   - '*'
         - PolicyName: KMSAccessPolicy
           PolicyDocument:
