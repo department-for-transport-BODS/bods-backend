@@ -7,6 +7,8 @@ from typing import cast, get_args
 from lxml.etree import _Element
 from structlog.stdlib import get_logger
 
+from timetables_etl.etl.app.txc.parser.utils_attributes import parse_xml_int
+
 from ..models.txc_service import (
     TXCJourneyPattern,
     TXCLine,
@@ -15,11 +17,11 @@ from ..models.txc_service import (
     TXCStandardService,
 )
 from ..models.txc_types import TransportModeType
+from .services_flexible import parse_flexible_service
 from .utils import find_section
 from .utils_tags import (
     get_elem_bool_default,
     get_element_date,
-    get_element_int,
     get_element_text,
     get_element_texts,
 )
@@ -35,13 +37,14 @@ def parse_line_description(line_description_xml: _Element) -> TXCLineDescription
     destination = get_element_text(line_description_xml, "Destination")
     description = get_element_text(line_description_xml, "Description")
 
-    if not origin or not destination or not description:
+    vias_xml = line_description_xml.find("Vias")
+    vias = get_element_texts(vias_xml, "Via") if vias_xml is not None else []
+    if not description:
+        log.warning("Service Line Description Missing")
         return None
 
     return TXCLineDescription(
-        Origin=origin,
-        Destination=destination,
-        Description=description,
+        Origin=origin, Destination=destination, Description=description, Vias=vias
     )
 
 
@@ -188,18 +191,24 @@ def parse_service(service_xml: _Element) -> TXCService | None:
         in get_args(TransportModeType)
         else "coach"
     )
-
+    flexible_service_xml = service_xml.find("FlexibleService")
+    flexible_service = (
+        parse_flexible_service(flexible_service_xml)
+        if flexible_service_xml is not None
+        else None
+    )
     if (
         not service_code
         or not registered_operator_ref
-        or not standard_service
         or not start_date
+        or (not standard_service and not flexible_service)
     ):
-        log.warning(
+        log.error(
             "Service missing required fields. Skipping.",
             ServiceCode=service_code,
             RegisteredOperatorRef=registered_operator_ref,
             StandardService=standard_service,
+            FlexibleService=flexible_service,
             StartDate=start_date,
         )
         return None
@@ -211,7 +220,7 @@ def parse_service(service_xml: _Element) -> TXCService | None:
             lines.append(line)
 
     return TXCService(
-        RevisionNumber=get_element_int(service_xml, "RevisionNumber") or 1,
+        RevisionNumber=parse_xml_int(service_xml, "RevisionNumber") or 0,
         ServiceCode=service_code,
         PrivateCode=get_element_text(service_xml, "PrivateCode"),
         RegisteredOperatorRef=registered_operator_ref,
@@ -219,6 +228,7 @@ def parse_service(service_xml: _Element) -> TXCService | None:
         StartDate=start_date,
         EndDate=end_date,
         StandardService=standard_service,
+        FlexibleService=flexible_service,
         Lines=lines,
         Mode=mode,
     )

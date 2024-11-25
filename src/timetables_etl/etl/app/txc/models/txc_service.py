@@ -64,11 +64,17 @@ class TXCStandardService(BaseModel):
 class TXCLineDescription(BaseModel):
     """
     OutboundDescription / InboundDescription of a line
+    According to PTI:
+        - Origin - Where Appropriate
+        - Destination - Where Appropriate
+        - Description - Yes. Shall be included
+        - Vias - Where Appropriate but avoid use where possible
     """
 
-    Origin: str
-    Destination: str
+    Origin: str | None = Field(default=None)
+    Destination: str | None = Field(default=None)
     Description: str
+    Vias: list[str] = Field(default=[])
 
 
 class TXCLine(BaseModel):
