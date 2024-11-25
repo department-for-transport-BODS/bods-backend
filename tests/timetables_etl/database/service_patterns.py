@@ -8,7 +8,9 @@ import pandas as pd
 from geoalchemy2.shape import from_shape
 from shapely.wkt import loads as wkt_loads
 
-from timetables_etl.app.database.models.model_transmodel import TransmodelServicePattern
+from timetables_etl.etl.app.database.models.model_transmodel import (
+    TransmodelServicePattern,
+)
 
 
 def load_service_patterns_from_csv(
