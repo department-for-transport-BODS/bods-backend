@@ -188,7 +188,8 @@ class TestLambdaHandler(unittest.TestCase):
         mock_event = {
             "Bucket": "test-bucket",
             "ObjectKey": "bodds.zip",
-            "DatasetEtlTaskResultId": 123
+            "DatasetRevisionId": 123,
+            "DatasetType": "timetables"
         }
 
         mock_context = MagicMock()
@@ -257,7 +258,8 @@ class TestLambdaHandler(unittest.TestCase):
         mock_event = {
             "Bucket": "test-bucket",
             "ObjectKey": "bodds.zip",
-            "DatasetEtlTaskResultId": 123
+            "DatasetRevisionId": 123,
+            "DatasetType": "timetables"
         }
         mock_context = MagicMock()
 

@@ -22,7 +22,8 @@ class TestTimetableFileValidator(unittest.TestCase):
         self.event = {
             "Bucket": "bodds-dev",
             "ObjectKey": "22122022105110.zip",
-            "DatasetEtlTaskResultId": 123
+            "DatasetRevisionId": 123,
+            "DatasetType": "timetables"
         }
 
         # Initialize TimetableFileValidator with the mocked S3 object
@@ -92,7 +93,8 @@ class TestLambdaHandler(unittest.TestCase):
         event = {
             "Bucket": "bodds-dev",
             "ObjectKey": "22122022105110.zip",
-            "DatasetEtlTaskResultId": 123
+            "DatasetRevisionId": 123,
+            "DatasetType": "timetables"
         }
 
         # Call the lambda_handler and verify the response
@@ -125,7 +127,8 @@ class TestLambdaHandler(unittest.TestCase):
             event = {
                 "Bucket": "bodds-dev",
                 "ObjectKey": "22122022105110.zip",
-                "DatasetEtlTaskResultId": 123
+                "DatasetRevisionId": 123,
+                "DatasetType": "timetables"
             }
             mock_db.return_value = MockedDB()
             mock_pipeline_file_processing = mock_pipeline_file_processing.return_value
@@ -167,7 +170,8 @@ class TestLambdaHandler(unittest.TestCase):
             event = {
                 "Bucket": "bodds-dev",
                 "ObjectKey": "22122022105110.zip",
-                "DatasetEtlTaskResultId": 123
+                "DatasetRevisionId": 123,
+                "DatasetType": "timetables"
             }
             mock_db.return_value = MockedDB()
             mock_pipeline_file_processing = mock_pipeline_file_processing.return_value

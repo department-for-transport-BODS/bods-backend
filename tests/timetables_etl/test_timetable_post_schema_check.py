@@ -43,7 +43,8 @@ class TestLambdaHandler(unittest.TestCase):
         mock_event = {
             "Bucket": "test-bucket",
             "ObjectKey": "test-key",
-            "DatasetEtlTaskResultId": 123
+            "DatasetRevisionId": 123,
+            "DatasetType": "timetables"
         }
         mock_context = {}
 
@@ -129,7 +130,8 @@ class TestLambdaHandler(unittest.TestCase):
         mock_event = {
             "Bucket": "test-bucket",
             "ObjectKey": "test-key",
-            "DatasetEtlTaskResultId": 123
+            "DatasetRevisionId": 123,
+            "DatasetType": "timetables"
         }
 
         mock_context = {}

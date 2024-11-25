@@ -23,7 +23,8 @@ class TestLambdaHandler(unittest.TestCase):
         event = {
             "Bucket": "test-bucket",
             "ObjectKey": "test-key",
-            "DatasetEtlTaskResultId": 123
+            "DatasetRevisionId": 123,
+            "DatasetType": "timetables"
         }
         # Mock get revision for TxC attributes
         mock_txc_revision = MagicMock()
@@ -82,7 +83,8 @@ class TestLambdaHandler(unittest.TestCase):
         event = {
             "Bucket": "test-bucket",
             "ObjectKey": "test-key",
-            "DatasetEtlTaskResultId": 123
+            "DatasetRevisionId": 123,
+            "DatasetType": "timetables"
         }
         # Mock get revision for TxC attributes
         mock_txc_revision = MagicMock()

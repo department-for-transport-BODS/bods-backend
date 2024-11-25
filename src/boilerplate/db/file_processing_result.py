@@ -92,6 +92,11 @@ def write_processing_step(db, name, category):
             raise err
 
 
+def get_dataset_type(event):
+    dataset_type = event.get("dataset_type", "timetables")
+    return "TIMETABLES" if dataset_type.startswith("timetable") else "FARES"
+
+
 def file_processing_result_to_db(step_name):
     def decorator(func):
         def wrapper(event, context):
@@ -100,10 +105,10 @@ def file_processing_result_to_db(step_name):
             uuid = str(uuid4())
             try:
                 revision = get_revision(_db,
-                                        int(event["DatasetEtlTaskResultId"]))
+                                        int(event["DatasetRevisionId"]))
                 step = write_processing_step(_db,
                                              step_name,
-                                             "TIMETABLES")
+                                             get_dataset_type(event))
                 result = get_file_processing_result_obj(
                     db=_db,
                     task_id=uuid,

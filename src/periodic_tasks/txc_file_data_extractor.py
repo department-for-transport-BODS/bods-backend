@@ -22,7 +22,7 @@ def lambda_handler(event, context):
 
     # Get revision
     db = DbManager.get_db()
-    revision = get_revision(db, int(event["DatasetEtlTaskResultId"]))
+    revision = get_revision(db, int(event["DatasetRevisionId"]))
 
     # URL-decode the key if it has special characters
     key = key.replace("+", " ")

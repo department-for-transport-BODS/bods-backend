@@ -101,7 +101,8 @@ class TestClamAVScanner(unittest.TestCase):
         event = {
             "Bucket": "test-bucket",
             "ObjectKey": self.file_name,
-            "DatasetEtlTaskResultId": 123,
+            "DatasetRevisionId": 123,
+            "DatasetType": "timetables"
         }
 
         # Mock write_processing_step
@@ -152,7 +153,8 @@ class TestClamAVScanner(unittest.TestCase):
         event = {
             "Bucket": "test-bucket",
             "ObjectKey": self.file_name,
-            "DatasetEtlTaskResultId": 123,
+            "DatasetRevisionId": 123,
+            "DatasetType": "timetables"
         }
 
         # Mock write_processing_step
@@ -201,7 +203,8 @@ class TestClamAVScanner(unittest.TestCase):
         event = {
             "Bucket": "test-bucket",
             "ObjectKey": self.file_name,
-            "DatasetEtlTaskResultId": 123,
+            "DatasetRevisionId": 123,
+            "DatasetType": "timetables"
         }
         # Mock write_processing_step
         buf_ = "db.file_processing_result.write_processing_step"

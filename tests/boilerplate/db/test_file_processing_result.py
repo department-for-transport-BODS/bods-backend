@@ -208,7 +208,8 @@ class TestFileProcessingResult(unittest.TestCase):
         event = {
             "Bucket": "test-bucket",
             "ObjectKey": "test-key",
-            "DatasetEtlTaskResultId": 123
+            "DatasetRevisionId": 123,
+            "DatasetType": "timetables"
         }
 
         context = {}
@@ -258,7 +259,8 @@ class TestFileProcessingResult(unittest.TestCase):
         event = {
             "Bucket": "test-bucket",
             "ObjectKey": "test-key",
-            "DatasetEtlTaskResultId": 123
+            "DatasetRevisionId": 123,
+            "DatasetType": "timetables"
         }
         context = {}
 

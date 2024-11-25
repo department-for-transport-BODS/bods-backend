@@ -9,15 +9,12 @@ from sqlalchemy.orm.exc import NoResultFound
 logger = logging.getLogger(__name__)
 
 
-def get_revision(db, dataset_etl_task_result_id):
+def get_revision(db, dataset_revision_id):
     """
     Retrieves the revision corresponding to the given dataset ETL task result.
     """
-    etl_task_result_repo = DatasetETLTaskResultRepository(db)
-    etl_task_result = etl_task_result_repo.get_by_id(dataset_etl_task_result_id)
-    if etl_task_result:
-        revision_repo = DatasetRevisionRepository(db)
-        return revision_repo.get_by_id(etl_task_result.revision_id)
+    revision_repo = DatasetRevisionRepository(db)
+    return revision_repo.get_by_id(dataset_revision_id)
 
 
 class DatasetRevisionRepository:
