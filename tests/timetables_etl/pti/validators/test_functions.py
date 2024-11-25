@@ -1,5 +1,5 @@
 from pathlib import Path
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from dateutil import parser
@@ -11,6 +11,7 @@ from pti.validators.functions import (
     cast_to_date,
     check_description_for_inbound_description,
     check_description_for_outbound_description,
+    check_flexible_service_stop_point_ref,
     check_flexible_service_times,
     check_flexible_service_timing_status,
     check_inbound_outbound_description,
@@ -1070,3 +1071,118 @@ def test_has_servicedorganisation_working_days_present():
         elements = doc.xpath("//x:ServicedOrganisations/x:ServicedOrganisation", namespaces=NAMESPACE)
         actual = has_servicedorganisation_working_days("", elements)
         assert actual == True
+
+
+@pytest.fixture
+def m_stop_point_repo():
+    with patch("pti.validators.functions.StopPointRepository") as m_repo:
+        yield m_repo
+
+
+@pytest.mark.parametrize(
+    ("stop_point_ref_values", "compliant_count", "expected_result"),
+    [
+        # All atco_codes are compliant
+        (["270002700155", "270002700156"], 2, True),
+        # Not all atco_codes are compliant
+        (["270002700156", "270002700157"], 1, False),
+        # No atco_codes are compliant
+        (["270002700157", "270002700158"], 0, False),
+        # Partial match
+        (["270002700156", "270002700158"], 1, False),
+    ],
+)
+def test_check_flexible_service_stop_point_ref(
+    m_stop_point_repo, stop_point_ref_values, compliant_count, expected_result
+):
+    m_stop_point_repo.get_count.return_value = compliant_count
+
+    # XML template for the test
+    NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
+    flexible_service_xml = """
+    <TransXChange xmlns="http://www.transxchange.org.uk/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <Services>
+            <Service>
+                <FlexibleService>
+                    <FlexibleJourneyPattern id="jp_1">
+                        <StopPointsInSequence>
+                            <FlexibleStopUsage>
+                                <StopPointRef>{0}</StopPointRef>
+                            </FlexibleStopUsage>
+                            <FlexibleStopUsage>
+                                <StopPointRef>{1}</StopPointRef>
+                            </FlexibleStopUsage>
+                        </StopPointsInSequence>
+                    </FlexibleJourneyPattern>
+                </FlexibleService>
+            </Service>
+        </Services>
+    </TransXChange>
+    """
+    string_xml = flexible_service_xml.format(*stop_point_ref_values)
+
+    doc = etree.fromstring(string_xml)
+    elements = doc.xpath("//x:Service/x:FlexibleService/x:FlexibleJourneyPattern", namespaces=NAMESPACE)
+
+    result = check_flexible_service_stop_point_ref("", elements)
+
+    assert result == expected_result
+    assert m_stop_point_repo.get_count.call_count == 1
+    assert sorted(m_stop_point_repo.get_count.call_args[1]["atco_codes"]) == sorted(stop_point_ref_values)
+    assert m_stop_point_repo.get_count.call_args[1]["bus_stop_type"] == "FLX"
+    assert m_stop_point_repo.get_count.call_args[1]["stop_type"] == "BCT"
+
+
+
+@pytest.mark.parametrize(
+    ("stop_point_ref_values", "compliant_count", "expected_result"),
+    [
+        # All atco_codes are compliant
+        (["270002700155", "270002700156"], 2, True),
+        # Not all atco_codes are compliant
+        (["270002700156", "270002700157"], 1, False),
+        # No atco_codes are compliant
+        (["270002700157", "270002700158"], 0, False),
+    ],
+)
+def test_check_flexible_service_stop_point_flexible_zone_stop_type(
+    m_stop_point_repo, stop_point_ref_values, compliant_count, expected_result
+):
+    # Mock the `get_count` method to return the expected count
+    m_stop_point_repo.get_count.return_value = compliant_count
+
+    # XML template for the test
+    NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
+    flexible_zone_xml = """
+    <TransXChange xmlns="http://www.transxchange.org.uk/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <Services>
+            <Service>
+                <FlexibleService>
+                    <FlexibleJourneyPattern id="jp_1">
+                        <Direction>outbound</Direction>
+                        <FlexibleZones>
+                            <FlexibleStopUsage>
+                                <StopPointRef>{0}</StopPointRef>
+                            </FlexibleStopUsage>
+                            <FlexibleStopUsage>
+                                <StopPointRef>{1}</StopPointRef>
+                            </FlexibleStopUsage>
+                        </FlexibleZones>
+                    </FlexibleJourneyPattern>
+                </FlexibleService>
+            </Service>
+        </Services>
+    </TransXChange>
+    """
+    string_xml = flexible_zone_xml.format(*stop_point_ref_values)
+
+    doc = etree.fromstring(string_xml)
+    elements = doc.xpath("//x:Service/x:FlexibleService/x:FlexibleJourneyPattern", namespaces=NAMESPACE)
+
+    result = check_flexible_service_stop_point_ref("", elements)
+
+    assert result == expected_result
+    assert m_stop_point_repo.get_count.call_count == 1
+    assert sorted(m_stop_point_repo.get_count.call_args[1]["atco_codes"]) == sorted(stop_point_ref_values)
+    assert m_stop_point_repo.get_count.call_args[1]["bus_stop_type"] == "FLX"
+    assert m_stop_point_repo.get_count.call_args[1]["stop_type"] == "BCT"
