@@ -10,7 +10,7 @@ from structlog.stdlib import get_logger
 from ..models.txc_operator import TXCOperator
 from ..models.txc_types import LicenceClassificationT, TransportModeType
 from .utils import find_section
-from .utils_tags import get_element_text
+from .utils_tags import get_element_text, get_tag_str
 
 log = get_logger()
 
@@ -86,9 +86,13 @@ def parse_operators(xml_data: _Element) -> list[TXCOperator]:
         "LicensedOperator": parse_operator,
     }
 
-    operators = []
+    operators: list[TXCOperator] = []
     for operator_xml in section.findall("*"):
-        parser = operator_parsers.get(operator_xml.tag)
+        tag_name = get_tag_str(operator_xml)
+        if tag_name is None:
+            log.warning("Unknown operator type. Skipping.", tag=operator_xml.tag)
+            continue
+        parser = operator_parsers.get(tag_name)
         if parser:
             try:
                 operator = parser(operator_xml)

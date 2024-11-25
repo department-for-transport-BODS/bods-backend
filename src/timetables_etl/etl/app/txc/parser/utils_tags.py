@@ -4,7 +4,7 @@ Functions to extract info from XML tags
 
 from datetime import date, datetime
 
-from lxml.etree import _Element
+from lxml.etree import QName, _Element
 from structlog.stdlib import get_logger
 
 log = get_logger()
@@ -109,3 +109,11 @@ def get_elem_bool_default(xml_data: _Element, field_name: str, default: bool = F
         return default
 
     return value
+
+
+def get_tag_str(xml_data: _Element) -> str | None:
+    """Get the String of a tag"""
+    tag = xml_data.tag
+    if isinstance(tag, QName):
+        return tag.text
+    return str(tag)
