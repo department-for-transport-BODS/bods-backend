@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-from pti.constants import PTI_PATH
+from pti.constants import PTI_SCHEMA_PATH
 from pti.models import Schema
 from pti.validators.pti import PTIValidator
 
@@ -21,7 +21,7 @@ DATA_DIR = Path(__file__).parent / "data/vehicle_journeys"
 )
 def test_destination_display(filename, expected):
     OBSERVATION_ID = 47
-    schema = Schema.from_path(PTI_PATH)
+    schema = Schema.from_path(PTI_SCHEMA_PATH)
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())

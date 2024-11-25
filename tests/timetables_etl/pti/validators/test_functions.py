@@ -1046,7 +1046,6 @@ def test_validate_modification_date_time(attributes, expected_result):
     assert result == expected_result
 
 
-@pytest.mark.django_db
 def test_has_servicedorganisation_working_days_not_present():
     """
     This test case validates working days tag is present for ServicedOrganisation
@@ -1060,7 +1059,6 @@ def test_has_servicedorganisation_working_days_not_present():
         assert actual == False
 
 
-@pytest.mark.django_db
 def test_has_servicedorganisation_working_days_present():
     """
     This test case validates working days tag is present for ServicedOrganisation

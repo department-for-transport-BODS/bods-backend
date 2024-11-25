@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 import pytest
 from dateutil import parser
 
-from pti.constants import PTI_PATH
+from pti.constants import PTI_SCHEMA_PATH
 from pti.models import Schema
 from tests.timetables_etl.pti.validators.conftest import JSONFile, TXCFile
 from pti.validators.pti import PTIValidator
@@ -40,7 +40,7 @@ def test_start_date_provisional_invalid(no_of_services, expected):
     xml = "<Services>{}</Services>".format(services)
 
     OBSERVATION_ID = 17
-    schema = Schema.from_path(PTI_PATH)
+    schema = Schema.from_path(PTI_SCHEMA_PATH)
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
     schema = SchemaFactory(observations=observations)
 
@@ -79,7 +79,7 @@ def test_start_date_provisional_valid(no_of_services, expected):
     xml = "<Services>{}</Services>".format(services)
 
     OBSERVATION_ID = 17
-    schema = Schema.from_path(PTI_PATH)
+    schema = Schema.from_path(PTI_SCHEMA_PATH)
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
     schema = SchemaFactory(observations=observations)
 
@@ -129,7 +129,7 @@ def test_service_has_journey_pattern(journey_ids, expected):
     xml = service.format(pattern)
 
     OBSERVATION_ID = 21
-    schema = Schema.from_path(PTI_PATH)
+    schema = Schema.from_path(PTI_SCHEMA_PATH)
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
 
     schema = SchemaFactory(observations=observations)
@@ -156,7 +156,7 @@ def test_line_outbound_description_true():
     """
     xml = lines
     OBSERVATION_ID = 25
-    schema = Schema.from_path(PTI_PATH)
+    schema = Schema.from_path(PTI_SCHEMA_PATH)
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
 
     schema = SchemaFactory(observations=observations)
@@ -183,7 +183,7 @@ def test_line_inbound_description_true():
     """
     xml = lines
     OBSERVATION_ID = 25
-    schema = Schema.from_path(PTI_PATH)
+    schema = Schema.from_path(PTI_SCHEMA_PATH)
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
 
     schema = SchemaFactory(observations=observations)
@@ -213,7 +213,7 @@ def test_line_description_false():
     """
     xml = lines
     OBSERVATION_ID = 25
-    schema = Schema.from_path(PTI_PATH)
+    schema = Schema.from_path(PTI_SCHEMA_PATH)
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
 
     schema = SchemaFactory(observations=observations)
@@ -247,7 +247,7 @@ def test_service_code_format(service_code, expected):
     """
     xml = services.format(service_code)
     OBSERVATION_ID = 18
-    schema = Schema.from_path(PTI_PATH)
+    schema = Schema.from_path(PTI_SCHEMA_PATH)
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
 
     schema = SchemaFactory(observations=observations)
@@ -302,7 +302,7 @@ def test_operating_period_end_date(start_date, end_date_in_days, expected):
 
     xml = operating_period.format(start_date, end_date)
     OBSERVATION_ID = 20
-    schema = Schema.from_path(PTI_PATH)
+    schema = Schema.from_path(PTI_SCHEMA_PATH)
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
 
     schema = SchemaFactory(observations=observations)
@@ -324,7 +324,7 @@ def test_operating_period_end_date(start_date, end_date_in_days, expected):
 )
 def test_line_id_format(filename, expected):
     OBSERVATION_ID = 24
-    schema = Schema.from_path(PTI_PATH)
+    schema = Schema.from_path(PTI_SCHEMA_PATH)
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
 
     schema = SchemaFactory(observations=observations)
@@ -367,7 +367,7 @@ def test_flexible_service(service, expected):
     xml = "<Services>{0}</Services>".format(service)
 
     OBSERVATION_ID = 22
-    schema = Schema.from_path(PTI_PATH)
+    schema = Schema.from_path(PTI_SCHEMA_PATH)
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
 
     schema = SchemaFactory(observations=observations)

@@ -1,9 +1,7 @@
 from pathlib import Path
 
+from pti.constants import PTI_SCHEMA_PATH
 from timetables_etl.pti.validators.xml_file import XmlFilePTIValidator
-
-PTI_SCHEMA_PATH = Path(__file__) / "pti_schema.json"
-
 
 def get_xml_file_pti_validator() -> XmlFilePTIValidator:
     """

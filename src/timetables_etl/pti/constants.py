@@ -1,7 +1,7 @@
 from pathlib import Path
 
 
-PTI_PATH = Path(__file__).parent / "pti_schema.json"
+PTI_SCHEMA_PATH = Path(__file__).parent / "pti_schema.json"
 
 OPERATION_DAYS = ("DaysOfOperation", "DaysOfNonOperation")
 
