@@ -1,11 +1,9 @@
-
 import json
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
+
+from pti.constants import NO_REF, REF_PREFIX, REF_SUFFIX, REF_URL
 from pydantic import BaseModel
-
-from pti.constants import NO_REF, REF_URL
-
 
 GENERAL_REF = NO_REF + REF_URL
 
