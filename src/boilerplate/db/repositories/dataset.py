@@ -22,4 +22,3 @@ class DatasetRepository:
             raise PipelineException(message) from exc
         else:
             return result
-
