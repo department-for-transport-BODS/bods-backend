@@ -1,39 +1,23 @@
 import json
-from pathlib import Path
-from urllib.parse import unquote
 import logging
+from pathlib import Path
 from typing import IO, Any, Callable
+from urllib.parse import unquote
 
+from lxml import etree
 from pti.constants import FLEXIBLE_SERVICE, STANDARD_SERVICE
 from pti.models import Observation, Schema, Violation
 from pti.validators.functions import (
-    cast_to_bool,
-    cast_to_date,
-    check_description_for_inbound_description,
+    cast_to_bool, cast_to_date, check_description_for_inbound_description,
     check_description_for_outbound_description,
-    check_flexible_service_times,
-    check_flexible_service_timing_status,
-    check_inbound_outbound_description,
-    check_service_group_validations,
-    contains_date,
-    has_destination_display,
-    has_flexible_or_standard_service,
-    has_flexible_service_classification,
-    has_name,
-    has_prohibited_chars,
-    has_servicedorganisation_working_days,
-    is_member_of,
-    regex,
-    strip,
-    to_days,
-    today,
-    validate_licence_number,
-    validate_line_id,
-    validate_modification_date_time,
-    # validate_run_time,
-    # validate_timing_link_stops,
-)
-from lxml import etree
+    check_flexible_service_stop_point_ref, check_flexible_service_times,
+    check_flexible_service_timing_status, check_inbound_outbound_description,
+    check_service_group_validations, contains_date, has_destination_display,
+    has_flexible_or_standard_service, has_flexible_service_classification,
+    has_name, has_prohibited_chars, has_servicedorganisation_working_days,
+    is_member_of, regex, strip, to_days, today, validate_licence_number,
+    validate_line_id, validate_modification_date_time,
+    validate_non_naptan_stop_points)
 
 logger = logging.getLogger(__name__)
 
@@ -50,11 +34,10 @@ class PTIValidator:
         self.register_function("contains_date", contains_date)
         self.register_function("check_flexible_service_timing_status", check_flexible_service_timing_status)
 
-        # TODO: Requires DB interaction
-        # self.register_function(
-        #     "check_flexible_service_stop_point_ref",
-        #     check_flexible_service_stop_point_ref,
-        # )
+        self.register_function(
+            "check_flexible_service_stop_point_ref",
+            check_flexible_service_stop_point_ref,
+        )
 
         self.register_function(
             "check_inbound_outbound_description",
@@ -90,7 +73,7 @@ class PTIValidator:
         # self.register_function("validate_lines", validate_lines)
 
         self.register_function("validate_modification_date_time", validate_modification_date_time)
-        # self.register_function("validate_non_naptan_stop_points", validate_non_naptan_stop_points)
+        self.register_function("validate_non_naptan_stop_points", validate_non_naptan_stop_points)
         # self.register_function("validate_run_time", validate_run_time)
         # self.register_function("validate_timing_link_stops", validate_timing_link_stops)
         # TODO: Requires DB interaction

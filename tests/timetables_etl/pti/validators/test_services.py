@@ -1,6 +1,5 @@
 from datetime import timedelta
 from pathlib import Path
-from unittest.mock import MagicMock
 
 import pytest
 from dateutil import parser
@@ -12,7 +11,6 @@ from pti.validators.pti import PTIValidator
 from tests.timetables_etl.pti.validators.factories import SchemaFactory
 
 DATA_DIR = Path(__file__).parent / "data"
-pytestmark = pytest.mark.django_db
 
 
 @pytest.mark.parametrize("no_of_services,expected", [(2, False), (0, False)])
