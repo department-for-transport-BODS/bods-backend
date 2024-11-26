@@ -176,7 +176,6 @@ def create_vehicle_journey_operations(
         )
         return VehicleJourneyOperations([], [], [])
 
-    log.critical("Data", profile=txc_vj.OperatingProfile, bank_holidays=bank_holidays)
     operating_profile = txc_vj.OperatingProfile
     special_days = operating_profile.SpecialDaysOperation
 
