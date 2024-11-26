@@ -1,14 +1,15 @@
 from io import BytesIO
 import unittest
+from zipfile import ZipFile
 from unittest.mock import patch, MagicMock
 from botocore.exceptions import (
     ClientError,
     BotoCoreError)
-from src.boilerplate.s3 import S3
+from boilerplate.s3 import S3
 
 
 class TestS3(unittest.TestCase):
-    @patch("src.boilerplate.s3.boto3.client")
+    @patch("boilerplate.s3.boto3.client")
     def setUp(self, mock_boto_client):
         self.mock_s3_client = MagicMock()
         mock_boto_client.return_value = self.mock_s3_client
@@ -20,7 +21,7 @@ class TestS3(unittest.TestCase):
         os.environ["PROJECT_ENV"] = "local"
         self.s3 = S3(bucket_name=self._bucket)
         self.assertEqual(self.s3._client.meta.endpoint_url,
-                         "http://localstack:4566")
+                         "http://127.0.0.1:4566")
 
     def test_bucket_name(self):
         self.s3 = S3(bucket_name=self._bucket)
@@ -90,6 +91,37 @@ class TestS3(unittest.TestCase):
         with self.assertRaises(ClientError) as context:
             self.s3.download_fileobj("test_file.txt")
         self.assertIn("Get object failed", str(context.exception))
+
+    def test_unzip(self):
+        # Mock the zip file content
+        zip_buffer = BytesIO()
+        with ZipFile(zip_buffer, 'w') as zf:
+            zf.writestr("file1.txt", "content of file1")
+            zf.writestr("file2.txt", "content of file2")
+        zip_buffer.seek(0)
+
+        # Mock the response for get_object
+        self.mock_s3_client.get_object.return_value = {"Body":
+                                                BytesIO(zip_buffer.getvalue())}
+
+        # Mock the put_object method
+        self.s3.put_object = MagicMock()
+
+        # Call the unzip method
+        result_folder = self.s3.unzip("path/to/test.zip", prefix="unzipped")
+
+        # Assert folder name
+        self.assertEqual(result_folder, "path/to/unzipped_test")
+
+        # Assert put_object was called for each file
+        calls = [
+            ((f"path/to/unzipped_test/file1.txt", b"content of file1"),),
+            ((f"path/to/unzipped_test/file2.txt", b"content of file2"),)
+        ]
+        self.s3.put_object.assert_has_calls(calls, any_order=True)
+
+        # Ensure no unexpected calls
+        self.assertEqual(self.s3.put_object.call_count, 2)
 
 
 if __name__ == "__main__":

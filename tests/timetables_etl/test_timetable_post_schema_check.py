@@ -1,7 +1,7 @@
 from io import BytesIO
 import unittest
 from unittest.mock import patch, MagicMock
-from tests.mock_db import MockedDB
+from tests.mock_db import MockedDB, pipeline_processing_step as step_
 from timetables_etl.timetable_post_schema_check import (
     lambda_handler,
     get_violation
@@ -65,7 +65,14 @@ class TestLambdaHandler(unittest.TestCase):
         mock_post_repo.return_value = mock_post_repo_instance
         mock_get_violation.return_value = "Error"
 
-        mock_bodds_db.return_value = MockedDB()
+        mocked_db = MockedDB()
+        mock_bodds_db.return_value = mocked_db
+        with mocked_db.session as session:
+            session.add(step_(name="Timetable Post Schema Check",
+                              category="TIMETABLES"))
+            session.commit()
+        # m_session = MagicMock()
+        mock_bodds_db.session.__enter__.return_value = mocked_db.session
 
         mock_revision_file_proc = MagicMock()
         mock_revision_file_proc.id = 1

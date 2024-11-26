@@ -117,7 +117,7 @@ class TestClamAVScanner(unittest.TestCase):
 
             # Assert success response
             self.assertEqual(result["statusCode"], 200)
-            self.assertIn("Successfully scanned", result["body"])
+            self.assertIn("Successfully scanned", result["body"]["message"])
 
             # Verify S3 and FileScanner were called correctly
             mock_s3.assert_called_once_with(bucket_name="test-bucket")

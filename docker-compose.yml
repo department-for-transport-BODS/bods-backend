@@ -53,9 +53,18 @@ services:
     networks:
       - lambda-local
 
+  clamav:
+    image: mkodockx/docker-clamav:alpine
+    ports:
+      - "3310:3310"
+    restart: unless-stopped
+    volumes:
+      - clamav_store:/var/lib/clamav
+
 volumes:
   postgres-data:
   localstack-data:
+  clamav_store:
 
 networks:
   lambda-local:

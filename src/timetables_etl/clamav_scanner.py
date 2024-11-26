@@ -112,12 +112,34 @@ def lambda_handler(event, context):
         # Backward compatibility with python file handler
         file_object.name = key
         av_scanner.scan(file_object)  # noqa
+        msg = f"Successfully scanned the file '{key}' from bucket '{bucket}'"
+        return {
+            "statusCode": 200,
+            "body": {
+                "message": msg,
+                "generatedPrefix": s3_handler.unzip(file_path=key,
+                                                    prefix="ext")
+            }
+        }
     except Exception as e:
         logger.error(f"Error scanning object '{key}' from bucket '{bucket}'")
         raise e
 
-    # Return a success message
-    return {
-        "statusCode": 200,
-        "body": f"Successfully scanned the file '{key}' from bucket '{bucket}'",
-    }
+
+# os.environ["CLAMAV_HOST"] = "localhost"
+# os.environ["CLAMAV_PORT"] = "3310"
+# os.environ["POSTGRES_HOST"] = "localhost"
+# os.environ["POSTGRES_PORT"] = "5432"
+# os.environ["POSTGRES_USER"] = "postgres"
+# os.environ["POSTGRES_PASSWORD"] = "postgres"
+# os.environ["POSTGRES_DB"] = "bodds"
+# os.environ["PROJECT_ENV"] = "local"
+#
+# event = {
+#     "Bucket": "bodds-local-sirivm",
+#     "ObjectKey": "4.zip",
+#     "DatasetEtlTaskResultId": 2,
+#     "DataType": "timetables"
+# }
+#
+# lambda_handler(event, None)

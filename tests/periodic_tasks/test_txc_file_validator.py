@@ -72,7 +72,9 @@ class TestLambdaHandler(unittest.TestCase):
     @patch(f"{TEST_MODULE}.TimetableFileValidator")
     @patch("boilerplate.db.file_processing_result.BodsDB")
     @patch("boilerplate.db.file_processing_result.get_revision")
+    @patch("boilerplate.db.file_processing_result.get_step")
     def test_lambda_handler_success(self,
+                                    mock_get_step,
                                     mock_get_revision,
                                     mock_db,
                                     mock_timetable_file_validator):
@@ -81,6 +83,10 @@ class TestLambdaHandler(unittest.TestCase):
         mock_revision = MagicMock()
         mock_revision.id = 1
         mock_get_revision.return_value = mock_revision
+
+        mock_step = MagicMock()
+        mock_step.id = 1
+        mock_get_step.return_value = mock_step
 
         mock_db.return_value = MockedDB()
 
@@ -106,7 +112,9 @@ class TestLambdaHandler(unittest.TestCase):
     @patch("boilerplate.db.file_processing_result.PipelineFileProcessingResult")
     @patch("boilerplate.db.file_processing_result.BodsDB")
     @patch("boilerplate.db.file_processing_result.get_revision")
+    @patch("boilerplate.db.file_processing_result.get_step")
     def test_lambda_handler_zip_validation_exception(self,
+                                                     mock_get_step,
                                                      mock_get_revision,
                                                      mock_db,
                                                      mock_pipeline_file_processing,
@@ -118,6 +126,10 @@ class TestLambdaHandler(unittest.TestCase):
         mock_revision = MagicMock()
         mock_revision.id = 1
         mock_get_revision.return_value = mock_revision
+
+        mock_step = MagicMock()
+        mock_step.id = 1
+        mock_get_step.return_value = mock_step
 
         for excep in (ZipTooLarge,
                       NestedZipForbidden,
@@ -139,7 +151,7 @@ class TestLambdaHandler(unittest.TestCase):
 
             with (patch(write_step) as mock_step,
                   patch(err_code) as mock_err_code):
-                mock_step.return_value = True
+                mock_step.return_value = mock_step
                 mock_err_code.return_value = MagicMock(id=1)
                 # Verify that lambda_handler raises ZipValidationException
                 with self.assertRaises(excep):
@@ -149,7 +161,9 @@ class TestLambdaHandler(unittest.TestCase):
     @patch("boilerplate.db.file_processing_result.PipelineFileProcessingResult")
     @patch("boilerplate.db.file_processing_result.BodsDB")
     @patch("boilerplate.db.file_processing_result.get_revision")
+    @patch("boilerplate.db.file_processing_result.get_step")
     def test_lambda_handler_xml_validation_exception(self,
+                                                     mock_get_step,
                                                      mock_get_revision,
                                                      mock_db,
                                                      mock_pipeline_file_processing,
@@ -161,6 +175,10 @@ class TestLambdaHandler(unittest.TestCase):
         mock_revision = MagicMock()
         mock_revision.id = 1
         mock_get_revision.return_value = mock_revision
+
+        mock_step = MagicMock()
+        mock_step.id = 1
+        mock_get_step.return_value = mock_step
 
         for excep in (XMLSyntaxError,
                       DangerousXML,
@@ -183,7 +201,7 @@ class TestLambdaHandler(unittest.TestCase):
 
             with (patch(write_step) as mock_step,
                   patch(err_code) as mock_err_code):
-                mock_step.return_value = True
+                mock_step.return_value = mock_step
                 mock_err_code.return_value = MagicMock(id=1)
                 # Verify that lambda_handler raises XMLValidationException
                 with self.assertRaises(excep):
