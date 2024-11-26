@@ -97,6 +97,7 @@ class naptan_stoppoint(Base):
     atco_code = Column(String(255))
     stop_type = Column(String(255))
     bus_stop_type = Column(String(255))
+    stop_areas = Column(JSON)
 
 class MockedDB:
     def __init__(self):
