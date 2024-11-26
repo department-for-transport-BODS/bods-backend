@@ -11,6 +11,7 @@ from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
 from structlog.stdlib import get_logger
 
 from ..client import BodsDB
+from ..models.common import BaseSQLModel
 
 logger = get_logger()
 
@@ -19,7 +20,7 @@ T = TypeVar("T")
 P = ParamSpec("P")
 
 
-DBModelT = TypeVar("DBModelT")
+DBModelT = TypeVar("DBModelT", bound=BaseSQLModel)
 
 
 @dataclass
@@ -135,12 +136,12 @@ class BaseRepository(Generic[DBModelT]):
             repository=self.__class__.__name__, model=model.__name__
         )
 
-    def _build_query(self) -> Select:
+    def _build_query(self) -> Select[tuple[DBModelT]]:
         """Build base query for the model"""
         return select(self._model)
 
     @handle_repository_errors
-    def _fetch_one(self, statement: Select) -> DBModelT | None:
+    def _fetch_one(self, statement: Select[tuple[DBModelT]]) -> DBModelT | None:
         with self._db.session_scope() as session:
             result = session.execute(statement).scalar_one_or_none()
             if result:
@@ -148,7 +149,7 @@ class BaseRepository(Generic[DBModelT]):
             return result
 
     @handle_repository_errors
-    def _fetch_all(self, statement: Select) -> list[DBModelT]:
+    def _fetch_all(self, statement: Select[tuple[DBModelT]]) -> list[DBModelT]:
         with self._db.session_scope() as session:
             results = list(session.execute(statement).scalars().all())
             for result in results:
@@ -157,7 +158,9 @@ class BaseRepository(Generic[DBModelT]):
 
     @handle_repository_errors
     def _update_one(
-        self, statement: Select, update_func: Callable[[DBModelT], None]
+        self,
+        statement: Select[tuple[DBModelT]],
+        update_func: Callable[[DBModelT], None],
     ) -> None:
         """Execute an update on a single record"""
         with self._db.session_scope() as session:
@@ -167,7 +170,7 @@ class BaseRepository(Generic[DBModelT]):
 
     @handle_repository_errors
     def _execute_update(
-        self, callback: Callable[[DBModelT], None], statement: Select
+        self, callback: Callable[[DBModelT], None], statement: Select[tuple[DBModelT]]
     ) -> None:
         with self._db.session_scope() as session:
             record = session.execute(statement).scalar_one()

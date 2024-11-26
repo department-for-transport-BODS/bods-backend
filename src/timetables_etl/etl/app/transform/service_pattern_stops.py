@@ -162,8 +162,8 @@ def generate_pattern_stops(
         vehicle_journey=txc_vehicle_journey.VehicleJourneyCode,
     )
     pattern_stops: list[TransmodelServicePatternStop] = []
-    current_time = tm_vehicle_journey.start_time
-    auto_sequence = 0
+    current_time: time | None = tm_vehicle_journey.start_time
+    auto_sequence: int = 0
 
     stop_iter = iter(stop_sequence)
     naptan_stop = next(stop_iter)

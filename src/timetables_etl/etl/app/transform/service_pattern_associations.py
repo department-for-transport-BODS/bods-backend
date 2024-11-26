@@ -35,6 +35,7 @@ def generate_pattern_localities(
         "Generated locality associations",
         pattern_id=pattern.service_pattern_id,
         locality_count=len(localities),
+        locality_db_ids=locality_ids,
     )
 
     return localities
@@ -61,6 +62,7 @@ def generate_pattern_admin_areas(
         "Generated admin area associations",
         pattern_id=pattern.service_pattern_id,
         admin_area_count=len(admin_areas),
+        admin_area_db_ids=admin_area_ids,
     )
 
     return admin_areas
