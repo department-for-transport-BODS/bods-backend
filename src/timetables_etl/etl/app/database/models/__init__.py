@@ -16,6 +16,7 @@ from .model_organisation import (
 )
 from .model_pipelines import DatasetETLTaskResult
 from .model_transmodel import (
+    TransmodelBankHolidays,
     TransmodelBookingArrangements,
     TransmodelFlexibleServiceOperationPeriod,
     TransmodelNonOperatingDatesExceptions,
@@ -59,4 +60,5 @@ __all__ = [
     "TransmodelServicePatternAdminAreas",
     "TransmodelServicePatternLocality",
     "TransmodelStopActivity",
+    "TransmodelBankHolidays",
 ]

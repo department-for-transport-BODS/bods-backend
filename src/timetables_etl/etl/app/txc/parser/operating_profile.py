@@ -69,11 +69,20 @@ def parse_bank_holiday_operation(
     days_of_operation_xml = bank_holiday_operation_xml.find("DaysOfOperation")
     days_of_non_operation_xml = bank_holiday_operation_xml.find("DaysOfNonOperation")
 
-    if days_of_operation_xml is None or days_of_non_operation_xml is None:
+    if days_of_operation_xml is None and days_of_non_operation_xml is None:
         return None
 
-    days_of_operation = parse_bank_holiday_days(days_of_operation_xml)
-    days_of_non_operation = parse_bank_holiday_days(days_of_non_operation_xml)
+    days_of_operation = (
+        parse_bank_holiday_days(days_of_operation_xml)
+        if days_of_operation_xml is not None
+        else TXCBankHolidayDays()
+    )
+
+    days_of_non_operation = (
+        parse_bank_holiday_days(days_of_non_operation_xml)
+        if days_of_non_operation_xml is not None
+        else TXCBankHolidayDays()
+    )
 
     return TXCBankHolidayOperation(
         DaysOfOperation=days_of_operation,

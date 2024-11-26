@@ -15,6 +15,7 @@ from .repo_organisation import (
     OrganisationTXCFileAttributesRepo,
 )
 from .repo_transmodel import (
+    TransmodelBankHolidaysRepo,
     TransmodelBookingArrangementsRepo,
     TransmodelFlexibleServiceOperationPeriodRepo,
     TransmodelNonOperatingDatesExceptionsRepo,
@@ -57,4 +58,5 @@ __all__ = [
     "TransmodelServicePatternAdminAreaRepo",
     "TransmodelServicePatternLocalityRepo",
     "TransmodelStopActivityRepo",
+    "TransmodelBankHolidaysRepo",
 ]

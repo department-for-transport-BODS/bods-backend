@@ -2,6 +2,7 @@
 Transmodel Vehicle Journeys
 """
 
+from datetime import date
 from typing import Sequence
 
 from structlog.stdlib import get_logger
@@ -22,10 +23,8 @@ from ..database.repos.repo_transmodel import (
     TransmodelVehicleJourneyRepo,
 )
 from ..transform.service_pattern_stops import generate_pattern_stops
-from ..transform.vehicle_journeys import (
-    create_vehicle_journey_operations,
-    generate_pattern_vehicle_journeys,
-)
+from ..transform.vehicle_journey_operations import create_vehicle_journey_operations
+from ..transform.vehicle_journeys import generate_pattern_vehicle_journeys
 from ..txc.models.txc_data import TXCData
 from ..txc.models.txc_journey_pattern import TXCJourneyPatternSection
 from ..txc.models.txc_service import TXCJourneyPattern
@@ -70,6 +69,7 @@ def process_pattern_stops(
 
 def process_vehicle_journey_operations(
     journey_results: list[tuple[TransmodelVehicleJourney, TXCVehicleJourney]],
+    bank_holidays: dict[str, list[date]],
     db: BodsDB,
 ) -> None:
     """
@@ -81,7 +81,9 @@ def process_vehicle_journey_operations(
 
     for tm_journey, txc_journey in journey_results:
         try:
-            operations = create_vehicle_journey_operations(txc_journey, tm_journey.id)
+            operations = create_vehicle_journey_operations(
+                txc_journey, tm_journey.id, bank_holidays
+            )
 
             if operations.operating_profiles:
                 profile_repo.bulk_insert(operations.operating_profiles)
@@ -113,6 +115,7 @@ def process_vehicle_journeys(
     txc_vjs: list[TXCVehicleJourney],
     txc_jp: TXCJourneyPattern,
     tm_service_pattern: TransmodelServicePattern,
+    bank_holidays: dict[str, list[date]],
     db: BodsDB,
 ) -> list[TransmodelVehicleJourney]:
     """
@@ -130,7 +133,7 @@ def process_vehicle_journeys(
 
     results = TransmodelVehicleJourneyRepo(db).bulk_insert(tm_journeys)
 
-    process_vehicle_journey_operations(journey_results, db)
+    process_vehicle_journey_operations(journey_results, bank_holidays, db)
 
     log.info(
         "Processed vehicle journeys",
@@ -147,13 +150,14 @@ def process_service_pattern_vehicle_journeys(
     txc_jp: TXCJourneyPattern,
     tm_service_pattern: TransmodelServicePattern,
     stops: Sequence[NaptanStopPoint],
+    bank_holidays: dict[str, list[date]],
     db: BodsDB,
 ) -> list[TransmodelVehicleJourney]:
     """
     Generate and save to DB Transmodel Vehicle Journeys for a Service Pattern
     """
     tm_vjs = process_vehicle_journeys(
-        txc.VehicleJourneys, txc_jp, tm_service_pattern, db
+        txc.VehicleJourneys, txc_jp, tm_service_pattern, bank_holidays, db
     )
 
     jp_sections = [

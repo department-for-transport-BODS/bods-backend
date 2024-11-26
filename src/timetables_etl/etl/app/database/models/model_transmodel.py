@@ -233,3 +233,21 @@ class TransmodelStopActivity(BaseSQLModel):
     is_pickup: Mapped[bool] = mapped_column(Boolean, nullable=False)
     is_setdown: Mapped[bool] = mapped_column(Boolean, nullable=False)
     is_driverrequest: Mapped[bool] = mapped_column(Boolean, nullable=False)
+
+
+class TransmodelBankHolidays(BaseSQLModel):
+    """
+    Transmodel Bank Holidays Table
+    List of Bank Holidays which is used as a reference to
+    """
+
+    __tablename__ = "transmodel_bankholidays"
+
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, init=False, autoincrement=True
+    )
+    txc_element: Mapped[str] = mapped_column(String(255), nullable=False)
+    title: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    date: Mapped[date] = mapped_column(Date, nullable=False)
+    notes: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    division: Mapped[str | None] = mapped_column(String(255), nullable=True)

@@ -6,6 +6,10 @@ from typing import Sequence
 
 from structlog.stdlib import get_logger
 
+from timetables_etl.etl.app.database.repos.repo_transmodel import (
+    TransmodelBankHolidaysRepo,
+)
+
 from ..database import BodsDB
 from ..database.models import TransmodelServicePattern
 from ..database.models.model_junction import (
@@ -137,8 +141,11 @@ def load_transmodel_service_patterns(
 
         process_pattern_admin_areas(service_pattern, stops, db)
 
+        bank_holidays = TransmodelBankHolidaysRepo(db).get_bank_holidays_lookup(
+            service.StartDate, service.EndDate
+        )
         process_service_pattern_vehicle_journeys(
-            txc, txc_jp, service_pattern, stops, db
+            txc, txc_jp, service_pattern, stops, bank_holidays, db
         )
 
         patterns.append(service_pattern)

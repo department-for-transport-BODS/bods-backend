@@ -20,6 +20,7 @@ from timetables_etl.etl.app.txc.models.txc_vehicle_journey import (
 from timetables_etl.etl.app.txc.parser.operating_profile import (
     parse_bank_holiday_days,
     parse_bank_holiday_operation,
+    parse_date_range,
     parse_date_ranges,
     parse_operating_profile,
     parse_periodic_days,
@@ -162,7 +163,45 @@ def test_parse_bank_holiday_days(xml_string: str, expected_result: TXCBankHolida
                     NewYearsDay=True,
                 ),
             ),
-            id="Valid bank holiday operation",
+            id="Both operation and non-operation days",
+        ),
+        pytest.param(
+            """
+            <BankHolidayOperation>
+                <DaysOfOperation>
+                    <ChristmasDay/>
+                    <BoxingDay/>
+                    <NewYearsDay/>
+                </DaysOfOperation>
+            </BankHolidayOperation>
+            """,
+            TXCBankHolidayOperation(
+                DaysOfOperation=TXCBankHolidayDays(
+                    ChristmasDay=True,
+                    BoxingDay=True,
+                    NewYearsDay=True,
+                ),
+                DaysOfNonOperation=TXCBankHolidayDays(),
+            ),
+            id="Only operation days",
+        ),
+        pytest.param(
+            """
+            <BankHolidayOperation>
+                <DaysOfNonOperation>
+                    <ChristmasDay/>
+                    <BoxingDay/>
+                </DaysOfNonOperation>
+            </BankHolidayOperation>
+            """,
+            TXCBankHolidayOperation(
+                DaysOfOperation=TXCBankHolidayDays(),
+                DaysOfNonOperation=TXCBankHolidayDays(
+                    ChristmasDay=True,
+                    BoxingDay=True,
+                ),
+            ),
+            id="Only non-operation days",
         ),
         pytest.param(
             """
@@ -255,6 +294,61 @@ def test_parse_date_ranges(
     xml_element = etree.fromstring(xml_string)
     result = parse_date_ranges(xml_element, is_operation)
     assert result == expected_result
+
+
+@pytest.mark.parametrize(
+    "xml_string",
+    [
+        pytest.param(
+            """
+            <DateRange>
+                <StartDate>2023-01-01</StartDate>
+            </DateRange>
+            """,
+            id="Missing end date",
+        ),
+        pytest.param(
+            """
+            <DateRange>
+                <EndDate>2023-01-05</EndDate>
+            </DateRange>
+            """,
+            id="Missing start date",
+        ),
+        pytest.param(
+            """
+            <DateRange>
+            </DateRange>
+            """,
+            id="Empty date range",
+        ),
+        pytest.param(
+            """
+            <DateRange>
+                <StartDate></StartDate>
+                <EndDate>2023-01-05</EndDate>
+            </DateRange>
+            """,
+            id="Empty start date",
+        ),
+        pytest.param(
+            """
+            <DateRange>
+                <StartDate>2023-01-01</StartDate>
+                <EndDate></EndDate>
+            </DateRange>
+            """,
+            id="Empty end date",
+        ),
+    ],
+)
+def test_parse_date_range_returns_none(xml_string: str):
+    """
+    Test cases where parse_date_range should return None
+    """
+    xml_element = etree.fromstring(xml_string)
+    result = parse_date_range(xml_element)
+    assert result is None
 
 
 @pytest.mark.parametrize(

@@ -2,29 +2,42 @@
 Pydantic Model to Transmodel for Vehicle Journeys
 """
 
-from dataclasses import dataclass
-from datetime import date, time, timedelta
-from typing import Sequence, cast
+from datetime import time
+from typing import cast
 
 from structlog.stdlib import get_logger
 
 from ..database.models.model_transmodel import (
-    TMDayOfWeek,
-    TransmodelNonOperatingDatesExceptions,
-    TransmodelOperatingDatesExceptions,
-    TransmodelOperatingProfile,
     TransmodelServicePattern,
     TransmodelVehicleJourney,
 )
-from ..txc.helpers.utils import parse_departure_time
-from ..txc.models import (
-    TXCDateRange,
-    TXCDaysOfWeek,
-    TXCJourneyPattern,
-    TXCVehicleJourney,
-)
+from ..txc.models import TXCJourneyPattern, TXCVehicleJourney
 
 log = get_logger()
+
+
+def _validate_vehicle_journey(vj: TXCVehicleJourney) -> bool:
+    """
+    Validate required fields on vehicle journey
+    """
+    required_fields = {
+        "VehicleJourneyCode": vj.VehicleJourneyCode,
+        "JourneyPatternRef": vj.JourneyPatternRef,
+        "DepartureTime": vj.DepartureTime,
+        "LineRef": vj.LineRef,
+    }
+
+    is_valid = all(required_fields.values())
+
+    if not is_valid:
+        missing_fields = [k for k, v in required_fields.items() if not v]
+        log.warning(
+            "Invalid vehicle journey",
+            journey_id=vj.VehicleJourneyCode,
+            missing_fields=missing_fields,
+        )
+
+    return is_valid
 
 
 def create_vehicle_journey(
@@ -51,170 +64,6 @@ def create_vehicle_journey(
         service_pattern_id=pattern.id,
         block_number=block.BlockNumber if block else None,
     )
-
-
-def transform_vehicle_journeys(
-    journeys: list[TXCVehicleJourney], service_patterns: dict[str, int] | None = None
-) -> list[TransmodelVehicleJourney]:
-    """Transform TXC vehicle journeys to Transmodel format"""
-    result: list[TransmodelVehicleJourney] = []
-
-    for journey in journeys:
-        journey_code = (
-            journey.Operational.TicketMachine.JourneyCode
-            if journey.Operational and journey.Operational.TicketMachine
-            else None
-        )
-
-        block_number = (
-            journey.Operational.Block.BlockNumber
-            if journey.Operational and journey.Operational.Block
-            else None
-        )
-
-        service_pattern_id = None
-        if service_patterns and journey.JourneyPatternRef:
-            pattern_key = f"{journey.ServiceRef}-{journey.JourneyPatternRef}"
-            service_pattern_id = service_patterns.get(pattern_key)
-
-        result.append(
-            TransmodelVehicleJourney(
-                start_time=parse_departure_time(journey.DepartureTime),
-                journey_code=journey_code,
-                line_ref=journey.LineRef,
-                direction=None,
-                departure_day_shift=bool(journey.DepartureDayShift),
-                service_pattern_id=service_pattern_id,
-                block_number=block_number,
-            )
-        )
-
-    return result
-
-
-def create_operating_profiles(
-    days: TXCDaysOfWeek, vehicle_journey_id: int
-) -> list[TransmodelOperatingProfile]:
-    """
-    Convert TXCDaysOfWeek to operating profile records
-    """
-    day_mappings = {
-        TMDayOfWeek.MONDAY: days.Monday,
-        TMDayOfWeek.TUESDAY: days.Tuesday,
-        TMDayOfWeek.WEDNESDAY: days.Wednesday,
-        TMDayOfWeek.THURSDAY: days.Thursday,
-        TMDayOfWeek.FRIDAY: days.Friday,
-        TMDayOfWeek.SATURDAY: days.Saturday,
-        TMDayOfWeek.SUNDAY: days.Sunday,
-    }
-
-    return [
-        TransmodelOperatingProfile(
-            day_of_week=day, vehicle_journey_id=vehicle_journey_id
-        )
-        for day, enabled in day_mappings.items()
-        if enabled
-    ]
-
-
-def generate_dates(start_date: date, end_date: date) -> list[date]:
-    """
-    Generate a list of dates between start and end dates inclusive
-
-    """
-    days_between = (end_date - start_date).days + 1
-    return [start_date + timedelta(days=x) for x in range(days_between)]
-
-
-def create_operating_dates(
-    date_ranges: Sequence[TXCDateRange], vehicle_journey_id: int
-) -> list[TransmodelOperatingDatesExceptions]:
-    """
-    Create operating dates exceptions from date ranges
-    """
-    return [
-        TransmodelOperatingDatesExceptions(
-            operating_date=current_date, vehicle_journey_id=vehicle_journey_id
-        )
-        for date_range in date_ranges
-        for current_date in generate_dates(date_range.StartDate, date_range.EndDate)
-    ]
-
-
-def create_non_operating_dates(
-    date_ranges: Sequence[TXCDateRange], vehicle_journey_id: int
-) -> list[TransmodelNonOperatingDatesExceptions]:
-    """
-    Create non-operating dates exceptions from date ranges
-    """
-    return [
-        TransmodelNonOperatingDatesExceptions(
-            non_operating_date=current_date, vehicle_journey_id=vehicle_journey_id
-        )
-        for date_range in date_ranges
-        for current_date in generate_dates(date_range.StartDate, date_range.EndDate)
-    ]
-
-
-@dataclass(frozen=True)
-class VehicleJourneyOperations:
-    """
-    Container for vehicle journey operating data
-    """
-
-    operating_profiles: list[TransmodelOperatingProfile]
-    operating_dates: list[TransmodelOperatingDatesExceptions]
-    non_operating_dates: list[TransmodelNonOperatingDatesExceptions]
-
-
-def create_vehicle_journey_operations(
-    txc_journey: TXCVehicleJourney, vehicle_journey_id: int
-) -> VehicleJourneyOperations:
-    """
-    Create all operations data for a vehicle journey from TXC data
-
-    """
-    if not txc_journey.OperatingProfile:
-        return VehicleJourneyOperations([], [], [])
-
-    operating_profile = txc_journey.OperatingProfile
-    special_days = operating_profile.SpecialDaysOperation
-
-    return VehicleJourneyOperations(
-        operating_profiles=create_operating_profiles(
-            operating_profile.RegularDayType, vehicle_journey_id
-        ),
-        operating_dates=create_operating_dates(
-            special_days.DaysOfOperation if special_days else [], vehicle_journey_id
-        ),
-        non_operating_dates=create_non_operating_dates(
-            special_days.DaysOfNonOperation if special_days else [], vehicle_journey_id
-        ),
-    )
-
-
-def _validate_vehicle_journey(vj: TXCVehicleJourney) -> bool:
-    """
-    Validate required fields on vehicle journey
-    """
-    required_fields = {
-        "VehicleJourneyCode": vj.VehicleJourneyCode,
-        "JourneyPatternRef": vj.JourneyPatternRef,
-        "DepartureTime": vj.DepartureTime,
-        "LineRef": vj.LineRef,
-    }
-
-    is_valid = all(required_fields.values())
-
-    if not is_valid:
-        missing_fields = [k for k, v in required_fields.items() if not v]
-        log.warning(
-            "Invalid vehicle journey",
-            journey_id=vj.VehicleJourneyCode,
-            missing_fields=missing_fields,
-        )
-
-    return is_valid
 
 
 def generate_pattern_vehicle_journeys(

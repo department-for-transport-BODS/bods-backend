@@ -2,8 +2,13 @@
 Transmodel table repos
 """
 
+from collections import defaultdict
+from datetime import date
+from typing import Literal
+
 from ..client import BodsDB
 from ..models import (
+    TransmodelBankHolidays,
     TransmodelBookingArrangements,
     TransmodelFlexibleServiceOperationPeriod,
     TransmodelNonOperatingDatesExceptions,
@@ -233,3 +238,55 @@ class TransmodelStopActivityRepo(BaseRepository[TransmodelStopActivity]):
 
         activities = self.get_all()
         return {activity.name: activity for activity in activities}
+
+
+class TransmodelBankHolidaysRepo(BaseRepository[TransmodelBankHolidays]):
+    """
+    Repository for getting Bank Holiday Information
+    """
+
+    def __init__(self, db: BodsDB):
+        super().__init__(db, TransmodelBankHolidays)
+
+    def get_bank_holidays_in_range(
+        self,
+        start_date: date,
+        end_date: date | None = None,
+        divisions: list[Literal["england-and-wales", "scotland"]] | None = None,
+    ) -> list[TransmodelBankHolidays]:
+        """
+        Get bank holidays from a start date, with optional end date
+        """
+        statement = self._build_query()
+
+        statement = statement.filter(self._model.date >= start_date)
+        if end_date is not None:
+            statement = statement.filter(self._model.date <= end_date)
+
+        if divisions:
+            statement = statement.filter(self._model.division.in_(divisions))
+
+        statement = statement.order_by(self._model.date)
+
+        return self._fetch_all(statement)
+
+    def get_bank_holidays_lookup(
+        self,
+        start_date: date,
+        end_date: date | None = None,
+        divisions: list[Literal["england-and-wales", "scotland"]] | None = None,
+    ) -> dict[str, list[date]]:
+        """
+        Get bank holidays organized by txc_element
+        """
+        holidays = self.get_bank_holidays_in_range(
+            start_date=start_date,
+            end_date=end_date,
+            divisions=divisions,
+        )
+
+        holiday_lookup: dict[str, list[date]] = defaultdict(list)
+        for holiday in holidays:
+            holiday_lookup[holiday.txc_element].append(holiday.date)
+
+        return dict(holiday_lookup)
