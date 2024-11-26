@@ -232,7 +232,7 @@ Resources:
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: app.lambda_handler
-      Layers:
+      Layers: !If
         - IsNotLocal
         - !Ref BoilerplateLambdaLayer
         - !Ref 'AWS::NoValue'

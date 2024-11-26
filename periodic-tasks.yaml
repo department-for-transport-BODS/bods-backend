@@ -144,8 +144,10 @@ Resources:
       FunctionName: !Sub '${ProjectName}-${Environment}-generate-gtfsrt-lambda'
       CodeUri: ./src/periodic_tasks
       Handler: create_gtfsrt_zip.lambda_handler
-      Layers:
+      Layers: !If
+        - IsNotLocal
         - !Ref BoilerplateLambdaLayer
+        - !Ref 'AWS::NoValue'
       Policies:
         - 'AWSLambdaBasicExecutionRole'
         - 'AWSLambdaVPCAccessExecutionRole'
@@ -213,8 +215,10 @@ Resources:
       FunctionName: !Sub '${ProjectName}-${Environment}-generate-sirivm-lambda'
       CodeUri: ./src/periodic_tasks
       Handler: create_sirivm_zip.lambda_handler
-      Layers:
+      Layers: !If
+        - IsNotLocal
         - !Ref BoilerplateLambdaLayer
+        - !Ref 'AWS::NoValue'
       Policies:
         - 'AWSLambdaBasicExecutionRole'
         - 'AWSLambdaVPCAccessExecutionRole'
@@ -282,8 +286,10 @@ Resources:
       FunctionName: !Sub '${ProjectName}-${Environment}-generate-sirivm-tfl-lambda'
       CodeUri: ./src/periodic_tasks
       Handler: create_sirivm_tfl_zip.lambda_handler
-      Layers:
+      Layers: !If
+        - IsNotLocal
         - !Ref BoilerplateLambdaLayer
+        - !Ref 'AWS::NoValue'
       Policies:
         - 'AWSLambdaBasicExecutionRole'
         - 'AWSLambdaVPCAccessExecutionRole'
@@ -351,8 +357,10 @@ Resources:
       FunctionName: !Sub '${ProjectName}-${Environment}-txc-file-validator-lambda'
       CodeUri: ./src/periodic_tasks
       Handler: txc_file_validator.lambda_handler
-      Layers:
+      Layers: !If
+        - IsNotLocal
         - !Ref BoilerplateLambdaLayer
+        - !Ref 'AWS::NoValue'
       Policies:
         - 'AWSLambdaBasicExecutionRole'
         - 'AWSLambdaVPCAccessExecutionRole'
@@ -408,8 +416,10 @@ Resources:
       FunctionName: !Sub '${ProjectName}-${Environment}-file-schema-check-lambda'
       CodeUri: ./src/periodic_tasks
       Handler: timetable_schema_check.lambda_handler
-      Layers:
+      Layers: !If
+        - IsNotLocal
         - !Ref BoilerplateLambdaLayer
+        - !Ref 'AWS::NoValue'
       Policies:
         - 'AWSLambdaBasicExecutionRole'
         - 'AWSLambdaVPCAccessExecutionRole'
@@ -457,8 +467,10 @@ Resources:
       FunctionName: !Sub '${ProjectName}-${Environment}-txc-file-attribute-extractor-lambda'
       CodeUri: ./src/periodic_tasks
       Handler: txc_file_data_extractor.lambda_handler
-      Layers:
+      Layers: !If
+        - IsNotLocal
         - !Ref BoilerplateLambdaLayer
+        - !Ref 'AWS::NoValue'
       Policies:
         - 'AWSLambdaBasicExecutionRole'
         - 'AWSLambdaVPCAccessExecutionRole'
