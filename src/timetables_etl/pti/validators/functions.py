@@ -9,6 +9,7 @@ from lxml import etree
 from common import DbManager
 from db.repositories.stop_point import StopPointRepository
 from pti.validators.destination_display import DestinationDisplayValidator
+from pti.validators.lines import LinesValidator
 from pti.validators.stop_point import StopPointValidator
 ElementsOrStr = Union[List[etree.Element], List[str], str]
 PROHIBITED_CHARS = r",[]{}^=@:;#$£?%+<>«»\/|~_¬"
@@ -458,3 +459,11 @@ def has_servicedorganisation_working_days(context, service_organisations):
         if not working_days:
             is_valid = False
     return is_valid
+
+def validate_lines(context, lines: List[etree._Element]) -> bool:
+    lines = lines[0]
+    db = DbManager.get_db()
+    repo = StopPointRepository(db)
+    stop_area_map = repo.get_stop_area_map()
+    validator = LinesValidator(lines, stop_area_map=stop_area_map)
+    return validator.validate()
