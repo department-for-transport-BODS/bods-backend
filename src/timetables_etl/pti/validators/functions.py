@@ -497,3 +497,24 @@ def validate_run_time(context, timing_links):
         return False
 
     return True
+
+def validate_timing_link_stops(context, sections):
+    """
+    Validates that all links in a section are ordered coherently by
+    stop point ref.
+    """
+    section = sections[0]
+    ns = {"x": section.nsmap.get(None)}
+    links = section.xpath("x:JourneyPatternTimingLink", namespaces=ns)
+
+    prev_link = links[0]
+    for curr_link in links[1:]:
+        to_ = prev_link.xpath("string(x:To/x:StopPointRef)", namespaces=ns)
+        from_ = curr_link.xpath("string(x:From/x:StopPointRef)", namespaces=ns)
+
+        if from_ != to_:
+            return False
+
+        prev_link = curr_link
+
+    return True
