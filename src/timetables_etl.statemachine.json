@@ -26,7 +26,7 @@
         "Resource": "arn:aws:states:::s3:listObjectsV2",
         "Parameters": {
           "Bucket.$": "$.detail.bucket.name",
-          "Prefix.$": "$.scanAndUnpack.generatedPrefix"
+          "Prefix.$": "$.scanAndUnpack.body.generatedPrefix"
         }
       },
       "ItemProcessor": {
