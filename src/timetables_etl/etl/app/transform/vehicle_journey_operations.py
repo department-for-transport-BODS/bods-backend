@@ -22,6 +22,7 @@ from timetables_etl.etl.app.txc.models import (
 from timetables_etl.etl.app.txc.models.txc_vehicle_journey import (
     TXCBankHolidayDays,
     TXCBankHolidayOperation,
+    TXCSpecialDaysOperation,
 )
 
 log = get_logger()
@@ -117,21 +118,47 @@ def get_bank_holiday_dates(
     return sorted(dates)
 
 
+def process_special_operating_days(
+    operations: TXCSpecialDaysOperation | None, vehicle_journey_id: int
+) -> tuple[
+    list[TransmodelOperatingDatesExceptions],
+    list[TransmodelNonOperatingDatesExceptions],
+]:
+    """
+    Generate Special Operating days
+    """
+
+    special_operating_dates = create_operating_dates(
+        operations.DaysOfOperation if operations else [], vehicle_journey_id
+    )
+    special_non_operating_dates = create_non_operating_dates(
+        operations.DaysOfNonOperation if operations else [], vehicle_journey_id
+    )
+    log.info(
+        "Special Operating Dates Calculated",
+        operating_count=len(special_operating_dates),
+        non_operating_count=len(special_non_operating_dates),
+    )
+
+    return special_operating_dates, special_non_operating_dates
+
+
 def process_bank_holidays(
-    bank_holiday_op: TXCBankHolidayOperation,
+    operations: TXCBankHolidayOperation | None,
     bank_holidays: dict[str, list[date]],
     vehicle_journey_id: int,
 ) -> tuple[
     list[TransmodelOperatingDatesExceptions],
     list[TransmodelNonOperatingDatesExceptions],
 ]:
-    """Process bank holiday operations and return operating/non-operating dates"""
-    log.error("Proccesssing bank holidays", vehicle_journey_id=vehicle_journey_id)
-    operating_dates = get_bank_holiday_dates(
-        bank_holiday_op.DaysOfOperation, bank_holidays
-    )
+    """
+    Process bank holiday operations and return operating/non-operating dates
+    """
+    if operations is None:
+        return ([], [])
+    operating_dates = get_bank_holiday_dates(operations.DaysOfOperation, bank_holidays)
     non_operating_dates = get_bank_holiday_dates(
-        bank_holiday_op.DaysOfNonOperation, bank_holidays
+        operations.DaysOfNonOperation, bank_holidays
     )
     tm_operating_dates = [
         TransmodelOperatingDatesExceptions(
@@ -176,26 +203,21 @@ def create_vehicle_journey_operations(
         )
         return VehicleJourneyOperations([], [], [])
 
-    operating_profile = txc_vj.OperatingProfile
-    special_days = operating_profile.SpecialDaysOperation
-
-    special_operating_dates = create_operating_dates(
-        special_days.DaysOfOperation if special_days else [], vehicle_journey_id
+    special_operating_dates, special_non_operating_dates = (
+        process_special_operating_days(
+            txc_vj.OperatingProfile.SpecialDaysOperation, vehicle_journey_id
+        )
     )
-    special_non_operating_dates = create_non_operating_dates(
-        special_days.DaysOfNonOperation if special_days else [], vehicle_journey_id
-    )
-
     bank_holiday_operating_dates, bank_holiday_non_operating_dates = (
         process_bank_holidays(
-            operating_profile.BankHolidayOperation, bank_holidays, vehicle_journey_id
+            txc_vj.OperatingProfile.BankHolidayOperation,
+            bank_holidays,
+            vehicle_journey_id,
         )
-        if operating_profile.BankHolidayOperation
-        else ([], [])
     )
     result = VehicleJourneyOperations(
         operating_profiles=create_operating_profiles(
-            operating_profile.RegularDayType, vehicle_journey_id
+            txc_vj.OperatingProfile.RegularDayType, vehicle_journey_id
         ),
         operating_dates=[*special_operating_dates, *bank_holiday_operating_dates],
         non_operating_dates=[
