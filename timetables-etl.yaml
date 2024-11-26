@@ -69,19 +69,19 @@ Resources:
     Properties:
       Name: !Sub '${ProjectName}-${Environment}-tetl-sm'
       Role: !GetAtt EtlStateMachineRole.Arn
-      Events:
-        S3ObjectCreatedEvent:
-          Type: EventBridgeRule
-          Properties:
-            Pattern:
-              source:
-                - 'aws.s3'
-              detail-type:
-                - 'Object Created'
-              detail:
-                bucket:
-                  name:
-                    - !Ref PlaceholderS3Bucket
+#      Events:
+#        S3ObjectCreatedEvent:
+#          Type: EventBridgeRule
+#          Properties:
+#            Pattern:
+#              source:
+#                - 'aws.s3'
+#              detail-type:
+#                - 'Object Created'
+#              detail:
+#                bucket:
+#                  name:
+#                    - !Ref PlaceholderS3Bucket
       DefinitionUri: './src/timetables_etl.statemachine.json'
       DefinitionSubstitutions:
         PlaceholderLambdaArn: !GetAtt PlaceholderLambda.Arn
@@ -142,10 +142,8 @@ Resources:
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: clamav_scanner.lambda_handler
-      Layers: !If
-        - IsNotLocal
+      Layers:
         - !Ref BoilerplateLambdaLayer
-        - !Ref 'AWS::NoValue'
       Environment:
         Variables:
           CLAMAV_HOST: !Sub 'http://clamav.bodds.${Environment}'
@@ -174,10 +172,8 @@ Resources:
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: timetable_post_schema_check.lambda_handler
-      Layers: !If
-        - IsNotLocal
+      Layers:
         - !Ref BoilerplateLambdaLayer
-        - !Ref 'AWS::NoValue'
       LoggingConfig:
         LogGroup: !Ref TimetablePostSchemaCheckLambdaLogGroup
 
@@ -203,10 +199,8 @@ Resources:
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: exception_handler.lambda_handler
-      Layers: !If
-        - IsNotLocal
+      Layers:
         - !Ref BoilerplateLambdaLayer
-        - !Ref 'AWS::NoValue'
       LoggingConfig:
         LogGroup: !Ref ExceptionHandlerLogGroup
 
@@ -217,7 +211,7 @@ Resources:
       KmsKeyId: !If
       - IsNotLocal
       - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-      - !Ref AWS::NoValue 
+      - !Ref AWS::NoValue
       RetentionInDays: 30
 
   #########################################
@@ -233,9 +227,7 @@ Resources:
       CodeUri: ./src/timetables_etl
       Handler: app.lambda_handler
       Layers:
-        - IsNotLocal
         - !Ref BoilerplateLambdaLayer
-        - !Ref 'AWS::NoValue'
       LoggingConfig:
         LogGroup: !Ref PlaceholderLambdaLogGroup
 

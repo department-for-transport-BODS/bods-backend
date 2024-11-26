@@ -136,7 +136,7 @@ def file_processing_result_to_db(step_name):
 
                 # Call the original Lambda handler function
                 result = func(event, context)
-
+                logger.info(f"lambda returns: {result}")
                 # Add lambda exit
                 params = dict(status="SUCCESS", completed=datetime.now())
                 fpr_ins.update(uuid, **params)

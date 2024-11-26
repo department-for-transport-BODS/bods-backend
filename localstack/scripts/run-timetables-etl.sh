@@ -1,15 +1,15 @@
 #!/bin/bash
 
 awslocal stepfunctions --endpoint http://localhost:4566 start-execution \
-    --state-machine arn:aws:states:eu-west-2:000000000000:stateMachine:bods-backend-local-timetables-etl-sm \
+    --state-machine arn:aws:states:eu-west-2:000000000000:stateMachine:bods-backend-local-tetl-sm \
     --input "$(cat <<EOF
 {
     "detail": {
         "bucket": {
-            "name": "bucket-name"
+            "name": "bodds-local-sirivm"
         },
         "object": {
-            "key": "object-key"
+            "key": "4.zip"
         },
         "dataset_type": "timetables",
         "dataset_revision_id": 2

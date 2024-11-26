@@ -1,15 +1,15 @@
 from io import BytesIO
-import unittest
 from zipfile import ZipFile
+import unittest
 from unittest.mock import patch, MagicMock
 from botocore.exceptions import (
     ClientError,
     BotoCoreError)
-from boilerplate.s3 import S3
+from s3 import S3
 
 
 class TestS3(unittest.TestCase):
-    @patch("boilerplate.s3.boto3.client")
+    @patch("s3.boto3.client")
     def setUp(self, mock_boto_client):
         self.mock_s3_client = MagicMock()
         mock_boto_client.return_value = self.mock_s3_client
@@ -21,7 +21,7 @@ class TestS3(unittest.TestCase):
         os.environ["PROJECT_ENV"] = "local"
         self.s3 = S3(bucket_name=self._bucket)
         self.assertEqual(self.s3._client.meta.endpoint_url,
-                         "http://127.0.0.1:4566")
+                         "http://localstack:4566")
 
     def test_bucket_name(self):
         self.s3 = S3(bucket_name=self._bucket)

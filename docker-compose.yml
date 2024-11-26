@@ -36,7 +36,7 @@ services:
       PGADMIN_DEFAULT_PASSWORD: ${POSTGRES_PASSWORD}
       PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: "False"
     restart: unless-stopped
-    networks: 
+    networks:
     - lambda-local
 
   localstack:

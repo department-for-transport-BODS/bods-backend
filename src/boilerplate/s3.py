@@ -35,7 +35,7 @@ class S3:
             logger.info("Using LocalStack for S3 (local environment)")
             return boto3.client(
                 "s3",
-                endpoint_url="http://127.0.0.1:4566",
+                endpoint_url="http://localhost:4566",
                 aws_access_key_id="dummy",
                 aws_secret_access_key="dummy",
             )
@@ -104,7 +104,9 @@ class S3:
             zip_content = BytesIO(self.get_object(file_path).read())
             split_path = file_path.split('/')
             zip_name = split_path[-1].split('.')[0]
-            folder_name = f"{'/'.join(split_path[:-1])}/{prefix}_{zip_name}"
+            base_dir = f"{'/'.join(split_path[:-1])}"
+            folder_name = f"{base_dir}/{prefix}_{zip_name}/" if base_dir else \
+                f"{prefix}_{zip_name}/"
             with ZipFile(zip_content) as zipObj:
                 for filename in zipObj.namelist():
                     file_content = zipObj.read(filename)

@@ -6,8 +6,10 @@ from dateutil import parser
 from isoduration import DurationParsingException, parse_duration
 from isoduration.types import TimeDuration
 from lxml import etree
+from common import DbManager
+from db.repositories.stop_point import StopPointRepository
 from pti.validators.destination_display import DestinationDisplayValidator
-
+from pti.validators.stop_point import StopPointValidator
 ElementsOrStr = Union[List[etree.Element], List[str], str]
 PROHIBITED_CHARS = r",[]{}^=@:;#$£?%+<>«»\/|~_¬"
 ZERO_TIME_DURATION = TimeDuration(hours=0, minutes=0, seconds=0)
@@ -81,6 +83,49 @@ def check_flexible_service_timing_status(context, flexiblejourneypatterns):
 
     result = all(timing_status_value == "otherPoint" for timing_status_value in timing_status_value_list)
     return result
+
+def validate_non_naptan_stop_points(context, points):
+    point = points[0]
+    validator = StopPointValidator(point)
+    return validator.validate()
+
+def get_stop_point_ref_list(stop_points, ns):
+    stop_point_ref_list = []
+    for flex_stop_point in stop_points:
+        flexible_stop_usage_list = flex_stop_point.xpath(
+            "x:FlexibleStopUsage", namespaces=ns
+        )
+        if len(flexible_stop_usage_list) > 0:
+            for flexible_stop_usage in flexible_stop_usage_list:
+                stop_point_ref_list.append(
+                    _extract_text(
+                        flexible_stop_usage.xpath("x:StopPointRef", namespaces=ns), ""
+                    )
+                )
+
+    return stop_point_ref_list
+
+def check_flexible_service_stop_point_ref(context, flexiblejourneypatterns):
+    atco_codes_list = []
+    flexiblejourneypattern = flexiblejourneypatterns[0]
+    ns = {"x": flexiblejourneypattern.nsmap.get(None)}
+    stop_points_in_seq_list = flexiblejourneypattern.xpath(
+        "x:StopPointsInSequence", namespaces=ns
+    )
+    stop_points_in_flexzone_list = flexiblejourneypattern.xpath(
+        "x:FlexibleZones", namespaces=ns
+    )
+    atco_codes_list = list(
+        set(
+            get_stop_point_ref_list(stop_points_in_seq_list, ns)
+            + get_stop_point_ref_list(stop_points_in_flexzone_list, ns)
+        )
+    )
+    db = DbManager.get_db()
+    repo = StopPointRepository(db)
+    total_compliant = repo.get_count(atco_codes=atco_codes_list, bus_stop_type="FLX", stop_type="BCT")
+
+    return total_compliant == len(atco_codes_list)
 
 
 def check_inbound_outbound_description(context, services):

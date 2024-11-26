@@ -90,6 +90,14 @@ class organisation_dataset(Base):
     __tablename__ = 'organisation_dataset'
     id = Column(Integer, primary_key=True)
 
+
+class naptan_stoppoint(Base):
+    __tablename__ = 'naptan_stoppoint'
+    id = Column(Integer, primary_key=True)
+    atco_code = Column(String(255))
+    stop_type = Column(String(255))
+    bus_stop_type = Column(String(255))
+
 class MockedDB:
     def __init__(self):
         self.engine = create_engine("sqlite:///:memory:")
@@ -104,7 +112,8 @@ class MockedDB:
             organisation_datasetrevision=organisation_datasetrevision,
             organisation_txcfileattributes=organisation_txcfileattributes,
             data_quality_postschemaviolation=data_quality_postschemaviolation,
-            organisation_dataset=organisation_dataset
+            organisation_dataset=organisation_dataset,
+            naptan_stoppoint=naptan_stoppoint
         )
 
 

@@ -124,22 +124,3 @@ def lambda_handler(event, context):
     except Exception as e:
         logger.error(f"Error scanning object '{key}' from bucket '{bucket}'")
         raise e
-
-
-# os.environ["CLAMAV_HOST"] = "localhost"
-# os.environ["CLAMAV_PORT"] = "3310"
-# os.environ["POSTGRES_HOST"] = "localhost"
-# os.environ["POSTGRES_PORT"] = "5432"
-# os.environ["POSTGRES_USER"] = "postgres"
-# os.environ["POSTGRES_PASSWORD"] = "postgres"
-# os.environ["POSTGRES_DB"] = "bodds"
-# os.environ["PROJECT_ENV"] = "local"
-#
-# event = {
-#     "Bucket": "bodds-local-sirivm",
-#     "ObjectKey": "4.zip",
-#     "DatasetEtlTaskResultId": 2,
-#     "DataType": "timetables"
-# }
-#
-# lambda_handler(event, None)
