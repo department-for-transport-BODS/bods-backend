@@ -9,6 +9,7 @@ from lxml import etree
 from common import DbManager
 from db.repositories.stop_point import StopPointRepository
 from pti.validators.destination_display import DestinationDisplayValidator
+from pti.validators.stop_point import StopPointValidator
 ElementsOrStr = Union[List[etree.Element], List[str], str]
 PROHIBITED_CHARS = r",[]{}^=@:;#$£?%+<>«»\/|~_¬"
 ZERO_TIME_DURATION = TimeDuration(hours=0, minutes=0, seconds=0)
