@@ -6,6 +6,7 @@ from dateutil import parser
 from isoduration import DurationParsingException, parse_duration
 from isoduration.types import TimeDuration
 from lxml import etree
+from common import DbManager
 from db.repositories.stop_point import StopPointRepository
 from pti.validators.destination_display import DestinationDisplayValidator
 ElementsOrStr = Union[List[etree.Element], List[str], str]
@@ -119,7 +120,9 @@ def check_flexible_service_stop_point_ref(context, flexiblejourneypatterns):
             + get_stop_point_ref_list(stop_points_in_flexzone_list, ns)
         )
     )
-    total_compliant = StopPointRepository.get_count(atco_codes=atco_codes_list, bus_stop_type="FLX", stop_type="BCT")
+    db = DbManager.get_db()
+    repo = StopPointRepository(db)
+    total_compliant = repo.get_count(atco_codes=atco_codes_list, bus_stop_type="FLX", stop_type="BCT")
 
     return total_compliant == len(atco_codes_list)
 

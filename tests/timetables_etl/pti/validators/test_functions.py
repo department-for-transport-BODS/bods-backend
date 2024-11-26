@@ -1088,14 +1088,12 @@ def m_stop_point_repo():
         (["270002700156", "270002700157"], 1, False),
         # No atco_codes are compliant
         (["270002700157", "270002700158"], 0, False),
-        # Partial match
-        (["270002700156", "270002700158"], 1, False),
     ],
 )
-def test_check_flexible_service_stop_point_ref(
+def test_check_flexible_service_stop_points_in_sequence_stop_type(
     m_stop_point_repo, stop_point_ref_values, compliant_count, expected_result
 ):
-    m_stop_point_repo.get_count.return_value = compliant_count
+    m_stop_point_repo.return_value.get_count.return_value = compliant_count
 
     # XML template for the test
     NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
@@ -1127,10 +1125,10 @@ def test_check_flexible_service_stop_point_ref(
     result = check_flexible_service_stop_point_ref("", elements)
 
     assert result == expected_result
-    assert m_stop_point_repo.get_count.call_count == 1
-    assert sorted(m_stop_point_repo.get_count.call_args[1]["atco_codes"]) == sorted(stop_point_ref_values)
-    assert m_stop_point_repo.get_count.call_args[1]["bus_stop_type"] == "FLX"
-    assert m_stop_point_repo.get_count.call_args[1]["stop_type"] == "BCT"
+    assert m_stop_point_repo.return_value.get_count.call_count == 1
+    assert sorted(m_stop_point_repo.return_value.get_count.call_args[1]["atco_codes"]) == sorted(stop_point_ref_values)
+    assert m_stop_point_repo.return_value.get_count.call_args[1]["bus_stop_type"] == "FLX"
+    assert m_stop_point_repo.return_value.get_count.call_args[1]["stop_type"] == "BCT"
 
 
 
@@ -1149,7 +1147,7 @@ def test_check_flexible_service_stop_point_flexible_zone_stop_type(
     m_stop_point_repo, stop_point_ref_values, compliant_count, expected_result
 ):
     # Mock the `get_count` method to return the expected count
-    m_stop_point_repo.get_count.return_value = compliant_count
+    m_stop_point_repo.return_value.get_count.return_value = compliant_count
 
     # XML template for the test
     NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
@@ -1182,7 +1180,7 @@ def test_check_flexible_service_stop_point_flexible_zone_stop_type(
     result = check_flexible_service_stop_point_ref("", elements)
 
     assert result == expected_result
-    assert m_stop_point_repo.get_count.call_count == 1
-    assert sorted(m_stop_point_repo.get_count.call_args[1]["atco_codes"]) == sorted(stop_point_ref_values)
-    assert m_stop_point_repo.get_count.call_args[1]["bus_stop_type"] == "FLX"
-    assert m_stop_point_repo.get_count.call_args[1]["stop_type"] == "BCT"
+    assert m_stop_point_repo.return_value.get_count.call_count == 1
+    assert sorted(m_stop_point_repo.return_value.get_count.call_args[1]["atco_codes"]) == sorted(stop_point_ref_values)
+    assert m_stop_point_repo.return_value.get_count.call_args[1]["bus_stop_type"] == "FLX"
+    assert m_stop_point_repo.return_value.get_count.call_args[1]["stop_type"] == "BCT"
