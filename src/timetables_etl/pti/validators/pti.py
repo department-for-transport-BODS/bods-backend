@@ -17,7 +17,7 @@ from pti.validators.functions import (
     has_name, has_prohibited_chars, has_servicedorganisation_working_days,
     is_member_of, regex, strip, to_days, today, validate_licence_number,
     validate_line_id, validate_lines, validate_modification_date_time,
-    validate_non_naptan_stop_points)
+    validate_non_naptan_stop_points, validate_run_time)
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,7 @@ class PTIValidator:
 
         self.register_function("validate_modification_date_time", validate_modification_date_time)
         self.register_function("validate_non_naptan_stop_points", validate_non_naptan_stop_points)
-        # self.register_function("validate_run_time", validate_run_time)
+        self.register_function("validate_run_time", validate_run_time)
         # self.register_function("validate_timing_link_stops", validate_timing_link_stops)
         # TODO: Requires DB interaction
         # self.register_function("validate_bank_holidays", validate_bank_holidays)

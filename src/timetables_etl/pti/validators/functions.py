@@ -467,3 +467,33 @@ def validate_lines(context, lines: List[etree._Element]) -> bool:
     stop_area_map = repo.get_stop_area_map()
     validator = LinesValidator(lines, stop_area_map=stop_area_map)
     return validator.validate()
+
+def validate_run_time(context, timing_links):
+    """
+    Validates journey timings.
+    """
+    timing_link = timing_links[0]
+    ns = {"x": timing_link.nsmap.get(None)}
+    run_time = timing_link.xpath("string(x:RunTime)", namespaces=ns)
+    try:
+        time_duration = parse_duration(run_time).time
+    except DurationParsingException:
+        has_run_time = False
+    else:
+        has_run_time = not time_duration == ZERO_TIME_DURATION
+
+    journey_pattern_timing_link_ref = timing_link.xpath("string(@id)", namespaces=ns)
+    xpath = (
+        "//x:VehicleJourney/x:VehicleJourneyTimingLink"
+        f"[x:JourneyPatternTimingLinkRef='{journey_pattern_timing_link_ref}']"
+    )
+
+    vj_timing_link = timing_link.xpath(xpath, namespaces=ns)
+    if has_run_time and len(vj_timing_link) == 0:
+        return True
+    elif has_run_time and vj_timing_link[0].xpath("x:From", namespaces=ns):
+        return False
+    elif has_run_time and vj_timing_link[0].xpath("x:To", namespaces=ns):
+        return False
+
+    return True
