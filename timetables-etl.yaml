@@ -84,10 +84,13 @@ Resources:
 #                    - !Ref PlaceholderS3Bucket
       DefinitionUri: './src/timetables_etl.statemachine.json'
       DefinitionSubstitutions:
-        PlaceholderLambdaArn: !GetAtt PlaceholderLambda.Arn
         ClamAvScannerLambdaArn: !GetAtt ClamAvScannerLambda.Arn
+        TxCFileSchemaCheckArn: TxCFileSchemaCheck.Arn
+        TxCFileValidatorLambdaArn: !GetAtt TxCFileValidatorLambda.Arn
+        TxCFileAttributeExtractorLambdaArn: !GetAtt TxCFileAttributeExtractorLambda.Arn
         TimetablePostSchemaCheckLambdaArn: !GetAtt TimetablePostSchemaCheckLambda.Arn
         ExceptionHandlerLambdaArn: !GetAtt ExceptionHandlerLambda.Arn
+        PlaceholderLambdaArn: !GetAtt PlaceholderLambda.Arn
         PlaceholderSNSTopicArn: !GetAtt PlaceholderSNSTopic.TopicArn
         PlaceholderSQSQueueUrl: !GetAtt PlaceholderSQSQueue.QueueUrl
 
@@ -112,7 +115,12 @@ Resources:
                   - lambda:InvokeFunction
                 Resource:
                   - !GetAtt ClamAvScannerLambda.Arn
-                  # - !GetAtt TimetablePostSchemaCheckLambda.Arn
+                  - !GetAtt TxCFileSchemaCheck.Arn
+                  - !GetAtt TxCFileValidatorLambda.Arn
+                  - !GetAtt TxCFileAttributeExtractorLambda.Arn
+                  - !GetAtt TimetablePostSchemaCheckLambda.Arn
+                  - !GetAtt ExceptionHandlerLambda.Arn
+                  - !GetAtt PlaceholderLambda.Arn
         - PolicyName: SNSPublishPolicy
           PolicyDocument:
             Version: '2012-10-17'
@@ -161,6 +169,87 @@ Resources:
         - !Ref AWS::NoValue
       RetentionInDays: 30
 
+  ################################
+  #### Basic File Schema Check ####
+  ################################
+  TxCFileSchemaCheck:
+    Type: AWS::Serverless::Function
+    ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-file-schema-check-lambda'
+      Role: !GetAtt CommonLambdaExecutionRole.Arn
+      CodeUri: ./src/timetables_etl
+      Handler: timetable_schema_check.lambda_handler
+      Layers:
+        - !ImportValue BoilerplateLambdaLayerArn
+      Environment:
+        Variables:
+          TXC_XSD_PATH: 'TransXChange_general.xsd'
+      LoggingConfig:
+        LogGroup: !Ref TxCFileSchemaCheckLambdaLogGroup
+
+  TxCFileSchemaCheckLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-file-schema-check-lambda'
+      KmsKeyId: !If
+        - IsNotLocal
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Ref AWS::NoValue
+      RetentionInDays: 30
+
+  ####################################
+  #### TxC FILE VALIDATOR LAMBDA ####
+  ####################################
+  TxCFileValidatorLambda:
+    Type: AWS::Serverless::Function
+    ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-txc-file-validator-lambda'
+      Role: !GetAtt CommonLambdaExecutionRole.Arn
+      CodeUri: ./src/timetables_etl
+      Handler: txc_file_validator.lambda_handler
+      Layers:
+        - !ImportValue BoilerplateLambdaLayerArn
+      LoggingConfig:
+        LogGroup: !Ref TxCFileValidatorLambdaLogGroup
+
+  TxCFileValidatorLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-txc-file-validator-lambda'
+      KmsKeyId: !If
+        - IsNotLocal
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Ref AWS::NoValue
+      RetentionInDays: 30
+
+  ####################################
+  #### TxC ATTRS EXTRACTOR LAMBDA ####
+  ####################################
+  TxCFileAttributeExtractorLambda:
+    Type: AWS::Serverless::Function
+    ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-txc-file-attribute-extractor-lambda'
+      Role: !GetAtt CommonLambdaExecutionRole.Arn
+      CodeUri: ./src/timetables_etl
+      Handler: txc_file_data_extractor.lambda_handler
+      Layers:
+        - !ImportValue BoilerplateLambdaLayerArn
+      LoggingConfig:
+        LogGroup: !Ref TxCFileAttributeExtractorLambdaLogGroup
+
+  TxCFileAttributeExtractorLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-txc-file-attribute-extractor-lambda'
+      KmsKeyId: !If
+        - IsNotLocal
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Ref AWS::NoValue
+      RetentionInDays: 30
+
   ##################################
   #### POST SCHEMA CHECK LAMBDA ####
   ##################################
@@ -173,7 +262,7 @@ Resources:
       CodeUri: ./src/timetables_etl
       Handler: timetable_post_schema_check.lambda_handler
       Layers:
-        - !Ref BoilerplateLambdaLayer
+        - !ImportValue BoilerplateLambdaLayerArn
       LoggingConfig:
         LogGroup: !Ref TimetablePostSchemaCheckLambdaLogGroup
 
@@ -200,7 +289,7 @@ Resources:
       CodeUri: ./src/timetables_etl
       Handler: exception_handler.lambda_handler
       Layers:
-        - !Ref BoilerplateLambdaLayer
+        - !ImportValue BoilerplateLambdaLayerArn
       LoggingConfig:
         LogGroup: !Ref ExceptionHandlerLogGroup
 
@@ -227,7 +316,7 @@ Resources:
       CodeUri: ./src/timetables_etl
       Handler: app.lambda_handler
       Layers:
-        - !Ref BoilerplateLambdaLayer
+        - !ImportValue BoilerplateLambdaLayerArn
       LoggingConfig:
         LogGroup: !Ref PlaceholderLambdaLogGroup
 
@@ -340,13 +429,3 @@ Resources:
       FromPort: 5432
       ToPort: 5432
       SourceSecurityGroupId: !GetAtt CommonLambdaSecurityGroup.GroupId
-
-  BoilerplateLambdaLayer:
-    Type: AWS::Serverless::LayerVersion
-    Properties:
-      LayerName: !Sub '${ProjectName}-${Environment}-tetl-boilerplate-layer'
-      ContentUri: ./src/boilerplate
-      CompatibleRuntimes:
-        - python3.11
-    Metadata:
-      BuildMethod: python3.11

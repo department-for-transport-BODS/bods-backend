@@ -110,7 +110,7 @@ class S3:
             with ZipFile(zip_content) as zipObj:
                 for filename in zipObj.namelist():
                     file_content = zipObj.read(filename)
-                    new_key = f"{folder_name}/{filename}"
+                    new_key = f"{folder_name}{filename}"
                     self.put_object(new_key, file_content)
             return folder_name
         except BadZipFile as e:

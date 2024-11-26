@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from periodic_tasks.txc_file_validator import (
+from timetables_etl.txc_file_validator import (
     TimetableFileValidator,
     lambda_handler
 )
@@ -8,7 +8,7 @@ from exceptions.zip_file_exceptions import *
 from exceptions.xml_file_exceptions import *
 from tests.mock_db import MockedDB
 
-TEST_MODULE = "periodic_tasks.txc_file_validator"
+TEST_MODULE = "timetables_etl.txc_file_validator"
 
 
 class TestTimetableFileValidator(unittest.TestCase):

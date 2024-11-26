@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 import os
 
-from periodic_tasks.timetable_schema_check import (
+from timetables_etl.timetable_schema_check import (
     get_transxchange_schema,
     lambda_handler,
     DatasetTXCValidator,
@@ -23,9 +23,9 @@ TEST_ENV_VAR = {
 
 class TestGetTransxchangeSchema(unittest.TestCase):
     @patch(
-        "periodic_tasks.timetable_schema_check.get_schema_definition_db_object"
+        "timetables_etl.timetable_schema_check.get_schema_definition_db_object"
     )
-    @patch("periodic_tasks.timetable_schema_check.SchemaLoader")
+    @patch("timetables_etl.timetable_schema_check.SchemaLoader")
     @patch.dict("os.environ", TEST_ENV_VAR)
     def test_get_transxchange_schema_success(self,
                                              mock_schemaloader,
@@ -49,7 +49,7 @@ class TestGetTransxchangeSchema(unittest.TestCase):
         self.assertEqual(result, "some_schema_object")
 
     @patch(
-        "periodic_tasks.timetable_schema_check.get_schema_definition_db_object"
+        "timetables_etl.timetable_schema_check.get_schema_definition_db_object"
     )
     @patch.dict("os.environ", TEST_ENV_VAR)
     def test_get_transxchange_schema_missing_definition(
@@ -64,8 +64,8 @@ class TestGetTransxchangeSchema(unittest.TestCase):
 
 class TestDatasetTXCValidator(unittest.TestCase):
 
-    @patch("periodic_tasks.timetable_schema_check.get_transxchange_schema")
-    @patch("periodic_tasks.timetable_schema_check.XMLValidator")
+    @patch("timetables_etl.timetable_schema_check.get_transxchange_schema")
+    @patch("timetables_etl.timetable_schema_check.XMLValidator")
     @patch("lxml.etree.parse")
     @patch.dict("os.environ", TEST_ENV_VAR)
     def test_get_violations_no_violations(
@@ -107,11 +107,11 @@ class TestDatasetTXCValidator(unittest.TestCase):
         mock_etree_parse.assert_called_once_with(mock_file)
         mock_gettransxchangeschema.assert_called_once()
 
-    @patch("periodic_tasks.timetable_schema_check.get_transxchange_schema")
-    @patch("periodic_tasks.timetable_schema_check.XMLValidator")
+    @patch("timetables_etl.timetable_schema_check.get_transxchange_schema")
+    @patch("timetables_etl.timetable_schema_check.XMLValidator")
     @patch("lxml.etree.parse")
     @patch.dict("os.environ", TEST_ENV_VAR)
-    @patch("periodic_tasks.timetable_schema_check.BaseSchemaViolation")
+    @patch("timetables_etl.timetable_schema_check.BaseSchemaViolation")
     def test_get_violations_with_errors(
         self,
         mock_baseschemaviolation,
@@ -170,12 +170,12 @@ class TestDatasetTXCValidator(unittest.TestCase):
 
 class TestLambdaHandler(unittest.TestCase):
 
-    @patch("periodic_tasks.timetable_schema_check.S3")
-    @patch("periodic_tasks.timetable_schema_check.get_revision")
-    @patch("periodic_tasks.timetable_schema_check.DatasetTXCValidator")
-    @patch("periodic_tasks.timetable_schema_check.SchemaViolation")
+    @patch("timetables_etl.timetable_schema_check.S3")
+    @patch("timetables_etl.timetable_schema_check.get_revision")
+    @patch("timetables_etl.timetable_schema_check.DatasetTXCValidator")
+    @patch("timetables_etl.timetable_schema_check.SchemaViolation")
     @patch("db.file_processing_result.BodsDB")
-    @patch("periodic_tasks.timetable_schema_check.logger")
+    @patch("timetables_etl.timetable_schema_check.logger")
     @patch.dict("os.environ", TEST_ENV_VAR)
     def test_lambda_handler_success(self,
                                     mock_logger,
@@ -240,12 +240,12 @@ class TestLambdaHandler(unittest.TestCase):
             f"Received event:{json.dumps(mock_event, indent=2)}"
         )
 
-    @patch("periodic_tasks.timetable_schema_check.S3")
-    @patch("periodic_tasks.timetable_schema_check.get_revision")
-    @patch("periodic_tasks.timetable_schema_check.DatasetTXCValidator")
-    @patch("periodic_tasks.timetable_schema_check.SchemaViolation")
+    @patch("timetables_etl.timetable_schema_check.S3")
+    @patch("timetables_etl.timetable_schema_check.get_revision")
+    @patch("timetables_etl.timetable_schema_check.DatasetTXCValidator")
+    @patch("timetables_etl.timetable_schema_check.SchemaViolation")
     @patch("boilerplate.db.file_processing_result.BodsDB")
-    @patch("periodic_tasks.timetable_schema_check.logger")
+    @patch("timetables_etl.timetable_schema_check.logger")
     @patch.dict("os.environ", {"TEST_ENV_VAR": "value"})
     def test_lambda_handler_exception(self,
                                       mock_logger,

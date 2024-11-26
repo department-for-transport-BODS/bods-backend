@@ -113,6 +113,16 @@ class TestS3(unittest.TestCase):
         # Assert folder name
         self.assertEqual(result_folder, "path/to/unzipped_test/")
 
+        # Assert put_object was called for each file
+        calls = [
+            ((f"path/to/unzipped_test/file1.txt", b"content of file1"),),
+            ((f"path/to/unzipped_test/file2.txt", b"content of file2"),)
+        ]
+        self.s3.put_object.assert_has_calls(calls, any_order=True)
+
+        # Ensure no unexpected calls
+        self.assertEqual(self.s3.put_object.call_count, 2)
+
 
 if __name__ == "__main__":
     unittest.main()
