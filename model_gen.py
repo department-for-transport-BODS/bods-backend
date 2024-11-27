@@ -29,6 +29,24 @@ else:
 
 load_dotenv()
 
+# Tables to generate models for
+MODEL_GEN_TABLES = [
+    "data_quality_postschemaviolation",
+    "data_quality_ptiobservation",
+    "data_quality_ptivalidationresult",
+    "data_quality_schemaviolation",
+    "organisation_dataset",
+    "organisation_datasetrevision",
+    "organisation_organisation",
+    "organisation_txcfileattributes",
+    "pipelines_datasetetltaskresult",
+    "pipelines_fileprocessingresult",
+    "pipelines_pipelineerrorcode",
+    "pipelines_pipelineprocessingstep",
+    "pipelines_schemadefinition",
+    "users_user",
+]
+
 
 def get_connection_string():
     db = os.getenv("POSTGRES_DB")
@@ -36,7 +54,8 @@ def get_connection_string():
     password = os.getenv("POSTGRES_PASSWORD")
     host = os.getenv("POSTGRES_HOST")
     port = os.getenv("POSTGRES_PORT")
-    return f"postgresql://{user}:{password}@{host}:{port}/{db}" 
+    return f"postgresql://{user}:{password}@{host}:{port}/{db}"
+
 
 def sqlalchemy_model_generator() -> None:
     generators = {ep.name: ep for ep in entry_points(group="sqlacodegen.generators")}
@@ -44,10 +63,9 @@ def sqlalchemy_model_generator() -> None:
     options = ""
     schemas = "public"
     generator = "dataclasses"
-    tables = os.getenv("MODEL_GEN_TABLES")
+    tables = MODEL_GEN_TABLES
     noviews = False
     outfile = "./src/boilerplate/db/models.py"
-
 
     if not url:
         print("You must supply a url\n", file=sys.stderr)
@@ -65,11 +83,10 @@ def sqlalchemy_model_generator() -> None:
     # Use reflection to fill in the metadata
     engine = create_engine(url)
     metadata = MetaData()
-    tables = tables.split(",") if tables else None
     tables = [table.lower() for table in tables]
     schemas = schemas.split(",") if schemas else [None]
     options = set(options.split(",")) if options else set()
-    
+
     for schema in schemas:
         metadata.reflect(engine, schema, not noviews, only=tables)
 
@@ -91,4 +108,4 @@ def sqlalchemy_model_generator() -> None:
         outfile.write(generator.generate())
 
 
-# sqlalchemy_model_generator()
+sqlalchemy_model_generator()

@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from sqlalchemy import ARRAY, Boolean, CheckConstraint, Date, DateTime, ForeignKeyConstraint, Identity, Index, Integer, PrimaryKeyConstraint, String, UniqueConstraint
+from sqlalchemy import ARRAY, Boolean, CheckConstraint, Date, DateTime, ForeignKeyConstraint, Identity, Index, Integer, PrimaryKeyConstraint, String, Text, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column, relationship
 import datetime
 
@@ -21,7 +21,7 @@ class OrganisationDataset(Base):
         {'schema': 'public'}
     )
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
     created: Mapped[datetime.datetime] = mapped_column(DateTime(True))
     modified: Mapped[datetime.datetime] = mapped_column(DateTime(True))
     organisation_id: Mapped[int] = mapped_column(Integer)
@@ -60,7 +60,7 @@ class OrganisationDatasetrevision(Base):
         {'schema': 'public'}
     )
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
     created: Mapped[datetime.datetime] = mapped_column(DateTime(True))
     modified: Mapped[datetime.datetime] = mapped_column(DateTime(True))
     status: Mapped[str] = mapped_column(String(20))
@@ -75,6 +75,8 @@ class OrganisationDatasetrevision(Base):
     requestor_ref: Mapped[str] = mapped_column(String(255))
     username: Mapped[str] = mapped_column(String(255))
     short_description: Mapped[str] = mapped_column(String(30))
+    modified_file_hash: Mapped[str] = mapped_column(String(40))
+    original_file_hash: Mapped[str] = mapped_column(String(40))
     upload_file: Mapped[Optional[str]] = mapped_column(String(100))
     num_of_lines: Mapped[Optional[int]] = mapped_column(Integer)
     num_of_operators: Mapped[Optional[int]] = mapped_column(Integer)
@@ -101,6 +103,53 @@ class OrganisationDatasetrevision(Base):
     data_quality_schemaviolation: Mapped[List['DataQualitySchemaviolation']] = relationship('DataQualitySchemaviolation', back_populates='revision')
     organisation_txcfileattributes: Mapped[List['OrganisationTxcfileattributes']] = relationship('OrganisationTxcfileattributes', back_populates='revision')
     pipelines_datasetetltaskresult: Mapped[List['PipelinesDatasetetltaskresult']] = relationship('PipelinesDatasetetltaskresult', back_populates='revision')
+    pipelines_fileprocessingresult: Mapped[List['PipelinesFileprocessingresult']] = relationship('PipelinesFileprocessingresult', back_populates='revision')
+
+
+class PipelinesPipelineerrorcode(Base):
+    __tablename__ = 'pipelines_pipelineerrorcode'
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='pipelines_pipelineerrorcode_pkey'),
+        UniqueConstraint('error', name='pipelines_pipelineerrorcode_error_key'),
+        Index('pipelines_pipelineerrorcode_error_df120360_like', 'error'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
+    error: Mapped[str] = mapped_column(String(255))
+
+    pipelines_fileprocessingresult: Mapped[List['PipelinesFileprocessingresult']] = relationship('PipelinesFileprocessingresult', back_populates='pipeline_error_code')
+
+
+class PipelinesPipelineprocessingstep(Base):
+    __tablename__ = 'pipelines_pipelineprocessingstep'
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='pipelines_pipelineprocessingstep_pkey'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
+    name: Mapped[str] = mapped_column(String(255))
+    category: Mapped[str] = mapped_column(String(20))
+
+    pipelines_fileprocessingresult: Mapped[List['PipelinesFileprocessingresult']] = relationship('PipelinesFileprocessingresult', back_populates='pipeline_processing_step')
+
+
+class PipelinesSchemadefinition(Base):
+    __tablename__ = 'pipelines_schemadefinition'
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='pipelines_schemadefinition_pkey'),
+        UniqueConstraint('category', name='pipelines_schemadefinition_category_key'),
+        Index('pipelines_schemadefinition_category_bfea9f81_like', 'category'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
+    created: Mapped[datetime.datetime] = mapped_column(DateTime(True))
+    modified: Mapped[datetime.datetime] = mapped_column(DateTime(True))
+    category: Mapped[str] = mapped_column(String(6))
+    checksum: Mapped[str] = mapped_column(String(40))
+    schema: Mapped[str] = mapped_column(String(100))
 
 
 class UsersUser(Base):
@@ -112,7 +161,7 @@ class UsersUser(Base):
         {'schema': 'public'}
     )
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
     password: Mapped[str] = mapped_column(String(128))
     is_superuser: Mapped[bool] = mapped_column(Boolean)
     username: Mapped[str] = mapped_column(String(150))
@@ -163,7 +212,7 @@ class DataQualityPtiobservation(Base):
         {'schema': 'public'}
     )
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
     filename: Mapped[str] = mapped_column(String(256))
     line: Mapped[int] = mapped_column(Integer)
     details: Mapped[str] = mapped_column(String(1024))
@@ -185,7 +234,7 @@ class DataQualityPtivalidationresult(Base):
         {'schema': 'public'}
     )
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
     count: Mapped[int] = mapped_column(Integer)
     report: Mapped[str] = mapped_column(String(100))
     created: Mapped[datetime.datetime] = mapped_column(DateTime(True))
@@ -203,7 +252,7 @@ class DataQualitySchemaviolation(Base):
         {'schema': 'public'}
     )
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
     filename: Mapped[str] = mapped_column(String(256))
     line: Mapped[int] = mapped_column(Integer)
     details: Mapped[str] = mapped_column(String(1024))
@@ -225,7 +274,7 @@ class OrganisationOrganisation(Base):
         {'schema': 'public'}
     )
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
     created: Mapped[datetime.datetime] = mapped_column(DateTime(True))
     modified: Mapped[datetime.datetime] = mapped_column(DateTime(True))
     name: Mapped[str] = mapped_column(String(255))
@@ -248,7 +297,7 @@ class OrganisationTxcfileattributes(Base):
         {'schema': 'public'}
     )
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
     schema_version: Mapped[str] = mapped_column(String(10))
     revision_number: Mapped[int] = mapped_column(Integer)
     creation_datetime: Mapped[datetime.datetime] = mapped_column(DateTime(True))
@@ -264,6 +313,7 @@ class OrganisationTxcfileattributes(Base):
     destination: Mapped[str] = mapped_column(String(512))
     origin: Mapped[str] = mapped_column(String(512))
     hash: Mapped[str] = mapped_column(String(40))
+    service_mode: Mapped[str] = mapped_column(String(20))
     operating_period_end_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
     operating_period_start_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
 
@@ -286,7 +336,7 @@ class PipelinesDatasetetltaskresult(Base):
         {'schema': 'public'}
     )
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
     created: Mapped[datetime.datetime] = mapped_column(DateTime(True))
     modified: Mapped[datetime.datetime] = mapped_column(DateTime(True))
     progress: Mapped[int] = mapped_column(Integer)
@@ -301,18 +351,36 @@ class PipelinesDatasetetltaskresult(Base):
     revision: Mapped['OrganisationDatasetrevision'] = relationship('OrganisationDatasetrevision', back_populates='pipelines_datasetetltaskresult')
 
 
-class PipelinesSchemadefinition(Base):
-    __tablename__ = 'pipelines_schemadefinition'
+class PipelinesFileprocessingresult(Base):
+    __tablename__ = 'pipelines_fileprocessingresult'
     __table_args__ = (
-        PrimaryKeyConstraint('id', name='pipelines_schemadefinition_pkey'),
-        UniqueConstraint('category', name='pipelines_schemadefinition_category_key'),
-        Index('pipelines_schemadefinition_category_bfea9f81_like', 'category'),
+        ForeignKeyConstraint(['pipeline_error_code_id'], ['public.pipelines_pipelineerrorcode.id'], deferrable=True, initially='DEFERRED', name='pipelines_fileproces_pipeline_error_code__90e865f3_fk_pipelines'),
+        ForeignKeyConstraint(['pipeline_processing_step_id'], ['public.pipelines_pipelineprocessingstep.id'], deferrable=True, initially='DEFERRED', name='pipelines_fileproces_pipeline_processing__97aa79bd_fk_pipelines'),
+        ForeignKeyConstraint(['revision_id'], ['public.organisation_datasetrevision.id'], deferrable=True, initially='DEFERRED', name='pipelines_fileproces_revision_id_9ecfda53_fk_organisat'),
+        PrimaryKeyConstraint('id', name='pipelines_fileprocessingresult_pkey'),
+        UniqueConstraint('task_id', name='pipelines_fileprocessingresult_task_id_key'),
+        Index('pipelines_fileprocessingre_pipeline_processing_step_i_97aa79bd', 'pipeline_processing_step_id'),
+        Index('pipelines_fileprocessingresult_completed_d46c00f8', 'completed'),
+        Index('pipelines_fileprocessingresult_pipeline_error_code_id_90e865f3', 'pipeline_error_code_id'),
+        Index('pipelines_fileprocessingresult_revision_id_9ecfda53', 'revision_id'),
+        Index('pipelines_fileprocessingresult_status_8119c347', 'status'),
+        Index('pipelines_fileprocessingresult_status_8119c347_like', 'status'),
+        Index('pipelines_fileprocessingresult_task_id_d8a57a58_like', 'task_id'),
         {'schema': 'public'}
     )
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
     created: Mapped[datetime.datetime] = mapped_column(DateTime(True))
     modified: Mapped[datetime.datetime] = mapped_column(DateTime(True))
-    category: Mapped[str] = mapped_column(String(6))
-    checksum: Mapped[str] = mapped_column(String(40))
-    schema: Mapped[str] = mapped_column(String(100))
+    task_id: Mapped[str] = mapped_column(String(255))
+    status: Mapped[str] = mapped_column(String(50))
+    filename: Mapped[str] = mapped_column(String(255))
+    pipeline_processing_step_id: Mapped[int] = mapped_column(Integer)
+    revision_id: Mapped[int] = mapped_column(Integer)
+    completed: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    error_message: Mapped[Optional[str]] = mapped_column(Text)
+    pipeline_error_code_id: Mapped[Optional[int]] = mapped_column(Integer)
+
+    pipeline_error_code: Mapped['PipelinesPipelineerrorcode'] = relationship('PipelinesPipelineerrorcode', back_populates='pipelines_fileprocessingresult')
+    pipeline_processing_step: Mapped['PipelinesPipelineprocessingstep'] = relationship('PipelinesPipelineprocessingstep', back_populates='pipelines_fileprocessingresult')
+    revision: Mapped['OrganisationDatasetrevision'] = relationship('OrganisationDatasetrevision', back_populates='pipelines_fileprocessingresult')
