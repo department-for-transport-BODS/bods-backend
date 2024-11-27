@@ -31,7 +31,15 @@ load_dotenv()
 
 # Tables to generate models for
 MODEL_GEN_TABLES = [
-    "avl_cavldataarchive",
+    "organisation_dataset",
+    "organisation_datasetrevision",
+    "users_user",
+    "data_quality_postschemaviolation",
+    "data_quality_ptiobservation",
+    "data_quality_ptivalidationresult",
+    "data_quality_schemaviolation",
+    "organisation_organisation",
+    "organisation_txcfileattributes",
     "pipelines_datasetetltaskresult",
     "pipelines_fileprocessingresult",
     "pipelines_pipelineerrorcode",
@@ -99,4 +107,4 @@ def sqlalchemy_model_generator() -> None:
         outfile.write(generator.generate())
 
 
-# sqlalchemy_model_generator()
+sqlalchemy_model_generator()

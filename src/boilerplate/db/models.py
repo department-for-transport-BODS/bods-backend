@@ -1,25 +1,11 @@
 from typing import List, Optional
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKeyConstraint, Identity, Index, Integer, PrimaryKeyConstraint, String, Text, UniqueConstraint
+from sqlalchemy import ARRAY, Boolean, CheckConstraint, Date, DateTime, ForeignKeyConstraint, Identity, Index, Integer, PrimaryKeyConstraint, String, Text, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column, relationship
 import datetime
 
 class Base(MappedAsDataclass, DeclarativeBase):
     pass
-
-
-class AvlCavldataarchive(Base):
-    __tablename__ = 'avl_cavldataarchive'
-    __table_args__ = (
-        PrimaryKeyConstraint('id', name='avl_cavldataarchive_pkey'),
-        {'schema': 'public'}
-    )
-
-    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
-    created: Mapped[datetime.datetime] = mapped_column(DateTime(True))
-    last_updated: Mapped[datetime.datetime] = mapped_column(DateTime(True))
-    data: Mapped[str] = mapped_column(String(100))
-    data_format: Mapped[str] = mapped_column(String(2))
 
 
 class OrganisationDataset(Base):
@@ -111,6 +97,11 @@ class OrganisationDatasetrevision(Base):
     dataset: Mapped['OrganisationDataset'] = relationship('OrganisationDataset', foreign_keys=[dataset_id], back_populates='organisation_datasetrevision')
     last_modified_user: Mapped['UsersUser'] = relationship('UsersUser', foreign_keys=[last_modified_user_id], back_populates='organisation_datasetrevision')
     published_by: Mapped['UsersUser'] = relationship('UsersUser', foreign_keys=[published_by_id], back_populates='organisation_datasetrevision_')
+    data_quality_postschemaviolation: Mapped[List['DataQualityPostschemaviolation']] = relationship('DataQualityPostschemaviolation', back_populates='revision')
+    data_quality_ptiobservation: Mapped[List['DataQualityPtiobservation']] = relationship('DataQualityPtiobservation', back_populates='revision')
+    data_quality_ptivalidationresult: Mapped['DataQualityPtivalidationresult'] = relationship('DataQualityPtivalidationresult', uselist=False, back_populates='revision')
+    data_quality_schemaviolation: Mapped[List['DataQualitySchemaviolation']] = relationship('DataQualitySchemaviolation', back_populates='revision')
+    organisation_txcfileattributes: Mapped[List['OrganisationTxcfileattributes']] = relationship('OrganisationTxcfileattributes', back_populates='revision')
     pipelines_datasetetltaskresult: Mapped[List['PipelinesDatasetetltaskresult']] = relationship('PipelinesDatasetetltaskresult', back_populates='revision')
     pipelines_fileprocessingresult: Mapped[List['PipelinesFileprocessingresult']] = relationship('PipelinesFileprocessingresult', back_populates='revision')
 
@@ -177,6 +168,83 @@ class UsersUser(Base):
     organisation_organisation: Mapped['OrganisationOrganisation'] = relationship('OrganisationOrganisation', uselist=False, back_populates='key_contact')
 
 
+class DataQualityPostschemaviolation(Base):
+    __tablename__ = 'data_quality_postschemaviolation'
+    __table_args__ = (
+        ForeignKeyConstraint(['revision_id'], ['public.organisation_datasetrevision.id'], deferrable=True, initially='DEFERRED', name='data_quality_postsch_revision_id_d236c059_fk_organisat'),
+        PrimaryKeyConstraint('id', name='data_quality_postschemaviolation_pkey'),
+        Index('data_quality_postschemaviolation_revision_id_d236c059', 'revision_id'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
+    filename: Mapped[str] = mapped_column(String(256))
+    details: Mapped[str] = mapped_column(String(1024))
+    created: Mapped[datetime.datetime] = mapped_column(DateTime(True))
+    revision_id: Mapped[int] = mapped_column(Integer)
+
+    revision: Mapped['OrganisationDatasetrevision'] = relationship('OrganisationDatasetrevision', back_populates='data_quality_postschemaviolation')
+
+
+class DataQualityPtiobservation(Base):
+    __tablename__ = 'data_quality_ptiobservation'
+    __table_args__ = (
+        ForeignKeyConstraint(['revision_id'], ['public.organisation_datasetrevision.id'], deferrable=True, initially='DEFERRED', name='data_quality_ptiobse_revision_id_3206212f_fk_organisat'),
+        PrimaryKeyConstraint('id', name='data_quality_ptiobservation_pkey'),
+        Index('data_quality_ptiobservation_revision_id_3206212f', 'revision_id'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
+    filename: Mapped[str] = mapped_column(String(256))
+    line: Mapped[int] = mapped_column(Integer)
+    details: Mapped[str] = mapped_column(String(1024))
+    element: Mapped[str] = mapped_column(String(256))
+    category: Mapped[str] = mapped_column(String(1024))
+    created: Mapped[datetime.datetime] = mapped_column(DateTime(True))
+    revision_id: Mapped[int] = mapped_column(Integer)
+    reference: Mapped[str] = mapped_column(String(64))
+
+    revision: Mapped['OrganisationDatasetrevision'] = relationship('OrganisationDatasetrevision', back_populates='data_quality_ptiobservation')
+
+
+class DataQualityPtivalidationresult(Base):
+    __tablename__ = 'data_quality_ptivalidationresult'
+    __table_args__ = (
+        ForeignKeyConstraint(['revision_id'], ['public.organisation_datasetrevision.id'], deferrable=True, initially='DEFERRED', name='data_quality_ptivali_revision_id_a90de4ea_fk_organisat'),
+        PrimaryKeyConstraint('id', name='data_quality_ptivalidationresult_pkey'),
+        UniqueConstraint('revision_id', name='data_quality_ptivalidationresult_revision_id_key'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
+    count: Mapped[int] = mapped_column(Integer)
+    report: Mapped[str] = mapped_column(String(100))
+    created: Mapped[datetime.datetime] = mapped_column(DateTime(True))
+    revision_id: Mapped[int] = mapped_column(Integer)
+
+    revision: Mapped['OrganisationDatasetrevision'] = relationship('OrganisationDatasetrevision', back_populates='data_quality_ptivalidationresult')
+
+
+class DataQualitySchemaviolation(Base):
+    __tablename__ = 'data_quality_schemaviolation'
+    __table_args__ = (
+        ForeignKeyConstraint(['revision_id'], ['public.organisation_datasetrevision.id'], deferrable=True, initially='DEFERRED', name='data_quality_schemav_revision_id_09049f6e_fk_organisat'),
+        PrimaryKeyConstraint('id', name='data_quality_schemaviolation_pkey'),
+        Index('data_quality_schemaviolation_revision_id_09049f6e', 'revision_id'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
+    filename: Mapped[str] = mapped_column(String(256))
+    line: Mapped[int] = mapped_column(Integer)
+    details: Mapped[str] = mapped_column(String(1024))
+    created: Mapped[datetime.datetime] = mapped_column(DateTime(True))
+    revision_id: Mapped[int] = mapped_column(Integer)
+
+    revision: Mapped['OrganisationDatasetrevision'] = relationship('OrganisationDatasetrevision', back_populates='data_quality_schemaviolation')
+
+
 class OrganisationOrganisation(Base):
     __tablename__ = 'organisation_organisation'
     __table_args__ = (
@@ -201,6 +269,38 @@ class OrganisationOrganisation(Base):
 
     organisation_dataset: Mapped[List['OrganisationDataset']] = relationship('OrganisationDataset', back_populates='organisation')
     key_contact: Mapped['UsersUser'] = relationship('UsersUser', back_populates='organisation_organisation')
+
+
+class OrganisationTxcfileattributes(Base):
+    __tablename__ = 'organisation_txcfileattributes'
+    __table_args__ = (
+        ForeignKeyConstraint(['revision_id'], ['public.organisation_datasetrevision.id'], deferrable=True, initially='DEFERRED', name='organisation_txcfile_revision_id_ddb2f841_fk_organisat'),
+        PrimaryKeyConstraint('id', name='organisation_txcfileattributes_pkey'),
+        Index('organisation_txcfileattributes_revision_id_ddb2f841', 'revision_id'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
+    schema_version: Mapped[str] = mapped_column(String(10))
+    revision_number: Mapped[int] = mapped_column(Integer)
+    creation_datetime: Mapped[datetime.datetime] = mapped_column(DateTime(True))
+    modification_datetime: Mapped[datetime.datetime] = mapped_column(DateTime(True))
+    filename: Mapped[str] = mapped_column(String(512))
+    service_code: Mapped[str] = mapped_column(String(100))
+    revision_id: Mapped[int] = mapped_column(Integer)
+    modification: Mapped[str] = mapped_column(String(28))
+    national_operator_code: Mapped[str] = mapped_column(String(100))
+    licence_number: Mapped[str] = mapped_column(String(56))
+    public_use: Mapped[bool] = mapped_column(Boolean)
+    line_names: Mapped[list] = mapped_column(ARRAY(String(length=255)))
+    destination: Mapped[str] = mapped_column(String(512))
+    origin: Mapped[str] = mapped_column(String(512))
+    hash: Mapped[str] = mapped_column(String(40))
+    service_mode: Mapped[str] = mapped_column(String(20))
+    operating_period_end_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
+    operating_period_start_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
+
+    revision: Mapped['OrganisationDatasetrevision'] = relationship('OrganisationDatasetrevision', back_populates='organisation_txcfileattributes')
 
 
 class PipelinesDatasetetltaskresult(Base):
