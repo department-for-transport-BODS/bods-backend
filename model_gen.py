@@ -31,19 +31,20 @@ load_dotenv()
 
 # Tables to generate models for
 MODEL_GEN_TABLES = [
-    "organisation_dataset",
-    "organisation_datasetrevision",
-    "users_user",
     "data_quality_postschemaviolation",
     "data_quality_ptiobservation",
     "data_quality_ptivalidationresult",
     "data_quality_schemaviolation",
+    "organisation_dataset",
+    "organisation_datasetrevision",
     "organisation_organisation",
     "organisation_txcfileattributes",
     "pipelines_datasetetltaskresult",
     "pipelines_fileprocessingresult",
     "pipelines_pipelineerrorcode",
     "pipelines_pipelineprocessingstep",
+    "pipelines_schemadefinition",
+    "users_user",
 ]
 
 

@@ -135,6 +135,23 @@ class PipelinesPipelineprocessingstep(Base):
     pipelines_fileprocessingresult: Mapped[List['PipelinesFileprocessingresult']] = relationship('PipelinesFileprocessingresult', back_populates='pipeline_processing_step')
 
 
+class PipelinesSchemadefinition(Base):
+    __tablename__ = 'pipelines_schemadefinition'
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='pipelines_schemadefinition_pkey'),
+        UniqueConstraint('category', name='pipelines_schemadefinition_category_key'),
+        Index('pipelines_schemadefinition_category_bfea9f81_like', 'category'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
+    created: Mapped[datetime.datetime] = mapped_column(DateTime(True))
+    modified: Mapped[datetime.datetime] = mapped_column(DateTime(True))
+    category: Mapped[str] = mapped_column(String(6))
+    checksum: Mapped[str] = mapped_column(String(40))
+    schema: Mapped[str] = mapped_column(String(100))
+
+
 class UsersUser(Base):
     __tablename__ = 'users_user'
     __table_args__ = (
