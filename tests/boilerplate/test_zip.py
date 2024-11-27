@@ -1,8 +1,8 @@
 import unittest
-from unittest.mock import patch, mock_open
+from unittest.mock import patch, mock_open, MagicMock
 from io import BytesIO
-from zipfile import ZipFile, ZIP_DEFLATED
-from boilerplate.zip import ZippedValidator
+from zipfile import ZipFile, ZIP_DEFLATED, BadZipFile
+from boilerplate.zip import ZippedValidator, unzip
 from exceptions.zip_file_exceptions import (
     NestedZipForbidden,
     ZipTooLarge,
@@ -108,6 +108,52 @@ class TestZippedValidator(unittest.TestCase):
                 validator, "validate", side_effect=ZipValidationException("abc.xml")
             ):
                 self.assertFalse(validator.is_valid())
+
+    def test_unzip_valid_zip(self):
+        s3_client = MagicMock()
+        # Arrange
+        file_path = 'test-folder/test.zip'
+        prefix = 'unzipped'
+
+        # Create a valid zip file in memory
+        zip_buffer = BytesIO()
+        with ZipFile(zip_buffer, 'w') as zip_file:
+            zip_file.writestr('file1.txt', 'Hello, world!')
+            zip_file.writestr('file2.txt', 'Python is awesome!')
+        zip_buffer.seek(0)
+
+        # Mock the S3 client to return the zip file for get_object
+        s3_client.get_object.return_value = zip_buffer
+
+        # Mock the put_object method
+        s3_client.put_object = MagicMock()
+
+        # Act
+        result = unzip(s3_client, file_path, prefix)
+
+        # Assert
+        expected_folder = 'test-folder/unzipped_test/'
+        self.assertEqual(result, expected_folder)
+
+        # Verify that files are uploaded to S3
+        s3_client.put_object.assert_any_call(
+            f"{expected_folder}file1.txt", b'Hello, world!'
+        )
+        s3_client.put_object.assert_any_call(
+            f"{expected_folder}file2.txt", b'Python is awesome!'
+        )
+
+    def test_unzip_invalid_zip(self):
+        s3_client = MagicMock()
+        # Arrange
+        file_path = 'test-folder/invalid.zip'
+
+        # Mock the S3 client to return invalid zip content
+        s3_client.get_object.return_value = BytesIO(b'Not a zip file')
+
+        # Act & Assert
+        with self.assertRaises(BadZipFile):
+            unzip(s3_client, file_path)
 
 
 if __name__ == "__main__":

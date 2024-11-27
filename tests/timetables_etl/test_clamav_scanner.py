@@ -75,12 +75,14 @@ class TestClamAVScanner(unittest.TestCase):
 
     @patch("timetables_etl.clamav_scanner.S3")
     @patch("timetables_etl.clamav_scanner.FileScanner")
+    @patch("timetables_etl.clamav_scanner.unzip")
     @patch("db.file_processing_result.BodsDB")
     @patch("db.file_processing_result.get_revision")
     @patch.dict("os.environ", TEST_ENV_VAR)
     def test_lambda_handler_success(self,
                                     mock_get_revision,
                                     mock_db,
+                                    mock_unzip,
                                     mock_file_scanner,
                                     mock_s3):
         # Mock get revision
@@ -92,6 +94,8 @@ class TestClamAVScanner(unittest.TestCase):
         mock_s3_instance = mock_s3.return_value
         mock_file_object = MagicMock()
         mock_s3_instance.get_object.return_value = mock_file_object
+
+        mock_unzip.return_value = MagicMock()
 
         # Mock FileScanner behavior
         mock_scanner_instance = mock_file_scanner.return_value

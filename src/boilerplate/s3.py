@@ -3,7 +3,6 @@ Description: Module to provide access to S3 objects
 """
 from io import BytesIO
 import os
-from typing import List
 
 import boto3
 from botocore.response import StreamingBody
@@ -11,7 +10,7 @@ from botocore.exceptions import (
     ClientError,
     BotoCoreError)
 from logger import logger
-from zipfile import ZipFile, BadZipFile
+
 
 class S3:
     """
@@ -98,24 +97,3 @@ class S3:
             logger.error(f"Error downloading file object "
                          f"{self.bucket_name}/{file_path}: {err}")
             raise err
-
-    def unzip(self, file_path: str, prefix='') -> str:
-        try:
-            zip_content = BytesIO(self.get_object(file_path).read())
-            split_path = file_path.split('/')
-            zip_name = split_path[-1].split('.')[0]
-            base_dir = f"{'/'.join(split_path[:-1])}"
-            folder_name = f"{base_dir}/{prefix}_{zip_name}/" if base_dir else \
-                f"{prefix}_{zip_name}/"
-            with ZipFile(zip_content) as zipObj:
-                for filename in zipObj.namelist():
-                    file_content = zipObj.read(filename)
-                    new_key = f"{folder_name}{filename}"
-                    self.put_object(new_key, file_content)
-            return folder_name
-        except BadZipFile as e:
-            logger.error(f"{file_path} is not a valid zip file: {e}")
-            raise e
-        except Exception as e:
-            print(f"Unexpected error: {e}")
-            raise e
