@@ -8,16 +8,35 @@ from lxml import etree
 from pti.constants import FLEXIBLE_SERVICE, STANDARD_SERVICE
 from pti.models import Observation, Schema, Violation
 from pti.validators.functions import (
-    cast_to_bool, cast_to_date, check_description_for_inbound_description,
+    cast_to_bool,
+    cast_to_date,
+    check_description_for_inbound_description,
     check_description_for_outbound_description,
-    check_flexible_service_stop_point_ref, check_flexible_service_times,
-    check_flexible_service_timing_status, check_inbound_outbound_description,
-    check_service_group_validations, contains_date, has_destination_display,
-    has_flexible_or_standard_service, has_flexible_service_classification,
-    has_name, has_prohibited_chars, has_servicedorganisation_working_days,
-    is_member_of, regex, strip, to_days, today, validate_licence_number,
-    validate_line_id, validate_modification_date_time,
-    validate_non_naptan_stop_points)
+    check_flexible_service_stop_point_ref,
+    check_flexible_service_times,
+    check_flexible_service_timing_status,
+    check_inbound_outbound_description,
+    check_service_group_validations,
+    contains_date,
+    has_destination_display,
+    has_flexible_or_standard_service,
+    has_flexible_service_classification,
+    has_name,
+    has_prohibited_chars,
+    has_servicedorganisation_working_days,
+    is_member_of,
+    regex,
+    strip,
+    to_days,
+    today,
+    validate_licence_number,
+    validate_line_id,
+    validate_lines,
+    validate_modification_date_time,
+    validate_non_naptan_stop_points,
+    validate_run_time,
+    validate_timing_link_stops,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -67,15 +86,14 @@ class PTIValidator:
         self.register_function("regex", regex)
         self.register_function("strip", strip)
         self.register_function("today", today)
-        self.register_function("validate_line_id", validate_line_id)
 
-        # TODO: Requires DB interaction
-        # self.register_function("validate_lines", validate_lines)
+        self.register_function("validate_line_id", validate_line_id)
+        self.register_function("validate_lines", validate_lines)
 
         self.register_function("validate_modification_date_time", validate_modification_date_time)
         self.register_function("validate_non_naptan_stop_points", validate_non_naptan_stop_points)
-        # self.register_function("validate_run_time", validate_run_time)
-        # self.register_function("validate_timing_link_stops", validate_timing_link_stops)
+        self.register_function("validate_run_time", validate_run_time)
+        self.register_function("validate_timing_link_stops", validate_timing_link_stops)
         # TODO: Requires DB interaction
         # self.register_function("validate_bank_holidays", validate_bank_holidays)
 
@@ -98,9 +116,7 @@ class PTIValidator:
     def add_violation(self, violation: Violation) -> None:
         self.violations.append(violation)
 
-    def check_observation(
-        self, observation: Observation, element: etree._Element
-    ) -> None:
+    def check_observation(self, observation: Observation, element: etree._Element) -> None:
         for rule in observation.rules:
             result = element.xpath(rule.test, namespaces=self.namespaces)
             if not result:
@@ -115,19 +131,12 @@ class PTIValidator:
                 self.add_violation(violation)
                 break
 
-
     def check_service_type(self, document):
-        servie_classification_xpath = (
-            "//x:Services/x:Service/x:ServiceClassification/x:Flexible"
-        )
-        service_classification = document.xpath(
-            servie_classification_xpath, namespaces=self.namespaces
-        )
+        servie_classification_xpath = "//x:Services/x:Service/x:ServiceClassification/x:Flexible"
+        service_classification = document.xpath(servie_classification_xpath, namespaces=self.namespaces)
 
         flexible_service_xpath = "//x:Services/x:Service/x:FlexibleService"
-        flexible_service = document.xpath(
-            flexible_service_xpath, namespaces=self.namespaces
-        )
+        flexible_service = document.xpath(flexible_service_xpath, namespaces=self.namespaces)
 
         if service_classification or flexible_service:
             return FLEXIBLE_SERVICE

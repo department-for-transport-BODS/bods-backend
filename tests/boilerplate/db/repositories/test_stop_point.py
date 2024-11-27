@@ -65,3 +65,51 @@ def test_get_count_exception():
 
     with pytest.raises(PipelineException):
         repo.get_count(atco_codes=[])
+
+
+def test_get_stop_area_map():
+    db = MockedDB()
+    stops = [
+        naptan_stoppoint(atco_code="270002700155", stop_areas=["Area1"]),
+        naptan_stoppoint(atco_code="270002700156", stop_areas=["Area2"]),
+        naptan_stoppoint(atco_code="270002700156", stop_areas=[]),
+    ]
+    expected_result = {"270002700155": ["Area1"], "270002700156": ["Area2"]}
+    with db.session as session:
+        session.bulk_save_objects(stops)
+        session.commit()
+
+    repository = StopPointRepository(db)
+    result = repository.get_stop_area_map()
+
+    assert result == expected_result
+
+
+def test_get_stop_area_map_no_result():
+    db = MockedDB()
+    stops = [
+        naptan_stoppoint(atco_code="270002700156", stop_areas=[]),
+    ]
+    expected_result = {}
+
+    with db.session as session:
+        session.bulk_save_objects(stops)
+        session.commit()
+
+    repository = StopPointRepository(db)
+    result = repository.get_stop_area_map()
+
+    assert result == expected_result
+
+
+def test_get_stop_area_map_exception():
+    mock_db = MockedDB()
+
+    m_session = MagicMock()
+    m_session.__enter__.return_value.query = MagicMock(side_effect=Exception("DB Exception"))
+    mock_db.session = m_session
+
+    repo = StopPointRepository(mock_db)
+
+    with pytest.raises(PipelineException, match="Error retrieving stops excluding empty stop areas."):
+        repo.get_stop_area_map()
