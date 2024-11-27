@@ -4,7 +4,22 @@ Types for TXC
 
 from typing import Literal
 
+ServiceOrganisationClassificationT = Literal[
+    "school",
+    "office",
+    "retailSite",
+    "touristAttraction",
+    "market",
+    "factory",
+    "college",
+    "military",
+    "sportsFacility",
+    "eventVenue",
+    "other",
+]
+
 ModificationType = Literal["new", "delete", "revise", "delta"]
+StatusT = Literal["active", "inactive", "pending"]
 TransportModeType = Literal[
     "air",
     "bus",

@@ -16,6 +16,7 @@ from .journey_pattern_sections import parse_journey_pattern_sections
 from .operators import parse_operators
 from .route_sections import parse_route_sections
 from .routes import parse_routes
+from .serviced_organisation import parse_serviced_organisations
 from .services import parse_services
 from .stop_points import parse_stop_points
 from .vehicle_journeys import parse_vehicle_journeys
@@ -67,6 +68,7 @@ def parse_txc_from_element(
     route_sections = parse_route_sections(xml_data, parse_track_data)
     txc_data = TXCData(
         Metadata=parse_metadata(xml_data, file_hash),
+        ServicedOrganisations=parse_serviced_organisations(xml_data),
         StopPoints=parse_stop_points(xml_data),
         RouteSections=route_sections,
         Routes=parse_routes(xml_data, route_sections),

@@ -9,6 +9,7 @@ from .txc_metadata import TXCMetadata
 from .txc_operator import TXCOperator
 from .txc_route import RouteSection, TXCRoute
 from .txc_service import TXCService
+from .txc_serviced_organisation import TXCServicedOrganisation
 from .txc_stoppoint import AnnotatedStopPointRef, TXCStopPoint
 from .txc_vehicle_journey import TXCVehicleJourney
 
@@ -19,6 +20,7 @@ class TXCData(BaseModel):
     """
 
     Metadata: TXCMetadata | None = Field(default=None, description="File Metadata")
+    ServicedOrganisations: list[TXCServicedOrganisation] = Field(default=[])
     StopPoints: list[AnnotatedStopPointRef | TXCStopPoint] = Field(
         default=[], description=""
     )
