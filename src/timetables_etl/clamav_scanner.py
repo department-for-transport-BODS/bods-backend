@@ -3,7 +3,6 @@
 Description: Module to scan incoming s3 file object for vulnerabilities.
 Lambda handle is triggered by S3 event
 """
-import json
 import os
 from typing import BinaryIO, Optional
 from dataclasses import dataclass
@@ -16,6 +15,7 @@ from exceptions.file_exceptions import (
     ClamConnectionError,
     SuspiciousFile
 )
+from zip import unzip
 
 SCAN_ATTEMPTS = 5
 MULTIPLIER = 1
@@ -112,12 +112,16 @@ def lambda_handler(event, context):
         # Backward compatibility with python file handler
         file_object.name = key
         av_scanner.scan(file_object)  # noqa
+        msg = f"Successfully scanned the file '{key}' from bucket '{bucket}'"
+        return {
+            "statusCode": 200,
+            "body": {
+                "message": msg,
+                "generatedPrefix": unzip(s3_client=s3_handler,
+                                         file_path=key,
+                                         prefix="ext")
+            }
+        }
     except Exception as e:
         logger.error(f"Error scanning object '{key}' from bucket '{bucket}'")
         raise e
-
-    # Return a success message
-    return {
-        "statusCode": 200,
-        "body": f"Successfully scanned the file '{key}' from bucket '{bucket}'",
-    }

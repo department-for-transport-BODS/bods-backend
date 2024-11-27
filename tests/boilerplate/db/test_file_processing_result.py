@@ -11,7 +11,7 @@ from boilerplate.db.file_processing_result import (
     file_processing_result_to_db,
     txc_file_attributes_to_db,
 )
-from tests.mock_db import MockedDB
+from tests.mock_db import MockedDB, pipeline_processing_step as step_
 
 
 class TestFileProcessingResult(unittest.TestCase):
@@ -141,6 +141,11 @@ class TestFileProcessingResult(unittest.TestCase):
 
     def test_write_processing_step(self):
         mock_db = MockedDB()
+        with mock_db.session as session:
+            session.add(step_(name="Test Scanner",
+                              category="FARES"))
+            session.commit()
+
         result_data = write_processing_step(
             mock_db, name="Test Scanner", category="FARES"
         )
@@ -160,16 +165,16 @@ class TestFileProcessingResult(unittest.TestCase):
     def test_write_processing_step_exception(self):
         mock_db = MockedDB()
         mock_db.session = MagicMock()
-        mock_db.session.__enter__.return_value.add.side_effect = (
-            SQLAlchemyError("Add failed")
+        mock_db.session.__enter__.return_value.query.side_effect = (
+            SQLAlchemyError("Query failed")
         )
         with self.assertRaises(SQLAlchemyError) as _context:
             write_processing_step(
                 mock_db, name="Test Scanner", category="FARES"
             )
 
-        self.assertEqual(str(_context.exception), "Add failed")
-        mock_db.session.__enter__.return_value.add.assert_called_once()
+        self.assertEqual(str(_context.exception), "Query failed")
+        mock_db.session.__enter__.return_value.query.assert_called_once()
 
     def test_get_file_processing_error_code_exception(self):
         error_status = "NO_DATA_FOUND"

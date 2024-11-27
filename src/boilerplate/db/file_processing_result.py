@@ -52,11 +52,13 @@ def write_error_to_db(db, uuid, exceptions):
 
 def get_file_processing_result_obj(db, **kwargs):
     return db.classes.pipelines_fileprocessingresult(
+        created=datetime.now(),
+        modified=datetime.now(),
         task_id=kwargs.get("task_id"),
         status=kwargs.get("status"),
         filename=kwargs.get("filename"),
-        pipeline_processing_step_id=kwargs.get("step"),
-        revision_id=kwargs.get("revision"),
+        pipeline_processing_step_id=kwargs.get("pipeline_processing_step_id"),
+        revision_id=kwargs.get("revision_id"),
     )
 
 
@@ -78,10 +80,21 @@ def get_file_processing_error_code(db, status):
     return get_record(db, class_name, filter_condition, error_message)
 
 
+def get_step(db, name, category):
+    with db.session as session:
+        class_name = db.classes.pipelines_pipelineprocessingstep
+        return session.query(class_name).filter(
+                class_name.name == name).filter(
+                class_name.category == category).one()
+
+
 def write_processing_step(db, name, category):
     with db.session as session_:
         try:
             class_name = db.classes.pipelines_pipelineprocessingstep
+            step = get_step(db, name, category)
+            if step:
+                return step
             new_step = class_name(name=name, category=category)
             session_.add(new_step)
             session_.commit()
@@ -114,7 +127,7 @@ def file_processing_result_to_db(step_name):
                     task_id=uuid,
                     status="STARTED",
                     filename=event["ObjectKey"].split("/")[-1],
-                    pipeline_processing_step_id=step,
+                    pipeline_processing_step_id=step.id,
                     revision_id=revision.id
                 )
                 fpr_ins = PipelineFileProcessingResult(_db)
@@ -123,7 +136,7 @@ def file_processing_result_to_db(step_name):
 
                 # Call the original Lambda handler function
                 result = func(event, context)
-
+                logger.info(f"lambda returns: {result}")
                 # Add lambda exit
                 params = dict(status="SUCCESS", completed=datetime.now())
                 fpr_ins.update(uuid, **params)

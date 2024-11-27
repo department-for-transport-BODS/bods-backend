@@ -3,6 +3,7 @@ Description: Module to provide access to S3 objects
 """
 from io import BytesIO
 import os
+
 import boto3
 from botocore.response import StreamingBody
 from botocore.exceptions import (
@@ -26,13 +27,14 @@ class S3:
     def _create_s3_client(self):# noqa
         """
         Creates an S3 client. If running locally (PROJECT_ENV=local),
-        it points to the LocalStack S3 service; otherwise, it connects to AWS S3.
+        it points to the LocalStack S3 service; otherwise, it connects to AWS
+        S3.
         """
         if os.environ.get("PROJECT_ENV") == "local":
             logger.info("Using LocalStack for S3 (local environment)")
             return boto3.client(
                 "s3",
-                endpoint_url="http://localstack:4566",
+                endpoint_url="http://localhost:4566",
                 aws_access_key_id="dummy",
                 aws_secret_access_key="dummy",
             )
@@ -64,7 +66,8 @@ class S3:
                 Body=file_data,
                 ContentType=content_type
             )
-            logger.info(f"Uploaded file successfully to {self.bucket_name}/{file_path}")
+            logger.info(f"Uploaded file successfully to "
+                        f"{self.bucket_name}/{file_path}")
             return True
         except (ClientError, BotoCoreError) as err:
             logger.error(f"Error uploading file {file_path}: {err}")
@@ -81,7 +84,8 @@ class S3:
             file_stream.seek(0)
             return file_stream
         except (ClientError, BotoCoreError) as err:
-            logger.error(f"Error downloading file {self.bucket_name}/{file_path}: {err}")
+            logger.error(f"Error downloading file "
+                         f"{self.bucket_name}/{file_path}: {err}")
             raise err
 
     def get_object(self, file_path: str) -> StreamingBody:
@@ -90,5 +94,6 @@ class S3:
                                                Key=file_path)
             return response["Body"]
         except (ClientError, BotoCoreError) as err:
-            logger.error(f"Error downloading file object {self.bucket_name}/{file_path}: {err}")
+            logger.error(f"Error downloading file object "
+                         f"{self.bucket_name}/{file_path}: {err}")
             raise err

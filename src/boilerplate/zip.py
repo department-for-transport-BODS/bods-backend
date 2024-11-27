@@ -1,4 +1,5 @@
-from zipfile import ZipFile, is_zipfile
+from io import BytesIO
+from zipfile import ZipFile, is_zipfile, BadZipFile
 from exceptions.zip_file_exceptions import (
     NestedZipForbidden,
     ZipValidationException,
@@ -6,6 +7,29 @@ from exceptions.zip_file_exceptions import (
     NoDataFound,
 )
 from bods_utils import get_file_size
+from logger import logger
+
+
+def unzip(s3_client, file_path: str, prefix='') -> str:
+    try:
+        zip_content = BytesIO(s3_client.get_object(file_path).read())
+        split_path = file_path.split('/')
+        zip_name = split_path[-1].split('.')[0]
+        base_dir = f"{'/'.join(split_path[:-1])}"
+        folder_name = f"{base_dir}/{prefix}_{zip_name}/" if base_dir else \
+            f"{prefix}_{zip_name}/"
+        with ZipFile(zip_content) as zipObj:
+            for filename in zipObj.namelist():
+                file_content = zipObj.read(filename)
+                new_key = f"{folder_name}{filename}"
+                s3_client.put_object(new_key, file_content)
+        return folder_name
+    except BadZipFile as e:
+        logger.error(f"{file_path} is not a valid zip file: {e}")
+        raise e
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        raise e
 
 
 class ZippedValidator:

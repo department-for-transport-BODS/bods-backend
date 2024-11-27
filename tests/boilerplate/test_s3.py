@@ -2,8 +2,7 @@ from io import BytesIO
 import unittest
 from unittest.mock import patch, MagicMock
 from botocore.exceptions import (
-    ClientError,
-    BotoCoreError)
+    ClientError)
 from s3 import S3
 
 
@@ -20,7 +19,7 @@ class TestS3(unittest.TestCase):
         os.environ["PROJECT_ENV"] = "local"
         self.s3 = S3(bucket_name=self._bucket)
         self.assertEqual(self.s3._client.meta.endpoint_url,
-                         "http://localstack:4566")
+                         "http://localhost:4566")
 
     def test_bucket_name(self):
         self.s3 = S3(bucket_name=self._bucket)
