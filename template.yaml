@@ -34,6 +34,7 @@ Resources:
         GtfsApiBaseUrl: !Ref GtfsApiBaseUrl
         RdsDbHostAddr: !Ref RdsDbHostAddr
         RdsDbPort: !Ref RdsDbPort
+        BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
 
   TimetablesEtl:
     Type: AWS::Serverless::Application
@@ -44,6 +45,7 @@ Resources:
         ProjectName: !Ref ProjectName
         RdsDbHostAddr: !Ref RdsDbHostAddr
         RdsDbPort: !Ref RdsDbPort
+        BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
 
   BoilerplateLambdaLayer:
     Type: AWS::Serverless::LayerVersion
@@ -54,9 +56,3 @@ Resources:
         - python3.11
     Metadata:
       BuildMethod: python3.11
-
-Outputs:
-  MySharedLayerArn:
-    Value: !Ref BoilerplateLambdaLayer
-    Export:
-      Name: BoilerplateLambdaLayerArn

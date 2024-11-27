@@ -17,6 +17,8 @@ Parameters:
     Type: String
   RdsDbPort:
     Type: Number
+  BoilerplateLambdaLayerArn:
+    Type: String
 
 Conditions:
   IsNotLocal: !Not [!Equals [!Ref Environment, 'local']]
@@ -142,7 +144,7 @@ Resources:
       CodeUri: ./src/periodic_tasks
       Handler: create_gtfsrt_zip.lambda_handler
       Layers:
-        - !ImportValue BoilerplateLambdaLayerArn
+        - !Ref BoilerplateLambdaLayerArn
       Policies:
         - 'AWSLambdaBasicExecutionRole'
         - 'AWSLambdaVPCAccessExecutionRole'
@@ -211,7 +213,7 @@ Resources:
       CodeUri: ./src/periodic_tasks
       Handler: create_sirivm_zip.lambda_handler
       Layers:
-        - !ImportValue BoilerplateLambdaLayerArn
+        - !Ref BoilerplateLambdaLayerArn
       Policies:
         - 'AWSLambdaBasicExecutionRole'
         - 'AWSLambdaVPCAccessExecutionRole'
@@ -280,7 +282,7 @@ Resources:
       CodeUri: ./src/periodic_tasks
       Handler: create_sirivm_tfl_zip.lambda_handler
       Layers:
-        - !ImportValue BoilerplateLambdaLayerArn
+        - !Ref BoilerplateLambdaLayerArn
       Policies:
         - 'AWSLambdaBasicExecutionRole'
         - 'AWSLambdaVPCAccessExecutionRole'
