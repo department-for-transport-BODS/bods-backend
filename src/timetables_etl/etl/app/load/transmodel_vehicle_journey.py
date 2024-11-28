@@ -20,16 +20,21 @@ from ..database.repos import (
     TransmodelOperatingDatesExceptionsRepo,
     TransmodelOperatingProfileRepo,
     TransmodelServicedOrganisationVehicleJourneyRepo,
+    TransmodelServicedOrganisationWorkingDaysRepo,
     TransmodelServicePatternStopRepo,
     TransmodelStopActivityRepo,
     TransmodelVehicleJourneyRepo,
 )
 from ..transform.service_pattern_stops import generate_pattern_stops
-from ..transform.vehicle_journey_operations import create_vehicle_journey_operations
+from ..transform.vehicle_journey_operations import (
+    create_serviced_organisation_working_days,
+    create_vehicle_journey_operations,
+)
 from ..transform.vehicle_journeys import generate_pattern_vehicle_journeys
 from ..txc.models.txc_data import TXCData
 from ..txc.models.txc_journey_pattern import TXCJourneyPatternSection
 from ..txc.models.txc_service import TXCJourneyPattern
+from ..txc.models.txc_serviced_organisation import TXCServicedOrganisation
 from ..txc.models.txc_vehicle_journey import TXCVehicleJourney
 
 log = get_logger()
@@ -72,17 +77,24 @@ def process_pattern_stops(
 def process_vehicle_journey_operations(
     journey_results: list[tuple[TransmodelVehicleJourney, TXCVehicleJourney]],
     bank_holidays: dict[str, list[date]],
-    serviced_orgs: dict[str, TransmodelServicedOrganisations],
+    tm_serviced_orgs: dict[str, TransmodelServicedOrganisations],
+    txc_serviced_orgs: list[TXCServicedOrganisation],
     db: BodsDB,
 ) -> None:
     """
     Process and save operations data for vehicle journeys
     """
 
-    for tm_journey, txc_journey in journey_results:
+    txc_serviced_orgs_dict = {org.OrganisationCode: org for org in txc_serviced_orgs}
+
+    for tm_vj, txc_vj in journey_results:
         try:
             operations = create_vehicle_journey_operations(
-                txc_journey, tm_journey, bank_holidays, serviced_orgs
+                txc_vj=txc_vj,
+                tm_vj=tm_vj,
+                bank_holidays=bank_holidays,
+                tm_serviced_orgs=tm_serviced_orgs,
+                txc_serviced_orgs=txc_serviced_orgs_dict,
             )
 
             if operations.operating_profiles:
@@ -101,12 +113,32 @@ def process_vehicle_journey_operations(
                 )
 
             if operations.serviced_organisation_vehicle_journeys:
-                TransmodelServicedOrganisationVehicleJourneyRepo(db).bulk_insert(
-                    operations.serviced_organisation_vehicle_journeys
-                )
+                saved_so_vjs = TransmodelServicedOrganisationVehicleJourneyRepo(
+                    db
+                ).bulk_insert(operations.serviced_organisation_vehicle_journeys)
+
+                saved_map = {
+                    orig.id: saved
+                    for orig, saved in zip(
+                        operations.serviced_organisation_vehicle_journeys, saved_so_vjs
+                    )
+                }
+
+                working_days = []
+                for orig_vj, patterns in operations.working_days_patterns:
+                    saved_vj = saved_map[orig_vj.id]
+                    working_days.extend(
+                        create_serviced_organisation_working_days(saved_vj, patterns)
+                    )
+
+                if working_days:
+                    TransmodelServicedOrganisationWorkingDaysRepo(db).bulk_insert(
+                        working_days
+                    )
+
             log.info(
                 "Processed journey operations",
-                journey_id=tm_journey.id,
+                journey_id=tm_vj.id,
                 profiles=len(operations.operating_profiles),
                 op_dates=len(operations.operating_dates),
                 non_op_dates=len(operations.non_operating_dates),
@@ -117,7 +149,8 @@ def process_vehicle_journey_operations(
             log.error(
                 "Failed to process journey operations",
                 error=str(e),
-                journey_id=tm_journey.id,
+                exc_info=True,
+                journey_id=tm_vj.id,
             )
             continue
 
@@ -127,7 +160,8 @@ def process_vehicle_journeys(
     txc_jp: TXCJourneyPattern,
     tm_service_pattern: TransmodelServicePattern,
     bank_holidays: dict[str, list[date]],
-    serviced_orgs: dict[str, TransmodelServicedOrganisations],
+    tm_serviced_orgs: dict[str, TransmodelServicedOrganisations],
+    txc_serviced_orgs: list[TXCServicedOrganisation],
     db: BodsDB,
 ) -> list[TransmodelVehicleJourney]:
     """
@@ -146,7 +180,7 @@ def process_vehicle_journeys(
     results = TransmodelVehicleJourneyRepo(db).bulk_insert(tm_journeys)
 
     process_vehicle_journey_operations(
-        journey_results, bank_holidays, serviced_orgs, db
+        journey_results, bank_holidays, tm_serviced_orgs, txc_serviced_orgs, db
     )
 
     log.info(
@@ -177,6 +211,7 @@ def process_service_pattern_vehicle_journeys(
         tm_service_pattern,
         bank_holidays,
         serviced_orgs,
+        txc.ServicedOrganisations,
         db,
     )
 

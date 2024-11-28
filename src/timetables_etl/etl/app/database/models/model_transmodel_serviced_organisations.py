@@ -30,9 +30,7 @@ class TransmodelServicedOrganisationVehicleJourney(BaseSQLModel):
     serviced_organisation_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("transmodel_servicedorganisations.id"), nullable=False
     )
-    vehicle_journey_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("transmodel_vehiclejourney.id"), nullable=False
-    )
+    vehicle_journey_id: Mapped[int] = mapped_column(Integer, nullable=False)
 
 
 class TransmodelServicedOrganisationWorkingDays(BaseSQLModel):
@@ -45,6 +43,5 @@ class TransmodelServicedOrganisationWorkingDays(BaseSQLModel):
     end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     serviced_organisation_vehicle_journey_id: Mapped[int | None] = mapped_column(
         Integer,
-        ForeignKey("transmodel_servicedorganisationvehiclejourney.id"),
         nullable=True,
     )
