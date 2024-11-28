@@ -82,7 +82,7 @@ def process_vehicle_journey_operations(
     for tm_journey, txc_journey in journey_results:
         try:
             operations = create_vehicle_journey_operations(
-                txc_journey, tm_journey.id, bank_holidays, serviced_orgs
+                txc_journey, tm_journey, bank_holidays, serviced_orgs
             )
 
             if operations.operating_profiles:

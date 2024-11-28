@@ -15,6 +15,7 @@ from ..database.models import (
     TransmodelOperatingProfile,
     TransmodelServicedOrganisations,
     TransmodelServicedOrganisationVehicleJourney,
+    TransmodelVehicleJourney,
 )
 from ..txc.models import TXCDateRange, TXCDaysOfWeek, TXCVehicleJourney
 from ..txc.models.txc_vehicle_journey import (
@@ -42,7 +43,8 @@ class VehicleJourneyOperations:
 
 
 def create_operating_profiles(
-    days: TXCDaysOfWeek, vehicle_journey_id: int
+    days: TXCDaysOfWeek,
+    vehicle_journey: TransmodelVehicleJourney,
 ) -> list[TransmodelOperatingProfile]:
     """
     Convert TXCDaysOfWeek to operating profile records
@@ -59,7 +61,7 @@ def create_operating_profiles(
 
     return [
         TransmodelOperatingProfile(
-            day_of_week=day, vehicle_journey_id=vehicle_journey_id
+            day_of_week=day, vehicle_journey_id=vehicle_journey.id
         )
         for day, enabled in day_mappings.items()
         if enabled
@@ -121,7 +123,8 @@ def get_bank_holiday_dates(
 
 
 def process_special_operating_days(
-    operations: TXCSpecialDaysOperation | None, vehicle_journey_id: int
+    operations: TXCSpecialDaysOperation | None,
+    vehicle_journey: TransmodelVehicleJourney,
 ) -> tuple[
     list[TransmodelOperatingDatesExceptions],
     list[TransmodelNonOperatingDatesExceptions],
@@ -131,10 +134,10 @@ def process_special_operating_days(
     """
 
     special_operating_dates = create_operating_dates(
-        operations.DaysOfOperation if operations else [], vehicle_journey_id
+        operations.DaysOfOperation if operations else [], vehicle_journey.id
     )
     special_non_operating_dates = create_non_operating_dates(
-        operations.DaysOfNonOperation if operations else [], vehicle_journey_id
+        operations.DaysOfNonOperation if operations else [], vehicle_journey.id
     )
     log.info(
         "Special Operating Dates Calculated",
@@ -148,7 +151,7 @@ def process_special_operating_days(
 def process_bank_holidays(
     operations: TXCBankHolidayOperation | None,
     bank_holidays: dict[str, list[date]],
-    vehicle_journey_id: int,
+    vehicle_journey: TransmodelVehicleJourney,
 ) -> tuple[
     list[TransmodelOperatingDatesExceptions],
     list[TransmodelNonOperatingDatesExceptions],
@@ -164,13 +167,13 @@ def process_bank_holidays(
     )
     tm_operating_dates = [
         TransmodelOperatingDatesExceptions(
-            operating_date=d, vehicle_journey_id=vehicle_journey_id
+            operating_date=d, vehicle_journey_id=vehicle_journey.id
         )
         for d in operating_dates
     ]
     tm_non_operating_dates = [
         TransmodelNonOperatingDatesExceptions(
-            non_operating_date=d, vehicle_journey_id=vehicle_journey_id
+            non_operating_date=d, vehicle_journey_id=vehicle_journey.id
         )
         for d in non_operating_dates
     ]
@@ -179,14 +182,14 @@ def process_bank_holidays(
         "Bank Holiday Operations found for VehicleJourney",
         operating_dates=len(tm_operating_dates),
         non_operating_dates=len(tm_non_operating_dates),
-        vehicle_journey_id=vehicle_journey_id,
+        vehicle_journey_id=vehicle_journey.id,
     )
     return tm_operating_dates, tm_non_operating_dates
 
 
 def create_serviced_organisation_vehicle_journeys(
     serviced_org_day_type: TXCServicedOrganisationDayType | None,
-    vehicle_journey_id: int,
+    vehicle_journey: TransmodelVehicleJourney,
     serviced_orgs: dict[str, TransmodelServicedOrganisations],
 ) -> list[TransmodelServicedOrganisationVehicleJourney]:
     """
@@ -205,7 +208,7 @@ def create_serviced_organisation_vehicle_journeys(
                     TransmodelServicedOrganisationVehicleJourney(
                         operating_on_working_days=True,
                         serviced_organisation_id=serviced_orgs[org_ref].id,
-                        vehicle_journey_id=vehicle_journey_id,
+                        vehicle_journey_id=vehicle_journey.id,
                     )
                 )
 
@@ -217,14 +220,14 @@ def create_serviced_organisation_vehicle_journeys(
                     TransmodelServicedOrganisationVehicleJourney(
                         operating_on_working_days=False,
                         serviced_organisation_id=serviced_orgs[org_ref].id,
-                        vehicle_journey_id=vehicle_journey_id,
+                        vehicle_journey_id=vehicle_journey.id,
                     )
                 )
 
     log.info(
         "Generated Serviced Organisation Vehicle Journey records",
         record_count=len(records),
-        vehicle_journey_id=vehicle_journey_id,
+        vehicle_journey_id=vehicle_journey.id,
     )
 
     return records
@@ -232,7 +235,7 @@ def create_serviced_organisation_vehicle_journeys(
 
 def create_vehicle_journey_operations(
     txc_vj: TXCVehicleJourney,
-    vehicle_journey_id: int,
+    vehicle_journey: TransmodelVehicleJourney,
     bank_holidays: dict[str, list[date]],
     serviced_orgs: dict[str, TransmodelServicedOrganisations],
 ) -> VehicleJourneyOperations:
@@ -249,32 +252,32 @@ def create_vehicle_journey_operations(
         log.warning(
             "TXC Vehicle Journey missing OperatingProfile, returning No dates of operation",
             txc_vj_id=txc_vj.VehicleJourneyCode,
-            tm_vj_id=vehicle_journey_id,
+            tm_vj_id=vehicle_journey,
         )
         return VehicleJourneyOperations([], [], [], [])
 
     special_operating_dates, special_non_operating_dates = (
         process_special_operating_days(
-            txc_vj.OperatingProfile.SpecialDaysOperation, vehicle_journey_id
+            txc_vj.OperatingProfile.SpecialDaysOperation, vehicle_journey
         )
     )
     bank_holiday_operating_dates, bank_holiday_non_operating_dates = (
         process_bank_holidays(
             txc_vj.OperatingProfile.BankHolidayOperation,
             bank_holidays,
-            vehicle_journey_id,
+            vehicle_journey,
         )
     )
 
     serviced_org_vehicle_journeys = create_serviced_organisation_vehicle_journeys(
         txc_vj.OperatingProfile.ServicedOrganisationDayType,
-        vehicle_journey_id,
+        vehicle_journey,
         serviced_orgs,
     )
 
     result = VehicleJourneyOperations(
         operating_profiles=create_operating_profiles(
-            txc_vj.OperatingProfile.RegularDayType, vehicle_journey_id
+            txc_vj.OperatingProfile.RegularDayType, vehicle_journey
         ),
         operating_dates=[*special_operating_dates, *bank_holiday_operating_dates],
         non_operating_dates=[
@@ -291,6 +294,6 @@ def create_vehicle_journey_operations(
         serviced_org_vehicle_journeys=len(
             result.serviced_organisation_vehicle_journeys
         ),
-        vehicle_journey_id=vehicle_journey_id,
+        vehicle_journey_id=vehicle_journey.id,
     )
     return result
