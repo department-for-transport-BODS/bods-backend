@@ -4,10 +4,22 @@ Instead of having try/except blocks for each repo call, define a decorator to ha
 
 from dataclasses import dataclass
 from functools import wraps
-from typing import Any, Callable, Generic, ParamSpec, Sequence, Type, TypeAlias, TypeVar
+from typing import (
+    Any,
+    Callable,
+    Generic,
+    ParamSpec,
+    Protocol,
+    Sequence,
+    Type,
+    TypeAlias,
+    TypeVar,
+    runtime_checkable,
+)
 
 from sqlalchemy import Select, select
 from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
+from sqlalchemy.orm import Mapped
 from structlog.stdlib import get_logger
 
 from ..client import BodsDB
@@ -18,6 +30,16 @@ logger = get_logger()
 
 T = TypeVar("T")
 P = ParamSpec("P")
+
+
+@runtime_checkable
+class HasId(Protocol):
+    """
+    A Protocol to check if the table using BaseRepositoryWithId has an Id column
+    If there isn't an ID column the Repo should inherit from BaseRepository
+    """
+
+    id: Mapped[int]
 
 
 DBModelT = TypeVar("DBModelT", bound=BaseSQLModel)
@@ -228,3 +250,28 @@ class BaseRepository(Generic[DBModelT]):
                 session.expunge(result)
             self._log.debug("Bulk inserting completed", inserted_count=len(results))
             return results
+
+
+class BaseRepositoryWithId(BaseRepository[DBModelT]):
+    """
+    Base repository for models that have an 'id' primary key.
+    Extends BaseRepository with common ID-based operations.
+    """
+
+    @handle_repository_errors
+    def get_by_id(self, id_column_id: int) -> DBModelT | None:
+        """Get entity by ID"""
+        if not isinstance(self._model, HasId):
+            raise TypeError(f"Model {self._model.__name__} must have an 'id' field")
+        statement = self._build_query().where(self._model.id == id_column_id)
+        return self._fetch_one(statement)
+
+    @handle_repository_errors
+    def get_by_ids(self, ids: list[int]) -> list[DBModelT]:
+        """Get multiple entities by their IDs"""
+        if not isinstance(self._model, HasId):
+            raise TypeError(f"Model {self._model.__name__} must have an 'id' field")
+        if not ids:
+            return []
+        statement = self._build_query().where(self._model.id.in_(ids))
+        return self._fetch_all(statement)

@@ -16,6 +16,7 @@ from .model_organisation import (
 )
 from .model_pipelines import DatasetETLTaskResult
 from .model_transmodel import (
+    TMDayOfWeek,
     TransmodelBankHolidays,
     TransmodelBookingArrangements,
     TransmodelFlexibleServiceOperationPeriod,
@@ -23,16 +24,21 @@ from .model_transmodel import (
     TransmodelOperatingDatesExceptions,
     TransmodelOperatingProfile,
     TransmodelService,
-    TransmodelServicedOrganisations,
-    TransmodelServicedOrganisationVehicleJourney,
-    TransmodelServicedOrganisationWorkingDays,
     TransmodelServicePattern,
     TransmodelServicePatternStop,
     TransmodelStopActivity,
     TransmodelVehicleJourney,
 )
+from .model_transmodel_serviced_organisations import (
+    TransmodelServicedOrganisations,
+    TransmodelServicedOrganisationVehicleJourney,
+    TransmodelServicedOrganisationWorkingDays,
+)
 
 __all__ = [
+    # Enums
+    "TMDayOfWeek",
+    # Database Models
     "DatasetETLTaskResult",
     "TransmodelService",
     "TransmodelServicePattern",

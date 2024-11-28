@@ -6,22 +6,20 @@ from typing import Sequence
 
 from structlog.stdlib import get_logger
 
-from timetables_etl.etl.app.database.repos.repo_transmodel import (
-    TransmodelBankHolidaysRepo,
-)
-
 from ..database import BodsDB
-from ..database.models import TransmodelServicePattern
-from ..database.models.model_junction import (
+from ..database.models import (
+    NaptanStopPoint,
+    OrganisationDatasetRevision,
+    TransmodelServicedOrganisations,
+    TransmodelServicePattern,
     TransmodelServicePatternAdminAreas,
     TransmodelServicePatternLocality,
 )
-from ..database.models.model_naptan import NaptanStopPoint
-from ..database.models.model_organisation import OrganisationDatasetRevision
-from ..database.repos import TransmodelServicePatternRepo
-from ..database.repos.repo_junction import (
+from ..database.repos import (
+    TransmodelBankHolidaysRepo,
     TransmodelServicePatternAdminAreaRepo,
     TransmodelServicePatternLocalityRepo,
+    TransmodelServicePatternRepo,
 )
 from ..models import TaskData
 from ..transform.service_pattern_associations import (
@@ -30,9 +28,8 @@ from ..transform.service_pattern_associations import (
 )
 from ..transform.service_patterns import create_service_pattern
 from ..transform.utils_stops import get_pattern_stops
+from ..txc.models import TXCJourneyPattern, TXCJourneyPatternSection, TXCService
 from ..txc.models.txc_data import TXCData
-from ..txc.models.txc_journey_pattern import TXCJourneyPatternSection
-from ..txc.models.txc_service import TXCJourneyPattern, TXCService
 from .transmodel_vehicle_journey import process_service_pattern_vehicle_journeys
 
 log = get_logger()
@@ -115,6 +112,7 @@ def load_transmodel_service_patterns(
     txc: TXCData,
     task_data: TaskData,
     stop_mapping: dict[str, NaptanStopPoint],
+    serviced_orgs: dict[str, TransmodelServicedOrganisations],
     db: BodsDB,
 ) -> list[TransmodelServicePattern]:
     """
@@ -145,7 +143,7 @@ def load_transmodel_service_patterns(
             service.StartDate, service.EndDate
         )
         process_service_pattern_vehicle_journeys(
-            txc, txc_jp, service_pattern, stops, bank_holidays, db
+            txc, txc_jp, service_pattern, stops, bank_holidays, serviced_orgs, db
         )
 
         patterns.append(service_pattern)

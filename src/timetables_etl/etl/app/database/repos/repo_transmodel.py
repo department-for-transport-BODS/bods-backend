@@ -15,9 +15,6 @@ from ..models import (
     TransmodelOperatingDatesExceptions,
     TransmodelOperatingProfile,
     TransmodelService,
-    TransmodelServicedOrganisations,
-    TransmodelServicedOrganisationVehicleJourney,
-    TransmodelServicedOrganisationWorkingDays,
     TransmodelServicePattern,
     TransmodelServicePatternStop,
     TransmodelStopActivity,
@@ -76,21 +73,6 @@ class TransmodelServicePatternRepo(BaseRepository[TransmodelServicePattern]):
         Get by ID
         """
         statement = self._build_query().where(self._model.id == pattern_id)
-        return self._fetch_one(statement)
-
-
-class TransmodelServicedOrganisationsRepo(
-    BaseRepository[TransmodelServicedOrganisations]
-):
-    """Repository for managing Transmodel Serviced Organisations entities"""
-
-    def __init__(self, db: BodsDB):
-        super().__init__(db, TransmodelServicedOrganisations)
-
-    @handle_repository_errors
-    def get_by_id(self, org_id: int) -> TransmodelServicedOrganisations | None:
-        """Get by ID"""
-        statement = self._build_query().where(self._model.id == org_id)
         return self._fetch_one(statement)
 
 
@@ -153,40 +135,6 @@ class TransmodelNonOperatingDatesExceptionsRepo(
     ) -> TransmodelNonOperatingDatesExceptions | None:
         """Get by ID"""
         statement = self._build_query().where(self._model.id == exception_id)
-        return self._fetch_one(statement)
-
-
-class TransmodelServicedOrganisationVehicleJourneyRepo(
-    BaseRepository[TransmodelServicedOrganisationVehicleJourney]
-):
-    """Repository for managing Serviced Organisation Vehicle Journey entities"""
-
-    def __init__(self, db: BodsDB):
-        super().__init__(db, TransmodelServicedOrganisationVehicleJourney)
-
-    @handle_repository_errors
-    def get_by_id(
-        self, relation_id: int
-    ) -> TransmodelServicedOrganisationVehicleJourney | None:
-        """Get by ID"""
-        statement = self._build_query().where(self._model.id == relation_id)
-        return self._fetch_one(statement)
-
-
-class TransmodelServicedOrganisationWorkingDaysRepo(
-    BaseRepository[TransmodelServicedOrganisationWorkingDays]
-):
-    """Repository for managing Serviced Organisation Working Days entities"""
-
-    def __init__(self, db: BodsDB):
-        super().__init__(db, TransmodelServicedOrganisationWorkingDays)
-
-    @handle_repository_errors
-    def get_by_id(
-        self, working_days_id: int
-    ) -> TransmodelServicedOrganisationWorkingDays | None:
-        """Get by ID"""
-        statement = self._build_query().where(self._model.id == working_days_id)
         return self._fetch_one(statement)
 
 

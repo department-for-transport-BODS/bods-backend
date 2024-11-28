@@ -21,14 +21,16 @@ from .repo_transmodel import (
     TransmodelNonOperatingDatesExceptionsRepo,
     TransmodelOperatingDatesExceptionsRepo,
     TransmodelOperatingProfileRepo,
-    TransmodelServicedOrganisationsRepo,
-    TransmodelServicedOrganisationVehicleJourneyRepo,
-    TransmodelServicedOrganisationWorkingDaysRepo,
     TransmodelServicePatternRepo,
     TransmodelServicePatternStopRepo,
     TransmodelServiceRepo,
     TransmodelStopActivityRepo,
     TransmodelVehicleJourneyRepo,
+)
+from .repo_transmodel_serviced_organisations import (
+    TransmodelServicedOrganisationsRepo,
+    TransmodelServicedOrganisationVehicleJourneyRepo,
+    TransmodelServicedOrganisationWorkingDaysRepo,
 )
 
 __all__ = [

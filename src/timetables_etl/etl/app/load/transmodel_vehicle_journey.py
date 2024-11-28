@@ -8,16 +8,18 @@ from typing import Sequence
 from structlog.stdlib import get_logger
 
 from ..database.client import BodsDB
-from ..database.models.model_naptan import NaptanStopPoint
-from ..database.models.model_transmodel import (
+from ..database.models import (
+    NaptanStopPoint,
+    TransmodelServicedOrganisations,
     TransmodelServicePattern,
     TransmodelServicePatternStop,
     TransmodelVehicleJourney,
 )
-from ..database.repos.repo_transmodel import (
+from ..database.repos import (
     TransmodelNonOperatingDatesExceptionsRepo,
     TransmodelOperatingDatesExceptionsRepo,
     TransmodelOperatingProfileRepo,
+    TransmodelServicedOrganisationVehicleJourneyRepo,
     TransmodelServicePatternStopRepo,
     TransmodelStopActivityRepo,
     TransmodelVehicleJourneyRepo,
@@ -70,36 +72,45 @@ def process_pattern_stops(
 def process_vehicle_journey_operations(
     journey_results: list[tuple[TransmodelVehicleJourney, TXCVehicleJourney]],
     bank_holidays: dict[str, list[date]],
+    serviced_orgs: dict[str, TransmodelServicedOrganisations],
     db: BodsDB,
 ) -> None:
     """
     Process and save operations data for vehicle journeys
     """
-    profile_repo = TransmodelOperatingProfileRepo(db)
-    operating_dates_repo = TransmodelOperatingDatesExceptionsRepo(db)
-    non_operating_dates_repo = TransmodelNonOperatingDatesExceptionsRepo(db)
 
     for tm_journey, txc_journey in journey_results:
         try:
             operations = create_vehicle_journey_operations(
-                txc_journey, tm_journey.id, bank_holidays
+                txc_journey, tm_journey.id, bank_holidays, serviced_orgs
             )
 
             if operations.operating_profiles:
-                profile_repo.bulk_insert(operations.operating_profiles)
+                TransmodelOperatingProfileRepo(db).bulk_insert(
+                    operations.operating_profiles
+                )
 
             if operations.operating_dates:
-                operating_dates_repo.bulk_insert(operations.operating_dates)
+                TransmodelOperatingDatesExceptionsRepo(db).bulk_insert(
+                    operations.operating_dates
+                )
 
             if operations.non_operating_dates:
-                non_operating_dates_repo.bulk_insert(operations.non_operating_dates)
+                TransmodelNonOperatingDatesExceptionsRepo(db).bulk_insert(
+                    operations.non_operating_dates
+                )
 
+            if operations.serviced_organisation_vehicle_journeys:
+                TransmodelServicedOrganisationVehicleJourneyRepo(db).bulk_insert(
+                    operations.serviced_organisation_vehicle_journeys
+                )
             log.info(
                 "Processed journey operations",
                 journey_id=tm_journey.id,
                 profiles=len(operations.operating_profiles),
                 op_dates=len(operations.operating_dates),
                 non_op_dates=len(operations.non_operating_dates),
+                serviced_org_vjs=len(operations.serviced_organisation_vehicle_journeys),
             )
 
         except Exception as e:
@@ -116,6 +127,7 @@ def process_vehicle_journeys(
     txc_jp: TXCJourneyPattern,
     tm_service_pattern: TransmodelServicePattern,
     bank_holidays: dict[str, list[date]],
+    serviced_orgs: dict[str, TransmodelServicedOrganisations],
     db: BodsDB,
 ) -> list[TransmodelVehicleJourney]:
     """
@@ -133,7 +145,9 @@ def process_vehicle_journeys(
 
     results = TransmodelVehicleJourneyRepo(db).bulk_insert(tm_journeys)
 
-    process_vehicle_journey_operations(journey_results, bank_holidays, db)
+    process_vehicle_journey_operations(
+        journey_results, bank_holidays, serviced_orgs, db
+    )
 
     log.info(
         "Processed vehicle journeys",
@@ -151,13 +165,19 @@ def process_service_pattern_vehicle_journeys(
     tm_service_pattern: TransmodelServicePattern,
     stops: Sequence[NaptanStopPoint],
     bank_holidays: dict[str, list[date]],
+    serviced_orgs: dict[str, TransmodelServicedOrganisations],
     db: BodsDB,
 ) -> list[TransmodelVehicleJourney]:
     """
     Generate and save to DB Transmodel Vehicle Journeys for a Service Pattern
     """
     tm_vjs = process_vehicle_journeys(
-        txc.VehicleJourneys, txc_jp, tm_service_pattern, bank_holidays, db
+        txc.VehicleJourneys,
+        txc_jp,
+        tm_service_pattern,
+        bank_holidays,
+        serviced_orgs,
+        db,
     )
 
     jp_sections = [
