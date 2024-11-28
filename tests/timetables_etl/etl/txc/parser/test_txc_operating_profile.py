@@ -15,6 +15,7 @@ from timetables_etl.etl.app.txc.models.txc_vehicle_journey import (
     TXCDaysOfWeek,
     TXCOperatingProfile,
     TXCPeriodicDayType,
+    TXCServicedOrganisationDayType,
     TXCSpecialDaysOperation,
 )
 from timetables_etl.etl.app.txc.parser.operating_profile import (
@@ -25,6 +26,7 @@ from timetables_etl.etl.app.txc.parser.operating_profile import (
     parse_operating_profile,
     parse_periodic_days,
     parse_regular_days,
+    parse_serviced_organisation_days,
     parse_special_days_operation,
 )
 
@@ -629,6 +631,93 @@ def test_parse_periodic_days(xml_string, expected_result):
     [
         pytest.param(
             """
+            <ServicedOrganisationDayType>
+                <DaysOfOperation>
+                    <WorkingDays>
+                        <ServicedOrganisationRef>080Sch-Thurrock</ServicedOrganisationRef>
+                    </WorkingDays>
+                    <Holidays>
+                        <ServicedOrganisationRef>Organisation2</ServicedOrganisationRef>
+                    </Holidays>
+                </DaysOfOperation>
+            </ServicedOrganisationDayType>
+            """,
+            TXCServicedOrganisationDayType(
+                WorkingDays=["080Sch-Thurrock"],
+                Holidays=["Organisation2"],
+            ),
+            id="Both working days and holidays",
+        ),
+        pytest.param(
+            """
+            <ServicedOrganisationDayType>
+                <DaysOfOperation>
+                    <WorkingDays>
+                        <ServicedOrganisationRef>School1</ServicedOrganisationRef>
+                        <ServicedOrganisationRef>School2</ServicedOrganisationRef>
+                    </WorkingDays>
+                </DaysOfOperation>
+            </ServicedOrganisationDayType>
+            """,
+            TXCServicedOrganisationDayType(
+                WorkingDays=["School1", "School2"],
+                Holidays=None,
+            ),
+            id="Only working days with multiple refs",
+        ),
+        pytest.param(
+            """
+            <ServicedOrganisationDayType>
+                <DaysOfOperation>
+                    <Holidays>
+                        <ServicedOrganisationRef>Holiday1</ServicedOrganisationRef>
+                        <ServicedOrganisationRef>Holiday2</ServicedOrganisationRef>
+                    </Holidays>
+                </DaysOfOperation>
+            </ServicedOrganisationDayType>
+            """,
+            TXCServicedOrganisationDayType(
+                WorkingDays=None,
+                Holidays=["Holiday1", "Holiday2"],
+            ),
+            id="Only holidays with multiple refs",
+        ),
+        pytest.param(
+            """
+            <ServicedOrganisationDayType>
+            </ServicedOrganisationDayType>
+            """,
+            None,
+            id="Empty serviced organisation",
+        ),
+        pytest.param(
+            """
+            <ServicedOrganisationDayType>
+                <DaysOfOperation>
+                </DaysOfOperation>
+            </ServicedOrganisationDayType>
+            """,
+            None,
+            id="Empty days of operation",
+        ),
+    ],
+)
+def test_parse_serviced_organisation_days(
+    xml_string: str, expected_result: TXCServicedOrganisationDayType | None
+):
+    """
+    Test parsing serviced organisation day types
+    """
+    xml_element = etree.fromstring(xml_string)
+    result = parse_serviced_organisation_days(xml_element)
+    assert result == expected_result
+
+
+@pytest.mark.parametrize(
+    "xml_string, expected_result",
+    [
+        pytest.param(
+            """
             <OperatingProfile>
                 <RegularDayType>
                     <DaysOfWeek>
@@ -732,6 +821,45 @@ def test_parse_periodic_days(xml_string, expected_result):
                 ),
             ),
             id="Operating profile with only regular days",
+        ),
+        pytest.param(
+            """
+            <OperatingProfile>
+                <RegularDayType>
+                    <DaysOfWeek>
+                        <Monday/>
+                        <Tuesday/>
+                    </DaysOfWeek>
+                </RegularDayType>
+                <ServicedOrganisationDayType>
+                    <DaysOfOperation>
+                        <WorkingDays>
+                            <ServicedOrganisationRef>School1</ServicedOrganisationRef>
+                        </WorkingDays>
+                        <Holidays>
+                            <ServicedOrganisationRef>Holiday1</ServicedOrganisationRef>
+                        </Holidays>
+                    </DaysOfOperation>
+                </ServicedOrganisationDayType>
+            </OperatingProfile>
+            """,
+            TXCOperatingProfile(
+                RegularDayType=TXCDaysOfWeek(
+                    Monday=True,
+                    Tuesday=True,
+                    Wednesday=False,
+                    Thursday=False,
+                    Friday=False,
+                    Saturday=False,
+                    Sunday=False,
+                    HolidaysOnly=False,
+                ),
+                ServicedOrganisationDayType=TXCServicedOrganisationDayType(
+                    WorkingDays=["School1"],
+                    Holidays=["Holiday1"],
+                ),
+            ),
+            id="Operating profile with serviced organisation",
         ),
         pytest.param(
             """

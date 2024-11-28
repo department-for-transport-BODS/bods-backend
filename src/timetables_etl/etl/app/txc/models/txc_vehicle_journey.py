@@ -169,6 +169,19 @@ class TXCSpecialDaysOperation(BaseModel):
     )
 
 
+class TXCServicedOrganisationDayType(BaseModel):
+    """
+    Serviced Organisation Day Type
+    """
+
+    WorkingDays: list[str] | None = Field(
+        default=None, description="List of ServicedOrganisationRef"
+    )
+    Holidays: list[str] | None = Field(
+        default=None, description="List of ServicedOrganisationRef"
+    )
+
+
 class TXCOperatingProfile(BaseModel):
     """
     VehicleJourney OperatingProfile Section
@@ -177,6 +190,9 @@ class TXCOperatingProfile(BaseModel):
     RegularDayType: TXCDaysOfWeek = Field(..., description="Required")
     PeriodicDayType: TXCPeriodicDayType | None = Field(
         default=None, description="Repeating patterns"
+    )
+    ServicedOrganisationDayType: TXCServicedOrganisationDayType | None = Field(
+        default=None, description="Serviced Organisation"
     )
     SpecialDaysOperation: TXCSpecialDaysOperation | None = Field(
         default=None, description="Special Days"

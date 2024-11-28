@@ -14,6 +14,7 @@ from ..models.txc_vehicle_journey import (
     TXCDaysOfWeek,
     TXCOperatingProfile,
     TXCPeriodicDayType,
+    TXCServicedOrganisationDayType,
     TXCSpecialDaysOperation,
 )
 from .utils_tags import does_element_exist, get_element_text, get_element_texts
@@ -201,6 +202,42 @@ def parse_periodic_days(periodic_day_type_xml: _Element) -> TXCPeriodicDayType:
     )
 
 
+def parse_serviced_organisation_days(
+    serviced_organisation_xml: _Element,
+) -> TXCServicedOrganisationDayType | None:
+    """
+    VehicleJourney -> OperatingProfile -> ServicedOrganisationDayType
+    """
+    if serviced_organisation_xml is None:
+        return None
+
+    days_of_operation = serviced_organisation_xml.find("DaysOfOperation")
+    if days_of_operation is None:
+        return None
+
+    working_days_xml = days_of_operation.find("WorkingDays")
+    holidays_xml = days_of_operation.find("Holidays")
+
+    working_days = (
+        get_element_texts(working_days_xml, "ServicedOrganisationRef")
+        if working_days_xml is not None
+        else None
+    )
+    holidays = (
+        get_element_texts(holidays_xml, "ServicedOrganisationRef")
+        if holidays_xml is not None
+        else None
+    )
+
+    if not working_days and not holidays:
+        return None
+
+    return TXCServicedOrganisationDayType(
+        WorkingDays=working_days,
+        Holidays=holidays,
+    )
+
+
 def parse_operating_profile(
     operating_profile_xml: _Element,
 ) -> TXCOperatingProfile | None:
@@ -216,6 +253,7 @@ def parse_operating_profile(
             xml=operating_profile_xml,
         )
         return None
+
     periodic_day_type_xml = operating_profile_xml.find("PeriodicDayType")
     periodic_day_type: TXCPeriodicDayType | None = None
     if periodic_day_type_xml is not None:
@@ -235,9 +273,19 @@ def parse_operating_profile(
         else None
     )
 
+    serviced_organisation_day_type_xml = operating_profile_xml.find(
+        "ServicedOrganisationDayType"
+    )
+    serviced_organisation_day_type = (
+        parse_serviced_organisation_days(serviced_organisation_day_type_xml)
+        if serviced_organisation_day_type_xml is not None
+        else None
+    )
+
     return TXCOperatingProfile(
         RegularDayType=regular_day_type,
         PeriodicDayType=periodic_day_type,
         SpecialDaysOperation=special_days_operation,
         BankHolidayOperation=bank_holiday_operation,
+        ServicedOrganisationDayType=serviced_organisation_day_type,
     )
