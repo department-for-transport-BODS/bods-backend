@@ -24,6 +24,7 @@ class ConsumerAPIArchiver:
     data_format = CAVLDataFormat.SIRIVM.value
     extension = ".xml"
     filename_prefix = "sirivm"
+    content_filename_prefix = "siri"
 
     def __init__(self, event, url):
         self.url = url
@@ -40,10 +41,6 @@ class ConsumerAPIArchiver:
     @property
     def data_format_value(self):
         return self.filename_prefix
-    
-    @property
-    def content_name_format_value(self):
-        return self.content_filename_prefix
 
     @property
     def access_time(self):
@@ -63,7 +60,7 @@ class ConsumerAPIArchiver:
 
     @property
     def content_filename(self):
-        return self.content_name_format_value + self.extension
+        return self.content_filename_prefix + self.extension
 
     def archive(self):
         file_ = self.get_file(self.content)
