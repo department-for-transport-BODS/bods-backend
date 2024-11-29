@@ -139,7 +139,8 @@ class StringAgg:
         self.values = set()
 
     def step(self, value, delimiter):
-        self.values.add(value)
+        if value is not None:
+            self.values.add(value)
 
     def finalize(self):
         return "|".join(self.values)
