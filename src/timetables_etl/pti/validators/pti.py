@@ -29,7 +29,6 @@ from pti.validators.functions import (
     strip,
     to_days,
     today,
-    validate_bank_holidays,
     validate_licence_number,
     validate_line_id,
     validate_lines,
@@ -38,6 +37,7 @@ from pti.validators.functions import (
     validate_run_time,
     validate_timing_link_stops,
 )
+from pti.validators.holidays import validate_bank_holidays
 
 logger = logging.getLogger(__name__)
 

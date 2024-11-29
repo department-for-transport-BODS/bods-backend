@@ -1,6 +1,6 @@
 import re
 from datetime import datetime
-from typing import Callable, List, Union
+from typing import List, Union
 
 from common import DbManager
 from dateutil import parser
@@ -8,11 +8,10 @@ from db.repositories.stop_point import StopPointRepository
 from isoduration import DurationParsingException, parse_duration
 from isoduration.types import TimeDuration
 from lxml import etree
-from pti.constants import BANK_HOLIDAYS, BANK_HOLIDAYS_ONLY_ENGLISH, BANK_HOLIDAYS_ONLY_SCOTTISH, OLD_HOLIDAYS_ALREADY_REMOVED, OPERATION_DAYS, OTHER_PUBLIC_HOLIDAYS, SCOTTISH_BANK_HOLIDAYS
-from pti.utils import is_service_in_scotland
 from pti.validators.destination_display import DestinationDisplayValidator
 from pti.validators.lines import LinesValidator
 from pti.validators.stop_point import StopPointValidator
+
 ElementsOrStr = Union[List[etree.Element], List[str], str]
 PROHIBITED_CHARS = r",[]{}^=@:;#$£?%+<>«»\/|~_¬"
 ZERO_TIME_DURATION = TimeDuration(hours=0, minutes=0, seconds=0)
@@ -391,19 +390,6 @@ def validate_modification_date_time(context, roots):
         return creation_date < modification_date
 
 
-def get_service_ref_from_element(element, ns):
-    vj = element.xpath("ancestor::x:VehicleJourney", namespaces=ns)
-    service_ref = None
-    if vj:
-        service_ref = vj[0].xpath("string(x:ServiceRef)", namespaces=ns)
-    else:
-        service = element.xpath("ancestor::x:Service", namespaces=ns)
-        if service:
-            service_ref = service[0].xpath("string(x:ServiceCode)", namespaces=ns)
-
-    return service_ref
-
-
 def validate_licence_number(context, elements: List[etree._Element]) -> bool:
     """
     Validate the license number within a list of XML elements if Primary Mode is not coach.
@@ -427,6 +413,7 @@ def validate_licence_number(context, elements: List[etree._Element]) -> bool:
         elif not (licence_number and licence_number[0].text):
             return False
     return True
+
 
 def has_servicedorganisation_working_days(context, service_organisations):
     """
@@ -518,37 +505,3 @@ def validate_timing_link_stops(context, sections):
         prev_link = curr_link
 
     return True
-
-def validate_bank_holidays(context, bank_holidays):
-    bank_holiday = bank_holidays[0]
-    ns = {"x": bank_holiday.nsmap.get(None)}
-    children = bank_holiday.getchildren()
-    local_name = "local-name()"
-
-    holidays = []
-    for element in children:
-        if element.xpath(local_name, namespaces=ns) in OPERATION_DAYS:
-            days = [el.xpath(local_name, namespaces=ns) for el in element.getchildren()]
-            holidays += days
-
-    # .getchildren() will return comments: this filters out the comments.
-    # It also removes occurrences of OTHER_PUBLIC_HOLIDAYS and OLD_HOLIDAYS_ALREADY_REMOVED of which there may be many or
-    # none.
-    holidays = [
-        h
-        for h in holidays
-        if h and h not in OTHER_PUBLIC_HOLIDAYS + OLD_HOLIDAYS_ALREADY_REMOVED
-    ]
-
-    # duplicate check
-    if sorted(list(set(holidays))) != sorted(holidays):
-        return False
-
-    service_ref = get_service_ref_from_element(element, ns)
-    if service_ref and is_service_in_scotland(service_ref):
-        english_removed = list(set(holidays) - set(BANK_HOLIDAYS_ONLY_ENGLISH))
-        return sorted(SCOTTISH_BANK_HOLIDAYS) == sorted(english_removed)
-
-    # optional Scottish holiday check
-    scottish_removed = list(set(holidays) - set(BANK_HOLIDAYS_ONLY_SCOTTISH))
-    return sorted(BANK_HOLIDAYS) == sorted(scottish_removed)
