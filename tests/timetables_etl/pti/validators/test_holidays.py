@@ -27,7 +27,7 @@ def test_bank_holidays_scottish_holidays(m_is_service_in_scotland):
     assert is_valid
 
 
-@patch("pti.validators.functions.is_service_in_scotland", return_value=True)
+@patch("pti.validators.holidays.is_service_in_scotland", return_value=True)
 def test_bank_holidays_scottish_holidays_error(m_is_service_in_scotland):
     filename = "scottish_holidays_error.xml"
     OBSERVATION_ID = 43
@@ -43,7 +43,7 @@ def test_bank_holidays_scottish_holidays_error(m_is_service_in_scotland):
     assert is_valid is False
 
 
-@patch("pti.validators.functions.is_service_in_scotland", return_value=False)
+@patch("pti.validators.holidays.is_service_in_scotland", return_value=False)
 def test_bank_holidays_english_holidays(m_is_service_in_scotland):
     filename = "english_holidays.xml"
     OBSERVATION_ID = 43
@@ -59,7 +59,7 @@ def test_bank_holidays_english_holidays(m_is_service_in_scotland):
     assert is_valid
 
 
-@patch("pti.validators.functions.is_service_in_scotland", return_value=False)
+@patch("pti.validators.holidays.is_service_in_scotland", return_value=False)
 def test_bank_holidays_english_holidays_error(m_is_service_in_scotland):
     filename = "english_holidays_error.xml"
     OBSERVATION_ID = 43
