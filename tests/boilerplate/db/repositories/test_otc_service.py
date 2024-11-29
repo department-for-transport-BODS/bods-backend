@@ -15,9 +15,10 @@ from tests.mock_db import (
 
 def test_get_service_by_registration_number_weca():
     db = MockedDB()
-    # Set up data
+
     registration_number = "PH0006633/01010001"
     api_type = "WECA"
+
     service = otc_service(id=1, registration_number=registration_number, api_type=api_type, atco_code="ATC001")
     admin_area = naptan_adminarea(id=1, atco_code="ATC001", traveline_region_id="SW", ui_lta_id=None)
 
@@ -40,6 +41,7 @@ def test_get_service_by_registration_number_otc():
 
     registration_number = "PC0004417/343"
     api_type = None
+
     service = otc_service(id=123, registration_number=registration_number, api_type=api_type, atco_code="ATC001")
     ui_lta_record = ui_lta(id=567, name="LTA1")
     admin_area = naptan_adminarea(id=234, atco_code="ATC001", traveline_region_id="N", ui_lta_id=ui_lta_record.id)
@@ -61,10 +63,10 @@ def test_get_service_by_registration_number_otc():
 def test_get_service_with_multiple_traveline_regions():
     db = MockedDB()
 
-    # Set up data
     api_type = None
     registration_number = "PH0005857/241"
-    service = otc_service(id=3, registration_number=registration_number, api_type=None, atco_code="ATC003")
+
+    service = otc_service(id=3, registration_number=registration_number, api_type=api_type, atco_code="ATC003")
     ui_lta_record = ui_lta(id=3, name="LTA2")
     admin_area_1 = naptan_adminarea(id=3, atco_code="ATC003", traveline_region_id="NE", ui_lta_id=ui_lta_record.id)
     admin_area_2 = naptan_adminarea(id=4, atco_code="ATC003", traveline_region_id="SW", ui_lta_id=ui_lta_record.id)
@@ -87,10 +89,8 @@ def test_get_service_with_multiple_traveline_regions():
 
 def test_get_service_with_traveline_region_not_found():
     db = MockedDB()
-
     repo = OtcServiceRepository(db)
     service_with_region = repo.get_service_with_traveline_region("9999")
-
     assert service_with_region is None
 
 
