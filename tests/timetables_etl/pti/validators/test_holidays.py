@@ -11,7 +11,7 @@ from tests.timetables_etl.pti.validators.factories import SchemaFactory
 DATA_DIR = Path(__file__).parent / "data" / "holidays"
 
 
-@patch("pti.validators.functions.is_service_in_scotland", return_value=True)
+@patch("pti.validators.holidays.is_service_in_scotland", return_value=True)
 def test_bank_holidays_scottish_holidays(m_is_service_in_scotland):
     filename = "scottish_holidays.xml"
     OBSERVATION_ID = 43
