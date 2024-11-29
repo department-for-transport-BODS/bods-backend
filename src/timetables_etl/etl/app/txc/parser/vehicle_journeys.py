@@ -267,5 +267,5 @@ def parse_vehicle_journeys(xml_data: _Element) -> list[TXCVehicleJourney]:
         vehicle_journey = parse_vehicle_journey(vehicle_journey_xml)
         if vehicle_journey:
             vehicle_journeys.append(vehicle_journey)
-
+    log.info("Parsed TXC Vehicle Journeys", count=len(vehicle_journeys))
     return vehicle_journeys

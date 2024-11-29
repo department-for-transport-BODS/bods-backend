@@ -79,5 +79,5 @@ def parse_routes(
                 RouteSectionRef=route_section_refs,
             )
         )
-
+    log.info("Parsed Routes", count=len(routes))
     return routes

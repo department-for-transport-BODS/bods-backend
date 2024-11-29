@@ -282,10 +282,11 @@ def parse_operating_profile(
         else None
     )
 
-    return TXCOperatingProfile(
+    operating_profile = TXCOperatingProfile(
         RegularDayType=regular_day_type,
         PeriodicDayType=periodic_day_type,
         SpecialDaysOperation=special_days_operation,
         BankHolidayOperation=bank_holiday_operation,
         ServicedOrganisationDayType=serviced_organisation_day_type,
     )
+    return operating_profile

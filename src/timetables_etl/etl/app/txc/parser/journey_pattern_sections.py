@@ -180,5 +180,5 @@ def parse_journey_pattern_sections(
         journey_pattern_section = parse_journey_pattern_section(section_xml)
         if journey_pattern_section:
             journey_pattern_sections.append(journey_pattern_section)
-
+    log.info("Parsed TXC Journey Pattern Sections", count=len(journey_pattern_sections))
     return journey_pattern_sections

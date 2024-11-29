@@ -168,5 +168,5 @@ def parse_serviced_organisations(xml_data: _Element) -> list[TXCServicedOrganisa
         org_parsed = parse_serviced_organisation(org_xml)
         if org_parsed:
             orgs.append(org_parsed)
-
+    log.info("Parsed Serviced Organisations", count=len(orgs))
     return orgs

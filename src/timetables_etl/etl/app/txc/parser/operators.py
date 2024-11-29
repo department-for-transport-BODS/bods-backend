@@ -102,5 +102,5 @@ def parse_operators(xml_data: _Element) -> list[TXCOperator]:
                 log.warning("Value error when parsing Operator", exc_info=True)
         else:
             log.warning("Unknown operator type. Skipping.", tag=operator_xml.tag)
-
+    log.info("Parsed TXC Operators", count=len(operators))
     return operators

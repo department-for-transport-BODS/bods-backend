@@ -249,5 +249,5 @@ def parse_services(xml_data: _Element) -> list[TXCService]:
         if service_parsed:
 
             services.append(service_parsed)
-
+    log.info("Parsed TXC Services", count=len(services))
     return services

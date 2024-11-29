@@ -161,5 +161,5 @@ def parse_route_sections(
         )
         if generated_route_section:
             route_sections.append(generated_route_section)
-
+    log.info("Parsed Route Sections", count=len(route_sections))
     return route_sections
