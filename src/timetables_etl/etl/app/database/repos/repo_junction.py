@@ -9,6 +9,7 @@ from ..models import (
     TransmodelServicePatternAdminAreas,
     TransmodelServicePatternLocality,
     TransmodelServiceServicePattern,
+    TransmodelTracksVehicleJourney,
 )
 from .repo_common import BaseRepository, BodsDB, handle_repository_errors
 
@@ -165,3 +166,12 @@ class TransmodelServicePatternAdminAreaRepo(
             self._model.adminarea_id.in_(admin_area_ids)
         )
         return self._fetch_all(statement)
+
+
+class TransmodelTracksVehicleJourneyRepo(
+    BaseRepository[TransmodelTracksVehicleJourney]
+):
+    """Repository for managing Tracks Vehicle Journey associations"""
+
+    def __init__(self, db: BodsDB):
+        super().__init__(db, TransmodelTracksVehicleJourney)

@@ -4,12 +4,21 @@ SQL Alchemy models for tables starting with transmodel_
 
 from __future__ import annotations
 
-from datetime import date, datetime, time
+from datetime import date, time
 from enum import Enum
 from typing import Literal
 
 from geoalchemy2 import Geometry, WKBElement
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text, Time
+from sqlalchemy import (
+    Boolean,
+    Date,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    Time,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -75,19 +84,6 @@ class TransmodelServicePattern(BaseSQLModel):
     )
     revision_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     line_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
-
-
-class TransmodelFlexibleServiceOperationPeriod(BaseSQLModel):
-    """Transmodel Flexible Service Operation Period Table"""
-
-    __tablename__ = "transmodel_flexibleserviceoperationperiod"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
-    vehicle_journey_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("transmodel_vehiclejourney.id"), nullable=False
-    )
-    end_time: Mapped[time | None] = mapped_column(Time, nullable=True)
-    start_time: Mapped[time | None] = mapped_column(Time, nullable=True)
 
 
 class TMDayOfWeek(str, Enum):
@@ -161,25 +157,6 @@ class TransmodelServicePatternStop(BaseSQLModel):
     auto_sequence_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
 
-class TransmodelBookingArrangements(BaseSQLModel):
-    """Transmodel Booking Arrangements Table"""
-
-    __tablename__ = "transmodel_bookingarrangements"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
-    description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    email: Mapped[str | None] = mapped_column(String(254), nullable=True)
-    phone_number: Mapped[str | None] = mapped_column(String(16), nullable=True)
-    web_address: Mapped[str | None] = mapped_column(String(200), nullable=True)
-    created: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    last_updated: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
-    service_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("transmodel_service.id"), nullable=False
-    )
-
-
 class TransmodelStopActivity(BaseSQLModel):
     """
     Transmodel Stop Activity Table
@@ -211,3 +188,28 @@ class TransmodelBankHolidays(BaseSQLModel):
     date: Mapped[date] = mapped_column(Date, nullable=False)
     notes: Mapped[str | None] = mapped_column(String(255), nullable=True)
     division: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+
+class TransmodelTrack(BaseSQLModel):
+    """
+    Transmodel Track Table
+    Represents a track segment between two stops with geometry and distance
+    """
+
+    __tablename__ = "transmodel_tracks"
+
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, init=False, autoincrement=True
+    )
+    from_atco_code: Mapped[str] = mapped_column(String(255), nullable=False)
+    to_atco_code: Mapped[str] = mapped_column(String(255), nullable=False)
+    geometry: Mapped[WKBElement | None] = mapped_column(
+        Geometry("LINESTRING", 4326), nullable=True
+    )
+    distance: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "from_atco_code", "to_atco_code", name="unique_from_to_atco_code"
+        ),
+    )

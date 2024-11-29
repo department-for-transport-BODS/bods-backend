@@ -6,6 +6,7 @@ from .model_junction import (
     TransmodelServicePatternAdminAreas,
     TransmodelServicePatternLocality,
     TransmodelServiceServicePattern,
+    TransmodelTracksVehicleJourney,
 )
 from .model_naptan import NaptanAdminArea, NaptanLocality, NaptanStopPoint
 from .model_organisation import (
@@ -18,8 +19,6 @@ from .model_pipelines import DatasetETLTaskResult
 from .model_transmodel import (
     TMDayOfWeek,
     TransmodelBankHolidays,
-    TransmodelBookingArrangements,
-    TransmodelFlexibleServiceOperationPeriod,
     TransmodelNonOperatingDatesExceptions,
     TransmodelOperatingDatesExceptions,
     TransmodelOperatingProfile,
@@ -27,7 +26,12 @@ from .model_transmodel import (
     TransmodelServicePattern,
     TransmodelServicePatternStop,
     TransmodelStopActivity,
+    TransmodelTrack,
     TransmodelVehicleJourney,
+)
+from .model_transmodel_flexible import (
+    TransmodelBookingArrangements,
+    TransmodelFlexibleServiceOperationPeriod,
 )
 from .model_transmodel_serviced_organisations import (
     TransmodelServicedOrganisations,
@@ -67,4 +71,6 @@ __all__ = [
     "TransmodelServicePatternLocality",
     "TransmodelStopActivity",
     "TransmodelBankHolidays",
+    "TransmodelTrack",
+    "TransmodelTracksVehicleJourney",
 ]

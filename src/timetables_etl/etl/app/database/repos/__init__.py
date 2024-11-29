@@ -7,6 +7,7 @@ from .repo_junction import (
     TransmodelServicePatternAdminAreaRepo,
     TransmodelServicePatternLocalityRepo,
     TransmodelServiceServicePatternRepo,
+    TransmodelTracksVehicleJourneyRepo,
 )
 from .repo_naptan import NaptanAdminAreaRepo, NaptanLocalityRepo, NaptanStopPointRepo
 from .repo_organisation import (
@@ -61,4 +62,5 @@ __all__ = [
     "TransmodelServicePatternLocalityRepo",
     "TransmodelStopActivityRepo",
     "TransmodelBankHolidaysRepo",
+    "TransmodelTracksVehicleJourneyRepo",
 ]

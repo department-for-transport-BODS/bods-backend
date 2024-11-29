@@ -3,7 +3,7 @@ Models for Many to Many Relationhip Tables
 AKA: Associative Entity, Junction Tables, Jump Tables
 """
 
-from sqlalchemy import Integer, String
+from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .common import BaseSQLModel
@@ -49,3 +49,29 @@ class TransmodelServicePatternAdminAreas(BaseSQLModel):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
     servicepattern_id: Mapped[int] = mapped_column(Integer, nullable=False)
     adminarea_id: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class TransmodelTracksVehicleJourney(BaseSQLModel):
+    """
+    Association table between Tracks and Vehicle Journeys
+    Represents which tracks are used by which vehicle journeys in sequence
+    """
+
+    __tablename__ = "transmodel_tracksvehiclejourney"
+
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, init=False, autoincrement=True
+    )
+    sequence_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    tracks_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("transmodel_tracks.id", deferrable=True, initially="DEFERRED"),
+        nullable=False,
+    )
+    vehicle_journey_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey(
+            "transmodel_vehiclejourney.id", deferrable=True, initially="DEFERRED"
+        ),
+        nullable=False,
+    )

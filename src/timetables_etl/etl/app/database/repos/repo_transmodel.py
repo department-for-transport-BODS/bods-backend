@@ -9,8 +9,6 @@ from typing import Literal
 from ..client import BodsDB
 from ..models import (
     TransmodelBankHolidays,
-    TransmodelBookingArrangements,
-    TransmodelFlexibleServiceOperationPeriod,
     TransmodelNonOperatingDatesExceptions,
     TransmodelOperatingDatesExceptions,
     TransmodelOperatingProfile,
@@ -19,6 +17,10 @@ from ..models import (
     TransmodelServicePatternStop,
     TransmodelStopActivity,
     TransmodelVehicleJourney,
+)
+from ..models.model_transmodel_flexible import (
+    TransmodelBookingArrangements,
+    TransmodelFlexibleServiceOperationPeriod,
 )
 from .repo_common import BaseRepository, handle_repository_errors
 
