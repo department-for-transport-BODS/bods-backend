@@ -12,6 +12,7 @@ from .txc_service import TXCService
 from .txc_serviced_organisation import TXCServicedOrganisation
 from .txc_stoppoint import AnnotatedStopPointRef, TXCStopPoint
 from .txc_vehicle_journey import TXCVehicleJourney
+from .txc_vehicle_journey_flexible import TXCFlexibleVehicleJourney
 
 
 class TXCData(BaseModel):
@@ -31,4 +32,6 @@ class TXCData(BaseModel):
     )
     Operators: list[TXCOperator] = Field(default=[], description="")
     Services: list[TXCService] = Field(default=[], description="")
-    VehicleJourneys: list[TXCVehicleJourney] = Field(default=[], description="")
+    VehicleJourneys: list[TXCVehicleJourney | TXCFlexibleVehicleJourney] = Field(
+        default=[], description=""
+    )

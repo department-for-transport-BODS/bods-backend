@@ -95,6 +95,7 @@ def get_naptan_stops_from_db(
     """
     Filter the TXC Stop Points for AnnotatedStopPointRef and query the DB for them
     """
+    log.debug("Getting list of AnnotatedStopPointRef stops found in DB")
     stop_refs: list[str] = []
     for stop in stop_points:
         if isinstance(stop, AnnotatedStopPointRef):
@@ -103,4 +104,5 @@ def get_naptan_stops_from_db(
     if missing_stops:
         # TODO: Figure out how to handle this scenario
         log.error("AnnotatedStopPointRef not found in DB", missing_stops=missing_stops)
+    log.info("Fetched naptan stops", count=len(stops), missing_stops=len(missing_stops))
     return stops

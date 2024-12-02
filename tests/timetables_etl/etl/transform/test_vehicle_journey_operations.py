@@ -6,6 +6,9 @@ from datetime import date
 
 import pytest
 
+from tests.timetables_etl.factories.database.transmodel import (
+    TransmodelVehicleJourneyFactory,
+)
 from timetables_etl.etl.app.database.models.model_transmodel import (
     TransmodelNonOperatingDatesExceptions,
     TransmodelOperatingDatesExceptions,
@@ -165,5 +168,10 @@ def test_process_bank_holidays(
     """
     Test generating Operating and NonOperating Dates for Bank Holidays
     """
-    result = process_bank_holidays(bank_holiday_op, bank_holidays, vehicle_journey_id)
+
+    result = process_bank_holidays(
+        bank_holiday_op,
+        bank_holidays,
+        TransmodelVehicleJourneyFactory.create_with_id(vehicle_journey_id),
+    )
     assert result == expected

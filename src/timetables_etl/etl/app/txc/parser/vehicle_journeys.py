@@ -9,14 +9,17 @@ from structlog.stdlib import get_logger
 
 from ..models.txc_types import CommercialBasisT, TimeDemandT
 from ..models.txc_vehicle_journey import (
-    TXCBlock,
     TXCLayoverPoint,
-    TXCOperational,
-    TXCTicketMachine,
     TXCVehicleJourney,
     TXCVehicleJourneyStopUsageStructure,
     TXCVehicleJourneyTimingLink,
 )
+from ..models.txc_vehicle_journey_common import (
+    TXCBlock,
+    TXCOperational,
+    TXCTicketMachine,
+)
+from ..models.txc_vehicle_journey_flexible import TXCFlexibleVehicleJourney
 from .operating_profile import parse_operating_profile
 from .utils import find_section
 from .utils_attributes import (
@@ -26,6 +29,7 @@ from .utils_attributes import (
     parse_revision_number,
 )
 from .utils_tags import get_element_text, get_element_texts
+from .vehicle_journeys_flexible import parse_flexible_vehicle_journey
 
 log = get_logger()
 
@@ -254,18 +258,35 @@ def parse_vehicle_journey(vehicle_journey_xml: _Element) -> TXCVehicleJourney | 
     )
 
 
-def parse_vehicle_journeys(xml_data: _Element) -> list[TXCVehicleJourney]:
+def parse_vehicle_journeys(
+    xml_data: _Element,
+) -> list[TXCVehicleJourney | TXCFlexibleVehicleJourney]:
     """
-    Parse XML for Vehicle Journeys
+    Parse XML for both regular and flexible Vehicle Journeys
+    Returns a combined list of both journey types
     """
-    section = find_section(xml_data, "VehicleJourneys")
+    section: _Element = find_section(xml_data, "VehicleJourneys")
     if section is None:
         return []
 
-    vehicle_journeys = []
+    journeys: list[TXCVehicleJourney | TXCFlexibleVehicleJourney] = []
+
     for vehicle_journey_xml in section.findall("VehicleJourney"):
         vehicle_journey = parse_vehicle_journey(vehicle_journey_xml)
         if vehicle_journey:
-            vehicle_journeys.append(vehicle_journey)
-    log.info("Parsed TXC Vehicle Journeys", count=len(vehicle_journeys))
-    return vehicle_journeys
+            journeys.append(vehicle_journey)
+
+    for flexible_journey_xml in section.findall("FlexibleVehicleJourney"):
+        flexible_journey = parse_flexible_vehicle_journey(flexible_journey_xml)
+        if flexible_journey:
+            journeys.append(flexible_journey)
+
+    log.info(
+        "Parsed TXC Vehicle Journeys",
+        regular_count=len([j for j in journeys if isinstance(j, TXCVehicleJourney)]),
+        flexible_count=len(
+            [j for j in journeys if isinstance(j, TXCFlexibleVehicleJourney)]
+        ),
+    )
+
+    return journeys

@@ -28,7 +28,9 @@ def parse_journey_pattern_stop_usage(
     """
     stop_usage_id = stop_usage_xml.get("id")
     if not stop_usage_id:
-        log.warning("JourneyPatternStopUsage missing required id attribute. Skipping.")
+        log.warning(
+            "JourneyPatternStopUsage missing required id attribute. Generating random ID"
+        )
         stop_usage_id = f"JPTL{round(random())}"
 
     wait_time = get_element_text(stop_usage_xml, "WaitTime")

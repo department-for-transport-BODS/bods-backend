@@ -113,7 +113,7 @@ def handle_repository_errors(func: Callable[P, T]) -> Callable[P, T]:
 
         try:
             result = func(*args, **kwargs)
-            log.debug("Database Operation Sucessful")
+            log.debug("Database Operation Successful")
             return result
 
         except Exception as exc:
@@ -231,7 +231,7 @@ class BaseRepository(Generic[DBModelT]):
             session.add(record)
             session.flush()
             session.expunge(record)
-            self._log.debug("Record Insert Sucess")
+            self._log.debug("Record Insert Success")
             return record
 
     @handle_repository_errors

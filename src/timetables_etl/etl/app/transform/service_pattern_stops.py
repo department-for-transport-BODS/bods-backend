@@ -15,10 +15,11 @@ from ..database.models.model_transmodel import (
     TransmodelStopActivity,
     TransmodelVehicleJourney,
 )
-from ..txc.models import TXCVehicleJourney
-from ..txc.models.txc_journey_pattern import (
+from ..txc.models import (
+    TXCFlexibleVehicleJourney,
     TXCJourneyPatternSection,
     TXCJourneyPatternStopUsage,
+    TXCVehicleJourney,
 )
 
 log = get_logger()
@@ -104,7 +105,7 @@ def create_stop(
 
 
 def get_pattern_timing(
-    txc_vehicle_journey: TXCVehicleJourney,
+    txc_vehicle_journey: TXCVehicleJourney | TXCFlexibleVehicleJourney,
     link_id: str,
     base_link_runtime: str,
 ) -> tuple[timedelta, timedelta]:
@@ -112,40 +113,51 @@ def get_pattern_timing(
     Get runtime and wait time, handling both vehicle journey types
     VehicleJourneyTimingLink override the JourneyPatternSectionTimingLinks
     """
-    has_timing_links = len(txc_vehicle_journey.VehicleJourneyTimingLink) > 0
+    default_timing = (parse_duration(base_link_runtime), timedelta(0))
 
-    if has_timing_links:
-        vj_link = next(
-            (
-                vl
-                for vl in txc_vehicle_journey.VehicleJourneyTimingLink
-                if vl.JourneyPatternTimingLinkRef == link_id
-            ),
-            None,
-        )
-        if vj_link:
-            wait_time = parse_duration(vj_link.From.WaitTime if vj_link.From else None)
-            run_time = parse_duration(vj_link.RunTime)
-            return run_time, wait_time
+    match txc_vehicle_journey:
+        case TXCFlexibleVehicleJourney():
+            return default_timing
 
-        available_links = [
-            vl.JourneyPatternTimingLinkRef
-            for vl in txc_vehicle_journey.VehicleJourneyTimingLink
-        ]
-        log.warning(
-            "Missing timing link in vehicle journey - using base runtime",
-            vehicle_journey_id=txc_vehicle_journey.VehicleJourneyCode,
-            requested_link=link_id,
-            available_links=available_links,
-        )
+        case TXCVehicleJourney() if not txc_vehicle_journey.VehicleJourneyTimingLink:
+            return default_timing
 
-    return parse_duration(base_link_runtime), timedelta(0)
+        case TXCVehicleJourney():
+            if vj_link := next(
+                (
+                    vl
+                    for vl in txc_vehicle_journey.VehicleJourneyTimingLink
+                    if vl.JourneyPatternTimingLinkRef == link_id
+                ),
+                None,
+            ):
+                return (
+                    parse_duration(vj_link.RunTime),
+                    parse_duration(vj_link.From.WaitTime if vj_link.From else None),
+                )
+
+            # Link not found, log warning
+            log.warning(
+                "Missing timing link in vehicle journey - using base runtime",
+                vehicle_journey_id=txc_vehicle_journey.VehicleJourneyCode,
+                requested_link=link_id,
+                available_links=[
+                    vl.JourneyPatternTimingLinkRef
+                    for vl in txc_vehicle_journey.VehicleJourneyTimingLink
+                ],
+            )
+            return default_timing
+
+        case _:
+            raise ValueError(
+                f"Unknown vehicle journey type: {type(txc_vehicle_journey)}"
+            )
 
 
 def generate_pattern_stops(
     tm_service_pattern: TransmodelServicePattern,
     tm_vehicle_journey: TransmodelVehicleJourney,
-    txc_vehicle_journey: TXCVehicleJourney,
+    txc_vehicle_journey: TXCVehicleJourney | TXCFlexibleVehicleJourney,
     jp_sections: list[TXCJourneyPatternSection],
     stop_sequence: Sequence[NaptanStopPoint],
     activity_map: dict[str, TransmodelStopActivity],

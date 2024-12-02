@@ -7,45 +7,30 @@ from typing import cast
 
 from structlog.stdlib import get_logger
 
-from ..database.models.model_transmodel import (
+from ..database.models import (
+    TransmodelFlexibleServiceOperationPeriod,
     TransmodelServicePattern,
     TransmodelVehicleJourney,
 )
-from ..txc.models import TXCJourneyPattern, TXCVehicleJourney
+from ..txc.models import (
+    TXCFlexibleJourneyPattern,
+    TXCFlexibleServiceTimes,
+    TXCFlexibleVehicleJourney,
+    TXCJourneyPattern,
+    TXCVehicleJourney,
+)
 
 log = get_logger()
 
 
-def _validate_vehicle_journey(vj: TXCVehicleJourney) -> bool:
-    """
-    Validate required fields on vehicle journey
-    """
-    required_fields = {
-        "VehicleJourneyCode": vj.VehicleJourneyCode,
-        "JourneyPatternRef": vj.JourneyPatternRef,
-        "DepartureTime": vj.DepartureTime,
-        "LineRef": vj.LineRef,
-    }
-
-    is_valid = all(required_fields.values())
-
-    if not is_valid:
-        missing_fields = [k for k, v in required_fields.items() if not v]
-        log.warning(
-            "Invalid vehicle journey",
-            journey_id=vj.VehicleJourneyCode,
-            missing_fields=missing_fields,
-        )
-
-    return is_valid
-
-
 def create_vehicle_journey(
-    vehicle_journey: TXCVehicleJourney,
+    vehicle_journey: TXCVehicleJourney | TXCFlexibleVehicleJourney,
     pattern: TransmodelServicePattern,
-    jp: TXCJourneyPattern,
+    jp: TXCJourneyPattern | TXCFlexibleJourneyPattern,
 ) -> TransmodelVehicleJourney:
-    """Create a single vehicle journey"""
+    """
+    Create a Transmodel Vehicle Journey
+    """
     ticket_machine = (
         vehicle_journey.Operational.TicketMachine
         if vehicle_journey.Operational
@@ -53,24 +38,34 @@ def create_vehicle_journey(
     )
     block = vehicle_journey.Operational.Block if vehicle_journey.Operational else None
 
-    departure_time = cast(time, vehicle_journey.DepartureTime)
+    match vehicle_journey:
+        case TXCVehicleJourney():
+            departure_time = cast(time, vehicle_journey.DepartureTime)
+            departure_day_shift = bool(vehicle_journey.DepartureDayShift)
+        case TXCFlexibleVehicleJourney():
+            departure_time = None
+            departure_day_shift = False
+        case _:
+            raise ValueError(f"Unknown vehicle journey type: {type(vehicle_journey)}")
 
     return TransmodelVehicleJourney(
         start_time=departure_time,
         direction=jp.Direction,
         journey_code=ticket_machine.JourneyCode if ticket_machine else None,
         line_ref=vehicle_journey.LineRef,
-        departure_day_shift=bool(vehicle_journey.DepartureDayShift),
+        departure_day_shift=departure_day_shift,
         service_pattern_id=pattern.id,
         block_number=block.BlockNumber if block else None,
     )
 
 
 def generate_pattern_vehicle_journeys(
-    txc_vjs: list[TXCVehicleJourney],
-    txc_jp: TXCJourneyPattern,
+    txc_vjs: list[TXCVehicleJourney | TXCFlexibleVehicleJourney],
+    txc_jp: TXCJourneyPattern | TXCFlexibleJourneyPattern,
     tm_service_pattern: TransmodelServicePattern,
-) -> list[tuple[TransmodelVehicleJourney, TXCVehicleJourney]]:
+) -> list[
+    tuple[TransmodelVehicleJourney, TXCVehicleJourney | TXCFlexibleVehicleJourney]
+]:
     """
     Generate vehicle journeys for a service pattern
     """
@@ -81,11 +76,7 @@ def generate_pattern_vehicle_journeys(
         raise ValueError("Service pattern must have an ID")
 
     # Filter and validate vehicle journeys for this pattern
-    pattern_journeys = [
-        vj
-        for vj in txc_vjs
-        if vj.JourneyPatternRef == txc_jp.id and _validate_vehicle_journey(vj)
-    ]
+    pattern_journeys = [vj for vj in txc_vjs if vj.JourneyPatternRef == txc_jp.id]
 
     if not pattern_journeys:
         log.warning(
@@ -95,9 +86,12 @@ def generate_pattern_vehicle_journeys(
         )
         return []
 
-    results: list[tuple[TransmodelVehicleJourney, TXCVehicleJourney]] = []
+    results: list[
+        tuple[TransmodelVehicleJourney, TXCVehicleJourney | TXCFlexibleVehicleJourney]
+    ] = []
 
     for vj in pattern_journeys:
+        log.debug("Processing Vehicle Journey 🌷", vj_id=vj.VehicleJourneyCode)
         try:
             tm_journey = create_vehicle_journey(vj, tm_service_pattern, txc_jp)
             results.append((tm_journey, vj))
@@ -113,8 +107,53 @@ def generate_pattern_vehicle_journeys(
     log.info(
         "Generated vehicle journeys",
         pattern_id=tm_service_pattern.id,
+        pattern_type=(
+            "flexible" if isinstance(txc_jp, TXCFlexibleJourneyPattern) else "standard"
+        ),
         attempted=len(pattern_journeys),
         succeeded=len(results),
     )
 
     return results
+
+
+def generate_flexible_service_operation_period(
+    tm_vj: TransmodelVehicleJourney,
+    txc_vj: TXCFlexibleVehicleJourney,
+) -> list[TransmodelFlexibleServiceOperationPeriod]:
+    """
+    Generate operations period for a flexdible Service
+    """
+    midnight = time(0, 0, 0)
+    end_of_day = time(23, 59, 59)
+
+    operation_periods: list[TransmodelFlexibleServiceOperationPeriod] = []
+    log.debug(
+        "Generating Flexible Service VKJ Operation Periods",
+        transmodel_vj_id=tm_vj.id,
+        txc_vj_id=txc_vj.VehicleJourneyCode,
+    )
+    for service_time in txc_vj.FlexibleServiceTimes:
+        match service_time:
+            case TXCFlexibleServiceTimes(AllDayService=True):
+                operation_periods.append(
+                    TransmodelFlexibleServiceOperationPeriod(
+                        vehicle_journey_id=tm_vj.id,
+                        start_time=midnight,
+                        end_time=end_of_day,
+                    )
+                )
+            case TXCFlexibleServiceTimes(ServicePeriod=period) if period:
+                try:
+                    operation_periods.append(
+                        TransmodelFlexibleServiceOperationPeriod(
+                            vehicle_journey_id=tm_vj.id,
+                            start_time=time.fromisoformat(period.StartTime),
+                            end_time=time.fromisoformat(period.EndTime),
+                        )
+                    )
+                except ValueError as e:
+                    raise ValueError(
+                        f"Wrong time format in ServicePeriod: {period.StartTime} - {period.EndTime}"
+                    ) from e
+    return operation_periods

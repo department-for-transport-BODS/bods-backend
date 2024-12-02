@@ -2,7 +2,7 @@
 Journey Pattern Section Helpers
 """
 
-from ..models.txc_journey_pattern import TXCJourneyPatternSection
+from ..models import TXCJourneyPatternSection
 
 
 def get_jps_by_id(

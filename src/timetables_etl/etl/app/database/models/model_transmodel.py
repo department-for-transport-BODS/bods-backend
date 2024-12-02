@@ -79,7 +79,7 @@ class TransmodelServicePattern(BaseSQLModel):
     origin: Mapped[str] = mapped_column(String(255), nullable=False)
     destination: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    geom: Mapped[WKBElement] = mapped_column(
+    geom: Mapped[WKBElement | None] = mapped_column(
         Geometry("LINESTRING", 4326), nullable=True
     )
     revision_id: Mapped[int | None] = mapped_column(Integer, nullable=True)

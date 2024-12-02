@@ -47,7 +47,7 @@ def make_transmodel_services(
     """
     Convert multiple TXCService objects to TransmodelService objects for database insertion.
     """
-
+    log.debug("Creating Tranmodel Services", service_count=len(services))
     transmodel_services = [
         make_transmodel_service(service, revision, file_attributes)
         for service in services

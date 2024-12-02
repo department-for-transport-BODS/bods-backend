@@ -2,8 +2,6 @@
 Transmodel Service Patterns Loader
 """
 
-from typing import Sequence
-
 from structlog.stdlib import get_logger
 
 from ..database import BodsDB
@@ -12,25 +10,19 @@ from ..database.models import (
     OrganisationDatasetRevision,
     TransmodelServicedOrganisations,
     TransmodelServicePattern,
-    TransmodelServicePatternAdminAreas,
-    TransmodelServicePatternLocality,
 )
-from ..database.repos import (
-    TransmodelBankHolidaysRepo,
-    TransmodelServicePatternAdminAreaRepo,
-    TransmodelServicePatternLocalityRepo,
-    TransmodelServicePatternRepo,
-)
+from ..database.repos import TransmodelServicePatternRepo
 from ..models import TaskData
-from ..transform.service_pattern_associations import (
-    generate_pattern_admin_areas,
-    generate_pattern_localities,
-)
 from ..transform.service_patterns import create_service_pattern
 from ..transform.utils_stops import get_pattern_stops
-from ..txc.models import TXCJourneyPattern, TXCJourneyPatternSection, TXCService
-from ..txc.models.txc_data import TXCData
-from .transmodel_vehicle_journey import process_service_pattern_vehicle_journeys
+from ..txc.models import (
+    TXCData,
+    TXCJourneyPattern,
+    TXCJourneyPatternSection,
+    TXCService,
+)
+from .transmodel_service_patterns_flexible import process_flexible_service_patterns
+from .transmodel_servicepatterns_common import process_pattern_common
 
 log = get_logger()
 
@@ -66,48 +58,7 @@ def process_service_pattern(
     return saved_pattern
 
 
-def process_pattern_localities(
-    service_pattern: TransmodelServicePattern,
-    stops: Sequence[NaptanStopPoint],
-    db: BodsDB,
-) -> list[TransmodelServicePatternLocality]:
-    """
-    Create and save locality associations for a pattern
-    """
-    localities = generate_pattern_localities(service_pattern, stops)
-    results = TransmodelServicePatternLocalityRepo(db).bulk_insert(localities)
-
-    log.info(
-        "Saved locality associations",
-        pattern_id=results[0].servicepattern_id if results else None,
-        locality_count=len(results),
-    )
-
-    return results
-
-
-def process_pattern_admin_areas(
-    service_pattern: TransmodelServicePattern,
-    stops: Sequence[NaptanStopPoint],
-    db: BodsDB,
-) -> list[TransmodelServicePatternAdminAreas]:
-    """
-    Create and save admin area associations for a pattern
-
-    """
-    admin_areas = generate_pattern_admin_areas(service_pattern, stops)
-    results = TransmodelServicePatternAdminAreaRepo(db).bulk_insert(admin_areas)
-
-    log.info(
-        "Saved admin area associations",
-        pattern_id=results[0].servicepattern_id if results else None,
-        admin_area_count=len(results),
-    )
-
-    return results
-
-
-def load_transmodel_service_patterns(
+def process_standard_service_patterns(
     service: TXCService,
     txc: TXCData,
     task_data: TaskData,
@@ -115,15 +66,10 @@ def load_transmodel_service_patterns(
     serviced_orgs: dict[str, TransmodelServicedOrganisations],
     db: BodsDB,
 ) -> list[TransmodelServicePattern]:
-    """
-    Generate and load transmodel service patterns
-    """
+    """Process patterns for standard services"""
     patterns: list[TransmodelServicePattern] = []
-
     if not service.StandardService:
-        log.error("Non Standard Services not implemented")
-        return patterns
-
+        return []
     for txc_jp in service.StandardService.JourneyPattern:
         service_pattern = process_service_pattern(
             service,
@@ -135,21 +81,54 @@ def load_transmodel_service_patterns(
         )
         stops = get_pattern_stops(txc_jp, txc.JourneyPatternSections, stop_mapping)
 
-        process_pattern_localities(service_pattern, stops, db)
-
-        process_pattern_admin_areas(service_pattern, stops, db)
-
-        bank_holidays = TransmodelBankHolidaysRepo(db).get_bank_holidays_lookup(
-            service.StartDate, service.EndDate
+        process_pattern_common(
+            service, txc_jp, service_pattern, stops, txc, serviced_orgs, db
         )
-        process_service_pattern_vehicle_journeys(
-            txc, txc_jp, service_pattern, stops, bank_holidays, serviced_orgs, db
-        )
-
         patterns.append(service_pattern)
 
+    return patterns
+
+
+def load_transmodel_service_patterns(
+    service: TXCService,
+    txc: TXCData,
+    task_data: TaskData,
+    stop_mapping: dict[str, NaptanStopPoint],
+    serviced_orgs: dict[str, TransmodelServicedOrganisations],
+    db: BodsDB,
+) -> list[TransmodelServicePattern]:
+    """
+    Generate and load transmodel service patterns for both standard and flexible services
+    """
+    patterns: list[TransmodelServicePattern] = []
+
+    if service.StandardService:
+        log.info("Processing StandardService data", service_code=service.ServiceCode)
+        patterns.extend(
+            process_standard_service_patterns(
+                service, txc, task_data, stop_mapping, serviced_orgs, db
+            )
+        )
+
+    if service.FlexibleService:
+        log.info("Processing FlexibleService Data", service_code=service.ServiceCode)
+        patterns.extend(
+            process_flexible_service_patterns(
+                service, txc, task_data, stop_mapping, serviced_orgs, db
+            )
+        )
+
+    if not patterns:
+        log.warning(
+            "No patterns processed",
+            txc_service_code=service.ServiceCode,
+            has_standard=service.StandardService is not None,
+            has_flexible=service.FlexibleService is not None,
+        )
+        return patterns
+
     log.info(
-        "Loaded all Service Patterns patterns",
+        "Loaded all Service Patterns",
         count=len(patterns),
         txc_service_code=service.ServiceCode,
     )

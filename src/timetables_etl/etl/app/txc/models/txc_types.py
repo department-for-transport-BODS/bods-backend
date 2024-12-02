@@ -83,3 +83,5 @@ LicenceClassificationT = Literal[
     "specialRestricted",
     "communityBusPermit",
 ]
+
+DirectionT = Literal["inbound", "outbound", "clockwise", "anticlockwise"]

@@ -16,13 +16,15 @@ from timetables_etl.etl.app.database.models.model_naptan import NaptanStopPoint
 from timetables_etl.etl.app.database.models.model_transmodel import (
     TransmodelServicePattern,
 )
-from timetables_etl.etl.app.transform.service_patterns import (
+from timetables_etl.etl.app.transform.service_pattern_metadata import (
     LineDescription,
     PatternMetadata,
-    create_service_pattern,
     extract_pattern_metadata,
-    generate_service_pattern_geometry,
     get_line_description,
+)
+from timetables_etl.etl.app.transform.service_patterns import (
+    create_service_pattern,
+    generate_service_pattern_geometry,
 )
 from timetables_etl.etl.app.txc.models.txc_journey_pattern import (
     TXCJourneyPatternSection,

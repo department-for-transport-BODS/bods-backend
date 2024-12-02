@@ -7,11 +7,13 @@ from lxml import etree
 from pydantic import ValidationError
 
 from timetables_etl.etl.app.txc.models.txc_vehicle_journey import (
-    TXCBlock,
     TXCLayoverPoint,
+    TXCVehicleJourney,
+)
+from timetables_etl.etl.app.txc.models.txc_vehicle_journey_common import (
+    TXCBlock,
     TXCOperational,
     TXCTicketMachine,
-    TXCVehicleJourney,
 )
 from timetables_etl.etl.app.txc.parser.vehicle_journeys import (
     parse_layover_point,

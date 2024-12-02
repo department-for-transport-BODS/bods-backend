@@ -17,11 +17,17 @@ from .txc_service import (
     TXCService,
     TXCStandardService,
 )
+from .txc_service_flexible import (
+    TXCFixedStopUsage,
+    TXCFlexibleJourneyPattern,
+    TXCFlexibleStopUsage,
+)
+from .txc_serviced_organisation import TXCServicedOrganisation
 from .txc_stoppoint import AnnotatedStopPointRef, TXCStopPoint
-from .txc_vehicle_journey import (
-    TXCDateRange,
-    TXCDaysOfWeek,
-    TXCOperational,
-    TXCTicketMachine,
-    TXCVehicleJourney,
+from .txc_vehicle_journey import TXCDateRange, TXCDaysOfWeek, TXCVehicleJourney
+from .txc_vehicle_journey_common import TXCOperational, TXCTicketMachine
+from .txc_vehicle_journey_flexible import (
+    TXCFlexibleServiceTimes,
+    TXCFlexibleVehicleJourney,
+    TXCServicePeriod,
 )

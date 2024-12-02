@@ -4,10 +4,13 @@ Stop Calculation Utilities
 
 from typing import Sequence
 
+from structlog.stdlib import get_logger
+
 from ..database.models import NaptanStopPoint
 from ..txc.helpers.jps import get_jps_by_id, get_stops_from_journey_pattern_section
-from ..txc.models.txc_journey_pattern import TXCJourneyPatternSection
-from ..txc.models.txc_service import TXCJourneyPattern
+from ..txc.models import TXCJourneyPattern, TXCJourneyPatternSection
+
+log = get_logger()
 
 
 def get_pattern_stops(

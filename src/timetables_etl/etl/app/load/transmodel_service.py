@@ -18,13 +18,18 @@ def load_transmodel_service(
     service: TXCService, task_data: TaskData, db: BodsDB
 ) -> TransmodelService:
     """
-    Generate and Load Transmodel Services in to DB
+    Generate and Load Transmodel Service into DB
     """
 
-    transmodel_services = make_transmodel_service(
+    transmodel_service = make_transmodel_service(
         service, task_data.revision, task_data.file_attributes
     )
     repo = TransmodelServiceRepo(db)
-    result = repo.insert(transmodel_services)
-    log.info("Inserted Transmodel Services into DB")
+    result = repo.insert(transmodel_service)
+    log.info(
+        "Inserted Transmodel Service into DB",
+        service_id=result.id,
+        name=result.name,
+        service_code=result.service_code,
+    )
     return result

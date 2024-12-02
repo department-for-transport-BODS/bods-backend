@@ -6,9 +6,13 @@ from datetime import date
 
 import pytest
 
+from tests.timetables_etl.factories.database.transmodel import (
+    TransmodelVehicleJourneyFactory,
+)
 from timetables_etl.etl.app.database.models.model_transmodel import (
     TransmodelNonOperatingDatesExceptions,
     TransmodelOperatingDatesExceptions,
+    TransmodelVehicleJourney,
 )
 from timetables_etl.etl.app.transform.vehicle_journey_operations import (
     process_bank_holidays,
@@ -20,7 +24,7 @@ from timetables_etl.etl.app.txc.models.txc_vehicle_journey import (
 
 
 @pytest.mark.parametrize(
-    "bank_holiday_operation, bank_holidays_data, vehicle_journey_id, expected_result",
+    "bank_holiday_operation, bank_holidays_data, vehicle_journey, expected_result",
     [
         pytest.param(
             TXCBankHolidayOperation(
@@ -56,7 +60,7 @@ from timetables_etl.etl.app.txc.models.txc_vehicle_journey import (
                     date(2025, 8, 25),
                 ],
             },
-            123,
+            TransmodelVehicleJourneyFactory.create_with_id(123),
             (
                 [],
                 [
@@ -133,7 +137,7 @@ from timetables_etl.etl.app.txc.models.txc_vehicle_journey import (
                 "ChristmasDay": [date(2024, 12, 25)],
                 "BoxingDay": [date(2024, 12, 26)],
             },
-            456,
+            TransmodelVehicleJourneyFactory.create_with_id(456),
             (
                 [
                     TransmodelOperatingDatesExceptions(
@@ -156,7 +160,7 @@ from timetables_etl.etl.app.txc.models.txc_vehicle_journey import (
                 "ChristmasDay": [date(2024, 12, 25)],
                 "BoxingDay": [date(2024, 12, 26)],
             },
-            789,
+            TransmodelVehicleJourneyFactory.create_with_id(789),
             ([], []),
             id="No bank holiday operations",
         ),
@@ -165,7 +169,7 @@ from timetables_etl.etl.app.txc.models.txc_vehicle_journey import (
 def test_process_bank_holidays(
     bank_holiday_operation: TXCBankHolidayOperation,
     bank_holidays_data: dict[str, list[date]],
-    vehicle_journey_id: int,
+    vehicle_journey: TransmodelVehicleJourney,
     expected_result: tuple[
         list[TransmodelOperatingDatesExceptions],
         list[TransmodelNonOperatingDatesExceptions],
@@ -175,6 +179,6 @@ def test_process_bank_holidays(
     Test bank holiday processing
     """
     result = process_bank_holidays(
-        bank_holiday_operation, bank_holidays_data, vehicle_journey_id
+        bank_holiday_operation, bank_holidays_data, vehicle_journey
     )
     assert result == expected_result
