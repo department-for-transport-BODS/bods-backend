@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 import pytest
 from lxml import etree
 
-from timetables_etl.etl.app.txc.models import RouteSection
+from timetables_etl.etl.app.txc.models import TXCRouteSection
 from timetables_etl.etl.app.txc.models.txc_route import (
     TXCLocation,
     TXCMapping,
@@ -55,7 +55,7 @@ from timetables_etl.etl.app.txc.parser.route_sections import (
             </RouteLink>
         </RouteSection>
         """,
-            RouteSection(
+            TXCRouteSection(
                 id="RS1",
                 CreationDateTime=datetime(2023, 5, 15, 10, 30, tzinfo=timezone.utc),
                 ModificationDateTime=datetime(2023, 5, 16, 12, 45, tzinfo=timezone.utc),
@@ -118,7 +118,7 @@ from timetables_etl.etl.app.txc.parser.route_sections import (
             </RouteLink>
         </RouteSection>
         """,
-            RouteSection(
+            TXCRouteSection(
                 id="RS2",
                 CreationDateTime=None,
                 ModificationDateTime=None,
@@ -162,7 +162,7 @@ from timetables_etl.etl.app.txc.parser.route_sections import (
         ),
     ],
 )
-def test_parse_route_section(xml_string: str, expected: RouteSection):
+def test_parse_route_section(xml_string: str, expected: TXCRouteSection):
     """
     Test the parsing of RouteSection from XML.
     """
@@ -191,7 +191,7 @@ def test_parse_route_section(xml_string: str, expected: RouteSection):
         </TransXChange>
         """,
             [
-                RouteSection(
+                TXCRouteSection(
                     id="RS1",
                     RouteLink=[
                         TXCRouteLink(
@@ -230,7 +230,7 @@ def test_parse_route_section(xml_string: str, expected: RouteSection):
         </TransXChange>
         """,
             [
-                RouteSection(
+                TXCRouteSection(
                     id="RS1",
                     RouteLink=[
                         TXCRouteLink(
@@ -276,7 +276,7 @@ def test_parse_route_section(xml_string: str, expected: RouteSection):
         </TransXChange>
         """,
             [
-                RouteSection(
+                TXCRouteSection(
                     id="RS1",
                     RouteLink=[
                         TXCRouteLink(
@@ -286,7 +286,7 @@ def test_parse_route_section(xml_string: str, expected: RouteSection):
                         )
                     ],
                 ),
-                RouteSection(
+                TXCRouteSection(
                     id="RS2",
                     RouteLink=[
                         TXCRouteLink(
@@ -350,7 +350,7 @@ def test_parse_route_section(xml_string: str, expected: RouteSection):
         </TransXChange>
         """,
             [
-                RouteSection(
+                TXCRouteSection(
                     id="RS1",
                     CreationDateTime=datetime(2023, 5, 15, 10, 30, tzinfo=timezone.utc),
                     ModificationDateTime=datetime(
@@ -423,7 +423,7 @@ def test_parse_route_section(xml_string: str, expected: RouteSection):
         </TransXChange>
         """,
             [
-                RouteSection(
+                TXCRouteSection(
                     id="RS1",
                     CreationDateTime=None,
                     ModificationDateTime=None,
@@ -441,7 +441,7 @@ def test_parse_route_section(xml_string: str, expected: RouteSection):
                         )
                     ],
                 ),
-                RouteSection(
+                TXCRouteSection(
                     id="RS2",
                     CreationDateTime=None,
                     ModificationDateTime=None,

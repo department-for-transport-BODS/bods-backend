@@ -6,9 +6,9 @@ import pytest
 from lxml import etree
 
 from timetables_etl.etl.app.txc.models.txc_route import (
-    RouteSection,
     TXCRoute,
     TXCRouteLink,
+    TXCRouteSection,
 )
 from timetables_etl.etl.app.txc.parser.routes import parse_routes
 
@@ -33,13 +33,13 @@ from timetables_etl.etl.app.txc.parser.routes import parse_routes
             </TransXChange>
             """,
             [
-                RouteSection(
+                TXCRouteSection(
                     id="RS1", RouteLink=[TXCRouteLink(id="RL1", From="A", To="B")]
                 ),
-                RouteSection(
+                TXCRouteSection(
                     id="RS2", RouteLink=[TXCRouteLink(id="RL2", From="B", To="C")]
                 ),
-                RouteSection(
+                TXCRouteSection(
                     id="RS3", RouteLink=[TXCRouteLink(id="RL3", From="C", To="D")]
                 ),
             ],
@@ -48,11 +48,11 @@ from timetables_etl.etl.app.txc.parser.routes import parse_routes
                     id="R1",
                     Description="Route 1",
                     RouteSectionRef=[
-                        RouteSection(
+                        TXCRouteSection(
                             id="RS1",
                             RouteLink=[TXCRouteLink(id="RL1", From="A", To="B")],
                         ),
-                        RouteSection(
+                        TXCRouteSection(
                             id="RS2",
                             RouteLink=[TXCRouteLink(id="RL2", From="B", To="C")],
                         ),
@@ -62,7 +62,7 @@ from timetables_etl.etl.app.txc.parser.routes import parse_routes
                     id="R2",
                     Description="Route 2",
                     RouteSectionRef=[
-                        RouteSection(
+                        TXCRouteSection(
                             id="RS3",
                             RouteLink=[TXCRouteLink(id="RL3", From="C", To="D")],
                         ),
@@ -83,7 +83,7 @@ from timetables_etl.etl.app.txc.parser.routes import parse_routes
              </TransXChange>
             """,
             [
-                RouteSection(
+                TXCRouteSection(
                     id="RS1", RouteLink=[TXCRouteLink(id="RL1", From="A", To="B")]
                 ),
             ],
@@ -101,7 +101,7 @@ from timetables_etl.etl.app.txc.parser.routes import parse_routes
             </TransXChange>
             """,
             [
-                RouteSection(
+                TXCRouteSection(
                     id="RS1", RouteLink=[TXCRouteLink(id="RL1", From="A", To="B")]
                 ),
             ],
@@ -110,7 +110,7 @@ from timetables_etl.etl.app.txc.parser.routes import parse_routes
                     id="R1",
                     Description="MISSING ROUTE DESCRIPTION",
                     RouteSectionRef=[
-                        RouteSection(
+                        TXCRouteSection(
                             id="RS1",
                             RouteLink=[TXCRouteLink(id="RL1", From="A", To="B")],
                         ),
@@ -132,7 +132,7 @@ from timetables_etl.etl.app.txc.parser.routes import parse_routes
              </TransXChange>
             """,
             [
-                RouteSection(
+                TXCRouteSection(
                     id="RS1", RouteLink=[TXCRouteLink(id="RL1", From="A", To="B")]
                 ),
             ],
@@ -141,7 +141,7 @@ from timetables_etl.etl.app.txc.parser.routes import parse_routes
                     id="R1",
                     Description="Route 1",
                     RouteSectionRef=[
-                        RouteSection(
+                        TXCRouteSection(
                             id="RS1",
                             RouteLink=[TXCRouteLink(id="RL1", From="A", To="B")],
                         ),
@@ -163,7 +163,7 @@ from timetables_etl.etl.app.txc.parser.routes import parse_routes
 )
 def test_parse_routes(
     xml_string: str,
-    route_sections: list[RouteSection],
+    route_sections: list[TXCRouteSection],
     expected_result: list[TXCRoute],
 ):
     """
