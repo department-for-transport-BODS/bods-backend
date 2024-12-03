@@ -1,7 +1,6 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from db.repositories import txc_file_attributes
 from exceptions.pipeline_exceptions import PipelineException
 from pti_validation import lambda_handler
 

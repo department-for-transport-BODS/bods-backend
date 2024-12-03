@@ -42,4 +42,3 @@ class PTIObservationRepository:
                 logger.error(message, exc_info=True)
                 raise PipelineException(message) from exc
         return True
-

@@ -15,7 +15,9 @@ def m_dataset_repository():
 @patch("pti.service.TXCRevisionValidator")
 @patch("pti.service.get_xml_file_pti_validator")
 @patch("pti.service.TxcFileAttributesRepository")
-def test_validate(m_file_attributes_repository, m_get_xml_file_pti_validator, m_txc_revision_validator, m_observation_repo):
+def test_validate(
+    m_file_attributes_repository, m_get_xml_file_pti_validator, m_txc_revision_validator, m_observation_repo
+):
     revision = MagicMock(id=123)
     xml_file = MagicMock()
     xml_file.read.return_value = b"dummycontent"
@@ -35,6 +37,7 @@ def test_validate(m_file_attributes_repository, m_get_xml_file_pti_validator, m_
 
     m_get_xml_file_pti_validator.return_value.get_violations.assert_called_once_with(revision, xml_file)
     m_observation_repo.return_value.create.assert_called_once_with(revision.id, violations)
+
 
 @patch("pti.service.PTIObservationRepository")
 @patch("pti.service.sha1sum")

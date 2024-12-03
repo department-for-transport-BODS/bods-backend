@@ -1,15 +1,10 @@
-
-
-
-
-from pydantic import BaseModel
-
 from common import DbManager
 from db.repositories.dataset_revision import DatasetRevisionRepository
 from db.repositories.txc_file_attributes import TxcFileAttributesRepository
 from exceptions.pipeline_exceptions import PipelineException
 from logger import get_dataset_adapter_from_revision
 from pti.service import PTIValidationService
+from pydantic import BaseModel
 from s3 import S3
 
 
@@ -18,7 +13,7 @@ class PTIValidationEvent(BaseModel):
     Bucket: str
     ObjectKey: str
 
-    
+
 def lambda_handler(event, context):
     parsed_event = PTIValidationEvent(**event)
 
@@ -44,6 +39,4 @@ def lambda_handler(event, context):
     validation_service = PTIValidationService(db)
     validation_service.validate(revision, xml_file_object, txc_file_attributes)
 
-    return {
-        "statusCode": 200
-    }
+    return {"statusCode": 200}

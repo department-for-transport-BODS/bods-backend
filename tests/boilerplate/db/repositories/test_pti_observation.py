@@ -1,9 +1,11 @@
-import pytest
-from sqlalchemy.exc import SQLAlchemyError
 from unittest.mock import MagicMock
+
+import pytest
 from db.repositories.pti_observation import PTIObservationRepository
 from exceptions.pipeline_exceptions import PipelineException
 from pti_common.models import Observation, Rule, Violation
+from sqlalchemy.exc import SQLAlchemyError
+
 from tests.mock_db import MockedDB
 
 

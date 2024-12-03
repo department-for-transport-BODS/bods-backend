@@ -1,13 +1,14 @@
+from bods_utils import sha1sum
 from botocore.response import StreamingBody
 from common import BodsDB
-from db.models import OrganisationDatasetrevision, OrganisationTxcfileattributes
+from db.models import (OrganisationDatasetrevision,
+                       OrganisationTxcfileattributes)
 from db.repositories.dataset import DatasetRepository
 from db.repositories.pti_observation import PTIObservationRepository
 from db.repositories.txc_file_attributes import TxcFileAttributesRepository
 from logger import PipelineAdapter, get_dataset_adapter_from_revision
 from pti.validators.factory import get_xml_file_pti_validator
 from pti.validators.txc_revision import TXCRevisionValidator
-from bods_utils import sha1sum
 
 
 class PTIValidationService:
