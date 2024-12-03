@@ -18,9 +18,12 @@ from .txc_service import (
     TXCStandardService,
 )
 from .txc_service_flexible import (
+    TXCBookingArrangements,
     TXCFixedStopUsage,
     TXCFlexibleJourneyPattern,
+    TXCFlexibleService,
     TXCFlexibleStopUsage,
+    TXCPhone,
 )
 from .txc_serviced_organisation import TXCServicedOrganisation
 from .txc_stoppoint import AnnotatedStopPointRef, TXCStopPoint

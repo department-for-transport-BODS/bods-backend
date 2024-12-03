@@ -5,6 +5,7 @@ ETL Pipeline
 from structlog.stdlib import get_logger
 
 from .database import BodsDB
+from .load.transmodel_bookingarrangements import process_booking_arrangements
 from .load.transmodel_service import load_transmodel_service
 from .load.transmodel_service_service_patterns import link_service_to_service_patterns
 from .load.transmodel_servicedorganisations import load_serviced_organizations
@@ -37,8 +38,9 @@ def transform_data(txc: TXCData, task_data: TaskData, db: BodsDB):
     serviced_orgs = load_serviced_organizations(txc.ServicedOrganisations, db)
     for service in txc.Services:
 
-        transmodel_services = load_transmodel_service(service, task_data, db)
+        tm_service = load_transmodel_service(service, task_data, db)
+        process_booking_arrangements(service, tm_service, db)
         service_patterns = load_transmodel_service_patterns(
             service, txc, task_data, stop_mapping, serviced_orgs, db
         )
-        link_service_to_service_patterns(transmodel_services, service_patterns, db)
+        link_service_to_service_patterns(tm_service, service_patterns, db)
