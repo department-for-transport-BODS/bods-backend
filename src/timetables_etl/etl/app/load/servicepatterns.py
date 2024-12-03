@@ -5,13 +5,9 @@ Transmodel Service Patterns Loader
 from structlog.stdlib import get_logger
 
 from ..database import BodsDB
-from ..database.models import (
-    NaptanStopPoint,
-    OrganisationDatasetRevision,
-    TransmodelServicedOrganisations,
-    TransmodelServicePattern,
-)
+from ..database.models import OrganisationDatasetRevision, TransmodelServicePattern
 from ..database.repos import TransmodelServicePatternRepo
+from ..helpers import ReferenceDataLookups, StopsLookup
 from ..models import TaskData
 from ..transform.service_patterns import create_service_pattern
 from ..transform.utils_stops import get_pattern_stops
@@ -21,8 +17,8 @@ from ..txc.models import (
     TXCJourneyPatternSection,
     TXCService,
 )
-from .transmodel_service_patterns_flexible import process_flexible_service_patterns
-from .transmodel_servicepatterns_common import process_pattern_common
+from .service_patterns_flexible import process_flexible_service_patterns
+from .servicepatterns_common import process_pattern_common
 
 log = get_logger()
 
@@ -32,7 +28,7 @@ def process_service_pattern(
     txc_jp: TXCJourneyPattern,
     revision: OrganisationDatasetRevision,
     journey_pattern_sections: list[TXCJourneyPatternSection],
-    stop_mapping: dict[str, NaptanStopPoint],
+    stop_mapping: StopsLookup,
     db: BodsDB,
 ) -> TransmodelServicePattern:
     """
@@ -62,8 +58,7 @@ def process_standard_service_patterns(
     service: TXCService,
     txc: TXCData,
     task_data: TaskData,
-    stop_mapping: dict[str, NaptanStopPoint],
-    serviced_orgs: dict[str, TransmodelServicedOrganisations],
+    lookups: ReferenceDataLookups,
     db: BodsDB,
 ) -> list[TransmodelServicePattern]:
     """Process patterns for standard services"""
@@ -76,13 +71,13 @@ def process_standard_service_patterns(
             txc_jp,
             task_data.revision,
             txc.JourneyPatternSections,
-            stop_mapping,
+            lookups.stops,
             db,
         )
-        stops = get_pattern_stops(txc_jp, txc.JourneyPatternSections, stop_mapping)
+        stops = get_pattern_stops(txc_jp, txc.JourneyPatternSections, lookups.stops)
 
         process_pattern_common(
-            service, txc_jp, service_pattern, stops, txc, serviced_orgs, db
+            service, txc_jp, service_pattern, stops, txc, lookups, db
         )
         patterns.append(service_pattern)
 
@@ -93,8 +88,7 @@ def load_transmodel_service_patterns(
     service: TXCService,
     txc: TXCData,
     task_data: TaskData,
-    stop_mapping: dict[str, NaptanStopPoint],
-    serviced_orgs: dict[str, TransmodelServicedOrganisations],
+    lookups: ReferenceDataLookups,
     db: BodsDB,
 ) -> list[TransmodelServicePattern]:
     """
@@ -105,17 +99,13 @@ def load_transmodel_service_patterns(
     if service.StandardService:
         log.info("Processing StandardService data", service_code=service.ServiceCode)
         patterns.extend(
-            process_standard_service_patterns(
-                service, txc, task_data, stop_mapping, serviced_orgs, db
-            )
+            process_standard_service_patterns(service, txc, task_data, lookups, db)
         )
 
     if service.FlexibleService:
         log.info("Processing FlexibleService Data", service_code=service.ServiceCode)
         patterns.extend(
-            process_flexible_service_patterns(
-                service, txc, task_data, stop_mapping, serviced_orgs, db
-            )
+            process_flexible_service_patterns(service, txc, task_data, lookups, db)
         )
 
     if not patterns:

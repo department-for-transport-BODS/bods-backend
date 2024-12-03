@@ -13,11 +13,11 @@ from ..database.models import (
     TransmodelNonOperatingDatesExceptions,
     TransmodelOperatingDatesExceptions,
     TransmodelOperatingProfile,
-    TransmodelServicedOrganisations,
     TransmodelServicedOrganisationVehicleJourney,
     TransmodelServicedOrganisationWorkingDays,
     TransmodelVehicleJourney,
 )
+from ..helpers import ServicedOrgLookup
 from ..txc.models import TXCDateRange, TXCDaysOfWeek, TXCVehicleJourney
 from ..txc.models.txc_serviced_organisation import (
     TXCServicedOrganisation,
@@ -231,7 +231,7 @@ def create_serviced_org_vehicle_journey(
     org_ref: str,
     operating_on_working_days: bool,
     vehicle_journey: TransmodelVehicleJourney,
-    serviced_orgs: dict[str, TransmodelServicedOrganisations],
+    serviced_orgs: ServicedOrgLookup,
 ) -> TransmodelServicedOrganisationVehicleJourney:
     """
     Create a single serviced organisation vehicle journey record
@@ -246,7 +246,7 @@ def create_serviced_org_vehicle_journey(
 def create_serviced_organisation_vehicle_journeys(
     serviced_org_day_type: TXCServicedOrganisationDayType | None,
     vehicle_journey: TransmodelVehicleJourney,
-    serviced_orgs: dict[str, TransmodelServicedOrganisations],
+    serviced_orgs: ServicedOrgLookup,
     txc_serviced_orgs: dict[str, TXCServicedOrganisation],
 ) -> tuple[
     list[TransmodelServicedOrganisationVehicleJourney],
@@ -344,7 +344,7 @@ def create_vehicle_journey_operations(
     txc_vj: TXCVehicleJourney,
     tm_vj: TransmodelVehicleJourney,
     txc_serviced_orgs: dict[str, TXCServicedOrganisation],
-    tm_serviced_orgs: dict[str, TransmodelServicedOrganisations],
+    tm_serviced_orgs: ServicedOrgLookup,
     bank_holidays: dict[str, list[date]],
 ) -> VehicleJourneyOperations:
     """

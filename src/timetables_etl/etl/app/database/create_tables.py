@@ -60,7 +60,7 @@ def create_single_table(table: Table, engine: Engine) -> None:
 def create_db_tables(db: BodsDB) -> None:
     """Initialize database tables using models from timetables_etl."""
     log.warning(
-        "This function will create tables in postgres. DO NOT do against BODs DB"
+        "Creating Tables: This function will create tables in postgres. DO NOT do against BODs DB"
     )
     metadata = MetaData()
 

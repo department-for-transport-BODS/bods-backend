@@ -5,7 +5,7 @@ Parsing of FlexibleService in a TXCService
 from lxml.etree import _Element
 from structlog.stdlib import get_logger
 
-from timetables_etl.etl.app.txc.models.txc_service_flexible import (
+from ..models.txc_service_flexible import (
     TXCBookingArrangements,
     TXCFixedStopUsage,
     TXCFlexibleJourneyPattern,
@@ -13,7 +13,6 @@ from timetables_etl.etl.app.txc.models.txc_service_flexible import (
     TXCFlexibleStopUsage,
     TXCPhone,
 )
-
 from .utils_tags import get_elem_bool_default, get_element_text
 
 log = get_logger()

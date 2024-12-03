@@ -8,15 +8,11 @@ from shapely import Point
 from shapely.geometry import LineString
 from structlog.stdlib import get_logger
 
-from timetables_etl.etl.app.transform.service_pattern_metadata import (
+from ..database.models import OrganisationDatasetRevision, TransmodelServicePattern
+from ..helpers import StopsLookup
+from ..transform.service_pattern_metadata import (
     extract_pattern_metadata,
     make_service_pattern_id,
-)
-
-from ..database.models import (
-    NaptanStopPoint,
-    OrganisationDatasetRevision,
-    TransmodelServicePattern,
 )
 from ..txc.helpers.jps import get_stops_from_sections
 from ..txc.models import TXCJourneyPattern, TXCJourneyPatternSection, TXCService
@@ -27,7 +23,7 @@ log = get_logger()
 def generate_service_pattern_geometry(
     jp: TXCJourneyPattern,
     journey_pattern_sections: list[TXCJourneyPatternSection],
-    atco_location_mapping: dict[str, NaptanStopPoint],
+    atco_location_mapping: StopsLookup,
 ) -> WKBElement:
     """
     Generate the Stop Linestring for a JourneyPattern
@@ -45,7 +41,7 @@ def create_service_pattern(
     jp: TXCJourneyPattern,
     revision: OrganisationDatasetRevision,
     journey_pattern_sections: list[TXCJourneyPatternSection],
-    stop_mapping: dict[str, NaptanStopPoint],
+    stop_mapping: StopsLookup,
 ) -> TransmodelServicePattern:
     """
     Create a single TransmodelServicePattern from a TXC journey pattern

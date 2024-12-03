@@ -5,7 +5,7 @@ Parse Routes from TXC
 from lxml.etree import _Element
 from structlog.stdlib import get_logger
 
-from ..models.txc_route import RouteSection, TXCRoute
+from ..models.txc_route import TXCRoute, TXCRouteSection
 from .utils import find_section
 from .utils_attributes import (
     parse_creation_datetime,
@@ -18,15 +18,15 @@ from .utils_tags import get_element_text
 log = get_logger()
 
 
-def gather_route_sections(route_xml: _Element, route_sections: list[RouteSection]):
+def gather_route_sections(route_xml: _Element, route_sections: list[TXCRouteSection]):
     """
     Route Sections models uses list of route section model instead of refs to ease conversion
     """
-    route_sections_dict: dict[str, RouteSection] = {}
+    route_sections_dict: dict[str, TXCRouteSection] = {}
     for route_section in route_sections:
         route_sections_dict[route_section.id] = route_section
 
-    route_section_refs: list[RouteSection] = []
+    route_section_refs: list[TXCRouteSection] = []
     for route_section_ref_xml in route_xml.findall("RouteSectionRef"):
         route_section_ref = route_section_ref_xml.text
         if route_section_ref in route_sections_dict:
@@ -35,7 +35,7 @@ def gather_route_sections(route_xml: _Element, route_sections: list[RouteSection
 
 
 def parse_routes(
-    xml_data: _Element, route_sections: list[RouteSection]
+    xml_data: _Element, route_sections: list[TXCRouteSection]
 ) -> list[TXCRoute]:
     """
     Routes

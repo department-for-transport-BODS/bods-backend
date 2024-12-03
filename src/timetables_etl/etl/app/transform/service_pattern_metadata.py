@@ -7,7 +7,7 @@ from uuid import uuid4
 
 from structlog.stdlib import get_logger
 
-from ..database.models import NaptanStopPoint
+from ..helpers import StopsLookup
 from ..transform.utils_stops import get_first_last_stops
 from ..txc.models import (
     TXCFlexibleJourneyPattern,
@@ -69,7 +69,7 @@ def extract_pattern_metadata(
     service: TXCService,
     jp: TXCJourneyPattern,
     journey_pattern_sections: list[TXCJourneyPatternSection],
-    stop_mapping: dict[str, NaptanStopPoint],
+    stop_mapping: StopsLookup,
 ) -> PatternMetadata:
     """
     Extract pattern metadata with priority:

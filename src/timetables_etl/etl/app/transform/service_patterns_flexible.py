@@ -9,11 +9,8 @@ from geoalchemy2.shape import from_shape
 from shapely import LineString, Point
 from structlog.stdlib import get_logger
 
-from ..database.models import (
-    NaptanStopPoint,
-    OrganisationDatasetRevision,
-    TransmodelServicePattern,
-)
+from ..database.models import OrganisationDatasetRevision, TransmodelServicePattern
+from ..helpers import StopsLookup
 from ..txc.helpers.service import extract_flexible_pattern_stop_refs
 from ..txc.models import TXCFlexibleJourneyPattern, TXCService
 from .service_pattern_metadata import PatternMetadata, make_service_pattern_id
@@ -40,7 +37,7 @@ def extract_flexible_pattern_metadata(
 
 def generate_flexible_pattern_geometry(
     stops: Sequence[str],
-    stop_mapping: dict[str, NaptanStopPoint],
+    stop_mapping: StopsLookup,
 ) -> WKBElement | None:
     """
     Generate geometry for a flexible service pattern.
@@ -69,7 +66,7 @@ def create_flexible_service_pattern(
     service: TXCService,
     jp: TXCFlexibleJourneyPattern,
     revision: OrganisationDatasetRevision,
-    stop_mapping: dict[str, NaptanStopPoint],
+    stop_mapping: StopsLookup,
 ) -> TransmodelServicePattern:
     """
     Create a single TransmodelServicePattern from a TXC flexible journey pattern

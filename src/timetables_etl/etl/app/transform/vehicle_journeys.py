@@ -91,7 +91,6 @@ def generate_pattern_vehicle_journeys(
     ] = []
 
     for vj in pattern_journeys:
-        log.debug("Processing Vehicle Journey 🌷", vj_id=vj.VehicleJourneyCode)
         try:
             tm_journey = create_vehicle_journey(vj, tm_service_pattern, txc_jp)
             results.append((tm_journey, vj))

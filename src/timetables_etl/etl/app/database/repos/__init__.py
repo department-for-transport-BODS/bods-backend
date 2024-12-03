@@ -26,6 +26,7 @@ from .repo_transmodel import (
     TransmodelServicePatternStopRepo,
     TransmodelServiceRepo,
     TransmodelStopActivityRepo,
+    TransmodelTrackRepo,
     TransmodelVehicleJourneyRepo,
 )
 from .repo_transmodel_serviced_organisations import (
@@ -63,4 +64,5 @@ __all__ = [
     "TransmodelStopActivityRepo",
     "TransmodelBankHolidaysRepo",
     "TransmodelTracksVehicleJourneyRepo",
+    "TransmodelTrackRepo",
 ]

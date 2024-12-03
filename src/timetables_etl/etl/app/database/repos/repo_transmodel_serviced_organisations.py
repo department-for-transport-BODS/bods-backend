@@ -4,17 +4,13 @@ Transmodel Serviced Organisation Related Repos
 
 from sqlalchemy import ColumnElement, Select, and_, or_
 
-from timetables_etl.etl.app.database.client import BodsDB
-from timetables_etl.etl.app.database.models.model_transmodel_serviced_organisations import (
+from ..client import BodsDB
+from ..models.model_transmodel_serviced_organisations import (
     TransmodelServicedOrganisations,
     TransmodelServicedOrganisationVehicleJourney,
     TransmodelServicedOrganisationWorkingDays,
 )
-from timetables_etl.etl.app.database.repos.repo_common import (
-    BaseRepository,
-    BaseRepositoryWithId,
-    handle_repository_errors,
-)
+from .repo_common import BaseRepository, BaseRepositoryWithId, handle_repository_errors
 
 
 class TransmodelServicedOrganisationsRepo(

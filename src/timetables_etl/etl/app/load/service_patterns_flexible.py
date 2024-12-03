@@ -5,18 +5,14 @@ Flexible Service Pattern Handling
 from structlog.stdlib import get_logger
 
 from ..database import BodsDB
-from ..database.models import (
-    NaptanStopPoint,
-    OrganisationDatasetRevision,
-    TransmodelServicedOrganisations,
-    TransmodelServicePattern,
-)
+from ..database.models import OrganisationDatasetRevision, TransmodelServicePattern
 from ..database.repos import TransmodelServicePatternRepo
+from ..helpers import ReferenceDataLookups, StopsLookup
 from ..models import TaskData
 from ..transform.service_patterns_flexible import create_flexible_service_pattern
 from ..transform.utils_stops_flexible import get_flexible_pattern_stops
 from ..txc.models import TXCData, TXCFlexibleJourneyPattern, TXCService
-from .transmodel_servicepatterns_common import process_pattern_common
+from .servicepatterns_common import process_pattern_common
 
 log = get_logger()
 
@@ -25,7 +21,7 @@ def process_flexible_service_pattern(
     service: TXCService,
     jp: TXCFlexibleJourneyPattern,
     revision: OrganisationDatasetRevision,
-    stop_mapping: dict[str, NaptanStopPoint],
+    stop_mapping: StopsLookup,
     db: BodsDB,
 ) -> TransmodelServicePattern:
     """
@@ -45,8 +41,7 @@ def process_flexible_service_patterns(
     service: TXCService,
     txc: TXCData,
     task_data: TaskData,
-    stop_mapping: dict[str, NaptanStopPoint],
-    serviced_orgs: dict[str, TransmodelServicedOrganisations],
+    lookups: ReferenceDataLookups,
     db: BodsDB,
 ) -> list[TransmodelServicePattern]:
     """Process patterns for flexible services"""
@@ -58,13 +53,13 @@ def process_flexible_service_patterns(
             service,
             flexible_jp,
             task_data.revision,
-            stop_mapping,
+            lookups.stops,
             db,
         )
-        stops = get_flexible_pattern_stops(flexible_jp, stop_mapping)
+        stops = get_flexible_pattern_stops(flexible_jp, lookups.stops)
 
         process_pattern_common(
-            service, flexible_jp, service_pattern, stops, txc, serviced_orgs, db
+            service, flexible_jp, service_pattern, stops, txc, lookups, db
         )
         patterns.append(service_pattern)
     log.info("Flexible Service Patterns Created", count=len(patterns))

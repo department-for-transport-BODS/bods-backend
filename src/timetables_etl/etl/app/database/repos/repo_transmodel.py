@@ -6,6 +6,8 @@ from collections import defaultdict
 from datetime import date
 from typing import Literal
 
+from sqlalchemy import tuple_
+
 from ..client import BodsDB
 from ..models import (
     TransmodelBankHolidays,
@@ -16,6 +18,7 @@ from ..models import (
     TransmodelServicePattern,
     TransmodelServicePatternStop,
     TransmodelStopActivity,
+    TransmodelTracks,
     TransmodelVehicleJourney,
 )
 from ..models.model_transmodel_flexible import (
@@ -240,3 +243,22 @@ class TransmodelBankHolidaysRepo(BaseRepository[TransmodelBankHolidays]):
             holiday_lookup[holiday.txc_element].append(holiday.date)
 
         return dict(holiday_lookup)
+
+
+class TransmodelTrackRepo(BaseRepository[TransmodelTracks]):
+    """Repository for managing Track entities"""
+
+    def __init__(self, db: BodsDB):
+        super().__init__(db, TransmodelTracks)
+
+    def get_by_stop_pairs(
+        self, stop_pairs: list[tuple[str, str]]
+    ) -> list[TransmodelTracks]:
+        """Get existing tracks by from/to stop pairs"""
+        if not stop_pairs:
+            return []
+
+        statement = self._build_query().where(
+            tuple_(self._model.from_atco_code, self._model.to_atco_code).in_(stop_pairs)
+        )
+        return self._fetch_all(statement)

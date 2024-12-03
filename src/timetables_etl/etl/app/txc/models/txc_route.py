@@ -75,7 +75,7 @@ class TXCRouteLink(BaseModel):
     Track: TXCTrack | None = Field(default=None)
 
 
-class RouteSection(BaseModel):
+class TXCRouteSection(BaseModel):
     """
     A reusable section of route comprising one or more route links
     Ordered in sequence of traversal.
@@ -123,6 +123,6 @@ class TXCRoute(FrozenBaseModel):
         ...,
         description="Description of the route",
     )
-    RouteSectionRef: list[RouteSection] = Field(
+    RouteSectionRef: list[TXCRouteSection] = Field(
         description="Description of the route",
     )

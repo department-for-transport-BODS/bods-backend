@@ -10,6 +10,7 @@ from structlog.stdlib import get_logger
 from ..database import BodsDB
 from ..database.models.model_naptan import NaptanStopPoint
 from ..database.repos.repo_naptan import NaptanStopPointRepo
+from ..helpers import StopsLookup
 from ..txc.models.txc_stoppoint import (
     AnnotatedStopPointRef,
     LocationStructure,
@@ -75,11 +76,11 @@ def create_custom_stop_point_data(stop: TXCStopPoint) -> NaptanStopPoint:
 def create_stop_point_location_mapping(
     stop_points: list[AnnotatedStopPointRef | TXCStopPoint],
     naptan_stops: list[NaptanStopPoint],
-) -> dict[str, NaptanStopPoint]:
+) -> StopsLookup:
     """
     Create a mapping dict between AtcoCodes and it's location
     """
-    stop_location_map: dict[str, NaptanStopPoint] = {}
+    stop_location_map: StopsLookup = {}
 
     for naptan in naptan_stops:
         stop_location_map[naptan.atco_code] = naptan

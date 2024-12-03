@@ -7,19 +7,6 @@ from typing import cast
 from lxml.etree import _Element
 from structlog.stdlib import get_logger
 
-from timetables_etl.etl.app.txc.parser.utils_attributes import (
-    parse_creation_datetime,
-    parse_modification,
-    parse_modification_datetime,
-    parse_revision_number,
-    parse_xml_attribute,
-)
-from timetables_etl.etl.app.txc.parser.utils_tags import (
-    get_elem_bool_default,
-    get_element_date,
-    get_element_text,
-)
-
 from ..models.txc_serviced_organisation import (
     TXCServicedOrganisation,
     TXCServicedOrganisationAnnotatedNptgLocalityRef,
@@ -27,6 +14,14 @@ from ..models.txc_serviced_organisation import (
 )
 from ..models.txc_types import ServiceOrganisationClassificationT, StatusT
 from .utils import find_section
+from .utils_attributes import (
+    parse_creation_datetime,
+    parse_modification,
+    parse_modification_datetime,
+    parse_revision_number,
+    parse_xml_attribute,
+)
+from .utils_tags import get_elem_bool_default, get_element_date, get_element_text
 
 log = get_logger()
 

@@ -9,7 +9,7 @@ from .txc_journey_pattern import (
     TXCJourneyPatternTimingLink,
 )
 from .txc_operator import TXCOperator
-from .txc_route import RouteSection, TXCLocation, TXCRoute, TXCRouteLink, TXCTrack
+from .txc_route import TXCLocation, TXCRoute, TXCRouteLink, TXCRouteSection, TXCTrack
 from .txc_service import (
     TXCJourneyPattern,
     TXCLine,

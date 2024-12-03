@@ -7,6 +7,7 @@ from typing import Sequence
 from structlog.stdlib import get_logger
 
 from ..database.models import NaptanStopPoint
+from ..helpers import StopsLookup
 from ..txc.helpers.service import extract_flexible_pattern_stop_refs
 from ..txc.models import TXCFlexibleJourneyPattern
 
@@ -15,7 +16,7 @@ log = get_logger()
 
 def map_stop_refs_to_naptan(
     stop_refs: list[str],
-    atco_location_mapping: dict[str, NaptanStopPoint],
+    atco_location_mapping: StopsLookup,
     journey_pattern_id: str,
 ) -> Sequence[NaptanStopPoint]:
     """
@@ -38,7 +39,7 @@ def map_stop_refs_to_naptan(
 
 def get_flexible_pattern_stops(
     flexible_jp: TXCFlexibleJourneyPattern,
-    atco_location_mapping: dict[str, NaptanStopPoint],
+    atco_location_mapping: StopsLookup,
 ) -> Sequence[NaptanStopPoint]:
     """
     Get all NaptanStopPoint DB Models for a flexible journey pattern's stop sequence.

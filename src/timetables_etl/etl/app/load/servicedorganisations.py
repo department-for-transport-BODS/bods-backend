@@ -6,10 +6,9 @@ from structlog.stdlib import get_logger
 
 from ..database import BodsDB
 from ..database.models import TransmodelServicedOrganisations
-from ..database.repos.repo_transmodel_serviced_organisations import (
-    TransmodelServicedOrganisationsRepo,
-)
-from ..txc.models.txc_serviced_organisation import TXCServicedOrganisation
+from ..database.repos import TransmodelServicedOrganisationsRepo
+from ..helpers import ServicedOrgLookup
+from ..txc.models import TXCServicedOrganisation
 
 log = get_logger()
 
@@ -55,7 +54,7 @@ def get_existing_pairs(
 def create_serviced_org_mapping(
     created_orgs: list[TransmodelServicedOrganisations],
     existing_orgs: list[TransmodelServicedOrganisations],
-) -> dict[str, TransmodelServicedOrganisations]:
+) -> ServicedOrgLookup:
     """
     Create a mapping of organisation_code to TransmodelServicedOrganisations
     from both created and existing organizations.
@@ -64,7 +63,7 @@ def create_serviced_org_mapping(
     """
     all_orgs: list[TransmodelServicedOrganisations] = [*created_orgs, *existing_orgs]
 
-    org_mapping: dict[str, TransmodelServicedOrganisations] = {}
+    org_mapping: ServicedOrgLookup = {}
 
     for org in all_orgs:
         if org.organisation_code is None:
@@ -83,7 +82,7 @@ def create_serviced_org_mapping(
 def load_serviced_organizations(
     txc_orgs: list[TXCServicedOrganisation],
     db: BodsDB,
-) -> dict[str, TransmodelServicedOrganisations]:
+) -> ServicedOrgLookup:
     """
     Load serviced organizations into database
 

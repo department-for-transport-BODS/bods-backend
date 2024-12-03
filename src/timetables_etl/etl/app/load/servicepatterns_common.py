@@ -6,36 +6,31 @@ from typing import Sequence
 
 from structlog.stdlib import get_logger
 
-from timetables_etl.etl.app.database import BodsDB
-from timetables_etl.etl.app.database.models import (
+from ..database import BodsDB
+from ..database.models import (
     NaptanStopPoint,
     TransmodelServicePattern,
     TransmodelServicePatternAdminAreas,
     TransmodelServicePatternLocality,
 )
-from timetables_etl.etl.app.database.repos import (
+from ..database.repos import (
+    TransmodelBankHolidaysRepo,
     TransmodelServicePatternAdminAreaRepo,
     TransmodelServicePatternLocalityRepo,
 )
-from timetables_etl.etl.app.transform.service_pattern_associations import (
+from ..helpers import ReferenceDataLookups
+from ..transform.service_pattern_associations import (
     generate_pattern_admin_areas,
     generate_pattern_localities,
 )
-
-from ..database import BodsDB
-from ..database.models import (
-    NaptanStopPoint,
-    TransmodelServicedOrganisations,
-    TransmodelServicePattern,
-)
-from ..database.repos import TransmodelBankHolidaysRepo
-from ..load.transmodel_vehicle_journey import process_service_pattern_vehicle_journeys
 from ..txc.models import (
     TXCData,
     TXCFlexibleJourneyPattern,
     TXCJourneyPattern,
     TXCService,
 )
+from .vehicle_journey import process_service_pattern_vehicle_journeys
+from .vehicle_journey_tracks import load_vehicle_journey_tracks
 
 log = get_logger()
 
@@ -87,7 +82,7 @@ def process_pattern_common(
     service_pattern: TransmodelServicePattern,
     stops: Sequence[NaptanStopPoint],
     txc: TXCData,
-    serviced_orgs: dict[str, TransmodelServicedOrganisations],
+    lookups: ReferenceDataLookups,
     db: BodsDB,
 ) -> None:
     """
@@ -103,6 +98,14 @@ def process_pattern_common(
     bank_holidays = TransmodelBankHolidaysRepo(db).get_bank_holidays_lookup(
         service.StartDate, service.EndDate
     )
-    process_service_pattern_vehicle_journeys(
-        txc, journey_pattern, service_pattern, stops, bank_holidays, serviced_orgs, db
+    tm_vjs = process_service_pattern_vehicle_journeys(
+        txc,
+        journey_pattern,
+        service_pattern,
+        stops,
+        bank_holidays,
+        lookups.serviced_orgs,
+        db,
     )
+
+    load_vehicle_journey_tracks(journey_pattern, tm_vjs, lookups.tracks, txc, db)

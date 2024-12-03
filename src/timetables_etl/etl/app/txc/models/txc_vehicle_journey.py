@@ -8,10 +8,9 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from timetables_etl.etl.app.txc.models.txc_vehicle_journey_common import TXCOperational
-
 from .txc_types import CommercialBasisT, ModificationType, TimeDemandT
 from .txc_validators import convert_runtime
+from .txc_vehicle_journey_common import TXCOperational
 
 
 class TXCDaysOfWeek(BaseModel):

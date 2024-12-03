@@ -5,7 +5,7 @@ Parse Route Sections XML into Pydantic Models
 from lxml.etree import _Element
 from structlog.stdlib import get_logger
 
-from ..models.txc_data import RouteSection
+from ..models.txc_data import TXCRouteSection
 from ..models.txc_route import TXCLocation, TXCMapping, TXCRouteLink, TXCTrack
 from .utils import find_section
 from .utils_attributes import (
@@ -120,7 +120,7 @@ def parse_route_links(
 
 def parse_route_section(
     route_section_xml: _Element, parse_track_data: bool
-) -> RouteSection | None:
+) -> TXCRouteSection | None:
     """
     Parse each Route Section into a Pydantic Model
     """
@@ -133,7 +133,7 @@ def parse_route_section(
     modification_datetime = parse_modification_datetime(route_section_xml)
     route_links = parse_route_links(route_section_xml, parse_track_data)
 
-    return RouteSection(
+    return TXCRouteSection(
         id=route_section_id,
         CreationDateTime=creation_datetime,
         ModificationDateTime=modification_datetime,
@@ -143,7 +143,7 @@ def parse_route_section(
 
 def parse_route_sections(
     xml_data: _Element, parse_track_data: bool
-) -> list[RouteSection]:
+) -> list[TXCRouteSection]:
     """
     Convert RouteSections XML into Pydantic Models
     """
@@ -152,7 +152,7 @@ def parse_route_sections(
     except ValueError:
         return []
 
-    route_sections: list[RouteSection] = []
+    route_sections: list[TXCRouteSection] = []
     route_section_xmls = section.findall("RouteSection")
 
     for route_section_xml in route_section_xmls:

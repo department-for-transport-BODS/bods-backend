@@ -26,7 +26,7 @@ from .model_transmodel import (
     TransmodelServicePattern,
     TransmodelServicePatternStop,
     TransmodelStopActivity,
-    TransmodelTrack,
+    TransmodelTracks,
     TransmodelVehicleJourney,
 )
 from .model_transmodel_flexible import (
@@ -71,6 +71,6 @@ __all__ = [
     "TransmodelServicePatternLocality",
     "TransmodelStopActivity",
     "TransmodelBankHolidays",
-    "TransmodelTrack",
+    "TransmodelTracks",
     "TransmodelTracksVehicleJourney",
 ]

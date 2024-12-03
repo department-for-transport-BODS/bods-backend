@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from .txc_journey_pattern import TXCJourneyPatternSection
 from .txc_metadata import TXCMetadata
 from .txc_operator import TXCOperator
-from .txc_route import RouteSection, TXCRoute
+from .txc_route import TXCRoute, TXCRouteSection
 from .txc_service import TXCService
 from .txc_serviced_organisation import TXCServicedOrganisation
 from .txc_stoppoint import AnnotatedStopPointRef, TXCStopPoint
@@ -25,7 +25,7 @@ class TXCData(BaseModel):
     StopPoints: list[AnnotatedStopPointRef | TXCStopPoint] = Field(
         default=[], description=""
     )
-    RouteSections: list[RouteSection] = Field(default=[], description="")
+    RouteSections: list[TXCRouteSection] = Field(default=[], description="")
     Routes: list[TXCRoute] = Field(default=[], description="")
     JourneyPatternSections: list[TXCJourneyPatternSection] = Field(
         default=[], description=""

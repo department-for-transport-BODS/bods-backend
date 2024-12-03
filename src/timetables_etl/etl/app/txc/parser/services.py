@@ -7,8 +7,6 @@ from typing import cast, get_args
 from lxml.etree import _Element
 from structlog.stdlib import get_logger
 
-from timetables_etl.etl.app.txc.parser.utils_attributes import parse_xml_int
-
 from ..models.txc_service import (
     TXCJourneyPattern,
     TXCLine,
@@ -19,6 +17,7 @@ from ..models.txc_service import (
 from ..models.txc_types import TransportModeType
 from .services_flexible import parse_flexible_service
 from .utils import find_section
+from .utils_attributes import parse_xml_int
 from .utils_tags import (
     get_elem_bool_default,
     get_element_date,

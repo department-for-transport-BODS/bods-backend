@@ -190,7 +190,7 @@ class TransmodelBankHolidays(BaseSQLModel):
     division: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
 
-class TransmodelTrack(BaseSQLModel):
+class TransmodelTracks(BaseSQLModel):
     """
     Transmodel Track Table
     Represents a track segment between two stops with geometry and distance
