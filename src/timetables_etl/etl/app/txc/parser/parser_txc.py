@@ -2,7 +2,6 @@
 Parse TXC XML into Pydantic Models
 """
 
-import hashlib
 from io import BytesIO
 from pathlib import Path
 
@@ -12,6 +11,7 @@ from structlog.stdlib import get_logger
 
 from ..models.txc_data import TXCData
 from ..parser.metadata import parse_metadata
+from .hashing import get_file_hash
 from .journey_pattern_sections import parse_journey_pattern_sections
 from .operators import parse_operators
 from .route_sections import parse_route_sections
@@ -22,20 +22,6 @@ from .stop_points import parse_stop_points
 from .vehicle_journeys import parse_vehicle_journeys
 
 log = get_logger()
-
-
-def get_file_hash(file_path: Path) -> str:
-    """
-    Get the hash of the txc file
-    """
-    log.info("Parsing TXC File hash", file_path=file_path)
-    sha1 = hashlib.sha1()
-    with open(file_path, "rb") as f:
-        for chunk in iter(lambda: f.read(8192), b""):
-            sha1.update(chunk)
-    file_hash = sha1.hexdigest()
-    log.info("TXC File Hash Calculated", file_hash=file_hash)
-    return file_hash
 
 
 def strip_namespace(xml_data: _Element) -> _Element:
