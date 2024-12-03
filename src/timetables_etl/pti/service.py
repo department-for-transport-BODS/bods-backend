@@ -2,6 +2,7 @@ from botocore.response import StreamingBody
 from common import BodsDB
 from db.models import OrganisationDatasetrevision, OrganisationTxcfileattributes
 from db.repositories.dataset import DatasetRepository
+from db.repositories.pti_observation import PTIObservationRepository
 from db.repositories.txc_file_attributes import TxcFileAttributesRepository
 from logger import PipelineAdapter, get_dataset_adapter_from_revision
 from pti.validators.factory import get_xml_file_pti_validator
@@ -55,7 +56,8 @@ class PTIValidationService:
             violations += revision_validator.get_violations()
             adapter.info(f"{len(violations)} violations found.")
 
-        # TODO: Handle re-creation of PTIObservation and PTIValidationResult objects
+            observation_repo = PTIObservationRepository(self.db)
+            observation_repo.create(revision.id, violations)
 
         adapter.info("Finished PTI Profile validation.")
         return None
