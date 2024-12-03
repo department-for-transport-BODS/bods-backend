@@ -1,7 +1,7 @@
 from lxml import etree
 import pytest
 from unittest.mock import MagicMock, patch
-from pti.models import VehicleJourney
+from pti_common.models import VehicleJourney
 from pti.validators.base import BaseValidator
 
 
