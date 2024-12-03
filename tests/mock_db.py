@@ -130,11 +130,25 @@ class otc_localauthority_registration_numbers(Base):
     localauthority_id = Column(Integer)
 
 
+class data_quality_ptiobservation(Base):
+    __tablename__ = "data_quality_ptiobservation"
+
+    id = Column(Integer, primary_key=True)
+    filename = Column(String(256))
+    line = Column(Integer)
+    details = Column(String(1024))
+    element = Column(String(256))
+    category = Column(String(1024))
+    revision_id = Column(Integer)
+    reference = Column(String(64))
+
+
 class StringAgg:
     """
     Temporary patch to support string_agg function
     TODO: Remove this once we're running tests in postgres
     """
+
     def __init__(self):
         self.values = set()
 
@@ -145,15 +159,16 @@ class StringAgg:
     def finalize(self):
         return "|".join(self.values)
 
+
 class MockedDB:
     def __init__(self):
         self.engine = create_engine("sqlite:///:memory:")
-        
+
         # Register the custom string_agg aggregate function
         @event.listens_for(self.engine, "connect")
         def register_custom_functions(dbapi_connection, connection_record):
             dbapi_connection.create_aggregate("string_agg", 2, StringAgg)
-        
+
         SessionLocal = sessionmaker(bind=self.engine)
         self.session = SessionLocal()
         Base.metadata.create_all(self.engine)
@@ -165,6 +180,7 @@ class MockedDB:
             organisation_datasetrevision=organisation_datasetrevision,
             organisation_txcfileattributes=organisation_txcfileattributes,
             data_quality_postschemaviolation=data_quality_postschemaviolation,
+            data_quality_ptiobservation=data_quality_ptiobservation,
             organisation_dataset=organisation_dataset,
             naptan_stoppoint=naptan_stoppoint,
             otc_service=otc_service,
@@ -173,8 +189,6 @@ class MockedDB:
             otc_localauthority=otc_localauthority,
             otc_localauthority_registration_numbers=otc_localauthority_registration_numbers,
         )
-
-
 
 
 if __name__ == "__main__":
