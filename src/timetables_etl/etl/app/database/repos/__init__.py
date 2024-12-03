@@ -17,22 +17,26 @@ from .repo_organisation import (
 )
 from .repo_transmodel import (
     TransmodelBankHolidaysRepo,
-    TransmodelBookingArrangementsRepo,
-    TransmodelFlexibleServiceOperationPeriodRepo,
-    TransmodelNonOperatingDatesExceptionsRepo,
-    TransmodelOperatingDatesExceptionsRepo,
-    TransmodelOperatingProfileRepo,
     TransmodelServicePatternRepo,
     TransmodelServicePatternStopRepo,
     TransmodelServiceRepo,
     TransmodelStopActivityRepo,
     TransmodelTrackRepo,
-    TransmodelVehicleJourneyRepo,
+)
+from .repo_transmodel_flexible import (
+    TransmodelBookingArrangementsRepo,
+    TransmodelFlexibleServiceOperationPeriodRepo,
 )
 from .repo_transmodel_serviced_organisations import (
     TransmodelServicedOrganisationsRepo,
     TransmodelServicedOrganisationVehicleJourneyRepo,
     TransmodelServicedOrganisationWorkingDaysRepo,
+)
+from .repo_transmodel_vehicle_journey import (
+    TransmodelNonOperatingDatesExceptionsRepo,
+    TransmodelOperatingDatesExceptionsRepo,
+    TransmodelOperatingProfileRepo,
+    TransmodelVehicleJourneyRepo,
 )
 
 __all__ = [

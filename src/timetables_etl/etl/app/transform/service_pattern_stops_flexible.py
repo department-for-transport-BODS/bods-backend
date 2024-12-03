@@ -11,8 +11,8 @@ from ..database.models import (
     TransmodelServicePattern,
     TransmodelServicePatternStop,
     TransmodelStopActivity,
-    TransmodelVehicleJourney,
 )
+from ..database.models.model_transmodel_vehicle_journey import TransmodelVehicleJourney
 from ..txc.helpers.service import get_stop_activity_details
 from ..txc.models import TXCFlexibleJourneyPattern
 from ..txc.models.txc_service_flexible import TXCFixedStopUsage, TXCFlexibleStopUsage

@@ -8,13 +8,12 @@ from typing import Sequence, TypeGuard
 from structlog.stdlib import get_logger
 
 from ..database.client import BodsDB
-from ..database.models import (
-    NaptanStopPoint,
-    TransmodelServicePattern,
-    TransmodelVehicleJourney,
-)
-from ..database.repos import (
+from ..database.models import NaptanStopPoint, TransmodelServicePattern
+from ..database.models.model_transmodel_vehicle_journey import TransmodelVehicleJourney
+from ..database.repos.repo_transmodel_flexible import (
     TransmodelFlexibleServiceOperationPeriodRepo,
+)
+from ..database.repos.repo_transmodel_vehicle_journey import (
     TransmodelVehicleJourneyRepo,
 )
 from ..helpers import ServicedOrgLookup

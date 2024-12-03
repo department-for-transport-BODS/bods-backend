@@ -4,7 +4,8 @@ Vehicle Journey Tracks Generation
 
 from structlog.stdlib import get_logger
 
-from ..database.models import TransmodelTracksVehicleJourney, TransmodelVehicleJourney
+from ..database.models import TransmodelTracksVehicleJourney
+from ..database.models.model_transmodel_vehicle_journey import TransmodelVehicleJourney
 from ..helpers import TrackLookup
 from ..txc.helpers.routes import extract_stop_point_pairs
 from ..txc.models import (

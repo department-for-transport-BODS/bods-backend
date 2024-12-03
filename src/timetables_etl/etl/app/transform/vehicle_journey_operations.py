@@ -9,12 +9,14 @@ from typing import Sequence
 from structlog.stdlib import get_logger
 
 from ..database.models import (
+    TransmodelServicedOrganisationVehicleJourney,
+    TransmodelServicedOrganisationWorkingDays,
+)
+from ..database.models.model_transmodel_vehicle_journey import (
     TMDayOfWeek,
     TransmodelNonOperatingDatesExceptions,
     TransmodelOperatingDatesExceptions,
     TransmodelOperatingProfile,
-    TransmodelServicedOrganisationVehicleJourney,
-    TransmodelServicedOrganisationWorkingDays,
     TransmodelVehicleJourney,
 )
 from ..helpers import ServicedOrgLookup

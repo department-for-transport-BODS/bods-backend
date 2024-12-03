@@ -5,7 +5,8 @@ Process and add Vehicle Journey Tracks to DB
 from structlog.stdlib import get_logger
 
 from ..database.client import BodsDB
-from ..database.models import TransmodelTracksVehicleJourney, TransmodelVehicleJourney
+from ..database.models import TransmodelTracksVehicleJourney
+from ..database.models.model_transmodel_vehicle_journey import TransmodelVehicleJourney
 from ..database.repos import TransmodelTracksVehicleJourneyRepo
 from ..helpers import TrackLookup
 from ..transform.vehicle_journey_tracks import generate_vehicle_journey_tracks

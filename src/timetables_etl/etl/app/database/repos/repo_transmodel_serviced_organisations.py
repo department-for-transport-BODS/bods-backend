@@ -10,7 +10,7 @@ from ..models.model_transmodel_serviced_organisations import (
     TransmodelServicedOrganisationVehicleJourney,
     TransmodelServicedOrganisationWorkingDays,
 )
-from .repo_common import BaseRepository, BaseRepositoryWithId, handle_repository_errors
+from .repo_common import BaseRepositoryWithId, handle_repository_errors
 
 
 class TransmodelServicedOrganisationsRepo(
@@ -44,34 +44,18 @@ class TransmodelServicedOrganisationsRepo(
 
 
 class TransmodelServicedOrganisationWorkingDaysRepo(
-    BaseRepository[TransmodelServicedOrganisationWorkingDays]
+    BaseRepositoryWithId[TransmodelServicedOrganisationWorkingDays]
 ):
     """Repository for managing Serviced Organisation Working Days entities"""
 
     def __init__(self, db: BodsDB):
         super().__init__(db, TransmodelServicedOrganisationWorkingDays)
 
-    @handle_repository_errors
-    def get_by_id(
-        self, working_days_id: int
-    ) -> TransmodelServicedOrganisationWorkingDays | None:
-        """Get by ID"""
-        statement = self._build_query().where(self._model.id == working_days_id)
-        return self._fetch_one(statement)
-
 
 class TransmodelServicedOrganisationVehicleJourneyRepo(
-    BaseRepository[TransmodelServicedOrganisationVehicleJourney]
+    BaseRepositoryWithId[TransmodelServicedOrganisationVehicleJourney]
 ):
     """Repository for managing Serviced Organisation Vehicle Journey entities"""
 
     def __init__(self, db: BodsDB):
         super().__init__(db, TransmodelServicedOrganisationVehicleJourney)
-
-    @handle_repository_errors
-    def get_by_id(
-        self, relation_id: int
-    ) -> TransmodelServicedOrganisationVehicleJourney | None:
-        """Get by ID"""
-        statement = self._build_query().where(self._model.id == relation_id)
-        return self._fetch_one(statement)

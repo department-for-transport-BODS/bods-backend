@@ -9,7 +9,7 @@ import pytest
 from tests.timetables_etl.factories.database.transmodel import (
     TransmodelVehicleJourneyFactory,
 )
-from timetables_etl.etl.app.database.models.model_transmodel import (
+from timetables_etl.etl.app.database.models import (
     TransmodelNonOperatingDatesExceptions,
     TransmodelOperatingDatesExceptions,
 )

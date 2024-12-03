@@ -6,7 +6,7 @@ from structlog.stdlib import get_logger
 
 from ..database.client import BodsDB
 from ..database.models import TransmodelService
-from ..database.repos import TransmodelBookingArrangementsRepo
+from ..database.repos.repo_transmodel_flexible import TransmodelBookingArrangementsRepo
 from ..transform.booking_arrangements import create_booking_arrangements
 from ..txc.models import TXCService
 

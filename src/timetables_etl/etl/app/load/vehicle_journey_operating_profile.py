@@ -7,16 +7,16 @@ from datetime import date
 from structlog.stdlib import get_logger
 
 from ..database.client import BodsDB
-from ..database.models import (
-    TransmodelServicedOrganisationWorkingDays,
-    TransmodelVehicleJourney,
-)
+from ..database.models import TransmodelServicedOrganisationWorkingDays
+from ..database.models.model_transmodel_vehicle_journey import TransmodelVehicleJourney
 from ..database.repos import (
+    TransmodelServicedOrganisationVehicleJourneyRepo,
+    TransmodelServicedOrganisationWorkingDaysRepo,
+)
+from ..database.repos.repo_transmodel_vehicle_journey import (
     TransmodelNonOperatingDatesExceptionsRepo,
     TransmodelOperatingDatesExceptionsRepo,
     TransmodelOperatingProfileRepo,
-    TransmodelServicedOrganisationVehicleJourneyRepo,
-    TransmodelServicedOrganisationWorkingDaysRepo,
 )
 from ..helpers import ServicedOrgLookup
 from ..transform.vehicle_journey_operations import (

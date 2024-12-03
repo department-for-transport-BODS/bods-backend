@@ -12,12 +12,12 @@ from ..models import (
     OrganisationTXCFileAttributes,
 )
 from . import exceptions
-from .repo_common import BaseRepository, handle_repository_errors
+from .repo_common import BaseRepository, BaseRepositoryWithId, handle_repository_errors
 
 logger = logging.getLogger(__name__)
 
 
-class OrganisationDatasetRepo(BaseRepository[OrganisationDataset]):
+class OrganisationDatasetRepo(BaseRepositoryWithId[OrganisationDataset]):
     """
     Repository for managing OrganisationDataset entities
     Table: organisation_dataset
@@ -25,14 +25,6 @@ class OrganisationDatasetRepo(BaseRepository[OrganisationDataset]):
 
     def __init__(self, db: BodsDB):
         super().__init__(db, OrganisationDataset)
-
-    @handle_repository_errors
-    def get_by_id(self, dataset_id: int) -> OrganisationDataset | None:
-        """
-        Get OrganisationDataset by ID
-        """
-        statement = self._build_query().where(self._model.id == dataset_id)
-        return self._fetch_one(statement)
 
 
 class OrganisationDatasetRevisionRepo(BaseRepository[OrganisationDatasetRevision]):
@@ -80,14 +72,8 @@ class OrganisationTXCFileAttributesRepo(BaseRepository[OrganisationTXCFileAttrib
         return file
 
 
-class OrganisationOrganisationRepo(BaseRepository[OrganisationOrganisation]):
+class OrganisationOrganisationRepo(BaseRepositoryWithId[OrganisationOrganisation]):
     """Repository for managing Organisation entities"""
 
     def __init__(self, db: BodsDB):
         super().__init__(db, OrganisationOrganisation)
-
-    @handle_repository_errors
-    def get_by_id(self, org_id: int) -> OrganisationOrganisation | None:
-        """Get by ID"""
-        statement = self._build_query().where(self._model.id == org_id)
-        return self._fetch_one(statement)

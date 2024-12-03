@@ -13,8 +13,8 @@ from ..database.models.model_transmodel import (
     TransmodelServicePattern,
     TransmodelServicePatternStop,
     TransmodelStopActivity,
-    TransmodelVehicleJourney,
 )
+from ..database.models.model_transmodel_vehicle_journey import TransmodelVehicleJourney
 from ..txc.models import (
     TXCFlexibleVehicleJourney,
     TXCJourneyPatternSection,

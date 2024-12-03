@@ -7,7 +7,12 @@ from typing import Optional
 from sqlalchemy import Select, select
 
 from ..models.model_naptan import NaptanAdminArea, NaptanLocality, NaptanStopPoint
-from .repo_common import BaseRepository, BodsDB, handle_repository_errors
+from .repo_common import (
+    BaseRepository,
+    BaseRepositoryWithId,
+    BodsDB,
+    handle_repository_errors,
+)
 
 
 class NaptanStopPointRepo(BaseRepository[NaptanStopPoint]):
@@ -98,14 +103,8 @@ class NaptanLocalityRepo(BaseRepository[NaptanLocality]):
         return self._fetch_one(statement)
 
 
-class NaptanAdminAreaRepo(BaseRepository[NaptanAdminArea]):
+class NaptanAdminAreaRepo(BaseRepositoryWithId[NaptanAdminArea]):
     """Repository for managing Naptan Admin Area entities"""
 
     def __init__(self, db: BodsDB):
         super().__init__(db, NaptanAdminArea)
-
-    @handle_repository_errors
-    def get_by_id(self, area_id: int) -> NaptanAdminArea | None:
-        """Get by ID"""
-        statement = self._build_query().where(self._model.id == area_id)
-        return self._fetch_one(statement)

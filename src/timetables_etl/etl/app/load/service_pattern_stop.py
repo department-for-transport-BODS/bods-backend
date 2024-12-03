@@ -11,8 +11,8 @@ from ..database.models import (
     NaptanStopPoint,
     TransmodelServicePattern,
     TransmodelServicePatternStop,
-    TransmodelVehicleJourney,
 )
+from ..database.models.model_transmodel_vehicle_journey import TransmodelVehicleJourney
 from ..database.repos import (
     TransmodelServicePatternStopRepo,
     TransmodelStopActivityRepo,

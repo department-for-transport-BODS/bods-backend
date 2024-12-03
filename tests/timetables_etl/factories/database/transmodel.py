@@ -7,12 +7,12 @@ from typing import Literal
 
 import factory
 
-from timetables_etl.etl.app.database.models import (
-    TransmodelService,
-    TransmodelVehicleJourney,
-)
+from timetables_etl.etl.app.database.models import TransmodelService
 from timetables_etl.etl.app.database.models.model_transmodel_flexible import (
     TransmodelBookingArrangements,
+)
+from timetables_etl.etl.app.database.models.model_transmodel_vehicle_journey import (
+    TransmodelVehicleJourney,
 )
 
 
