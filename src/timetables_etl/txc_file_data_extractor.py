@@ -1,5 +1,6 @@
 from io import BytesIO
 from common import DbManager
+from db.constants import StepName
 from db.file_processing_result import (
     txc_file_attributes_to_db,
     file_processing_result_to_db,
@@ -11,7 +12,7 @@ from timetables.transxchange import TransXChangeDatasetParser
 from timetables.dataclasses.transxchange import TXCFile
 
 
-@file_processing_result_to_db("TxC attributes extraction")
+@file_processing_result_to_db(StepName.TXC_ATTRIBUTE_EXTRACTION)
 def lambda_handler(event, context):
     """
     Main lambda handler
