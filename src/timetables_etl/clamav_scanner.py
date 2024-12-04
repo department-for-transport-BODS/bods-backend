@@ -89,7 +89,7 @@ def update_file_hash(event, file_object):
     logger.info(f"Updating the hash of {event['ObjectKey']} to db")
     dataset_revision = DatasetRevisionRepository(DbManager.get_db())
     revision = dataset_revision.get_by_id(event["DatasetRevisionId"])
-    revision.modified_file_hash = sha1sum(file_object.read())
+    revision.original_file_hash = sha1sum(file_object.read())
     dataset_revision.update(revision)
 
 
