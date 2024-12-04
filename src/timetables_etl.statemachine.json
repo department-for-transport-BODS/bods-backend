@@ -97,10 +97,11 @@
           },
           "ptiValidation": {
             "Type": "Task",
-            "Resource": "${PlaceholderLambdaArn}",
+            "Resource": "${PTIValidationLambdaArn}",
             "Parameters": {
               "Bucket.$": "$.Bucket",
-              "ObjectKey.$": "$.Key"
+              "ObjectKey.$": "$.Key",
+              "DatasetRevisionId.$": "$.detail.dataset_revision_id"
             },
             "Next": "timetablesEtl",
             "Catch": [
