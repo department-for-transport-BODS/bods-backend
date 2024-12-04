@@ -1,11 +1,25 @@
-from typing import List, Optional
+from typing import Any, List, Optional
 
+from geoalchemy2.types import Geometry
 from sqlalchemy import ARRAY, Boolean, CheckConstraint, Date, DateTime, ForeignKeyConstraint, Identity, Index, Integer, PrimaryKeyConstraint, String, Text, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column, relationship
 import datetime
 
 class Base(MappedAsDataclass, DeclarativeBase):
     pass
+
+
+class NaptanDistrict(Base):
+    __tablename__ = 'naptan_district'
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='naptan_district_pkey'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
+    name: Mapped[str] = mapped_column(String(255))
+
+    naptan_locality: Mapped[List['NaptanLocality']] = relationship('NaptanLocality', back_populates='district')
 
 
 class OrganisationDataset(Base):
@@ -106,6 +120,42 @@ class OrganisationDatasetrevision(Base):
     pipelines_fileprocessingresult: Mapped[List['PipelinesFileprocessingresult']] = relationship('PipelinesFileprocessingresult', back_populates='revision')
 
 
+class OtcLicence(Base):
+    __tablename__ = 'otc_licence'
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='otc_licence_pkey'),
+        UniqueConstraint('number', name='otc_licence_number_key'),
+        Index('otc_licence_number_d0c037ba_like', 'number'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
+    number: Mapped[str] = mapped_column(String(9))
+    status: Mapped[str] = mapped_column(String(30))
+    granted_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
+    expiry_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
+
+    otc_service: Mapped[List['OtcService']] = relationship('OtcService', back_populates='licence')
+
+
+class OtcOperator(Base):
+    __tablename__ = 'otc_operator'
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='otc_operator_pkey'),
+        UniqueConstraint('operator_id', name='otc_operator_operator_id_key'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
+    operator_id: Mapped[int] = mapped_column(Integer)
+    operator_name: Mapped[str] = mapped_column(String(100))
+    address: Mapped[str] = mapped_column(Text)
+    discs_in_possession: Mapped[Optional[int]] = mapped_column(Integer)
+    authdiscs: Mapped[Optional[int]] = mapped_column(Integer)
+
+    otc_service: Mapped[List['OtcService']] = relationship('OtcService', back_populates='operator')
+
+
 class PipelinesPipelineerrorcode(Base):
     __tablename__ = 'pipelines_pipelineerrorcode'
     __table_args__ = (
@@ -150,6 +200,23 @@ class PipelinesSchemadefinition(Base):
     category: Mapped[str] = mapped_column(String(6))
     checksum: Mapped[str] = mapped_column(String(40))
     schema: Mapped[str] = mapped_column(String(100))
+
+
+class UiLta(Base):
+    __tablename__ = 'ui_lta'
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='ui_lta_pkey'),
+        UniqueConstraint('id', 'name', name='ui_lta_id_name_304a2476_uniq'),
+        UniqueConstraint('name', name='ui_lta_name_key'),
+        Index('ui_lta_name_8bea4104_like', 'name'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
+    name: Mapped[str] = mapped_column(Text)
+
+    naptan_adminarea: Mapped[List['NaptanAdminarea']] = relationship('NaptanAdminarea', back_populates='ui_lta')
+    otc_localauthority: Mapped[List['OtcLocalauthority']] = relationship('OtcLocalauthority', back_populates='ui_lta')
 
 
 class UsersUser(Base):
@@ -262,6 +329,28 @@ class DataQualitySchemaviolation(Base):
     revision: Mapped['OrganisationDatasetrevision'] = relationship('OrganisationDatasetrevision', back_populates='data_quality_schemaviolation')
 
 
+class NaptanAdminarea(Base):
+    __tablename__ = 'naptan_adminarea'
+    __table_args__ = (
+        ForeignKeyConstraint(['ui_lta_id'], ['public.ui_lta.id'], deferrable=True, initially='DEFERRED', name='naptan_adminarea_ui_lta_id_c37d8a17_fk_ui_lta_id'),
+        PrimaryKeyConstraint('id', name='naptan_adminarea_pkey'),
+        UniqueConstraint('atco_code', name='naptan_adminarea_atco_code_key'),
+        Index('naptan_adminarea_atco_code_167e083c_like', 'atco_code'),
+        Index('naptan_adminarea_ui_lta_id_c37d8a17', 'ui_lta_id'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
+    name: Mapped[str] = mapped_column(String(255))
+    traveline_region_id: Mapped[str] = mapped_column(String(255))
+    atco_code: Mapped[str] = mapped_column(String(255))
+    ui_lta_id: Mapped[Optional[int]] = mapped_column(Integer)
+
+    ui_lta: Mapped['UiLta'] = relationship('UiLta', back_populates='naptan_adminarea')
+    naptan_locality: Mapped[List['NaptanLocality']] = relationship('NaptanLocality', back_populates='admin_area')
+    naptan_stoppoint: Mapped[List['NaptanStoppoint']] = relationship('NaptanStoppoint', back_populates='admin_area')
+
+
 class OrganisationOrganisation(Base):
     __tablename__ = 'organisation_organisation'
     __table_args__ = (
@@ -318,6 +407,69 @@ class OrganisationTxcfileattributes(Base):
     operating_period_start_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
 
     revision: Mapped['OrganisationDatasetrevision'] = relationship('OrganisationDatasetrevision', back_populates='organisation_txcfileattributes')
+
+
+class OtcLocalauthority(Base):
+    __tablename__ = 'otc_localauthority'
+    __table_args__ = (
+        ForeignKeyConstraint(['ui_lta_id'], ['public.ui_lta.id'], deferrable=True, initially='DEFERRED', name='otc_localauthority_ui_lta_id_f47b3d37_fk_ui_lta_id'),
+        PrimaryKeyConstraint('id', name='otc_localauthority_pkey'),
+        UniqueConstraint('name', name='otc_localauthority_name_5e53a784_uniq'),
+        Index('otc_localauthority_name_5e53a784_like', 'name'),
+        Index('otc_localauthority_ui_lta_id_f47b3d37', 'ui_lta_id'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
+    name: Mapped[str] = mapped_column(Text)
+    ui_lta_id: Mapped[Optional[int]] = mapped_column(Integer)
+
+    ui_lta: Mapped['UiLta'] = relationship('UiLta', back_populates='otc_localauthority')
+    otc_localauthority_registration_numbers: Mapped[List['OtcLocalauthorityRegistrationNumbers']] = relationship('OtcLocalauthorityRegistrationNumbers', back_populates='localauthority')
+
+
+class OtcService(Base):
+    __tablename__ = 'otc_service'
+    __table_args__ = (
+        ForeignKeyConstraint(['licence_id'], ['public.otc_licence.id'], deferrable=True, initially='DEFERRED', name='otc_service_licence_id_8b93ea5f_fk_otc_licence_id'),
+        ForeignKeyConstraint(['operator_id'], ['public.otc_operator.id'], deferrable=True, initially='DEFERRED', name='otc_service_operator_id_26fe49fe_fk_otc_operator_id'),
+        PrimaryKeyConstraint('id', name='otc_service_pkey'),
+        Index('otc_service_api_type_c542e069', 'api_type'),
+        Index('otc_service_api_type_c542e069_like', 'api_type'),
+        Index('otc_service_licence_id_8b93ea5f', 'licence_id'),
+        Index('otc_service_operator_id_26fe49fe', 'operator_id'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
+    registration_number: Mapped[str] = mapped_column(String(25))
+    variation_number: Mapped[int] = mapped_column(Integer)
+    service_number: Mapped[str] = mapped_column(String(1000))
+    current_traffic_area: Mapped[str] = mapped_column(String(1))
+    start_point: Mapped[str] = mapped_column(Text)
+    finish_point: Mapped[str] = mapped_column(Text)
+    via: Mapped[str] = mapped_column(Text)
+    service_type_other_details: Mapped[str] = mapped_column(Text)
+    description: Mapped[str] = mapped_column(String(25))
+    registration_status: Mapped[str] = mapped_column(String(20))
+    public_text: Mapped[str] = mapped_column(Text)
+    service_type_description: Mapped[str] = mapped_column(String(1000))
+    subsidies_description: Mapped[str] = mapped_column(String(7))
+    subsidies_details: Mapped[str] = mapped_column(Text)
+    effective_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
+    received_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
+    end_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
+    registration_code: Mapped[Optional[int]] = mapped_column(Integer)
+    short_notice: Mapped[Optional[bool]] = mapped_column(Boolean)
+    licence_id: Mapped[Optional[int]] = mapped_column(Integer)
+    operator_id: Mapped[Optional[int]] = mapped_column(Integer)
+    last_modified: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    api_type: Mapped[Optional[str]] = mapped_column(Text)
+    atco_code: Mapped[Optional[str]] = mapped_column(Text)
+
+    licence: Mapped['OtcLicence'] = relationship('OtcLicence', back_populates='otc_service')
+    operator: Mapped['OtcOperator'] = relationship('OtcOperator', back_populates='otc_service')
+    otc_localauthority_registration_numbers: Mapped[List['OtcLocalauthorityRegistrationNumbers']] = relationship('OtcLocalauthorityRegistrationNumbers', back_populates='service')
 
 
 class PipelinesDatasetetltaskresult(Base):
@@ -384,3 +536,79 @@ class PipelinesFileprocessingresult(Base):
     pipeline_error_code: Mapped['PipelinesPipelineerrorcode'] = relationship('PipelinesPipelineerrorcode', back_populates='pipelines_fileprocessingresult')
     pipeline_processing_step: Mapped['PipelinesPipelineprocessingstep'] = relationship('PipelinesPipelineprocessingstep', back_populates='pipelines_fileprocessingresult')
     revision: Mapped['OrganisationDatasetrevision'] = relationship('OrganisationDatasetrevision', back_populates='pipelines_fileprocessingresult')
+
+
+class NaptanLocality(Base):
+    __tablename__ = 'naptan_locality'
+    __table_args__ = (
+        ForeignKeyConstraint(['admin_area_id'], ['public.naptan_adminarea.id'], deferrable=True, initially='DEFERRED', name='naptan_locality_admin_area_id_0765cd72_fk_naptan_adminarea_id'),
+        ForeignKeyConstraint(['district_id'], ['public.naptan_district.id'], deferrable=True, initially='DEFERRED', name='naptan_locality_district_id_39815ea9_fk_naptan_district_id'),
+        PrimaryKeyConstraint('gazetteer_id', name='naptan_locality_pkey'),
+        Index('naptan_locality_admin_area_id_0765cd72', 'admin_area_id'),
+        Index('naptan_locality_district_id_39815ea9', 'district_id'),
+        Index('naptan_locality_gazetteer_id_6170fc8e_like', 'gazetteer_id'),
+        {'schema': 'public'}
+    )
+
+    gazetteer_id: Mapped[str] = mapped_column(String(8), primary_key=True)
+    name: Mapped[str] = mapped_column(String(255))
+    easting: Mapped[int] = mapped_column(Integer)
+    northing: Mapped[int] = mapped_column(Integer)
+    admin_area_id: Mapped[Optional[int]] = mapped_column(Integer)
+    district_id: Mapped[Optional[int]] = mapped_column(Integer)
+
+    admin_area: Mapped['NaptanAdminarea'] = relationship('NaptanAdminarea', back_populates='naptan_locality')
+    district: Mapped['NaptanDistrict'] = relationship('NaptanDistrict', back_populates='naptan_locality')
+    naptan_stoppoint: Mapped[List['NaptanStoppoint']] = relationship('NaptanStoppoint', back_populates='locality')
+
+
+class OtcLocalauthorityRegistrationNumbers(Base):
+    __tablename__ = 'otc_localauthority_registration_numbers'
+    __table_args__ = (
+        ForeignKeyConstraint(['localauthority_id'], ['public.otc_localauthority.id'], deferrable=True, initially='DEFERRED', name='otc_localauthority_r_localauthority_id_7b261027_fk_otc_local'),
+        ForeignKeyConstraint(['service_id'], ['public.otc_service.id'], deferrable=True, initially='DEFERRED', name='otc_localauthority_r_service_id_75d70959_fk_otc_servi'),
+        PrimaryKeyConstraint('id', name='otc_localauthority_registration_numbers_pkey'),
+        UniqueConstraint('localauthority_id', 'service_id', name='otc_localauthority_regis_localauthority_id_servic_708d1fe0_uniq'),
+        Index('otc_localauthority_registr_localauthority_id_7b261027', 'localauthority_id'),
+        Index('otc_localauthority_registration_numbers_service_id_75d70959', 'service_id'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
+    localauthority_id: Mapped[int] = mapped_column(Integer)
+    service_id: Mapped[int] = mapped_column(Integer)
+
+    localauthority: Mapped['OtcLocalauthority'] = relationship('OtcLocalauthority', back_populates='otc_localauthority_registration_numbers')
+    service: Mapped['OtcService'] = relationship('OtcService', back_populates='otc_localauthority_registration_numbers')
+
+
+class NaptanStoppoint(Base):
+    __tablename__ = 'naptan_stoppoint'
+    __table_args__ = (
+        ForeignKeyConstraint(['admin_area_id'], ['public.naptan_adminarea.id'], deferrable=True, initially='DEFERRED', name='naptan_stoppoint_admin_area_id_6ccac623_fk_naptan_adminarea_id'),
+        ForeignKeyConstraint(['locality_id'], ['public.naptan_locality.gazetteer_id'], deferrable=True, initially='DEFERRED', name='naptan_stoppoint_locality_id_4ef6e016_fk_naptan_lo'),
+        PrimaryKeyConstraint('id', name='naptan_stoppoint_pkey'),
+        UniqueConstraint('atco_code', name='naptan_stoppoint_atco_code_key'),
+        Index('naptan_stoppoint_admin_area_id_6ccac623', 'admin_area_id'),
+        Index('naptan_stoppoint_atco_code_b99b7c43_like', 'atco_code'),
+        Index('naptan_stoppoint_locality_id_4ef6e016', 'locality_id'),
+        Index('naptan_stoppoint_locality_id_4ef6e016_like', 'locality_id'),
+        Index('naptan_stoppoint_location_741ad66c_id', 'location'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[int] = mapped_column(Integer, Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1), primary_key=True)
+    atco_code: Mapped[str] = mapped_column(String(255))
+    common_name: Mapped[str] = mapped_column(String(255))
+    location: Mapped[Any] = mapped_column(Geometry('POINT', 4326, from_text='ST_GeomFromEWKT', name='geometry', nullable=False))
+    stop_areas: Mapped[list] = mapped_column(ARRAY(String(length=255)))
+    naptan_code: Mapped[Optional[str]] = mapped_column(String(12))
+    street: Mapped[Optional[str]] = mapped_column(String(255))
+    indicator: Mapped[Optional[str]] = mapped_column(String(255))
+    admin_area_id: Mapped[Optional[int]] = mapped_column(Integer)
+    locality_id: Mapped[Optional[str]] = mapped_column(String(8))
+    bus_stop_type: Mapped[Optional[str]] = mapped_column(String(255))
+    stop_type: Mapped[Optional[str]] = mapped_column(String(255))
+
+    admin_area: Mapped['NaptanAdminarea'] = relationship('NaptanAdminarea', back_populates='naptan_stoppoint')
+    locality: Mapped['NaptanLocality'] = relationship('NaptanLocality', back_populates='naptan_stoppoint')

@@ -1,6 +1,6 @@
 import re
 from datetime import datetime
-from typing import Callable, List, Union
+from typing import List, Union
 
 from common import DbManager
 from dateutil import parser
@@ -11,6 +11,7 @@ from lxml import etree
 from pti.validators.destination_display import DestinationDisplayValidator
 from pti.validators.lines import LinesValidator
 from pti.validators.stop_point import StopPointValidator
+
 ElementsOrStr = Union[List[etree.Element], List[str], str]
 PROHIBITED_CHARS = r",[]{}^=@:;#$£?%+<>«»\/|~_¬"
 ZERO_TIME_DURATION = TimeDuration(hours=0, minutes=0, seconds=0)
@@ -389,19 +390,6 @@ def validate_modification_date_time(context, roots):
         return creation_date < modification_date
 
 
-def get_service_ref_from_element(element, ns):
-    vj = element.xpath("ancestor::x:VehicleJourney", namespaces=ns)
-    service_ref = None
-    if vj:
-        service_ref = vj[0].xpath("string(x:ServiceRef)", namespaces=ns)
-    else:
-        service = element.xpath("ancestor::x:Service", namespaces=ns)
-        if service:
-            service_ref = service[0].xpath("string(x:ServiceCode)", namespaces=ns)
-
-    return service_ref
-
-
 def validate_licence_number(context, elements: List[etree._Element]) -> bool:
     """
     Validate the license number within a list of XML elements if Primary Mode is not coach.
@@ -425,6 +413,7 @@ def validate_licence_number(context, elements: List[etree._Element]) -> bool:
         elif not (licence_number and licence_number[0].text):
             return False
     return True
+
 
 def has_servicedorganisation_working_days(context, service_organisations):
     """
