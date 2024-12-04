@@ -15,6 +15,7 @@ class PTIValidationEvent(BaseModel):
     Bucket: str
     ObjectKey: str
 
+
 @file_processing_result_to_db(step_name=StepName.PTI_VALIDATION)
 def lambda_handler(event, context):
     parsed_event = PTIValidationEvent(**event)

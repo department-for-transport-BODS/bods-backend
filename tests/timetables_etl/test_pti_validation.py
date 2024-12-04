@@ -3,13 +3,16 @@ from unittest.mock import MagicMock, patch
 import pytest
 from db.constants import StepName
 from exceptions.pipeline_exceptions import PipelineException
+
 from tests.conftest import decorator_mock
 
 # Patch the file processing decorator before importing the module
 with patch("db.file_processing_result.file_processing_result_to_db") as m_file_processing_result_to_db:
+
     def decorator_mock(step_name):
         def wrapper(func):
             return func
+
         return wrapper
 
     m_file_processing_result_to_db.side_effect = decorator_mock
@@ -21,6 +24,7 @@ with patch("db.file_processing_result.file_processing_result_to_db") as m_file_p
 def m_db_manager():
     with patch("pti_validation.DbManager") as m_db:
         yield m_db
+
 
 @patch("pti_validation.DatasetRevisionRepository")
 @patch("pti_validation.S3")
