@@ -29,7 +29,6 @@ class PTIValidationService:
 
             txc_file_attributes_repo = TxcFileAttributesRepository(self.db)
             return txc_file_attributes_repo.exists(revision_id=dataset.live_revision_id, hash=file_hash)
-        # TODO: review exception handling
         except Exception as e:
             adapter.error(f"Error checking if file is unchanged: {e}")
             return False

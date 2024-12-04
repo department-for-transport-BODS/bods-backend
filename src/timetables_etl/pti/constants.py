@@ -44,7 +44,7 @@ OLD_HOLIDAYS_ALREADY_REMOVED = [
     "AugustBankHolidayScotland",
 ]
 
-REF_URL = "http://pti_pdf_url.com/"  # TODO: was coming from settings.PTI_PDF_URL. Hardcode or get from env var?
+REF_URL = "https://pti.org.uk/system/files/files/TransXChange_UK_PTI_Profile_v1.1.A.pdf"
 REF_PREFIX = "Please refer to section "
 REF_SUFFIX = " in the BODS PTI profile v1.1 document: "
 NO_REF = "Please refer to the BODS PTI profile v1.1 document: "

@@ -98,10 +98,6 @@ class PTIValidator:
 
         self.register_function("validate_bank_holidays", validate_bank_holidays)
 
-        # TODO: These functions aren't in the pti_schema. Check if they should be re-added or removed entirely.
-        # self.register_function("validate_service_code", validate_service_codes)
-        # self.register_function("check_vehicle_journey_timing_links", check_vehicle_journey_timing_links)
-
         self.register_function("validate_licence_number", validate_licence_number)
 
         self.register_function(
