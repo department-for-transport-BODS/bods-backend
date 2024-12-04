@@ -1,4 +1,6 @@
 from common import DbManager
+from db.constants import StepName
+from db.file_processing_result import file_processing_result_to_db
 from db.repositories.dataset_revision import DatasetRevisionRepository
 from db.repositories.txc_file_attributes import TxcFileAttributesRepository
 from exceptions.pipeline_exceptions import PipelineException
@@ -13,7 +15,7 @@ class PTIValidationEvent(BaseModel):
     Bucket: str
     ObjectKey: str
 
-
+@file_processing_result_to_db(step_name=StepName.PTI_VALIDATION)
 def lambda_handler(event, context):
     parsed_event = PTIValidationEvent(**event)
 
@@ -33,7 +35,6 @@ def lambda_handler(event, context):
     if not txc_file_attributes:
         message = f"Validation task: pti_validation, no valid file to process, zip file: {revision.upload_file}"
         adapter.error(message, exc_info=True)
-        # TODO: Usually we mark the task as error here. Need to handle single file failure (use decorator?)
         raise PipelineException(message)
 
     validation_service = PTIValidationService(db)
