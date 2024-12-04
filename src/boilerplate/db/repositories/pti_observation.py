@@ -32,7 +32,6 @@ class PTIObservationRepository:
         with self._db.session as session:
             db_objects = [self._get_observation_from_violation(revision_id, violation) for violation in violations]
             try:
-                # session.query(self._db.classes.data_quality_ptiobservation).filter_by(revision_id=revision_id).delete()
                 # TODO: Any need to batch writes here?
                 session.add_all(db_objects)
                 session.commit()
