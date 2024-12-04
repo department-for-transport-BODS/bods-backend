@@ -8,7 +8,7 @@ def lambda_handler(event, context):
     try:
         GTFS_API_BASE_URL = environ.get("GTFS_API_BASE_URL", default="")
         url = f"{GTFS_API_BASE_URL}/gtfs-rt"
-        _prefix = f"[GTFSRTArchiving] URL {url} => "
+        _prefix = f"[GTFSRTArchiving] => "
         logger.info(_prefix + "Begin archiving GTFSRT data.")
         start = time.time()
         archiver = GTFSRTArchiver(event, url)
