@@ -78,8 +78,10 @@ class TestClamAVScanner(unittest.TestCase):
     @patch("timetables_etl.clamav_scanner.unzip")
     @patch("db.file_processing_result.BodsDB")
     @patch("db.file_processing_result.get_revision")
+    @patch("timetables_etl.clamav_scanner.update_file_hash")
     @patch.dict("os.environ", TEST_ENV_VAR)
     def test_lambda_handler_success(self,
+                                    mock_update_file_hash,
                                     mock_get_revision,
                                     mock_db,
                                     mock_unzip,
@@ -125,7 +127,7 @@ class TestClamAVScanner(unittest.TestCase):
 
             # Verify S3 and FileScanner were called correctly
             mock_s3.assert_called_once_with(bucket_name="test-bucket")
-            mock_s3_instance.get_object.assert_called_once_with(file_path=self.file_name)
+            self.assertEqual(mock_s3_instance.get_object.call_count, 2)
             mock_scanner_instance.clamav.ping.assert_called_once()
             mock_scanner_instance.scan.assert_called_once_with(mock_file_object)
 
@@ -133,8 +135,10 @@ class TestClamAVScanner(unittest.TestCase):
     @patch("timetables_etl.clamav_scanner.FileScanner")
     @patch('db.file_processing_result.BodsDB')
     @patch("db.file_processing_result.get_revision")
+    @patch("timetables_etl.clamav_scanner.update_file_hash")
     @patch.dict("os.environ", TEST_ENV_VAR)
     def test_lambda_handler_clamav_unreachable(self,
+                                               mock_update_file_hash,
                                                mock_get_revision,
                                                mock_db,
                                                mock_file_scanner,
@@ -182,8 +186,10 @@ class TestClamAVScanner(unittest.TestCase):
     @patch("timetables_etl.clamav_scanner.FileScanner")
     @patch('db.file_processing_result.BodsDB')
     @patch("db.file_processing_result.get_revision")
+    @patch("timetables_etl.clamav_scanner.update_file_hash")
     @patch.dict("os.environ", TEST_ENV_VAR)
     def test_lambda_handler_scan_error(self,
+                                       mock_update_file_hash,
                                        mock_get_revision,
                                        mock_db,
                                        mock_file_scanner,

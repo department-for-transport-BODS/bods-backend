@@ -97,3 +97,11 @@ class S3:
             logger.error(f"Error downloading file object "
                          f"{self.bucket_name}/{file_path}: {err}")
             raise err
+
+    def get_list_objects_v2(self, prefix):
+        # Get the paginator
+        paginator = self._client.get_paginator('list_objects_v2')
+
+        # Paginate through the API results
+        for page in paginator.paginate(Bucket=self.bucket_name, Prefix=prefix):
+            yield page
