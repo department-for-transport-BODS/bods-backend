@@ -11,6 +11,8 @@ Parameters:
     Type: String
   AvlConsumerApiBaseUrl:
     Type: String
+  CavlConsumerUrl:
+    Type: String
   GtfsApiBaseUrl:
     Type: String
   RdsDbHostAddr:
@@ -54,34 +56,43 @@ Resources:
           Properties:
             Name: !Sub '${ProjectName}-${Environment}-pt-iterator-sm-scheduler'
             Schedule: rate(1 minute)
+            Enabled: False
+            Input: !Sub |
+              {
+                "functions": [ 
+                  "${GenerateGtfsRtLambda}",
+                  "${GenerateSiriVmLambda}",
+                  "${GenerateSiriVmTflLambda}"
+                ]
+              }
       Definition:
         StartAt: ConfigureCount
         States:
           ConfigureCount:
-            Type: Pass
+            Next: MapState
             Result:
-              index: 0
-              count: 6
-            ResultPath: $.iterator
-            Next: Iterator
-          Iterator:
-            Type: Task
-            Resource: !GetAtt PtIteratorLambda.Arn
-            ResultPath: $.iterator
-            Next: IsCountReached
-          IsCountReached:
-            Type: Choice
-            Choices:
-              - Variable: $.iterator.continue
-                BooleanEquals: true
-                Next: Wait
-            Default: Done
-          Wait:
-            Type: Wait
-            Seconds: 10
-            Next: Iterator
-          Done:
+              intervals: [0, 10, 20, 30, 40, 50]
+            ResultPath: $.config
             Type: Pass
+          MapState:
+            Type: Map
+            ItemsPath: $.functions
+            Iterator:
+              StartAt: InvokeLambda
+              States:
+                InvokeLambda:
+                  Type: Task
+                  Resource: !GetAtt PtIteratorLambda.Arn
+                  Parameters:
+                    functionName.$: $.functionName
+                    intervals.$: $.intervals
+                  Next: Done
+                Done:
+                  End: true
+                  Type: Pass
+            Parameters:
+              functionName.$: $$.Map.Item.Value
+              intervals.$: $.config.intervals
             End: true
 
   ############################
@@ -103,14 +114,6 @@ Resources:
             FunctionName: !Ref GenerateSiriVmLambda
         - LambdaInvokePolicy:
             FunctionName: !Ref GenerateSiriVmTflLambda
-      Environment:
-        Variables:
-          TARGET_FUNCTION_NAMES: !Join 
-            - ','
-            - 
-              - !Ref GenerateGtfsRtLambda
-              - !Ref GenerateSiriVmLambda
-              - !Ref GenerateSiriVmTflLambda
       LoggingConfig:
         LogGroup: !Ref PtIteratorLambdaLogGroup
 
@@ -147,7 +150,9 @@ Resources:
       Environment:
         Variables:
           AWS_SIRIVM_STORAGE_BUCKET_NAME: !Sub 'bodds-${Environment}-sirivm'
+          CAVL_CONSUMER_URL: !Ref CavlConsumerUrl
           GTFS_API_BASE_URL: !Ref GtfsApiBaseUrl
+          # GTFS_API_ACTIVE: 'True'
           HTTPS_PROXY: !If
             - IsNotLocal
             - !Sub 'http://squid.bodds.${Environment}:3128'

@@ -64,6 +64,7 @@ test:
         ProjectName='bods-backend'
         Environment='test'
         AvlConsumerApiBaseUrl='https://x87vl7rpc0.execute-api.eu-west-2.amazonaws.com/v1'
+        CavlConsumerUrl='https://api-consumer-cavl-preprod.itoworld.com'
 
 uat:
   deploy:
@@ -75,6 +76,7 @@ uat:
         ProjectName='bods-backend'
         Environment='uat'
         AvlConsumerApiBaseUrl='https://x87vl7rpc0.execute-api.eu-west-2.amazonaws.com/v1'
+        CavlConsumerUrl='https://api-consumer-cavl-staging.itoworld.com'
 
 prod:
   sync:
@@ -89,4 +91,5 @@ prod:
         ProjectName='bods-backend'
         Environment='prod'
         AvlConsumerApiBaseUrl='https://obg8kxwhq9.execute-api.eu-west-2.amazonaws.com/v1'
+        CavlConsumerUrl='https://api-consumer-cavl.itoworld.com'
         GtfsApiBaseUrl='https://gtfs.prod-temp.integrated-data.dft-create-data.com'
