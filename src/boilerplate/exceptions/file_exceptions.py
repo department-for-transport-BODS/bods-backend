@@ -10,6 +10,11 @@ class ValidationException(Exception):
         else:
             self.message = message
         self.line = line
+        super().__init__(self.message)
+
+    def __str__(self):
+        return (f"[{self.code}] {self.message} "
+                f"(File: {self.filename}, Line: {self.line})")
 
 
 class AntiVirusError(ValidationException):
