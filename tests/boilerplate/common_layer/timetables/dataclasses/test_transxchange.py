@@ -6,7 +6,7 @@ from common_layer.timetables.dataclasses import transxchange
 
 class TestTransXChangeZip(unittest.TestCase):
     def setUp(self):
-        xml_path = Path(__file__).parent.parent.parent.parent.resolve() / "data" / "sample.xml"
+        xml_path = Path(__file__).parent.parent.parent.resolve() / "data" / "sample.xml"
         xml_content = open(xml_path, "rb")
         self.document = TransXChangeDocument(xml_content)
 

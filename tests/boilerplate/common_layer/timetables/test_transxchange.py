@@ -16,7 +16,7 @@ from common_layer.timetables.transxchange import (
 class TestTransXChangeDocument(unittest.TestCase):
     def setUp(self):
         # Mock XML content for testing purposes
-        xml_path = Path(__file__).parent.parent.parent.resolve() / "data" / "sample.xml"
+        xml_path = Path(__file__).parent.parent.resolve() / "data" / "sample.xml"
         xml_content = open(xml_path, "rb").read()
         self.document = TransXChangeDocument(BytesIO(xml_content))
 
