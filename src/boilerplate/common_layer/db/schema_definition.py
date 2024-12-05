@@ -1,5 +1,5 @@
 import time
-from common_layer.db.bods_db import BodsDB
+from common_layer.db import BodsDB
 from common_layer.logger import logger
 from django.db.models import TextChoices
 from django.utils.translation import gettext_lazy as _

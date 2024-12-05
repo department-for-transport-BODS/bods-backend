@@ -1,6 +1,6 @@
 import logging
 
-from common_layer.db.bods_db import BodsDB
+from common_layer.db import BodsDB
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 from sqlalchemy.orm.exc import NoResultFound
 

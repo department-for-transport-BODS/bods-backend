@@ -1,7 +1,7 @@
 import logging
 from typing import List
 
-from common_layer.db.bods_db import BodsDB
+from common_layer.db import BodsDB
 from common_layer.db.models import DataQualityPtiobservation
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 from common_layer.pti.models import Violation

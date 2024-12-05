@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, List
 
-from common_layer.db.bods_db import BodsDB
+from common_layer.db import BodsDB
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 
 logger = logging.getLogger(__name__)

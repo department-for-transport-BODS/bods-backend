@@ -1,6 +1,6 @@
 from botocore.response import StreamingBody
 from common_layer.utils import sha1sum
-from common_layer.db.bods_db import BodsDB
+from common_layer.db import BodsDB
 from common_layer.db.models import (OrganisationDatasetrevision,
                                     OrganisationTxcfileattributes)
 from common_layer.db.repositories.dataset import DatasetRepository

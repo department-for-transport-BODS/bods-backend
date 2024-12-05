@@ -1,4 +1,4 @@
-from common_layer.db.bods_db import BodsDB
+from common_layer.db import BodsDB
 
 from common_layer.logger import logger
 from sqlalchemy.exc import SQLAlchemyError

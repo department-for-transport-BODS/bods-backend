@@ -1,5 +1,5 @@
 import time
-from common_layer.db.bods_db import BodsDB
+from common_layer.db import BodsDB
 from datetime import datetime, timezone
 from common_layer.logger import logger
 

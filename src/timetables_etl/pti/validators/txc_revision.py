@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from common_layer.db.bods_db import BodsDB
+from common_layer.db import BodsDB
 from common_layer.db.models import OrganisationDatasetrevision, OrganisationTxcfileattributes
 from common_layer.db.repositories.dataset import DatasetRepository
 from common_layer.db.repositories.dataset_revision import DatasetRevisionRepository
