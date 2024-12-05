@@ -1,7 +1,7 @@
 import time
-from common import BodsDB
+from common_layer.db.bods_db import BodsDB
 from datetime import datetime, timezone
-from logger import logger
+from common_layer.logger import logger
 
 
 def get_cavl_db_object(db: BodsDB, data_format: str):

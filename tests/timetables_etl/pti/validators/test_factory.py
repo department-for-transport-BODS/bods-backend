@@ -1,8 +1,9 @@
-from unittest.mock import MagicMock, mock_open, patch
 from pathlib import Path
+from unittest.mock import MagicMock, mock_open, patch
+
 import pytest
-from pti.validators.xml_file import XmlFilePTIValidator
 from pti.validators.factory import get_xml_file_pti_validator
+from pti.validators.xml_file import XmlFilePTIValidator
 
 
 @patch("pti.validators.factory.PTI_SCHEMA_PATH", new_callable=MagicMock)

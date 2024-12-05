@@ -1,12 +1,12 @@
 import unittest
 from unittest.mock import MagicMock, patch
 from sqlalchemy.exc import SQLAlchemyError
-from db.schema_violation import SchemaViolation, get_schema_violation_obj
+from common_layer.db.schema_violation import SchemaViolation, get_schema_violation_obj
 
 
 class TestSchemaViolation(unittest.TestCase):
 
-    @patch("db.schema_violation.get_schema_violation_obj")
+    @patch("common_layer.db.schema_violation.get_schema_violation_obj")
     def test_create_success(self, mock_get_schema_violation_obj):
         """
         Test SchemaViolation.create adds records successfully.
@@ -46,8 +46,8 @@ class TestSchemaViolation(unittest.TestCase):
         mock_session.add.assert_called_with(mock_violation_obj)
         mock_session.commit.assert_called()
 
-    @patch("db.schema_violation.get_schema_violation_obj")
-    @patch("db.schema_violation.logger")
+    @patch("common_layer.db.schema_violation.get_schema_violation_obj")
+    @patch("common_layer.db.schema_violation.logger")
     def test_create_failure(self, mock_logger, mock_get_schema_violation_obj):
         """
         Test SchemaViolation.create handles SQLAlchemyError.

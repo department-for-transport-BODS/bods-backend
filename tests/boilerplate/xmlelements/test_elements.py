@@ -1,8 +1,8 @@
 import unittest
 from unittest.mock import MagicMock, patch
 from lxml import etree
-from boilerplate.xmlelements import XMLElement
-from exceptions.xml_doc_exceptions import (
+from common_layer.xmlelements import XMLElement
+from common_layer.exceptions.xml_doc_exceptions import (
     NoElement,
     TooManyElements,
 )

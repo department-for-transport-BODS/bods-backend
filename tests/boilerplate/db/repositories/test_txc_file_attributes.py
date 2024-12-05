@@ -1,8 +1,8 @@
 import unittest
 from unittest.mock import MagicMock
 import pytest
-from db.repositories.txc_file_attributes import TxcFileAttributesRepository
-from exceptions.pipeline_exceptions import PipelineException
+from common_layer.db.repositories.txc_file_attributes import TxcFileAttributesRepository
+from common_layer.exceptions.pipeline_exceptions import PipelineException
 from tests.mock_db import MockedDB, organisation_txcfileattributes
 
 

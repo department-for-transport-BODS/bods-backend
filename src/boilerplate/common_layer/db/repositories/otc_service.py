@@ -1,8 +1,8 @@
 import logging
 from dataclasses import dataclass
 
-from common import BodsDB
-from exceptions.pipeline_exceptions import PipelineException
+from common_layer.db.bods_db import BodsDB
+from common_layer.exceptions.pipeline_exceptions import PipelineException
 
 logger = logging.getLogger(__name__)
 

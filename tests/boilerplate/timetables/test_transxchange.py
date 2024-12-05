@@ -1,10 +1,10 @@
 from pathlib import Path
 import unittest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch, MagicMock
 from io import BytesIO
 
-import boilerplate.timetables.transxchange
-from boilerplate.timetables.transxchange import (
+import common_layer.timetables.transxchange
+from common_layer.timetables.transxchange import (
     TransXChangeDocument,
     TransXChangeZip,
     TransXChangeDatasetParser,
@@ -155,9 +155,9 @@ class TestTransXChangeDocument(unittest.TestCase):
 
 
 class TestTransXChangeZip(unittest.TestCase):
-    @patch("boilerplate.timetables.transxchange.TransXChangeDocument")
-    @patch("boilerplate.timetables.transxchange.ZippedValidator.get_files")
-    @patch.object(boilerplate.timetables.transxchange.ZippedValidator,
+    @patch("common_layer.timetables.transxchange.TransXChangeDocument")
+    @patch("common_layer.timetables.transxchange.ZippedValidator.get_files")
+    @patch.object(common_layer.timetables.transxchange.ZippedValidator,
                   "__init__", return_value=None)
     @patch.object(TransXChangeZip, "get_doc_from_name", return_value="sample")
     def test_get_transxchange_docs(self, mock_txc, mock_super_init, mock_get_files, mock_txc_doc):
@@ -165,7 +165,7 @@ class TestTransXChangeZip(unittest.TestCase):
         mock_get_files.return_value = ["file1.xml", "file2.xml"]  # Mocked list of filenames
         mock_doc = mock_txc_doc.return_value
         mock_super_init.return_value = MagicMock()
-        with patch("boilerplate.timetables.transxchange.open",
+        with patch("common_layer.timetables.transxchange.open",
                    MagicMock()) as mock_open:
             mock_open.return_value = BytesIO(b"sample zip file")
             zip_instance = TransXChangeZip(source="dummy.zip")
@@ -178,10 +178,10 @@ class TestTransXChangeZip(unittest.TestCase):
             mock_get_files.assert_called_once()
             self.assertEqual(mock_txc.call_count, 2)
 
-    @patch("boilerplate.timetables.transxchange.TransXChangeZip.get_files",
+    @patch("common_layer.timetables.transxchange.TransXChangeZip.get_files",
            return_value=["doc1.xml", "doc2.xml"])
-    @patch("boilerplate.timetables.transxchange.TransXChangeZip.get_doc_from_name")
-    @patch.object(boilerplate.timetables.transxchange.ZippedValidator,
+    @patch("common_layer.timetables.transxchange.TransXChangeZip.get_doc_from_name")
+    @patch.object(common_layer.timetables.transxchange.ZippedValidator,
                   "__init__", return_value=None)
     def test_iter_doc(self, mock_super_init, mock_get_doc_from_name, mock_get_files):
         # Mocked TransXChangeDocument instances for each file
@@ -190,7 +190,7 @@ class TestTransXChangeZip(unittest.TestCase):
         mock_get_doc_from_name.side_effect = [mock_doc1, mock_doc2]
 
         # Initialize TransXChangeZip with mocked file
-        with patch("boilerplate.timetables.transxchange.open",
+        with patch("common_layer.timetables.transxchange.open",
                    MagicMock()) as mock_open:
             mock_open.return_value = BytesIO(b"sample zip file")
             txc_zip = TransXChangeZip("dummy.zip")
@@ -204,16 +204,16 @@ class TestTransXChangeZip(unittest.TestCase):
             self.assertIn(mock_doc2, docs)
             mock_get_files.assert_called_once()
 
-    @patch.object(boilerplate.timetables.transxchange.ZippedValidator,
+    @patch.object(common_layer.timetables.transxchange.ZippedValidator,
                   "__init__", return_value=None)
-    @patch.object(boilerplate.timetables.transxchange.ZippedValidator,
+    @patch.object(common_layer.timetables.transxchange.ZippedValidator,
                   "open", return_value=None)
     def test_get_doc_from_name(self, mock_open_zip, mock_super_init):
         mock_open_zip.return_value = BytesIO(b"sample zip file")
-        with patch("boilerplate.timetables.transxchange.open",
+        with patch("common_layer.timetables.transxchange.open",
                    MagicMock()) as mock_open:
             mock_open.return_value = BytesIO(b"sample zip file")
-            with patch("boilerplate.timetables.transxchange.TransXChangeDocument", MagicMock()) as mock_txc_doc:
+            with patch("common_layer.timetables.transxchange.TransXChangeDocument", MagicMock()) as mock_txc_doc:
                 mock_doc = mock_txc_doc.return_value
                 txc_zip = TransXChangeZip("dummy.zip")
 
@@ -225,17 +225,17 @@ class TestTransXChangeZip(unittest.TestCase):
                 self.assertEqual(mock_txc_doc.call_count, 1)
                 self.assertEqual(doc, mock_doc)
 
-    @patch("boilerplate.timetables.transxchange.TransXChangeZip.get_files",
+    @patch("common_layer.timetables.transxchange.TransXChangeZip.get_files",
            return_value=["doc1.xml", "doc2.xml"])
-    @patch("boilerplate.timetables.transxchange.TransXChangeZip.get_doc_from_name")
-    @patch("boilerplate.timetables.transxchange.logger.info")
-    @patch.object(boilerplate.timetables.transxchange.ZippedValidator,
+    @patch("common_layer.timetables.transxchange.TransXChangeZip.get_doc_from_name")
+    @patch("common_layer.timetables.transxchange.logger.info")
+    @patch.object(common_layer.timetables.transxchange.ZippedValidator,
                   "__init__", return_value=None)
     def test_validate_contents(self, mock_super_init,
                                mock_logger_info,
                                mock_get_doc_from_name,
                                mock_get_files):
-        with patch("boilerplate.timetables.transxchange.open",
+        with patch("common_layer.timetables.transxchange.open",
                    MagicMock()) as mock_open:
             mock_open.return_value = BytesIO(b"sample zip file")
             txc_zip = TransXChangeZip("dummy.zip")
@@ -249,12 +249,12 @@ class TestTransXChangeZip(unittest.TestCase):
             mock_logger_info.assert_any_call("[TransXChange] Validating 2 files.")
             mock_logger_info.assert_any_call("[TransXChange] => Validating doc1.xml file 1 of 2.")
 
-    @patch("boilerplate.timetables.transxchange.TransXChangeZip.validate_contents")
-    @patch("boilerplate.timetables.transxchange.ZippedValidator.validate")
-    @patch.object(boilerplate.timetables.transxchange.ZippedValidator,
+    @patch("common_layer.timetables.transxchange.TransXChangeZip.validate_contents")
+    @patch("common_layer.timetables.transxchange.ZippedValidator.validate")
+    @patch.object(common_layer.timetables.transxchange.ZippedValidator,
                   "__init__", return_value=None)
     def test_validate(self, mock_super_init, mock_super_validate, mock_validate_contents):
-        with patch("boilerplate.timetables.transxchange.open",
+        with patch("common_layer.timetables.transxchange.open",
                    MagicMock()) as mock_open:
             mock_open.return_value = BytesIO(b"sample zip file")
             txc_zip = TransXChangeZip("dummy.zip")
@@ -268,7 +268,7 @@ class TestTransXChangeZip(unittest.TestCase):
 
 
 class TestTransXChangeDatasetParser(unittest.TestCase):
-    PTH_ = "boilerplate.timetables.transxchange"
+    PTH_ = "common_layer.timetables.transxchange"
     @patch(f"{PTH_}.TransXChangeDatasetParser.is_zipfile", return_value=True)
     @patch(f"{PTH_}.TransXChangeZip")
     def test_get_documents_zipfile(self, mock_transxchange_zip, mock_is_zipfile):

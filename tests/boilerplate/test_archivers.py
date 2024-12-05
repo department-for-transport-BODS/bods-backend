@@ -5,11 +5,11 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
 
-from archiver import GTFSRTArchiver
-from enums import CAVLDataFormat
+from common_layer.archiver import GTFSRTArchiver
+from common_layer.enums import CAVLDataFormat
 from tests.mock_db import MockedDB
 
-ARCHIVE_MODULE = "archiver"
+ARCHIVE_MODULE = "common_layer.archiver"
 
 @pytest.fixture(scope="module", autouse=True)
 def mock_db_manager():

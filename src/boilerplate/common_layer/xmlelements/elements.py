@@ -2,7 +2,7 @@ from typing import List, Tuple, Union
 
 from lxml import etree
 
-from exceptions.xml_doc_exceptions import (
+from common_layer.exceptions.xml_doc_exceptions import (
     NoElement,
     ParentDoesNotExist,
     TooManyElements,

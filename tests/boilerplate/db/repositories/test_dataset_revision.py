@@ -1,9 +1,9 @@
 import pytest
-from unittest.mock import MagicMock, patch
-from enums import FeedStatus
-from exceptions.pipeline_exceptions import PipelineException
+from unittest.mock import MagicMock
+from common_layer.enums import FeedStatus
+from common_layer.exceptions.pipeline_exceptions import PipelineException
 
-from db.repositories.dataset_revision import (
+from common_layer.db.repositories.dataset_revision import (
     DatasetRevisionRepository,
     update_file_hash_in_db
 )

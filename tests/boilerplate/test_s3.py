@@ -3,11 +3,11 @@ import unittest
 from unittest.mock import patch, MagicMock
 from botocore.exceptions import (
     ClientError)
-from s3 import S3
+from common_layer.s3 import S3
 
 
 class TestS3(unittest.TestCase):
-    @patch("s3.boto3.client")
+    @patch("common_layer.s3.boto3.client")
     def setUp(self, mock_boto_client):
         self.mock_s3_client = MagicMock()
         mock_boto_client.return_value = self.mock_s3_client

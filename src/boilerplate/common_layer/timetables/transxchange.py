@@ -5,10 +5,10 @@ from typing import List, Optional
 
 from lxml import etree
 from pydantic import BaseModel
-from logger import logger
-from boilerplate.bods_utils import sha1sum
-from boilerplate.xmlelements import XMLElement
-from zip import ZippedValidator
+from common_layer.logger import logger
+from common_layer.utils import sha1sum
+from common_layer.xmlelements import XMLElement
+from common_layer.zip import ZippedValidator
 
 GRID_LOCATION = "Grid"
 WSG84_LOCATION = "WGS84"

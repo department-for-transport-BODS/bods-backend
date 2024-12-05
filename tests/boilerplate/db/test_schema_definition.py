@@ -1,14 +1,14 @@
 import pytest
 from unittest import mock
 from unittest.mock import patch
-from db.schema_definition import (
+from common_layer.db.schema_definition import (
     get_schema_definition_db_object,
     NoSchemaDefinition,
 )
-from db.models import PipelinesSchemadefinition
+from common_layer.db.models import PipelinesSchemadefinition
 
 
-@patch("db.schema_definition.BodsDB")
+@patch("common_layer.db.schema_definition.BodsDB")
 def test_get_schema_definition_db_object_success(mock_bods_db):
     # Setup mock event and session
     mock_db_instance = mock_bods_db.return_value
@@ -40,7 +40,7 @@ def test_get_schema_definition_db_object_success(mock_bods_db):
     mock_session.query.return_value.where.return_value.first.assert_called_once()
 
 
-@patch("db.schema_definition.BodsDB")
+@patch("common_layer.db.schema_definition.BodsDB")
 def test_get_schema_definition_db_object_not_found(mock_bods_db):
     # Setup mock event and session
     mock_db_instance = mock_bods_db.return_value
@@ -61,7 +61,7 @@ def test_get_schema_definition_db_object_not_found(mock_bods_db):
         get_schema_definition_db_object(mock_db_instance, "CategoryA")
 
 
-@patch("db.schema_definition.BodsDB")
+@patch("common_layer.db.schema_definition.BodsDB")
 def test_get_schema_definition_db_object_invalid_event(mock_bods_db):
     # Setup a mock event without a db session
     mock_db_instance = mock_bods_db.return_value

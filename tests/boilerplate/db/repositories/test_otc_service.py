@@ -1,9 +1,9 @@
 from unittest.mock import MagicMock
 import pytest
-from common import DbManager
-from db.repositories.otc_service import OtcServiceRepository
+from common_layer.db.manager import DbManager
+from common_layer.db.repositories.otc_service import OtcServiceRepository
 
-from exceptions.pipeline_exceptions import PipelineException
+from common_layer.exceptions.pipeline_exceptions import PipelineException
 from tests.mock_db import (
     MockedDB,
     naptan_adminarea,

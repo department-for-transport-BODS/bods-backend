@@ -1,4 +1,4 @@
-from boilerplate.logger import (
+from common_layer.logger import (
     get_dataset_adapter_from_revision,
     DatasetPipelineLoggerContext,
 )

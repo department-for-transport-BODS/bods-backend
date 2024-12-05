@@ -1,7 +1,7 @@
 from pathlib import Path
 import unittest
-from boilerplate.timetables.transxchange import TransXChangeDocument
-from boilerplate.timetables.dataclasses import transxchange
+from common_layer.timetables.transxchange import TransXChangeDocument
+from common_layer.timetables.dataclasses import transxchange
 
 
 class TestTransXChangeZip(unittest.TestCase):

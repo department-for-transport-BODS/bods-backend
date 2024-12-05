@@ -1,13 +1,13 @@
 from io import BytesIO
 from zipfile import ZipFile, is_zipfile, BadZipFile
-from exceptions.zip_file_exceptions import (
+from common_layer.exceptions.zip_file_exceptions import (
     NestedZipForbidden,
     ZipValidationException,
     ZipTooLarge,
     NoDataFound,
 )
-from bods_utils import get_file_size
-from logger import logger
+from common_layer.utils import get_file_size
+from common_layer.logger import logger
 
 
 def unzip(s3_client, file_path: str, prefix='') -> str:

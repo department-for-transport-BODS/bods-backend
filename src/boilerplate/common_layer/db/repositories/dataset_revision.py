@@ -1,6 +1,9 @@
 import logging
-from common import BodsDB, DbManager
-from exceptions.pipeline_exceptions import PipelineException
+from common_layer.db import BodsDB, DbManager
+from common_layer.db.repositories.dataset_etl_task_result import (
+    DatasetETLTaskResultRepository
+)
+from common_layer.exceptions.pipeline_exceptions import PipelineException
 from sqlalchemy.orm.exc import NoResultFound
 
 logger = logging.getLogger(__name__)

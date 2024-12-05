@@ -1,15 +1,15 @@
 from io import BytesIO
-from common import DbManager
-from db.constants import StepName
-from db.file_processing_result import (
+from common_layer.db.manager import DbManager
+from common_layer.db.constants import StepName
+from common_layer.db.file_processing_result import (
     txc_file_attributes_to_db,
     file_processing_result_to_db,
 )
-from db.repositories.dataset_revision import get_revision
-from logger import logger
-from s3 import S3
-from timetables.transxchange import TransXChangeDatasetParser
-from timetables.dataclasses.transxchange import TXCFile
+from common_layer.db.repositories.dataset_revision import get_revision
+from common_layer.logger import logger
+from common_layer.s3 import S3
+from common_layer.timetables.transxchange import TransXChangeDatasetParser
+from common_layer.timetables.dataclasses.transxchange import TXCFile
 
 
 @file_processing_result_to_db(StepName.TXC_ATTRIBUTE_EXTRACTION)
@@ -31,7 +31,7 @@ def lambda_handler(event, context):
         # Get S3 handler
         s3_handler = S3(bucket_name=bucket)
 
-        # Fetch the object from S3
+        # Fetch the object from common_layer.s3
         file_object = BytesIO(s3_handler.get_object(key).read())
         # file_object = s3_handler.get_object(file_path=key)
 

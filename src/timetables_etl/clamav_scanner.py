@@ -7,17 +7,17 @@ import os
 from typing import BinaryIO, Optional
 from dataclasses import dataclass
 from clamd import BufferTooLongError, ClamdNetworkSocket, ConnectionError
-from bods_utils import sha1sum
+from common_layer.utils import sha1sum
 from logger import logger
 from s3 import S3
 from db.file_processing_result import file_processing_result_to_db
-from db.repositories.dataset_revision import update_file_hash_in_db
+from common_layer.db.repositories.dataset_revision import update_file_hash_in_db
 from exceptions.file_exceptions import (
     AntiVirusError,
     ClamConnectionError,
     SuspiciousFile
 )
-from zip import unzip
+from common_layer.zip import unzip
 
 SCAN_ATTEMPTS = 5
 MULTIPLIER = 1
@@ -99,7 +99,7 @@ def lambda_handler(event, context):
         # Get S3 handler
         s3_handler = S3(bucket_name=bucket)
 
-        # Fetch the object from S3
+        # Fetch the object from common_layer.s3
         file_object = s3_handler.get_object(file_path=key)
 
         update_file_hash_in_db(event["ObjectKey"],

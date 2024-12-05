@@ -2,8 +2,8 @@ import unittest
 from unittest.mock import patch, mock_open, MagicMock
 from io import BytesIO
 from zipfile import ZipFile, ZIP_DEFLATED, BadZipFile
-from boilerplate.zip import ZippedValidator, unzip
-from exceptions.zip_file_exceptions import (
+from common_layer.zip import ZippedValidator, unzip
+from common_layer.exceptions.zip_file_exceptions import (
     NestedZipForbidden,
     ZipTooLarge,
     NoDataFound,
@@ -85,8 +85,8 @@ class TestZippedValidator(unittest.TestCase):
             content = f.read()
             self.assertEqual(content, b"Test content")
 
-    @patch("boilerplate.bods_utils.get_file_size", return_value=500)
-    @patch("boilerplate.zip.ZipFile")
+    @patch("common_layer.utils.get_file_size", return_value=500)
+    @patch("common_layer.zip.ZipFile")
     def test_context_manager(self, mock_zipfile, mock_get_file_size):
         # Create a dummy zip file using mock_open
         mock_file = mock_open(read_data=b"dummy data")
@@ -97,8 +97,8 @@ class TestZippedValidator(unittest.TestCase):
             # Ensure zip_file was closed on __exit__
             mock_zipfile.return_value.close.assert_called_once()
 
-    @patch("boilerplate.bods_utils.get_file_size", return_value=500)
-    @patch("boilerplate.zip.ZipFile")
+    @patch("common_layer.utils.get_file_size", return_value=500)
+    @patch("common_layer.zip.ZipFile")
     def test_is_valid_with_exception(self, mock_zipfile, mock_get_file_size):
         mock_file = mock_open(read_data=b"dummy data")
         with mock_file() as file:

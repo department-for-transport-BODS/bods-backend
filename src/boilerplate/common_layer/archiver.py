@@ -1,17 +1,17 @@
 import io
 import requests
 import time
-from common import DbManager
+from common_layer.db.manager import DbManager
 from datetime import datetime, timezone
-from db.repositories.avl_cavldataarchive import (
+from common_layer.db.repositories.avl_cavldataarchive import (
     get_cavl_db_object,
     update_record_in_db,
 )
-from enums import CAVLDataFormat
-from logger import logger
+from common_layer.enums import CAVLDataFormat
+from common_layer.logger import logger
 from os import environ
 from requests import RequestException
-from s3 import S3
+from common_layer.s3 import S3
 from zipfile import ZIP_DEFLATED, ZipFile
 
 

@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import List, Optional
 import pytz
 from pydantic import BaseModel, field_validator
-from timetables.transxchange import TransXChangeDocument
+from common_layer.timetables.transxchange import TransXChangeDocument
 
 NOC_TAG = "NationalOperatorCode"
 LICENCE_NUM_TAG = "LicenceNumber"

@@ -6,14 +6,14 @@ Description: Module contains the database functionality for
 from datetime import datetime
 from uuid import uuid4
 from sqlalchemy.exc import SQLAlchemyError, NoResultFound
-from common import BodsDB
-from db.repositories.dataset_revision import get_revision
-from exceptions.file_exceptions import *
-from exceptions.xml_file_exceptions import *
-from exceptions.zip_file_exceptions import *
-from exceptions.db_exceptions import *
-from exceptions.schema_exceptions import *
-from logger import logger
+from common_layer.db.bods_db import BodsDB
+from common_layer.db.repositories.dataset_revision import get_revision
+from common_layer.exceptions.file_exceptions import *
+from common_layer.exceptions.xml_file_exceptions import *
+from common_layer.exceptions.zip_file_exceptions import *
+from common_layer.exceptions.db_exceptions import *
+from common_layer.exceptions.schema_exceptions import *
+from common_layer.logger import logger
 
 
 def write_error_to_db(db, uuid, exceptions):

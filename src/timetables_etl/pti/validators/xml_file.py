@@ -3,8 +3,8 @@ from logging import getLogger
 from typing import IO, Any, List
 
 from botocore.response import StreamingBody
-from logger import get_dataset_adapter_from_revision
-from pti_common.models import Violation
+from common_layer.logger import get_dataset_adapter_from_revision
+from common_layer.pti.models import Violation
 from pti.validators.pti import PTIValidator
 
 logger = getLogger(__name__)

@@ -1,5 +1,5 @@
 from lxml import etree
-from pti_common.models import VehicleJourney
+from common_layer.pti.models import VehicleJourney
 
 def test_vehicle_journey_from_xml():
     """

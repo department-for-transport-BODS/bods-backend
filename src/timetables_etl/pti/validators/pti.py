@@ -6,7 +6,7 @@ from urllib.parse import unquote
 
 from lxml import etree
 from pti.constants import FLEXIBLE_SERVICE, STANDARD_SERVICE
-from pti_common.models import Observation, Schema, Violation
+from common_layer.pti.models import Observation, Schema, Violation
 from pti.validators.functions import (
     cast_to_bool,
     cast_to_date,

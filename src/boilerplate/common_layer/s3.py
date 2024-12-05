@@ -9,7 +9,7 @@ from botocore.response import StreamingBody
 from botocore.exceptions import (
     ClientError,
     BotoCoreError)
-from logger import logger
+from common_layer.logger import logger
 
 
 class S3:

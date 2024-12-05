@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 from pti.constants import PTI_SCHEMA_PATH
-from pti_common.models import Schema
+from common_layer.pti.models import Schema
 from pti.validators.pti import PTIValidator
 
 from tests.timetables_etl.pti.validators.conftest import JSONFile, TXCFile

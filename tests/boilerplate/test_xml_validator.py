@@ -1,12 +1,12 @@
 import unittest
 from unittest.mock import patch, MagicMock
 from io import BytesIO
-from boilerplate.xml_validator import (
+from common_layer.xml_validator import (
     FileValidator,
     XMLValidator,
     get_lxml_schema
 )
-from exceptions.xml_file_exceptions import (
+from common_layer.exceptions.xml_file_exceptions import (
     FileTooLarge,
     XMLSyntaxError,
     DangerousXML

@@ -1,13 +1,13 @@
-from common import DbManager
-from db.constants import StepName
-from db.file_processing_result import file_processing_result_to_db
-from db.repositories.dataset_revision import DatasetRevisionRepository
-from db.repositories.txc_file_attributes import TxcFileAttributesRepository
-from exceptions.pipeline_exceptions import PipelineException
-from logger import get_dataset_adapter_from_revision
+from common_layer.db.manager import DbManager
+from common_layer.db.constants import StepName
+from common_layer.db.file_processing_result import file_processing_result_to_db
+from common_layer.db.repositories.dataset_revision import DatasetRevisionRepository
+from common_layer.db.repositories.txc_file_attributes import TxcFileAttributesRepository
+from common_layer.exceptions.pipeline_exceptions import PipelineException
+from common_layer.logger import get_dataset_adapter_from_revision
 from pti.service import PTIValidationService
 from pydantic import BaseModel
-from s3 import S3
+from common_layer.s3 import S3
 
 
 class PTIValidationEvent(BaseModel):

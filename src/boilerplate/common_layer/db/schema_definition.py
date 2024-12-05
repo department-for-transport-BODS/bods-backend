@@ -1,9 +1,9 @@
 import time
-from common import BodsDB
-from logger import logger
+from common_layer.db.bods_db import BodsDB
+from common_layer.logger import logger
 from django.db.models import TextChoices
 from django.utils.translation import gettext_lazy as _
-from exceptions.schema_exceptions import NoSchemaDefinition
+from common_layer.exceptions.schema_exceptions import NoSchemaDefinition
 
 
 class SchemaCategory(TextChoices):

@@ -1,19 +1,19 @@
 import os
 import json
 from pathlib import Path
-from logger import logger
-from s3 import S3
+from common_layer.logger import logger
+from common_layer.s3 import S3
 from zipfile import ZipFile
 from lxml import etree
 
-from db.file_processing_result import file_processing_result_to_db
-from db.repositories.dataset_revision import get_revision
-from db.schema_definition import get_schema_definition_db_object
-from constants import SCHEMA_DIR
-from violations import BaseSchemaViolation
-from xml_validator import XMLValidator
-from db.schema_violation import SchemaViolation
-from common import DbManager
+from common_layer.db.file_processing_result import file_processing_result_to_db
+from common_layer.db.repositories.dataset_revision import get_revision
+from common_layer.db.schema_definition import get_schema_definition_db_object
+from common_layer.constants import SCHEMA_DIR
+from common_layer.violations import BaseSchemaViolation
+from common_layer.xml_validator import XMLValidator
+from common_layer.db.schema_violation import SchemaViolation
+from common_layer.db.manager import DbManager
 
 
 def get_transxchange_schema():

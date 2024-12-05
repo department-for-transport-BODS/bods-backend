@@ -1,8 +1,8 @@
 from unittest.mock import MagicMock
 
 import pytest
-from db.repositories.stop_point import StopPointRepository
-from exceptions.pipeline_exceptions import PipelineException
+from common_layer.db.repositories.stop_point import StopPointRepository
+from common_layer.exceptions.pipeline_exceptions import PipelineException
 
 from tests.mock_db import MockedDB, naptan_stoppoint
 
