@@ -239,7 +239,7 @@ class TestLambdaHandler(unittest.TestCase):
                 mock_err_code.return_value = MagicMock(id=1)
                 # Verify that lambda_handler raises XMLValidationException
                 with self.assertRaises(excep):
-                    lambda_handler(event=event, context=None)
+                     lambda_handler(event=event, context=None)
 
 
 if __name__ == "__main__":
