@@ -6,7 +6,7 @@ from urllib.parse import unquote
 
 from lxml import etree
 from pti.constants import FLEXIBLE_SERVICE, STANDARD_SERVICE
-from pti.models import Observation, Schema, Violation
+from pti_common.models import Observation, Schema, Violation
 from pti.validators.functions import (
     cast_to_bool,
     cast_to_date,
@@ -97,12 +97,6 @@ class PTIValidator:
         self.register_function("validate_timing_link_stops", validate_timing_link_stops)
 
         self.register_function("validate_bank_holidays", validate_bank_holidays)
-
-        # TODO: Requires DB interaction
-        # self.register_function("validate_service_code", validate_service_codes)
-
-        # TODO: It doesn't seem like this function is actually being called
-        # self.register_function("check_vehicle_journey_timing_links", check_vehicle_journey_timing_links)
 
         self.register_function("validate_licence_number", validate_licence_number)
 

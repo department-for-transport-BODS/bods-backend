@@ -1,5 +1,5 @@
 from factory import Factory, SubFactory
-from pti.models import Header, Schema
+from pti_common.models import Header, Schema
 
 
 class HeaderFactory(Factory):

@@ -1,7 +1,7 @@
 from lxml import etree
 import pytest
 from unittest.mock import MagicMock, patch
-from pti.models import VehicleJourney
+from pti_common.models import VehicleJourney
 from pti.validators.base import BaseValidator
 
 
@@ -22,7 +22,7 @@ def test_lines_property(m_root):
     m_root.xpath.return_value = [mock_line]
 
     mock_line_obj = MagicMock()
-    with patch("pti.models.Line.from_xml", return_value=mock_line_obj):
+    with patch("pti_common.models.Line.from_xml", return_value=mock_line_obj):
         lines = validator.lines
 
     assert len(lines) == 1
@@ -44,7 +44,7 @@ def test_vehicle_journeys_property(m_root):
         vehicle_journey_ref="",
         service_ref="Service1",
     )
-    with patch("pti.models.VehicleJourney.from_xml", return_value=vehicle_journey):
+    with patch("pti_common.models.VehicleJourney.from_xml", return_value=vehicle_journey):
         validator = BaseValidator(m_root)
         vehicle_journeys = validator.vehicle_journeys
 
@@ -83,7 +83,7 @@ def test_get_journey_pattern_ref_by_vehicle_journey_code(m_root):
     vehicle_journey_1 = MagicMock(journey_pattern_ref=expected_pattern, vehicle_journey_ref="", code=code)
     vehicle_journey_2 = MagicMock(journey_pattern_ref="Pattern2", vehicle_journey_ref="", code="Code2")
 
-    with patch("pti.models.VehicleJourney.from_xml", side_effect=[vehicle_journey_1, vehicle_journey_2]):
+    with patch("pti_common.models.VehicleJourney.from_xml", side_effect=[vehicle_journey_1, vehicle_journey_2]):
         pattern_ref = validator.get_journey_pattern_ref_by_vehicle_journey_code(code)
 
     assert pattern_ref == expected_pattern
@@ -101,7 +101,7 @@ def test_get_journey_pattern_refs_by_line_ref(m_root):
     expected_pattern_refs = ["Pattern1", "Pattern2"]
 
     with patch(
-        "pti.models.VehicleJourney.from_xml",
+        "pti_common.models.VehicleJourney.from_xml",
         side_effect=[m_vehicle_journey_1, m_vehicle_journey_2, m_vehicle_journey_3],
     ):
         pattern_refs = validator.get_journey_pattern_refs_by_line_ref(line)

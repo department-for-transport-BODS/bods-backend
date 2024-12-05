@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from pti.models import Line, VehicleJourney
+from pti_common.models import Line, VehicleJourney
 from timetables.transxchange import TransXChangeElement
 
 class BaseValidator:

@@ -12,8 +12,7 @@ class StopPointRepository:
     def __init__(self, db: BodsDB):
         self._db = db
 
-    # TODO: Typing for return type (DB Model)
-    def get_count(self, atco_codes: List[str], **filter_kwargs) -> List[Any]:
+    def get_count(self, atco_codes: List[str], **filter_kwargs) -> int:
         try:
             with self._db.session as session:
                 query = session.query(self._db.classes.naptan_stoppoint).filter(

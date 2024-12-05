@@ -4,7 +4,7 @@ from typing import IO, Any, List
 
 from botocore.response import StreamingBody
 from logger import get_dataset_adapter_from_revision
-from pti.models import Violation
+from pti_common.models import Violation
 from pti.validators.pti import PTIValidator
 
 logger = getLogger(__name__)
