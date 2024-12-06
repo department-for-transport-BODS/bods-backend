@@ -1,8 +1,5 @@
 import logging
-from common import BodsDB
-from db.repositories.dataset_etl_task_result import (
-    DatasetETLTaskResultRepository
-)
+from common import BodsDB, DbManager
 from exceptions.pipeline_exceptions import PipelineException
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -15,6 +12,28 @@ def get_revision(db, dataset_revision_id):
     """
     revision_repo = DatasetRevisionRepository(db)
     return revision_repo.get_by_id(dataset_revision_id)
+
+
+def update_file_hash_in_db(file_name,
+                           revision_id,
+                           original_file_hash=None,
+                           modified_file_hash=None
+                           ):
+    """
+    Update modified hash to db
+    """
+    if original_file_hash is None and modified_file_hash is None:
+        logger.warning(f"Nothing to update for {file_name}")
+        return None
+
+    logger.info(f"Updating the hash of {file_name} to db")
+    dataset_revision = DatasetRevisionRepository(DbManager.get_db())
+    revision = dataset_revision.get_by_id(revision_id)
+    if original_file_hash:
+        revision.original_file_hash = original_file_hash
+    if modified_file_hash:
+        revision.modified_file_hash = modified_file_hash
+    dataset_revision.update(revision)
 
 
 class DatasetRevisionRepository:

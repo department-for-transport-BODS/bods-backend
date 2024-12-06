@@ -1,12 +1,12 @@
 from io import BytesIO
 from zipfile import is_zipfile
-from boilerplate.exceptions.zip_file_exceptions import ZipValidationException
-from boilerplate.exceptions.xml_file_exceptions import XMLValidationException
-from boilerplate.db.file_processing_result import file_processing_result_to_db
-from boilerplate.logger import logger
-from boilerplate.s3 import S3
-from boilerplate.xml_validator import FileValidator, XMLValidator
-from boilerplate.zip import ZippedValidator
+from exceptions.zip_file_exceptions import ZipValidationException
+from exceptions.xml_file_exceptions import XMLValidationException
+from db.file_processing_result import file_processing_result_to_db
+from logger import logger
+from s3 import S3
+from xml_validator import FileValidator, XMLValidator
+from zip import ZippedValidator
 
 
 class TimetableFileValidator:

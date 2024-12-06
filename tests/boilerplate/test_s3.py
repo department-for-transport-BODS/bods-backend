@@ -90,6 +90,27 @@ class TestS3(unittest.TestCase):
             self.s3.download_fileobj("test_file.txt")
         self.assertIn("Get object failed", str(context.exception))
 
+    def test_get_list_objects_v2(self):
+        # Define mock responses for pagination
+        mock_pages = [
+            {"Contents": [{"Key": "file1.txt"}, {"Key": "file2.txt"}]},
+            {"Contents": [{"Key": "file3.txt"}, {"Key": "file4.txt"}]},
+        ]
+        mock_paginator = MagicMock()
+        self.mock_s3_client.get_paginator.return_value = mock_paginator
+        mock_paginator.paginate.return_value = mock_pages
+
+        # Call the method
+        results = list(self.s3.get_list_objects_v2(prefix="test-prefix"))
+
+        # Assertions
+        self.mock_s3_client.get_paginator.assert_called_once_with(
+            "list_objects_v2")
+        mock_paginator.paginate.assert_called_once_with(Bucket=self._bucket,
+                                                        Prefix="test-prefix")
+        # Verify results
+        self.assertEqual(results, mock_pages)
+
 
 if __name__ == "__main__":
     unittest.main()

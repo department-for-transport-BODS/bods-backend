@@ -7,9 +7,11 @@ import os
 from typing import BinaryIO, Optional
 from dataclasses import dataclass
 from clamd import BufferTooLongError, ClamdNetworkSocket, ConnectionError
+from bods_utils import sha1sum
 from logger import logger
 from s3 import S3
 from db.file_processing_result import file_processing_result_to_db
+from db.repositories.dataset_revision import update_file_hash_in_db
 from exceptions.file_exceptions import (
     AntiVirusError,
     ClamConnectionError,
@@ -100,6 +102,10 @@ def lambda_handler(event, context):
         # Fetch the object from S3
         file_object = s3_handler.get_object(file_path=key)
 
+        update_file_hash_in_db(event["ObjectKey"],
+                               event["DatasetRevisionId"],
+                               original_file_hash=sha1sum(file_object.read()))
+
         # Connect/Scan the file object
         av_scanner = FileScanner(
             os.environ["CLAMAV_HOST"], int(os.environ["CLAMAV_PORT"])
@@ -110,6 +116,7 @@ def lambda_handler(event, context):
             raise ClamConnectionError("ClamAV is not running or accessible.")
 
         # Backward compatibility with python file handler
+        file_object = s3_handler.get_object(file_path=key)
         file_object.name = key
         av_scanner.scan(file_object)  # noqa
         msg = f"Successfully scanned the file '{key}' from bucket '{bucket}'"

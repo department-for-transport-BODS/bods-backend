@@ -11,6 +11,10 @@ class ValidationException(Exception):
             self.message = message
         self.line = line
 
+    def __str__(self):
+        return (f"[{self.code}] {self.message} "
+                f"(File: {self.filename}, Line: {self.line})")
+
 
 class AntiVirusError(ValidationException):
     """Base exception for antivirus scans."""
