@@ -1,9 +1,12 @@
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from enums import FeedStatus
 from exceptions.pipeline_exceptions import PipelineException
 
-from db.repositories.dataset_revision import DatasetRevisionRepository
+from db.repositories.dataset_revision import (
+    DatasetRevisionRepository,
+    update_file_hash_in_db
+)
 from tests.mock_db import MockedDB, organisation_datasetrevision
 
 

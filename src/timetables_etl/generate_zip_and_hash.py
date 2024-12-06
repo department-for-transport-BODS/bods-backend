@@ -1,9 +1,7 @@
-from io import BytesIO
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from zipfile import ZipFile, ZIP_DEFLATED
-from common import DbManager
-from db.repositories.dataset_revision import DatasetRevisionRepository
+from db.repositories.dataset_revision import update_file_hash_in_db
 from logger import logger
 from s3 import S3
 from bods_utils import sha1sum
@@ -33,17 +31,6 @@ def get_files_in_s3_folder(s3_handler, s3_folder):
                 continue
             files.append(file_key)
     return files
-
-
-def update_file_hash_in_db(hash_value, event):
-    """
-    Update modified hash to db
-    """
-    logger.info(f"Updating the hash of {event['ObjectKey']} to db")
-    dataset_revision = DatasetRevisionRepository(DbManager.get_db())
-    revision = dataset_revision.get_by_id(event["DatasetRevisionId"])
-    revision.modified_file_hash = hash_value
-    dataset_revision.update(revision)
 
 
 def create_zip_archive(s3_handler, zip_filename, files):
@@ -98,7 +85,9 @@ def lambda_handler(event, context):
             logger.info(f"Hashing the file {key}")
             stream = s3_handler.get_object(key)
 
-            update_file_hash_in_db(sha1sum(stream.read()), event)
+            update_file_hash_in_db(event["ObjectKey"],
+                                   event["DatasetRevisionId"],
+                                   modified_file_hash=sha1sum(stream.read()))
             msg = f"Modified hash is updated"
         return {
             "statusCode": 200,

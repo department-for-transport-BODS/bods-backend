@@ -14,17 +14,17 @@ PREFIX = "timetables_etl.generate_zip_and_hash"
 
 class TestLambdaHandler(unittest.TestCase):
     @patch(f"{PREFIX}.S3")
-    @patch(f"{PREFIX}.DatasetRevisionRepository")
-    @patch(f"{PREFIX}.DbManager")
+    @patch(f"{PREFIX}.update_file_hash_in_db")
     @patch(f"{PREFIX}.sha1sum")
     def test_lambda_handler_no_zip(self,
                                    mock_sha1sum,
-                                   mock_db_manager,
-                                   mock_dataset_revision_repo,
+                                   mock_update_file_hash,
                                    mock_s3):
         # Setup mock S3
         mock_s3_handler = MagicMock()
         mock_s3.return_value = mock_s3_handler
+
+        mock_update_file_hash.return_value = True
 
         # Mock S3 get_list_objects_v2
         mock_s3_handler.get_list_objects_v2.return_value = [
@@ -40,14 +40,6 @@ class TestLambdaHandler(unittest.TestCase):
 
         # Mock sha1sum
         mock_sha1sum.return_value = "fakehash123"
-
-        # Mock database
-        mock_db_instance = MagicMock()
-        mock_db_manager.get_db.return_value = mock_db_instance
-        mock_dataset_revision_repo_instance = MagicMock()
-        mock_dataset_revision_repo.return_value = mock_dataset_revision_repo_instance
-        mock_revision = MagicMock()
-        mock_dataset_revision_repo_instance.get_by_id.return_value = mock_revision
 
         # Prepare event
         event = {
@@ -66,12 +58,10 @@ class TestLambdaHandler(unittest.TestCase):
                          "No modified files found in folder/")
 
     @patch(f"{PREFIX}.S3")
-    @patch(f"{PREFIX}.DatasetRevisionRepository")
-    @patch(f"{PREFIX}.DbManager")
+    @patch(f"{PREFIX}.update_file_hash_in_db")
     @patch(f"{PREFIX}.sha1sum")
     def test_lambda_handler_zip_creation(self,
                                          mock_sha1sum,
-                                         mock_db_manager,
                                          mock_dataset_revision_repo,
                                          mock_s3):
         # Setup mock S3
@@ -93,13 +83,7 @@ class TestLambdaHandler(unittest.TestCase):
         # Mock sha1sum
         mock_sha1sum.return_value = "fakehash123"
 
-        # Mock database
-        mock_db_instance = MagicMock()
-        mock_db_manager.get_db.return_value = mock_db_instance
-        mock_dataset_revision_repo_instance = MagicMock()
-        mock_dataset_revision_repo.return_value = mock_dataset_revision_repo_instance
-        mock_revision = MagicMock()
-        mock_dataset_revision_repo_instance.get_by_id.return_value = mock_revision
+        mock_dataset_revision_repo.return_value = True
 
         # Prepare event
         event = {
@@ -117,12 +101,6 @@ class TestLambdaHandler(unittest.TestCase):
         self.assertEqual(mock_s3_handler.get_object.call_count, 3)
         mock_s3_handler.put_object.assert_called_once()
 
-        # Assert database interactions
-        mock_dataset_revision_repo_instance.get_by_id.assert_called_once_with(
-            123)
-        self.assertEqual(mock_revision.modified_file_hash, "fakehash123")
-        mock_dataset_revision_repo_instance.update.assert_called_once_with(
-            mock_revision)
 
     @patch(f"{PREFIX}.S3")
     def test_create_zip_archive(self, mock_s3):

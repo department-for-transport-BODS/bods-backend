@@ -8,11 +8,10 @@ from typing import BinaryIO, Optional
 from dataclasses import dataclass
 from clamd import BufferTooLongError, ClamdNetworkSocket, ConnectionError
 from bods_utils import sha1sum
-from common import DbManager
 from logger import logger
 from s3 import S3
 from db.file_processing_result import file_processing_result_to_db
-from db.repositories.dataset_revision import DatasetRevisionRepository
+from db.repositories.dataset_revision import update_file_hash_in_db
 from exceptions.file_exceptions import (
     AntiVirusError,
     ClamConnectionError,
@@ -84,15 +83,6 @@ class FileScanner:
             raise ClamConnectionError(file_.name, message=msg) from e
 
 
-def update_file_hash(event, file_object):
-    # update modified hash to db
-    logger.info(f"Updating the hash of {event['ObjectKey']} to db")
-    dataset_revision = DatasetRevisionRepository(DbManager.get_db())
-    revision = dataset_revision.get_by_id(event["DatasetRevisionId"])
-    revision.original_file_hash = sha1sum(file_object.read())
-    dataset_revision.update(revision)
-
-
 @file_processing_result_to_db(step_name="Clam AV Scanner")
 def lambda_handler(event, context):
     """
@@ -111,7 +101,10 @@ def lambda_handler(event, context):
 
         # Fetch the object from S3
         file_object = s3_handler.get_object(file_path=key)
-        update_file_hash(event, file_object)
+
+        update_file_hash_in_db(event["ObjectKey"],
+                               event["DatasetRevisionId"],
+                               original_file_hash=sha1sum(file_object.read()))
 
         # Connect/Scan the file object
         av_scanner = FileScanner(
