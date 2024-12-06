@@ -8,11 +8,11 @@ from typing import BinaryIO, Optional
 from dataclasses import dataclass
 from clamd import BufferTooLongError, ClamdNetworkSocket, ConnectionError
 from common_layer.utils import sha1sum
-from logger import logger
-from s3 import S3
-from db.file_processing_result import file_processing_result_to_db
+from common_layer.logger import logger
+from common_layer.s3 import S3
+from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.db.repositories.dataset_revision import update_file_hash_in_db
-from exceptions.file_exceptions import (
+from common_layer.exceptions.file_exceptions import (
     AntiVirusError,
     ClamConnectionError,
     SuspiciousFile
