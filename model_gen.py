@@ -69,7 +69,7 @@ def sqlalchemy_model_generator() -> None:
     generator = "dataclasses"
     tables = MODEL_GEN_TABLES
     noviews = False
-    outfile = "./src/boilerplate/db/models.py"
+    outfile = "./src/boilerplate/common_layer/db/models.py"
 
     if not url:
         print("You must supply a url\n", file=sys.stderr)

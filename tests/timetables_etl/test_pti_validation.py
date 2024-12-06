@@ -1,13 +1,13 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from db.constants import StepName
-from exceptions.pipeline_exceptions import PipelineException
+from common_layer.db.constants import StepName
+from common_layer.exceptions.pipeline_exceptions import PipelineException
 
 from tests.conftest import decorator_mock
 
 # Patch the file processing decorator before importing the module
-with patch("db.file_processing_result.file_processing_result_to_db") as m_file_processing_result_to_db:
+with patch("common_layer.db.file_processing_result.file_processing_result_to_db") as m_file_processing_result_to_db:
 
     def decorator_mock(step_name):
         def wrapper(func):

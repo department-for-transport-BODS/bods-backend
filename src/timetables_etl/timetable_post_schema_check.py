@@ -1,12 +1,12 @@
 import json
 import re
-from common import DbManager
-from db.file_processing_result import file_processing_result_to_db
-from db.repositories.post_schema_violation import PostSchemaViolationRepository
-from db.repositories.dataset_revision import get_revision
-from logger import logger
-from s3 import S3
-from timetables.transxchange import TransXChangeDocument
+from common_layer.db.manager import DbManager
+from common_layer.db.file_processing_result import file_processing_result_to_db
+from common_layer.db.repositories.post_schema_violation import PostSchemaViolationRepository
+from common_layer.db.repositories.dataset_revision import get_revision
+from common_layer.logger import logger
+from common_layer.s3 import S3
+from common_layer.timetables.transxchange import TransXChangeDocument
 
 STEP_NAME = "Timetable Post Schema Check"
 

@@ -76,8 +76,8 @@ class TestClamAVScanner(unittest.TestCase):
     @patch("timetables_etl.clamav_scanner.S3")
     @patch("timetables_etl.clamav_scanner.FileScanner")
     @patch("timetables_etl.clamav_scanner.unzip")
-    @patch("db.file_processing_result.BodsDB")
-    @patch("db.file_processing_result.get_revision")
+    @patch("common_layer.db.file_processing_result.BodsDB")
+    @patch("common_layer.db.file_processing_result.get_revision")
     @patch("timetables_etl.clamav_scanner.update_file_hash_in_db")
     @patch.dict("os.environ", TEST_ENV_VAR)
     def test_lambda_handler_success(self,
@@ -111,7 +111,7 @@ class TestClamAVScanner(unittest.TestCase):
         }
 
         # Mock write_processing_step
-        buf_ = "db.file_processing_result.write_processing_step"
+        buf_ = "common_layer.db.file_processing_result.write_processing_step"
 
         with patch(buf_) as mock_step:
             mock_step.return_value = MagicMock(id=1)
@@ -131,8 +131,8 @@ class TestClamAVScanner(unittest.TestCase):
 
     @patch("timetables_etl.clamav_scanner.S3")
     @patch("timetables_etl.clamav_scanner.FileScanner")
-    @patch('db.file_processing_result.BodsDB')
-    @patch("db.file_processing_result.get_revision")
+    @patch('common_layer.db.file_processing_result.BodsDB')
+    @patch("common_layer.db.file_processing_result.get_revision")
     @patch("timetables_etl.clamav_scanner.update_file_hash_in_db")
     @patch.dict("os.environ", TEST_ENV_VAR)
     def test_lambda_handler_clamav_unreachable(self,
@@ -163,12 +163,12 @@ class TestClamAVScanner(unittest.TestCase):
         }
 
         # Mock write_processing_step
-        buf_ = "db.file_processing_result.write_processing_step"
+        buf_ = "common_layer.db.file_processing_result.write_processing_step"
         with patch(buf_) as mock_step:
             mock_step.return_value = MagicMock(id=1)
             mock_db.return_value = MockedDB()
             # Mock write_error_to_db
-            buf_ = "db.file_processing_result.write_error_to_db"
+            buf_ = "common_layer.db.file_processing_result.write_error_to_db"
             with patch(buf_) as mock_write_db:
                 mock_write_db.return_value = "Transaction committed"
                 # Assert exception due to ClamAV unreachability
@@ -181,8 +181,8 @@ class TestClamAVScanner(unittest.TestCase):
 
     @patch("timetables_etl.clamav_scanner.S3")
     @patch("timetables_etl.clamav_scanner.FileScanner")
-    @patch('db.file_processing_result.BodsDB')
-    @patch("db.file_processing_result.get_revision")
+    @patch('common_layer.db.file_processing_result.BodsDB')
+    @patch("common_layer.db.file_processing_result.get_revision")
     @patch("timetables_etl.clamav_scanner.update_file_hash_in_db")
     @patch.dict("os.environ", TEST_ENV_VAR)
     def test_lambda_handler_scan_error(self,
@@ -213,12 +213,12 @@ class TestClamAVScanner(unittest.TestCase):
             "DatasetType": "timetables"
         }
         # Mock write_processing_step
-        buf_ = "db.file_processing_result.write_processing_step"
+        buf_ = "common_layer.db.file_processing_result.write_processing_step"
         with patch(buf_) as mock_step:
             mock_step.return_value = MagicMock(id=1)
             mock_db.return_value = MockedDB()
             # Mock write_error_to_db
-            buf_ = "db.file_processing_result.write_error_to_db"
+            buf_ = "common_layer.db.file_processing_result.write_error_to_db"
             with patch(buf_) as mock_write_db:
                 mock_write_db.return_value = "Transaction committed"
                 # Assert exception due to scan error

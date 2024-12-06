@@ -5,8 +5,8 @@ from timetables_etl.txc_file_validator import (
     TimetableFileValidator,
     lambda_handler
 )
-from exceptions.zip_file_exceptions import *
-from exceptions.xml_file_exceptions import *
+from common_layer.exceptions.zip_file_exceptions import *
+from common_layer.exceptions.xml_file_exceptions import *
 from tests.mock_db import MockedDB
 
 TEST_MODULE = "timetables_etl.txc_file_validator"
@@ -99,9 +99,9 @@ class TestTimetableFileValidator(unittest.TestCase):
 
 class TestLambdaHandler(unittest.TestCase):
     @patch(f"{TEST_MODULE}.TimetableFileValidator")
-    @patch("db.file_processing_result.BodsDB")
-    @patch("db.file_processing_result.get_revision")
-    @patch("db.file_processing_result.get_step")
+    @patch("common_layer.db.file_processing_result.BodsDB")
+    @patch("common_layer.db.file_processing_result.get_revision")
+    @patch("common_layer.db.file_processing_result.get_step")
     @patch.dict("os.environ", TEST_ENV_VAR)
     def test_lambda_handler_success(self,
                                     mock_get_step,
@@ -139,11 +139,11 @@ class TestLambdaHandler(unittest.TestCase):
         self.assertIn("File validation completed", response["body"])
 
     @patch(f"{TEST_MODULE}.TimetableFileValidator")
-    @patch("db.file_processing_result.PipelineFileProcessingResult")
-    @patch("db.file_processing_result.BodsDB")
-    @patch("db.file_processing_result.get_revision")
-    @patch("db.file_processing_result.get_step")
-    @patch("db.file_processing_result.get_record")
+    @patch("common_layer.db.file_processing_result.PipelineFileProcessingResult")
+    @patch("common_layer.db.file_processing_result.BodsDB")
+    @patch("common_layer.db.file_processing_result.get_revision")
+    @patch("common_layer.db.file_processing_result.get_step")
+    @patch("common_layer.db.file_processing_result.get_record")
     def test_lambda_handler_zip_validation_exception(self,
                                                      mock_get_record,
                                                      mock_get_step,
@@ -178,8 +178,8 @@ class TestLambdaHandler(unittest.TestCase):
             mock_pipeline_file_processing = mock_pipeline_file_processing.return_value
             mock_pipeline_file_processing.return_value.update = None
             # Mock write_processing_step
-            write_step = "db.file_processing_result.write_processing_step"
-            err_code = "db.file_processing_result.get_file_processing_error_code"
+            write_step = "common_layer.db.file_processing_result.write_processing_step"
+            err_code = "common_layer.db.file_processing_result.get_file_processing_error_code"
 
             with (patch(write_step) as mock_step,
                   patch(err_code) as mock_err_code):
@@ -190,11 +190,11 @@ class TestLambdaHandler(unittest.TestCase):
                     lambda_handler(event=event, context=None)
 
     @patch(f"{TEST_MODULE}.TimetableFileValidator")
-    @patch("db.file_processing_result.PipelineFileProcessingResult")
-    @patch("db.file_processing_result.BodsDB")
-    @patch("db.file_processing_result.get_revision")
-    @patch("db.file_processing_result.get_step")
-    @patch("db.file_processing_result.get_record")
+    @patch("common_layer.db.file_processing_result.PipelineFileProcessingResult")
+    @patch("common_layer.db.file_processing_result.BodsDB")
+    @patch("common_layer.db.file_processing_result.get_revision")
+    @patch("common_layer.db.file_processing_result.get_step")
+    @patch("common_layer.db.file_processing_result.get_record")
     def test_lambda_handler_xml_validation_exception(self,
                                                      mock_get_record,
                                                      mock_get_step,
@@ -230,8 +230,8 @@ class TestLambdaHandler(unittest.TestCase):
             mock_pipeline_file_processing.return_value.update = None
 
             # Mock write_processing_step
-            write_step = "db.file_processing_result.write_processing_step"
-            err_code = "db.file_processing_result.get_file_processing_error_code"
+            write_step = "common_layer.db.file_processing_result.write_processing_step"
+            err_code = "common_layer.db.file_processing_result.get_file_processing_error_code"
 
             with (patch(write_step) as mock_step,
                   patch(err_code) as mock_err_code):

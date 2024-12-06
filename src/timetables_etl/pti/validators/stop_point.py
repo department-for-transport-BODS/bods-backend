@@ -3,7 +3,7 @@ from pti.constants import MODE_COACH
 from pti.validators.base import BaseValidator
 from dateutil.relativedelta import relativedelta
 
-from timetables.transxchange import TransXChangeElement
+from common_layer.timetables.transxchange import TransXChangeElement
 
 class StopPointValidator(BaseValidator):
     @property

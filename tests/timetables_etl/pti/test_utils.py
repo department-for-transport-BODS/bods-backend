@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 import pytest
-from db.repositories.otc_service import ServiceWithRegion
+from common_layer.db.repositories.otc_service import ServiceWithRegion
 from pti.constants import SCOTLAND_TRAVELINE_REGIONS
 from pti.utils import is_service_in_scotland
 

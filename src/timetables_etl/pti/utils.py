@@ -1,7 +1,7 @@
 import logging
 
-from common import DbManager
-from db.repositories.otc_service import OtcServiceRepository
+from common_layer.db.manager import DbManager
+from common_layer.db.repositories.otc_service import OtcServiceRepository
 from pti.constants import SCOTLAND_TRAVELINE_REGIONS
 
 

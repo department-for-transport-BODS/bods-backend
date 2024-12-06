@@ -1,11 +1,11 @@
 from typing import List, Optional
 
-from common import BodsDB
-from db.models import OrganisationDatasetrevision, OrganisationTxcfileattributes
-from db.repositories.dataset import DatasetRepository
-from db.repositories.dataset_revision import DatasetRevisionRepository
-from db.repositories.txc_file_attributes import TxcFileAttributesRepository
-from pti_common.models import Observation, Violation
+from common_layer.db import BodsDB
+from common_layer.db.models import OrganisationDatasetrevision, OrganisationTxcfileattributes
+from common_layer.db.repositories.dataset import DatasetRepository
+from common_layer.db.repositories.dataset_revision import DatasetRevisionRepository
+from common_layer.db.repositories.txc_file_attributes import TxcFileAttributesRepository
+from common_layer.pti.models import Observation, Violation
 
 REVISION_NUMBER_OBSERVATION = Observation(
     details=(

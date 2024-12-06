@@ -25,8 +25,8 @@ class TestLambdaHandler(unittest.TestCase):
     @patch("timetables_etl.timetable_post_schema_check.S3")
     @patch("timetables_etl.timetable_post_schema_check."
            "PostSchemaViolationRepository")
-    @patch("db.file_processing_result.BodsDB")
-    @patch("db.file_processing_result.get_revision")
+    @patch("common_layer.db.file_processing_result.BodsDB")
+    @patch("common_layer.db.file_processing_result.get_revision")
     @patch.dict("os.environ", TEST_ENV_VAR)
     def test_lambda_handler_success(self,
                                     mock_get_rev,
@@ -121,7 +121,7 @@ class TestLambdaHandler(unittest.TestCase):
     @patch("timetables_etl.timetable_post_schema_check.logger.error")
     @patch("timetables_etl.timetable_post_schema_check.DbManager.get_db")
     @patch("timetables_etl.timetable_post_schema_check.get_revision")
-    @patch("db.file_processing_result.BodsDB")
+    @patch("common_layer.db.file_processing_result.BodsDB")
     @patch("timetables_etl.timetable_post_schema_check.S3")
     @patch.dict("os.environ", TEST_ENV_VAR)
     def test_lambda_handler_error_handling(self,
@@ -156,7 +156,7 @@ class TestLambdaHandler(unittest.TestCase):
         mock_get_db.return_value = mock_db
 
         mock_bodds_db.return_value = MockedDB()
-        with patch("db.file_processing_result.get_revision") as mock_revision:
+        with patch("common_layer.db.file_processing_result.get_revision") as mock_revision:
             mock_revision.return_value = 123
             with self.assertRaises(Exception) as context:
                 lambda_handler(mock_event, mock_context)

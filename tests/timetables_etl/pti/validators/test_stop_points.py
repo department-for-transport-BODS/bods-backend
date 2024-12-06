@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from lxml import etree
 from pti.constants import PTI_SCHEMA_PATH
-from pti_common.models import Schema
+from common_layer.pti.models import Schema
 from pti.validators.functions import validate_non_naptan_stop_points
 from pti.validators.pti import PTIValidator
 

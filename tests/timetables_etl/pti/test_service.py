@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from pti.service import PTIValidationService
-from pti_common.models import Violation
+from common_layer.pti.models import Violation
 
 
 @pytest.fixture(autouse=True, scope="module")

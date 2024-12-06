@@ -1,6 +1,6 @@
 import time
-from boilerplate.archiver import GTFSRTArchiver
-from boilerplate.logger import logger
+from common_layer.archiver import GTFSRTArchiver
+from common_layer.logger import logger
 from os import environ
 
 

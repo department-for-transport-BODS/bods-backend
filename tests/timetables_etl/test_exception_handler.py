@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, patch
 from datetime import datetime
 
 from freezegun import freeze_time
-from enums import DatasetETLResultStatus, FeedStatus
+from common_layer.enums import DatasetETLResultStatus, FeedStatus
 from timetables_etl.exception_handler import ErrorInfo, ExceptionEvent, lambda_handler
 
 

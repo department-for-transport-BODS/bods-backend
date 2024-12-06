@@ -1,10 +1,10 @@
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from zipfile import ZipFile, ZIP_DEFLATED
-from db.repositories.dataset_revision import update_file_hash_in_db
-from logger import logger
-from s3 import S3
-from bods_utils import sha1sum
+from common_layer.db.repositories.dataset_revision import update_file_hash_in_db
+from common_layer.logger import logger
+from common_layer.s3 import S3
+from common_layer.utils import sha1sum
 
 
 def get_file_path_and_name(full_path_name):

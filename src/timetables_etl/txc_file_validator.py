@@ -1,12 +1,12 @@
 from io import BytesIO
 from zipfile import is_zipfile
-from exceptions.zip_file_exceptions import ZipValidationException
-from exceptions.xml_file_exceptions import XMLValidationException
-from db.file_processing_result import file_processing_result_to_db
-from logger import logger
-from s3 import S3
-from xml_validator import FileValidator, XMLValidator
-from zip import ZippedValidator
+from common_layer.exceptions.zip_file_exceptions import ZipValidationException
+from common_layer.exceptions.xml_file_exceptions import XMLValidationException
+from common_layer.db.file_processing_result import file_processing_result_to_db
+from common_layer.logger import logger
+from common_layer.s3 import S3
+from common_layer.xml_validator import FileValidator, XMLValidator
+from common_layer.zip import ZippedValidator
 
 
 class TimetableFileValidator:

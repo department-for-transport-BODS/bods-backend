@@ -2,9 +2,9 @@ import re
 from datetime import datetime
 from typing import List, Union
 
-from common import DbManager
+from common_layer.db.manager import DbManager
 from dateutil import parser
-from db.repositories.stop_point import StopPointRepository
+from common_layer.db.repositories.stop_point import StopPointRepository
 from isoduration import DurationParsingException, parse_duration
 from isoduration.types import TimeDuration
 from lxml import etree

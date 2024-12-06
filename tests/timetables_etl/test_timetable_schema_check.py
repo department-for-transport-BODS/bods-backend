@@ -273,7 +273,7 @@ class TestLambdaHandler(unittest.TestCase):
     @patch(f"{PREFIX}.get_revision")
     @patch(f"{PREFIX}.DatasetTXCValidator")
     @patch(f"{PREFIX}.SchemaViolation")
-    @patch("db.file_processing_result.BodsDB")
+    @patch("common_layer.db.file_processing_result.BodsDB")
     @patch(f"{PREFIX}.logger")
     @patch.dict("os.environ", TEST_ENV_VAR)
     def test_lambda_handler_success(self,
@@ -343,7 +343,7 @@ class TestLambdaHandler(unittest.TestCase):
     @patch(f"{PREFIX}.get_revision")
     @patch(f"{PREFIX}.DatasetTXCValidator")
     @patch(f"{PREFIX}.SchemaViolation")
-    @patch("boilerplate.db.file_processing_result.BodsDB")
+    @patch("common_layer.db.file_processing_result.BodsDB")
     @patch(f"{PREFIX}.logger")
     @patch.dict("os.environ", {"TEST_ENV_VAR": "value"})
     def test_lambda_handler_exception(self,

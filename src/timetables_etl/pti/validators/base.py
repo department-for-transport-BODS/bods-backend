@@ -1,7 +1,7 @@
 from typing import List, Optional
 
-from pti_common.models import Line, VehicleJourney
-from timetables.transxchange import TransXChangeElement
+from common_layer.pti.models import Line, VehicleJourney
+from common_layer.timetables.transxchange import TransXChangeElement
 
 class BaseValidator:
     def __init__(self, root):
