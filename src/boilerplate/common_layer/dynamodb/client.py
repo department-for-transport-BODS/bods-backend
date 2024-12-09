@@ -17,7 +17,7 @@ class DynamoDB:
     @staticmethod
     def client():
         """
-        Returns the DynamoDB client, initializing it if it doesn't exist.
+        Return the DynamoDB client, initializing it if it doesn't exist.
         """
         if DynamoDB._client is None:
             DynamoDB._client = DynamoDB._create_dynamodb_client()
@@ -26,7 +26,7 @@ class DynamoDB:
     @staticmethod
     def _create_dynamodb_client():
         """
-        Creates a DynamoDB client with the boto3.resource API
+        Create a DynamoDB client
         If running locally, it points to the LocalStack DynamoDB service.
         """
         if os.environ.get("PROJECT_ENV") == "local":
@@ -43,9 +43,6 @@ class DynamoDB:
     def get(key: str) -> Dict[str, Any] | None:
         """
         Retrieve an item from the DynamoDB table by key.
-
-        :param key: The partition key for the item.
-        :return: The item as a JSON object (dict), or None if not found.
         """
         try:
             client = DynamoDB.client()
@@ -65,11 +62,7 @@ class DynamoDB:
     @staticmethod
     def put(key: str, value: Any, ttl: int | None = None):
         """
-        Store a JSON object in the DynamoDB table with a TTL.
-
-        :param key: The partition key for the item.
-        :param value: The value to store as a JSON object (dict).
-        :param ttl: The time-to-live for the item (in seconds from now).
+        Store a value in the DynamoDB table with (optional) TTL.
         """
         try:
             serialized_value = serialize_dynamo_item(value)
