@@ -7,11 +7,11 @@ from datetime import datetime, timezone
 import pytest
 from lxml import etree
 
-from timetables_etl.etl.app.txc.models import TXCRouteSection
-from timetables_etl.etl.app.txc.models.txc_route import (
+from timetables_etl.etl.app.txc.models import (
     TXCLocation,
     TXCMapping,
     TXCRouteLink,
+    TXCRouteSection,
     TXCTrack,
 )
 from timetables_etl.etl.app.txc.parser.route_sections import (

@@ -8,20 +8,20 @@ from lxml.etree import _Element
 from structlog.stdlib import get_logger
 
 from ..models.txc_operator import TXCOperator
-from ..models.txc_types import LicenceClassificationT, TransportModeType
+from ..models.txc_types import LicenceClassificationT, TransportModeT
 from .utils import find_section
 from .utils_tags import get_element_text, get_tag_str
 
 log = get_logger()
 
 
-def parse_transport_mode(operator_xml: _Element) -> TransportModeType:
+def parse_transport_mode(operator_xml: _Element) -> TransportModeT:
     """
     Return transport mode
     """
     primary_mode = get_element_text(operator_xml, "PrimaryMode")
-    if primary_mode in get_args(TransportModeType):
-        return cast(TransportModeType, primary_mode)
+    if primary_mode in get_args(TransportModeT):
+        return cast(TransportModeT, primary_mode)
     return "coach"
 
 
@@ -48,7 +48,7 @@ def parse_operator(operator_xml: _Element) -> TXCOperator | None:
     trading_name = get_element_text(operator_xml, "TradingName")
     licence_number = get_element_text(operator_xml, "LicenceNumber")
 
-    primary_mode: TransportModeType = parse_transport_mode(operator_xml)
+    primary_mode: TransportModeT = parse_transport_mode(operator_xml)
     licence_classification: LicenceClassificationT | None = (
         parse_licence_classification(operator_xml)
     )

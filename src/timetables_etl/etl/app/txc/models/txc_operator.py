@@ -5,7 +5,7 @@ Operator
 
 from pydantic import BaseModel, Field
 
-from .txc_types import LicenceClassificationT, TransportModeType
+from .txc_types import LicenceClassificationT, TransportModeT
 
 
 class TXCOperator(BaseModel):
@@ -44,7 +44,7 @@ class TXCOperator(BaseModel):
         default=None,
         description="Shall be provided, where this is different from the name given in NOC. ",
     )
-    PrimaryMode: TransportModeType = Field(
+    PrimaryMode: TransportModeT = Field(
         default="coach",
         description=("The main mode the operator provides"),
     )

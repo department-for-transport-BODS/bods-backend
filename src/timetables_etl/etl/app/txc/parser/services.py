@@ -14,7 +14,7 @@ from ..models.txc_service import (
     TXCService,
     TXCStandardService,
 )
-from ..models.txc_types import TransportModeType
+from ..models.txc_types import TransportModeT
 from .services_flexible import parse_flexible_service
 from .utils import find_section
 from .utils_attributes import parse_xml_int
@@ -184,10 +184,9 @@ def parse_service(service_xml: _Element) -> TXCService | None:
         else None
     )
 
-    mode: TransportModeType = (
-        cast(TransportModeType, text)
-        if (text := get_element_text(service_xml, "Mode"))
-        in get_args(TransportModeType)
+    mode: TransportModeT = (
+        cast(TransportModeT, text)
+        if (text := get_element_text(service_xml, "Mode")) in get_args(TransportModeT)
         else "coach"
     )
     flexible_service_xml = service_xml.find("FlexibleService")

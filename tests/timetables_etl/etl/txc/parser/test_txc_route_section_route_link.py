@@ -7,8 +7,12 @@ from datetime import datetime, timezone
 import pytest
 from lxml import etree
 
-from timetables_etl.etl.app.txc.models import TXCLocation, TXCRouteLink, TXCTrack
-from timetables_etl.etl.app.txc.models.txc_route import TXCMapping
+from timetables_etl.etl.app.txc.models import (
+    TXCLocation,
+    TXCMapping,
+    TXCRouteLink,
+    TXCTrack,
+)
 from timetables_etl.etl.app.txc.parser.route_sections import (
     parse_route_link,
     parse_route_links,

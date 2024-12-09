@@ -9,12 +9,12 @@ from timetables_etl.etl.app.transform.utils_stops import (
     get_first_last_stops,
     get_terminal_stop_points,
 )
-from timetables_etl.etl.app.txc.models.txc_journey_pattern import (
+from timetables_etl.etl.app.txc.models import (
+    TXCJourneyPattern,
     TXCJourneyPatternSection,
     TXCJourneyPatternStopUsage,
     TXCJourneyPatternTimingLink,
 )
-from timetables_etl.etl.app.txc.models.txc_service import TXCJourneyPattern
 
 STOP_MAPPING_DATA = [
     ("490014051VC", "Victoria Coach Station"),

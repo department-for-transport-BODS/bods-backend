@@ -2,7 +2,6 @@
 Test Generating Transmodel Service Patterns
 """
 
-from datetime import date
 from typing import Callable
 
 import pytest
@@ -12,353 +11,56 @@ from shapely import Point
 from shapely.geometry import LineString
 
 from tests.timetables_etl.factories.database.naptan import NaptanStopPointFactory
-from timetables_etl.etl.app.database.models.model_naptan import NaptanStopPoint
-from timetables_etl.etl.app.database.models.model_transmodel import (
-    TransmodelServicePattern,
+from tests.timetables_etl.factories.database.organisation import (
+    OrganisationDatasetRevisionFactory,
 )
-from timetables_etl.etl.app.transform.service_pattern_metadata import (
-    LineDescription,
-    PatternMetadata,
-    extract_pattern_metadata,
-    get_line_description,
+from tests.timetables_etl.factories.txc import (
+    TXCJourneyPatternFactory,
+    TXCJourneyPatternSectionFactory,
+    TXCJourneyPatternStopUsageFactory,
+    TXCJourneyPatternTimingLinkFactory,
+    TXCServiceFactory,
+)
+from timetables_etl.etl.app.database.models import (
+    NaptanStopPoint,
+    TransmodelServicePattern,
 )
 from timetables_etl.etl.app.transform.service_patterns import (
     create_service_pattern,
     generate_service_pattern_geometry,
 )
-from timetables_etl.etl.app.txc.models.txc_journey_pattern import (
-    TXCJourneyPatternSection,
-    TXCJourneyPatternStopUsage,
-    TXCJourneyPatternTimingLink,
-)
-from timetables_etl.etl.app.txc.models.txc_service import (
+from timetables_etl.etl.app.txc.models import (
     TXCJourneyPattern,
-    TXCLine,
-    TXCLineDescription,
+    TXCJourneyPatternSection,
     TXCService,
-    TXCStandardService,
 )
-
-
-@pytest.mark.parametrize(
-    "line,direction,expected",
-    [
-        pytest.param(
-            TXCLine(
-                id="1",
-                LineName="Test Line",
-                InboundDescription=TXCLineDescription(
-                    Origin="Start", Destination="End", Description="Start to End Route"
-                ),
-            ),
-            "inbound",
-            LineDescription(
-                origin="Start", destination="End", description="Start to End Route"
-            ),
-            id="Valid: Inbound",
-        ),
-        pytest.param(
-            TXCLine(
-                id="1",
-                LineName="Test Line",
-                OutboundDescription=TXCLineDescription(
-                    Origin="End", Destination="Start", Description="End to Start Route"
-                ),
-            ),
-            "outbound",
-            LineDescription(
-                origin="End", destination="Start", description="End to Start Route"
-            ),
-            id="Valid: Outbound",
-        ),
-        pytest.param(
-            TXCLine(id="1", LineName="Test Line"),
-            "inbound",
-            None,
-            id="Missing Description: Inbound",
-        ),
-        pytest.param(
-            TXCLine(id="1", LineName="Test Line"),
-            "outbound",
-            None,
-            id="Missing Description: Outbound",
-        ),
-    ],
-)
-def test_get_line_description(
-    line: TXCLine, direction: str, expected: LineDescription | None
-) -> None:
-    """
-    Test Generating line description from a TXCLine based on direction
-    """
-    result = get_line_description(line, direction)
-    assert result == expected
-
-
-@pytest.mark.parametrize(
-    "service,journey_pattern,sections,stop_mapping,expected",
-    [
-        pytest.param(
-            TXCService(
-                RevisionNumber=1,
-                ServiceCode="UZ000FLIX:UK045",
-                PrivateCode="UK045",
-                RegisteredOperatorRef="FLIX",
-                PublicUse=True,
-                StartDate=date(2024, 11, 11),
-                EndDate=date(2025, 1, 5),
-                StandardService=TXCStandardService(
-                    Origin="London",
-                    Destination="Plymouth",
-                    JourneyPattern=[],
-                ),
-                FlexibleService=None,
-                Lines=[
-                    TXCLine(
-                        id="FLIX:UZ000FLIX:UK045:UK045",
-                        LineName="UK045",
-                        MarketingName=None,
-                        OutboundDescription=TXCLineDescription(
-                            Origin="London",
-                            Destination="Plymouth",
-                            Description="London - Plymouth",
-                        ),
-                        InboundDescription=TXCLineDescription(
-                            Origin="Plymouth",
-                            Destination="London",
-                            Description="Plymouth - London",
-                        ),
-                    )
-                ],
-                Mode="coach",
-            ),
-            TXCJourneyPattern(
-                id="JP1",
-                DestinationDisplay="Victoria - Plymouth",
-                Direction="inbound",
-                RouteRef="R1",
-                JourneyPatternSectionRefs=["JPS1"],
-            ),
-            [
-                TXCJourneyPatternSection(
-                    id="JPS1",
-                    JourneyPatternTimingLink=[
-                        TXCJourneyPatternTimingLink(
-                            id="JPTL1",
-                            From=TXCJourneyPatternStopUsage(
-                                id="JPSU1",
-                                Activity="pickUp",
-                                StopPointRef="490014051VC",
-                                TimingStatus="principalTimingPoint",
-                            ),
-                            To=TXCJourneyPatternStopUsage(
-                                id="JPSU2",
-                                Activity="setDown",
-                                StopPointRef="118000037",
-                                TimingStatus="principalTimingPoint",
-                            ),
-                            RouteLinkRef="RL1",
-                            RunTime="PT0H0M0S",
-                        ),
-                    ],
-                )
-            ],
-            NaptanStopPointFactory.create_mapping(
-                [
-                    ("490014051VC", "Victoria Coach Station"),
-                    ("118000037", "Plymouth Coach Station"),
-                ]
-            ),
-            PatternMetadata(
-                origin="Plymouth",
-                destination="London",
-                description="Plymouth - London",
-                line_name="UK045",
-            ),
-            id="Using Line Description",
-        ),
-        pytest.param(
-            TXCService(
-                RevisionNumber=1,
-                ServiceCode="UZ000FLIX:UK045",
-                PrivateCode="UK045",
-                RegisteredOperatorRef="FLIX",
-                PublicUse=True,
-                StartDate=date(2024, 11, 11),
-                EndDate=date(2025, 1, 5),
-                StandardService=TXCStandardService(
-                    Origin="London",
-                    Destination="Plymouth",
-                    JourneyPattern=[],
-                ),
-                FlexibleService=None,
-                Lines=[],
-                Mode="coach",
-            ),
-            TXCJourneyPattern(
-                id="JP1",
-                DestinationDisplay="Victoria - Plymouth",
-                Direction="inbound",
-                RouteRef="R1",
-                JourneyPatternSectionRefs=["JPS1"],
-            ),
-            [
-                TXCJourneyPatternSection(
-                    id="JPS1",
-                    JourneyPatternTimingLink=[
-                        TXCJourneyPatternTimingLink(
-                            id="JPTL1",
-                            From=TXCJourneyPatternStopUsage(
-                                id="JPSU1",
-                                Activity="pickUp",
-                                StopPointRef="490014051VC",
-                                TimingStatus="principalTimingPoint",
-                            ),
-                            To=TXCJourneyPatternStopUsage(
-                                id="JPSU2",
-                                Activity="setDown",
-                                StopPointRef="118000037",
-                                TimingStatus="principalTimingPoint",
-                            ),
-                            RouteLinkRef="RL1",
-                            RunTime="PT0H0M0S",
-                        ),
-                    ],
-                )
-            ],
-            NaptanStopPointFactory.create_mapping(
-                [
-                    ("490014051VC", "Victoria Coach Station"),
-                    ("118000037", "Plymouth Coach Station"),
-                ]
-            ),
-            PatternMetadata(
-                origin="Victoria Coach Station",
-                destination="Plymouth Coach Station",
-                description="Victoria Coach Station - Plymouth Coach Station",
-                line_name="unknown",
-            ),
-            id="Using Stop Common Name: No Lines Available",
-        ),
-        pytest.param(
-            TXCService(
-                RevisionNumber=1,
-                ServiceCode="UZ000FLIX:UK045",
-                PrivateCode="UK045",
-                RegisteredOperatorRef="FLIX",
-                PublicUse=True,
-                StartDate=date(2024, 11, 11),
-                EndDate=date(2025, 1, 5),
-                StandardService=TXCStandardService(
-                    Origin="London",
-                    Destination="Plymouth",
-                    JourneyPattern=[],
-                ),
-                FlexibleService=None,
-                Lines=[
-                    TXCLine(
-                        id="FLIX:UZ000FLIX:UK045:UK045",
-                        LineName="UK045",
-                        MarketingName=None,
-                        OutboundDescription=None,
-                        InboundDescription=None,
-                    )
-                ],
-                Mode="coach",
-            ),
-            TXCJourneyPattern(
-                id="JP1",
-                DestinationDisplay="Victoria - Plymouth",
-                Direction="inbound",
-                RouteRef="R1",
-                JourneyPatternSectionRefs=["JPS1"],
-            ),
-            [
-                TXCJourneyPatternSection(
-                    id="JPS1",
-                    JourneyPatternTimingLink=[
-                        TXCJourneyPatternTimingLink(
-                            id="JPTL1",
-                            From=TXCJourneyPatternStopUsage(
-                                id="JPSU1",
-                                Activity="pickUp",
-                                StopPointRef="490014051VC",
-                                TimingStatus="principalTimingPoint",
-                            ),
-                            To=TXCJourneyPatternStopUsage(
-                                id="JPSU2",
-                                Activity="setDown",
-                                StopPointRef="118000037",
-                                TimingStatus="principalTimingPoint",
-                            ),
-                            RouteLinkRef="RL1",
-                            RunTime="PT0H0M0S",
-                        ),
-                    ],
-                )
-            ],
-            NaptanStopPointFactory.create_mapping(
-                [
-                    ("490014051VC", "Victoria Coach Station"),
-                    ("118000037", "Plymouth Coach Station"),
-                ]
-            ),
-            PatternMetadata(
-                origin="Victoria Coach Station",
-                destination="Plymouth Coach Station",
-                description="Victoria Coach Station - Plymouth Coach Station",
-                line_name="UK045",
-            ),
-            id="Using Stop Common Name: No Line Description",
-        ),
-    ],
-)
-def test_extract_pattern_metadata(
-    service: TXCService,
-    journey_pattern: TXCJourneyPattern,
-    sections: list[TXCJourneyPatternSection],
-    stop_mapping: dict[str, NaptanStopPoint],
-    expected: PatternMetadata,
-) -> None:
-    """
-    Testing extracting the Origin / Destination / Description for a Service Pattern
-
-    """
-    result = extract_pattern_metadata(service, journey_pattern, sections, stop_mapping)
-    assert result == expected
 
 
 @pytest.mark.parametrize(
     "journey_pattern,sections,stop_mapping,expected_coordinates",
     [
         pytest.param(
-            TXCJourneyPattern(
+            TXCJourneyPatternFactory.create(
                 id="JP1",
-                DestinationDisplay="Test Route",
-                Direction="inbound",
-                RouteRef="R1",
                 JourneyPatternSectionRefs=["JPS1"],
             ),
             [
-                TXCJourneyPatternSection(
+                TXCJourneyPatternSectionFactory.create(
                     id="JPS1",
                     JourneyPatternTimingLink=[
-                        TXCJourneyPatternTimingLink(
+                        TXCJourneyPatternTimingLinkFactory.create(
                             id="JPTL1",
-                            From=TXCJourneyPatternStopUsage(
+                            From=TXCJourneyPatternStopUsageFactory.create(
                                 id="JPSU1",
                                 Activity="pickUpAndSetDown",
                                 StopPointRef="Atco1",
-                                TimingStatus="principalTimingPoint",
                             ),
-                            To=TXCJourneyPatternStopUsage(
+                            To=TXCJourneyPatternStopUsageFactory.create(
                                 id="JPSU2",
                                 Activity="setDown",
                                 StopPointRef="Atco2",
-                                TimingStatus="principalTimingPoint",
                             ),
                             RouteLinkRef="RL1",
-                            RunTime="PT0H0M0S",
                         ),
                     ],
                 ),
@@ -370,58 +72,49 @@ def test_extract_pattern_metadata(
                 ]
             ),
             [(50.7, -3.5), (50.8, -3.6)],
-            id="Single JourneyPatternSection for JourneyPattern",
+            id="Single JourneyPatternSection",
         ),
         pytest.param(
-            TXCJourneyPattern(
+            TXCJourneyPatternFactory.create(
                 id="JP1",
-                DestinationDisplay="Test Route",
-                Direction="inbound",
-                RouteRef="R1",
                 JourneyPatternSectionRefs=["JPS1", "JPS2"],
             ),
             [
-                TXCJourneyPatternSection(
+                TXCJourneyPatternSectionFactory.create(
                     id="JPS1",
                     JourneyPatternTimingLink=[
-                        TXCJourneyPatternTimingLink(
+                        TXCJourneyPatternTimingLinkFactory.create(
                             id="JPTL1",
-                            From=TXCJourneyPatternStopUsage(
+                            From=TXCJourneyPatternStopUsageFactory.create(
                                 id="JPSU1",
                                 Activity="pickUp",
                                 StopPointRef="Atco1",
-                                TimingStatus="principalTimingPoint",
                             ),
-                            To=TXCJourneyPatternStopUsage(
+                            To=TXCJourneyPatternStopUsageFactory.create(
                                 id="JPSU2",
                                 Activity="pickUpAndSetDown",
                                 StopPointRef="Atco2",
-                                TimingStatus="principalTimingPoint",
                             ),
                             RouteLinkRef="RL1",
-                            RunTime="PT0H0M0S",
                         ),
                     ],
                 ),
-                TXCJourneyPatternSection(
+                TXCJourneyPatternSectionFactory.create(
                     id="JPS2",
                     JourneyPatternTimingLink=[
-                        TXCJourneyPatternTimingLink(
+                        TXCJourneyPatternTimingLinkFactory.create(
                             id="JPTL2",
-                            From=TXCJourneyPatternStopUsage(
+                            From=TXCJourneyPatternStopUsageFactory.create(
                                 id="JPSU3",
                                 Activity="pickUpAndSetDown",
                                 StopPointRef="Atco2",
-                                TimingStatus="principalTimingPoint",
                             ),
-                            To=TXCJourneyPatternStopUsage(
+                            To=TXCJourneyPatternStopUsageFactory.create(
                                 id="JPSU4",
                                 Activity="setDown",
                                 StopPointRef="Atco3",
-                                TimingStatus="principalTimingPoint",
                             ),
                             RouteLinkRef="RL2",
-                            RunTime="PT0H0M0S",
                         ),
                     ],
                 ),
@@ -445,7 +138,8 @@ def test_generate_service_pattern_geometry(
     expected_coordinates: list[tuple[float, float]],
 ) -> None:
     """
-    Test generating the LineString from the JourneyPatternSections for a JourneyPattern
+    Test generating the LineString from the JourneyPatternSections for a JourneyPattern.
+
     """
     result = generate_service_pattern_geometry(journey_pattern, sections, stop_mapping)
     assert isinstance(result, WKBElement)
@@ -460,69 +154,33 @@ def test_generate_service_pattern_geometry(
     "service,journey_pattern,sections,stop_mapping,expected_pattern",
     [
         pytest.param(
-            TXCService(
-                RevisionNumber=1,
-                ServiceCode="UZ000FLIX:UK045",
-                PrivateCode="UK045",
-                RegisteredOperatorRef="FLIX",
-                PublicUse=True,
-                StartDate=date(2024, 11, 11),
-                EndDate=date(2025, 1, 5),
-                StandardService=TXCStandardService(
-                    Origin="London",
-                    Destination="Plymouth",
-                    JourneyPattern=[],
-                ),
-                FlexibleService=None,
-                Lines=[
-                    TXCLine(
-                        id="FLIX:UZ000FLIX:UK045:UK045",
-                        LineName="UK045",
-                        MarketingName=None,
-                        OutboundDescription=TXCLineDescription(
-                            Origin="London",
-                            Destination="Plymouth",
-                            Description="London - Plymouth",
-                        ),
-                        InboundDescription=TXCLineDescription(
-                            Origin="Plymouth",
-                            Destination="London",
-                            Description="Plymouth - London",
-                        ),
-                    )
-                ],
-                Mode="coach",
-            ),
-            TXCJourneyPattern(
+            TXCServiceFactory.create(with_standard_line=True),
+            TXCJourneyPatternFactory.create(
                 id="JP1",
-                DestinationDisplay="Victoria - Plymouth",
                 Direction="outbound",
-                RouteRef="R1",
+                DestinationDisplay="Victoria - Plymouth",
                 JourneyPatternSectionRefs=["JPS1"],
             ),
             [
-                TXCJourneyPatternSection(
+                TXCJourneyPatternSectionFactory.create(
                     id="JPS1",
                     JourneyPatternTimingLink=[
-                        TXCJourneyPatternTimingLink(
+                        TXCJourneyPatternTimingLinkFactory.create(
                             id="JPTL1",
-                            From=TXCJourneyPatternStopUsage(
+                            From=TXCJourneyPatternStopUsageFactory.create(
                                 id="JPSU1",
                                 Activity="pickUp",
                                 StopPointRef="490014051VC",
-                                TimingStatus="principalTimingPoint",
                             ),
-                            To=TXCJourneyPatternStopUsage(
+                            To=TXCJourneyPatternStopUsageFactory.create(
                                 id="JPSU2",
                                 Activity="setDown",
                                 StopPointRef="118000037",
-                                TimingStatus="principalTimingPoint",
                             ),
                             RouteLinkRef="RL1",
-                            RunTime="PT0H0M0S",
                         ),
                     ],
-                )
+                ),
             ],
             NaptanStopPointFactory.create_mapping_with_locations(
                 [
@@ -542,53 +200,33 @@ def test_generate_service_pattern_geometry(
             id="Valid Service Pattern with Line Description",
         ),
         pytest.param(
-            TXCService(
-                RevisionNumber=1,
-                ServiceCode="UZ000FLIX:UK045",
-                PrivateCode="UK045",
-                RegisteredOperatorRef="FLIX",
-                PublicUse=True,
-                StartDate=date(2024, 11, 11),
-                EndDate=date(2025, 1, 5),
-                StandardService=TXCStandardService(
-                    Origin="London",
-                    Destination="Plymouth",
-                    JourneyPattern=[],
-                ),
-                FlexibleService=None,
-                Lines=[],
-                Mode="coach",
-            ),
-            TXCJourneyPattern(
+            TXCServiceFactory.create(no_lines=True),
+            TXCJourneyPatternFactory.create(
                 id="JP1",
-                DestinationDisplay="Victoria - Plymouth",
                 Direction="outbound",
-                RouteRef="R1",
+                DestinationDisplay="Victoria - Plymouth",
                 JourneyPatternSectionRefs=["JPS1"],
             ),
             [
-                TXCJourneyPatternSection(
+                TXCJourneyPatternSectionFactory.create(
                     id="JPS1",
                     JourneyPatternTimingLink=[
-                        TXCJourneyPatternTimingLink(
+                        TXCJourneyPatternTimingLinkFactory.create(
                             id="JPTL1",
-                            From=TXCJourneyPatternStopUsage(
+                            From=TXCJourneyPatternStopUsageFactory.create(
                                 id="JPSU1",
                                 Activity="pickUp",
                                 StopPointRef="490014051VC",
-                                TimingStatus="principalTimingPoint",
                             ),
-                            To=TXCJourneyPatternStopUsage(
+                            To=TXCJourneyPatternStopUsageFactory.create(
                                 id="JPSU2",
                                 Activity="setDown",
                                 StopPointRef="118000037",
-                                TimingStatus="principalTimingPoint",
                             ),
                             RouteLinkRef="RL1",
-                            RunTime="PT0H0M0S",
                         ),
                     ],
-                )
+                ),
             ],
             NaptanStopPointFactory.create_mapping_with_locations(
                 [
@@ -610,16 +248,17 @@ def test_generate_service_pattern_geometry(
     ],
 )
 def test_create_service_pattern(
-    organisation_dataset_revision,
     service: TXCService,
     journey_pattern: TXCJourneyPattern,
     sections: list[TXCJourneyPatternSection],
     stop_mapping: dict[str, NaptanStopPoint],
-    expected_pattern: Callable,
+    expected_pattern: Callable[[TransmodelServicePattern], TransmodelServicePattern],
 ) -> None:
     """
-    Test creating a TransmodelServicePattern from TXC data
+    Test creating a TransmodelServicePattern from TXC data.
+
     """
+    organisation_dataset_revision = OrganisationDatasetRevisionFactory.create_with_id(1)
     result = create_service_pattern(
         service,
         journey_pattern,
@@ -628,7 +267,6 @@ def test_create_service_pattern(
         stop_mapping,
     )
 
-    # Test pattern matches expected values
     expected = expected_pattern(result)
     assert isinstance(result, TransmodelServicePattern)
     assert result.origin == expected.origin

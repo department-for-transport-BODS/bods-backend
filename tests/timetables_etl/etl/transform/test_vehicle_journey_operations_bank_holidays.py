@@ -17,7 +17,7 @@ from timetables_etl.etl.app.database.models import (
 from timetables_etl.etl.app.transform.vehicle_journey_operations import (
     process_bank_holidays,
 )
-from timetables_etl.etl.app.txc.models.txc_vehicle_journey import (
+from timetables_etl.etl.app.txc.models import (
     TXCBankHolidayDays,
     TXCBankHolidayOperation,
 )

@@ -7,20 +7,18 @@ from datetime import date
 import pytest
 from lxml import etree
 
-from timetables_etl.etl.app.txc.models.txc_service import (
-    TXCJourneyPattern,
-    TXCLine,
-    TXCLineDescription,
-    TXCService,
-    TXCStandardService,
-)
-from timetables_etl.etl.app.txc.models.txc_service_flexible import (
+from timetables_etl.etl.app.txc.models import (
     TXCBookingArrangements,
     TXCFixedStopUsage,
     TXCFlexibleJourneyPattern,
     TXCFlexibleService,
     TXCFlexibleStopUsage,
+    TXCJourneyPattern,
+    TXCLine,
+    TXCLineDescription,
     TXCPhone,
+    TXCService,
+    TXCStandardService,
 )
 from timetables_etl.etl.app.txc.parser.services import (
     parse_journey_pattern,

@@ -8,7 +8,7 @@ import pytest
 from lxml import etree
 
 from tests.timetables_etl.etl.txc.parser.utils import assert_model_equal
-from timetables_etl.etl.app.txc.models.txc_serviced_organisation import (
+from timetables_etl.etl.app.txc.models import (
     TXCServicedOrganisation,
     TXCServicedOrganisationAnnotatedNptgLocalityRef,
     TXCServicedOrganisationDatePattern,

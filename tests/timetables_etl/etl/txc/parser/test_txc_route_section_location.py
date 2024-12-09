@@ -5,7 +5,7 @@ TXC Route Section Location XML to Pydantic Test
 import pytest
 from lxml import etree
 
-from timetables_etl.etl.app.txc.models.txc_route import TXCLocation
+from timetables_etl.etl.app.txc.models import TXCLocation
 from timetables_etl.etl.app.txc.parser.route_sections import (
     parse_location,
     parse_locations,

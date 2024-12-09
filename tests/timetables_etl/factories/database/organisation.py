@@ -64,6 +64,35 @@ class OrganisationDatasetRevisionFactory(factory.Factory):
     created = LazyFunction(lambda: datetime.now(UTC))
     modified = LazyFunction(lambda: datetime.now(UTC))
 
+    @classmethod
+    def create_with_id(cls, id_number: int, **kwargs) -> OrganisationDatasetRevision:
+        """Creates a revision with a specific ID"""
+        revision = cls.create(**kwargs)
+        revision.id = id_number
+        return revision
+
+    @classmethod
+    def published(cls, **kwargs) -> OrganisationDatasetRevision:
+        """Creates a published revision"""
+        return cls.create(
+            is_published=True,
+            published_at=datetime.now(UTC),
+            published_by_id=FuzzyInteger(1, 1000).fuzz(),
+            **kwargs,
+        )
+
+    @classmethod
+    def with_dates(
+        cls, start_date: date, end_date: date, **kwargs
+    ) -> OrganisationDatasetRevision:
+        """Creates a revision with specific service dates"""
+        return cls.create(
+            first_service_start=datetime.combine(start_date, datetime.min.time(), UTC),
+            first_expiring_service=datetime.combine(end_date, datetime.max.time(), UTC),
+            last_expiring_service=datetime.combine(end_date, datetime.max.time(), UTC),
+            **kwargs,
+        )
+
 
 class OrganisationTXCFileAttributesFactory(factory.Factory):
     """
@@ -92,3 +121,30 @@ class OrganisationTXCFileAttributesFactory(factory.Factory):
     destination = "Plymouth"
     origin = "London"
     hash = factory.Faker("sha1")
+
+    @classmethod
+    def create_with_id(cls, id_number: int, **kwargs) -> OrganisationTXCFileAttributes:
+        """Creates file attributes with a specific ID"""
+        attrs = cls.create(**kwargs)
+        attrs.id = id_number
+        return attrs
+
+    @classmethod
+    def with_service_details(
+        cls, origin: str, destination: str, line_names: list[str], **kwargs
+    ) -> OrganisationTXCFileAttributes:
+        """Creates file attributes with specific service details"""
+        return cls.create(
+            origin=origin, destination=destination, line_names=line_names, **kwargs
+        )
+
+    @classmethod
+    def with_operating_period(
+        cls, start_date: date, end_date: date, **kwargs
+    ) -> OrganisationTXCFileAttributes:
+        """Creates file attributes with specific operating period"""
+        return cls.create(
+            operating_period_start_date=start_date,
+            operating_period_end_date=end_date,
+            **kwargs,
+        )

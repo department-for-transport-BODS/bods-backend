@@ -20,7 +20,7 @@ ServiceOrganisationClassificationT = Literal[
 
 ModificationType = Literal["new", "delete", "revise", "delta"]
 StatusT = Literal["active", "inactive", "pending"]
-TransportModeType = Literal[
+TransportModeT = Literal[
     "air",
     "bus",
     "coach",

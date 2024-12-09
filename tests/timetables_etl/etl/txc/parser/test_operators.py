@@ -5,10 +5,10 @@ Test Parsing the Operators section
 import pytest
 from lxml import etree
 
-from timetables_etl.etl.app.txc.models.txc_operator import TXCOperator
-from timetables_etl.etl.app.txc.models.txc_types import (
+from timetables_etl.etl.app.txc.models import (
     LicenceClassificationT,
-    TransportModeType,
+    TransportModeT,
+    TXCOperator,
 )
 from timetables_etl.etl.app.txc.parser.operators import (
     parse_licence_classification,
@@ -34,7 +34,7 @@ from timetables_etl.etl.app.txc.parser.operators import (
         pytest.param("<Operator></Operator>", "coach", id="Missing Transport Mode"),
     ],
 )
-def test_parse_transport_mode(xml_string: str, expected: TransportModeType):
+def test_parse_transport_mode(xml_string: str, expected: TransportModeT):
     """
     Test parsing transport mode from XML
     """

@@ -5,7 +5,7 @@ TXC Stoppoint XML to Pydantic Test
 import pytest
 from lxml.etree import fromstring
 
-from timetables_etl.etl.app.txc.models.txc_stoppoint import (
+from timetables_etl.etl.app.txc.models import (
     AnnotatedStopPointRef,
     BearingStructure,
     BusStopStructure,

@@ -5,11 +5,7 @@ Testing Route XML Parsing
 import pytest
 from lxml import etree
 
-from timetables_etl.etl.app.txc.models.txc_route import (
-    TXCRoute,
-    TXCRouteLink,
-    TXCRouteSection,
-)
+from timetables_etl.etl.app.txc.models import TXCRoute, TXCRouteLink, TXCRouteSection
 from timetables_etl.etl.app.txc.parser.routes import parse_routes
 
 
