@@ -44,15 +44,21 @@ jobs:
       - name: Prepare Test Summary
         if: always()
         id: prepare_test_summary
+        shell: bash
         run: |
           passed=${{ steps.test_summary.outputs.passed }}
           failed=${{ steps.test_summary.outputs.failed }}
           skipped=${{ steps.test_summary.outputs.skipped }}
           total=${{ steps.test_summary.outputs.total }}
 
-          conclusion="success"
-          if [ "$failed" -gt 0 ]; then
-            conclusion="failure"
+          # Default to neutral if we can't determine
+          conclusion="neutral"
+          if [ -n "$failed" ]; then
+            if [ "$failed" -gt 0 ]; then
+              conclusion="failure"
+            else
+              conclusion="success"
+            fi
           fi
 
           title="Passed: $passed, Failed: $failed, Skipped: $skipped, Total: $total"
@@ -73,11 +79,13 @@ jobs:
             summary="No tests were run"
           fi
 
-          echo "title=$title" >> $GITHUB_OUTPUT
+          echo "conclusion=$conclusion" >> $GITHUB_OUTPUT
+          echo "title<<EOF" >> $GITHUB_OUTPUT
+          echo "$title" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
           echo "summary<<EOF" >> $GITHUB_OUTPUT
           echo "$summary" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-          echo "conclusion=$conclusion" >> $GITHUB_OUTPUT
 
       - name: Create Test Check
         if: always()

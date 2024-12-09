@@ -14,6 +14,7 @@ inputs:
   conclusion:
     description: 'Conclusion of the check (success/failure)'
     required: true
+    default: 'neutral'
   token:
     description: 'GitHub token'
     required: true
@@ -26,6 +27,21 @@ runs:
   steps:
     - shell: bash
       run: |
+        # Print inputs for debugging (masking sensitive data)
+        echo "Creating check:"
+        echo "Name: ${{ inputs.name }}"
+        echo "Title length: ${#INPUT_TITLE}"
+        echo "Summary length: ${#INPUT_SUMMARY}"
+        echo "Conclusion: ${{ inputs.conclusion }}"
+        
+        # Set conclusion to neutral if invalid
+        if [[ ! "${{ inputs.conclusion }}" =~ ^(success|failure|neutral|cancelled|timed_out|action_required|skipped)$ ]]; then
+          echo "Warning: Invalid conclusion '${{ inputs.conclusion }}'. Defaulting to 'neutral'. Valid values are: success, failure, neutral, cancelled, timed_out, action_required, skipped"
+          CONCLUSION="neutral"
+        else
+          CONCLUSION="${{ inputs.conclusion }}"
+        fi
+
         json_payload=$(jq -n \
           --arg name "${{ inputs.name }}" \
           --arg head_sha "${{ inputs.commit-sha }}" \
@@ -57,5 +73,3 @@ runs:
           echo "Error creating check: $response"
           exit 1
         fi
-        echo "Response from GitHub API:"
-        echo "$response"
