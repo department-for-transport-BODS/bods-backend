@@ -32,11 +32,11 @@ runs:
         echo "Name: ${{ inputs.name }}"
         echo "Title length: ${#INPUT_TITLE}"
         echo "Summary length: ${#INPUT_SUMMARY}"
-        echo "Conclusion: ${{ inputs.conclusion }}"
+        echo "Original conclusion: ${{ inputs.conclusion }}"
         
         # Set conclusion to neutral if invalid
         if [[ ! "${{ inputs.conclusion }}" =~ ^(success|failure|neutral|cancelled|timed_out|action_required|skipped)$ ]]; then
-          echo "Warning: Invalid conclusion '${{ inputs.conclusion }}'. Defaulting to 'neutral'. Valid values are: success, failure, neutral, cancelled, timed_out, action_required, skipped"
+          echo "Warning: Invalid conclusion '${{ inputs.conclusion }}'. Defaulting to 'neutral'"
           CONCLUSION="neutral"
         else
           CONCLUSION="${{ inputs.conclusion }}"
@@ -45,7 +45,7 @@ runs:
         json_payload=$(jq -n \
           --arg name "${{ inputs.name }}" \
           --arg head_sha "${{ inputs.commit-sha }}" \
-          --arg conclusion "${{ inputs.conclusion }}" \
+          --arg conclusion "$CONCLUSION" \
           --arg title "${{ inputs.title }}" \
           --arg summary "${{ inputs.summary }}" \
           '{
