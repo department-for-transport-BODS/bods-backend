@@ -10,7 +10,6 @@ from common_layer.logger import logger
 
 TABLE_NAME = os.getenv("DYNAMO_DB_TABLE_NAME")
 
-
 class DynamoDB:
 
     _client = None
@@ -64,7 +63,7 @@ class DynamoDB:
             raise PipelineException(message) from e
 
     @staticmethod
-    def put(key: str, value: Dict[str, Any], ttl: int | None = None):
+    def put(key: str, value: Any, ttl: int | None = None):
         """
         Store a JSON object in the DynamoDB table with a TTL.
 

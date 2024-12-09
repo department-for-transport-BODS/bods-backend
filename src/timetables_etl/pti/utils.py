@@ -2,24 +2,22 @@ import logging
 
 from common_layer.db.manager import DbManager
 from common_layer.db.repositories.otc_service import OtcServiceRepository
+from common_layer.dynamodb.client import DynamoDB
 from pti.constants import SCOTLAND_TRAVELINE_REGIONS
 
 
 logger = logging.getLogger(__name__)
 
 def is_service_in_scotland(service_ref: str) -> bool:
-    # TODO: How should we implement caching in lambda environment?
-
-    # service_name_in_cache = f"{service_ref.replace(':', '-')}-scottish-region"
-    # value_in_cache = cache.get(service_name_in_cache, None)
-    # if value_in_cache is not None:
-    #     logger.info(f"{service_ref} PTI validation For region found in cache")
-    #     return value_in_cache
+    cache_key = f"{service_ref.replace(':', '-')}-is-scottish-region"
+    value_in_cache = DynamoDB.get(cache_key)
+    if value_in_cache is not None:
+        logger.info(f"{cache_key} for PTI Validation found in cache")
+        return value_in_cache
 
     is_in_scotland = get_service_in_scotland_from_db(service_ref)
 
-    # service_name_in_cache = f"{service_ref.replace(':', '-')}-scottish-region"
-    # cache.set(service_name_in_cache, is_scottish, timeout=7200)
+    DynamoDB.put(cache_key, is_in_scotland, ttl=7200)
 
     return is_in_scotland
 

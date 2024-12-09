@@ -1,4 +1,7 @@
-def serialize_dynamo_item(raw):
+from typing import Any, Dict
+
+
+def serialize_dynamo_item(raw: Any) -> Dict[str, Any]:
     """
     Serializes plain value/dict into DynamoDB item format.
 
@@ -23,7 +26,7 @@ def serialize_dynamo_item(raw):
     else:
         raise ValueError(f"Unsupported type for DynamoDB conversion: {type(raw)}")
 
-def deserialize_dynamo_item(item):
+def deserialize_dynamo_item(item: Dict[str, Any]) -> Any:
     """
     Deserializes DynamoDB item format dict to a plain value/dict.
     """
