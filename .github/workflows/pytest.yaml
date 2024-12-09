@@ -65,16 +65,12 @@ jobs:
 
           if [ "$total" -gt 0 ]; then
             pass_rate=$(echo "scale=2; ($passed * 100) / $total" | bc)
-            summary=$(cat << EOF
-            ### Test Results
-
+            summary="### Test Results
             - Pass Rate: ${pass_rate}%
             - Passed: $passed tests
             - Failed: $failed tests
             - Skipped: $skipped tests
-            - Total: $total tests
-            EOF
-            )
+            - Total: $total tests"
           else
             summary="No tests were run"
           fi
