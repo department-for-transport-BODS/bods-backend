@@ -40,11 +40,10 @@ jobs:
         if: always()
         with:
           paths: junit/*.xml
-      - name: Create Check with Test Summary
+      # Test Results Check
+      - name: Prepare Test Summary
         if: always()
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        id: prepare_test_summary
         run: |
           passed=${{ steps.test_summary.outputs.passed }}
           failed=${{ steps.test_summary.outputs.failed }}
@@ -56,63 +55,43 @@ jobs:
             conclusion="failure"
           fi
 
-          # Write title to file
-          echo "Passed: $passed, Failed: $failed, Skipped: $skipped, Total: $total" > test_title.txt
+          title="Passed: $passed, Failed: $failed, Skipped: $skipped, Total: $total"
 
-          # Create summary and write to file
           if [ "$total" -gt 0 ]; then
             pass_rate=$(echo "scale=2; ($passed * 100) / $total" | bc)
-            {
-              echo "### Test Results"
-              echo ""
-              echo "- Pass Rate: ${pass_rate}%"
-              echo "- Passed: $passed tests"
-              echo "- Failed: $failed tests"
-              echo "- Skipped: $skipped tests"
-              echo "- Total: $total tests"
-            } > test_summary.txt
+            summary=$(cat << EOF
+            ### Test Results
+
+            - Pass Rate: ${pass_rate}%
+            - Passed: $passed tests
+            - Failed: $failed tests
+            - Skipped: $skipped tests
+            - Total: $total tests
+            EOF
+            )
           else
-            echo "No tests were run" > test_summary.txt
+            summary="No tests were run"
           fi
 
-          title=$(cat test_title.txt)
-          summary=$(cat test_summary.txt)
+          echo "title=$title" >> $GITHUB_OUTPUT
+          echo "summary<<EOF" >> $GITHUB_OUTPUT
+          echo "$summary" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "conclusion=$conclusion" >> $GITHUB_OUTPUT
 
-          json_payload=$(jq -n \
-            --arg name "Tests" \
-            --arg head_sha "${{ env.COMMIT_SHA }}" \
-            --arg conclusion "$conclusion" \
-            --arg title "$title" \
-            --arg summary "$summary" \
-            '{
-              name: $name,
-              head_sha: $head_sha,
-              status: "completed",
-              conclusion: $conclusion,
-              output: {
-                title: $title,
-                summary: $summary
-              }
-            }')
+      - name: Create Test Check
+        if: always()
+        uses: ./.github/actions/create-check
+        with:
+          name: "Tests"
+          title: ${{ steps.prepare_test_summary.outputs.title }}
+          summary: ${{ steps.prepare_test_summary.outputs.summary }}
+          conclusion: ${{ steps.prepare_test_summary.outputs.conclusion }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-sha: ${{ github.event.pull_request.head.sha || github.sha }}
 
-          response=$(curl -L \
-            -w "\n%{http_code}" \
-            -X POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer $GITHUB_TOKEN" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            https://api.github.com/repos/${{ github.repository }}/check-runs \
-            -d "$json_payload")
-
-          status_code=$(echo "$response" | tail -n1)
-          if [ "$status_code" -ge 400 ]; then
-            echo "Error creating check: $response"
-            exit 1
-          fi
-          echo "Response from GitHub API:"
-          echo "$response"
-
-      - name: Extract Coverage Percentage
+      # Coverage Check
+      - name: Extract Coverage
         if: always()
         id: extract_coverage
         shell: bash
@@ -128,67 +107,39 @@ jobs:
           covered_branches=$(jq .totals.covered_branches cov.json)
           missing_branches=$(jq .totals.missing_branches cov.json)
 
-          # Set outputs for use in next step
           echo "coverage=$coverage_percentage" >> $GITHUB_OUTPUT
-          echo "statements=$num_statements" >> $GITHUB_OUTPUT
 
-          echo "Coverage: $coverage_percentage%" | tee cov_title.txt
+          title="Coverage: $coverage_percentage%"
 
-          {
-            echo "### Coverage Report"
-            echo "- Total Statements: $num_statements"
-            echo "- Missing Lines: $missing_lines"
-            echo "- Excluded Lines: $excluded_lines"
-            echo "- Total Branches: $num_branches"
-            echo "- Partial Branches: $num_partial_branches"
-            echo "- Covered Branches: $covered_branches"
-            echo "- Missing Branches: $missing_branches"
-          } | tee cov_summary.txt
+          summary=$(cat << EOF
+          ### Coverage Report
+          - Total Statements: $num_statements
+          - Missing Lines: $missing_lines
+          - Excluded Lines: $excluded_lines
+          - Total Branches: $num_branches
+          - Partial Branches: $num_partial_branches
+          - Covered Branches: $covered_branches
+          - Missing Branches: $missing_branches
+          EOF
+          )
 
+          echo "title=$title" >> $GITHUB_OUTPUT
+          echo "summary<<EOF" >> $GITHUB_OUTPUT
+          echo "$summary" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          if (( $(echo "$coverage_percentage < 90" | bc -l) )); then
+            echo "conclusion=failure" >> $GITHUB_OUTPUT
+          else
+            echo "conclusion=success" >> $GITHUB_OUTPUT
+          fi
       - name: Create Coverage Check
         if: always()
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          MIN_COVERAGE: 90
-        run: |
-          title=$(cat cov_title.txt)
-          summary=$(cat cov_summary.txt)
-          coverage="${{ steps.extract_coverage.outputs.coverage }}"
-
-          conclusion="success"
-          if (( $(echo "$coverage < $MIN_COVERAGE" | bc -l) )); then
-            conclusion="failure"
-          fi
-
-          json_payload=$(jq -n \
-            --arg name "Coverage" \
-            --arg head_sha "${{ env.COMMIT_SHA }}" \
-            --arg conclusion "$conclusion" \
-            --arg title "$title" \
-            --arg summary "$summary" \
-            '{
-              name: $name,
-              head_sha: $head_sha,
-              status: "completed",
-              conclusion: $conclusion,
-              output: {
-                title: $title,
-                summary: $summary
-              }
-            }')
-
-          response=$(curl -L \
-            -w "\n%{http_code}" \
-            -X POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer $GITHUB_TOKEN" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            https://api.github.com/repos/${{ github.repository }}/check-runs \
-            -d "$json_payload")
-
-          status_code=$(echo "$response" | tail -n1)
-          if [ "$status_code" -ge 400 ]; then
-            echo "Error creating check: $response"
-            exit 1
-          fi
+        uses: ./.github/actions/create-check
+        with:
+          name: "Coverage"
+          title: ${{ steps.extract_coverage.outputs.title }}
+          summary: ${{ steps.extract_coverage.outputs.summary }}
+          conclusion: ${{ steps.extract_coverage.outputs.conclusion }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-sha: ${{ github.event.pull_request.head.sha || github.sha }}
