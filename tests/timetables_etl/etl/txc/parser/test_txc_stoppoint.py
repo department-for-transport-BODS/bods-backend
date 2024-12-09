@@ -34,7 +34,7 @@ from timetables_etl.etl.app.txc.parser.stop_points import (
 @pytest.mark.parametrize(
     "xml_input, expected_output",
     [
-        (
+        pytest.param(
             """
             <TransXChange>
             <StopPoints>
@@ -56,8 +56,9 @@ from timetables_etl.etl.app.txc.parser.stop_points import (
                     LocalityQualifier="Victoria",
                 )
             ],
+            id="Single Stop With Full Location Details",
         ),
-        (
+        pytest.param(
             """
             <TransXChange>
             <StopPoints>
@@ -89,18 +90,21 @@ from timetables_etl.etl.app.txc.parser.stop_points import (
                     LocalityQualifier=None,
                 ),
             ],
+            id="Multiple Stops With Different Optional Fields",
         ),
-        (
+        pytest.param(
             """
             <StopPoints></StopPoints>
             """,
             [],
+            id="Empty Stop Points",
         ),
-        (
+        pytest.param(
             """
             <InvalidTopLevel></InvalidTopLevel>
             """,
             [],
+            id="Invalid Top Level Element",
         ),
     ],
 )
