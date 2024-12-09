@@ -1,3 +1,0 @@
-# .coveragerc
-[run]
-omit = src/boilerplate/db/models.py
