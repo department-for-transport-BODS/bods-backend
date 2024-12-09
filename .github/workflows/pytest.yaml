@@ -58,25 +58,29 @@ jobs:
 
           title="Passed: $passed, Failed: $failed, Skipped: $skipped, Total: $total"
 
-          # Create a more detailed summary including pass rate with proper floating point calculation
+          # Create a more detailed summary using proper line breaks
           if [ "$total" -gt 0 ]; then
             pass_rate=$(echo "scale=2; ($passed * 100) / $total" | bc)
-            summary="### Test Results\n\n"
-            summary+="- Pass Rate: ${pass_rate}%\n"
-            summary+="- Passed: $passed tests\n"
-            summary+="- Failed: $failed tests\n"
-            summary+="- Skipped: $skipped tests\n"
-            summary+="- Total: $total tests"
+            summary="### Test Results
+
+            - Pass Rate: ${pass_rate}%
+            - Passed: $passed tests
+            - Failed: $failed tests
+            - Skipped: $skipped tests
+            - Total: $total tests"
           else
             summary="No tests were run"
           fi
+
+          # Properly escape the summary for JSON while preserving newlines
+          json_summary=$(echo "$summary" | jq -Rs .)
 
           json_payload=$(jq -n \
             --arg name "Tests" \
             --arg head_sha "${{ env.COMMIT_SHA }}" \
             --arg conclusion "$conclusion" \
             --arg title "$title" \
-            --arg summary "$summary" \
+            --arg summary "$json_summary" \
             '{
               name: $name,
               head_sha: $head_sha,
@@ -104,6 +108,7 @@ jobs:
           fi
           echo "Response from GitHub API:"
           echo "$response"
+
       - name: Extract Coverage Percentage
         if: always()
         id: extract_coverage
