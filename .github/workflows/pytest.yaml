@@ -56,31 +56,34 @@ jobs:
             conclusion="failure"
           fi
 
-          title="Passed: $passed, Failed: $failed, Skipped: $skipped, Total: $total"
+          # Write title to file
+          echo "Passed: $passed, Failed: $failed, Skipped: $skipped, Total: $total" > test_title.txt
 
-          # Create a more detailed summary using proper line breaks
+          # Create summary and write to file
           if [ "$total" -gt 0 ]; then
             pass_rate=$(echo "scale=2; ($passed * 100) / $total" | bc)
-            summary="### Test Results
-
-            - Pass Rate: ${pass_rate}%
-            - Passed: $passed tests
-            - Failed: $failed tests
-            - Skipped: $skipped tests
-            - Total: $total tests"
+            {
+              echo "### Test Results"
+              echo ""
+              echo "- Pass Rate: ${pass_rate}%"
+              echo "- Passed: $passed tests"
+              echo "- Failed: $failed tests"
+              echo "- Skipped: $skipped tests"
+              echo "- Total: $total tests"
+            } > test_summary.txt
           else
-            summary="No tests were run"
+            echo "No tests were run" > test_summary.txt
           fi
 
-          # Properly escape the summary for JSON while preserving newlines
-          json_summary=$(echo "$summary" | jq -Rs .)
+          title=$(cat test_title.txt)
+          summary=$(cat test_summary.txt)
 
           json_payload=$(jq -n \
             --arg name "Tests" \
             --arg head_sha "${{ env.COMMIT_SHA }}" \
             --arg conclusion "$conclusion" \
             --arg title "$title" \
-            --arg summary "$json_summary" \
+            --arg summary "$summary" \
             '{
               name: $name,
               head_sha: $head_sha,
@@ -189,5 +192,3 @@ jobs:
             echo "Error creating check: $response"
             exit 1
           fi
-          echo "Response from GitHub API:"
-          echo "$response"
