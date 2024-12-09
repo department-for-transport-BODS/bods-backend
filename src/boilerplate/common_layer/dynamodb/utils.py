@@ -29,6 +29,10 @@ def serialize_dynamo_item(raw: Any) -> Dict[str, Any]:
 def deserialize_dynamo_item(item: Dict[str, Any]) -> Any:
     """
     Deserializes DynamoDB item format dict to a plain value/dict.
+
+    Example: 
+        input: {"M": {"key": {"S": "value"}}}
+        output: {"key": "value"}
     """
     if "M" in item:
         return {key: deserialize_dynamo_item(value) for key, value in item["M"].items()}
