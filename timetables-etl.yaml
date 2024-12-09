@@ -397,6 +397,14 @@ Resources:
       TimeToLiveSpecification:
         AttributeName: ttl
         Enabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        KMSMasterKeyId: !If
+          - IsNotLocal
+          - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
+          - !Ref AWS::NoValue
 
   CommonLambdaExecutionRole:
     Type: AWS::IAM::Role
