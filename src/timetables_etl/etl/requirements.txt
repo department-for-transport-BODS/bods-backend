@@ -2,9 +2,9 @@ lxml
 structlog
 pydantic
 boto3
-pandas
 psycopg2-binary
 sqlalchemy
-geopandas
 pyproj
 pydantic-settings
+geoalchemy2
+shapely
