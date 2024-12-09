@@ -5,6 +5,7 @@ on:
       - "dev"
       - "!test"
       - "!main"
+      - "poetry-pytest"
     paths:
       - "src/**"
       - "tests/**"
