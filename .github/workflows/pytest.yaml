@@ -58,10 +58,15 @@ jobs:
 
           title="Passed: $passed, Failed: $failed, Skipped: $skipped, Total: $total"
 
-          # Create a more detailed summary including pass rate
+          # Create a more detailed summary including pass rate with proper floating point calculation
           if [ "$total" -gt 0 ]; then
-            pass_rate=$(( (passed * 100) / total ))
-            summary="Test Pass Rate: ${pass_rate}%"
+            pass_rate=$(echo "scale=2; ($passed * 100) / $total" | bc)
+            summary="### Test Results\n\n"
+            summary+="- Pass Rate: ${pass_rate}%\n"
+            summary+="- Passed: $passed tests\n"
+            summary+="- Failed: $failed tests\n"
+            summary+="- Skipped: $skipped tests\n"
+            summary+="- Total: $total tests"
           else
             summary="No tests were run"
           fi
@@ -99,6 +104,7 @@ jobs:
           fi
 
       - name: Extract Coverage Percentage
+        if: always()
         id: extract_coverage
         shell: bash
         run: |
