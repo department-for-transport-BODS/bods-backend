@@ -21,7 +21,8 @@ def handle_lambda_errors(func):
     @wraps(func)
     def wrapper(*args, **kwargs) -> Dict[str, Any]:
         try:
-            return {"statusCode": 200, "body": func(*args, **kwargs)}
+            result = func(*args, **kwargs)
+            return result
         except DBBaseException as e:
             log.error("Known error occurred", exc_info=True)
             return {

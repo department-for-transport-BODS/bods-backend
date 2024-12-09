@@ -3,8 +3,8 @@ Lambda function for the Timetable ETL Job
 Each invocation handles a single file
 """
 
+from common_layer.s3 import S3
 from lxml.etree import _Element
-from s3 import S3
 from structlog.stdlib import get_logger
 
 from .database import BodsDB
@@ -82,4 +82,4 @@ def lambda_handler(event, _):
 
     task_data = get_task_data(input_data, db)
     transform_data(txc_data, task_data, db)
-    return
+    return {"status_code": 200, "message": "ETL Completed"}
