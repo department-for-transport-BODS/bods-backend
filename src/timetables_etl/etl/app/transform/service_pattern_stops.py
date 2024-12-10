@@ -6,15 +6,17 @@ import re
 from datetime import datetime, time, timedelta
 from typing import Sequence
 
-from structlog.stdlib import get_logger
-
-from ..database.models.model_naptan import NaptanStopPoint
-from ..database.models.model_transmodel import (
+from common_layer.database.models.model_naptan import NaptanStopPoint
+from common_layer.database.models.model_transmodel import (
     TransmodelServicePattern,
     TransmodelServicePatternStop,
     TransmodelStopActivity,
 )
-from ..database.models.model_transmodel_vehicle_journey import TransmodelVehicleJourney
+from common_layer.database.models.model_transmodel_vehicle_journey import (
+    TransmodelVehicleJourney,
+)
+from structlog.stdlib import get_logger
+
 from ..txc.models import (
     TXCFlexibleVehicleJourney,
     TXCJourneyPatternSection,

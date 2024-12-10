@@ -4,9 +4,9 @@ Flexible Stop Handling Functions
 
 from typing import Sequence
 
+from common_layer.database.models import NaptanStopPoint
 from structlog.stdlib import get_logger
 
-from ..database.models import NaptanStopPoint
 from ..helpers import StopsLookup
 from ..txc.helpers.service import extract_flexible_pattern_stop_refs
 from ..txc.models import TXCFlexibleJourneyPattern

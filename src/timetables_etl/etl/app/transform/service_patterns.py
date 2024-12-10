@@ -2,13 +2,16 @@
 Make Transmodel Service Patterns
 """
 
+from common_layer.database.models import (
+    OrganisationDatasetRevision,
+    TransmodelServicePattern,
+)
 from geoalchemy2 import WKBElement
 from geoalchemy2.shape import from_shape
 from shapely import Point
 from shapely.geometry import LineString
 from structlog.stdlib import get_logger
 
-from ..database.models import OrganisationDatasetRevision, TransmodelServicePattern
 from ..helpers import StopsLookup
 from ..transform.service_pattern_metadata import (
     extract_pattern_metadata,

@@ -2,11 +2,14 @@
 Transmodel Service Patterns Loader
 """
 
+from common_layer.database import SqlDB
+from common_layer.database.models import (
+    OrganisationDatasetRevision,
+    TransmodelServicePattern,
+)
+from common_layer.database.repos import TransmodelServicePatternRepo
 from structlog.stdlib import get_logger
 
-from ..database import BodsDB
-from ..database.models import OrganisationDatasetRevision, TransmodelServicePattern
-from ..database.repos import TransmodelServicePatternRepo
 from ..helpers import ReferenceDataLookups, StopsLookup
 from ..models import TaskData
 from ..transform.service_patterns import create_service_pattern
@@ -29,7 +32,7 @@ def process_service_pattern(
     revision: OrganisationDatasetRevision,
     journey_pattern_sections: list[TXCJourneyPatternSection],
     stop_mapping: StopsLookup,
-    db: BodsDB,
+    db: SqlDB,
 ) -> TransmodelServicePattern:
     """
     Generate Service Pattern and Add to db
@@ -59,7 +62,7 @@ def process_standard_service_patterns(
     txc: TXCData,
     task_data: TaskData,
     lookups: ReferenceDataLookups,
-    db: BodsDB,
+    db: SqlDB,
 ) -> list[TransmodelServicePattern]:
     """Process patterns for standard services"""
     patterns: list[TransmodelServicePattern] = []
@@ -89,7 +92,7 @@ def load_transmodel_service_patterns(
     txc: TXCData,
     task_data: TaskData,
     lookups: ReferenceDataLookups,
-    db: BodsDB,
+    db: SqlDB,
 ) -> list[TransmodelServicePattern]:
     """
     Generate and load transmodel service patterns for both standard and flexible services

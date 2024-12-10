@@ -4,20 +4,22 @@ transmodel_vehiclejourny Operating profiles generation
 
 from datetime import date
 
-from structlog.stdlib import get_logger
-
-from ..database.client import BodsDB
-from ..database.models import TransmodelServicedOrganisationWorkingDays
-from ..database.models.model_transmodel_vehicle_journey import TransmodelVehicleJourney
-from ..database.repos import (
+from common_layer.database.client import SqlDB
+from common_layer.database.models import TransmodelServicedOrganisationWorkingDays
+from common_layer.database.models.model_transmodel_vehicle_journey import (
+    TransmodelVehicleJourney,
+)
+from common_layer.database.repos import (
     TransmodelServicedOrganisationVehicleJourneyRepo,
     TransmodelServicedOrganisationWorkingDaysRepo,
 )
-from ..database.repos.repo_transmodel_vehicle_journey import (
+from common_layer.database.repos.repo_transmodel_vehicle_journey import (
     TransmodelNonOperatingDatesExceptionsRepo,
     TransmodelOperatingDatesExceptionsRepo,
     TransmodelOperatingProfileRepo,
 )
+from structlog.stdlib import get_logger
+
 from ..helpers import ServicedOrgLookup
 from ..transform.vehicle_journey_operations import (
     create_serviced_organisation_working_days,
@@ -34,7 +36,7 @@ def process_operating_profile(
     txc_serviced_orgs_dict: dict[str, TXCServicedOrganisation],
     bank_holidays: dict[str, list[date]],
     tm_serviced_orgs: ServicedOrgLookup,
-    db: BodsDB,
+    db: SqlDB,
 ):
     """
     Process a single Operating Profile

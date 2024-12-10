@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from timetables_etl.etl.app.database.models.model_organisation import (
+from boilerplate.common_layer.database.models.model_organisation import (
     OrganisationDatasetRevision,
 )
 

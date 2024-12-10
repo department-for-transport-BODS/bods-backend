@@ -5,13 +5,15 @@ Pydantic Model to Transmodel for Vehicle Journeys
 from datetime import time
 from typing import cast
 
-from structlog.stdlib import get_logger
-
-from ..database.models import (
+from common_layer.database.models import (
     TransmodelFlexibleServiceOperationPeriod,
     TransmodelServicePattern,
 )
-from ..database.models.model_transmodel_vehicle_journey import TransmodelVehicleJourney
+from common_layer.database.models.model_transmodel_vehicle_journey import (
+    TransmodelVehicleJourney,
+)
+from structlog.stdlib import get_logger
+
 from ..txc.models import (
     TXCFlexibleJourneyPattern,
     TXCFlexibleServiceTimes,

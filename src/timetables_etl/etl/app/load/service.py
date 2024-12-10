@@ -2,11 +2,11 @@
 Gen and load of Transmodel Services
 """
 
+from common_layer.database import SqlDB
+from common_layer.database.models import TransmodelService
+from common_layer.database.repos import TransmodelServiceRepo
 from structlog.stdlib import get_logger
 
-from ..database import BodsDB
-from ..database.models import TransmodelService
-from ..database.repos import TransmodelServiceRepo
 from ..models import TaskData
 from ..transform.services import make_transmodel_service
 from ..txc.models.txc_service import TXCService
@@ -15,7 +15,7 @@ log = get_logger()
 
 
 def load_transmodel_service(
-    service: TXCService, task_data: TaskData, db: BodsDB
+    service: TXCService, task_data: TaskData, db: SqlDB
 ) -> TransmodelService:
     """
     Generate and Load Transmodel Service into DB

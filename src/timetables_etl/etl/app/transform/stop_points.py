@@ -2,14 +2,14 @@
 Stop Point Information
 """
 
+from common_layer.database import SqlDB
+from common_layer.database.models.model_naptan import NaptanStopPoint
+from common_layer.database.repos.repo_naptan import NaptanStopPointRepo
 from geoalchemy2.shape import from_shape
 from pyproj import Transformer
 from shapely.geometry import Point
 from structlog.stdlib import get_logger
 
-from ..database import BodsDB
-from ..database.models.model_naptan import NaptanStopPoint
-from ..database.repos.repo_naptan import NaptanStopPointRepo
 from ..helpers import StopsLookup
 from ..txc.models.txc_stoppoint import (
     AnnotatedStopPointRef,
@@ -91,7 +91,7 @@ def create_stop_point_location_mapping(
 
 
 def get_naptan_stops_from_db(
-    stop_points: list[AnnotatedStopPointRef | TXCStopPoint], db: BodsDB
+    stop_points: list[AnnotatedStopPointRef | TXCStopPoint], db: SqlDB
 ) -> list[NaptanStopPoint]:
     """
     Filter the TXC Stop Points for AnnotatedStopPointRef and query the DB for them

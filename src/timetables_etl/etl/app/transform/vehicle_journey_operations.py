@@ -6,19 +6,19 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import Sequence
 
-from structlog.stdlib import get_logger
-
-from ..database.models import (
+from common_layer.database.models import (
     TransmodelServicedOrganisationVehicleJourney,
     TransmodelServicedOrganisationWorkingDays,
 )
-from ..database.models.model_transmodel_vehicle_journey import (
+from common_layer.database.models.model_transmodel_vehicle_journey import (
     TMDayOfWeek,
     TransmodelNonOperatingDatesExceptions,
     TransmodelOperatingDatesExceptions,
     TransmodelOperatingProfile,
     TransmodelVehicleJourney,
 )
+from structlog.stdlib import get_logger
+
 from ..helpers import ServicedOrgLookup
 from ..txc.models import TXCDateRange, TXCDaysOfWeek, TXCVehicleJourney
 from ..txc.models.txc_serviced_organisation import (

@@ -2,9 +2,9 @@
 ETL Pipeline
 """
 
+from common_layer.database import SqlDB
 from structlog.stdlib import get_logger
 
-from .database import BodsDB
 from .helpers import ReferenceDataLookups
 from .load import (
     link_service_to_service_patterns,
@@ -32,7 +32,7 @@ class MissingLines(Exception):
         super().__init__(self.message)
 
 
-def build_lookup_data(txc: TXCData, db: BodsDB) -> ReferenceDataLookups:
+def build_lookup_data(txc: TXCData, db: SqlDB) -> ReferenceDataLookups:
     """
     Get from DB with inserts of reference data used accross the workflow
     """
@@ -47,7 +47,7 @@ def build_lookup_data(txc: TXCData, db: BodsDB) -> ReferenceDataLookups:
     )
 
 
-def transform_data(txc: TXCData, task_data: TaskData, db: BodsDB):
+def transform_data(txc: TXCData, task_data: TaskData, db: SqlDB):
     """
     Transform Parsed TXC XML Data into SQLAlchmeny Database Models to apply
     """

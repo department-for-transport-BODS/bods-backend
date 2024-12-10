@@ -2,11 +2,11 @@
 Serviced Organisation Loading
 """
 
+from common_layer.database import SqlDB
+from common_layer.database.models import TransmodelServicedOrganisations
+from common_layer.database.repos import TransmodelServicedOrganisationsRepo
 from structlog.stdlib import get_logger
 
-from ..database import BodsDB
-from ..database.models import TransmodelServicedOrganisations
-from ..database.repos import TransmodelServicedOrganisationsRepo
 from ..helpers import ServicedOrgLookup
 from ..txc.models import TXCServicedOrganisation
 
@@ -81,7 +81,7 @@ def create_serviced_org_mapping(
 
 def load_serviced_organizations(
     txc_orgs: list[TXCServicedOrganisation],
-    db: BodsDB,
+    db: SqlDB,
 ) -> ServicedOrgLookup:
     """
     Load serviced organizations into database

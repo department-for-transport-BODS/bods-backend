@@ -3,16 +3,16 @@ Lambda function for the Timetable ETL Job
 Each invocation handles a single file
 """
 
-from common_layer.s3 import S3
-from lxml.etree import _Element
-from structlog.stdlib import get_logger
-
-from .database import BodsDB
-from .database.repos import (
+from common_layer.database import SqlDB
+from common_layer.database.repos import (
     ETLTaskResultRepo,
     OrganisationDatasetRevisionRepo,
     OrganisationTXCFileAttributesRepo,
 )
+from common_layer.s3 import S3
+from lxml.etree import _Element
+from structlog.stdlib import get_logger
+
 from .exception_handler import handle_lambda_errors
 from .log_setup import configure_logging
 from .models import ETLInputData, TaskData
@@ -41,16 +41,31 @@ def get_txc_xml(s3_bucket_name: str, s3_file_key: str) -> _Element:
     return xml
 
 
-def get_task_data(input_data: ETLInputData, db: BodsDB) -> TaskData:
+def get_task_data(input_data: ETLInputData, db: SqlDB) -> TaskData:
     """
     Gather initial information that should be in the database to start the task
     """
 
     task = ETLTaskResultRepo(db).get_by_id(input_data.task_id)
+    if task is None:
+        log.critical(
+            "Task not found",
+            task=task,
+        )
+        raise ValueError("Missing Task, Revision or File Attributes")
     revision = OrganisationDatasetRevisionRepo(db).get_by_id(task.revision_id)
     file_attributes = OrganisationTXCFileAttributesRepo(db).get_by_id(
         input_data.file_attributes_id
     )
+
+    if revision is None or file_attributes is None:
+        log.critical(
+            "Required data missing",
+            task=task,
+            revision=revision,
+            file_attributes=file_attributes,
+        )
+        raise ValueError("Missing Task, Revision or File Attributes")
     return TaskData(
         etl_task=task,
         revision=revision,
@@ -77,7 +92,7 @@ def lambda_handler(event, _):
     """
     configure_logging()
     input_data = ETLInputData(**event)
-    db = BodsDB()
+    db = SqlDB()
     txc_data = extract_txc_data(input_data.s3_bucket_name, input_data.s3_file_key)
 
     task_data = get_task_data(input_data, db)

@@ -2,12 +2,14 @@
 Process and add Vehicle Journey Tracks to DB
 """
 
+from common_layer.database.client import SqlDB
+from common_layer.database.models import TransmodelTracksVehicleJourney
+from common_layer.database.models.model_transmodel_vehicle_journey import (
+    TransmodelVehicleJourney,
+)
+from common_layer.database.repos import TransmodelTracksVehicleJourneyRepo
 from structlog.stdlib import get_logger
 
-from ..database.client import BodsDB
-from ..database.models import TransmodelTracksVehicleJourney
-from ..database.models.model_transmodel_vehicle_journey import TransmodelVehicleJourney
-from ..database.repos import TransmodelTracksVehicleJourneyRepo
 from ..helpers import TrackLookup
 from ..transform.vehicle_journey_tracks import generate_vehicle_journey_tracks
 from ..txc.models import TXCData, TXCFlexibleJourneyPattern, TXCJourneyPattern
@@ -20,7 +22,7 @@ def load_vehicle_journey_tracks(
     vehicle_journeys: list[TransmodelVehicleJourney],
     track_lookup: TrackLookup,
     txc: TXCData,
-    db: BodsDB,
+    db: SqlDB,
 ) -> list[TransmodelTracksVehicleJourney]:
     """
     Generate Vehicle Journey Tracks

@@ -2,12 +2,12 @@
 Generation of a TXC File Attributes from a TXC File
 """
 
-from structlog.stdlib import get_logger
-
-from ..database.models.model_organisation import (
+from common_layer.database.models.model_organisation import (
     OrganisationDatasetRevision,
     OrganisationTXCFileAttributes,
 )
+from structlog.stdlib import get_logger
+
 from ..txc.helpers.operator import get_licence_number, get_national_operator_code
 from ..txc.helpers.service import (
     get_all_line_names,

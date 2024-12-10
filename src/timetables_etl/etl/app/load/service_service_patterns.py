@@ -2,15 +2,14 @@
 Association Table Linking transmodel_service and transmodel_servicepattern
 """
 
-from structlog.stdlib import get_logger
-
-from ..database.client import BodsDB
-from ..database.models import (
+from common_layer.database.client import SqlDB
+from common_layer.database.models import (
     TransmodelService,
     TransmodelServicePattern,
     TransmodelServiceServicePattern,
 )
-from ..database.repos import TransmodelServiceServicePatternRepo
+from common_layer.database.repos import TransmodelServiceServicePatternRepo
+from structlog.stdlib import get_logger
 
 log = get_logger()
 
@@ -18,7 +17,7 @@ log = get_logger()
 def link_service_to_service_patterns(
     service: TransmodelService,
     service_patterns: list[TransmodelServicePattern],
-    db: BodsDB,
+    db: SqlDB,
 ) -> list[TransmodelServiceServicePattern]:
     """
     Associative table between service and service pattern

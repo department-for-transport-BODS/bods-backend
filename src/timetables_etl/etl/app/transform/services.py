@@ -2,13 +2,13 @@
 Processing of Services
 """
 
-from structlog.stdlib import get_logger
-
-from ..database.models import (
+from common_layer.database.models import (
     OrganisationDatasetRevision,
     OrganisationTXCFileAttributes,
     TransmodelService,
 )
+from structlog.stdlib import get_logger
+
 from ..txc.helpers.service import get_line_names
 from ..txc.models.txc_service import TXCService
 

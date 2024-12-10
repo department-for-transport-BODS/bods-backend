@@ -2,10 +2,10 @@
 Tracks Generation
 """
 
+from common_layer.database import SqlDB
+from common_layer.database.repos import TransmodelTrackRepo
 from structlog.stdlib import get_logger
 
-from ..database import BodsDB
-from ..database.repos import TransmodelTrackRepo
 from ..helpers import TrackLookup
 from ..transform.tracks import analyze_track_pairs, create_new_tracks
 from ..txc.helpers.routes import extract_stop_point_pairs
@@ -14,7 +14,7 @@ from ..txc.models import TXCRouteSection
 log = get_logger()
 
 
-def load_tracks(route_sections: list[TXCRouteSection], db: BodsDB) -> TrackLookup:
+def load_tracks(route_sections: list[TXCRouteSection], db: SqlDB) -> TrackLookup:
     """
     Process tracks from route sections, creating new ones if they don't exist.
     Returns a lookup dictionary mapping (from_atco, to_atco) to TransmodelTracks

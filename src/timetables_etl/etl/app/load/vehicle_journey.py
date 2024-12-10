@@ -5,17 +5,19 @@ Transmodel Vehicle Journeys
 from datetime import date
 from typing import Sequence, TypeGuard
 
-from structlog.stdlib import get_logger
-
-from ..database.client import BodsDB
-from ..database.models import NaptanStopPoint, TransmodelServicePattern
-from ..database.models.model_transmodel_vehicle_journey import TransmodelVehicleJourney
-from ..database.repos.repo_transmodel_flexible import (
+from common_layer.database.client import SqlDB
+from common_layer.database.models import NaptanStopPoint, TransmodelServicePattern
+from common_layer.database.models.model_transmodel_vehicle_journey import (
+    TransmodelVehicleJourney,
+)
+from common_layer.database.repos.repo_transmodel_flexible import (
     TransmodelFlexibleServiceOperationPeriodRepo,
 )
-from ..database.repos.repo_transmodel_vehicle_journey import (
+from common_layer.database.repos.repo_transmodel_vehicle_journey import (
     TransmodelVehicleJourneyRepo,
 )
+from structlog.stdlib import get_logger
+
 from ..helpers import ServicedOrgLookup
 from ..load.service_pattern_stop import (
     process_flexible_pattern_stops,
@@ -59,7 +61,7 @@ def process_vehicle_journey_operations(
     bank_holidays: dict[str, list[date]],
     tm_serviced_orgs: ServicedOrgLookup,
     txc_serviced_orgs: list[TXCServicedOrganisation],
-    db: BodsDB,
+    db: SqlDB,
 ) -> None:
     """
     Process and save operations data for vehicle journeys
@@ -109,7 +111,7 @@ def process_vehicle_journeys(
     bank_holidays: dict[str, list[date]],
     tm_serviced_orgs: ServicedOrgLookup,
     txc_serviced_orgs: list[TXCServicedOrganisation],
-    db: BodsDB,
+    db: SqlDB,
 ) -> list[TransmodelVehicleJourney]:
     """
     Generate and insert Transmodel Vehicle Journeys
@@ -154,7 +156,7 @@ def process_service_pattern_vehicle_journeys(
     stops: Sequence[NaptanStopPoint],
     bank_holidays: dict[str, list[date]],
     serviced_orgs: ServicedOrgLookup,
-    db: BodsDB,
+    db: SqlDB,
 ) -> list[TransmodelVehicleJourney]:
     """
     Generate and save to DB Transmodel Vehicle Journeys for a Service Pattern

@@ -6,12 +6,12 @@ from dataclasses import dataclass
 from typing import NamedTuple
 
 import pyproj
+from common_layer.database.models.model_transmodel import TransmodelTracks
 from geoalchemy2 import WKBElement
 from geoalchemy2.shape import from_shape
 from shapely import LineString, Point
 from structlog.stdlib import get_logger
 
-from ..database.models.model_transmodel import TransmodelTracks
 from ..txc.models import TXCTrack
 from ..txc.models.txc_route import TXCRouteSection
 

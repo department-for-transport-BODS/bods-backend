@@ -4,13 +4,26 @@ Pipeline Exception Handler
 
 import traceback
 from functools import wraps
-from typing import Any, Dict
+from typing import Any
 
 from structlog.stdlib import get_logger
 
-from .database.repos.exceptions import DBBaseException
-
 log = get_logger()
+
+
+class ETLException(Exception):
+    """Base exception class for ETL operations"""
+
+    def __init__(
+        self,
+        error_code: str,
+        error_message: str,
+        details: dict[str, Any] | None = None,
+    ):
+        self.error_code = error_code
+        self.error_message = error_message
+        self.details = details
+        super().__init__(self.error_message)
 
 
 def handle_lambda_errors(func):
@@ -19,11 +32,11 @@ def handle_lambda_errors(func):
     """
 
     @wraps(func)
-    def wrapper(*args, **kwargs) -> Dict[str, Any]:
+    def wrapper(*args, **kwargs) -> dict[str, Any]:
         try:
             result = func(*args, **kwargs)
             return result
-        except DBBaseException as e:
+        except ETLException as e:
             log.error("Known error occurred", exc_info=True)
             return {
                 "statusCode": 400,

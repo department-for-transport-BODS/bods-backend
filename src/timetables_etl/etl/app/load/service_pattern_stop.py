@@ -4,19 +4,21 @@ transmodel_service_patternstops
 
 from typing import Sequence
 
-from structlog.stdlib import get_logger
-
-from ..database.client import BodsDB
-from ..database.models import (
+from common_layer.database.client import SqlDB
+from common_layer.database.models import (
     NaptanStopPoint,
     TransmodelServicePattern,
     TransmodelServicePatternStop,
 )
-from ..database.models.model_transmodel_vehicle_journey import TransmodelVehicleJourney
-from ..database.repos import (
+from common_layer.database.models.model_transmodel_vehicle_journey import (
+    TransmodelVehicleJourney,
+)
+from common_layer.database.repos import (
     TransmodelServicePatternStopRepo,
     TransmodelStopActivityRepo,
 )
+from structlog.stdlib import get_logger
+
 from ..transform.service_pattern_stops import generate_pattern_stops
 from ..transform.service_pattern_stops_flexible import generate_flexible_pattern_stops
 from ..txc.models import (
@@ -35,7 +37,7 @@ def process_pattern_stops(
     txc_vehicle_journey: TXCVehicleJourney | TXCFlexibleVehicleJourney,
     jp_sections: list[TXCJourneyPatternSection],
     stop_sequence: Sequence[NaptanStopPoint],
-    db: BodsDB,
+    db: SqlDB,
 ) -> list[TransmodelServicePatternStop]:
     """
     Process and insert transmodel_servicepatternstop
@@ -68,7 +70,7 @@ def process_flexible_pattern_stops(
     tm_vehicle_journey: TransmodelVehicleJourney,
     flexible_pattern: TXCFlexibleJourneyPattern,
     stop_sequence: Sequence[NaptanStopPoint],
-    db: BodsDB,
+    db: SqlDB,
 ) -> list[TransmodelServicePatternStop]:
     """Process stops for flexible patterns"""
     activity_map = TransmodelStopActivityRepo(db).get_activity_map()

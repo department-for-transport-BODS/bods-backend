@@ -2,11 +2,14 @@
 Flexible Service Pattern Handling
 """
 
+from common_layer.database import SqlDB
+from common_layer.database.models import (
+    OrganisationDatasetRevision,
+    TransmodelServicePattern,
+)
+from common_layer.database.repos import TransmodelServicePatternRepo
 from structlog.stdlib import get_logger
 
-from ..database import BodsDB
-from ..database.models import OrganisationDatasetRevision, TransmodelServicePattern
-from ..database.repos import TransmodelServicePatternRepo
 from ..helpers import ReferenceDataLookups, StopsLookup
 from ..models import TaskData
 from ..transform.service_patterns_flexible import create_flexible_service_pattern
@@ -22,7 +25,7 @@ def process_flexible_service_pattern(
     jp: TXCFlexibleJourneyPattern,
     revision: OrganisationDatasetRevision,
     stop_mapping: StopsLookup,
-    db: BodsDB,
+    db: SqlDB,
 ) -> TransmodelServicePattern:
     """
     Process a single Service Pattern
@@ -42,7 +45,7 @@ def process_flexible_service_patterns(
     txc: TXCData,
     task_data: TaskData,
     lookups: ReferenceDataLookups,
-    db: BodsDB,
+    db: SqlDB,
 ) -> list[TransmodelServicePattern]:
     """Process patterns for flexible services"""
     patterns: list[TransmodelServicePattern] = []

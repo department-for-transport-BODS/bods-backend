@@ -2,13 +2,12 @@
 Pydantic Models 
 """
 
-from pydantic import BaseModel, ConfigDict
-
-from .database.models import (
+from common_layer.database.models import (
     DatasetETLTaskResult,
     OrganisationDatasetRevision,
     OrganisationTXCFileAttributes,
 )
+from pydantic import BaseModel, ConfigDict
 
 
 class ETLInputData(BaseModel):

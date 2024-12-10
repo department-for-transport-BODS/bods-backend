@@ -4,20 +4,20 @@ Common Functions
 
 from typing import Sequence
 
-from structlog.stdlib import get_logger
-
-from ..database import BodsDB
-from ..database.models import (
+from common_layer.database import SqlDB
+from common_layer.database.models import (
     NaptanStopPoint,
     TransmodelServicePattern,
     TransmodelServicePatternAdminAreas,
     TransmodelServicePatternLocality,
 )
-from ..database.repos import (
+from common_layer.database.repos import (
     TransmodelBankHolidaysRepo,
     TransmodelServicePatternAdminAreaRepo,
     TransmodelServicePatternLocalityRepo,
 )
+from structlog.stdlib import get_logger
+
 from ..helpers import ReferenceDataLookups
 from ..transform.service_pattern_associations import (
     generate_pattern_admin_areas,
@@ -38,7 +38,7 @@ log = get_logger()
 def process_pattern_admin_areas(
     service_pattern: TransmodelServicePattern,
     stops: Sequence[NaptanStopPoint],
-    db: BodsDB,
+    db: SqlDB,
 ) -> list[TransmodelServicePatternAdminAreas]:
     """
     Create and save admin area associations for a pattern
@@ -59,7 +59,7 @@ def process_pattern_admin_areas(
 def process_pattern_localities(
     service_pattern: TransmodelServicePattern,
     stops: Sequence[NaptanStopPoint],
-    db: BodsDB,
+    db: SqlDB,
 ) -> list[TransmodelServicePatternLocality]:
     """
     Create and save locality associations for a pattern
@@ -83,7 +83,7 @@ def process_pattern_common(
     stops: Sequence[NaptanStopPoint],
     txc: TXCData,
     lookups: ReferenceDataLookups,
-    db: BodsDB,
+    db: SqlDB,
 ) -> None:
     """
     Process common elements for both standard and flexible service patterns

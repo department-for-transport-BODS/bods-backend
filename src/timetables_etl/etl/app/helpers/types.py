@@ -4,7 +4,7 @@ Type Alises etc
 
 from typing import TypeAlias
 
-from ..database.models import (
+from common_layer.database.models import (
     NaptanStopPoint,
     TransmodelServicedOrganisations,
     TransmodelTracks,

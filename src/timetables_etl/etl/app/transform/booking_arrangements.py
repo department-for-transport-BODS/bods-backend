@@ -5,9 +5,12 @@ Transmodel Booking Arrangements
 from datetime import UTC, datetime
 from typing import NamedTuple
 
+from common_layer.database.models import (
+    TransmodelBookingArrangements,
+    TransmodelService,
+)
 from structlog.stdlib import get_logger
 
-from ..database.models import TransmodelBookingArrangements, TransmodelService
 from ..txc.models import TXCService
 
 log = get_logger()
