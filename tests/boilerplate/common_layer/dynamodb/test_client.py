@@ -3,8 +3,10 @@ from unittest.mock import patch, MagicMock
 
 from freezegun import freeze_time
 import pytest
+from common_layer import dynamodb
 from common_layer.dynamodb.client import DynamoDB, TABLE_NAME
 from common_layer.exceptions.pipeline_exceptions import PipelineException
+
 
 @pytest.fixture
 def m_boto_client():
@@ -15,7 +17,9 @@ def m_boto_client():
 def test_put(m_boto_client):
     with freeze_time("2024-12-06 12:00:00"):
         ttl = 3600
-        expected_dynamo_ttl = 1733490000  # Epoch time for 2024-12-06 12:00:00 + 3600 seconds
+        expected_dynamo_ttl = (
+            1733490000  # Epoch time for 2024-12-06 12:00:00 + 3600 seconds
+        )
 
         dynamo = DynamoDB()
         dynamo.put("test-key", {"key": "value"}, ttl=ttl)
@@ -29,11 +33,16 @@ def test_put(m_boto_client):
             },
         )
 
+
 def test_put_exception(m_boto_client):
     m_boto_client.put_item.side_effect = Exception("Client exception")
     dynamodb = DynamoDB()
-    with pytest.raises(PipelineException, match="Failed to set item with key 'test-key': Client exception"):
+    with pytest.raises(
+        PipelineException,
+        match="Failed to set item with key 'test-key': Client exception",
+    ):
         dynamodb.put("test-key", {"key": "value"}, ttl=3600)
+
 
 def test_get(m_boto_client):
     m_boto_client.get_item = MagicMock(
@@ -50,8 +59,50 @@ def test_get(m_boto_client):
     )
     assert result == {"key": "value"}
 
+
 def test_get_exception(m_boto_client):
     m_boto_client.get_item.side_effect = Exception("Client exception")
     dynamodb = DynamoDB()
-    with pytest.raises(PipelineException, match="Failed to get item with key 'test-key': Client exception"):
+    with pytest.raises(
+        PipelineException,
+        match="Failed to get item with key 'test-key': Client exception",
+    ):
         dynamodb.get("test-key")
+
+
+def test_get_or_compute_cache_hit(m_boto_client):
+    m_boto_client.get_item = MagicMock(
+        return_value={
+            "Item": {"Key": {"S": "test-key"}, "Value": {"M": {"key": {"S": "value"}}}}
+        }
+    )
+
+    func_to_cache = MagicMock()
+
+    dynamodb = DynamoDB()
+    result = dynamodb.get_or_compute(
+        key="test-key", compute_fn=lambda: func_to_cache(), ttl=7200
+    )
+
+    assert result == {"key": "value"}
+    func_to_cache.assert_not_called()
+    m_boto_client.put.assert_not_called()
+
+
+def test_get_or_compute_cache_miss(m_boto_client):
+    m_boto_client.get_item.return_value = {}
+
+    func_to_cache = MagicMock(return_value={"key": "computed-value"})
+
+    dynamodb = DynamoDB()
+    dynamodb.put = MagicMock()
+
+    result = dynamodb.get_or_compute(
+        key="test-key", compute_fn=lambda: func_to_cache(), ttl=7200
+    )
+
+    assert result == {"key": "computed-value"}
+    func_to_cache.assert_called_once()
+    dynamodb.put.assert_called_once_with(
+        "test-key", {"key": "computed-value"}, ttl=7200
+    )
