@@ -2,12 +2,12 @@
 Flexible Journey TM Repos
 """
 
-from timetables_etl.etl.app.database.client import BodsDB
-from timetables_etl.etl.app.database.models.model_transmodel_flexible import (
+from ..client import BodsDB
+from ..models import (
     TransmodelBookingArrangements,
     TransmodelFlexibleServiceOperationPeriod,
 )
-from timetables_etl.etl.app.database.repos.repo_common import BaseRepositoryWithId
+from ..repos.repo_common import BaseRepositoryWithId
 
 
 class TransmodelBookingArrangementsRepo(

@@ -2,14 +2,14 @@
 Vehicle Journey Repos
 """
 
-from timetables_etl.etl.app.database.client import BodsDB
-from timetables_etl.etl.app.database.models.model_transmodel_vehicle_journey import (
+from ..client import BodsDB
+from ..models import (
     TransmodelNonOperatingDatesExceptions,
     TransmodelOperatingDatesExceptions,
     TransmodelOperatingProfile,
     TransmodelVehicleJourney,
 )
-from timetables_etl.etl.app.database.repos.repo_common import BaseRepositoryWithId
+from ..repos.repo_common import BaseRepositoryWithId
 
 
 class TransmodelVehicleJourneyRepo(BaseRepositoryWithId[TransmodelVehicleJourney]):
