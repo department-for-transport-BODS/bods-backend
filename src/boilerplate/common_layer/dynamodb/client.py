@@ -1,6 +1,6 @@
 import os
 import time
-from typing import Any, Dict
+from typing import Any
 
 import boto3
 from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
@@ -33,7 +33,7 @@ class DynamoDB:
         else:
             return boto3.client("dynamodb")
 
-    def get(self, key: str) -> Dict[str, Any] | None:
+    def get(self, key: str) -> dict[str, Any] | None:
         """
         Retrieve an item from the DynamoDB table by key.
         """
