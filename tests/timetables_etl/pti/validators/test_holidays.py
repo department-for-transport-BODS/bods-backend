@@ -1,5 +1,5 @@
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 import pytest
 
 from pti.constants import PTI_SCHEMA_PATH
@@ -19,7 +19,7 @@ def test_bank_holidays_scottish_holidays(m_is_service_in_scotland):
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file)
+    pti = PTIValidator(json_file, MagicMock())
     txc_path = DATA_DIR / filename
 
     with txc_path.open("r") as txc:
@@ -35,7 +35,7 @@ def test_bank_holidays_scottish_holidays_error(m_is_service_in_scotland):
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file)
+    pti = PTIValidator(json_file, MagicMock())
     txc_path = DATA_DIR / filename
 
     with txc_path.open("r") as txc:
@@ -51,7 +51,7 @@ def test_bank_holidays_english_holidays(m_is_service_in_scotland):
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file)
+    pti = PTIValidator(json_file, MagicMock())
     txc_path = DATA_DIR / filename
 
     with txc_path.open("r") as txc:
@@ -67,7 +67,7 @@ def test_bank_holidays_english_holidays_error(m_is_service_in_scotland):
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file)
+    pti = PTIValidator(json_file, MagicMock())
     txc_path = DATA_DIR / filename
 
     with txc_path.open("r") as txc:

@@ -32,7 +32,7 @@ def test_validate(
     m_get_xml_file_pti_validator.return_value.get_violations.return_value = violations
     m_txc_revision_validator.return_value.get_violations.return_value = ["txc_revision_violation"]
 
-    service = PTIValidationService(db=MagicMock())
+    service = PTIValidationService(db=MagicMock(), dynamodb=MagicMock())
     service.validate(revision, xml_file, txc_file_attributes)
 
     m_get_xml_file_pti_validator.return_value.get_violations.assert_called_once_with(revision, xml_file)
@@ -65,7 +65,7 @@ def test_validate_unchanged_file(
     m_dataset = MagicMock()
     m_dataset_repository.return_value.get_by_id.return_value = m_dataset
 
-    service = PTIValidationService(db=MagicMock())
+    service = PTIValidationService(db=MagicMock(), dynamodb=MagicMock())
     service.validate(revision, xml_file, txc_file_attributes)
 
     # We should look for the file in the live revision of the dataset

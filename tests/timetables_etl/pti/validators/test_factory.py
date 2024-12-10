@@ -13,6 +13,7 @@ def test_get_xml_file_pti_validator(mock_validator_class, mock_open_fn, mock_sch
     """
     Test the `get_xml_file_pti_validator` function.
     """
+    m_dynamodb = MagicMock()
     mock_schema_path.return_value = MagicMock(spec=Path)
     mock_open_fn = mock_open(read_data='{"key": "value"}')
     mock_schema_path.open = mock_open_fn
@@ -21,9 +22,9 @@ def test_get_xml_file_pti_validator(mock_validator_class, mock_open_fn, mock_sch
     mock_validator_class.return_value = mock_validator_instance
 
     # Call the function
-    result = get_xml_file_pti_validator()
+    result = get_xml_file_pti_validator(dynamodb=m_dynamodb)
 
     # Assertions
     mock_open_fn.assert_called_once_with("r")
-    mock_validator_class.assert_called_once_with(mock_open_fn())
+    mock_validator_class.assert_called_once_with(mock_open_fn(), m_dynamodb)
     assert result == mock_validator_instance

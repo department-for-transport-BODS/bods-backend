@@ -1,5 +1,5 @@
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from pti.constants import PTI_SCHEMA_PATH
@@ -36,7 +36,7 @@ def test_validate_less_than_two_lines():
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file)
+    pti = PTIValidator(json_file, MagicMock())
     txc = TXCFile(xml)
     is_valid = pti.is_valid(txc)
     assert is_valid
@@ -57,7 +57,7 @@ def test_related_lines(filename, expected):
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file)
+    pti = PTIValidator(json_file, MagicMock())
     txc_path = DATA_DIR / filename
     with txc_path.open("r") as txc:
         is_valid = pti.is_valid(txc)
@@ -79,7 +79,7 @@ def test_non_related_with_stop_areas(m_stop_point_repo):
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file)
+    pti = PTIValidator(json_file, MagicMock())
     txc_path = DATA_DIR / "nonrelatedlines.xml"
     with txc_path.open("r") as txc:
         assert pti.is_valid(txc)

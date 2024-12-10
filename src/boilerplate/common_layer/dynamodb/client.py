@@ -36,7 +36,7 @@ class DynamoDB:
         self, key: str, compute_fn: Callable[[], Any], ttl: int | None = None
     ) -> Any:
         """
-        Get a value from cache or compute it if not found.
+        Get a value from cache or compute it and cache it if not found.
         """
         cached_value = self.get(key)
 

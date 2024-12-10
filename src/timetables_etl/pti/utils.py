@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 def is_service_in_scotland(service_ref: str, dynamo: DynamoDB) -> bool:
     cache_key = f"{service_ref.replace(':', '-')}-is-scottish-region"
-
     return dynamo.get_or_compute(
         key=cache_key,
         compute_fn=lambda: get_service_in_scotland_from_db(service_ref),
