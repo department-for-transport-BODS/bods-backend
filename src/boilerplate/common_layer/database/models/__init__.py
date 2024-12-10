@@ -15,7 +15,7 @@ from .model_organisation import (
     OrganisationOrganisation,
     OrganisationTXCFileAttributes,
 )
-from .model_pipelines import DatasetETLTaskResult
+from .model_pipelines import DatasetETLTaskResult, ETLErrorCode
 from .model_transmodel import (
     TransmodelBankHolidays,
     TransmodelService,
@@ -44,6 +44,7 @@ from .model_transmodel_vehicle_journey import (
 __all__ = [
     # Enums
     "TMDayOfWeek",
+    "ETLErrorCode",
     # Database Models
     "DatasetETLTaskResult",
     "TransmodelService",
