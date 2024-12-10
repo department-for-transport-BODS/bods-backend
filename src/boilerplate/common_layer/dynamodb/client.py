@@ -3,7 +3,7 @@ import time
 from typing import Any, Dict
 
 import boto3
-from common_layer.dynamodb.utils import deserialize_dynamo_item, serialize_dynamo_item
+from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 from common_layer.logger import logger
 
@@ -14,6 +14,9 @@ class DynamoDB:
 
     def __init__(self):
         self._client = self._create_dynamodb_client()
+        self._serializer = TypeSerializer()
+        self._deserializer = TypeDeserializer()
+
 
     def _create_dynamodb_client(self):
         """
@@ -40,11 +43,8 @@ class DynamoDB:
             )
             item = response.get("Item", {})
             item_value = item.get("Value", None)
-            if item_value:
-                result = deserialize_dynamo_item(item_value)
-                return result
-            logger.info(f"Item with key '{key}' not found in table '{TABLE_NAME}'")
-            return None
+            result = self._deserializer.deserialize(item_value) if item_value else None
+            return result
         except Exception as e:
             message = f"Failed to get item with key '{key}': {str(e)}"
             logger.error(message)
@@ -55,7 +55,7 @@ class DynamoDB:
         Store a value in the DynamoDB table with (optional) TTL.
         """
         try:
-            serialized_value = serialize_dynamo_item(value)
+            serialized_value = self._serializer.serialize(value)
             item = {
                 "Key": {"S": key},
                 "Value": serialized_value,
