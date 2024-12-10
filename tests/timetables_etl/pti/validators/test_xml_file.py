@@ -15,7 +15,7 @@ def test_get_violations_validates_file(m_pti_validator):
     m_pti_validator.return_value.is_valid = MagicMock()
     m_pti_validator.return_value.violations = ["violation1", "violation2"]
 
-    validator = XmlFilePTIValidator(schema=BytesIO())
+    validator = XmlFilePTIValidator(schema=BytesIO(), dynamodb=MagicMock())
 
     result = validator.get_violations(revision, xml_file)
 

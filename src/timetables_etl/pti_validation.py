@@ -3,6 +3,7 @@ from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.db.repositories.dataset_revision import DatasetRevisionRepository
 from common_layer.db.repositories.txc_file_attributes import TxcFileAttributesRepository
+from common_layer.dynamodb.client import DynamoDB
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 from common_layer.logger import get_dataset_adapter_from_revision
 from pti.service import PTIValidationService
@@ -38,7 +39,8 @@ def lambda_handler(event, context):
         adapter.error(message, exc_info=True)
         raise PipelineException(message)
 
-    validation_service = PTIValidationService(db)
+    dynamodb = DynamoDB()
+    validation_service = PTIValidationService(db, dynamodb)
     validation_service.validate(revision, xml_file_object, txc_file_attributes)
 
     return {"statusCode": 200}

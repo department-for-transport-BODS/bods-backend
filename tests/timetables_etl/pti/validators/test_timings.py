@@ -1,3 +1,4 @@
+from unittest.mock import MagicMock
 import pytest
 
 from pti.constants import PTI_SCHEMA_PATH
@@ -44,7 +45,7 @@ def test_timing_link_validation(refs, expected):
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file)
+    pti = PTIValidator(json_file, MagicMock())
 
     txc = TXCFile(xml)
     is_valid = pti.is_valid(txc)
@@ -87,7 +88,7 @@ def test_from_has_sequence_number_true(from_seq, to_seq, expected):
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file)
+    pti = PTIValidator(json_file, MagicMock())
 
     txc = TXCFile(xml)
     is_valid = pti.is_valid(txc)
@@ -173,7 +174,7 @@ def test_run_time_validation(run_time, jptl_ref, has_to_from, expected):
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file)
+    pti = PTIValidator(json_file, MagicMock())
     txc = TXCFile(xml)
     is_valid = pti.is_valid(txc)
     assert is_valid == expected

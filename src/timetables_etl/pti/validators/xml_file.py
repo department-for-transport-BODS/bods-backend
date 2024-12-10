@@ -3,6 +3,7 @@ from logging import getLogger
 from typing import IO, Any, List
 
 from botocore.response import StreamingBody
+from common_layer.dynamodb.client import DynamoDB
 from common_layer.logger import get_dataset_adapter_from_revision
 from common_layer.pti.models import Violation
 from pti.validators.pti import PTIValidator
@@ -11,8 +12,8 @@ logger = getLogger(__name__)
 
 
 class XmlFilePTIValidator:
-    def __init__(self, schema: IO[Any]):
-        self._validator = PTIValidator(schema)
+    def __init__(self, schema: IO[Any], dynamodb: DynamoDB):
+        self._validator = PTIValidator(schema, dynamodb)
 
     def get_violations(self, revision, xml_file: StreamingBody) -> List[Violation]:
         """

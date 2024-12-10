@@ -1,4 +1,5 @@
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 from lxml import etree
@@ -32,7 +33,7 @@ def test_non_naptan_stop_points(filename, expected):
 
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file)
+    pti = PTIValidator(json_file, MagicMock())
 
     txc_path = DATA_DIR / filename
     with txc_path.open("r") as txc:

@@ -1,5 +1,6 @@
 from datetime import timedelta
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 from dateutil import parser
@@ -43,7 +44,7 @@ def test_start_date_provisional_invalid(no_of_services, expected):
     schema = SchemaFactory(observations=observations)
 
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file)
+    pti = PTIValidator(json_file, MagicMock())
 
     txc = TXCFile(xml)
     is_valid = pti.is_valid(txc)
@@ -82,7 +83,7 @@ def test_start_date_provisional_valid(no_of_services, expected):
     schema = SchemaFactory(observations=observations)
 
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file)
+    pti = PTIValidator(json_file, MagicMock())
 
     txc = TXCFile(xml)
     is_valid = pti.is_valid(txc)
@@ -132,7 +133,7 @@ def test_service_has_journey_pattern(journey_ids, expected):
 
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file)
+    pti = PTIValidator(json_file, MagicMock())
 
     txc = TXCFile(xml)
     is_valid = pti.is_valid(txc)
@@ -159,7 +160,7 @@ def test_line_outbound_description_true():
 
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file)
+    pti = PTIValidator(json_file, MagicMock())
 
     txc = TXCFile(xml)
     is_valid = pti.is_valid(txc)
@@ -186,7 +187,7 @@ def test_line_inbound_description_true():
 
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file)
+    pti = PTIValidator(json_file, MagicMock())
 
     txc = TXCFile(xml)
     is_valid = pti.is_valid(txc)
@@ -216,7 +217,7 @@ def test_line_description_false():
 
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file)
+    pti = PTIValidator(json_file, MagicMock())
 
     txc = TXCFile(xml)
     is_valid = pti.is_valid(txc)
@@ -250,7 +251,7 @@ def test_service_code_format(service_code, expected):
 
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file)
+    pti = PTIValidator(json_file, MagicMock())
 
     txc = TXCFile(xml)
     is_valid = pti.is_valid(txc)
@@ -305,7 +306,7 @@ def test_operating_period_end_date(start_date, end_date_in_days, expected):
 
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file)
+    pti = PTIValidator(json_file, MagicMock())
 
     txc = TXCFile(xml)
     is_valid = pti.is_valid(txc)
@@ -327,7 +328,7 @@ def test_line_id_format(filename, expected):
 
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file)
+    pti = PTIValidator(json_file, MagicMock())
 
     txc_path = DATA_DIR / "lines" / filename
     with txc_path.open("r") as txc:
@@ -370,7 +371,7 @@ def test_flexible_service(service, expected):
 
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file)
+    pti = PTIValidator(json_file, MagicMock())
 
     txc = TXCFile(xml)
     is_valid = pti.is_valid(txc)

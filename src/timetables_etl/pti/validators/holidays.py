@@ -1,3 +1,4 @@
+from common_layer.dynamodb.client import DynamoDB
 from pti.constants import (
     BANK_HOLIDAYS,
     BANK_HOLIDAYS_ONLY_ENGLISH,
@@ -23,32 +24,42 @@ def get_service_ref_from_element(element, ns):
     return service_ref
 
 
-def validate_bank_holidays(context, bank_holidays):
-    bank_holiday = bank_holidays[0]
-    ns = {"x": bank_holiday.nsmap.get(None)}
-    children = bank_holiday.getchildren()
-    local_name = "local-name()"
+def get_validate_bank_holidays(dynamo: DynamoDB):
 
-    holidays = []
-    for element in children:
-        if element.xpath(local_name, namespaces=ns) in OPERATION_DAYS:
-            days = [el.xpath(local_name, namespaces=ns) for el in element.getchildren()]
-            holidays += days
+    def validate_bank_holidays(context, bank_holidays):
+        bank_holiday = bank_holidays[0]
+        ns = {"x": bank_holiday.nsmap.get(None)}
+        children = bank_holiday.getchildren()
+        local_name = "local-name()"
 
-    # .getchildren() will return comments: this filters out the comments.
-    # It also removes occurrences of OTHER_PUBLIC_HOLIDAYS and OLD_HOLIDAYS_ALREADY_REMOVED of which there may be many or
-    # none.
-    holidays = [h for h in holidays if h and h not in OTHER_PUBLIC_HOLIDAYS + OLD_HOLIDAYS_ALREADY_REMOVED]
+        holidays = []
+        for element in children:
+            if element.xpath(local_name, namespaces=ns) in OPERATION_DAYS:
+                days = [
+                    el.xpath(local_name, namespaces=ns) for el in element.getchildren()
+                ]
+                holidays += days
 
-    # duplicate check
-    if sorted(list(set(holidays))) != sorted(holidays):
-        return False
+        # .getchildren() will return comments: this filters out the comments.
+        # It also removes occurrences of OTHER_PUBLIC_HOLIDAYS and OLD_HOLIDAYS_ALREADY_REMOVED of which there may be many or
+        # none.
+        holidays = [
+            h
+            for h in holidays
+            if h and h not in OTHER_PUBLIC_HOLIDAYS + OLD_HOLIDAYS_ALREADY_REMOVED
+        ]
 
-    service_ref = get_service_ref_from_element(element, ns)
-    if service_ref and is_service_in_scotland(service_ref):
-        english_removed = list(set(holidays) - set(BANK_HOLIDAYS_ONLY_ENGLISH))
-        return sorted(SCOTTISH_BANK_HOLIDAYS) == sorted(english_removed)
+        # duplicate check
+        if sorted(list(set(holidays))) != sorted(holidays):
+            return False
 
-    # optional Scottish holiday check
-    scottish_removed = list(set(holidays) - set(BANK_HOLIDAYS_ONLY_SCOTTISH))
-    return sorted(BANK_HOLIDAYS) == sorted(scottish_removed)
+        service_ref = get_service_ref_from_element(element, ns)
+        if service_ref and is_service_in_scotland(service_ref, dynamo):
+            english_removed = list(set(holidays) - set(BANK_HOLIDAYS_ONLY_ENGLISH))
+            return sorted(SCOTTISH_BANK_HOLIDAYS) == sorted(english_removed)
+
+        # optional Scottish holiday check
+        scottish_removed = list(set(holidays) - set(BANK_HOLIDAYS_ONLY_SCOTTISH))
+        return sorted(BANK_HOLIDAYS) == sorted(scottish_removed)
+
+    return validate_bank_holidays

@@ -99,7 +99,7 @@ def lambda_handler(event, context):
         # Get S3 handler
         s3_handler = S3(bucket_name=bucket)
 
-        # Fetch the object from common_layer.s3
+        # Fetch the object from s3
         file_object = s3_handler.get_object(file_path=key)
 
         update_file_hash_in_db(event["ObjectKey"],

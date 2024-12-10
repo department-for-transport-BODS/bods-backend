@@ -26,11 +26,12 @@ def m_db_manager():
         yield m_db
 
 
+@patch("pti_validation.DynamoDB")
 @patch("pti_validation.DatasetRevisionRepository")
 @patch("pti_validation.S3")
 @patch("pti_validation.TxcFileAttributesRepository")
 @patch("pti_validation.PTIValidationService")
-def test_lambda_hander(m_pti_validation_service, m_file_attribute_repo, m_s3, m_revision_repo):
+def test_lambda_hander(m_pti_validation_service, m_file_attribute_repo, m_s3, m_revision_repo, m_dynamodb):
     revision_id = 123
     event = {
         "Bucket": "test-bucket",

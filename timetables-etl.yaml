@@ -15,6 +15,10 @@ Parameters:
     Type: Number
   BoilerplateLambdaLayerArn:
     Type: String
+  DynamoDBTableName:
+    Type: string
+    Default: !Sub "${ProjectName}-${Environment}-dynamodb-cache"
+  
 
 Conditions:
   IsNotLocal: !Not [!Equals [!Ref Environment, "local"]]
@@ -60,6 +64,7 @@ Globals:
           - IsNotLocal
           - !Sub "{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}"
           - bodds_rw
+        DYNAMO_DB_TABLE_NAME: !Ref DynamoDBTableName
 
 Resources:
   ###########################
@@ -377,6 +382,29 @@ Resources:
           - id: CKV_AWS_27
             comment: "Ensure all data stored in the SQS queue is encrypted"
     Type: AWS::SQS::Queue
+  
+  DynamoDB:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref DynamoDBTableName
+      AttributeDefinitions:
+        - AttributeName: Key
+          AttributeType: S
+      KeySchema:
+        - AttributeName: Key
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        KMSMasterKeyId: !If
+          - IsNotLocal
+          - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
+          - !Ref AWS::NoValue
 
   CommonLambdaExecutionRole:
     Type: AWS::IAM::Role
@@ -433,6 +461,17 @@ Resources:
                   - IsNotLocal
                   - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
                   - "*"
+        - PolicyName: DynamoDBAccessPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                Resource: !GetAtt DynamoDB.Arn
 
   CommonLambdaSecurityGroup:
     Type: AWS::EC2::SecurityGroup
