@@ -5,6 +5,7 @@ from typing import IO, Any, Callable
 from urllib.parse import unquote
 
 from lxml import etree
+from common_layer.dynamodb.client import DynamoDB
 from pti.constants import FLEXIBLE_SERVICE, STANDARD_SERVICE
 from common_layer.pti.models import Observation, Schema, Violation
 from pti.validators.functions import (
@@ -37,13 +38,13 @@ from pti.validators.functions import (
     validate_run_time,
     validate_timing_link_stops,
 )
-from pti.validators.holidays import validate_bank_holidays
+from pti.validators.holidays import get_validate_bank_holidays
 
 logger = logging.getLogger(__name__)
 
 
 class PTIValidator:
-    def __init__(self, source: IO[Any]):
+    def __init__(self, source: IO[Any], dynamo: DynamoDB):
         json_ = json.load(source)
         self.schema = Schema(**json_)
         self.namespaces = self.schema.header.namespaces
@@ -52,7 +53,9 @@ class PTIValidator:
         self.fns = etree.FunctionNamespace(None)
         self.register_function("bool", cast_to_bool)
         self.register_function("contains_date", contains_date)
-        self.register_function("check_flexible_service_timing_status", check_flexible_service_timing_status)
+        self.register_function(
+            "check_flexible_service_timing_status", check_flexible_service_timing_status
+        )
 
         self.register_function(
             "check_flexible_service_stop_point_ref",
@@ -75,10 +78,16 @@ class PTIValidator:
         self.register_function("days", to_days)
         self.register_function("has_destination_display", has_destination_display)
         self.register_function("has_name", has_name)
-        self.register_function("has_flexible_or_standard_service", has_flexible_or_standard_service)
-        self.register_function("has_flexible_service_classification", has_flexible_service_classification)
+        self.register_function(
+            "has_flexible_or_standard_service", has_flexible_or_standard_service
+        )
+        self.register_function(
+            "has_flexible_service_classification", has_flexible_service_classification
+        )
         self.register_function("has_prohibited_chars", has_prohibited_chars)
-        self.register_function("check_service_group_validations", check_service_group_validations)
+        self.register_function(
+            "check_service_group_validations", check_service_group_validations
+        )
         self.register_function(
             "check_flexible_service_times",
             check_flexible_service_times,
@@ -91,12 +100,18 @@ class PTIValidator:
         self.register_function("validate_line_id", validate_line_id)
         self.register_function("validate_lines", validate_lines)
 
-        self.register_function("validate_modification_date_time", validate_modification_date_time)
-        self.register_function("validate_non_naptan_stop_points", validate_non_naptan_stop_points)
+        self.register_function(
+            "validate_modification_date_time", validate_modification_date_time
+        )
+        self.register_function(
+            "validate_non_naptan_stop_points", validate_non_naptan_stop_points
+        )
         self.register_function("validate_run_time", validate_run_time)
         self.register_function("validate_timing_link_stops", validate_timing_link_stops)
 
-        self.register_function("validate_bank_holidays", validate_bank_holidays)
+        self.register_function(
+            "validate_bank_holidays", get_validate_bank_holidays(dynamo)
+        )
 
         self.register_function("validate_licence_number", validate_licence_number)
 
@@ -111,7 +126,9 @@ class PTIValidator:
     def add_violation(self, violation: Violation) -> None:
         self.violations.append(violation)
 
-    def check_observation(self, observation: Observation, element: etree._Element) -> None:
+    def check_observation(
+        self, observation: Observation, element: etree._Element
+    ) -> None:
         for rule in observation.rules:
             result = element.xpath(rule.test, namespaces=self.namespaces)
             if not result:
@@ -127,11 +144,17 @@ class PTIValidator:
                 break
 
     def check_service_type(self, document):
-        servie_classification_xpath = "//x:Services/x:Service/x:ServiceClassification/x:Flexible"
-        service_classification = document.xpath(servie_classification_xpath, namespaces=self.namespaces)
+        servie_classification_xpath = (
+            "//x:Services/x:Service/x:ServiceClassification/x:Flexible"
+        )
+        service_classification = document.xpath(
+            servie_classification_xpath, namespaces=self.namespaces
+        )
 
         flexible_service_xpath = "//x:Services/x:Service/x:FlexibleService"
-        flexible_service = document.xpath(flexible_service_xpath, namespaces=self.namespaces)
+        flexible_service = document.xpath(
+            flexible_service_xpath, namespaces=self.namespaces
+        )
 
         if service_classification or flexible_service:
             return FLEXIBLE_SERVICE
@@ -143,7 +166,9 @@ class PTIValidator:
 
         service_observations = []
         service_observations = [
-            x for x in self.schema.observations if x.service_type == txc_service_type or x.service_type == "All"
+            x
+            for x in self.schema.observations
+            if x.service_type == txc_service_type or x.service_type == "All"
         ]
         logger.info(f"Checking observations for the XML file {source.name}")
         for observation in service_observations:

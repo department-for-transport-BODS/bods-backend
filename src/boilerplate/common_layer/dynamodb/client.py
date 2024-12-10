@@ -1,6 +1,6 @@
 import os
 import time
-from typing import Any
+from typing import Any, Callable
 
 import boto3
 from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
@@ -17,7 +17,6 @@ class DynamoDB:
         self._serializer = TypeSerializer()
         self._deserializer = TypeDeserializer()
 
-
     def _create_dynamodb_client(self):
         """
         Create a DynamoDB client
@@ -32,6 +31,25 @@ class DynamoDB:
             )
         else:
             return boto3.client("dynamodb")
+
+    def get_or_compute(
+        self, key: str, compute_fn: Callable[[], Any], ttl: int | None = None
+    ) -> Any:
+        """
+        Get a value from cache or compute it if not found.
+        """
+        cached_value = self.get(key)
+
+        if cached_value is not None:
+            logger.info(f"Cache hit for key: {key}")
+            return cached_value
+
+        logger.info(f"Cache miss for key: {key}, computing value")
+        computed_value = compute_fn()
+
+        self.put(key, computed_value, ttl=ttl)
+
+        return computed_value
 
     def get(self, key: str) -> dict[str, Any] | None:
         """

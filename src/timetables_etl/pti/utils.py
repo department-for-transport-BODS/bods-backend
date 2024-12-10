@@ -8,18 +8,15 @@ from pti.constants import SCOTLAND_TRAVELINE_REGIONS
 
 logger = logging.getLogger(__name__)
 
-def is_service_in_scotland(service_ref: str) -> bool:
+
+def is_service_in_scotland(service_ref: str, dynamo: DynamoDB) -> bool:
     cache_key = f"{service_ref.replace(':', '-')}-is-scottish-region"
-    value_in_cache = DynamoDB.get(cache_key)
-    if value_in_cache is not None:
-        logger.info(f"{cache_key} for PTI Validation found in cache")
-        return value_in_cache
 
-    is_in_scotland = get_service_in_scotland_from_db(service_ref)
-
-    DynamoDB.put(cache_key, is_in_scotland, ttl=7200)
-
-    return is_in_scotland
+    return dynamo.get_or_compute(
+        key=cache_key,
+        compute_fn=lambda: get_service_in_scotland_from_db(service_ref),
+        ttl=7200,
+    )
 
 
 def get_service_in_scotland_from_db(service_ref: str) -> bool:
