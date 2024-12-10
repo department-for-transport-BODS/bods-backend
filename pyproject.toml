@@ -79,7 +79,7 @@ python_functions = ["test_*"]
 [tool.coverage.run]
 omit = [
   "src/boilerplate/db/models.py",
-  "src/boilerplate/common_layer/database/",
+  "src/boilerplate/common_layer/database/**/*", # Ignoring for now whilst mock scheme is devised
 ]
 
 [tool.black]
