@@ -1,4 +1,3 @@
-import logging
 import os
 import time
 from typing import Any, Dict
@@ -10,21 +9,13 @@ from common_layer.logger import logger
 
 TABLE_NAME = os.getenv("DYNAMO_DB_TABLE_NAME")
 
+
 class DynamoDB:
 
-    _client = None
+    def __init__(self):
+        self._client = self._create_dynamodb_client()
 
-    @staticmethod
-    def client():
-        """
-        Return the DynamoDB client, initializing it if it doesn't exist.
-        """
-        if DynamoDB._client is None:
-            DynamoDB._client = DynamoDB._create_dynamodb_client()
-        return DynamoDB._client
-
-    @staticmethod
-    def _create_dynamodb_client():
+    def _create_dynamodb_client(self):
         """
         Create a DynamoDB client
         If running locally, it points to the LocalStack DynamoDB service.
@@ -37,16 +28,16 @@ class DynamoDB:
                 aws_secret_access_key="dummy",
             )
         else:
-            return boto3.resource("dynamodb")
+            return boto3.client("dynamodb")
 
-    @staticmethod
-    def get(key: str) -> Dict[str, Any] | None:
+    def get(self, key: str) -> Dict[str, Any] | None:
         """
         Retrieve an item from the DynamoDB table by key.
         """
         try:
-            client = DynamoDB.client()
-            response = client.get_item(TableName=TABLE_NAME, Key={"Key": {"S": key}})
+            response = self._client.get_item(
+                TableName=TABLE_NAME, Key={"Key": {"S": key}}
+            )
             item = response.get("Item", {})
             item_value = item.get("Value", None)
             if item_value:
@@ -59,8 +50,7 @@ class DynamoDB:
             logger.error(message)
             raise PipelineException(message) from e
 
-    @staticmethod
-    def put(key: str, value: Any, ttl: int | None = None):
+    def put(self, key: str, value: Any, ttl: int | None = None):
         """
         Store a value in the DynamoDB table with (optional) TTL.
         """
@@ -74,8 +64,7 @@ class DynamoDB:
                 expiration_time = int(time.time()) + ttl
                 item["ttl"] = expiration_time
 
-            client = DynamoDB.client()
-            client.put_item(TableName=TABLE_NAME, Item=item)
+            self._client.put_item(TableName=TABLE_NAME, Item=item)
         except Exception as e:
             message = f"Failed to set item with key '{key}': {str(e)}"
             logger.error(message)

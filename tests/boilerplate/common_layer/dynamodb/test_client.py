@@ -6,19 +6,21 @@ import pytest
 from common_layer.dynamodb.client import DynamoDB, TABLE_NAME
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 
+@pytest.fixture
+def m_boto_client():
+    with patch("common_layer.dynamodb.client.boto3.client") as m_boto:
+        yield m_boto.return_value
 
-def test_put():
-    mock_client = MagicMock()
-    mock_client.return_value.put_item = MagicMock()
-    DynamoDB.client = mock_client
 
+def test_put(m_boto_client):
     with freeze_time("2024-12-06 12:00:00"):
         ttl = 3600
         expected_dynamo_ttl = 1733490000  # Epoch time for 2024-12-06 12:00:00 + 3600 seconds
 
-        DynamoDB.put("test-key", {"key": "value"}, ttl=ttl)
+        dynamo = DynamoDB()
+        dynamo.put("test-key", {"key": "value"}, ttl=ttl)
 
-        mock_client.return_value.put_item.assert_called_once_with(
+        m_boto_client.put_item.assert_called_once_with(
             TableName=TABLE_NAME,
             Item={
                 "Key": {"S": "test-key"},
@@ -27,32 +29,29 @@ def test_put():
             },
         )
 
-def test_put_exception():
-    mock_client = MagicMock()
-    mock_client.return_value.put_item.side_effect = Exception("Client exception")
-    DynamoDB.client = mock_client
+def test_put_exception(m_boto_client):
+    m_boto_client.put_item.side_effect = Exception("Client exception")
+    dynamodb = DynamoDB()
     with pytest.raises(PipelineException, match="Failed to set item with key 'test-key': Client exception"):
-        DynamoDB.put("test-key", {"key": "value"}, ttl=3600)
+        dynamodb.put("test-key", {"key": "value"}, ttl=3600)
 
-def test_get():
-    mock_client = MagicMock()
-    mock_client.return_value.get_item = MagicMock(
+def test_get(m_boto_client):
+    m_boto_client.get_item = MagicMock(
         return_value={
             "Item": {"Key": {"S": "test-key"}, "Value": {"M": {"key": {"S": "value"}}}}
         }
     )
-    DynamoDB.client = mock_client
 
-    result = DynamoDB.get("test-key")
+    dynamodb = DynamoDB()
+    result = dynamodb.get("test-key")
 
-    mock_client.return_value.get_item.assert_called_once_with(
+    m_boto_client.get_item.assert_called_once_with(
         TableName=TABLE_NAME, Key={"Key": {"S": "test-key"}}
     )
     assert result == {"key": "value"}
 
-def test_get_exception():
-    mock_client = MagicMock()
-    mock_client.return_value.get_item.side_effect = Exception("Client exception")
-    DynamoDB.client = mock_client
+def test_get_exception(m_boto_client):
+    m_boto_client.get_item.side_effect = Exception("Client exception")
+    dynamodb = DynamoDB()
     with pytest.raises(PipelineException, match="Failed to get item with key 'test-key': Client exception"):
-        DynamoDB.get("test-key")
+        dynamodb.get("test-key")
