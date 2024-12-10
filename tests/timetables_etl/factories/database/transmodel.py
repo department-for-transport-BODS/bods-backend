@@ -6,12 +6,11 @@ from datetime import date, datetime, timedelta
 from typing import Literal
 
 import factory
-
-from timetables_etl.etl.app.database.models import TransmodelService
-from timetables_etl.etl.app.database.models.model_transmodel_flexible import (
+from common_layer.database.models import TransmodelService
+from common_layer.database.models.model_transmodel_flexible import (
     TransmodelBookingArrangements,
 )
-from timetables_etl.etl.app.database.models.model_transmodel_vehicle_journey import (
+from common_layer.database.models.model_transmodel_vehicle_journey import (
     TransmodelVehicleJourney,
 )
 

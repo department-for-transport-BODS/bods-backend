@@ -5,12 +5,9 @@ Implement Service Patterns
 from pathlib import Path
 
 import pandas as pd
+from common_layer.database.models.model_transmodel import TransmodelServicePattern
 from geoalchemy2.shape import from_shape
 from shapely.wkt import loads as wkt_loads
-
-from timetables_etl.etl.app.database.models.model_transmodel import (
-    TransmodelServicePattern,
-)
 
 
 def load_service_patterns_from_csv(

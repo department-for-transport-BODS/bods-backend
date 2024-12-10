@@ -6,13 +6,13 @@ from datetime import date
 from typing import Callable
 
 import pytest
+from common_layer.database.models import TransmodelService
 
 from tests.timetables_etl.factories.database import (
     OrganisationDatasetRevisionFactory,
     OrganisationTXCFileAttributesFactory,
 )
 from tests.timetables_etl.factories.txc import TXCServiceFactory
-from timetables_etl.etl.app.database.models import TransmodelService
 from timetables_etl.etl.app.transform.services import make_transmodel_service
 from timetables_etl.etl.app.txc.models import TXCService
 

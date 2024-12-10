@@ -5,14 +5,14 @@ Tests for Handling Bank Holiday Operations
 from datetime import date
 
 import pytest
-
-from tests.timetables_etl.factories.database.transmodel import (
-    TransmodelVehicleJourneyFactory,
-)
-from timetables_etl.etl.app.database.models import (
+from common_layer.database.models import (
     TransmodelNonOperatingDatesExceptions,
     TransmodelOperatingDatesExceptions,
     TransmodelVehicleJourney,
+)
+
+from tests.timetables_etl.factories.database.transmodel import (
+    TransmodelVehicleJourneyFactory,
 )
 from timetables_etl.etl.app.transform.vehicle_journey_operations import (
     process_bank_holidays,

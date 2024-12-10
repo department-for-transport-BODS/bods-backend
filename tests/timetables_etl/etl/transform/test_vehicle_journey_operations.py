@@ -5,13 +5,13 @@ Test Generating Transmodel Operating/NonOperating Days from TXC Operating Profil
 from datetime import date
 
 import pytest
+from common_layer.database.models import (
+    TransmodelNonOperatingDatesExceptions,
+    TransmodelOperatingDatesExceptions,
+)
 
 from tests.timetables_etl.factories.database.transmodel import (
     TransmodelVehicleJourneyFactory,
-)
-from timetables_etl.etl.app.database.models import (
-    TransmodelNonOperatingDatesExceptions,
-    TransmodelOperatingDatesExceptions,
 )
 from timetables_etl.etl.app.transform.vehicle_journey_operations import (
     get_bank_holiday_dates,

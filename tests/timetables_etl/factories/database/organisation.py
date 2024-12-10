@@ -5,13 +5,12 @@ Organisation Database Model Factories
 from datetime import UTC, date, datetime
 
 import factory
-from factory import LazyFunction
-from factory.fuzzy import FuzzyChoice, FuzzyInteger
-
-from timetables_etl.etl.app.database.models.model_organisation import (
+from common_layer.database.models.model_organisation import (
     OrganisationDatasetRevision,
     OrganisationTXCFileAttributes,
 )
+from factory import LazyFunction
+from factory.fuzzy import FuzzyChoice, FuzzyInteger
 
 
 class OrganisationDatasetRevisionFactory(factory.Factory):

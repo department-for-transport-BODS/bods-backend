@@ -5,14 +5,14 @@ Test Creating Booking Arrangements
 from datetime import date
 
 import pytest
+from common_layer.database.models import (
+    TransmodelBookingArrangements,
+    TransmodelService,
+)
 
 from tests.timetables_etl.factories.database import TransmodelServiceFactory
 from tests.timetables_etl.factories.database.transmodel import (
     TransmodelBookingArrangementsFactory,
-)
-from timetables_etl.etl.app.database.models import (
-    TransmodelBookingArrangements,
-    TransmodelService,
 )
 from timetables_etl.etl.app.transform.booking_arrangements import (
     create_booking_arrangements,

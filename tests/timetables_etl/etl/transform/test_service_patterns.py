@@ -5,6 +5,7 @@ Test Generating Transmodel Service Patterns
 from typing import Callable
 
 import pytest
+from common_layer.database.models import NaptanStopPoint, TransmodelServicePattern
 from geoalchemy2 import WKBElement
 from geoalchemy2.shape import to_shape
 from shapely import Point
@@ -20,10 +21,6 @@ from tests.timetables_etl.factories.txc import (
     TXCJourneyPatternStopUsageFactory,
     TXCJourneyPatternTimingLinkFactory,
     TXCServiceFactory,
-)
-from timetables_etl.etl.app.database.models import (
-    NaptanStopPoint,
-    TransmodelServicePattern,
 )
 from timetables_etl.etl.app.transform.service_patterns import (
     create_service_pattern,
