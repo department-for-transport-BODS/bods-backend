@@ -2,7 +2,6 @@
 Instead of having try/except blocks for each repo call, define a decorator to handle it
 """
 
-from dataclasses import dataclass
 from typing import (
     Callable,
     Generic,
@@ -35,22 +34,6 @@ class HasId(Protocol):
     """
 
     id: Column[int]
-
-
-@dataclass
-class RepositoryError(Exception):
-    """Base class for repository exceptions"""
-
-    message: str
-    original_error: Exception | None = None
-
-
-class NotFoundError(RepositoryError):
-    """Raised when an entity is not found"""
-
-
-class UpdateError(RepositoryError):
-    """Raised when an update operation fails"""
 
 
 class BaseRepository(Generic[DBModelT]):

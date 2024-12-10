@@ -2,20 +2,34 @@
 Decorator that handles DB Errors and Debug Logging
 """
 
+from dataclasses import dataclass
 from functools import wraps
 from typing import Any, Callable, ParamSpec, TypeAlias, TypeVar
 
-from common_layer.database.repos.repo_common import (
-    NotFoundError,
-    RepositoryError,
-    UpdateError,
-)
 from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
 from structlog.stdlib import get_logger
 
 logger = get_logger()
 T = TypeVar("T")
 P = ParamSpec("P")
+
+
+@dataclass
+class RepositoryError(Exception):
+    """Base class for repository exceptions"""
+
+    message: str
+    original_error: Exception | None = None
+
+
+class NotFoundError(RepositoryError):
+    """Raised when an entity is not found"""
+
+
+class UpdateError(RepositoryError):
+    """Raised when an update operation fails"""
+
+
 ErrorMapping: TypeAlias = dict[type[Exception], tuple[type[RepositoryError], str]]
 
 
@@ -26,11 +40,12 @@ def get_operation_name(func: Callable, args: tuple[Any, ...]) -> tuple[str | Non
     """
     try:
         instance = args[0] if args else None
-        repo_name = (
-            instance.__class__.__name__
-            if instance and hasattr(instance, "__class__")
-            else None
+        is_class_instance = (
+            instance is not None
+            and hasattr(instance, "__class__")
+            and not isinstance(instance.__class__, type)
         )
+        repo_name = instance.__class__.__name__ if is_class_instance else None
         return repo_name, func.__name__
     except AttributeError:
         return None, func.__name__
