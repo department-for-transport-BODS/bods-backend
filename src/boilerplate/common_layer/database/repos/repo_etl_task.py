@@ -2,15 +2,12 @@
 Database Calls
 """
 
-import logging
 from datetime import UTC, datetime
 
 from ..client import SqlDB
 from ..models.model_pipelines import DatasetETLTaskResult, ETLErrorCode, TaskState
 from .operation_decorator import handle_repository_errors
 from .repo_common import BaseRepository
-
-logger = logging.getLogger(__name__)
 
 
 class ETLTaskResultRepo(BaseRepository[DatasetETLTaskResult]):
