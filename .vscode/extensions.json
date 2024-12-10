@@ -1,0 +1,11 @@
+{
+	"recommendations": [
+		"ms-python.python",
+		"ms-python.pylint",
+		"ms-python.black-formatter",
+		"ms-python.isort",
+		"redhat.vscode-yaml",
+		"redhat.vscode-xml",
+	],
+	"unwantedRecommendations": []
+}
