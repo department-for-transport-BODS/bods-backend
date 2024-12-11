@@ -17,9 +17,28 @@ Parameters:
   DynamoDBTableName:
     Type: String
     Default: ""
-
+  RdsEndpoint:
+    Type: String
+    Description: RDS endpoint for local development
+    Default: "localhost"
+  RdsPassword:
+    Type: String
+    Description: RDS password for local development
+    Default: ""
+  RdsDbName:
+    Type: String
+    Description: Database name for local development
+    Default: "postgres"
 Conditions:
   IsNotLocal: !Not [!Equals [!Ref Environment, "local"]]
+  IsStandalone: !Equals [!Ref Environment, "standalone"]
+  IsUsingBodsInfra:
+    !Not [
+      !Or [
+        !Equals [!Ref Environment, "local"],
+        !Equals [!Ref Environment, "standalone"],
+      ],
+    ]
   UseDefaultTableName: !Equals [!Ref DynamoDBTableName, ""]
 
 Globals:
@@ -30,59 +49,69 @@ Globals:
     Timeout: 60
     MemorySize: 256
     KmsKeyArn: !If
-      - IsNotLocal
+      - IsUsingBodsInfra
       - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
-      - !Ref AWS::NoValue
+      - !If
+        - IsStandalone
+        - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
+        - !Ref AWS::NoValue
     VpcConfig: !If
-      - IsNotLocal
+      - IsUsingBodsInfra
       - SubnetIds:
           - !Sub "{{resolve:ssm:/bodds/${Environment}/private-subnet-0}}"
           - !Sub "{{resolve:ssm:/bodds/${Environment}/private-subnet-1}}"
           - !Sub "{{resolve:ssm:/bodds/${Environment}/private-subnet-2}}"
         SecurityGroupIds:
           - !GetAtt CommonLambdaSecurityGroup.GroupId
-      - SubnetIds:
-          - Fn::ImportValue:
-              Fn::Sub: "${ProjectName}-${Environment}-local-subnet-1-id"
-          - Fn::ImportValue:
-              Fn::Sub: "${ProjectName}-${Environment}-local-subnet-2-id"
-        SecurityGroupIds:
-          - Fn::ImportValue:
-              Fn::Sub: "${ProjectName}-${Environment}-local-lambda-sg-id"
-
+      - !If
+        - IsStandalone
+        - SubnetIds:
+            - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-subnet-1-id"
+            - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-subnet-2-id"
+          SecurityGroupIds:
+            - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-lambda-sg-id"
+        - !Ref AWS::NoValue
     Environment:
       Variables:
         HTTPS_PROXY: !If
-          - IsNotLocal
+          - IsUsingBodsInfra
           - !Sub "http://squid.bodds.${Environment}:3128"
           - !Ref AWS::NoValue
         PROJECT_ENV: !Ref Environment
         PROJECT_NAME: !Ref ProjectName
         POSTGRES_HOST: !If
-          - IsNotLocal
+          - IsUsingBodsInfra
           - !Sub "{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}"
-          - Fn::ImportValue:
-              Fn::Sub: "${ProjectName}-${Environment}-local-rds-endpoint"
+          - !If
+            - IsStandalone
+            - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-rds-endpoint"
+            - !Sub RdsEndpoint
         POSTGRES_PORT: !If
-          - IsNotLocal
-          - Fn::ImportValue:
-              Fn::Sub: "${ProjectName}-${Environment}-local-rds-port"
-          - !Ref RdsDbPort
+          - IsUsingBodsInfra
+          - !Sub "{{resolve:ssm:/bodds/${Environment}/rds-proxy-port}}"
+          - !If
+            - IsStandalone
+            - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-rds-port"
+            - !Ref RdsDbPort
         POSTGRES_PASSWORD: !If
-          - IsNotLocal
-          - !Sub
-            - "{{resolve:secretsmanager:${SecretArn}:SecretString:password}}"
-            - SecretArn:
-                Fn::ImportValue:
-                  Fn::Sub: "${ProjectName}-${Environment}-local-rds-secret-arn"
-          - !Ref AWS::NoValue
+          - IsUsingBodsInfra
+          - !Sub "{{resolve:ssm:/bodds/${Environment}/rds-password}}"
+          - !If
+            - IsStandalone
+            - !Sub
+              - "{{resolve:secretsmanager:${SecretArn}:SecretString:password}}"
+              - SecretArn:
+                  Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-rds-secret-arn"
+            - !Ref RdsPassword
         POSTGRES_DB: !If
-          - IsNotLocal
+          - IsUsingBodsInfra
           - !Sub "{{resolve:ssm:/bodds/${Environment}/rds-db-name}}"
-          - Fn::ImportValue:
-              Fn::Sub: "${ProjectName}-${Environment}-local-rds-db-name"
+          - !If
+            - IsStandalone
+            - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-rds-db-name"
+            - !Ref RdsDbName
         POSTGRES_USER: !If
-          - IsNotLocal
+          - IsUsingBodsInfra
           - !Sub "{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}"
           - bodds_rw
         DYNAMO_DB_TABLE_NAME: !Ref DynamoDBTableName
@@ -194,9 +223,12 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-clamav-scanner-lambda"
       KmsKeyId: !If
-        - IsNotLocal
+        - IsUsingBodsInfra
         - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
-        - !Ref AWS::NoValue
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
+          - !Ref AWS::NoValue
       RetentionInDays: 30
 
   ################################
@@ -225,9 +257,12 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-file-schema-check-lambda"
       KmsKeyId: !If
-        - IsNotLocal
+        - IsUsingBodsInfra
         - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
-        - !Ref AWS::NoValue
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
+          - !Ref AWS::NoValue
       RetentionInDays: 30
 
   ####################################
@@ -253,9 +288,12 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-txc-file-validator-lambda"
       KmsKeyId: !If
-        - IsNotLocal
+        - IsUsingBodsInfra
         - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
-        - !Ref AWS::NoValue
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
+          - !Ref AWS::NoValue
       RetentionInDays: 30
 
   ####################################
@@ -281,9 +319,12 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-txc-file-attribute-extractor-lambda"
       KmsKeyId: !If
-        - IsNotLocal
+        - IsUsingBodsInfra
         - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
-        - !Ref AWS::NoValue
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
+          - !Ref AWS::NoValue
       RetentionInDays: 30
 
   ##################################
@@ -309,9 +350,12 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-timetable-post-schema-check-lambda"
       KmsKeyId: !If
-        - IsNotLocal
+        - IsUsingBodsInfra
         - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
-        - !Ref AWS::NoValue
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
+          - !Ref AWS::NoValue
       RetentionInDays: 30
 
   ##################################
@@ -337,9 +381,12 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-pti-validation-lambda"
       KmsKeyId: !If
-        - IsNotLocal
+        - IsUsingBodsInfra
         - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
-        - !Ref AWS::NoValue
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
+          - !Ref AWS::NoValue
       RetentionInDays: 30
 
   ##################################
@@ -365,9 +412,12 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-exception-handler-lambda"
       KmsKeyId: !If
-        - IsNotLocal
+        - IsUsingBodsInfra
         - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
-        - !Ref AWS::NoValue
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
+          - !Ref AWS::NoValue
       RetentionInDays: 30
 
   #########################################
@@ -393,9 +443,12 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-placeholder-lambda"
       KmsKeyId: !If
-        - IsNotLocal
+        - IsUsingBodsInfra
         - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
-        - !Ref AWS::NoValue
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
+          - !Ref AWS::NoValue
       RetentionInDays: 30
 
   PlaceholderSNSTopic:
@@ -441,9 +494,12 @@ Resources:
         SSEEnabled: true
         SSEType: KMS
         KMSMasterKeyId: !If
-          - IsNotLocal
+          - IsUsingBodsInfra
           - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
-          - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-local-kms-key-arn"
+          - !If
+            - IsStandalone
+            - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
+            - !Ref AWS::NoValue
 
   CommonLambdaExecutionRole:
     Type: AWS::IAM::Role
@@ -460,13 +516,13 @@ Resources:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
         - !If
-          - IsNotLocal
+          - IsUsingBodsInfra
           - !Sub "{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}"
-          - "arn:aws:iam::aws:policy/AmazonRDSFullAccess" # Full access fallback
+          - "arn:aws:iam::aws:policy/AmazonRDSFullAccess"
         - !If
-          - IsNotLocal
+          - IsUsingBodsInfra
           - !Sub "{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}"
-          - "arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess" # Read-only fallback
+          - "arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess"
       Policies:
         - PolicyName: S3AccessPolicy
           PolicyDocument:
@@ -476,25 +532,25 @@ Resources:
                 Action:
                   - s3:ListBucket
                 Resource: !If
-                  - IsNotLocal
+                  - IsUsingBodsInfra
                   - !Sub "{{resolve:ssm:/bodds/${Environment}/s3-app-bucket}}"
                   - !Sub
                     - "arn:aws:s3:::${BucketName}"
                     - BucketName:
                         Fn::ImportValue:
-                          Fn::Sub: "${ProjectName}-${Environment}-local-s3-bucket-name"
+                          Fn::Sub: "${ProjectName}-${Environment}-standalone-s3-bucket-name"
               - Effect: Allow
                 Action:
                   - s3:GetObject*
                   - s3:PutObject*
                 Resource: !If
-                  - IsNotLocal
+                  - IsUsingBodsInfra
                   - !Sub "{{resolve:ssm:/bodds/${Environment}/s3-app-bucket}}"
                   - !Sub
                     - "arn:aws:s3:::${BucketName}/*"
                     - BucketName:
                         Fn::ImportValue:
-                          Fn::Sub: "${ProjectName}-${Environment}-local-s3-bucket-name"
+                          Fn::Sub: "${ProjectName}-${Environment}-standalone-s3-bucket-name"
         - PolicyName: KMSAccessPolicy
           PolicyDocument:
             Version: "2012-10-17"
@@ -505,9 +561,9 @@ Resources:
                   - kms:Decrypt
                   - kms:Encrypt
                 Resource: !If
-                  - IsNotLocal
+                  - IsUsingBodsInfra
                   - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
-                  - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-local-kms-key-arn"
+                  - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
         - PolicyName: DynamoDBAccessPolicy
           PolicyDocument:
             Version: "2012-10-17"
@@ -530,7 +586,10 @@ Resources:
         - IpProtocol: "-1"
           Description: "Allow outbound connectivity to any"
           CidrIp: "0.0.0.0/0"
-      VpcId: !Sub "{{resolve:ssm:/bodds/${Environment}/vpc-id}}"
+      VpcId: !If
+        - IsUsingBodsInfra
+        - Fn::Sub: "{{resolve:ssm:/bodds/${Environment}/vpc-id}}"
+        - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-vpc-id"
       Tags:
         - Key: Name
           Value: !Sub "${ProjectName}-${Environment}-tetl-common-lambda"
@@ -539,7 +598,10 @@ Resources:
     Type: AWS::EC2::SecurityGroupIngress
     Condition: IsNotLocal
     Properties:
-      GroupId: !Sub "{{resolve:ssm:/bodds/${Environment}/rds-proxy-sg-id}}"
+      GroupId: !If
+        - IsUsingBodsInfra
+        - !Sub "{{resolve:ssm:/bodds/${Environment}/rds-proxy-sg-id}}"
+        - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-lambda-sg-id"
       Description: !Sub "Allow inbound connectivity from ${ProjectName}-${Environment}-tetl-common-lambda"
       IpProtocol: tcp
       FromPort: 5432

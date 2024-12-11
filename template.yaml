@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: Backend resources associated with the BODS (Bus Open Data Service) service
 
@@ -11,75 +11,61 @@ Parameters:
     Type: String
   AvlConsumerApiBaseUrl:
     Type: String
-    Default: 'https://6tfu67dcng.execute-api.eu-west-2.amazonaws.com/v1'
+    Default: "https://6tfu67dcng.execute-api.eu-west-2.amazonaws.com/v1"
   CavlConsumerUrl:
     Type: String
-    Default: 'https://api-consumer-cavl-internal.dev.itoworld.com'
+    Default: "https://api-consumer-cavl-internal.dev.itoworld.com"
   GtfsApiBaseUrl:
     Type: String
-    Default: 'https://gtfs.test.integrated-data.dft-create-data.com'
+    Default: "https://gtfs.test.integrated-data.dft-create-data.com"
   RdsDbHostAddr:
     Type: String
-    Default: ''
+    Default: ""
   RdsDbPort:
     Type: Number
     Default: 5432
 
 Conditions:
-  IsLocal: !Equals [!Ref Environment, "local"]
-  IsNotLocal: !Not [!Equals [!Ref Environment, "local"]]
+  IsStandalone: !Equals [!Ref Environment, "standalone"]
+  IsNotStandalone: !Not [!Equals [!Ref Environment, "standalone"]]
+
 Resources:
-  LocalResources:
+  StandaloneResources:
     Type: AWS::Serverless::Application
-    Condition: IsLocal
+    Condition: IsStandalone
     Properties:
-      Location: './timetables-etl-local.yaml'
+      Location: "./timetables-etl-standalone.yaml"
       Parameters:
         Environment: !Ref Environment
         ProjectName: !Ref ProjectName
 
-
-  PeriodicTasks:
+  TimetablesEtl:
     Type: AWS::Serverless::Application
+    Condition: IsNotStandalone
     Properties:
-      Location: './periodic-tasks.yaml'
+      Location: "./timetables-etl.yaml"
       Parameters:
         Environment: !Ref Environment
         ProjectName: !Ref ProjectName
-        AvlConsumerApiBaseUrl: !Ref AvlConsumerApiBaseUrl
-        CavlConsumerUrl: !Ref CavlConsumerUrl
-        GtfsApiBaseUrl: !Ref GtfsApiBaseUrl
-        RdsDbHostAddr: !Ref RdsDbHostAddr
         RdsDbPort: !Ref RdsDbPort
         BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
 
-  TimetablesEtl:
-      Type: AWS::Serverless::Application
-      Condition: IsNotLocal
-      Properties:
-          Location: './timetables-etl.yaml'
-          Parameters:
-              Environment: !Ref Environment
-              ProjectName: !Ref ProjectName
-              RdsDbPort: !Ref RdsDbPort
-              BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
-
-  TimetablesEtlLocal:
-      Type: AWS::Serverless::Application
-      Condition: IsLocal
-      DependsOn: LocalResources
-      Properties:
-          Location: './timetables-etl.yaml'
-          Parameters:
-              Environment: !Ref Environment
-              ProjectName: !Ref ProjectName
-              RdsDbPort: !Ref RdsDbPort
-              BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
+  TimetablesEtlStandalone:
+    Type: AWS::Serverless::Application
+    Condition: IsStandalone
+    DependsOn: StandaloneResources
+    Properties:
+      Location: "./timetables-etl.yaml"
+      Parameters:
+        Environment: !Ref Environment
+        ProjectName: !Ref ProjectName
+        RdsDbPort: !Ref RdsDbPort
+        BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
 
   BoilerplateLambdaLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
-      LayerName: !Sub '${ProjectName}-${Environment}-boilerplate-layer'
+      LayerName: !Sub "${ProjectName}-${Environment}-boilerplate-layer"
       ContentUri: ./src/boilerplate
       CompatibleRuntimes:
         - python3.11
