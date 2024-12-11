@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: Supporting services for the execution of the timetables ETL process
 
@@ -9,19 +9,18 @@ Parameters:
   ProjectName:
     Description: The name of the project
     Type: String
-  RdsDbHostAddr:
-    Type: String
   RdsDbPort:
     Type: Number
+    Default: 5432
   BoilerplateLambdaLayerArn:
     Type: String
   DynamoDBTableName:
     Type: String
-    Default: ''
+    Default: ""
 
 Conditions:
-  IsNotLocal: !Not [!Equals [!Ref Environment, 'local']]
-  UseDefaultTableName: !Equals [!Ref DynamoDBTableName, '']
+  IsNotLocal: !Not [!Equals [!Ref Environment, "local"]]
+  UseDefaultTableName: !Equals [!Ref DynamoDBTableName, ""]
 
 Globals:
   Function:
@@ -32,37 +31,59 @@ Globals:
     MemorySize: 256
     KmsKeyArn: !If
       - IsNotLocal
-      - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+      - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
       - !Ref AWS::NoValue
     VpcConfig: !If
       - IsNotLocal
       - SubnetIds:
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-0}}'
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-1}}'
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-2}}'
+          - !Sub "{{resolve:ssm:/bodds/${Environment}/private-subnet-0}}"
+          - !Sub "{{resolve:ssm:/bodds/${Environment}/private-subnet-1}}"
+          - !Sub "{{resolve:ssm:/bodds/${Environment}/private-subnet-2}}"
         SecurityGroupIds:
           - !GetAtt CommonLambdaSecurityGroup.GroupId
-      - !Ref AWS::NoValue
+      - SubnetIds:
+          - Fn::ImportValue:
+              Fn::Sub: "${ProjectName}-${Environment}-local-subnet-1-id"
+          - Fn::ImportValue:
+              Fn::Sub: "${ProjectName}-${Environment}-local-subnet-2-id"
+        SecurityGroupIds:
+          - Fn::ImportValue:
+              Fn::Sub: "${ProjectName}-${Environment}-local-lambda-sg-id"
+
     Environment:
       Variables:
         HTTPS_PROXY: !If
           - IsNotLocal
-          - !Sub 'http://squid.bodds.${Environment}:3128'
+          - !Sub "http://squid.bodds.${Environment}:3128"
           - !Ref AWS::NoValue
         PROJECT_ENV: !Ref Environment
         PROJECT_NAME: !Ref ProjectName
         POSTGRES_HOST: !If
           - IsNotLocal
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
-          - !Ref RdsDbHostAddr
-        POSTGRES_PORT: !Ref RdsDbPort
+          - !Sub "{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}"
+          - Fn::ImportValue:
+              Fn::Sub: "${ProjectName}-${Environment}-local-rds-endpoint"
+        POSTGRES_PORT: !If
+          - IsNotLocal
+          - Fn::ImportValue:
+              Fn::Sub: "${ProjectName}-${Environment}-local-rds-port"
+          - !Ref RdsDbPort
+        POSTGRES_PASSWORD: !If
+          - IsNotLocal
+          - !Sub
+            - "{{resolve:secretsmanager:${SecretArn}:SecretString:password}}"
+            - SecretArn:
+                Fn::ImportValue:
+                  Fn::Sub: "${ProjectName}-${Environment}-local-rds-secret-arn"
+          - !Ref AWS::NoValue
         POSTGRES_DB: !If
           - IsNotLocal
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
-          - postgres
+          - !Sub "{{resolve:ssm:/bodds/${Environment}/rds-db-name}}"
+          - Fn::ImportValue:
+              Fn::Sub: "${ProjectName}-${Environment}-local-rds-db-name"
         POSTGRES_USER: !If
           - IsNotLocal
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
+          - !Sub "{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}"
           - bodds_rw
         DYNAMO_DB_TABLE_NAME: !Ref DynamoDBTableName
 
@@ -73,7 +94,7 @@ Resources:
   EtlStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
-      Name: !Sub '${ProjectName}-${Environment}-tetl-sm'
+      Name: !Sub "${ProjectName}-${Environment}-tetl-sm"
       Role: !GetAtt EtlStateMachineRole.Arn
       #      Events:
       #        S3ObjectCreatedEvent:
@@ -88,10 +109,10 @@ Resources:
       #                bucket:
       #                  name:
       #                    - !Ref PlaceholderS3Bucket
-      DefinitionUri: './src/timetables_etl.statemachine.json'
+      DefinitionUri: "./src/timetables_etl.statemachine.json"
       DefinitionSubstitutions:
         ClamAvScannerLambdaArn: !GetAtt ClamAvScannerLambda.Arn
-        TxCFileSchemaCheckArn: TxCFileSchemaCheck.Arn
+        TxCFileSchemaCheckArn: !GetAtt TxCFileSchemaCheck.Arn
         TxCFileValidatorLambdaArn: !GetAtt TxCFileValidatorLambda.Arn
         TxCFileAttributeExtractorLambdaArn: !GetAtt TxCFileAttributeExtractorLambda.Arn
         TimetablePostSchemaCheckLambdaArn: !GetAtt TimetablePostSchemaCheckLambda.Arn
@@ -104,9 +125,9 @@ Resources:
   EtlStateMachineRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub '${ProjectName}-${Environment}-tetl-sm-role'
+      RoleName: !Sub "${ProjectName}-${Environment}-tetl-sm-role"
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -115,7 +136,7 @@ Resources:
       Policies:
         - PolicyName: StateMachineLambdaInvokePolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -131,7 +152,7 @@ Resources:
                   - !GetAtt PlaceholderLambda.Arn
         - PolicyName: SNSPublishPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -139,7 +160,7 @@ Resources:
                 Resource: !GetAtt PlaceholderSNSTopic.TopicArn
         - PolicyName: SQSSendMessagePolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -151,10 +172,9 @@ Resources:
   ################################
   ClamAvScannerLambda:
     Type: AWS::Serverless::Function
-    DependsOn: ClamAvScannerLambdaLogGroup
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-clamav-scanner-lambda'
+      FunctionName: !Sub "${ProjectName}-${Environment}-clamav-scanner-lambda"
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: clamav_scanner.lambda_handler
@@ -162,18 +182,20 @@ Resources:
         - !Ref BoilerplateLambdaLayerArn
       Environment:
         Variables:
-          CLAMAV_HOST: !Sub 'http://clamav.bodds.${Environment}'
+          CLAMAV_HOST: !Sub "http://clamav.bodds.${Environment}"
           CLAMAV_PORT: 3310
       LoggingConfig:
         LogGroup: !Ref ClamAvScannerLambdaLogGroup
 
   ClamAvScannerLambdaLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-clamav-scanner-lambda'
+      LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-clamav-scanner-lambda"
       KmsKeyId: !If
         - IsNotLocal
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
         - !Ref AWS::NoValue
       RetentionInDays: 30
 
@@ -184,7 +206,7 @@ Resources:
     Type: AWS::Serverless::Function
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-file-schema-check-lambda'
+      FunctionName: !Sub "${ProjectName}-${Environment}-file-schema-check-lambda"
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: timetable_schema_check.lambda_handler
@@ -192,17 +214,19 @@ Resources:
         - !Ref BoilerplateLambdaLayerArn
       Environment:
         Variables:
-          TXC_XSD_PATH: 'TransXChange_general.xsd'
+          TXC_XSD_PATH: "TransXChange_general.xsd"
       LoggingConfig:
         LogGroup: !Ref TxCFileSchemaCheckLambdaLogGroup
 
   TxCFileSchemaCheckLambdaLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-file-schema-check-lambda'
+      LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-file-schema-check-lambda"
       KmsKeyId: !If
         - IsNotLocal
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
         - !Ref AWS::NoValue
       RetentionInDays: 30
 
@@ -213,7 +237,7 @@ Resources:
     Type: AWS::Serverless::Function
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-txc-file-validator-lambda'
+      FunctionName: !Sub "${ProjectName}-${Environment}-txc-file-validator-lambda"
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: txc_file_validator.lambda_handler
@@ -224,11 +248,13 @@ Resources:
 
   TxCFileValidatorLambdaLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-txc-file-validator-lambda'
+      LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-txc-file-validator-lambda"
       KmsKeyId: !If
         - IsNotLocal
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
         - !Ref AWS::NoValue
       RetentionInDays: 30
 
@@ -239,7 +265,7 @@ Resources:
     Type: AWS::Serverless::Function
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-txc-file-attribute-extractor-lambda'
+      FunctionName: !Sub "${ProjectName}-${Environment}-txc-file-attribute-extractor-lambda"
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: txc_file_data_extractor.lambda_handler
@@ -250,11 +276,13 @@ Resources:
 
   TxCFileAttributeExtractorLambdaLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-txc-file-attribute-extractor-lambda'
+      LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-txc-file-attribute-extractor-lambda"
       KmsKeyId: !If
         - IsNotLocal
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
         - !Ref AWS::NoValue
       RetentionInDays: 30
 
@@ -265,7 +293,7 @@ Resources:
     Type: AWS::Serverless::Function
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-timetable-post-schema-check-lambda'
+      FunctionName: !Sub "${ProjectName}-${Environment}-timetable-post-schema-check-lambda"
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: timetable_post_schema_check.lambda_handler
@@ -276,11 +304,13 @@ Resources:
 
   TimetablePostSchemaCheckLambdaLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-timetable-post-schema-check-lambda'
+      LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-timetable-post-schema-check-lambda"
       KmsKeyId: !If
         - IsNotLocal
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
         - !Ref AWS::NoValue
       RetentionInDays: 30
 
@@ -289,10 +319,9 @@ Resources:
   ##################################
   PTIValidationLambda:
     Type: AWS::Serverless::Function
-    DependsOn: PTIValidationLambdaLogGroup
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-pti-validation-lambda'
+      FunctionName: !Sub "${ProjectName}-${Environment}-pti-validation-lambda"
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: pti_validation.lambda_handler
@@ -303,11 +332,13 @@ Resources:
 
   PTIValidationLambdaLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-pti-validation-lambda'
+      LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-pti-validation-lambda"
       KmsKeyId: !If
         - IsNotLocal
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
         - !Ref AWS::NoValue
       RetentionInDays: 30
 
@@ -316,10 +347,9 @@ Resources:
   ##################################
   ExceptionHandlerLambda:
     Type: AWS::Serverless::Function
-    DependsOn: ExceptionHandlerLogGroup
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-exception-handler-lambda'
+      FunctionName: !Sub "${ProjectName}-${Environment}-exception-handler-lambda"
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: exception_handler.lambda_handler
@@ -330,11 +360,13 @@ Resources:
 
   ExceptionHandlerLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-exception-handler-lambda'
+      LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-exception-handler-lambda"
       KmsKeyId: !If
         - IsNotLocal
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
         - !Ref AWS::NoValue
       RetentionInDays: 30
 
@@ -343,10 +375,9 @@ Resources:
   #########################################
   PlaceholderLambda:
     Type: AWS::Serverless::Function
-    DependsOn: PlaceholderLambdaLogGroup
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-placeholder-lambda'
+      FunctionName: !Sub "${ProjectName}-${Environment}-placeholder-lambda"
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: app.lambda_handler
@@ -357,11 +388,13 @@ Resources:
 
   PlaceholderLambdaLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-placeholder-lambda'
+      LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-placeholder-lambda"
       KmsKeyId: !If
         - IsNotLocal
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
         - !Ref AWS::NoValue
       RetentionInDays: 30
 
@@ -371,7 +404,7 @@ Resources:
       checkov:
         skip:
           - id: CKV_AWS_26
-            comment: 'Ensure all data stored in the SNS topic is encrypted'
+            comment: "Ensure all data stored in the SNS topic is encrypted"
     Type: AWS::SNS::Topic
 
   PlaceholderSQSQueue:
@@ -380,15 +413,17 @@ Resources:
       checkov:
         skip:
           - id: CKV_AWS_27
-            comment: 'Ensure all data stored in the SQS queue is encrypted'
+            comment: "Ensure all data stored in the SQS queue is encrypted"
     Type: AWS::SQS::Queue
 
   DynamoDB:
     Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
     Properties:
       TableName: !If
         - UseDefaultTableName
-        - !Sub '${ProjectName}-${Environment}-dynamodb-cache'
+        - !Sub "${ProjectName}-${Environment}-dynamodb-cache"
         - !Ref DynamoDBTableName
       AttributeDefinitions:
         - AttributeName: Key
@@ -404,17 +439,18 @@ Resources:
         PointInTimeRecoveryEnabled: true
       SSESpecification:
         SSEEnabled: true
+        SSEType: KMS
         KMSMasterKeyId: !If
           - IsNotLocal
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-          - !Ref AWS::NoValue
+          - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
+          - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-local-kms-key-arn"
 
   CommonLambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub '${ProjectName}-${Environment}-tetl-common-lambda-execution-role'
+      RoleName: !Sub "${ProjectName}-${Environment}-tetl-common-lambda-execution-role"
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -425,35 +461,43 @@ Resources:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
         - !If
           - IsNotLocal
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
-          - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess' # Full access fallback
+          - !Sub "{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}"
+          - "arn:aws:iam::aws:policy/AmazonRDSFullAccess" # Full access fallback
         - !If
           - IsNotLocal
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
-          - 'arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess' # Read-only fallback
+          - !Sub "{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}"
+          - "arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess" # Read-only fallback
       Policies:
         - PolicyName: S3AccessPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
                   - s3:ListBucket
                 Resource: !If
                   - IsNotLocal
-                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3-app-bucket}}'
-                  - '*'
+                  - !Sub "{{resolve:ssm:/bodds/${Environment}/s3-app-bucket}}"
+                  - !Sub
+                    - "arn:aws:s3:::${BucketName}"
+                    - BucketName:
+                        Fn::ImportValue:
+                          Fn::Sub: "${ProjectName}-${Environment}-local-s3-bucket-name"
               - Effect: Allow
                 Action:
                   - s3:GetObject*
                   - s3:PutObject*
                 Resource: !If
                   - IsNotLocal
-                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3-app-bucket}}'
-                  - '*'
+                  - !Sub "{{resolve:ssm:/bodds/${Environment}/s3-app-bucket}}"
+                  - !Sub
+                    - "arn:aws:s3:::${BucketName}/*"
+                    - BucketName:
+                        Fn::ImportValue:
+                          Fn::Sub: "${ProjectName}-${Environment}-local-s3-bucket-name"
         - PolicyName: KMSAccessPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -462,11 +506,11 @@ Resources:
                   - kms:Encrypt
                 Resource: !If
                   - IsNotLocal
-                  - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-                  - '*'
+                  - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
+                  - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-local-kms-key-arn"
         - PolicyName: DynamoDBAccessPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -480,23 +524,23 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Condition: IsNotLocal
     Properties:
-      GroupDescription: !Sub 'Security group for ${ProjectName}-${Environment} Timetables ETL related lambda functions'
-      GroupName: !Sub '${ProjectName}-${Environment}-tetl-common-lambda'
+      GroupDescription: !Sub "Security group for ${ProjectName}-${Environment} Timetables ETL related lambda functions"
+      GroupName: !Sub "${ProjectName}-${Environment}-tetl-common-lambda"
       SecurityGroupEgress:
-        - IpProtocol: '-1'
-          Description: 'Allow outbound connectivity to any'
-          CidrIp: '0.0.0.0/0'
-      VpcId: !Sub '{{resolve:ssm:/bodds/${Environment}/vpc-id}}'
+        - IpProtocol: "-1"
+          Description: "Allow outbound connectivity to any"
+          CidrIp: "0.0.0.0/0"
+      VpcId: !Sub "{{resolve:ssm:/bodds/${Environment}/vpc-id}}"
       Tags:
         - Key: Name
-          Value: !Sub '${ProjectName}-${Environment}-tetl-common-lambda'
+          Value: !Sub "${ProjectName}-${Environment}-tetl-common-lambda"
 
   CommonLambdaSecurityGroupIngress:
     Type: AWS::EC2::SecurityGroupIngress
     Condition: IsNotLocal
     Properties:
-      GroupId: !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-sg-id}}'
-      Description: !Sub 'Allow inbound connectivity from ${ProjectName}-${Environment}-tetl-common-lambda'
+      GroupId: !Sub "{{resolve:ssm:/bodds/${Environment}/rds-proxy-sg-id}}"
+      Description: !Sub "Allow inbound connectivity from ${ProjectName}-${Environment}-tetl-common-lambda"
       IpProtocol: tcp
       FromPort: 5432
       ToPort: 5432

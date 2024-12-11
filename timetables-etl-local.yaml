@@ -1,0 +1,281 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Local resources for timetables ETL dev and self contained AWS Deployment
+
+Parameters:
+  Environment:
+    Type: String
+    Description: Environment name (should be 'local')
+  ProjectName:
+    Type: String
+    Description: Project name for resource tagging
+
+Resources:
+  # VPC Setup
+  LocalVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: "10.0.0.0/16"
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-${Environment}-vpc"
+
+  LocalSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref LocalVPC
+      CidrBlock: "10.0.1.0/24"
+      AvailabilityZone: !Select
+        - 0
+        - Fn::GetAZs: !Ref 'AWS::Region'
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-${Environment}-subnet-1"
+
+  LocalSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref LocalVPC
+      CidrBlock: "10.0.2.0/24"
+      AvailabilityZone: 
+        Fn::Select: 
+          - 1
+          - Fn::GetAZs: !Ref 'AWS::Region'
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-${Environment}-subnet-2"
+
+  # Internet Connectivity
+  LocalIGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-${Environment}-igw"
+
+  AttachLocalIGW:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref LocalVPC
+      InternetGatewayId: !Ref LocalIGW
+
+  LocalRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref LocalVPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-${Environment}-rt"
+
+  LocalDefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachLocalIGW
+    Properties:
+      RouteTableId: !Ref LocalRouteTable
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref LocalIGW
+
+  LocalSubnet1RouteAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref LocalSubnet1
+      RouteTableId: !Ref LocalRouteTable
+
+  LocalSubnet2RouteAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref LocalSubnet2
+      RouteTableId: !Ref LocalRouteTable
+
+  # KMS
+
+  LocalKMSKey:
+    Type: AWS::KMS::Key
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Properties:
+      Description: !Sub "KMS key for ${ProjectName} ${Environment} encryption"
+      EnableKeyRotation: true
+      PendingWindowInDays: 7
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+          - Sid: Allow RDS Service
+            Effect: Allow
+            Principal:
+              Service: "rds.amazonaws.com"
+            Action:
+              - "kms:Encrypt"
+              - "kms:Decrypt"
+              - "kms:ReEncrypt*"
+              - "kms:GenerateDataKey*"
+              - "kms:CreateGrant"
+              - "kms:ListGrants"
+              - "kms:DescribeKey"
+            Resource: "*"
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-${Environment}-local-kms-key"
+  LocalKMSKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${ProjectName}-${Environment}-local-kms-key"
+      TargetKeyId: !Ref LocalKMSKey
+
+  # RDS Setup
+  LocalRDSSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub "${ProjectName}/${Environment}/rds-credentials"
+      Description: "Credentials for local RDS instance"
+      KmsKeyId: !Ref LocalKMSKey
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "bodds_rw"}'
+        GenerateStringKey: "password"
+        PasswordLength: 32
+        ExcludeCharacters: '"@/\'''
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Delete
+  LocalRDSSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: "Subnet group for local RDS instance"
+      SubnetIds:
+        - !Ref LocalSubnet1
+        - !Ref LocalSubnet2
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-${Environment}-rds-subnet-group"
+
+  LocalRDSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${ProjectName}-${Environment}-rds-sg"
+      GroupDescription: !Sub "Security group for ${ProjectName}-${Environment} local RDS instance"
+      VpcId: !Ref LocalVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref LocalLambdaSecurityGroup
+
+  LocalLambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${ProjectName}-${Environment}-lambda-sg"
+      GroupDescription: !Sub "Security group for ${ProjectName}-${Environment} local lambda functions"
+      VpcId: !Ref LocalVPC
+      SecurityGroupEgress:
+        - IpProtocol: "-1"
+          Description: "Allow outbound connectivity to any"
+          CidrIp: "0.0.0.0/0"
+
+  LocalRDSInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      Engine: postgres
+      DBInstanceClass: db.t3.micro
+      AllocatedStorage: "20"
+      DBName: postgres
+      MasterUsername: !Sub "{{resolve:secretsmanager:${LocalRDSSecret}:SecretString:username}}"
+      MasterUserPassword: !Sub "{{resolve:secretsmanager:${LocalRDSSecret}:SecretString:password}}"
+      PubliclyAccessible: false
+      DBSubnetGroupName: !Ref LocalRDSSubnetGroup
+      VPCSecurityGroups:
+        - !GetAtt LocalRDSSecurityGroup.GroupId
+      BackupRetentionPeriod: 0
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-${Environment}-rds"
+      KmsKeyId: !Ref LocalKMSKey
+      StorageEncrypted: true
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Delete
+
+  # S3 Bucket
+  LocalS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${ProjectName}-${Environment}-bucket"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-${Environment}-bucket"
+
+Outputs:
+  LocalVpcId:
+    Description: VPC ID for local environment
+    Value: !Ref LocalVPC
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-local-vpc-id"
+
+  LocalSubnet1Id:
+    Description: First subnet ID
+    Value: !Ref LocalSubnet1
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-local-subnet-1-id"
+
+  LocalSubnet2Id:
+    Description: Second subnet ID
+    Value: !Ref LocalSubnet2
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-local-subnet-2-id"
+
+  LocalRdsEndpoint:
+    Description: RDS endpoint address
+    Value: !GetAtt LocalRDSInstance.Endpoint.Address
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-local-rds-endpoint"
+
+  LocalRdsPort:
+    Description: RDS port
+    Value: !GetAtt LocalRDSInstance.Endpoint.Port
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-local-rds-port"
+
+  LocalRdsSecretArn:
+    Description: ARN of RDS secret
+    Value: !Ref LocalRDSSecret
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-local-rds-secret-arn"
+  LocalRdsDbName:
+    Description: Name of the RDS database
+    Value: postgres
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-local-rds-db-name"
+  LocalS3BucketName:
+    Description: Name of the S3 bucket
+    Value: !Ref LocalS3Bucket
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-local-s3-bucket-name"
+
+  LocalLambdaSecurityGroupId:
+    Description: Security group ID for Lambda functions
+    Value: !Ref LocalLambdaSecurityGroup
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-local-lambda-sg-id"
+  LocalKMSKeyId: 
+    Description: KMS Key ID for encryption
+    Value: !Ref LocalKMSKey
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-local-kms-key-id"
+
+  LocalKMSKeyArn: 
+    Description: KMS Key ARN for encryption
+    Value: !GetAtt LocalKMSKey.Arn
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-local-kms-key-arn"

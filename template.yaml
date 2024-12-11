@@ -25,7 +25,20 @@ Parameters:
     Type: Number
     Default: 5432
 
+Conditions:
+  IsLocal: !Equals [!Ref Environment, "local"]
+  IsNotLocal: !Not [!Equals [!Ref Environment, "local"]]
 Resources:
+  LocalResources:
+    Type: AWS::Serverless::Application
+    Condition: IsLocal
+    Properties:
+      Location: './timetables-etl-local.yaml'
+      Parameters:
+        Environment: !Ref Environment
+        ProjectName: !Ref ProjectName
+
+
   PeriodicTasks:
     Type: AWS::Serverless::Application
     Properties:
@@ -41,15 +54,27 @@ Resources:
         BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
 
   TimetablesEtl:
-    Type: AWS::Serverless::Application
-    Properties:
-      Location: './timetables-etl.yaml'
-      Parameters:
-        Environment: !Ref Environment
-        ProjectName: !Ref ProjectName
-        RdsDbHostAddr: !Ref RdsDbHostAddr
-        RdsDbPort: !Ref RdsDbPort
-        BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
+      Type: AWS::Serverless::Application
+      Condition: IsNotLocal
+      Properties:
+          Location: './timetables-etl.yaml'
+          Parameters:
+              Environment: !Ref Environment
+              ProjectName: !Ref ProjectName
+              RdsDbPort: !Ref RdsDbPort
+              BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
+
+  TimetablesEtlLocal:
+      Type: AWS::Serverless::Application
+      Condition: IsLocal
+      DependsOn: LocalResources
+      Properties:
+          Location: './timetables-etl.yaml'
+          Parameters:
+              Environment: !Ref Environment
+              ProjectName: !Ref ProjectName
+              RdsDbPort: !Ref RdsDbPort
+              BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
 
   BoilerplateLambdaLayer:
     Type: AWS::Serverless::LayerVersion
