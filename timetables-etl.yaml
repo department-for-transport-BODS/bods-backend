@@ -16,12 +16,13 @@ Parameters:
   BoilerplateLambdaLayerArn:
     Type: String
   DynamoDBTableName:
-    Type: string
-    Default: !Sub "${ProjectName}-${Environment}-dynamodb-cache"
+    Type: String
+    Default: ""
   
 
 Conditions:
   IsNotLocal: !Not [!Equals [!Ref Environment, "local"]]
+  UseDefaultTableName: !Equals [!Ref DynamoDBTableName, ""]
 
 Globals:
   Function:
@@ -386,7 +387,10 @@ Resources:
   DynamoDB:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Ref DynamoDBTableName
+      TableName: !If 
+        - UseDefaultTableName
+        - !Sub "${ProjectName}-${Environment}-dynamodb-cache"
+        - !Ref DynamoDBTableName
       AttributeDefinitions:
         - AttributeName: Key
           AttributeType: S

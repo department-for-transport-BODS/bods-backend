@@ -31,7 +31,8 @@
       },
       "ItemProcessor": {
         "ProcessorConfig": {
-          "Mode": "DISTRIBUTED"
+          "Mode": "DISTRIBUTED",
+          "ExecutionType": "STANDARD"
         },
         "StartAt": "basicFileValidation",
         "States": {
@@ -170,9 +171,9 @@
         "ParsedCause.$": "States.StringToJson($.error_info.Cause)"
       },
       "ResultPath": "$.parsed_error",
-      "Next": "exceptionHandler"
+      "Next": "mainExceptionHandler"
     },
-    "exceptionHandler": {
+    "mainExceptionHandler": {
       "Type": "Task",
       "Resource": "${ExceptionHandlerLambdaArn}",
       "Parameters": {
