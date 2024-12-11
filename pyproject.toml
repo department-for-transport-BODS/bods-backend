@@ -12,6 +12,7 @@ packages = [
 
 [tool.poetry.scripts]
 local-etl = "tools.local_etl.cli:app"
+db-viewer = "tools.db_viewer.cli:app"
 
 [tool.poetry.dependencies]
 python = "^3.11"
