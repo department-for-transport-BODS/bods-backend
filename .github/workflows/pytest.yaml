@@ -30,7 +30,7 @@ jobs:
           export POSTGRES_ADMIN_USER="postgres"
           export POSTGRES_ADMIN_PASSWORD=`pwgen 12`
 
-          docker compose --compatibility up --force-recreate postgres
+          docker compose --compatibility up -d --force-recreate postgres
 
       - name: Install Poetry
         run: pipx install poetry
@@ -176,3 +176,7 @@ jobs:
           conclusion: ${{ steps.extract_coverage.outputs.conclusion }}
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-sha: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Stop Docker
+        if: always()
+        run: docker compose down
