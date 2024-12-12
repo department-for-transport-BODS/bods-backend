@@ -5,15 +5,18 @@ Description: Module contains the database functionality for
 
 from datetime import datetime
 from uuid import uuid4
-from sqlalchemy.exc import SQLAlchemyError, NoResultFound
+
 from common_layer.db import BodsDB
+from common_layer.db.constants import StepName
+from common_layer.db.manager import DbManager
 from common_layer.db.repositories.dataset_revision import get_revision
+from common_layer.exceptions.db_exceptions import *
 from common_layer.exceptions.file_exceptions import *
+from common_layer.exceptions.schema_exceptions import *
 from common_layer.exceptions.xml_file_exceptions import *
 from common_layer.exceptions.zip_file_exceptions import *
-from common_layer.exceptions.db_exceptions import *
-from common_layer.exceptions.schema_exceptions import *
 from common_layer.logger import logger
+from sqlalchemy.exc import NoResultFound, SQLAlchemyError
 
 
 def write_error_to_db(db, uuid, exceptions):
@@ -83,9 +86,12 @@ def get_file_processing_error_code(db, status):
 def get_step(db, name, category):
     with db.session as session:
         class_name = db.classes.pipelines_pipelineprocessingstep
-        return session.query(class_name).filter(
-                class_name.name == name).filter(
-                class_name.category == category).one()
+        return (
+            session.query(class_name)
+            .filter(class_name.name == name)
+            .filter(class_name.category == category)
+            .one()
+        )
 
 
 def write_processing_step(db, name, category):
@@ -106,29 +112,26 @@ def write_processing_step(db, name, category):
 
 
 def get_dataset_type(event):
-    dataset_type = event.get("dataset_type", "timetables")
+    dataset_type = event.get("DatasetType", "timetables")
     return "TIMETABLES" if dataset_type.startswith("timetable") else "FARES"
 
 
-def file_processing_result_to_db(step_name):
+def file_processing_result_to_db(step_name: StepName):
     def decorator(func):
         def wrapper(event, context):
             logger.info(f"step: {step_name}, event: {event}")
-            _db = BodsDB()
+            _db = DbManager.get_db()
             uuid = str(uuid4())
             try:
-                revision = get_revision(_db,
-                                        int(event["DatasetRevisionId"]))
-                step = write_processing_step(_db,
-                                             step_name,
-                                             get_dataset_type(event))
+                revision = get_revision(_db, int(event["DatasetRevisionId"]))
+                step = write_processing_step(_db, step_name, get_dataset_type(event))
                 result = get_file_processing_result_obj(
                     db=_db,
                     task_id=uuid,
                     status="STARTED",
                     filename=event["ObjectKey"].split("/")[-1],
                     pipeline_processing_step_id=step.id,
-                    revision_id=revision.id
+                    revision_id=revision.id,
                 )
                 fpr_ins = PipelineFileProcessingResult(_db)
                 # Add lambda entry
@@ -186,12 +189,13 @@ class PipelineFileProcessingResult:
             try:
                 buf_ = self._db.classes.pipelines_fileprocessingresult
                 result = (
-                    session.query(buf_).filter(
-                        buf_.revision_id == revision_id).one()
+                    session.query(buf_).filter(buf_.revision_id == revision_id).one()
                 )
             except NoResultFound as error:
-                msg = (f"Revision {revision_id} "
-                       f"doesn't exist pipelines_fileprocessingresult")
+                msg = (
+                    f"Revision {revision_id} "
+                    f"doesn't exist pipelines_fileprocessingresult"
+                )
                 logger.error(msg)
                 raise error
             else:
@@ -209,8 +213,7 @@ class PipelineFileProcessingResult:
             try:
                 # Get the record using task_id
                 buf_ = self._db.classes.pipelines_fileprocessingresult
-                result = session.query(buf_).filter(
-                    buf_.task_id == task_id).one()
+                result = session.query(buf_).filter(buf_.task_id == task_id).one()
                 if not result:
                     logger.warning(
                         f"No file processing result found for task {task_id}"
@@ -229,8 +232,10 @@ class PipelineFileProcessingResult:
                 return "File processing result updated successfully!"
             except Exception as error:
                 session.rollback()
-                msg = (f"Failed to update file processing result for task "
-                       f"{task_id} {error}")
+                msg = (
+                    f"Failed to update file processing result for task "
+                    f"{task_id} {error}"
+                )
                 logger.error(msg)
                 raise error
 
@@ -261,10 +266,8 @@ def txc_file_attributes_to_db(revision_id, attributes):
                     service_code=it.service.service_code,
                     origin=it.service.origin,
                     destination=it.service.destination,
-                    operating_period_start_date=it.service.
-                    operating_period_start_date,
-                    operating_period_end_date=it.service.
-                    operating_period_end_date,
+                    operating_period_start_date=it.service.operating_period_start_date,
+                    operating_period_end_date=it.service.operating_period_end_date,
                     public_use=it.service.public_use,
                     line_names=[line.line_name for line in it.service.lines],
                     hash=it.hash,

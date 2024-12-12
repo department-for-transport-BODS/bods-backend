@@ -1,8 +1,10 @@
 from io import BytesIO
 from zipfile import is_zipfile
-from common_layer.exceptions.zip_file_exceptions import ZipValidationException
-from common_layer.exceptions.xml_file_exceptions import XMLValidationException
+
+from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
+from common_layer.exceptions.xml_file_exceptions import XMLValidationException
+from common_layer.exceptions.zip_file_exceptions import ZipValidationException
 from common_layer.logger import logger
 from common_layer.s3 import S3
 from common_layer.xml_validator import FileValidator, XMLValidator
@@ -48,7 +50,7 @@ class TimetableFileValidator:
             XMLValidator(self.file).dangerous_xml_check()
 
 
-@file_processing_result_to_db(step_name="TxC File Validator")
+@file_processing_result_to_db(step_name=StepName.TXC_FILE_VALIDATOR)
 def lambda_handler(event, context):
     bucket = event["Bucket"]
     key = event["ObjectKey"]
@@ -69,4 +71,3 @@ def lambda_handler(event, context):
         "statusCode": 200,
         "body": f"File validation completed '{key}' from bucket '{bucket}'",
     }
-
