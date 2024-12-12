@@ -30,7 +30,7 @@ jobs:
           export POSTGRES_ADMIN_USER="postgres"
           export POSTGRES_ADMIN_PASSWORD=`pwgen 12`
 
-          docker-compose --compatibility up --force-recreate postgres
+          docker compose --compatibility up --force-recreate postgres
 
       - name: Install Poetry
         run: pipx install poetry
