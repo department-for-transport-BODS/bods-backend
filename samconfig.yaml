@@ -27,7 +27,7 @@ default:
   local_invoke:
     parameters:
       docker_network: lambda-local
-      region: 'eu-west-2'
+      region: "eu-west-2"
       parameter_overrides: ProjectName='bods-backend'
         Environment='local'
         RdsDbPort=5432
@@ -39,8 +39,7 @@ local:
       stack_name: "bods-backend-local-app-stack"
       s3_prefix: dev
       capabilities: "CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND"
-      parameter_overrides:
-        ProjectName='bods-backend'
+      parameter_overrides: ProjectName='bods-backend'
         Environment='local'
 
 dev:
@@ -49,8 +48,7 @@ dev:
       stack_name: "bods-backend-dev-app-stack"
       s3_prefix: dev
       capabilities: "CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND"
-      parameter_overrides: 
-        ProjectName='bods-backend'
+      parameter_overrides: ProjectName='bods-backend'
         Environment='dev'
         AvlConsumerApiBaseUrl='https://x87vl7rpc0.execute-api.eu-west-2.amazonaws.com/v1'
 
@@ -60,10 +58,10 @@ test:
       stack_name: "bods-backend-test-app-stack"
       s3_prefix: test
       capabilities: "CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND"
-      parameter_overrides:
-        ProjectName='bods-backend'
+      parameter_overrides: ProjectName='bods-backend'
         Environment='test'
         AvlConsumerApiBaseUrl='https://x87vl7rpc0.execute-api.eu-west-2.amazonaws.com/v1'
+        CavlConsumerUrl='https://api-consumer-cavl-preprod.itoworld.com'
 
 uat:
   deploy:
@@ -71,10 +69,10 @@ uat:
       stack_name: "bods-backend-uat-app-stack"
       s3_prefix: uat
       capabilities: "CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND"
-      parameter_overrides:
-        ProjectName='bods-backend'
+      parameter_overrides: ProjectName='bods-backend'
         Environment='uat'
         AvlConsumerApiBaseUrl='https://x87vl7rpc0.execute-api.eu-west-2.amazonaws.com/v1'
+        CavlConsumerUrl='https://api-consumer-cavl-staging.itoworld.com'
 
 prod:
   sync:
@@ -85,8 +83,8 @@ prod:
       stack_name: "bods-backend-prod-app-stack"
       s3_prefix: prod
       capabilities: "CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND"
-      parameter_overrides:
-        ProjectName='bods-backend'
+      parameter_overrides: ProjectName='bods-backend'
         Environment='prod'
         AvlConsumerApiBaseUrl='https://obg8kxwhq9.execute-api.eu-west-2.amazonaws.com/v1'
+        CavlConsumerUrl='https://api-consumer-cavl.itoworld.com'
         GtfsApiBaseUrl='https://gtfs.prod-temp.integrated-data.dft-create-data.com'

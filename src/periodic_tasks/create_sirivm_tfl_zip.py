@@ -8,10 +8,10 @@ def lambda_handler(event, context):
     try:
         AVL_CONSUMER_API_BASE_URL = environ.get("AVL_CONSUMER_API_BASE_URL", default="")
         url = f"{AVL_CONSUMER_API_BASE_URL}/siri-vm?downloadTfl=true"
-        _prefix = f"[SIRIVM_TFL_Archiving] URL {url} => "
+        _prefix = f"[SIRIVM_TFL_Archiving] => "
         logger.info(_prefix + "Begin archiving SIRIVM TFL data.")
         start = time.time()
-        archiver = SiriVMTFLArchiver(url)
+        archiver = SiriVMTFLArchiver(event, url)
         archiver.archive()
         end = time.time()
         logger.info(_prefix + f"Finished archiving in {end-start:.2f} seconds.")
