@@ -19,6 +19,7 @@ htmlcov/
 coverage.xml
 
 # Distribution / packaging
+.python-version
 .Python
 build/
 develop-eggs/

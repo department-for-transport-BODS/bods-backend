@@ -31,6 +31,7 @@ load_dotenv()
 
 # Tables to generate models for
 MODEL_GEN_TABLES = [
+    "avl_cavldataarchive",
     "data_quality_postschemaviolation",
     "data_quality_ptiobservation",
     "data_quality_ptivalidationresult",

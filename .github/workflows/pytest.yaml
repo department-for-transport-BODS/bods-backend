@@ -17,39 +17,67 @@ jobs:
       contents: read
       statuses: write
       checks: write
+
     steps:
-      - name: checkout
+      - name: Checkout
         uses: actions/checkout@v4
-      - name: Install poetry
+
+      - name: Start Docker
+        run: |
+          sudo apt update -y && \
+            sudo apt install -y pwgen
+
+          export POSTGRES_ADMIN_USER="postgres"
+          export POSTGRES_ADMIN_PASSWORD=`pwgen 12`
+
+          docker-compose --compatibility up --force-recreate postgres
+
+      - name: Install Poetry
         run: pipx install poetry
-      - name: Setup python
+
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: 3.11
           cache: "poetry"
-      - name: Install Dependencies (Poetry)
+
+      - name: Install Dependencies [Poetry]
         run: |
           poetry install
-      - name: Install pytest PR annotation plugin
+
+      - name: Install PyTest PR Annotation Plugin
         run: poetry run pip install pytest-github-actions-annotate-failures
+
+      - name: Prime Database
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_DB: bodds
+          POSTGRES_USER: bodds_rw
+          POSTGRES_PASSWORD: password
+          PROJECT_ENV: local
+        run: poetry run create-tables-dev
+
       - name: Run Pytest
         run: poetry run pytest --junitxml=junit/test-results.xml --cov-report term
+
       - name: Generate Test Summary
-        id: test_summary
+        id: test-summary
         uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # v2.4
         if: always()
         with:
           paths: junit/*.xml
+
       # Test Results Check
       - name: Prepare Test Summary
         if: always()
-        id: prepare_test_summary
+        id: prepare-test-summary
         shell: bash
         run: |
-          passed=${{ steps.test_summary.outputs.passed }}
-          failed=${{ steps.test_summary.outputs.failed }}
-          skipped=${{ steps.test_summary.outputs.skipped }}
-          total=${{ steps.test_summary.outputs.total }}
+          passed=${{ steps.test-summary.outputs.passed }}
+          failed=${{ steps.test-summary.outputs.failed }}
+          skipped=${{ steps.test-summary.outputs.skipped }}
+          total=${{ steps.test-summary.outputs.total }}
 
           # Default to neutral if we can't determine
           conclusion="neutral"
@@ -88,9 +116,9 @@ jobs:
         uses: ./.github/actions/create-check
         with:
           name: "Tests"
-          title: ${{ steps.prepare_test_summary.outputs.title }}
-          summary: ${{ steps.prepare_test_summary.outputs.summary }}
-          conclusion: ${{ steps.prepare_test_summary.outputs.conclusion }}
+          title: ${{ steps.prepare-test-summary.outputs.title }}
+          summary: ${{ steps.prepare-test-summary.outputs.summary }}
+          conclusion: ${{ steps.prepare-test-summary.outputs.conclusion }}
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-sha: ${{ github.event.pull_request.head.sha || github.sha }}
 
@@ -137,6 +165,7 @@ jobs:
           else
             echo "conclusion=success" >> $GITHUB_OUTPUT
           fi
+
       - name: Create Coverage Check
         if: always()
         uses: ./.github/actions/create-check

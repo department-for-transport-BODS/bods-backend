@@ -16,7 +16,7 @@ help:
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/[:].*[##]/:/'
 
 start-services: ## Start the Docker container services
-	docker-compose --env-file ./config/.env up --build --force-recreate
+	docker-compose --compatibility --env-file ./config/.env up --build --force-recreate
 
 stop-services: ## Stop the Docker container services
 	docker-compose --env-file ./config/.env down
