@@ -1,29 +1,33 @@
-from io import BytesIO
 import unittest
-from unittest.mock import patch, MagicMock
-from clamd import BufferTooLongError, ConnectionError
-from timetables_etl.clamav_scanner import (
-    FileScanner,
-    lambda_handler,
-    AntiVirusError,
-    SuspiciousFile,
-    ClamConnectionError)
-from tests.mock_db import MockedDB
+from io import BytesIO
+from unittest.mock import MagicMock, patch
 
-TEST_ENV_VAR = {"PROJECT_ENV": "dev",
-                "CLAMAV_HOST": "abc",
-                "CLAMAV_PORT": "1234",
-                "POSTGRES_HOST": "sample_host",
-                "POSTGRES_PORT": "1234",
-                "POSTGRES_USER": "sample_user",
-                "POSTGRES_PASSWORD": "<PASSWORD>"
-                }
+from clamd import BufferTooLongError, ConnectionError
+
+from tests.mock_db import MockedDB
+from timetables_etl.clamav_scanner import (
+    AntiVirusError,
+    ClamConnectionError,
+    FileScanner,
+    SuspiciousFile,
+    lambda_handler,
+)
+
+TEST_ENV_VAR = {
+    "PROJECT_ENV": "dev",
+    "CLAMAV_HOST": "abc",
+    "CLAMAV_PORT": "1234",
+    "POSTGRES_HOST": "sample_host",
+    "POSTGRES_PORT": "1234",
+    "POSTGRES_USER": "sample_user",
+    "POSTGRES_PASSWORD": "<PASSWORD>",
+}
 
 
 class TestClamAVScanner(unittest.TestCase):
     @patch("timetables_etl.clamav_scanner.ClamdNetworkSocket")
     def setUp(self, mock_clamd):
-        self.file_name = 'bodds.zip' # noqa
+        self.file_name = "bodds.zip"  # noqa
         self.mock_clamd_instance = mock_clamd.return_value
         self.file_scanner = FileScanner("http://clamavhost.example", 9876)
 
@@ -76,17 +80,19 @@ class TestClamAVScanner(unittest.TestCase):
     @patch("timetables_etl.clamav_scanner.S3")
     @patch("timetables_etl.clamav_scanner.FileScanner")
     @patch("timetables_etl.clamav_scanner.unzip")
-    @patch("common_layer.db.file_processing_result.BodsDB")
+    @patch("common_layer.db.file_processing_result.DbManager")
     @patch("common_layer.db.file_processing_result.get_revision")
     @patch("timetables_etl.clamav_scanner.update_file_hash_in_db")
     @patch.dict("os.environ", TEST_ENV_VAR)
-    def test_lambda_handler_success(self,
-                                    mock_update_file_hash,
-                                    mock_get_revision,
-                                    mock_db,
-                                    mock_unzip,
-                                    mock_file_scanner,
-                                    mock_s3):
+    def test_lambda_handler_success(
+        self,
+        mock_update_file_hash,
+        mock_get_revision,
+        mock_db,
+        mock_unzip,
+        mock_file_scanner,
+        mock_s3,
+    ):
         # Mock get revision
         mock_revision = MagicMock()
         mock_revision.id = 1
@@ -107,7 +113,7 @@ class TestClamAVScanner(unittest.TestCase):
             "Bucket": "test-bucket",
             "ObjectKey": self.file_name,
             "DatasetRevisionId": 123,
-            "DatasetType": "timetables"
+            "DatasetType": "timetables",
         }
 
         # Mock write_processing_step
@@ -131,16 +137,18 @@ class TestClamAVScanner(unittest.TestCase):
 
     @patch("timetables_etl.clamav_scanner.S3")
     @patch("timetables_etl.clamav_scanner.FileScanner")
-    @patch('common_layer.db.file_processing_result.BodsDB')
+    @patch("common_layer.db.file_processing_result.DbManager")
     @patch("common_layer.db.file_processing_result.get_revision")
     @patch("timetables_etl.clamav_scanner.update_file_hash_in_db")
     @patch.dict("os.environ", TEST_ENV_VAR)
-    def test_lambda_handler_clamav_unreachable(self,
-                                               mock_update_file_hash,
-                                               mock_get_revision,
-                                               mock_db,
-                                               mock_file_scanner,
-                                               mock_s3):
+    def test_lambda_handler_clamav_unreachable(
+        self,
+        mock_update_file_hash,
+        mock_get_revision,
+        mock_db,
+        mock_file_scanner,
+        mock_s3,
+    ):
         # Mock get revision
         mock_revision = MagicMock()
         mock_revision.id = 1
@@ -159,7 +167,7 @@ class TestClamAVScanner(unittest.TestCase):
             "Bucket": "test-bucket",
             "ObjectKey": self.file_name,
             "DatasetRevisionId": 123,
-            "DatasetType": "timetables"
+            "DatasetType": "timetables",
         }
 
         # Mock write_processing_step
@@ -176,21 +184,24 @@ class TestClamAVScanner(unittest.TestCase):
                     lambda_handler(event, None)
 
                 # Verify the exception message
-                self.assertIn("ClamAV is not running or accessible.",
-                              str(context.exception))
+                self.assertIn(
+                    "ClamAV is not running or accessible.", str(context.exception)
+                )
 
     @patch("timetables_etl.clamav_scanner.S3")
     @patch("timetables_etl.clamav_scanner.FileScanner")
-    @patch('common_layer.db.file_processing_result.BodsDB')
+    @patch("common_layer.db.file_processing_result.DbManager")
     @patch("common_layer.db.file_processing_result.get_revision")
     @patch("timetables_etl.clamav_scanner.update_file_hash_in_db")
     @patch.dict("os.environ", TEST_ENV_VAR)
-    def test_lambda_handler_scan_error(self,
-                                       mock_update_file_hash,
-                                       mock_get_revision,
-                                       mock_db,
-                                       mock_file_scanner,
-                                       mock_s3):
+    def test_lambda_handler_scan_error(
+        self,
+        mock_update_file_hash,
+        mock_get_revision,
+        mock_db,
+        mock_file_scanner,
+        mock_s3,
+    ):
         # Mock get revision
         mock_revision = MagicMock()
         mock_revision.id = 1
@@ -210,7 +221,7 @@ class TestClamAVScanner(unittest.TestCase):
             "Bucket": "test-bucket",
             "ObjectKey": self.file_name,
             "DatasetRevisionId": 123,
-            "DatasetType": "timetables"
+            "DatasetType": "timetables",
         }
         # Mock write_processing_step
         buf_ = "common_layer.db.file_processing_result.write_processing_step"
@@ -229,5 +240,5 @@ class TestClamAVScanner(unittest.TestCase):
                 self.assertIn("Scan failed", str(context.exception))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

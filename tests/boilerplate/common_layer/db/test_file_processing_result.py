@@ -236,7 +236,7 @@ class TestFileProcessingResult(unittest.TestCase):
         # Assert write_error_to_db was not called
         mock_write_error_to_db.assert_not_called()
 
-    @patch("common_layer.db.file_processing_result.BodsDB")
+    @patch("common_layer.db.file_processing_result.DbManager")
     @patch("common_layer.db.file_processing_result." "get_file_processing_result_obj")
     @patch("common_layer.db.file_processing_result.PipelineFileProcessingResult")
     @patch("common_layer.db.file_processing_result.write_error_to_db")
@@ -245,10 +245,10 @@ class TestFileProcessingResult(unittest.TestCase):
         mock_write_error_to_db,
         mock_file_proc_result,
         mock_get_file_processing_result_obj,
-        mock_bods_db,
+        mock_db_manager,
     ):
         # Configure mocks
-        mock_db_instance = mock_bods_db.return_value
+        mock_db_instance = mock_db_manager.get_db.return_value
         mock_result_obj = MagicMock()
         mock_get_file_processing_result_obj.return_value = mock_result_obj
         mock_pipeline_result_instance = mock_file_proc_result.return_value
@@ -279,7 +279,7 @@ class TestFileProcessingResult(unittest.TestCase):
         mock_pipeline_result_instance.create.assert_called_once_with(mock_result_obj)
         mock_pipeline_result_instance.update.assert_not_called()
 
-    @patch("common_layer.db.file_processing_result.BodsDB")
+    @patch("common_layer.db.file_processing_result.DbManager")
     def test_txc_file_attributes_to_db(self, mock_bods_db):
         mock_db_instance = mock_bods_db.return_value
 
@@ -345,7 +345,7 @@ class TestFileProcessingResult(unittest.TestCase):
         mock_session.bulk_save_objects.assert_called_once()
         mock_session.commit.assert_called_once()
 
-    @patch("common_layer.db.file_processing_result.BodsDB")
+    @patch("common_layer.db.file_processing_result.DbManager")
     def test_txc_file_attributes_to_db_exception(self, mock_bods_db):
         mock_db_instance = mock_bods_db.return_value
 
