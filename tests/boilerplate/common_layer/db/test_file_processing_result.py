@@ -280,8 +280,8 @@ class TestFileProcessingResult(unittest.TestCase):
         mock_pipeline_result_instance.update.assert_not_called()
 
     @patch("common_layer.db.file_processing_result.DbManager")
-    def test_txc_file_attributes_to_db(self, mock_bods_db):
-        mock_db_instance = mock_bods_db.return_value
+    def test_txc_file_attributes_to_db(self, mock_db_manager):
+        mock_db_instance = mock_db_manager.get_db.return_value
 
         # Mock the session context manager
         mock_session = MagicMock()
@@ -346,8 +346,8 @@ class TestFileProcessingResult(unittest.TestCase):
         mock_session.commit.assert_called_once()
 
     @patch("common_layer.db.file_processing_result.DbManager")
-    def test_txc_file_attributes_to_db_exception(self, mock_bods_db):
-        mock_db_instance = mock_bods_db.return_value
+    def test_txc_file_attributes_to_db_exception(self, mock_db_manager):
+        mock_db_instance = mock_db_manager.get_db.return_value
 
         # Mock the session context manager
         mock_session = MagicMock()

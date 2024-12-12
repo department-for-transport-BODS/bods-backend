@@ -249,7 +249,7 @@ def txc_file_attributes_to_db(revision_id, attributes):
 
     """
     try:
-        db_: BodsDB = BodsDB()
+        db_: BodsDB = DbManager.get_db()
         with db_.session as session_:
             db_table = db_.classes.organisation_txcfileattributes
             buffer = [
