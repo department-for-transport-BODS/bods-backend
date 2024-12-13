@@ -1,0 +1,4 @@
+psycopg[binary,pool]
+boto3
+structlog
+urllib3
