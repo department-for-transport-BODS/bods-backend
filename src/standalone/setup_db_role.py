@@ -1,3 +1,7 @@
+"""
+Create RDS Proxy Role using the Admin Credentials
+"""
+
 import json
 import logging
 import os
@@ -228,11 +232,22 @@ def create_db_connection(secret: dict[str, Any]) -> psycopg.Connection:
     """
     Create database connection with fallback authentication.
     First tries password auth, then falls back to IAM if that fails.
+
+    Returns:
+        psycopg.Connection: A valid database connection
+
+    Raises:
+        ValueError: If connection parameters are invalid
+        psycopg.OperationalError: If both auth methods fail
     """
-    host = os.environ["DB_HOST"]
-    port = os.environ["DB_PORT"]
-    dbname = os.environ["DB_NAME"]
-    username = secret["username"]
+    host = os.environ.get("DB_HOST")
+    port = os.environ.get("DB_PORT")
+    dbname = os.environ.get("DB_NAME")
+    username = secret.get("username")
+
+    # Validate required parameters
+    if not all([host, port, dbname, username]):
+        raise ValueError("Missing required database connection parameters")
 
     base_params = {
         "host": host,
@@ -254,8 +269,11 @@ def create_db_connection(secret: dict[str, Any]) -> psycopg.Connection:
 
     try:
         conn_params = {**base_params, "password": secret["password"]}
-        return psycopg.connect(**conn_params)
-    except psycopg.OperationalError as e:
+        conn = psycopg.connect(**conn_params)
+        if conn is None:
+            raise ValueError("Connection returned None")
+        return conn
+    except (psycopg.OperationalError, KeyError, ValueError) as e:
         logger.info(
             "password_auth_failed_attempting_iam",
             error=str(e),
@@ -266,20 +284,26 @@ def create_db_connection(secret: dict[str, Any]) -> psycopg.Connection:
         )
 
         # Second attempt - IAM authentication
-        try:
-            auth_token = generate_auth_token(host, port, username)
-            conn_params = {**base_params, "password": auth_token}
-            return psycopg.connect(**conn_params)
-        except psycopg.OperationalError as iam_error:
-            logger.error(
-                "iam_auth_failed",
-                error=str(iam_error),
-                host=host,
-                port=port,
-                dbname=dbname,
-                user=username,
-            )
-            raise
+        if host is not None and port is not None and username is not None:
+
+            try:
+                auth_token = generate_auth_token(host, port, username)
+                conn_params = {**base_params, "password": auth_token}
+                conn = psycopg.connect(**conn_params)
+                if conn is None:
+                    raise ValueError("IAM connection returned None") from e
+                return conn
+            except (psycopg.OperationalError, ValueError) as iam_error:
+                logger.error(
+                    "iam_auth_failed",
+                    error=str(iam_error),
+                    host=host,
+                    port=port,
+                    dbname=dbname,
+                    user=username,
+                )
+                raise
+    raise ValueError("Could not establish DB Connection")
 
 
 def setup_database_role(
@@ -302,77 +326,71 @@ def setup_database_role(
         # Create role if it doesn't exist with password
         {
             "name": "create_role",
-            "sql": """
-               DO $$ 
-               BEGIN
-                   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = %s) THEN
-                       CREATE USER %s WITH PASSWORD %s;
-                   ELSE
-                       ALTER USER %s WITH PASSWORD %s;
-                   END IF;
-               END
-               $$;
-           """,
-            "params": (
-                role_name,
-                role_name,
-                app_secret["password"],
-                role_name,
-                app_secret["password"],
-            ),
+            "sql": f"""
+                    DO $$ 
+                    BEGIN
+                        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '{role_name}') THEN
+                            CREATE USER {role_name} WITH PASSWORD %s;
+                        ELSE
+                            ALTER USER {role_name} WITH PASSWORD %s;
+                        END IF;
+                    END
+                    $$;
+                """,
+            "params": (app_secret["password"], app_secret["password"]),
         },
         # Configure authentication methods
         {
             "name": "configure_auth",
-            "sql": """
-               GRANT rds_iam TO %s;
-               ALTER USER %s WITH LOGIN;
-           """,
-            "params": (role_name, role_name),
+            "sql": f"""
+                GRANT rds_iam TO {role_name};
+                ALTER USER {role_name} WITH LOGIN;
+            """,
+            "params": None,  # No parameters needed anymore
         },
         # Grant database privileges
         {
             "name": "grant_db_privileges",
-            "sql": "GRANT ALL PRIVILEGES ON DATABASE %s TO %s;",
-            "params": (os.environ["DB_NAME"], role_name),
+            "sql": f"GRANT ALL PRIVILEGES ON DATABASE {os.environ['DB_NAME']} TO {role_name};",
+            "params": None,
         },
         # Grant schema privileges
         {
             "name": "grant_schema_privileges",
-            "sql": """
-               DO $$
-               BEGIN
-                   -- Grant privileges on public schema
-                   GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO %s;
-                   GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO %s;
-                   GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO %s;
-                   
-                   -- Set default privileges for future objects
-                   ALTER DEFAULT PRIVILEGES IN SCHEMA public 
-                       GRANT ALL PRIVILEGES ON TABLES TO %s;
-                   ALTER DEFAULT PRIVILEGES IN SCHEMA public 
-                       GRANT ALL PRIVILEGES ON SEQUENCES TO %s;
-                   ALTER DEFAULT PRIVILEGES IN SCHEMA public 
-                       GRANT ALL PRIVILEGES ON FUNCTIONS TO %s;
+            "sql": f"""
+                DO $$
+                BEGIN
+                    -- Grant privileges on public schema
+                    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO {role_name};
+                    GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO {role_name};
+                    GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO {role_name};
+                    
+                    -- Set default privileges for future objects
+                    ALTER DEFAULT PRIVILEGES IN SCHEMA public 
+                        GRANT ALL PRIVILEGES ON TABLES TO {role_name};
+                    ALTER DEFAULT PRIVILEGES IN SCHEMA public 
+                        GRANT ALL PRIVILEGES ON SEQUENCES TO {role_name};
+                    ALTER DEFAULT PRIVILEGES IN SCHEMA public 
+                        GRANT ALL PRIVILEGES ON FUNCTIONS TO {role_name};
 
-                   -- Grant minimal required catalog access
-                   GRANT USAGE ON SCHEMA pg_catalog TO %s;
-                   GRANT USAGE ON SCHEMA information_schema TO %s;
-                   
-                   -- Grant access to specific catalog views
-                   GRANT SELECT ON pg_catalog.pg_namespace TO %s;
-                   GRANT SELECT ON pg_catalog.pg_class TO %s;
-                   GRANT SELECT ON pg_catalog.pg_roles TO %s;
-                   GRANT SELECT ON pg_catalog.pg_user TO %s;
-                   GRANT SELECT ON pg_catalog.pg_tables TO %s;
-                   GRANT SELECT ON pg_catalog.pg_views TO %s;
-                   
-                   -- Grant access to information_schema views
-                   GRANT SELECT ON ALL TABLES IN SCHEMA information_schema TO %s;
-               END
-               $$;
-           """,
-            "params": tuple([role_name] * 15),
+                    -- Grant minimal required catalog access
+                    GRANT USAGE ON SCHEMA pg_catalog TO {role_name};
+                    GRANT USAGE ON SCHEMA information_schema TO {role_name};
+                    
+                    -- Grant access to specific catalog views
+                    GRANT SELECT ON pg_catalog.pg_namespace TO {role_name};
+                    GRANT SELECT ON pg_catalog.pg_class TO {role_name};
+                    GRANT SELECT ON pg_catalog.pg_roles TO {role_name};
+                    GRANT SELECT ON pg_catalog.pg_user TO {role_name};
+                    GRANT SELECT ON pg_catalog.pg_tables TO {role_name};
+                    GRANT SELECT ON pg_catalog.pg_views TO {role_name};
+                    
+                    -- Grant access to information_schema views
+                    GRANT SELECT ON ALL TABLES IN SCHEMA information_schema TO {role_name};
+                END
+                $$;
+            """,
+            "params": None,  # No parameters needed anymore since we're using f-strings
         },
     ]
 
@@ -419,8 +437,12 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         if event["RequestType"] in ["Create", "Update"]:
             admin_secret, app_secret = get_secrets()
 
-            with create_db_connection(admin_secret) as conn:
-                setup_database_role(conn, app_secret)
+            conn = create_db_connection(admin_secret)
+            if not conn:
+                raise ValueError("Failed to create database connection")
+
+            setup_database_role(conn, app_secret)
+            conn.close()
 
             logger.info("setup_completed_successfully")
             send_cloudformation_response(event, context, "SUCCESS")

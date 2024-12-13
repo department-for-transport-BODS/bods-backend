@@ -374,7 +374,9 @@ Resources:
               Action:
                 - secretsmanager:GetSecretValue
                 - secretsmanager:DescribeSecret
-              Resource: !Ref StandaloneRDSSecret
+              Resource:
+                - !Ref StandaloneRDSSecret
+                - !Ref StandaloneRDSAppUserSecret
             - Effect: Allow
               Action:
                 - kms:Decrypt
