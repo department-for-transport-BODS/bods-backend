@@ -1,8 +1,7 @@
 import time
-from logger import logger
+from common_layer.logger import logger
+from common_layer.archiver import SiriVMArchiver
 from os import environ
-from archiver import SiriVMArchiver
-
 
 def lambda_handler(event, context):
     try:

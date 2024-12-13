@@ -16,7 +16,7 @@ help:
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/[:].*[##]/:/'
 
 start-services: ## Start the Docker container services
-	docker-compose --env-file ./config/.env up --build --force-recreate
+	docker-compose --compatibility --env-file ./config/.env up --build --force-recreate
 
 stop-services: ## Stop the Docker container services
 	docker-compose --env-file ./config/.env down
@@ -26,17 +26,29 @@ clean-services: ## Stop and remove all related Docker container services
 	docker rm -f postgres pgadmin 2>/dev/null
 	docker volume rm ${DIRNAME}_postgres-data 2>/dev/null
 
-build-backend: ## Build the backend functions using sam
-	@sam build
+generate-models: ## Generate models.py from BODs DB (DB must be running)
+	python model_gen.py
+
+build-backend: generate-models ## Build the backend functions using sam
+	@samlocal build
+	python localstack/scripts/bootstrap_layers.py 
 
 build-backend-sync: ## Build the backend api using sam and keep contents synced for test
 	@nodemon --watch './src/**/*.py' --signal SIGTERM --exec 'sam' build -e "py"
 
 deploy-backend: ## Deploy the backend functions to target environment using sam
-	@sam deploy --config-env=$(ENV) --confirm-changeset --resolve-s3
+	@samlocal deploy --config-env=$(ENV) --resolve-s3
 
 run-backend-function: ## Runs a standalone backend function locally using sam (default: GenerateSiriVmLambda)
 	@sam local invoke $(FUNC)
+
+run-timetables-etl: ## Start execution of the timetables etl stepfunction
+	$(eval CURRENT_STEP_FUNCTION_EXECUTION_ARN := $(shell ./localstack/scripts/run-timetables-etl.sh))
+	@echo $(CURRENT_STEP_FUNCTION_EXECUTION_ARN) > current_execution_arn
+	@echo "Execution ARN set to: $(CURRENT_STEP_FUNCTION_EXECUTION_ARN)"
+
+check-timetables-etl: ## Check the status of the last timetables stepfunction execution
+	./localstack/scripts/check-timetables-etl.sh "$$(cat current_execution_arn)"
 
 run-db-initialise: cmd-exists-psql ## Initialise the database with users/roles and schema
 	@echo "Initialising the database..."

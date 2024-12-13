@@ -10,7 +10,16 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Unit test / coverage reports
+htmlcov/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+coverage.xml
+
 # Distribution / packaging
+.python-version
 .Python
 build/
 develop-eggs/
@@ -51,3 +60,6 @@ venv.bak/
 
 # SAM default build folder
 .aws-sam/
+
+# Pycharm
+.idea/

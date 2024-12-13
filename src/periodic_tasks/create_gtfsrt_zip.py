@@ -1,6 +1,6 @@
 import time
-from archiver import GTFSRTArchiver
-from logger import logger
+from common_layer.archiver import GTFSRTArchiver
+from common_layer.logger import logger
 from os import environ
 
 
