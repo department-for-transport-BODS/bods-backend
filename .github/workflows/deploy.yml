@@ -11,10 +11,10 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - "test"
-      - "main"
+      - 'test'
+      - 'main'
     paths:
-      - "VERSION"
+      - 'VERSION'
   release:
     types: [published]
   repository_dispatch:
@@ -174,7 +174,7 @@ jobs:
           confluence_page_id: ${{ vars.CONFLUENCE_PAGE_ID }}
           atlassian_username: ${{ secrets.ATLASSIAN_USERNAME }}
           atlassian_api_token: ${{ secrets.ATLASSIAN_API_TOKEN }}
-          component: "bods-backend"
+          component: 'bods-backend'
           environment: ${{ env.RC_ENV }}
           version: ${{ needs.validation.outputs.VERSION }}
         continue-on-error: true

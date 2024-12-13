@@ -1,4 +1,4 @@
-name: "code quality check"
+name: 'code quality check'
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    - cron: "0 8 * * 4"
+    - cron: '0 8 * * 4'
 
 jobs:
   codeql:
@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: ["cpp", "csharp", "go", "java", "javascript", "python"]
+        language: ['python']
 
     steps:
       - name: Checkout repository

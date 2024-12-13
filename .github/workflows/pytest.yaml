@@ -2,12 +2,12 @@ name: pytest
 on:
   pull_request:
     branches:
-      - "dev"
-      - "!test"
-      - "!main"
+      - 'dev'
+      - '!test'
+      - '!main'
     paths:
-      - "src/**"
-      - "tests/**"
+      - 'src/**'
+      - 'tests/**'
 
 jobs:
   pytest:
@@ -39,7 +39,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.11
-          cache: "poetry"
+          cache: 'poetry'
 
       - name: Install Dependencies [Poetry]
         run: |
@@ -115,7 +115,7 @@ jobs:
         if: always()
         uses: ./.github/actions/create-check
         with:
-          name: "Tests"
+          name: 'Tests'
           title: ${{ steps.prepare-test-summary.outputs.title }}
           summary: ${{ steps.prepare-test-summary.outputs.summary }}
           conclusion: ${{ steps.prepare-test-summary.outputs.conclusion }}
@@ -170,7 +170,7 @@ jobs:
         if: always()
         uses: ./.github/actions/create-check
         with:
-          name: "Coverage"
+          name: 'Coverage'
           title: ${{ steps.extract_coverage.outputs.title }}
           summary: ${{ steps.extract_coverage.outputs.summary }}
           conclusion: ${{ steps.extract_coverage.outputs.conclusion }}

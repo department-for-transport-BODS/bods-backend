@@ -3,11 +3,11 @@ name: checkov
 on:
   pull_request:
     paths-ignore:
-      - ".github/CODEOWNERS"
-      - ".github/settings.yml"
-      - "README.md"
-      - "CHANGELOG.md"
-      - ".gitignore"
+      - '.github/CODEOWNERS'
+      - '.github/settings.yml'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - '.gitignore'
 
 jobs:
   checkov:
