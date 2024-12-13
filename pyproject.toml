@@ -9,6 +9,9 @@ packages = [
   { from = "src/boilerplate", include = "common_layer" },
 ]
 
+[tool.poetry.scripts]
+create-tables-dev = "src.boilerplate.common_layer.database.create_tables:create_db_tables"
+
 [tool.poetry.dependencies]
 python = "^3.11"
 lxml = "^5.3.0"
