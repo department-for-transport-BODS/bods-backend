@@ -18,7 +18,6 @@ Parameters:
   DynamoDBTableName:
     Type: String
     Default: ""
-  
 
 Conditions:
   IsNotLocal: !Not [!Equals [!Ref Environment, "local"]]
@@ -383,11 +382,11 @@ Resources:
           - id: CKV_AWS_27
             comment: "Ensure all data stored in the SQS queue is encrypted"
     Type: AWS::SQS::Queue
-  
+
   DynamoDB:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !If 
+      TableName: !If
         - UseDefaultTableName
         - !Sub "${ProjectName}-${Environment}-dynamodb-cache"
         - !Ref DynamoDBTableName
