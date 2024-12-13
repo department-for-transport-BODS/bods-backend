@@ -619,7 +619,7 @@ Resources:
                   Action: rds-db:connect
                   Resource:
                     - !Sub
-                      - "arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:${ProxyId}/${AppUsername}"
+                      - "${ProxyId}/${AppUsername}"
                       - ProxyId:
                           Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-rds-proxy-resource-id"
                         AppUsername:

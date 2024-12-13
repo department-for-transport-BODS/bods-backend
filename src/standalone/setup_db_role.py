@@ -13,6 +13,7 @@ import psycopg
 import structlog
 import urllib3
 from botocore.exceptions import ClientError
+from psycopg import sql
 from psycopg.rows import dict_row
 from structlog.processors import _json_fallback_handler
 from structlog.stdlib import get_logger
@@ -265,15 +266,13 @@ def create_db_connection(secret: dict[str, Any]) -> psycopg.Connection:
         port=port,
         dbname=dbname,
         user=username,
+        params=str({k: v for k, v in base_params.items() if k != "password"}),
     )
 
     try:
         conn_params = {**base_params, "password": secret["password"]}
-        conn = psycopg.connect(**conn_params)
-        if conn is None:
-            raise ValueError("Connection returned None")
-        return conn
-    except (psycopg.OperationalError, KeyError, ValueError) as e:
+        return psycopg.connect(**conn_params)
+    except (psycopg.OperationalError, KeyError) as e:
         logger.info(
             "password_auth_failed_attempting_iam",
             error=str(e),
@@ -306,143 +305,253 @@ def create_db_connection(secret: dict[str, Any]) -> psycopg.Connection:
     raise ValueError("Could not establish DB Connection")
 
 
-def setup_database_role(
+def check_role_existence(cur: psycopg.Cursor, role_name: str) -> bool:
+    check_role_sql = sql.SQL(
+        "SELECT EXISTS(SELECT 1 FROM pg_roles WHERE rolname = {role}) as exists"
+    )
+    cur.execute(check_role_sql.format(role=sql.Literal(role_name)))
+
+    result = cur.fetchone()
+    if result is None:
+        raise ValueError(
+            "Database query returned no result when checking role existence"
+        )
+
+    # Access by column name since we're using dict_row
+    role_exists = result["exists"]  # type: ignore
+
+    logger.info("checked_role_existence", role_name=role_name, exists=role_exists)
+    return role_exists
+
+
+def execute_role_creation(
+    cur: psycopg.Cursor, role_name: str, password: str, is_update: bool
+) -> None:
+    """Execute the SQL to create or update a role."""
+    action = "updating" if is_update else "creating"
+    logger.info(f"{action}_role", role_name=role_name)
+
+    sql_template = "ALTER USER {role}" if is_update else "CREATE USER {role}"
+    create_sql = sql.SQL(f"{sql_template} WITH PASSWORD {{password}}")
+
+    cur.execute(
+        create_sql.format(
+            role=sql.Identifier(role_name), password=sql.Literal(password)
+        )
+    )
+
+
+def configure_iam_auth(cur: psycopg.Cursor, role_name: str) -> None:
+    """Configure IAM authentication for the role."""
+    logger.info("configuring_iam_auth", role_name=role_name)
+    iam_sql = sql.SQL("GRANT rds_iam TO {role}; ALTER USER {role} WITH LOGIN")
+    cur.execute(iam_sql.format(role=sql.Identifier(role_name)))
+
+
+def validate_app_secret(app_secret: dict[str, Any]) -> None:
+    """Validate the app secret contains required fields."""
+    if "password" not in app_secret:
+        raise ValueError("App secret missing required 'password' field")
+
+
+def handle_database_error(
+    e: psycopg.Error, role_name: str, conn: psycopg.Connection
+) -> None:
+    """Handle PostgreSQL-specific errors."""
+    error_msg = f"Database error: {str(e)}"
+    logger.error(
+        "failed_to_create_or_update_role",
+        role_name=role_name,
+        error=error_msg,
+        error_type=type(e).__name__,
+        pgcode=getattr(e, "pgcode", None),
+        pgerror=getattr(e, "pgerror", None),
+    )
+    conn.rollback()
+    raise RuntimeError(error_msg) from e
+
+
+def handle_generic_error(
+    e: Exception, role_name: str, conn: psycopg.Connection
+) -> None:
+    """Handle any other unexpected errors."""
+    error_msg = f"Unexpected error: {str(e)}"
+    logger.error(
+        "failed_to_create_or_update_role",
+        role_name=role_name,
+        error=error_msg,
+        error_type=type(e).__name__,
+        error_details=repr(e),
+    )
+    conn.rollback()
+    raise RuntimeError(error_msg) from e
+
+
+def create_or_update_role(
     conn: psycopg.Connection, app_secret: dict[str, Any], role_name: str = "bodds_rw"
 ) -> None:
-    """
-    Set up application database role with password and IAM authentication.
+    """Main function to create or update a database role."""
+    logger.info("creating_or_updating_role", role_name=role_name)
 
-    Args:
-        conn: Database connection to use for setup
-        app_secret: Secret containing the application user credentials
-        role_name: Name of the role to create/update, defaults to "bodds_rw"
+    try:
+        validate_app_secret(app_secret)
 
-    Raises:
-        Exception: If any database operations fail
+        with conn.cursor() as cur:
+            # Check if role exists and create/update accordingly
+            role_exists = check_role_existence(cur, role_name)
+            execute_role_creation(cur, role_name, app_secret["password"], role_exists)
+            configure_iam_auth(cur, role_name)
+
+        conn.commit()
+        logger.info("role_created_or_updated_successfully", role_name=role_name)
+
+    except psycopg.Error as e:
+        handle_database_error(e, role_name, conn)
+    except Exception as e:
+        handle_generic_error(e, role_name, conn)
+
+
+def grant_role_permissions(
+    conn: psycopg.Connection, role_name: str = "bodds_rw"
+) -> None:
     """
-    logger.info("setting_up_database_role", role_name=role_name)
+    Grants necessary permissions to the database role.
+    """
+    logger.info("granting_role_permissions", role_name=role_name)
 
     statements = [
-        # Create role if it doesn't exist with password
-        {
-            "name": "create_role",
-            "sql": f"""
-                    DO $$ 
-                    BEGIN
-                        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '{role_name}') THEN
-                            CREATE USER {role_name} WITH PASSWORD %s;
-                        ELSE
-                            ALTER USER {role_name} WITH PASSWORD %s;
-                        END IF;
-                    END
-                    $$;
-                """,
-            "params": (app_secret["password"], app_secret["password"]),
-        },
-        # Configure authentication methods
-        {
-            "name": "configure_auth",
-            "sql": f"""
-                GRANT rds_iam TO {role_name};
-                ALTER USER {role_name} WITH LOGIN;
-            """,
-            "params": None,  # No parameters needed anymore
-        },
-        # Grant database privileges
-        {
-            "name": "grant_db_privileges",
-            "sql": f"GRANT ALL PRIVILEGES ON DATABASE {os.environ['DB_NAME']} TO {role_name};",
-            "params": None,
-        },
-        # Grant schema privileges
-        {
-            "name": "grant_schema_privileges",
-            "sql": f"""
-                DO $$
-                BEGIN
-                    -- Grant privileges on public schema
-                    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO {role_name};
-                    GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO {role_name};
-                    GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO {role_name};
-                    
-                    -- Set default privileges for future objects
-                    ALTER DEFAULT PRIVILEGES IN SCHEMA public 
-                        GRANT ALL PRIVILEGES ON TABLES TO {role_name};
-                    ALTER DEFAULT PRIVILEGES IN SCHEMA public 
-                        GRANT ALL PRIVILEGES ON SEQUENCES TO {role_name};
-                    ALTER DEFAULT PRIVILEGES IN SCHEMA public 
-                        GRANT ALL PRIVILEGES ON FUNCTIONS TO {role_name};
-
-                    -- Grant minimal required catalog access
-                    GRANT USAGE ON SCHEMA pg_catalog TO {role_name};
-                    GRANT USAGE ON SCHEMA information_schema TO {role_name};
-                    
-                    -- Grant access to specific catalog views
-                    GRANT SELECT ON pg_catalog.pg_namespace TO {role_name};
-                    GRANT SELECT ON pg_catalog.pg_class TO {role_name};
-                    GRANT SELECT ON pg_catalog.pg_roles TO {role_name};
-                    GRANT SELECT ON pg_catalog.pg_user TO {role_name};
-                    GRANT SELECT ON pg_catalog.pg_tables TO {role_name};
-                    GRANT SELECT ON pg_catalog.pg_views TO {role_name};
-                    
-                    -- Grant access to information_schema views
-                    GRANT SELECT ON ALL TABLES IN SCHEMA information_schema TO {role_name};
-                END
-                $$;
-            """,
-            "params": None,  # No parameters needed anymore since we're using f-strings
-        },
+        # Database privileges
+        sql.SQL("GRANT ALL PRIVILEGES ON DATABASE {db} TO {role}").format(
+            db=sql.Identifier(os.environ["DB_NAME"]), role=sql.Identifier(role_name)
+        ),
+        # Schema privileges
+        sql.SQL(
+            """
+            GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO {role};
+            GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO {role};
+            GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO {role};
+        """
+        ).format(role=sql.Identifier(role_name)),
+        # Default privileges
+        sql.SQL(
+            """
+            ALTER DEFAULT PRIVILEGES IN SCHEMA public 
+                GRANT ALL PRIVILEGES ON TABLES TO {role};
+            ALTER DEFAULT PRIVILEGES IN SCHEMA public 
+                GRANT ALL PRIVILEGES ON SEQUENCES TO {role};
+            ALTER DEFAULT PRIVILEGES IN SCHEMA public 
+                GRANT ALL PRIVILEGES ON FUNCTIONS TO {role};
+        """
+        ).format(role=sql.Identifier(role_name)),
+        # Schema usage
+        sql.SQL(
+            """
+            GRANT USAGE ON SCHEMA pg_catalog TO {role};
+            GRANT USAGE ON SCHEMA information_schema TO {role};
+        """
+        ).format(role=sql.Identifier(role_name)),
+        # Catalog access
+        sql.SQL(
+            """
+            GRANT SELECT ON pg_catalog.pg_namespace TO {role};
+            GRANT SELECT ON pg_catalog.pg_class TO {role};
+            GRANT SELECT ON pg_catalog.pg_roles TO {role};
+            GRANT SELECT ON pg_catalog.pg_user TO {role};
+            GRANT SELECT ON pg_catalog.pg_tables TO {role};
+            GRANT SELECT ON pg_catalog.pg_views TO {role};
+            
+            GRANT SELECT ON ALL TABLES IN SCHEMA information_schema TO {role};
+        """
+        ).format(role=sql.Identifier(role_name)),
     ]
 
     try:
         with conn.cursor() as cur:
             for statement in statements:
                 try:
-                    logger.info(
-                        "executing_statement",
-                        statement_name=statement["name"],
-                    )
-                    cur.execute(statement["sql"], statement.get("params", None))
-                    logger.info(
-                        "executed_statement",
-                        statement_name=statement["name"],
-                        role_name=role_name,
-                    )
+                    cur.execute(statement)
                 except Exception as e:
-                    logger.error(
-                        "failed_to_execute_statement",
-                        statement_name=statement["name"],
-                        error=str(e),
-                    )
+                    logger.error("failed_to_execute_permission_statement", error=str(e))
                     raise
 
         conn.commit()
-        logger.info("committed_changes", role_name=role_name)
+        logger.info("permissions_granted", role_name=role_name)
 
     except Exception as e:
-        logger.error("failed_to_setup_database_role", error=str(e))
+        logger.error("failed_to_grant_permissions", error=str(e))
         conn.rollback()
         raise
 
 
+def setup_database_role(
+    conn: psycopg.Connection, app_secret: dict[str, Any], role_name: str = "bodds_rw"
+) -> None:
+    """
+    Main function to set up the database role with all necessary permissions.
+    """
+    try:
+        logger.info("starting_database_role_setup", role_name=role_name)
+
+        if not isinstance(app_secret, dict):
+            raise ValueError(f"Invalid app_secret type: {type(app_secret)}")
+
+        if "password" not in app_secret:
+            raise ValueError("app_secret missing required 'password' field")
+
+        create_or_update_role(conn, app_secret, role_name)
+        grant_role_permissions(conn, role_name)
+
+        logger.info(
+            "database_role_setup_completed", role_name=role_name, setup_status="success"
+        )
+    except Exception as e:
+        error_msg = str(e)
+        logger.error(
+            "database_role_setup_failed",
+            role_name=role_name,
+            error=error_msg,
+            error_type=type(e).__name__,
+            setup_status="failed",
+        )
+        raise RuntimeError(f"Database role setup failed: {error_msg}") from e
+
+
+def validate_environment() -> None:
+    """
+    Validate all required environment variables are present
+    """
+    required_vars = [
+        "SECRET_ARN",
+        "APP_SECRET_ARN",
+        "DB_HOST",
+        "DB_PORT",
+        "DB_NAME",
+        "AWS_REGION",
+    ]
+
+    missing_vars = [var for var in required_vars if not os.environ.get(var)]
+
+    if missing_vars:
+        msg = f"Missing required environment variables: {', '.join(missing_vars)}"
+        logger.error("missing_environment_variables", missing_vars=missing_vars)
+        raise ValueError(msg)
+
+
 def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """
-    Main Lambda handler
+    Main Lambda handler with proper connection management
     """
     configure_logging()
+    validate_environment()
     logger.info("Starting DB Role Lambda", input_data=event)
+    conn = None
 
     try:
         # Only process Create and Update events
         if event["RequestType"] in ["Create", "Update"]:
             admin_secret, app_secret = get_secrets()
-
             conn = create_db_connection(admin_secret)
-            if not conn:
-                raise ValueError("Failed to create database connection")
-
             setup_database_role(conn, app_secret)
-            conn.close()
 
             logger.info("setup_completed_successfully")
             send_cloudformation_response(event, context, "SUCCESS")
@@ -462,6 +571,13 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     except Exception as e:
         error_message = str(e)
         logger.error("setup_failed", error=error_message)
-        # Make sure to send the failure response before raising
         send_cloudformation_response(event, context, "FAILED", {"Error": error_message})
-        raise  # Re-raise the exception after sending the response
+        raise
+
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+                logger.info("database_connection_closed")
+            except Exception as e:
+                logger.error("error_closing_connection", error=str(e))
