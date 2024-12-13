@@ -193,3 +193,4 @@ class MockedDB:
 
 if __name__ == "__main__":
     DB = MockedDB()
+    print(DB.classes)
