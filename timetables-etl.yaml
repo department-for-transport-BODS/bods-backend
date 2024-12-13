@@ -118,6 +118,7 @@ Resources:
       Role: !GetAtt TimetablesStateMachineRole.Arn
       DefinitionUri: './src/timetables_etl.statemachine.json'
       DefinitionSubstitutions:
+        InitializePipelineLambdaArn: !GetAtt InitializePipelineLambda.Arn
         ClamAvScannerLambdaArn: !GetAtt ClamAvScannerLambda.Arn
         FileValidationLambdaArn: !GetAtt FileValidationLambda.Arn
         SchemaCheckLambdaArn: !GetAtt SchemaCheckLambda.Arn
@@ -251,6 +252,33 @@ Resources:
   #       - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
   #       - !Ref AWS::NoValue
   #     RetentionInDays: 14
+
+  #########################################
+  #### Initialize Pipeline Lambda ####
+  #########################################
+  InitializePipelineLambda:
+    Type: AWS::Serverless::Function
+    DependsOn: InitializePipelineLambdaLogGroup
+    ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
+    Properties:
+      FunctionName: !Sub "${ProjectName}-${Environment}-initialize-pipeline-lambda"
+      Role: !GetAtt CommonLambdaExecutionRole.Arn
+      CodeUri: ./src/timetables_etl
+      Handler: initialize_pipeline.lambda_handler
+      Layers:
+        - !Ref BoilerplateLambdaLayerArn
+      LoggingConfig:
+        LogGroup: !Ref InitializePipelineLambdaLogGroup
+
+  InitializePipelineLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-initialize-pipeline-lambda"
+      KmsKeyId: !If
+        - IsNotLocal
+        - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
+        - !Ref AWS::NoValue
+      RetentionInDays: 30
 
   ################################
   #### CLAM AV SCANNER LAMBDA ####
