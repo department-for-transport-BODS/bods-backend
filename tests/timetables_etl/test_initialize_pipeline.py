@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from common_layer.database.models.model_pipelines import DatasetETLTaskResult, TaskState
+from common_layer.database.models.model_pipelines import TaskState
 from common_layer.enums import FeedStatus
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 
