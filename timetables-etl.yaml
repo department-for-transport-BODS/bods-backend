@@ -262,7 +262,7 @@ Resources:
     DependsOn: InitializePipelineLambdaLogGroup
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-initialize-pipeline-lambda'
+      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-initialize-pipeline-lambda'
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: initialize_pipeline.lambda_handler
