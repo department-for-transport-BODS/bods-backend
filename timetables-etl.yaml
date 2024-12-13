@@ -84,7 +84,7 @@ Globals:
           - !Sub "{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}"
           - !If
             - IsStandalone
-            - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-rds-endpoint"
+            - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-rds-proxy-endpoint"
             - !Sub RdsEndpoint
         POSTGRES_PORT: !If
           - IsUsingBodsInfra
@@ -113,7 +113,10 @@ Globals:
         POSTGRES_USER: !If
           - IsUsingBodsInfra
           - !Sub "{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}"
-          - bodds_rw
+          - !If
+            - IsStandalone
+            - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-rds-app-username"
+            - bodds_rw
         DYNAMO_DB_TABLE_NAME: !Ref DynamoDBTableName
 
 Resources:
@@ -518,11 +521,17 @@ Resources:
         - !If
           - IsUsingBodsInfra
           - !Sub "{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}"
-          - "arn:aws:iam::aws:policy/AmazonRDSFullAccess"
+          - !If
+            - IsStandalone
+            - !Ref AWS::NoValue
+            - "arn:aws:iam::aws:policy/AmazonRDSFullAccess"
         - !If
           - IsUsingBodsInfra
           - !Sub "{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}"
-          - "arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess"
+          - !If
+            - IsStandalone
+            - !Ref AWS::NoValue
+            - "arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess"
       Policies:
         - PolicyName: S3AccessPolicy
           PolicyDocument:
@@ -575,7 +584,60 @@ Resources:
                   - dynamodb:UpdateItem
                   - dynamodb:DeleteItem
                 Resource: !GetAtt DynamoDB.Arn
-
+        - !If
+          - IsStandalone
+          - PolicyName: SecretsManagerAccessPolicy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - secretsmanager:GetSecretValue
+                  Resource:
+                    Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-rds-secret-arn"
+          - !Ref AWS::NoValue
+        - !If
+          - IsStandalone
+          - PolicyName: RDSIAMAuthPolicy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action: rds-db:connect
+                  Resource: !Sub
+                    - "arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser/${RdsEndpoint}/*"
+                    - RdsEndpoint:
+                        Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-rds-endpoint"
+          - !Ref AWS::NoValue
+        - !If
+          - IsStandalone
+          - PolicyName: RDSProxyAccessPolicy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action: rds-db:connect
+                  Resource:
+                    - !Sub
+                      - "arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:${ProxyId}/${AppUsername}"
+                      - ProxyId:
+                          Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-rds-proxy-resource-id"
+                        AppUsername:
+                          Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-rds-app-username"
+          - !Ref AWS::NoValue
+        - !If
+          - IsStandalone
+          - PolicyName: RDSInstanceAccessPolicy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - rds:DescribeDBInstances
+                    - rds:ListTagsForResource
+                  Resource:
+                    Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-rds-arn"
+          - !Ref AWS::NoValue
   CommonLambdaSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Condition: IsNotLocal
@@ -601,7 +663,7 @@ Resources:
       GroupId: !If
         - IsUsingBodsInfra
         - !Sub "{{resolve:ssm:/bodds/${Environment}/rds-proxy-sg-id}}"
-        - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-lambda-sg-id"
+        - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-rds-sg-id"
       Description: !Sub "Allow inbound connectivity from ${ProjectName}-${Environment}-tetl-common-lambda"
       IpProtocol: tcp
       FromPort: 5432
