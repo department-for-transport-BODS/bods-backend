@@ -1,14 +1,22 @@
 {
-  "StartAt": "ClamAvScanner",
+  "StartAt": "ProcessInput",
   "States": {
+    "ProcessInput": {
+      "Type": "Pass",
+      "ResultPath": "$",
+      "Parameters": {
+        "detail.$": "$[0].detail"
+      },
+      "Next": "ClamAvScanner"
+    },
     "ClamAvScanner": {
       "Type": "Task",
       "Resource": "${ClamAvScannerLambdaArn}",
       "Parameters": {
         "Bucket.$": "$.detail.bucket.name",
         "ObjectKey.$": "$.detail.object.key",
-        "DatasetRevisionId.$": "$.detail.dataset_revision_id",
-        "DatasetType.$": "$.detail.dataset_type"
+        "DatasetRevisionId.$": "$.detail.datasetRevisionId",
+        "DatasetType.$": "$.detail.datasetType"
       },
       "ResultPath": "$.scanner",
       "Next": "FileLevelProcessing",
@@ -25,7 +33,7 @@
     "FileLevelProcessing": {
       "Type": "Map",
       "Parameters": {
-        "DatasetRevisionId.$": "$.detail.dataset_revision_id"
+        "DatasetRevisionId.$": "$.detail.datasetRevisionId"
       },
       "ItemReader": {
         "Resource": "arn:aws:states:::s3:listObjectsV2",
@@ -159,7 +167,7 @@
       "Type": "Task",
       "Resource": "${ExceptionHandlerLambdaArn}",
       "Parameters": {
-        "DatasetEtlTaskResultId.$": "$.detail.dataset_etl_task_result_id",
+        "DatasetEtlTaskResultId.$": "$.detail.datasetEtlTaskResultId",
         "ErrorInfo.$": "States.StringToJson($.parsed_error.ParsedCause.errorMessage)"
       },
       "End": true

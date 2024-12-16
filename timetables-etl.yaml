@@ -19,14 +19,10 @@ Parameters:
     Type: Number
   BoilerplateLambdaLayerArn:
     Type: String
-  DynamoDBTableName:
-    Type: String
-    Default: ''
 
 Conditions:
   IsNotLocal: !Not [!Equals [!Ref Environment, 'local']]
   IsNotProd: !Not [!Equals [!Ref Environment, 'prod']]
-  UseDefaultTableName: !Equals [!Ref DynamoDBTableName, '']
 
 Globals:
   Function:
@@ -69,7 +65,7 @@ Globals:
           - IsNotLocal
           - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
           - bodds_rw
-        DYNAMO_DB_TABLE_NAME: !Ref DynamoDBTableName
+        DYNAMODB_TABLE_NAME: !Ref TimetablesCache
 
 Resources:
   ##################################
@@ -107,8 +103,7 @@ Resources:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
-                Action:
-                  - lambda:InvokeFunction
+                Action: lambda:InvokeFunction
                 Resource:
                   - !GetAtt ClamAvScannerLambda.Arn
                   - !GetAtt FileValidationLambda.Arn
@@ -130,7 +125,31 @@ Resources:
       RoleArn: !GetAtt TimetablesStateMachineTriggerRole.Arn
       KmsKeyIdentifier: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
       Source: !GetAtt TimetablesProcessQueue.Arn
+      SourceParameters:
+        SqsQueueParameters:
+          BatchSize: 1
       Target: !GetAtt TimetablesStateMachine.Arn
+      TargetParameters:
+        InputTemplate: |
+          {
+            "detail": {
+              "bucket": {
+                "name": <$.body.detail.bucket.name>
+              },
+              "object": {
+                "key": <$.body.detail.object.key>
+              },
+              "datasetEtlTaskResultId": <$.body.detail.dataset_etl_task_result_id>,
+              "datasetRevisionId": <$.body.detail.dataset_revision_id>,
+              "datasetType": <$.body.detail.dataset_type>
+            }
+          }
+        StepFunctionStateMachineParameters:
+          InvocationType: 'FIRE_AND_FORGET'
+      # LogConfiguration:
+      #   Level: 'INFO'
+      #   CloudwatchLogsLogDestination:
+      #     LogGroupArn: !GetAtt TimetablesStateMachineTriggerLogGroup.Arn
 
   TimetablesStateMachineTriggerRole:
     Type: AWS::IAM::Role
@@ -154,17 +173,34 @@ Resources:
                   - sqs:ReceiveMessage
                   - sqs:DeleteMessage
                   - sqs:GetQueueAttributes
-                Resource:
-                  - !GetAtt TimetablesProcessQueue.Arn
+                Resource: !GetAtt TimetablesProcessQueue.Arn
         - PolicyName: StateMachineInvokePolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
+                Action: states:StartExecution
+                Resource: !GetAtt TimetablesStateMachine.Arn
+        - PolicyName: KMSAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
                 Action:
-                  - states:StartExecution
-                Resource:
-                  - !GetAtt TimetablesStateMachine.Arn
+                  - kms:GenerateDataKey
+                  - kms:Decrypt
+                  - kms:Encrypt
+                Resource: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+
+  # TimetablesStateMachineTriggerLogGroup:
+  #   Type: AWS::Logs::LogGroup
+  #   Properties:
+  #     LogGroupName: !Sub '/aws/eventbridge/pipe/${ProjectName}-${Environment}-${SubFunction}-sm-trigger'
+  #     KmsKeyId: !If
+  #       - IsNotLocal
+  #       - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+  #       - !Ref AWS::NoValue
+  #     RetentionInDays: 14
 
   ################################
   #### CLAM AV SCANNER LAMBDA ####
@@ -362,10 +398,7 @@ Resources:
     Type: AWS::DynamoDB::Table
     ## checkov:skip=CKV_AWS_28:Ensure DynamoDB point in time recovery (backup) is enabled
     Properties:
-      TableName: !If
-        - UseDefaultTableName
-        - !Sub '${ProjectName}-${Environment}-${SubFunction}-cache'
-        - !Ref DynamoDBTableName
+      TableName: !Sub '${ProjectName}-${Environment}-${SubFunction}-cache'
       AttributeDefinitions:
         - AttributeName: Key
           AttributeType: S
@@ -443,8 +476,7 @@ Resources:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
-                Action:
-                  - s3:ListBucket
+                Action: s3:ListBucket
                 Resource: !If
                   - IsNotLocal
                   - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/app/arn}}'
@@ -488,7 +520,7 @@ Resources:
     Properties:
       QueueName: !Sub '${ProjectName}-${Environment}-${SubFunction}-process-queue'
       KmsMasterKeyId: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-      VisibilityTimeout: 300
+      VisibilityTimeout: 180
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt TimetablesDeadLetterQueue.Arn
         maxReceiveCount: 3

@@ -7,7 +7,7 @@ from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 from common_layer.logger import logger
 
-TABLE_NAME = os.getenv("DYNAMO_DB_TABLE_NAME")
+TABLE_NAME = os.getenv("DYNAMODB_TABLE_NAME")
 
 
 class DynamoDB:
