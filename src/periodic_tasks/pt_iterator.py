@@ -32,7 +32,7 @@ def lambda_handler(event, context):
 
         wait_time = max(0, target_time - time.time())
         if wait_time > 0:
-            print(f"Sleeping for {wait_time:.2f} seconds to align with {interval} seconds.")
+            logger.info(f"Sleeping for {wait_time:.2f} seconds to align with {interval} seconds.")
             time.sleep(wait_time)
 
         invoke_start = time.time()
@@ -45,7 +45,7 @@ def lambda_handler(event, context):
             logger.info(f"Synchronous invocation time: {invoke_time:.4f} seconds")
             logger.info(f"Response from {function_name}: {response['Payload'].read().decode()}")
         except Exception as e:
-            print(f"Error invoking {function_name}: {str(e)}")
+            logger.error(f"Error invoking {function_name}: {str(e)}")
             invoke_time = None
 
     return {
