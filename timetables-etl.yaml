@@ -695,11 +695,3 @@ Resources:
       KmsKeyId:
         Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
       RetentionInDays: 30
-  CreateTablesCustomResource:
-    Type: Custom::CreateTables
-    Condition: IsStandalone
-    DependsOn:
-      - CreateTablesLambda
-    Properties:
-      ServiceToken: !GetAtt CreateTablesLambda.Arn
-      Version: "1.0"
