@@ -13,8 +13,8 @@ formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-client = boto3.client("lambda")
 
+client = boto3.client("lambda", region_name=environ.get("AWS_REGION", "eu-west-2"))
 
 def lambda_handler(event, context):
     intervals = event.get("intervals", [])
