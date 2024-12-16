@@ -32,6 +32,7 @@ class ProjectEnvironment(str, Enum):
     DEVELOPMENT = "development"
     STAGING = "staging"
     PRODUCTION = "production"
+    STANDALONE = "standalone"
 
 
 class PostgresSettings(BaseSettings):
@@ -76,10 +77,19 @@ class PostgresSettings(BaseSettings):
         """
         if self.use_iam_auth and not iam_token:
             raise ValueError("IAM token required for non-local environment")
+        password = iam_token if self.use_iam_auth else self.POSTGRES_PASSWORD
+        logger.info(
+            "Constructing Connection URL",
+            username=self.POSTGRES_USER,
+            host=self.POSTGRES_HOST,
+            port=self.POSTGRES_PORT,
+            database=self.POSTGRES_DB,
+            ssl_mode=self.ssl_mode,
+        )
         url = MultiHostUrl.build(
             scheme="postgresql+psycopg2",
             username=self.POSTGRES_USER,
-            password=self.POSTGRES_PASSWORD,
+            password=password,
             host=self.POSTGRES_HOST,
             port=self.POSTGRES_PORT,
             path=self.POSTGRES_DB,
@@ -155,7 +165,7 @@ class SqlDB:
 
             connection_url = self._settings.postgres.get_connection_url(iam_token)
 
-            self._engine = create_engine(connection_url)
+            self._engine = create_engine(connection_url, pool_pre_ping=True)
 
             if self.backend == DatabaseBackend.POSTGRESQL:
                 self._token_expiration = datetime.now() + self._token_lifetime

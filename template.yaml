@@ -38,7 +38,19 @@ Resources:
       Parameters:
         Environment: !Ref Environment
         ProjectName: !Ref ProjectName
-
+  PeriodicTasks:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: "./periodic-tasks.yaml"
+      Parameters:
+        Environment: !Ref Environment
+        ProjectName: !Ref ProjectName
+        AvlConsumerApiBaseUrl: !Ref AvlConsumerApiBaseUrl
+        CavlConsumerUrl: !Ref CavlConsumerUrl
+        GtfsApiBaseUrl: !Ref GtfsApiBaseUrl
+        RdsDbHostAddr: !Ref RdsDbHostAddr
+        RdsDbPort: !Ref RdsDbPort
+        BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
   TimetablesEtl:
     Type: AWS::Serverless::Application
     Condition: IsNotStandalone

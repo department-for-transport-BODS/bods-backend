@@ -306,6 +306,9 @@ def create_db_connection(secret: dict[str, Any]) -> psycopg.Connection:
 
 
 def check_role_existence(cur: psycopg.Cursor, role_name: str) -> bool:
+    """
+    Check if role exists
+    """
     check_role_sql = sql.SQL(
         "SELECT EXISTS(SELECT 1 FROM pg_roles WHERE rolname = {role}) as exists"
     )
@@ -377,7 +380,7 @@ def handle_generic_error(
     """Handle any other unexpected errors."""
     error_msg = f"Unexpected error: {str(e)}"
     logger.error(
-        "failed_to_create_or_update_role",
+        "Failed to Create or update role",
         role_name=role_name,
         error=error_msg,
         error_type=type(e).__name__,
@@ -400,7 +403,9 @@ def create_or_update_role(
             # Check if role exists and create/update accordingly
             role_exists = check_role_existence(cur, role_name)
             execute_role_creation(cur, role_name, app_secret["password"], role_exists)
-            configure_iam_auth(cur, role_name)
+
+            # If using RDS Proxy Don't use IAM Auth
+            # configure_iam_auth(cur, role_name)
 
         conn.commit()
         logger.info("role_created_or_updated_successfully", role_name=role_name)
@@ -516,6 +521,54 @@ def setup_database_role(
         raise RuntimeError(f"Database role setup failed: {error_msg}") from e
 
 
+def enable_postgis_extension(conn: psycopg.Connection) -> None:
+    """
+    Enable PostGIS extension on the database.
+    If enabling fails, log the error but continue execution.
+    """
+    logger.info("Enabling PostGIS Extension for Geometry types")
+
+    try:
+        with conn.cursor() as cur:
+            # Check if PostGIS is already enabled
+            cur.execute(
+                """
+                SELECT EXISTS (
+                    SELECT 1 
+                    FROM pg_extension 
+                    WHERE extname = 'postgis'
+                ) as exists;
+            """
+            )
+            result = cur.fetchone()
+
+            if result and not result["exists"]:  # type: ignore
+                # Enable PostGIS if not already enabled
+                cur.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
+                logger.info("postgis_extension_enabled")
+            else:
+                logger.info("postgis_extension_already_enabled")
+
+        conn.commit()
+
+    except psycopg.Error as e:
+        logger.error(
+            "Failed to enable PostGIS extension",
+            error=str(e),
+            error_type=type(e).__name__,
+            pgcode=getattr(e, "pgcode", None),
+            pgerror=getattr(e, "pgerror", None),
+        )
+        conn.rollback()
+    except Exception as e:
+        logger.error(
+            "Unexpected error enabling PostGIS",
+            error=str(e),
+            error_type=type(e).__name__,
+        )
+        conn.rollback()
+
+
 def validate_environment() -> None:
     """
     Validate all required environment variables are present
@@ -553,7 +606,9 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
             conn = create_db_connection(admin_secret)
             setup_database_role(conn, app_secret)
 
-            logger.info("setup_completed_successfully")
+            logger.info("Completed Role Setup")
+            enable_postgis_extension(conn)
+
             send_cloudformation_response(event, context, "SUCCESS")
             return {"statusCode": 200, "body": "Role setup completed successfully"}
 
@@ -564,7 +619,9 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
             return {"statusCode": 200, "body": "Nothing to delete"}
 
         msg = "Unsupported request type"
-        logger.error("unsupported_request_type", request_type=event["RequestType"])
+        logger.error(
+            "Unsupported Cloudformation Request Type", request_type=event["RequestType"]
+        )
         send_cloudformation_response(event, context, "FAILED", {"Error": msg})
         return {"statusCode": 400, "body": msg}
 
