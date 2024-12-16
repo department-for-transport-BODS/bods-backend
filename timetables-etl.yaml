@@ -80,19 +80,6 @@ Resources:
     Properties:
       Name: !Sub '${ProjectName}-${Environment}-${SubFunction}-sm'
       Role: !GetAtt TimetablesStateMachineRole.Arn
-      #      Events:
-      #        S3ObjectCreatedEvent:
-      #          Type: EventBridgeRule
-      #          Properties:
-      #            Pattern:
-      #              source:
-      #                - 'aws.s3'
-      #              detail-type:
-      #                - 'Object Created'
-      #              detail:
-      #                bucket:
-      #                  name:
-      #                    - !Ref PlaceholderS3Bucket
       DefinitionUri: './src/timetables_etl.statemachine.json'
       DefinitionSubstitutions:
         ClamAvScannerLambdaArn: !GetAtt ClamAvScannerLambda.Arn
@@ -130,6 +117,54 @@ Resources:
                   - !GetAtt FileAttributesEtlLambda.Arn
                   - !GetAtt PtiValidationLambda.Arn
                   - !GetAtt ExceptionHandlerLambda.Arn
+
+  ##########################################
+  #### TIMETABLES STATE MACHINE TRIGGER ####
+  ##########################################
+  TimetablesStateMachineTrigger:
+    Type: AWS::Pipes::Pipe
+    Condition: IsNotLocal
+    Properties:
+      Name: !Sub '${ProjectName}-${Environment}-${SubFunction}-sm-trigger'
+      Description: !Sub 'EventBridge Pipe used as trigger for ${ProjectName}-${Environment} Timetables ETL State Machine'
+      RoleArn: !GetAtt TimetablesStateMachineTriggerRole.Arn
+      KmsKeyIdentifier: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+      Source: !GetAtt TimetablesProcessQueue.Arn
+      Target: !GetAtt TimetablesStateMachine.Arn
+
+  TimetablesStateMachineTriggerRole:
+    Type: AWS::IAM::Role
+    Condition: IsNotLocal
+    Properties:
+      RoleName: !Sub '${ProjectName}-${Environment}-${SubFunction}-sm-trigger-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: pipes.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: 'StateMachineSQSPolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource:
+                  - !GetAtt TimetablesProcessQueue.Arn
+        - PolicyName: StateMachineInvokePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - states:StartExecution
+                Resource:
+                  - !GetAtt TimetablesStateMachine.Arn
 
   ################################
   #### CLAM AV SCANNER LAMBDA ####
@@ -353,6 +388,32 @@ Resources:
           - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
           - !Ref AWS::NoValue
 
+  CommonLambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Condition: IsNotLocal
+    Properties:
+      GroupDescription: !Sub 'Security group for ${ProjectName}-${Environment} Timetables ETL related lambda functions'
+      GroupName: !Sub '${ProjectName}-${Environment}-${SubFunction}-common-lambda'
+      SecurityGroupEgress:
+        - IpProtocol: '-1'
+          Description: 'Allow outbound connectivity to any'
+          CidrIp: '0.0.0.0/0'
+      VpcId: !Sub '{{resolve:ssm:/bodds/${Environment}/vpc-id}}'
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-${SubFunction}-common-lambda'
+
+  CommonLambdaSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Condition: IsNotLocal
+    Properties:
+      GroupId: !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-sg-id}}'
+      Description: !Sub 'Allow inbound connectivity from ${ProjectName}-${Environment}-${SubFunction}-common-lambda'
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432
+      SourceSecurityGroupId: !GetAtt CommonLambdaSecurityGroup.GroupId
+
   CommonLambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -420,28 +481,21 @@ Resources:
                   - dynamodb:DeleteItem
                 Resource: !GetAtt TimetablesCache.Arn
 
-  CommonLambdaSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
+  TimetablesProcessQueue:
+    Type: AWS::SQS::Queue
     Condition: IsNotLocal
     Properties:
-      GroupDescription: !Sub 'Security group for ${ProjectName}-${Environment} Timetables ETL related lambda functions'
-      GroupName: !Sub '${ProjectName}-${Environment}-${SubFunction}-common-lambda'
-      SecurityGroupEgress:
-        - IpProtocol: '-1'
-          Description: 'Allow outbound connectivity to any'
-          CidrIp: '0.0.0.0/0'
-      VpcId: !Sub '{{resolve:ssm:/bodds/${Environment}/vpc-id}}'
-      Tags:
-        - Key: Name
-          Value: !Sub '${ProjectName}-${Environment}-${SubFunction}-common-lambda'
+      QueueName: !Sub '${ProjectName}-${Environment}-${SubFunction}-process-queue'
+      KmsMasterKeyId: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+      VisibilityTimeout: 300
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt TimetablesDeadLetterQueue.Arn
+        maxReceiveCount: 3
 
-  CommonLambdaSecurityGroupIngress:
-    Type: AWS::EC2::SecurityGroupIngress
+  TimetablesDeadLetterQueue:
+    Type: AWS::SQS::Queue
     Condition: IsNotLocal
     Properties:
-      GroupId: !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-sg-id}}'
-      Description: !Sub 'Allow inbound connectivity from ${ProjectName}-${Environment}-${SubFunction}-common-lambda'
-      IpProtocol: tcp
-      FromPort: 5432
-      ToPort: 5432
-      SourceSecurityGroupId: !GetAtt CommonLambdaSecurityGroup.GroupId
+      QueueName: !Sub '${ProjectName}-${Environment}-${SubFunction}-dead-letter-queue'
+      KmsMasterKeyId: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+      VisibilityTimeout: 300

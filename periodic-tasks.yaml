@@ -168,7 +168,7 @@ Resources:
         - !If
           - IsNotLocal
           - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
-          - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess' # Is this right? No such role as ReadWrite
+          - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess'
         - !If
           - IsNotLocal
           - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
@@ -239,7 +239,7 @@ Resources:
         - !If
           - IsNotLocal
           - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
-          - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess' # Is this right? No such role as ReadWrite
+          - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess'
         - !If
           - IsNotLocal
           - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
@@ -308,7 +308,7 @@ Resources:
         - !If
           - IsNotLocal
           - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
-          - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess' # Is this right? No such role as ReadWrite
+          - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess'
         - !If
           - IsNotLocal
           - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
