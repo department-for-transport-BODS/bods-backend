@@ -669,3 +669,37 @@ Resources:
       FromPort: 5432
       ToPort: 5432
       SourceSecurityGroupId: !GetAtt CommonLambdaSecurityGroup.GroupId
+
+  CreateTablesLambda:
+    Type: AWS::Serverless::Function
+    Condition: IsStandalone
+    DependsOn:
+      - CommonLambdaExecutionRole
+      - CommonLambdaSecurityGroup
+    Properties:
+      FunctionName: !Sub "${ProjectName}-${Environment}-create-tables-lambda"
+      Role: !GetAtt CommonLambdaExecutionRole.Arn
+      CodeUri: ./src/standalone
+      Handler: create_db_tables.lambda_handler
+      Layers:
+        - !Ref BoilerplateLambdaLayerArn
+      LoggingConfig:
+        LogGroup: !Ref CreateTablesLambdaLogGroup
+  CreateTablesLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: IsStandalone
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-create-tables-lambda"
+      KmsKeyId:
+        Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
+      RetentionInDays: 30
+  CreateTablesCustomResource:
+    Type: Custom::CreateTables
+    Condition: IsStandalone
+    DependsOn:
+      - CreateTablesLambda
+    Properties:
+      ServiceToken: !GetAtt CreateTablesLambda.Arn
+      Version: "1.0"

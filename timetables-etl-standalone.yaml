@@ -228,6 +228,7 @@ Resources:
     Type: AWS::RDS::DBInstance
     Properties:
       Engine: postgres
+      EngineVersion: "13"
       DBInstanceClass: db.t3.micro
       AllocatedStorage: "20"
       DBName: postgres
