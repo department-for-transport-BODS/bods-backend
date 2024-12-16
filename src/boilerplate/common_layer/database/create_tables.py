@@ -59,11 +59,13 @@ def create_single_table(table: Table, engine: Engine) -> None:
         raise RuntimeError(f"Failed to create table {table.name}: {str(e)}") from e
 
 
-def create_db_tables(db: SqlDB) -> None:
+def create_db_tables(db: SqlDB | None = None) -> None:
     """Initialize database tables using models from timetables_etl."""
     log.warning(
         "Creating Tables: This function will create tables in postgres. DO NOT do against BODs DB"
     )
+    if db is None:
+        db = SqlDB()
     metadata = MetaData()
 
     model_classes = get_model_classes(models)

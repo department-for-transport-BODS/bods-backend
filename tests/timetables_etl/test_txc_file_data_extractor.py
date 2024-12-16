@@ -1,6 +1,7 @@
-from io import BytesIO
 import unittest
-from unittest.mock import patch, MagicMock
+from io import BytesIO
+from unittest.mock import MagicMock, patch
+
 from tests.mock_db import MockedDB
 from timetables_etl.txc_file_data_extractor import lambda_handler
 
@@ -13,20 +14,22 @@ class TestLambdaHandler(unittest.TestCase):
     @patch("common_layer.db.file_processing_result.get_revision")
     @patch("common_layer.db.file_processing_result.get_step")
     @patch("timetables_etl.txc_file_data_extractor.get_revision")
-    def test_lambda_handler_success(self,
-                                    mock_txc_get_revision,
-                                    mock_get_step,
-                                    mock_get_revision,
-                                    mock_s3,
-                                    mock_parser,
-                                    mock_txc_file_attributes_to_db,
-                                    mock_logger):
+    def test_lambda_handler_success(
+        self,
+        mock_txc_get_revision,
+        mock_get_step,
+        mock_get_revision,
+        mock_s3,
+        mock_parser,
+        mock_txc_file_attributes_to_db,
+        mock_logger,
+    ):
         # Event structure with a test bucket and key
         event = {
             "Bucket": "test-bucket",
             "ObjectKey": "test-key",
             "DatasetRevisionId": 123,
-            "DatasetType": "timetables"
+            "DatasetType": "timetables",
         }
         # Mock get revision for TxC attributes
         mock_txc_revision = MagicMock()
@@ -54,7 +57,7 @@ class TestLambdaHandler(unittest.TestCase):
         # Mock TXCFile to simulate parsed data
         mock_txc_file = MagicMock()
         buf = "timetables_etl.txc_file_data_extractor.TXCFile.from_txc_document"
-        db = "common_layer.db.file_processing_result.BodsDB"
+        db = "common_layer.db.file_processing_result.DbManager"
         with patch(buf, return_value=mock_txc_file):
             with patch(db, return_value=MockedDB()) as mock_db:
                 mock_session = MagicMock()
@@ -80,19 +83,21 @@ class TestLambdaHandler(unittest.TestCase):
     @patch("common_layer.db.file_processing_result.get_revision")
     @patch("common_layer.db.file_processing_result.get_step")
     @patch("timetables_etl.txc_file_data_extractor.get_revision")
-    def test_lambda_handler_no_files(self,
-                                     mock_txc_get_revision,
-                                     mock_get_step,
-                                     mock_get_revision,
-                                     mock_err,
-                                     mock_s3,
-                                     mock_logger):
+    def test_lambda_handler_no_files(
+        self,
+        mock_txc_get_revision,
+        mock_get_step,
+        mock_get_revision,
+        mock_err,
+        mock_s3,
+        mock_logger,
+    ):
         # Event structure with a test bucket and key
         event = {
             "Bucket": "test-bucket",
             "ObjectKey": "test-key",
             "DatasetRevisionId": 123,
-            "DatasetType": "timetables"
+            "DatasetType": "timetables",
         }
         # Mock get revision for TxC attributes
         mock_txc_revision = MagicMock()
@@ -116,9 +121,11 @@ class TestLambdaHandler(unittest.TestCase):
 
         # Mock TransXChangeDatasetParser to return an empty list,
         # simulating no documents
-        doc_ = ("timetables_etl.txc_file_data_extractor."
-                "TransXChangeDatasetParser.get_documents")
-        db = "common_layer.db.file_processing_result.BodsDB"
+        doc_ = (
+            "timetables_etl.txc_file_data_extractor."
+            "TransXChangeDatasetParser.get_documents"
+        )
+        db = "common_layer.db.file_processing_result.DbManager"
         with patch(doc_, return_value=[]):
             with patch(db, return_value=MockedDB()) as mock_db:
                 mock_session = MagicMock()

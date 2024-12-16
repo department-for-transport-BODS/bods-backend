@@ -1,19 +1,20 @@
-import os
 import json
+import os
 from pathlib import Path
-from common_layer.logger import logger
-from common_layer.s3 import S3
 from zipfile import ZipFile
-from lxml import etree
 
+from common_layer.constants import SCHEMA_DIR
+from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
+from common_layer.db.manager import DbManager
 from common_layer.db.repositories.dataset_revision import get_revision
 from common_layer.db.schema_definition import get_schema_definition_db_object
-from common_layer.constants import SCHEMA_DIR
+from common_layer.db.schema_violation import SchemaViolation
+from common_layer.logger import logger
+from common_layer.s3 import S3
 from common_layer.violations import BaseSchemaViolation
 from common_layer.xml_validator import XMLValidator
-from common_layer.db.schema_violation import SchemaViolation
-from common_layer.db.manager import DbManager
+from lxml import etree
 
 
 def get_transxchange_schema():
@@ -82,8 +83,7 @@ class DatasetTXCValidator:
         if error:
             file_.seek(0)
             violations.append(
-                BaseSchemaViolation.from_error(error[0],
-                                               revision_id=self.revision.id)
+                BaseSchemaViolation.from_error(error[0], revision_id=self.revision.id)
             )
             return violations
         file_.seek(0)
@@ -92,13 +92,12 @@ class DatasetTXCValidator:
         if not is_valid:
             for error in self._schema.error_log:
                 violations.append(
-                    BaseSchemaViolation.from_error(error,
-                                                   revision_id=self.revision.id)
+                    BaseSchemaViolation.from_error(error, revision_id=self.revision.id)
                 )
         return violations
 
 
-@file_processing_result_to_db(step_name="Timetable Schema Check")
+@file_processing_result_to_db(step_name=StepName.TIMETABLE_SCHEMA_CHECK)
 def lambda_handler(event, context):
     """
     Main lambda handler
@@ -129,5 +128,5 @@ def lambda_handler(event, context):
     return {
         "statusCode": 200,
         "body": f"Successfully ran the file schema check for file '{key}' "
-                f"from bucket '{bucket}' with {len(violations)} violations"
+        f"from bucket '{bucket}' with {len(violations)} violations",
     }

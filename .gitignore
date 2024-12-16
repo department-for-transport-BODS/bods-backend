@@ -19,6 +19,7 @@ htmlcov/
 coverage.xml
 
 # Distribution / packaging
+.python-version
 .Python
 build/
 develop-eggs/
@@ -60,8 +61,5 @@ venv.bak/
 # SAM default build folder
 .aws-sam/
 
-# code coverage
-.coverage
-
-# pycharm
+# Pycharm
 .idea/

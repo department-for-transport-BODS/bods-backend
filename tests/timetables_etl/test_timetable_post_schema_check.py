@@ -1,20 +1,20 @@
-from io import BytesIO
 import unittest
-from unittest.mock import patch, MagicMock
-from tests.mock_db import MockedDB, pipeline_processing_step as step_
-from timetables_etl.timetable_post_schema_check import (
-    lambda_handler,
-    get_violation
-)
+from io import BytesIO
+from unittest.mock import MagicMock, patch
 
-TEST_ENV_VAR = {"PROJECT_ENV": "dev",
-                "CLAMAV_HOST": "abc",
-                "CLAMAV_PORT": "1234",
-                "POSTGRES_HOST": "sample_host",
-                "POSTGRES_PORT": "1234",
-                "POSTGRES_USER": "sample_user",
-                "POSTGRES_PASSWORD": "<PASSWORD>"
-                }
+from tests.mock_db import MockedDB
+from tests.mock_db import pipeline_processing_step as step_
+from timetables_etl.timetable_post_schema_check import get_violation, lambda_handler
+
+TEST_ENV_VAR = {
+    "PROJECT_ENV": "dev",
+    "CLAMAV_HOST": "abc",
+    "CLAMAV_PORT": "1234",
+    "POSTGRES_HOST": "sample_host",
+    "POSTGRES_PORT": "1234",
+    "POSTGRES_USER": "sample_user",
+    "POSTGRES_PASSWORD": "<PASSWORD>",
+}
 
 
 class TestLambdaHandler(unittest.TestCase):
@@ -23,19 +23,22 @@ class TestLambdaHandler(unittest.TestCase):
     @patch("timetables_etl.timetable_post_schema_check.get_revision")
     @patch("timetables_etl.timetable_post_schema_check.get_violation")
     @patch("timetables_etl.timetable_post_schema_check.S3")
-    @patch("timetables_etl.timetable_post_schema_check."
-           "PostSchemaViolationRepository")
-    @patch("common_layer.db.file_processing_result.BodsDB")
+    @patch(
+        "timetables_etl.timetable_post_schema_check." "PostSchemaViolationRepository"
+    )
+    @patch("common_layer.db.file_processing_result.DbManager")
     @patch("common_layer.db.file_processing_result.get_revision")
     @patch.dict("os.environ", TEST_ENV_VAR)
-    def test_lambda_handler_success(self,
-                                    mock_get_rev,
-                                    mock_bodds_db,
-                                    mock_post_repo,
-                                    mock_s3,
-                                    mock_get_violation,
-                                    mock_get_revision,
-                                    mock_get_db):
+    def test_lambda_handler_success(
+        self,
+        mock_get_rev,
+        mock_bodds_db,
+        mock_post_repo,
+        mock_s3,
+        mock_get_violation,
+        mock_get_revision,
+        mock_get_db,
+    ):
         """
         Test lambda_handler for a successful run.
         """
@@ -44,7 +47,7 @@ class TestLambdaHandler(unittest.TestCase):
             "Bucket": "test-bucket",
             "ObjectKey": "test-key",
             "DatasetRevisionId": 123,
-            "DatasetType": "timetables"
+            "DatasetType": "timetables",
         }
         mock_context = {}
 
@@ -68,8 +71,9 @@ class TestLambdaHandler(unittest.TestCase):
         mocked_db = MockedDB()
         mock_bodds_db.return_value = mocked_db
         with mocked_db.session as session:
-            session.add(step_(name="Timetable Post Schema Check",
-                              category="TIMETABLES"))
+            session.add(
+                step_(name="Timetable Post Schema Check", category="TIMETABLES")
+            )
             session.commit()
         # m_session = MagicMock()
         mock_bodds_db.session.__enter__.return_value = mocked_db.session
@@ -84,12 +88,9 @@ class TestLambdaHandler(unittest.TestCase):
         # Assertions
         self.assertEqual(response["statusCode"], 200)
         self.assertIn("Successfully ran", response["body"])
-        mock_s3_instance.get_object.assert_called_once_with(
-            file_path="test-key")
+        mock_s3_instance.get_object.assert_called_once_with(file_path="test-key")
         mock_post_repo_instance.create.assert_called_once_with(
-            filename="test-key",
-            details="Error",
-            revision_id=1
+            filename="test-key", details="Error", revision_id=1
         )
 
     @patch("timetables_etl.timetable_post_schema_check.TransXChangeDocument")
@@ -119,17 +120,13 @@ class TestLambdaHandler(unittest.TestCase):
         self.assertIsNone(violation)
 
     @patch("timetables_etl.timetable_post_schema_check.logger.error")
-    @patch("timetables_etl.timetable_post_schema_check.DbManager.get_db")
     @patch("timetables_etl.timetable_post_schema_check.get_revision")
-    @patch("common_layer.db.file_processing_result.BodsDB")
+    @patch("common_layer.db.file_processing_result.DbManager")
     @patch("timetables_etl.timetable_post_schema_check.S3")
     @patch.dict("os.environ", TEST_ENV_VAR)
-    def test_lambda_handler_error_handling(self,
-                                           mock_s3,
-                                           mock_bodds_db,
-                                           mock_get_revision,
-                                           mock_get_db,
-                                           mock_logger):
+    def test_lambda_handler_error_handling(
+        self, mock_s3, m_db_manager, mock_get_revision, mock_logger
+    ):
         """
         Test lambda_handler handles exceptions and logs errors.
         """
@@ -138,7 +135,7 @@ class TestLambdaHandler(unittest.TestCase):
             "Bucket": "test-bucket",
             "ObjectKey": "test-key",
             "DatasetRevisionId": 123,
-            "DatasetType": "timetables"
+            "DatasetType": "timetables",
         }
 
         mock_context = {}
@@ -152,18 +149,16 @@ class TestLambdaHandler(unittest.TestCase):
         mock_get_revision.return_value = mock_revision
 
         # Mock return values
-        mock_db = MagicMock()
-        mock_get_db.return_value = mock_db
+        m_db_manager.get_db.return_value = MockedDB()
 
-        mock_bodds_db.return_value = MockedDB()
-        with patch("common_layer.db.file_processing_result.get_revision") as mock_revision:
+        # mock_bodds_db.return_value = MockedDB()
+        with patch(
+            "common_layer.db.file_processing_result.get_revision"
+        ) as mock_revision:
             mock_revision.return_value = 123
             with self.assertRaises(Exception) as context:
                 lambda_handler(mock_event, mock_context)
 
-            self.assertEqual("No row was found when one was required",
-                             str(context.exception))
-
-
-if __name__ == "__main__":
-    unittest.main()
+                self.assertEqual(
+                    "No row was found when one was required", str(context.exception)
+                )

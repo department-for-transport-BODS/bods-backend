@@ -25,10 +25,11 @@ class SamTemplate:
                 logger.info(f"Updating functions for {application_name}")
                 for function in application["functions"]:
                     for ref in function.layer_refs:
-                        if ref in application["layers"]:
-                            logger.info(f"Updating function build for {function.name} with layer {ref}")
+                        layer_name = ref.removesuffix("Arn")
+                        if layer_name in self.layers:
+                            logger.info(f"Updating function build for {function.name} with layer {layer_name}")
                             copy_tree(
-                                f".aws-sam/build/{application_name}/{ref}/python",
+                                f".aws-sam/build/{layer_name}/python",
                                 f".aws-sam/build/{application_name}/{function.name}",
                                 update=1,
                             )
@@ -52,7 +53,6 @@ class SamTemplate:
                     nested_template = SamTemplate(nested_template_location)
                     self.applications[resource] = {
                         "functions": nested_template.functions,
-                        "layers": nested_template.layers,
                     }
                 else:
                     logger.warning(f"Nested template {nested_template_location} not found")

@@ -13,6 +13,7 @@ packages = [
 [tool.poetry.scripts]
 local-etl = "tools.local_etl.cli:app"
 db-viewer = "tools.db_viewer.cli:app"
+create-tables-dev = "src.boilerplate.common_layer.database.create_tables:create_db_tables"
 
 [tool.poetry.dependencies]
 python = "^3.11"

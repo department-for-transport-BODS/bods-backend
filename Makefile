@@ -16,7 +16,7 @@ help:
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/[:].*[##]/:/'
 
 start-services: ## Start the Docker container services
-	docker-compose --env-file ./config/.env up --build --force-recreate
+	docker-compose --compatibility --env-file ./config/.env up --build --force-recreate
 
 stop-services: ## Stop the Docker container services
 	docker-compose --env-file ./config/.env down
@@ -32,7 +32,6 @@ generate-models: ## Generate models.py from BODs DB (DB must be running)
 build-backend: generate-models ## Build the backend functions using sam
 	@samlocal build
 	python localstack/scripts/bootstrap_layers.py 
-
 
 build-backend-sync: ## Build the backend api using sam and keep contents synced for test
 	@nodemon --watch './src/**/*.py' --signal SIGTERM --exec 'sam' build -e "py"

@@ -23,6 +23,7 @@ class ConsumerAPIArchiver:
     data_format = CAVLDataFormat.SIRIVM.value
     extension = ".xml"
     filename_prefix = "sirivm"
+    content_filename_prefix = "siri"
 
     def __init__(self, url):
         self.url = url
@@ -58,7 +59,7 @@ class ConsumerAPIArchiver:
 
     @property
     def content_filename(self):
-        return self.data_format_value + self.extension
+        return self.content_filename_prefix + self.extension
 
     def archive(self):
         file_ = self.get_file(self.content)
@@ -123,6 +124,7 @@ class SiriVMArchiver(ConsumerAPIArchiver):
     data_format = CAVLDataFormat.SIRIVM.value
     extension = ".xml"
     filename_prefix = "sirivm"
+    content_filename_prefix = "siri"
     logger_prefix = "[SIRIVM_Archiving]"
 
 
@@ -130,6 +132,7 @@ class SiriVMTFLArchiver(ConsumerAPIArchiver):
     data_format = CAVLDataFormat.SIRIVM_TFL.value
     extension = ".xml"
     filename_prefix = "sirivm_tfl"
+    content_filename_prefix = "siri_tfl"
     logger_prefix = "[SIRIVM_TFL_Archiving]"
 
 
@@ -137,4 +140,5 @@ class GTFSRTArchiver(ConsumerAPIArchiver):
     data_format = CAVLDataFormat.GTFSRT.value
     extension = ".bin"
     filename_prefix = "gtfsrt"
+    content_filename_prefix = "gtfsrt"
     logger_prefix = "[GTFSRT_Archiving]"
