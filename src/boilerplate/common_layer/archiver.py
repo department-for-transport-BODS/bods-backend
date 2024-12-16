@@ -77,9 +77,6 @@ class ConsumerAPIArchiver:
             logger.info(
                 f"{self.logger_prefix} Total time elapsed to get response from {self.url} is {response.elapsed.total_seconds()} for job-task_create_{self.filename_prefix}_zipfile"
             )
-            logger.info(
-                f"Content Log: For url {self.url} and module {self.filename_prefix} Received content {response.content}"
-            )
             return response.content
 
     def get_file(self, content):

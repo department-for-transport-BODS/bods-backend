@@ -1,9 +1,9 @@
 import os
 import unittest
 from unittest.mock import patch, MagicMock
-from periodic_tasks.pt_iterator import lambda_handler
+from periodic_tasks.iterator import lambda_handler
 
-MODULE_PATH = "periodic_tasks.pt_iterator"
+MODULE_PATH = "periodic_tasks.iterator"
 
 
 @patch(f"{MODULE_PATH}.client")
