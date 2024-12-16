@@ -36,7 +36,7 @@ app = Typer()
 
 
 @csv_extractor()
-def extarct_stoppoint(db: SqlDB, locality_ids: list[int]) -> list[NaptanStopPoint]:
+def extract_stoppoint(db: SqlDB, locality_ids: list[int]) -> list[NaptanStopPoint]:
     """
     Extract naptan stoppoint details from DB.
     """
@@ -79,9 +79,11 @@ def process_data_extraction(
     vehicle_journey_ids = list(set([result.vehicle_journey_id for result in results]))
     extract_vehiclejourney(db, vehicle_journey_ids, output_path=output_path)
 
-    results = extract_servicepattern_localities(db, service_pattern_ids, output_path=output_path)
+    results = extract_servicepattern_localities(
+        db, service_pattern_ids, output_path=output_path
+    )
 
-    extarct_stoppoint(
+    extract_stoppoint(
         db,
         list(set([result.locality_id for result in results])),
         output_path=output_path,
@@ -168,6 +170,10 @@ def main(
         help="Service id",
     ),
 ):
+    """
+    This tool queries a database then creates CSVs for ETL data for a
+    specific revision id or service id
+    """
     config = DbConfig(
         host=db_host, port=db_port, user=db_user, password=db_password, database=db_name
     )
