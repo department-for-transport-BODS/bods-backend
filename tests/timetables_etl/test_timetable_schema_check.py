@@ -1,14 +1,14 @@
-from io import BytesIO
 import json
-import unittest
-from unittest.mock import patch, MagicMock, call
 import os
+import unittest
+from io import BytesIO
+from unittest.mock import MagicMock, call, patch
 
 from timetables_etl.timetable_schema_check import (
+    DatasetTXCValidator,
+    SchemaLoader,
     get_transxchange_schema,
     lambda_handler,
-    DatasetTXCValidator,
-    SchemaLoader
 )
 
 PREFIX = "timetables_etl.timetable_schema_check"
@@ -27,9 +27,9 @@ class TestGetTransxchangeSchema(unittest.TestCase):
     @patch(f"{PREFIX}.get_schema_definition_db_object")
     @patch(f"{PREFIX}.SchemaLoader")
     @patch.dict("os.environ", TEST_ENV_VAR)
-    def test_get_transxchange_schema_success(self,
-                                             mock_schemaloader,
-                                             mock_getschemadefinitiondbobject):
+    def test_get_transxchange_schema_success(
+        self, mock_schemaloader, mock_getschemadefinitiondbobject
+    ):
         mock_definition = MagicMock()
         mock_definition.category = "category1"
         mock_definition.schema = "some_schema.zip"
@@ -51,8 +51,7 @@ class TestGetTransxchangeSchema(unittest.TestCase):
     @patch(f"{PREFIX}.get_schema_definition_db_object")
     @patch.dict("os.environ", TEST_ENV_VAR)
     def test_get_transxchange_schema_missing_definition(
-            self,
-            mock_getschemadefinitiondbobject
+        self, mock_getschemadefinitiondbobject
     ):
         mock_getschemadefinitiondbobject.return_value = None
 
@@ -95,30 +94,30 @@ class TestGetTransxchangeSchema(unittest.TestCase):
 
         # Assertions for directory creation
         mock_directory.mkdir.assert_called_once_with(parents=True)
-        mock_logger.info.assert_called_once_with(
-            f"Directory {mock_directory} created")
+        mock_logger.info.assert_called_once_with(f"Directory {mock_directory} created")
 
         # Assertions for ZipFile usage
         mock_zipfile.assert_called_once_with(mock_definition.schema)
         mock_zip_instance.namelist.assert_called_once()
         mock_zip_instance.extract.assert_has_calls(
-            [call("file1.xsd", mock_directory),
-             call("file2.xsd", mock_directory)])
+            [call("file1.xsd", mock_directory), call("file2.xsd", mock_directory)]
+        )
 
         # Assertions for path
         self.assertEqual(result, mock_path)
 
         # Test exception during extraction
-        mock_zip_instance.extract.side_effect = OSError(
-            "Mocked extraction error")
+        mock_zip_instance.extract.side_effect = OSError("Mocked extraction error")
         loader = SchemaLoader(mock_definition, "main.xsd")
         result = loader.path  # Trigger the property again
 
         # Check logger warning
         mock_logger.warning.assert_any_call(
-            "Could not extract file1.xsd - Mocked extraction error")
+            "Could not extract file1.xsd - Mocked extraction error"
+        )
         mock_logger.warning.assert_any_call(
-            "Could not extract file2.xsd - Mocked extraction error")
+            "Could not extract file2.xsd - Mocked extraction error"
+        )
 
 
 class TestDatasetTXCValidator(unittest.TestCase):
@@ -229,18 +228,16 @@ class TestDatasetTXCValidator(unittest.TestCase):
     @patch(f"{PREFIX}.XMLValidator")
     @patch(f"{PREFIX}.BaseSchemaViolation")
     @patch(f"{PREFIX}.get_transxchange_schema")
-    def test_get_violations_with_xml_error(self,
-                                           mock_get_schema,
-                                           mock_base_violation,
-                                           mock_xml_validator):
+    def test_get_violations_with_xml_error(
+        self, mock_get_schema, mock_base_violation, mock_xml_validator
+    ):
         # Mock revision object
         mock_revision = MagicMock()
         mock_revision.id = 123
 
         # Mock XMLValidator
         mock_error = MagicMock()
-        mock_xml_validator.return_value.dangerous_xml_check.return_value = [
-            mock_error]
+        mock_xml_validator.return_value.dangerous_xml_check.return_value = [mock_error]
 
         # Mock BaseSchemaViolation
         mock_violation = MagicMock()
@@ -261,8 +258,9 @@ class TestDatasetTXCValidator(unittest.TestCase):
 
         # Assertions
         mock_xml_validator.assert_called_once_with(mock_file)
-        mock_base_violation.from_error.assert_called_once_with(mock_error,
-                                                               revision_id=123)
+        mock_base_violation.from_error.assert_called_once_with(
+            mock_error, revision_id=123
+        )
         self.assertEqual(len(violations), 1)
         self.assertIn(mock_violation, violations)
 
@@ -273,22 +271,24 @@ class TestLambdaHandler(unittest.TestCase):
     @patch(f"{PREFIX}.get_revision")
     @patch(f"{PREFIX}.DatasetTXCValidator")
     @patch(f"{PREFIX}.SchemaViolation")
-    @patch("common_layer.db.file_processing_result.BodsDB")
+    @patch("common_layer.db.file_processing_result.DbManager")
     @patch(f"{PREFIX}.logger")
     @patch.dict("os.environ", TEST_ENV_VAR)
-    def test_lambda_handler_success(self,
-                                    mock_logger,
-                                    mock_db,
-                                    mock_schemaviolation,
-                                    mock_datasettxcvalidator,
-                                    mock_getdatasetrevision,
-                                    mock_s3):
+    def test_lambda_handler_success(
+        self,
+        mock_logger,
+        mock_db,
+        mock_schemaviolation,
+        mock_datasettxcvalidator,
+        mock_getdatasetrevision,
+        mock_s3,
+    ):
         # Setup mocks
         mock_event = {
             "Bucket": "test-bucket",
             "ObjectKey": "bodds.zip",
             "DatasetRevisionId": 123,
-            "DatasetType": "timetables"
+            "DatasetType": "timetables",
         }
 
         mock_context = MagicMock()
@@ -343,22 +343,24 @@ class TestLambdaHandler(unittest.TestCase):
     @patch(f"{PREFIX}.get_revision")
     @patch(f"{PREFIX}.DatasetTXCValidator")
     @patch(f"{PREFIX}.SchemaViolation")
-    @patch("common_layer.db.file_processing_result.BodsDB")
+    @patch("common_layer.db.file_processing_result.DbManager")
     @patch(f"{PREFIX}.logger")
     @patch.dict("os.environ", {"TEST_ENV_VAR": "value"})
-    def test_lambda_handler_exception(self,
-                                      mock_logger,
-                                      mock_db,
-                                      mock_schemaviolation,
-                                      mock_datasettxcvalidator,
-                                      mock_getdatasetrevision,
-                                      mock_s3):
+    def test_lambda_handler_exception(
+        self,
+        mock_logger,
+        mock_db,
+        mock_schemaviolation,
+        mock_datasettxcvalidator,
+        mock_getdatasetrevision,
+        mock_s3,
+    ):
         # Setup mocks
         mock_event = {
             "Bucket": "test-bucket",
             "ObjectKey": "bodds.zip",
             "DatasetRevisionId": 123,
-            "DatasetType": "timetables"
+            "DatasetType": "timetables",
         }
         mock_context = MagicMock()
 

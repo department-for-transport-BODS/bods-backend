@@ -1,22 +1,24 @@
-
 """
 Description: Module to scan incoming s3 file object for vulnerabilities.
 Lambda handle is triggered by S3 event
 """
+
 import os
-from typing import BinaryIO, Optional
 from dataclasses import dataclass
+from typing import BinaryIO, Optional
+
 from clamd import BufferTooLongError, ClamdNetworkSocket, ConnectionError
-from common_layer.utils import sha1sum
-from common_layer.logger import logger
-from common_layer.s3 import S3
+from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.db.repositories.dataset_revision import update_file_hash_in_db
 from common_layer.exceptions.file_exceptions import (
     AntiVirusError,
     ClamConnectionError,
-    SuspiciousFile
+    SuspiciousFile,
 )
+from common_layer.logger import logger
+from common_layer.s3 import S3
+from common_layer.utils import sha1sum
 from common_layer.zip import unzip
 
 SCAN_ATTEMPTS = 5
@@ -83,7 +85,7 @@ class FileScanner:
             raise ClamConnectionError(file_.name, message=msg) from e
 
 
-@file_processing_result_to_db(step_name="Clam AV Scanner")
+@file_processing_result_to_db(step_name=StepName.CLAM_AV_SCANNER)
 def lambda_handler(event, context):
     """
     Main lambda handler
@@ -102,9 +104,11 @@ def lambda_handler(event, context):
         # Fetch the object from s3
         file_object = s3_handler.get_object(file_path=key)
 
-        update_file_hash_in_db(event["ObjectKey"],
-                               event["DatasetRevisionId"],
-                               original_file_hash=sha1sum(file_object.read()))
+        update_file_hash_in_db(
+            event["ObjectKey"],
+            event["DatasetRevisionId"],
+            original_file_hash=sha1sum(file_object.read()),
+        )
 
         # Connect/Scan the file object
         av_scanner = FileScanner(
@@ -124,10 +128,10 @@ def lambda_handler(event, context):
             "statusCode": 200,
             "body": {
                 "message": msg,
-                "generatedPrefix": unzip(s3_client=s3_handler,
-                                         file_path=key,
-                                         prefix="ext")
-            }
+                "generatedPrefix": unzip(
+                    s3_client=s3_handler, file_path=key, prefix="ext"
+                ),
+            },
         }
     except Exception as e:
         logger.error(f"Error scanning object '{key}' from bucket '{bucket}'")

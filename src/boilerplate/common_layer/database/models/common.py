@@ -20,6 +20,9 @@ class TimeStampedMixin(MappedAsDataclass):
     A mixin that adds self-managed created and modified fields.
     All timestamps are stored in UTC.
     """
+    include_created = True
+    include_last_updated = False
+    include_modified = True
 
     @declared_attr.directive
     @classmethod
@@ -27,13 +30,30 @@ class TimeStampedMixin(MappedAsDataclass):
         """
         Generate the created timestamp when inserting
         """
-        return mapped_column(
-            DateTime(timezone=True),
-            insert_default=datetime.now(UTC),
-            default_factory=datetime.now,
-            nullable=False,
-            kw_only=True,
-        )
+        if cls.include_created:
+            return mapped_column(
+                DateTime(timezone=True),
+                insert_default=datetime.now(UTC),
+                default_factory=datetime.now,
+                nullable=False,
+                kw_only=True,
+            )
+
+    @declared_attr.directive
+    @classmethod
+    def last_updated(cls) -> Mapped[datetime]:
+        """
+        Generates the modified field when model is being updated
+        """
+        if cls.include_last_updated:
+            return mapped_column(
+                DateTime(timezone=True),
+                insert_default=datetime.now(UTC),
+                default_factory=datetime.now,
+                onupdate=datetime.now(UTC),
+                nullable=False,
+                kw_only=True,
+            )
 
     @declared_attr.directive
     @classmethod
@@ -41,11 +61,12 @@ class TimeStampedMixin(MappedAsDataclass):
         """
         Generates the modified field when model is being updated
         """
-        return mapped_column(
-            DateTime(timezone=True),
-            insert_default=datetime.now(UTC),
-            default_factory=datetime.now,
-            onupdate=datetime.now(UTC),
-            nullable=False,
-            kw_only=True,
-        )
+        if cls.include_modified:
+            return mapped_column(
+                DateTime(timezone=True),
+                insert_default=datetime.now(UTC),
+                default_factory=datetime.now,
+                onupdate=datetime.now(UTC),
+                nullable=False,
+                kw_only=True,
+            )

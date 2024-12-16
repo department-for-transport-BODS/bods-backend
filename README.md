@@ -21,9 +21,7 @@ Supporting application lambda processes
 - [Bus Open Data Service Application](https://github.com/department-for-transport-BODS/bods)
 
   GitHub repository containing code relating to the associated application services for BODS.
-- [PG Admin](./docker/pgadmin/)
 
-  Service to allow for interrogation of the database through a Web UI.
 - [LocalStack](./localstack/)
 
   Scripts associated with the localstack instance that is used for end-to-end testing of various services.
