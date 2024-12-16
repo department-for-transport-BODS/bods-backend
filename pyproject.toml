@@ -7,9 +7,12 @@ readme = "README.md"
 packages = [
   { from = "src", include = "boilerplate" },
   { from = "src/boilerplate", include = "common_layer" },
+  { from = ".", include = "tools" },
 ]
 
 [tool.poetry.scripts]
+local-etl = "tools.local_etl.cli:app"
+db-viewer = "tools.db_viewer.cli:app"
 create-tables-dev = "src.boilerplate.common_layer.database.create_tables:create_db_tables"
 
 [tool.poetry.dependencies]

@@ -52,6 +52,22 @@ class TransmodelServicedOrganisationWorkingDaysRepo(
     def __init__(self, db: SqlDB):
         super().__init__(db, TransmodelServicedOrganisationWorkingDays)
 
+    def get_by_serviced_organisation_vehicle_journey_id(
+        self, serviced_organisation_vehicle_journey_ids: list[int]
+    ) -> list[TransmodelServicedOrganisationWorkingDays]:
+        """
+        Get serviced organisation working days by
+        serviced_organisation_vehicle_journey_id(s).
+        """
+        if not serviced_organisation_vehicle_journey_ids:
+            return []
+        statement = self._build_query().where(
+            self._model.serviced_organisation_vehicle_journey_id.in_(
+                serviced_organisation_vehicle_journey_ids
+            )
+        )
+        return self._fetch_all(statement)
+
 
 class TransmodelServicedOrganisationVehicleJourneyRepo(
     BaseRepositoryWithId[TransmodelServicedOrganisationVehicleJourney]
@@ -60,3 +76,16 @@ class TransmodelServicedOrganisationVehicleJourneyRepo(
 
     def __init__(self, db: SqlDB):
         super().__init__(db, TransmodelServicedOrganisationVehicleJourney)
+
+    def get_by_vehicle_journey_ids(
+        self, vehicle_journey_ids: list[int]
+    ) -> list[TransmodelServicedOrganisationVehicleJourney]:
+        """
+        Get serviced organisation vehicle journey by vehicle_journey_id
+        """
+        if not vehicle_journey_ids:
+            return []
+        statement = self._build_query().where(
+            self._model.vehicle_journey_id.in_(vehicle_journey_ids)
+        )
+        return self._fetch_all(statement)
