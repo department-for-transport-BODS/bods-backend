@@ -17,7 +17,7 @@ http = urllib3.PoolManager()
 
 
 @cloudformation_response()
-def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
+def lambda_handler(_event: dict[str, Any], _context: Any) -> dict[str, Any]:
     """
     Run Create Tables on DB
     """
