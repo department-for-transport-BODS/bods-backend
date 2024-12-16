@@ -13,7 +13,10 @@ import requests
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.db.manager import DbManager
-from common_layer.db.repositories.dataset_revision import get_revision
+from common_layer.db.repositories.dataset_revision import (
+    DatasetRevisionRepository,
+    get_revision,
+)
 from common_layer.exceptions.file_exceptions import (
     DownloadException,
     DownloadTimeout,
@@ -154,8 +157,9 @@ def lambda_handler(event, context):
     url_link = event["URLLink"]
 
     # Get revision
+    revision_id = int(event["DatasetRevisionId"])
     db = DbManager.get_db()
-    revision = get_revision(db, int(event["DatasetRevisionId"]))
+    revision = get_revision(db, revision_id)
     s3_handler = S3(bucket_name=bucket)
 
     if revision.url_link:
@@ -179,6 +183,10 @@ def lambda_handler(event, context):
 
             temp_file_name = write_temp_file(url_link)
             upload_file_to_s3(temp_file_name, name, s3_handler)
+            dataset_revision = DatasetRevisionRepository(db)
+            revision = dataset_revision.get_by_id(revision_id)
+            revision.upload_file = name
+            dataset_revision.update(revision)
         return {"statusCode": 200, "body": f"file downloaded successfully"}
     else:
         logger.info("nothing to download.")
