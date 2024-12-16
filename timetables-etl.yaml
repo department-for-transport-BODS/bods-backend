@@ -58,7 +58,7 @@ Globals:
         PROJECT_NAME: !Ref ProjectName
         POSTGRES_HOST: !If
           - IsNotLocal
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-endpoint}}'
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-endpoint}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
           - !Ref RdsDbHostAddr
         POSTGRES_PORT: !Ref RdsDbPort
         POSTGRES_DB: !If
@@ -360,6 +360,7 @@ Resources:
   #########################################
   TimetablesCache:
     Type: AWS::DynamoDB::Table
+    ## checkov:skip=CKV_AWS_28:Ensure DynamoDB point in time recovery (backup) is enabled
     Properties:
       TableName: !If
         - UseDefaultTableName
@@ -430,11 +431,11 @@ Resources:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
         - !If
           - IsNotLocal
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-rw-user-access-policy-arn}}'
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-rw-user-access-policy-arn}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
           - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess' # Full access fallback
         - !If
           - IsNotLocal
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-ro-user-access-policy-arn}}'
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-ro-user-access-policy-arn}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
           - 'arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess' # Read-only fallback
       Policies:
         - PolicyName: S3AccessPolicy
