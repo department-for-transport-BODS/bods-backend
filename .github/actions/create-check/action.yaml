@@ -33,7 +33,7 @@ runs:
         echo "Title length: ${#INPUT_TITLE}"
         echo "Summary length: ${#INPUT_SUMMARY}"
         echo "Original conclusion: ${{ inputs.conclusion }}"
-        
+
         # Set conclusion to neutral if invalid
         if [[ ! "${{ inputs.conclusion }}" =~ ^(success|failure|neutral|cancelled|timed_out|action_required|skipped)$ ]]; then
           echo "Warning: Invalid conclusion '${{ inputs.conclusion }}'. Defaulting to 'neutral'"

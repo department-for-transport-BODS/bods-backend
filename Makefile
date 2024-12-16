@@ -33,7 +33,6 @@ build-backend: generate-models ## Build the backend functions using sam
 	@samlocal build
 	python localstack/scripts/bootstrap_layers.py 
 
-
 build-backend-sync: ## Build the backend api using sam and keep contents synced for test
 	@nodemon --watch './src/**/*.py' --signal SIGTERM --exec 'sam' build -e "py"
 

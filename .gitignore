@@ -61,8 +61,5 @@ venv.bak/
 # SAM default build folder
 .aws-sam/
 
-# code coverage
-.coverage
-
-# pycharm
+# Pycharm
 .idea/
