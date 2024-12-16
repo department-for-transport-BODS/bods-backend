@@ -14,6 +14,7 @@ from .repo_organisation import (
     OrganisationDatasetRepo,
     OrganisationDatasetRevisionRepo,
     OrganisationTXCFileAttributesRepo,
+    OrganisationOrganisationRepo,
 )
 from .repo_transmodel import (
     TransmodelBankHolidaysRepo,

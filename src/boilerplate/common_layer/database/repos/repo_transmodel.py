@@ -31,10 +31,19 @@ class TransmodelServiceRepo(BaseRepositoryWithId[TransmodelService]):
         super().__init__(db, TransmodelService)
 
     @handle_repository_errors
-    def get_by_revision_id(self, revision_id: int) -> list[
-        TransmodelService]:
+    def get_by_revision_id(self, revision_id: int) -> list[TransmodelService]:
+        statement = self._build_query().where(self._model.revision_id == revision_id)
+        return self._fetch_all(statement)
+
+    @handle_repository_errors
+    def get_by_txcfileattributes_ids(
+        self, txcfileattributes_ids
+    ) -> list[TransmodelService]:
+        if not txcfileattributes_ids:
+            return []
         statement = self._build_query().where(
-            self._model.revision_id == revision_id)
+            self._model.txcfileattributes_id.in_(txcfileattributes_ids)
+        )
         return self._fetch_all(statement)
 
 
@@ -47,10 +56,8 @@ class TransmodelServicePatternRepo(BaseRepositoryWithId[TransmodelServicePattern
         super().__init__(db, TransmodelServicePattern)
 
     @handle_repository_errors
-    def get_by_revision_id(self, revision_id: int) -> list[
-        TransmodelServicePattern]:
-        statement = self._build_query().where(
-            self._model.revision_id == revision_id)
+    def get_by_revision_id(self, revision_id: int) -> list[TransmodelServicePattern]:
+        statement = self._build_query().where(self._model.revision_id == revision_id)
         return self._fetch_all(statement)
 
 
@@ -63,14 +70,16 @@ class TransmodelServicePatternStopRepo(
         super().__init__(db, TransmodelServicePatternStop)
 
     @handle_repository_errors
-    def get_by_service_pattern_ids(self, pattern_ids: List[int]) -> list[
-        TransmodelServicePatternStop]:
+    def get_by_service_pattern_ids(
+        self, pattern_ids: List[int]
+    ) -> list[TransmodelServicePatternStop]:
         statement = self._build_query().where(
-            self._model.service_pattern_id.in_(pattern_ids))
+            self._model.service_pattern_id.in_(pattern_ids)
+        )
         return self._fetch_all(statement)
 
 
-class TransmodelStopActivityRepo(BaseRepository[TransmodelStopActivity]):
+class TransmodelStopActivityRepo(BaseRepositoryWithId[TransmodelStopActivity]):
     """
     Repository for managing TransmodelStopActivity Stop usages
     e.g. pickup, setDown
