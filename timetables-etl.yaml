@@ -80,14 +80,11 @@ Globals:
         PROJECT_NAME: !Ref ProjectName
         POSTGRES_HOST: !If
           - IsUsingBodsInfra
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-endpoint}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
           - !If
             - IsStandalone
             - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-endpoint'
-            - !If
-              - IsNotLocal
-              - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-endpoint}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
-              - !Ref RdsDbHostAddr
+            - !Ref RdsDbHostAddr
         POSTGRES_PORT: !If
           - IsUsingBodsInfra
           - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-port}}'
@@ -550,15 +547,15 @@ Resources:
               - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-rw-user-access-policy-arn}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
               - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess'
         - !If
-        - IsUsingBodsInfra
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
-        - !If
-          - IsStandalone
-          - !Ref AWS::NoValue
+          - IsUsingBodsInfra
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
           - !If
-            - IsNotLocal
-            - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-ro-user-access-policy-arn}}'
-            - 'arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess'
+            - IsStandalone
+            - !Ref AWS::NoValue
+            - !If
+              - IsNotLocal
+              - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-ro-user-access-policy-arn}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
+              - 'arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess'
       Policies:
         - PolicyName: S3AccessPolicy
           PolicyDocument:
@@ -661,9 +658,6 @@ Resources:
   CreateTablesLambda:
     Type: AWS::Serverless::Function
     Condition: IsStandalone
-    DependsOn:
-      - CommonLambdaExecutionRole
-      - CommonLambdaSecurityGroup
     Properties:
       Description: Run manually to create DB Tables for standalone
       FunctionName: !Sub '${ProjectName}-${Environment}-create-tables-lambda'

@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: "2010-09-09"
+AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Standalone resources for timetables ETL dev and self contained AWS Deployment
 
@@ -23,7 +23,7 @@ Resources:
   StandaloneS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "${ProjectName}-${Environment}-bucket"
+      BucketName: !Sub '${ProjectName}-${Environment}-bucket'
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -31,44 +31,44 @@ Resources:
         RestrictPublicBuckets: true
       Tags:
         - Key: Name
-          Value: !Sub "${ProjectName}-${Environment}-bucket"
+          Value: !Sub '${ProjectName}-${Environment}-bucket'
   # VPC Setup
   StandaloneVPC:
     Type: AWS::EC2::VPC
     Properties:
-      CidrBlock: "10.0.0.0/16"
+      CidrBlock: '10.0.0.0/16'
       EnableDnsHostnames: true
       EnableDnsSupport: true
       Tags:
         - Key: Name
-          Value: !Sub "${ProjectName}-${Environment}-vpc"
+          Value: !Sub '${ProjectName}-${Environment}-vpc'
 
   StandaloneSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref StandaloneVPC
-      CidrBlock: "10.0.1.0/24"
+      CidrBlock: '10.0.1.0/24'
       AvailabilityZone: !Select
         - 0
-        - Fn::GetAZs: !Ref "AWS::Region"
+        - Fn::GetAZs: !Ref 'AWS::Region'
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub "${ProjectName}-${Environment}-subnet-1"
+          Value: !Sub '${ProjectName}-${Environment}-subnet-1'
 
   StandaloneSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref StandaloneVPC
-      CidrBlock: "10.0.2.0/24"
+      CidrBlock: '10.0.2.0/24'
       AvailabilityZone:
         Fn::Select:
           - 1
-          - Fn::GetAZs: !Ref "AWS::Region"
+          - Fn::GetAZs: !Ref 'AWS::Region'
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub "${ProjectName}-${Environment}-subnet-2"
+          Value: !Sub '${ProjectName}-${Environment}-subnet-2'
 
   # Internet Connectivity
   StandaloneIGW:
@@ -76,7 +76,7 @@ Resources:
     Properties:
       Tags:
         - Key: Name
-          Value: !Sub "${ProjectName}-${Environment}-igw"
+          Value: !Sub '${ProjectName}-${Environment}-igw'
 
   AttachStandaloneIGW:
     Type: AWS::EC2::VPCGatewayAttachment
@@ -90,14 +90,14 @@ Resources:
       VpcId: !Ref StandaloneVPC
       Tags:
         - Key: Name
-          Value: !Sub "${ProjectName}-${Environment}-rt"
+          Value: !Sub '${ProjectName}-${Environment}-rt'
 
   StandaloneDefaultRoute:
     Type: AWS::EC2::Route
     DependsOn: AttachStandaloneIGW
     Properties:
       RouteTableId: !Ref StandaloneRouteTable
-      DestinationCidrBlock: "0.0.0.0/0"
+      DestinationCidrBlock: '0.0.0.0/0'
       GatewayId: !Ref StandaloneIGW
 
   StandaloneSubnet1RouteAssoc:
@@ -119,31 +119,31 @@ Resources:
     DeletionPolicy: Delete
     UpdateReplacePolicy: Retain
     Properties:
-      Description: !Sub "KMS key for ${ProjectName} ${Environment} encryption"
+      Description: !Sub 'KMS key for ${ProjectName} ${Environment} encryption'
       EnableKeyRotation: true
       PendingWindowInDays: 7
       KeyPolicy:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
           - Sid: Enable IAM User Permissions
             Effect: Allow
             Principal:
-              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
-            Action: "kms:*"
-            Resource: "*"
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
           - Sid: Allow RDS Service
             Effect: Allow
             Principal:
-              Service: "rds.amazonaws.com"
+              Service: 'rds.amazonaws.com'
             Action:
-              - "kms:Encrypt"
-              - "kms:Decrypt"
-              - "kms:ReEncrypt*"
-              - "kms:GenerateDataKey*"
-              - "kms:CreateGrant"
-              - "kms:ListGrants"
-              - "kms:DescribeKey"
-            Resource: "*"
+              - 'kms:Encrypt'
+              - 'kms:Decrypt'
+              - 'kms:ReEncrypt*'
+              - 'kms:GenerateDataKey*'
+              - 'kms:CreateGrant'
+              - 'kms:ListGrants'
+              - 'kms:DescribeKey'
+            Resource: '*'
           - Sid: Allow CloudWatch Logs
             Effect: Allow
             Principal:
@@ -151,29 +151,29 @@ Resources:
             Action:
               - kms:Encrypt
               - kms:Decrypt
-              - "kms:ReEncrypt*"
-              - "kms:GenerateDataKey*"
+              - 'kms:ReEncrypt*'
+              - 'kms:GenerateDataKey*'
               - kms:DescribeKey
-            Resource: "*"
+            Resource: '*'
       Tags:
         - Key: Name
-          Value: !Sub "${ProjectName}-${Environment}-standalone-kms-key"
+          Value: !Sub '${ProjectName}-${Environment}-standalone-kms-key'
   StandaloneKMSKeyAlias:
     Type: AWS::KMS::Alias
     Properties:
-      AliasName: !Sub "alias/${ProjectName}-${Environment}-standalone-kms-key"
+      AliasName: !Sub 'alias/${ProjectName}-${Environment}-standalone-kms-key'
       TargetKeyId: !Ref StandaloneKMSKey
 
   # RDS Setup
   StandaloneRDSSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
-      Name: !Sub "${ProjectName}/${Environment}/rds-admin-credentials"
-      Description: "Admin credentials for standalone RDS instance"
+      Name: !Sub '${ProjectName}/${Environment}/rds-admin-credentials'
+      Description: 'Admin credentials for standalone RDS instance'
       KmsKeyId: !Ref StandaloneKMSKey
       GenerateSecretString:
         SecretStringTemplate: !Sub '{"username": "${DBAdminUsername}"}'
-        GenerateStringKey: "password"
+        GenerateStringKey: 'password'
         PasswordLength: 32
         ExcludeCharacters: '"@/\'''
     UpdateReplacePolicy: Retain
@@ -181,12 +181,12 @@ Resources:
   StandaloneRDSAppUserSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
-      Name: !Sub "${ProjectName}/${Environment}/rds-app-credentials"
-      Description: "Application user credentials for standalone RDS instance"
+      Name: !Sub '${ProjectName}/${Environment}/rds-app-credentials'
+      Description: 'Application user credentials for standalone RDS instance'
       KmsKeyId: !Ref StandaloneKMSKey
       GenerateSecretString:
         SecretStringTemplate: !Sub '{"username": "${DbUsername}"}'
-        GenerateStringKey: "password"
+        GenerateStringKey: 'password'
         PasswordLength: 32
         ExcludeCharacters: '"@/\'''
     UpdateReplacePolicy: Retain
@@ -194,19 +194,19 @@ Resources:
   StandaloneRDSSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
-      DBSubnetGroupDescription: "Subnet group for standalone RDS instance"
+      DBSubnetGroupDescription: 'Subnet group for standalone RDS instance'
       SubnetIds:
         - !Ref StandaloneSubnet1
         - !Ref StandaloneSubnet2
       Tags:
         - Key: Name
-          Value: !Sub "${ProjectName}-${Environment}-rds-subnet-group"
+          Value: !Sub '${ProjectName}-${Environment}-rds-subnet-group'
 
   StandaloneRDSSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Sub "${ProjectName}-${Environment}-rds-sg"
-      GroupDescription: !Sub "Security group for ${ProjectName}-${Environment} standalone RDS instance"
+      GroupName: !Sub '${ProjectName}-${Environment}-rds-sg'
+      GroupDescription: !Sub 'Security group for ${ProjectName}-${Environment} standalone RDS instance'
       VpcId: !Ref StandaloneVPC
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -216,24 +216,24 @@ Resources:
   StandaloneLambdaSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Sub "${ProjectName}-${Environment}-lambda-sg"
-      GroupDescription: !Sub "Security group for ${ProjectName}-${Environment} standalone lambda functions"
+      GroupName: !Sub '${ProjectName}-${Environment}-lambda-sg'
+      GroupDescription: !Sub 'Security group for ${ProjectName}-${Environment} standalone lambda functions'
       VpcId: !Ref StandaloneVPC
       SecurityGroupEgress:
-        - IpProtocol: "-1"
-          Description: "Allow outbound connectivity to any"
-          CidrIp: "0.0.0.0/0"
+        - IpProtocol: '-1'
+          Description: 'Allow outbound connectivity to any'
+          CidrIp: '0.0.0.0/0'
 
   StandaloneRDSInstance:
     Type: AWS::RDS::DBInstance
     Properties:
       Engine: postgres
-      EngineVersion: "13"
+      EngineVersion: '13.13'
       DBInstanceClass: db.t3.micro
-      AllocatedStorage: "20"
+      AllocatedStorage: '20'
       DBName: postgres
-      MasterUsername: !Sub "{{resolve:secretsmanager:${StandaloneRDSSecret}:SecretString:username}}"
-      MasterUserPassword: !Sub "{{resolve:secretsmanager:${StandaloneRDSSecret}:SecretString:password}}"
+      MasterUsername: !Sub '{{resolve:secretsmanager:${StandaloneRDSSecret}:SecretString:username}}'
+      MasterUserPassword: !Sub '{{resolve:secretsmanager:${StandaloneRDSSecret}:SecretString:password}}'
       PubliclyAccessible: false
       DBSubnetGroupName: !Ref StandaloneRDSSubnetGroup
       EnableIAMDatabaseAuthentication: true
@@ -242,7 +242,7 @@ Resources:
       BackupRetentionPeriod: 0
       Tags:
         - Key: Name
-          Value: !Sub "${ProjectName}-${Environment}-rds"
+          Value: !Sub '${ProjectName}-${Environment}-rds'
       KmsKeyId: !Ref StandaloneKMSKey
       StorageEncrypted: true
     UpdateReplacePolicy: Retain
@@ -252,7 +252,7 @@ Resources:
   StandaloneRDSProxy:
     Type: AWS::RDS::DBProxy
     Properties:
-      DBProxyName: !Sub "${ProjectName}-${Environment}-proxy"
+      DBProxyName: !Sub '${ProjectName}-${Environment}-proxy'
       EngineFamily: POSTGRESQL
       RoleArn: !GetAtt RDSProxyRole.Arn
       Auth:
@@ -273,7 +273,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal:
@@ -282,7 +282,7 @@ Resources:
       Policies:
         - PolicyName: RDSProxySecretsPolicy
           PolicyDocument:
-            Version: "2012-10-17"
+            Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action:
@@ -309,7 +309,7 @@ Resources:
           SourceSecurityGroupId: !Ref StandaloneLambdaSecurityGroup
       Tags:
         - Key: Name
-          Value: !Sub "${ProjectName}-${Environment}-rds-proxy-sg"
+          Value: !Sub '${ProjectName}-${Environment}-rds-proxy-sg'
   RDSProxyToRDSIngress:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
@@ -347,7 +347,7 @@ Resources:
       - CloudWatchLogsEndpoint
       - KMSEndpoint
     Properties:
-      FunctionName: !Sub "${ProjectName}-${Environment}-rds-user-setup"
+      FunctionName: !Sub '${ProjectName}-${Environment}-rds-user-setup'
       CodeUri: ./src/standalone/
       Handler: setup_db_role.lambda_handler
       Runtime: python3.11
@@ -369,7 +369,7 @@ Resources:
       Policies:
         - AWSLambdaBasicExecutionRole
         - AWSLambdaVPCAccessExecutionRole
-        - Version: "2012-10-17"
+        - Version: '2012-10-17'
           Statement:
             - Effect: Allow
               Action:
@@ -385,7 +385,7 @@ Resources:
               Resource: !GetAtt StandaloneKMSKey.Arn
             - Effect: Allow
               Action: rds-db:connect
-              Resource: !Sub "arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:${StandaloneRDSProxy}/${DbUsername}"
+              Resource: !Sub 'arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:${StandaloneRDSProxy}/${DbUsername}'
 
   StandaloneRDSUserSetupCustomResource:
     Type: Custom::RDSUserSetup
@@ -401,13 +401,13 @@ Resources:
     UpdateReplacePolicy: Delete
     Properties:
       ServiceToken: !GetAtt StandaloneRDSUserSetupLambda.Arn
-      Version: "1.0"
+      Version: '1.0'
   # VPC Endpoints
   SecretsManagerEndpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
       VpcId: !Ref StandaloneVPC
-      ServiceName: !Sub "com.amazonaws.${AWS::Region}.secretsmanager"
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.secretsmanager'
       VpcEndpointType: Interface
       PrivateDnsEnabled: true
       SubnetIds:
@@ -419,7 +419,7 @@ Resources:
     Type: AWS::EC2::VPCEndpoint
     Properties:
       VpcId: !Ref StandaloneVPC
-      ServiceName: !Sub "com.amazonaws.${AWS::Region}.s3"
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
       VpcEndpointType: Gateway
       RouteTableIds:
         - !Ref StandaloneRouteTable
@@ -427,7 +427,7 @@ Resources:
     Type: AWS::EC2::VPCEndpoint
     Properties:
       VpcId: !Ref StandaloneVPC
-      ServiceName: !Sub "com.amazonaws.${AWS::Region}.logs"
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.logs'
       VpcEndpointType: Interface
       PrivateDnsEnabled: true
       SubnetIds:
@@ -440,7 +440,7 @@ Resources:
     Type: AWS::EC2::VPCEndpoint
     Properties:
       VpcId: !Ref StandaloneVPC
-      ServiceName: !Sub "com.amazonaws.${AWS::Region}.kms"
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.kms'
       VpcEndpointType: Interface
       PrivateDnsEnabled: true
       SubnetIds:
@@ -453,7 +453,7 @@ Resources:
     Type: AWS::EC2::VPCEndpoint
     Properties:
       VpcId: !Ref StandaloneVPC
-      ServiceName: !Sub "com.amazonaws.${AWS::Region}.rds"
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.rds'
       VpcEndpointType: Interface
       PrivateDnsEnabled: true
       SubnetIds:
@@ -465,7 +465,7 @@ Resources:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
       GroupId: !Ref StandaloneLambdaSecurityGroup
-      Description: "Allow TLS inbound from VPC endpoints"
+      Description: 'Allow TLS inbound from VPC endpoints'
       IpProtocol: tcp
       FromPort: 443
       ToPort: 443
@@ -476,93 +476,93 @@ Outputs:
     Description: VPC ID for standalone environment
     Value: !Ref StandaloneVPC
     Export:
-      Name: !Sub "${ProjectName}-${Environment}-standalone-vpc-id"
+      Name: !Sub '${ProjectName}-${Environment}-standalone-vpc-id'
   StandaloneSubnet1Id:
     Description: First subnet ID
     Value: !Ref StandaloneSubnet1
     Export:
-      Name: !Sub "${ProjectName}-${Environment}-standalone-subnet-1-id"
+      Name: !Sub '${ProjectName}-${Environment}-standalone-subnet-1-id'
   StandaloneSubnet2Id:
     Description: Second subnet ID
     Value: !Ref StandaloneSubnet2
     Export:
-      Name: !Sub "${ProjectName}-${Environment}-standalone-subnet-2-id"
+      Name: !Sub '${ProjectName}-${Environment}-standalone-subnet-2-id'
   # RDS
   StandaloneRdsArn:
     Description: ARN of the RDS instance
-    Value: !Sub "arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db/${StandaloneRDSInstance}"
+    Value: !Sub 'arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db/${StandaloneRDSInstance}'
     Export:
-      Name: !Sub "${ProjectName}-${Environment}-standalone-rds-arn"
+      Name: !Sub '${ProjectName}-${Environment}-standalone-rds-arn'
   StandaloneRdsEndpoint:
     Description: RDS endpoint address
     Value: !GetAtt StandaloneRDSInstance.Endpoint.Address
     Export:
-      Name: !Sub "${ProjectName}-${Environment}-standalone-rds-endpoint"
+      Name: !Sub '${ProjectName}-${Environment}-standalone-rds-endpoint'
   StandaloneRdsPort:
     Description: RDS port
     Value: !GetAtt StandaloneRDSInstance.Endpoint.Port
     Export:
-      Name: !Sub "${ProjectName}-${Environment}-standalone-rds-port"
+      Name: !Sub '${ProjectName}-${Environment}-standalone-rds-port'
   StandaloneRdsSecretArn:
     Description: ARN of RDS secret
     Value: !Ref StandaloneRDSSecret
     Export:
-      Name: !Sub "${ProjectName}-${Environment}-standalone-rds-secret-arn"
+      Name: !Sub '${ProjectName}-${Environment}-standalone-rds-secret-arn'
   StandaloneRdsDbName:
     Description: Name of the RDS database
     Value: !GetAtt StandaloneRDSInstance.DBName
     Export:
-      Name: !Sub "${ProjectName}-${Environment}-standalone-rds-db-name"
+      Name: !Sub '${ProjectName}-${Environment}-standalone-rds-db-name'
   # RDS Proxy
   StandaloneRDSProxyEndpoint:
     Description: RDS Proxy endpoint
     Value: !GetAtt StandaloneRDSProxy.Endpoint
     Export:
-      Name: !Sub "${ProjectName}-${Environment}-standalone-rds-proxy-endpoint"
+      Name: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-endpoint'
   StandaloneRDSProxyArn:
     Description: ARN of the RDS Proxy
-    Value: !Sub "arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db-proxy/${StandaloneRDSProxy}"
+    Value: !Sub 'arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db-proxy/${StandaloneRDSProxy}'
     Export:
-      Name: !Sub "${ProjectName}-${Environment}-standalone-rds-proxy-arn"
+      Name: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-arn'
   StandaloneRdsProxyResourceId:
     Description: Resource ID for RDS Proxy IAM authentication
     Value: !Sub
       - arn:${AWS::Partition}:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:${ProxyId}
       - ProxyId: !Select
           - 6 #arn:PARTITION:rds:REGION:ACCOUNT:db-proxy:IDENTIFIER
-          - !Split [":", !GetAtt StandaloneRDSProxy.DBProxyArn]
+          - !Split [':', !GetAtt StandaloneRDSProxy.DBProxyArn]
     Export:
-      Name: !Sub "${ProjectName}-${Environment}-standalone-rds-proxy-resource-id"
+      Name: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-resource-id'
   # S3
   StandaloneS3BucketName:
     Description: Name of the S3 bucket
     Value: !Ref StandaloneS3Bucket
     Export:
-      Name: !Sub "${ProjectName}-${Environment}-standalone-s3-bucket-name"
+      Name: !Sub '${ProjectName}-${Environment}-standalone-s3-bucket-name'
   # Security Group
   StandaloneLambdaSecurityGroupId:
     Description: Security group ID for Lambda functions
     Value: !Ref StandaloneLambdaSecurityGroup
     Export:
-      Name: !Sub "${ProjectName}-${Environment}-standalone-lambda-sg-id"
+      Name: !Sub '${ProjectName}-${Environment}-standalone-lambda-sg-id'
   StandaloneRdsSecurityGroupId:
     Description: Security group ID for RDS instance
     Value: !Ref StandaloneRDSSecurityGroup
     Export:
-      Name: !Sub "${ProjectName}-${Environment}-standalone-rds-sg-id"
+      Name: !Sub '${ProjectName}-${Environment}-standalone-rds-sg-id'
   # KMS
   StandaloneKMSKeyId:
     Description: KMS Key ID for encryption
     Value: !Ref StandaloneKMSKey
     Export:
-      Name: !Sub "${ProjectName}-${Environment}-standalone-kms-key-id"
+      Name: !Sub '${ProjectName}-${Environment}-standalone-kms-key-id'
   StandaloneKMSKeyArn:
     Description: KMS Key ARN for encryption
     Value: !GetAtt StandaloneKMSKey.Arn
     Export:
-      Name: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
+      Name: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
   StandaloneRdsDBUsername:
     Description: Application username for RDS access
     Value: !Ref DbUsername
     Export:
-      Name: !Sub "${ProjectName}-${Environment}-standalone-rds-app-username"
+      Name: !Sub '${ProjectName}-${Environment}-standalone-rds-app-username'

@@ -23,11 +23,27 @@ Parameters:
     Type: String
   RdsDbPort:
     Type: Number
+  RdsDbName:
+    Type: String
+    Description: Database name for local development
+    Default: 'postgres'
+  RdsDbUsername:
+    Type: String
+    Description: User name for local development
+    Default: 'bodds_rw'
   BoilerplateLambdaLayerArn:
     Type: String
 
 Conditions:
   IsNotLocal: !Not [!Equals [!Ref Environment, 'local']]
+  IsStandalone: !Equals [!Ref Environment, 'standalone']
+  IsUsingBodsInfra:
+    !Not [
+      !Or [
+        !Equals [!Ref Environment, 'local'],
+        !Equals [!Ref Environment, 'standalone'],
+      ],
+    ]
 
 Globals:
   Function:
@@ -38,18 +54,28 @@ Globals:
     MemorySize: 1024
     ReservedConcurrentExecutions: 3
     KmsKeyArn: !If
-      - IsNotLocal
+      - IsUsingBodsInfra
       - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-      - !Ref AWS::NoValue
+      - !If
+        - IsStandalone
+        - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+        - !Ref AWS::NoValue
     VpcConfig: !If
-      - IsNotLocal
+      - IsUsingBodsInfra
       - SubnetIds:
           - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-0}}'
           - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-1}}'
           - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-2}}'
         SecurityGroupIds:
           - !GetAtt CommonLambdaSecurityGroup.GroupId
-      - !Ref AWS::NoValue
+      - !If
+        - IsStandalone
+        - SubnetIds:
+            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-subnet-1-id'
+            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-subnet-2-id'
+          SecurityGroupIds:
+            - !GetAtt CommonLambdaSecurityGroup.GroupId
+        - !Ref AWS::NoValue
 
 Resources:
   ###################################
@@ -135,9 +161,12 @@ Resources:
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-iterator-lambda'
       KmsKeyId: !If
-        - IsNotLocal
+        - IsUsingBodsInfra
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-        - !Ref AWS::NoValue
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - !Ref AWS::NoValue
       RetentionInDays: 30
 
   ################################
@@ -206,9 +235,12 @@ Resources:
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-generate-gtfsrt-lambda'
       KmsKeyId: !If
-        - IsNotLocal
+        - IsUsingBodsInfra
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-        - !Ref AWS::NoValue
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - !Ref AWS::NoValue
       RetentionInDays: 30
 
   ################################
@@ -233,17 +265,48 @@ Resources:
               Action:
                 - kms:GenerateDataKey
               Resource: !If
-                - IsNotLocal
+                - IsUsingBodsInfra
                 - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-                - '*'
+                - !If
+                  - IsStandalone
+                  - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+                  - '*'
         - !If
-          - IsNotLocal
+          - IsUsingBodsInfra
           - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
-          - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess'
+          - !If
+            - IsStandalone
+            - !Ref AWS::NoValue
+            - !If
+              - IsNotLocal
+              - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-rw-user-access-policy-arn}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
+              - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess'
         - !If
-          - IsNotLocal
+          - IsUsingBodsInfra
           - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
-          - 'arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess'
+          - !If
+            - IsStandalone
+            - !Ref AWS::NoValue
+            - !If
+              - IsNotLocal
+              - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-ro-user-access-policy-arn}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
+              - 'arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess'
+        - !If
+          - IsStandalone
+          - PolicyName: RDSProxyAccessPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action: rds-db:connect
+                  Resource:
+                    - !Sub
+                      - '${ProxyId}/${AppUsername}'
+                      - ProxyId:
+                          Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-resource-id'
+                        AppUsername:
+                          Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-app-username'
+          - !Ref AWS::NoValue
       Environment:
         Variables:
           AWS_SIRIVM_STORAGE_BUCKET_NAME: !Sub '{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
@@ -254,19 +317,37 @@ Resources:
             - !Ref AWS::NoValue
           PROJECT_ENV: !Ref Environment
           PROJECT_NAME: !Ref ProjectName
-          POSTGRES_HOST: !If
-            - IsNotLocal
-            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
-            - !Ref RdsDbHostAddr
-          POSTGRES_PORT: !Ref RdsDbPort
-          POSTGRES_DB: !If
-            - IsNotLocal
-            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
-            - postgres
-          POSTGRES_USER: !If
-            - IsNotLocal
-            - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
-            - bodds_rw
+        POSTGRES_HOST: !If
+          - IsUsingBodsInfra
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
+          - !If
+            - IsStandalone
+            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-endpoint'
+            - !If
+              - IsNotLocal
+              - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-endpoint}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
+              - !Ref RdsDbHostAddr
+        POSTGRES_PORT: !If
+          - IsUsingBodsInfra
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-port}}'
+          - !If
+            - IsStandalone
+            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-port'
+            - !Ref RdsDbPort
+        POSTGRES_DB: !If
+          - IsUsingBodsInfra
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
+          - !If
+            - IsStandalone
+            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-db-name'
+            - !Ref RdsDbName
+        POSTGRES_USER: !If
+          - IsUsingBodsInfra
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
+          - !If
+            - IsStandalone
+            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-app-username'
+            - !Ref RdsDbUsername
       LoggingConfig:
         LogGroup: !Ref GenerateSiriVmLambdaLogGroup
 
@@ -275,9 +356,12 @@ Resources:
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-generate-sirivm-lambda'
       KmsKeyId: !If
-        - IsNotLocal
+        - IsUsingBodsInfra
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-        - !Ref AWS::NoValue
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - !Ref AWS::NoValue
       RetentionInDays: 30
 
   ####################################
@@ -302,17 +386,48 @@ Resources:
               Action:
                 - kms:GenerateDataKey
               Resource: !If
-                - IsNotLocal
+                - IsUsingBodsInfra
                 - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-                - '*'
+                - !If
+                  - IsStandalone
+                  - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+                  - '*'
         - !If
-          - IsNotLocal
+          - IsUsingBodsInfra
           - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
-          - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess'
+          - !If
+            - IsStandalone
+            - !Ref AWS::NoValue
+            - !If
+              - IsNotLocal
+              - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-rw-user-access-policy-arn}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
+              - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess'
         - !If
-          - IsNotLocal
+          - IsUsingBodsInfra
           - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
-          - 'arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess'
+          - !If
+            - IsStandalone
+            - !Ref AWS::NoValue
+            - !If
+              - IsNotLocal
+              - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-ro-user-access-policy-arn}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
+              - 'arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess'
+        - !If
+          - IsStandalone
+          - PolicyName: RDSProxyAccessPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action: rds-db:connect
+                  Resource:
+                    - !Sub
+                      - '${ProxyId}/${AppUsername}'
+                      - ProxyId:
+                          Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-resource-id'
+                        AppUsername:
+                          Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-app-username'
+          - !Ref AWS::NoValue
       Environment:
         Variables:
           AWS_SIRIVM_STORAGE_BUCKET_NAME: !Sub '{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
@@ -323,19 +438,37 @@ Resources:
             - !Ref AWS::NoValue
           PROJECT_ENV: !Ref Environment
           PROJECT_NAME: !Ref ProjectName
-          POSTGRES_HOST: !If
-            - IsNotLocal
-            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
-            - !Ref RdsDbHostAddr
-          POSTGRES_PORT: !Ref RdsDbPort
-          POSTGRES_DB: !If
-            - IsNotLocal
-            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
-            - postgres
-          POSTGRES_USER: !If
-            - IsNotLocal
-            - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
-            - bodds_rw
+        POSTGRES_HOST: !If
+          - IsUsingBodsInfra
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
+          - !If
+            - IsStandalone
+            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-endpoint'
+            - !If
+              - IsNotLocal
+              - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-endpoint}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
+              - !Ref RdsDbHostAddr
+        POSTGRES_PORT: !If
+          - IsUsingBodsInfra
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-port}}'
+          - !If
+            - IsStandalone
+            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-port'
+            - !Ref RdsDbPort
+        POSTGRES_DB: !If
+          - IsUsingBodsInfra
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
+          - !If
+            - IsStandalone
+            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-db-name'
+            - !Ref RdsDbName
+        POSTGRES_USER: !If
+          - IsUsingBodsInfra
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
+          - !If
+            - IsStandalone
+            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-app-username'
+            - !Ref RdsDbUsername
       LoggingConfig:
         LogGroup: !Ref GenerateSiriVmTflLambdaLogGroup
 
@@ -344,9 +477,12 @@ Resources:
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-generate-sirivm-tfl-lambda'
       KmsKeyId: !If
-        - IsNotLocal
+        - IsUsingBodsInfra
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-        - !Ref AWS::NoValue
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - !Ref AWS::NoValue
       RetentionInDays: 30
 
   #########################################
