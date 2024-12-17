@@ -28,7 +28,9 @@ Parameters:
     Default: 'bodds_rw'
   BoilerplateLambdaLayerArn:
     Type: String
-
+  DynamoDBTableName:
+    Type: String
+    Default: ''
 Conditions:
   IsNotLocal: !Not [!Equals [!Ref Environment, 'local']]
   IsNotProd: !Not [!Equals [!Ref Environment, 'prod']]
@@ -464,7 +466,10 @@ Resources:
     Type: AWS::DynamoDB::Table
     ## checkov:skip=CKV_AWS_28:Ensure DynamoDB point in time recovery (backup) is enabled
     Properties:
-      TableName: !Sub '${ProjectName}-${Environment}-${SubFunction}-cache'
+      TableName: !If
+        - UseDefaultTableName
+        - !Sub '${ProjectName}-${Environment}-${SubFunction}-cache'
+        - !Ref DynamoDBTableName
       AttributeDefinitions:
         - AttributeName: Key
           AttributeType: S
