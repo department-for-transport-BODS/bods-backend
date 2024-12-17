@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: Supporting services for the execution of the timetables ETL process
 
@@ -56,9 +56,9 @@ Globals:
     VpcConfig: !If
       - IsUsingBodsInfra
       - SubnetIds:
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-0}}'
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-1}}'
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-2}}'
+          - !Sub "{{resolve:ssm:/bodds/${Environment}/private-subnet-0}}"
+          - !Sub "{{resolve:ssm:/bodds/${Environment}/private-subnet-1}}"
+          - !Sub "{{resolve:ssm:/bodds/${Environment}/private-subnet-2}}"
         SecurityGroupIds:
           - !GetAtt CommonLambdaSecurityGroup.GroupId
       - !If
@@ -133,7 +133,7 @@ Resources:
     Properties:
       RoleName: !Sub '${ProjectName}-${Environment}-${SubFunction}-sm-role'
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -142,11 +142,12 @@ Resources:
       Policies:
         - PolicyName: StateMachineLambdaInvokePolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action: lambda:InvokeFunction
                 Resource:
+                  - !GetAtt InitializePipelineLambda.Arn
                   - !GetAtt ClamAvScannerLambda.Arn
                   - !GetAtt FileValidationLambda.Arn
                   - !GetAtt SchemaCheckLambda.Arn
@@ -214,7 +215,7 @@ Resources:
       Policies:
         - PolicyName: 'StateMachineSQSPolicy'
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -231,7 +232,7 @@ Resources:
                 Resource: !GetAtt TimetablesStateMachine.Arn
         - PolicyName: KMSAccessPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -295,7 +296,7 @@ Resources:
         - !Ref BoilerplateLambdaLayerArn
       Environment:
         Variables:
-          CLAMAV_HOST: !Sub 'http://clamav.bodds.${Environment}'
+          CLAMAV_HOST: !Sub "http://clamav.bodds.${Environment}"
           CLAMAV_PORT: 3310
       LoggingConfig:
         LogGroup: !Ref ClamAvScannerLambdaLogGroup
@@ -591,7 +592,7 @@ Resources:
     Properties:
       RoleName: !Sub '${ProjectName}-${Environment}-${SubFunction}-common-lambda-execution-role'
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -617,7 +618,7 @@ Resources:
       Policies:
         - PolicyName: S3AccessPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action: s3:ListBucket
@@ -649,7 +650,7 @@ Resources:
                     - '*'
         - PolicyName: KMSAccessPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -665,7 +666,7 @@ Resources:
                     - '*'
         - PolicyName: DynamoDBAccessPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
