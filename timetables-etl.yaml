@@ -643,7 +643,13 @@ Resources:
     Condition: IsNotLocal
     Properties:
       QueueName: !Sub '${ProjectName}-${Environment}-${SubFunction}-process-queue'
-      KmsMasterKeyId: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+      KmsMasterKeyId: !If
+        - IsUsingBodsInfra
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - !Ref AWS::NoValue
       VisibilityTimeout: 180
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt TimetablesDeadLetterQueue.Arn
@@ -654,7 +660,13 @@ Resources:
     Condition: IsNotLocal
     Properties:
       QueueName: !Sub '${ProjectName}-${Environment}-${SubFunction}-dead-letter-queue'
-      KmsMasterKeyId: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+      KmsMasterKeyId: !If
+        - IsUsingBodsInfra
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - !Ref AWS::NoValue
       VisibilityTimeout: 300
 
   #########################################
