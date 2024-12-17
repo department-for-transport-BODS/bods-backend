@@ -453,37 +453,37 @@ Resources:
             - !Ref AWS::NoValue
           PROJECT_ENV: !Ref Environment
           PROJECT_NAME: !Ref ProjectName
-        POSTGRES_HOST: !If
-          - IsUsingBodsInfra
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
-          - !If
-            - IsStandalone
-            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-endpoint'
+          POSTGRES_HOST: !If
+            - IsUsingBodsInfra
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
             - !If
-              - IsNotLocal
-              - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-endpoint}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
-              - !Ref RdsDbHostAddr
-        POSTGRES_PORT: !If
-          - IsUsingBodsInfra
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-port}}'
-          - !If
-            - IsStandalone
-            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-port'
-            - !Ref RdsDbPort
-        POSTGRES_DB: !If
-          - IsUsingBodsInfra
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
-          - !If
-            - IsStandalone
-            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-db-name'
-            - !Ref RdsDbName
-        POSTGRES_USER: !If
-          - IsUsingBodsInfra
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
-          - !If
-            - IsStandalone
-            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-app-username'
-            - !Ref RdsDbUsername
+              - IsStandalone
+              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-endpoint'
+              - !If
+                - IsNotLocal
+                - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-endpoint}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
+                - !Ref RdsDbHostAddr
+          POSTGRES_PORT: !If
+            - IsUsingBodsInfra
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-port}}'
+            - !If
+              - IsStandalone
+              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-port'
+              - !Ref RdsDbPort
+          POSTGRES_DB: !If
+            - IsUsingBodsInfra
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
+            - !If
+              - IsStandalone
+              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-db-name'
+              - !Ref RdsDbName
+          POSTGRES_USER: !If
+            - IsUsingBodsInfra
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
+            - !If
+              - IsStandalone
+              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-app-username'
+              - !Ref RdsDbUsername
       LoggingConfig:
         LogGroup: !Ref GenerateSiriVmTflLambdaLogGroup
 
