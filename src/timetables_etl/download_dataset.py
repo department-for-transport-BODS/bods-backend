@@ -1,10 +1,10 @@
 import io
 import json
-import os
 import tempfile
 import zipfile
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from os import environ
 from pathlib import Path
 from typing import Optional
 from urllib.parse import unquote
@@ -151,18 +151,17 @@ def lambda_handler(event, context):
     Main lambda handler
     """
     logger.info(f"Received event:{json.dumps(event, indent=2)}")
-    TIME_ZONE = os.environ.get("USE_TZ")
+    TIME_ZONE = environ.get("USE_TZ", default=False)
     bucket = event["Bucket"]
     key = event["ObjectKey"]
-    url_link = event["URLLink"]
+    url_link = event.get("URLLink", None)
+    print(f"url_link: {url_link}")
 
-    # Get revision
-    revision_id = int(event["DatasetRevisionId"])
-    db = DbManager.get_db()
-    revision = get_revision(db, revision_id)
-    s3_handler = S3(bucket_name=bucket)
-
-    if revision.url_link:
+    if url_link:
+        revision_id = int(event["DatasetRevisionId"])
+        db = DbManager.get_db()
+        revision = get_revision(db, revision_id)
+        s3_handler = S3(bucket_name=bucket)
         logger.info("Downloading data.")
         try:
             now = datetime.now(tz=timezone.utc if TIME_ZONE else None).strftime(
