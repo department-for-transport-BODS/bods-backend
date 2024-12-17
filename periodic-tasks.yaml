@@ -308,19 +308,7 @@ Resources:
               - 'arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess'
         - !If
           - IsStandalone
-          - PolicyName: RDSProxyAccessPolicy
-            PolicyDocument:
-              Version: '2012-10-17'
-              Statement:
-                - Effect: Allow
-                  Action: rds-db:connect
-                  Resource:
-                    - !Sub
-                      - '${ProxyId}/${AppUsername}'
-                      - ProxyId:
-                          Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-resource-id'
-                        AppUsername:
-                          Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-app-username'
+          - !Ref RDSProxyAccessPolicy
           - !Ref AWS::NoValue
       Environment:
         Variables:
@@ -429,19 +417,7 @@ Resources:
               - 'arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess'
         - !If
           - IsStandalone
-          - PolicyName: RDSProxyAccessPolicy
-            PolicyDocument:
-              Version: '2012-10-17'
-              Statement:
-                - Effect: Allow
-                  Action: rds-db:connect
-                  Resource:
-                    - !Sub
-                      - '${ProxyId}/${AppUsername}'
-                      - ProxyId:
-                          Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-resource-id'
-                        AppUsername:
-                          Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-app-username'
+          - !Ref RDSProxyAccessPolicy
           - !Ref AWS::NoValue
       Environment:
         Variables:
@@ -540,3 +516,20 @@ Resources:
       FromPort: 5432
       ToPort: 5432
       SourceSecurityGroupId: !GetAtt CommonLambdaSecurityGroup.GroupId
+
+  RDSProxyAccessPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Condition: IsStandalone
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: rds-db:connect
+            Resource:
+              - !Sub
+                - '${ProxyId}/${AppUsername}'
+                - ProxyId:
+                    Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-resource-id'
+                  AppUsername:
+                    Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-app-username'
