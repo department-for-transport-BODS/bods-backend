@@ -499,7 +499,13 @@ Resources:
         - IpProtocol: '-1'
           Description: 'Allow outbound connectivity to any'
           CidrIp: '0.0.0.0/0'
-      VpcId: !Sub '{{resolve:ssm:/bodds/${Environment}/vpc-id}}'
+      VpcId: !If
+        - IsUsingBodsInfra
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/vpc-id}}'
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-vpc-id'
+          - !Ref AWS::NoValue
       Tags:
         - Key: Name
           Value: !Sub '${ProjectName}-${Environment}-${SubFunction}-common-lambda'
@@ -508,7 +514,13 @@ Resources:
     Type: AWS::EC2::SecurityGroupIngress
     Condition: IsNotLocal
     Properties:
-      GroupId: !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-sg-id}}'
+      GroupId: !If
+        - IsUsingBodsInfra
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-sg-id}}'
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-sg-id'
+          - !Ref AWS::NoValue
       Description: !Sub 'Allow inbound connectivity from ${ProjectName}-${Environment}-${SubFunction}-common-lambda'
       IpProtocol: tcp
       FromPort: 5432
