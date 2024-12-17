@@ -144,7 +144,7 @@ class TestFileProcessingResult(unittest.TestCase):
             session.commit()
 
         result_data = write_processing_step(
-            mock_db, name="Test Scanner", category="FARES"
+            mock_db, name=StepName.CLAM_AV_SCANNER, category="FARES"
         )
 
         self.assertTrue(result_data, 1)
@@ -152,7 +152,8 @@ class TestFileProcessingResult(unittest.TestCase):
     def test_get_file_processing_error_code(self):
         error_status = "NO_DATA_FOUND"
         mock_db = MockedDB()
-        result_data = mock_db.classes.pipelines_pipelineerrorcode(status=error_status)
+        result_data = mock_db.classes.pipelines_pipelineerrorcode(
+            error=error_status)
         mock_db.session.add(result_data)
         mock_db.session.commit()
 
@@ -166,7 +167,9 @@ class TestFileProcessingResult(unittest.TestCase):
             "Query failed"
         )
         with self.assertRaises(SQLAlchemyError) as _context:
-            write_processing_step(mock_db, name="Test Scanner", category="FARES")
+            write_processing_step(mock_db,
+                                  name=StepName.CLAM_AV_SCANNER,
+                                  category="FARES")
 
         self.assertEqual(str(_context.exception), "Query failed")
         mock_db.session.__enter__.return_value.query.assert_called_once()
@@ -175,9 +178,8 @@ class TestFileProcessingResult(unittest.TestCase):
         error_status = "NO_DATA_FOUND"
         mock_db = MockedDB()
         mock_db.session = MagicMock()
-        mock_db.session.__enter__.return_value.query.side_effect = NoResultFound(
-            "No record found"
-        )
+        mock_db.session.__enter__.return_value.query.side_effect = (
+            NoResultFound("No record found"))
         test_obj = PipelineFileProcessingResult(mock_db)
         with self.assertRaises(NoResultFound) as _context:
             get_file_processing_error_code(mock_db, error_status)

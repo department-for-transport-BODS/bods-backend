@@ -78,7 +78,7 @@ def get_record(db, class_name, filter_condition, error_message):
 
 def get_file_processing_error_code(db, status):
     class_name = db.classes.pipelines_pipelineerrorcode
-    filter_condition = class_name.status == status
+    filter_condition = class_name.error == status
     error_message = f"Processing error status {status} doesn't exist"
     return get_record(db, class_name, filter_condition, error_message)
 
@@ -94,18 +94,29 @@ def get_step(db, name, category):
         )
 
 
+def add_step(db, value, category):
+    """
+    Add step to db.
+    """
+    with db.session as session:
+        table = db.classes.pipelines_pipelineprocessingstep
+        step = table(name=value, category=category)
+        session.add(step)
+        session.commit()
+        return step
+
+
 def write_processing_step(db, name, category):
+    """
+    Write processing step in to DB, If already step exist
+    return it
+    """
     with db.session as session_:
         try:
-            class_name = db.classes.pipelines_pipelineprocessingstep
-            step = get_step(db, name, category)
-            if step:
-                return step
-            new_step = class_name(name=name, category=category)
-            session_.add(new_step)
-            session_.commit()
-            return new_step.id
+            return get_step(db, name.value, category)
         except SQLAlchemyError as err:
+            if isinstance(err, NoResultFound):
+                return add_step(db, name, category)
             session_.rollback()
             logger.error(f" Failed to add record {err}", exc_info=True)
             raise err
