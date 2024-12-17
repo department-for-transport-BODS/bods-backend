@@ -21,6 +21,7 @@ Parameters:
     Type: String
   RdsDbHostAddr:
     Type: String
+    Default: ''
   RdsDbPort:
     Type: Number
   RdsDbName:

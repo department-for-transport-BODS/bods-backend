@@ -15,6 +15,7 @@ Parameters:
     Default: 'tt'
   RdsDbHostAddr:
     Type: String
+    Default: ''
   RdsDbPort:
     Type: Number
   RdsDbName:
