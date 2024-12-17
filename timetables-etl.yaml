@@ -503,7 +503,10 @@ Resources:
         - IpProtocol: '-1'
           Description: 'Allow outbound connectivity to any'
           CidrIp: '0.0.0.0/0'
-      VpcId: !Sub '{{resolve:ssm:/bodds/${Environment}/vpc-id}}'
+      VpcId: !If
+        - IsUsingBodsInfra
+        - Fn::Sub: '{{resolve:ssm:/bodds/${Environment}/vpc-id}}'
+        - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-vpc-id'
       Tags:
         - Key: Name
           Value: !Sub '${ProjectName}-${Environment}-${SubFunction}-common-lambda'
@@ -512,7 +515,10 @@ Resources:
     Type: AWS::EC2::SecurityGroupIngress
     Condition: IsNotLocal
     Properties:
-      GroupId: !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-sg-id}}'
+      GroupId: !If
+        - IsUsingBodsInfra
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-sg-id}}'
+        - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-sg-id'
       Description: !Sub 'Allow inbound connectivity from ${ProjectName}-${Environment}-${SubFunction}-common-lambda'
       IpProtocol: tcp
       FromPort: 5432
@@ -534,13 +540,25 @@ Resources:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
         - !If
-          - IsNotLocal
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-rw-user-access-policy-arn}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
-          - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess' # Full access fallback
+          - IsUsingBodsInfra
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
+          - !If
+            - IsStandalone
+            - !Ref AWS::NoValue
+            - !If
+              - IsNotLocal
+              - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-rw-user-access-policy-arn}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
+              - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess'
         - !If
-          - IsNotLocal
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-ro-user-access-policy-arn}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
-          - 'arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess' # Read-only fallback
+        - IsUsingBodsInfra
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
+        - !If
+          - IsStandalone
+          - !Ref AWS::NoValue
+          - !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-ro-user-access-policy-arn}}'
+            - 'arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess'
       Policies:
         - PolicyName: S3AccessPolicy
           PolicyDocument:
@@ -549,17 +567,31 @@ Resources:
               - Effect: Allow
                 Action: s3:ListBucket
                 Resource: !If
-                  - IsNotLocal
-                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/app/arn}}'
-                  - '*'
+                  - IsUsingBodsInfra
+                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3-app-bucket}}'
+                  - !If
+                    - IsStandalone
+                    - !Sub
+                      - 'arn:aws:s3:::${BucketName}'
+                      - BucketName:
+                          Fn::ImportValue:
+                            Fn::Sub: '${ProjectName}-${Environment}-standalone-s3-bucket-name'
+                    - '*'
               - Effect: Allow
                 Action:
                   - s3:GetObject*
                   - s3:PutObject*
                 Resource: !If
-                  - IsNotLocal
-                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/app/arn}}'
-                  - '*'
+                  - IsUsingBodsInfra
+                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3-app-bucket}}'
+                  - !If
+                    - IsStandalone
+                    - !Sub
+                      - 'arn:aws:s3:::${BucketName}/*'
+                      - BucketName:
+                          Fn::ImportValue:
+                            Fn::Sub: '${ProjectName}-${Environment}-standalone-s3-bucket-name'
+                    - '*'
         - PolicyName: KMSAccessPolicy
           PolicyDocument:
             Version: '2012-10-17'
@@ -570,9 +602,12 @@ Resources:
                   - kms:Decrypt
                   - kms:Encrypt
                 Resource: !If
-                  - IsNotLocal
+                  - IsUsingBodsInfra
                   - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-                  - '*'
+                  - !If
+                    - IsStandalone
+                    - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+                    - '*'
         - PolicyName: DynamoDBAccessPolicy
           PolicyDocument:
             Version: '2012-10-17'
@@ -584,7 +619,22 @@ Resources:
                   - dynamodb:UpdateItem
                   - dynamodb:DeleteItem
                 Resource: !GetAtt TimetablesCache.Arn
-
+        - !If
+          - IsStandalone
+          - PolicyName: RDSProxyAccessPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action: rds-db:connect
+                  Resource:
+                    - !Sub
+                      - '${ProxyId}/${AppUsername}'
+                      - ProxyId:
+                          Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-resource-id'
+                        AppUsername:
+                          Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-app-username'
+          - !Ref AWS::NoValue
   TimetablesProcessQueue:
     Type: AWS::SQS::Queue
     Condition: IsNotLocal
@@ -603,3 +653,34 @@ Resources:
       QueueName: !Sub '${ProjectName}-${Environment}-${SubFunction}-dead-letter-queue'
       KmsMasterKeyId: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
       VisibilityTimeout: 300
+
+  #########################################
+  #### STANDALONE SPECIFIC ####
+  #########################################
+
+  CreateTablesLambda:
+    Type: AWS::Serverless::Function
+    Condition: IsStandalone
+    DependsOn:
+      - CommonLambdaExecutionRole
+      - CommonLambdaSecurityGroup
+    Properties:
+      Description: Run manually to create DB Tables for standalone
+      FunctionName: !Sub '${ProjectName}-${Environment}-create-tables-lambda'
+      Role: !GetAtt CommonLambdaExecutionRole.Arn
+      CodeUri: ./src/standalone
+      Handler: create_db_tables.lambda_handler
+      Layers:
+        - !Ref BoilerplateLambdaLayerArn
+      LoggingConfig:
+        LogGroup: !Ref CreateTablesLambdaLogGroup
+  CreateTablesLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: IsStandalone
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-create-tables-lambda'
+      KmsKeyId:
+        Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+      RetentionInDays: 30
