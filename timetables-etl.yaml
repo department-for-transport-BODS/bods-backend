@@ -167,7 +167,13 @@ Resources:
       Name: !Sub '${ProjectName}-${Environment}-${SubFunction}-sm-trigger'
       Description: !Sub 'EventBridge Pipe used as trigger for ${ProjectName}-${Environment} Timetables ETL State Machine'
       RoleArn: !GetAtt TimetablesStateMachineTriggerRole.Arn
-      KmsKeyIdentifier: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+      KmsKeyIdentifier: !If
+        - IsUsingBodsInfra
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - !Ref AWS::NoValue
       Source: !GetAtt TimetablesProcessQueue.Arn
       SourceParameters:
         SqsQueueParameters:
