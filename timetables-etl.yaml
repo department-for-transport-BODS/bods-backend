@@ -274,9 +274,12 @@ Resources:
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-clamav-scanner-lambda'
       KmsKeyId: !If
-        - IsNotLocal
+        - IsUsingBodsInfra
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-        - !Ref AWS::NoValue
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - !Ref AWS::NoValue
       RetentionInDays: 30
 
   ################################
@@ -300,9 +303,12 @@ Resources:
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-file-validation-lambda'
       KmsKeyId: !If
-        - IsNotLocal
+        - IsUsingBodsInfra
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-        - !Ref AWS::NoValue
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - !Ref AWS::NoValue
       RetentionInDays: 30
 
   #############################
@@ -329,9 +335,12 @@ Resources:
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-schema-check-lambda'
       KmsKeyId: !If
-        - IsNotLocal
+        - IsUsingBodsInfra
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-        - !Ref AWS::NoValue
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - !Ref AWS::NoValue
       RetentionInDays: 30
 
   ##################################
@@ -355,9 +364,12 @@ Resources:
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-post-schema-check-lambda'
       KmsKeyId: !If
-        - IsNotLocal
+        - IsUsingBodsInfra
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-        - !Ref AWS::NoValue
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - !Ref AWS::NoValue
       RetentionInDays: 30
 
   ####################################
@@ -381,9 +393,12 @@ Resources:
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-file-attributes-etl-lambda'
       KmsKeyId: !If
-        - IsNotLocal
+        - IsUsingBodsInfra
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-        - !Ref AWS::NoValue
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - !Ref AWS::NoValue
       RetentionInDays: 30
 
   ###############################
@@ -407,9 +422,12 @@ Resources:
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-pti-validation-lambda'
       KmsKeyId: !If
-        - IsNotLocal
+        - IsUsingBodsInfra
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-        - !Ref AWS::NoValue
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - !Ref AWS::NoValue
       RetentionInDays: 30
 
   ##################################
@@ -433,9 +451,12 @@ Resources:
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-exception-handler-lambda'
       KmsKeyId: !If
-        - IsNotLocal
+        - IsUsingBodsInfra
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-        - !Ref AWS::NoValue
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - !Ref AWS::NoValue
       RetentionInDays: 30
 
   #########################################
