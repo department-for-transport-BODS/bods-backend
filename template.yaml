@@ -68,7 +68,6 @@ Resources:
   TimetablesEtl:
     Type: AWS::Serverless::Application
     Condition: IsNotStandalone
-    DependsOn: StandaloneResources
     Properties:
       Location: './timetables-etl.yaml'
       Parameters:
