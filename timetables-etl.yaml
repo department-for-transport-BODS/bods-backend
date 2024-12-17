@@ -486,9 +486,12 @@ Resources:
         SSEEnabled: true
         SSEType: 'KMS'
         KMSMasterKeyId: !If
-          - IsNotLocal
+          - IsUsingBodsInfra
           - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-          - !Ref AWS::NoValue
+          - !If
+            - IsStandalone
+            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+            - !Ref AWS::NoValue
 
   CommonLambdaSecurityGroup:
     Type: AWS::EC2::SecurityGroup
