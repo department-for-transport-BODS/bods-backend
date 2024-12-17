@@ -234,7 +234,10 @@ Resources:
                   - kms:GenerateDataKey
                   - kms:Decrypt
                   - kms:Encrypt
-                Resource: !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+                Resource: !If
+                  - IsUsingBodsInfra
+                  - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+                  - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
 
   # TimetablesStateMachineTriggerLogGroup:
   #   Type: AWS::Logs::LogGroup
