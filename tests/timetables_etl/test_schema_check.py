@@ -4,14 +4,14 @@ import unittest
 from io import BytesIO
 from unittest.mock import MagicMock, call, patch
 
-from timetables_etl.timetable_schema_check import (
+from timetables_etl.schema_check import (
     DatasetTXCValidator,
     SchemaLoader,
     get_transxchange_schema,
     lambda_handler,
 )
 
-PREFIX = "timetables_etl.timetable_schema_check"
+PREFIX = "timetables_etl.schema_check"
 TEST_ENV_VAR = {
     "PROJECT_ENV": "dev",
     "POSTGRES_HOST": "sample_host",
