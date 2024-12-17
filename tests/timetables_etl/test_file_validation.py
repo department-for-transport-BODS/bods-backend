@@ -6,9 +6,9 @@ from common_layer.exceptions.xml_file_exceptions import *
 from common_layer.exceptions.zip_file_exceptions import *
 
 from tests.mock_db import MockedDB
-from timetables_etl.txc_file_validator import TimetableFileValidator, lambda_handler
+from timetables_etl.file_validation import TimetableFileValidator, lambda_handler
 
-TEST_MODULE = "timetables_etl.txc_file_validator"
+TEST_MODULE = "timetables_etl.file_validation"
 TEST_ENV_VAR = {
     "PROJECT_ENV": "dev",
     "CLAMAV_HOST": "abc",

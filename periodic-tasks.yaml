@@ -9,6 +9,10 @@ Parameters:
   ProjectName:
     Description: The name of the project
     Type: String
+  SubFunction:
+    Description: The sub-fuction that each resource relates to
+    Type: String
+    Default: 'pt'
   AvlConsumerApiBaseUrl:
     Type: String
   CavlConsumerUrl:
@@ -51,20 +55,20 @@ Resources:
   ###################################
   #### PT ITERATOR STATE MACHINE ####
   ###################################
-  PtIteratorStateMachine:
+  IteratorStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
-      Name: !Sub '${ProjectName}-${Environment}-pt-iterator-sm'
+      Name: !Sub '${ProjectName}-${Environment}-${SubFunction}-iterator-sm'
       Policies:
         - LambdaInvokePolicy:
-            FunctionName: !Ref PtIteratorLambda
+            FunctionName: !Ref IteratorLambda
       Events:
         Scheduler:
           Type: Schedule
           Properties:
-            Name: !Sub '${ProjectName}-${Environment}-pt-iterator-sm-scheduler'
+            Name: !Sub '${ProjectName}-${Environment}-${SubFunction}-iterator-sm-scheduler'
             Schedule: rate(1 minute)
-            Enabled: False
+            Enabled: True
             Input: !Sub |
               {
                 "functions": [ 
@@ -90,7 +94,7 @@ Resources:
               States:
                 InvokeLambda:
                   Type: Task
-                  Resource: !GetAtt PtIteratorLambda.Arn
+                  Resource: !GetAtt IteratorLambda.Arn
                   Parameters:
                     functionName.$: $.functionName
                     intervals.$: $.intervals
@@ -103,16 +107,16 @@ Resources:
               intervals.$: $.config.intervals
             End: true
 
-  ############################
-  #### PT ITERATOR LAMBDA ####
-  ############################
-  PtIteratorLambda:
+  #########################
+  #### ITERATOR LAMBDA ####
+  #########################
+  IteratorLambda:
     Type: AWS::Serverless::Function
     # checkov:skip=CKV_AWS_117:Ensure that AWS Lambda function is configured inside a VPC
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-pt-iterator-lambda'
+      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-iterator-lambda'
       CodeUri: ./src/periodic_tasks
-      Handler: pt_iterator.lambda_handler
+      Handler: iterator.lambda_handler
       MemorySize: 128
       VpcConfig:
       Policies:
@@ -124,12 +128,12 @@ Resources:
         - LambdaInvokePolicy:
             FunctionName: !Ref GenerateSiriVmTflLambda
       LoggingConfig:
-        LogGroup: !Ref PtIteratorLambdaLogGroup
+        LogGroup: !Ref IteratorLambdaLogGroup
 
-  PtIteratorLambdaLogGroup:
+  IteratorLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-pt-iterator-lambda'
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-iterator-lambda'
       KmsKeyId: !If
         - IsNotLocal
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
@@ -142,7 +146,7 @@ Resources:
   GenerateGtfsRtLambda:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-generate-gtfsrt-lambda'
+      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-generate-gtfsrt-lambda'
       CodeUri: ./src/periodic_tasks
       Handler: create_gtfsrt_zip.lambda_handler
       Layers:
@@ -151,7 +155,7 @@ Resources:
         - 'AWSLambdaBasicExecutionRole'
         - 'AWSLambdaVPCAccessExecutionRole'
         - S3WritePolicy:
-            BucketName: !Sub 'bodds-${Environment}-sirivm'
+            BucketName: !Sub '{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
         - Version: '2012-10-17'
           Statement:
             - Effect: Allow
@@ -164,14 +168,14 @@ Resources:
         - !If
           - IsNotLocal
           - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
-          - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess' # Is this right? No such role as ReadWrite
+          - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess'
         - !If
           - IsNotLocal
           - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
           - 'arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess'
       Environment:
         Variables:
-          AWS_SIRIVM_STORAGE_BUCKET_NAME: !Sub 'bodds-${Environment}-sirivm'
+          AWS_SIRIVM_STORAGE_BUCKET_NAME: !Sub '{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
           CAVL_CONSUMER_URL: !Ref CavlConsumerUrl
           GTFS_API_BASE_URL: !Ref GtfsApiBaseUrl
           # GTFS_API_ACTIVE: 'True'
@@ -200,7 +204,7 @@ Resources:
   GenerateGtfsRtLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-generate-gtfsrt-lambda'
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-generate-gtfsrt-lambda'
       KmsKeyId: !If
         - IsNotLocal
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
@@ -213,7 +217,7 @@ Resources:
   GenerateSiriVmLambda:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-generate-sirivm-lambda'
+      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-generate-sirivm-lambda'
       CodeUri: ./src/periodic_tasks
       Handler: create_sirivm_zip.lambda_handler
       Layers:
@@ -222,7 +226,7 @@ Resources:
         - 'AWSLambdaBasicExecutionRole'
         - 'AWSLambdaVPCAccessExecutionRole'
         - S3WritePolicy:
-            BucketName: !Sub 'bodds-${Environment}-sirivm'
+            BucketName: !Sub '{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
         - Version: '2012-10-17'
           Statement:
             - Effect: Allow
@@ -235,14 +239,14 @@ Resources:
         - !If
           - IsNotLocal
           - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
-          - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess' # Is this right? No such role as ReadWrite
+          - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess'
         - !If
           - IsNotLocal
           - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
           - 'arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess'
       Environment:
         Variables:
-          AWS_SIRIVM_STORAGE_BUCKET_NAME: !Sub 'bodds-${Environment}-sirivm'
+          AWS_SIRIVM_STORAGE_BUCKET_NAME: !Sub '{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
           AVL_CONSUMER_API_BASE_URL: !Ref AvlConsumerApiBaseUrl
           HTTPS_PROXY: !If
             - IsNotLocal
@@ -269,7 +273,7 @@ Resources:
   GenerateSiriVmLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-generate-sirivm-lambda'
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-generate-sirivm-lambda'
       KmsKeyId: !If
         - IsNotLocal
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
@@ -282,7 +286,7 @@ Resources:
   GenerateSiriVmTflLambda:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-generate-sirivm-tfl-lambda'
+      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-generate-sirivm-tfl-lambda'
       CodeUri: ./src/periodic_tasks
       Handler: create_sirivm_tfl_zip.lambda_handler
       Layers:
@@ -291,7 +295,7 @@ Resources:
         - 'AWSLambdaBasicExecutionRole'
         - 'AWSLambdaVPCAccessExecutionRole'
         - S3WritePolicy:
-            BucketName: !Sub 'bodds-${Environment}-sirivm'
+            BucketName: !Sub '{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
         - Version: '2012-10-17'
           Statement:
             - Effect: Allow
@@ -304,14 +308,14 @@ Resources:
         - !If
           - IsNotLocal
           - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
-          - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess' # Is this right? No such role as ReadWrite
+          - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess'
         - !If
           - IsNotLocal
           - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
           - 'arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess'
       Environment:
         Variables:
-          AWS_SIRIVM_STORAGE_BUCKET_NAME: !Sub 'bodds-${Environment}-sirivm'
+          AWS_SIRIVM_STORAGE_BUCKET_NAME: !Sub '{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
           AVL_CONSUMER_API_BASE_URL: !Ref AvlConsumerApiBaseUrl
           HTTPS_PROXY: !If
             - IsNotLocal
@@ -338,7 +342,7 @@ Resources:
   GenerateSiriVmTflLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-generate-sirivm-tfl-lambda'
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-generate-sirivm-tfl-lambda'
       KmsKeyId: !If
         - IsNotLocal
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
@@ -352,8 +356,8 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Condition: IsNotLocal
     Properties:
-      GroupDescription: !Sub 'Security group for ${ProjectName}-${Environment} PT related lambda functions'
-      GroupName: !Sub '${ProjectName}-${Environment}-pt-common-lambda'
+      GroupDescription: !Sub 'Security group for ${ProjectName}-${Environment}-${SubFunction} PT related lambda functions'
+      GroupName: !Sub '${ProjectName}-${Environment}-${SubFunction}-common-lambda'
       SecurityGroupEgress:
         - IpProtocol: '-1'
           Description: 'Allow outbound connectivity to any'
@@ -361,14 +365,14 @@ Resources:
       VpcId: !Sub '{{resolve:ssm:/bodds/${Environment}/vpc-id}}'
       Tags:
         - Key: Name
-          Value: !Sub '${ProjectName}-${Environment}-pt-common-lambda'
+          Value: !Sub '${ProjectName}-${Environment}-${SubFunction}-common-lambda'
 
   CommonLambdaSecurityGroupIngress:
     Type: AWS::EC2::SecurityGroupIngress
     Condition: IsNotLocal
     Properties:
       GroupId: !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-sg-id}}'
-      Description: !Sub 'Allow inbound connectivity from ${ProjectName}-${Environment}-pt-common-lambda'
+      Description: !Sub 'Allow inbound connectivity from ${ProjectName}-${Environment}-${SubFunction}-common-lambda'
       IpProtocol: tcp
       FromPort: 5432
       ToPort: 5432

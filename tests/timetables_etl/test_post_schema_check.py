@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 from tests.mock_db import MockedDB
 from tests.mock_db import pipeline_processing_step as step_
-from timetables_etl.timetable_post_schema_check import get_violation, lambda_handler
+from timetables_etl.post_schema_check import get_violation, lambda_handler
 
 TEST_ENV_VAR = {
     "PROJECT_ENV": "dev",
@@ -19,12 +19,12 @@ TEST_ENV_VAR = {
 
 class TestLambdaHandler(unittest.TestCase):
 
-    @patch("timetables_etl.timetable_post_schema_check.DbManager.get_db")
-    @patch("timetables_etl.timetable_post_schema_check.get_revision")
-    @patch("timetables_etl.timetable_post_schema_check.get_violation")
-    @patch("timetables_etl.timetable_post_schema_check.S3")
+    @patch("timetables_etl.post_schema_check.DbManager.get_db")
+    @patch("timetables_etl.post_schema_check.get_revision")
+    @patch("timetables_etl.post_schema_check.get_violation")
+    @patch("timetables_etl.post_schema_check.S3")
     @patch(
-        "timetables_etl.timetable_post_schema_check." "PostSchemaViolationRepository"
+        "timetables_etl.post_schema_check." "PostSchemaViolationRepository"
     )
     @patch("common_layer.db.file_processing_result.DbManager")
     @patch("common_layer.db.file_processing_result.get_revision")
@@ -93,7 +93,7 @@ class TestLambdaHandler(unittest.TestCase):
             filename="test-key", details="Error", revision_id=1
         )
 
-    @patch("timetables_etl.timetable_post_schema_check.TransXChangeDocument")
+    @patch("timetables_etl.post_schema_check.TransXChangeDocument")
     def test_get_violation_with_pii_error(self, mock_txc_doc):
         """
         Test get_violation detects a PII_ERROR.
@@ -106,7 +106,7 @@ class TestLambdaHandler(unittest.TestCase):
         violation = get_violation("mocked-file-content")
         self.assertEqual(violation, "PII_ERROR")
 
-    @patch("timetables_etl.timetable_post_schema_check.TransXChangeDocument")
+    @patch("timetables_etl.post_schema_check.TransXChangeDocument")
     def test_get_violation_no_error(self, mock_txc_doc):
         """
         Test get_violation returns None when no error is found.
@@ -119,10 +119,10 @@ class TestLambdaHandler(unittest.TestCase):
         violation = get_violation("mocked-file-content")
         self.assertIsNone(violation)
 
-    @patch("timetables_etl.timetable_post_schema_check.logger.error")
-    @patch("timetables_etl.timetable_post_schema_check.get_revision")
+    @patch("timetables_etl.post_schema_check.logger.error")
+    @patch("timetables_etl.post_schema_check.get_revision")
     @patch("common_layer.db.file_processing_result.DbManager")
-    @patch("timetables_etl.timetable_post_schema_check.S3")
+    @patch("timetables_etl.post_schema_check.S3")
     @patch.dict("os.environ", TEST_ENV_VAR)
     def test_lambda_handler_error_handling(
         self, mock_s3, m_db_manager, mock_get_revision, mock_logger
