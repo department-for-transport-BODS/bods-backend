@@ -487,7 +487,7 @@ Resources:
                   - s3:PutObject*
                 Resource: !If
                   - IsNotLocal
-                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/app/arn}}'
+                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/app/arn}}/*'
                   - '*'
         - PolicyName: KMSAccessPolicy
           PolicyDocument:
