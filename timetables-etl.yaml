@@ -90,7 +90,7 @@ Globals:
             - !Ref RdsDbHostAddr
         POSTGRES_PORT: !If
           - IsUsingBodsInfra
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-port}}'
+          - !Ref RdsDbPort
           - !If
             - IsStandalone
             - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-port'
