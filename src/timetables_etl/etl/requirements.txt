@@ -1,3 +1,4 @@
 pydantic-settings
 geoalchemy2
 shapely
+pyproj
