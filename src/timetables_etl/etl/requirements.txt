@@ -1,4 +1,1 @@
-pydantic-settings
-geoalchemy2
-shapely
-pyproj
+pyproj==3.7.0
