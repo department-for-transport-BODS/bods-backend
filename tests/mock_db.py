@@ -1,6 +1,17 @@
-from sqlalchemy import Column, Integer, String, Boolean, JSON, TIMESTAMP, Text, create_engine, event
-from sqlalchemy.orm import sessionmaker, declarative_base
 from types import SimpleNamespace
+
+from sqlalchemy import (
+    JSON,
+    TIMESTAMP,
+    Boolean,
+    Column,
+    Integer,
+    String,
+    Text,
+    create_engine,
+    event,
+)
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 Base = declarative_base()
 
@@ -39,7 +50,7 @@ class pipeline_processing_step(Base):
 class pipeline_error_code(Base):
     __tablename__ = "pipelines_pipelineerrorcode"
     id = Column(Integer, primary_key=True)
-    status = Column(String(255))
+    error = Column(String(255))
 
 
 class organisation_datasetrevision(Base):

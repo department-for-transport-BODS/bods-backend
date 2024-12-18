@@ -78,7 +78,7 @@ def get_record(db, class_name, filter_condition, error_message):
 
 def get_file_processing_error_code(db, status):
     class_name = db.classes.pipelines_pipelineerrorcode
-    filter_condition = class_name.status == status
+    filter_condition = class_name.error == status
     error_message = f"Processing error status {status} doesn't exist"
     return get_record(db, class_name, filter_condition, error_message)
 
