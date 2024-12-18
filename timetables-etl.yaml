@@ -217,7 +217,7 @@ Resources:
         - !Ref BoilerplateLambdaLayerArn
       Environment:
         Variables:
-          CLAMAV_HOST: !Sub 'http://clamav.bodds.${Environment}'
+          CLAMAV_HOST: !Sub 'clamav.bodds.${Environment}'
           CLAMAV_PORT: 3310
       LoggingConfig:
         LogGroup: !Ref ClamAvScannerLambdaLogGroup
