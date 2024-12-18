@@ -1,15 +1,16 @@
 from io import BytesIO
-from common_layer.db.manager import DbManager
+
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import (
-    txc_file_attributes_to_db,
     file_processing_result_to_db,
+    txc_file_attributes_to_db,
 )
+from common_layer.db.manager import DbManager
 from common_layer.db.repositories.dataset_revision import get_revision
 from common_layer.logger import logger
 from common_layer.s3 import S3
-from common_layer.timetables.transxchange import TransXChangeDatasetParser
 from common_layer.timetables.dataclasses.transxchange import TXCFile
+from common_layer.timetables.transxchange import TransXChangeDatasetParser
 
 
 @file_processing_result_to_db(StepName.TXC_ATTRIBUTE_EXTRACTION)

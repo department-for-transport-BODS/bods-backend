@@ -3,17 +3,16 @@ Test Parsing Vehicle Journey Timing Links
 """
 
 import pytest
-from lxml import etree
-
-from timetables_etl.etl.app.txc.models import (
+from common_layer.txc.models import (
     TXCVehicleJourneyStopUsageStructure,
     TXCVehicleJourneyTimingLink,
 )
-from timetables_etl.etl.app.txc.parser.vehicle_journeys import (
+from common_layer.txc.parser.vehicle_journeys import (
     parse_vehicle_journey_stop_usage,
     parse_vehicle_journey_timing_link,
     parse_vehicle_journey_timing_links,
 )
+from lxml import etree
 
 
 @pytest.mark.parametrize(

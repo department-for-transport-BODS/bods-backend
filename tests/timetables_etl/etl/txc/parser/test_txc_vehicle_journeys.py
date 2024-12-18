@@ -3,21 +3,20 @@ Test Parsing of Vehinicle Journeys
 """
 
 import pytest
-from lxml import etree
-from pydantic import ValidationError
-
-from timetables_etl.etl.app.txc.models import (
+from common_layer.txc.models import (
     TXCBlock,
     TXCLayoverPoint,
     TXCOperational,
     TXCTicketMachine,
     TXCVehicleJourney,
 )
-from timetables_etl.etl.app.txc.parser.vehicle_journeys import (
+from common_layer.txc.parser.vehicle_journeys import (
     parse_layover_point,
     parse_operational,
     parse_vehicle_journey,
 )
+from lxml import etree
+from pydantic import ValidationError
 
 from .utils import assert_model_equal
 

@@ -17,16 +17,16 @@ from common_layer.database.repos import (
     TransmodelServicePatternStopRepo,
     TransmodelStopActivityRepo,
 )
-from structlog.stdlib import get_logger
-
-from ..transform.service_pattern_stops import generate_pattern_stops
-from ..transform.service_pattern_stops_flexible import generate_flexible_pattern_stops
-from ..txc.models import (
+from common_layer.txc.models import (
     TXCFlexibleJourneyPattern,
     TXCFlexibleVehicleJourney,
     TXCJourneyPatternSection,
     TXCVehicleJourney,
 )
+from structlog.stdlib import get_logger
+
+from ..transform.service_pattern_stops import generate_pattern_stops
+from ..transform.service_pattern_stops_flexible import generate_flexible_pattern_stops
 
 log = get_logger()
 

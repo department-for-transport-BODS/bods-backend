@@ -6,6 +6,11 @@ from typing import Callable
 
 import pytest
 from common_layer.database.models import NaptanStopPoint, TransmodelServicePattern
+from common_layer.txc.models import (
+    TXCJourneyPattern,
+    TXCJourneyPatternSection,
+    TXCService,
+)
 from geoalchemy2 import WKBElement
 from geoalchemy2.shape import to_shape
 from shapely import Point
@@ -25,11 +30,6 @@ from tests.timetables_etl.factories.txc import (
 from timetables_etl.etl.app.transform.service_patterns import (
     create_service_pattern,
     generate_service_pattern_geometry,
-)
-from timetables_etl.etl.app.txc.models import (
-    TXCJourneyPattern,
-    TXCJourneyPatternSection,
-    TXCService,
 )
 
 

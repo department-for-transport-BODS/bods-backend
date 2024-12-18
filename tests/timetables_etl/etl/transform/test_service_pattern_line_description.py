@@ -6,16 +6,7 @@ from datetime import date
 
 import pytest
 from common_layer.database.models import NaptanStopPoint
-
-from tests.timetables_etl.factories.database.naptan import NaptanStopPointFactory
-from tests.timetables_etl.factories.txc import TXCLineDescriptionFactory, TXCLineFactory
-from timetables_etl.etl.app.transform.service_pattern_metadata import (
-    LineDescription,
-    PatternMetadata,
-    extract_pattern_metadata,
-    get_line_description,
-)
-from timetables_etl.etl.app.txc.models import (
+from common_layer.txc.models import (
     TXCJourneyPattern,
     TXCJourneyPatternSection,
     TXCJourneyPatternStopUsage,
@@ -24,6 +15,15 @@ from timetables_etl.etl.app.txc.models import (
     TXCLineDescription,
     TXCService,
     TXCStandardService,
+)
+
+from tests.timetables_etl.factories.database.naptan import NaptanStopPointFactory
+from tests.timetables_etl.factories.txc import TXCLineDescriptionFactory, TXCLineFactory
+from timetables_etl.etl.app.transform.service_pattern_metadata import (
+    LineDescription,
+    PatternMetadata,
+    extract_pattern_metadata,
+    get_line_description,
 )
 
 

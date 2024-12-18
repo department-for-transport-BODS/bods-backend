@@ -5,17 +5,17 @@ Meta Data Extraction
 from dataclasses import dataclass
 from uuid import uuid4
 
-from structlog.stdlib import get_logger
-
-from ..helpers import StopsLookup
-from ..transform.utils_stops import get_first_last_stops
-from ..txc.models import (
+from common_layer.txc.models import (
     TXCFlexibleJourneyPattern,
     TXCJourneyPattern,
     TXCJourneyPatternSection,
     TXCLine,
     TXCService,
 )
+from structlog.stdlib import get_logger
+
+from ..helpers import StopsLookup
+from ..transform.utils_stops import get_first_last_stops
 
 log = get_logger()
 

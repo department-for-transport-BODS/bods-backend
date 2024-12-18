@@ -5,19 +5,13 @@ TXC Stoppoint XML to Pydantic Test
 from datetime import datetime, timezone
 
 import pytest
-from lxml import etree
-
-from timetables_etl.etl.app.txc.models import (
-    TXCLocation,
-    TXCMapping,
-    TXCRouteLink,
-    TXCTrack,
-)
-from timetables_etl.etl.app.txc.parser.route_sections import (
+from common_layer.txc.models import TXCLocation, TXCMapping, TXCRouteLink, TXCTrack
+from common_layer.txc.parser.route_sections import (
     parse_route_link,
     parse_route_links,
     parse_track,
 )
+from lxml import etree
 
 
 @pytest.mark.parametrize(

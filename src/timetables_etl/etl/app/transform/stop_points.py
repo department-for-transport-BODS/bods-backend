@@ -5,17 +5,17 @@ Stop Point Information
 from common_layer.database import SqlDB
 from common_layer.database.models.model_naptan import NaptanStopPoint
 from common_layer.database.repos.repo_naptan import NaptanStopPointRepo
+from common_layer.txc.models.txc_stoppoint import (
+    AnnotatedStopPointRef,
+    LocationStructure,
+    TXCStopPoint,
+)
 from geoalchemy2.shape import from_shape
 from pyproj import Transformer
 from shapely.geometry import Point
 from structlog.stdlib import get_logger
 
 from ..helpers import StopsLookup
-from ..txc.models.txc_stoppoint import (
-    AnnotatedStopPointRef,
-    LocationStructure,
-    TXCStopPoint,
-)
 
 log = get_logger()
 

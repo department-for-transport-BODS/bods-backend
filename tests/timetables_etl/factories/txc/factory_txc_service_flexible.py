@@ -3,8 +3,7 @@ Flexible Service Factories
 """
 
 import factory
-
-from timetables_etl.etl.app.txc.models import (
+from common_layer.txc.models import (
     TXCBookingArrangements,
     TXCFixedStopUsage,
     TXCFlexibleJourneyPattern,

@@ -3,6 +3,7 @@ ETL Pipeline
 """
 
 from common_layer.database import SqlDB
+from common_layer.txc.models.txc_data import TXCData
 from structlog.stdlib import get_logger
 
 from .helpers import ReferenceDataLookups
@@ -19,7 +20,6 @@ from .transform.stop_points import (
     create_stop_point_location_mapping,
     get_naptan_stops_from_db,
 )
-from .txc.models.txc_data import TXCData
 
 log = get_logger()
 

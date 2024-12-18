@@ -10,6 +10,8 @@ from common_layer.database.repos import (
     OrganisationTXCFileAttributesRepo,
 )
 from common_layer.s3 import S3
+from common_layer.txc.models import TXCData
+from common_layer.txc.parser.parser_txc import load_xml_data, parse_txc_from_element
 from lxml.etree import _Element
 from structlog.stdlib import get_logger
 
@@ -17,8 +19,6 @@ from .exception_handler import handle_lambda_errors
 from .log_setup import configure_logging
 from .models import ETLInputData, TaskData
 from .pipeline import transform_data
-from .txc.models import TXCData
-from .txc.parser.parser_txc import load_xml_data, parse_txc_from_element
 
 log = get_logger()
 

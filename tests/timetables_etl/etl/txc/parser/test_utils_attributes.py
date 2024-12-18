@@ -5,14 +5,13 @@ XML parser helpers
 from datetime import datetime, timezone
 
 import pytest
-from lxml import etree
-
-from timetables_etl.etl.app.txc.parser.utils_attributes import (
+from common_layer.txc.parser.utils_attributes import (
     parse_creation_datetime,
     parse_modification,
     parse_modification_datetime,
     parse_revision_number,
 )
+from lxml import etree
 
 
 @pytest.mark.parametrize(

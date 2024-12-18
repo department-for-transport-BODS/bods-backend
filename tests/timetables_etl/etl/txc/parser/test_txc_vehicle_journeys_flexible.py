@@ -3,18 +3,17 @@ Flexible Vehicle Journey PArsing Tests
 """
 
 import pytest
-from lxml import etree
-from pydantic import ValidationError
-
-from timetables_etl.etl.app.txc.models import (
+from common_layer.txc.models import (
     TXCFlexibleServiceTimes,
     TXCFlexibleVehicleJourney,
     TXCServicePeriod,
 )
-from timetables_etl.etl.app.txc.parser.vehicle_journeys_flexible import (
+from common_layer.txc.parser.vehicle_journeys_flexible import (
     parse_flexible_service_times,
     parse_flexible_vehicle_journey,
 )
+from lxml import etree
+from pydantic import ValidationError
 
 from .utils import assert_model_equal
 
