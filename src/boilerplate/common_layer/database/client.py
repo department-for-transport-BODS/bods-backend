@@ -32,6 +32,7 @@ class ProjectEnvironment(str, Enum):
     DEVELOPMENT = "development"
     STAGING = "staging"
     PRODUCTION = "production"
+    STANDALONE = "standalone"
 
 
 class PostgresSettings(BaseSettings):

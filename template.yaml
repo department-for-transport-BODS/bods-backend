@@ -24,10 +24,21 @@ Parameters:
   RdsDbPort:
     Type: Number
     Default: 5432
-
+Conditions:
+  IsStandalone: !Equals [!Ref Environment, 'standalone']
+  IsNotStandalone: !Not [!Equals [!Ref Environment, 'standalone']]
 Resources:
+  StandaloneResources:
+    Type: AWS::Serverless::Application
+    Condition: IsStandalone
+    Properties:
+      Location: './timetables-etl-standalone.yaml'
+      Parameters:
+        Environment: !Ref Environment
+        ProjectName: !Ref ProjectName
   PeriodicTasks:
     Type: AWS::Serverless::Application
+    Condition: IsNotStandalone
     Properties:
       Location: './periodic-tasks.yaml'
       Parameters:
@@ -39,15 +50,41 @@ Resources:
         RdsDbHostAddr: !Ref RdsDbHostAddr
         RdsDbPort: !Ref RdsDbPort
         BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
-
+  PeriodicTasksStandalone:
+    Type: AWS::Serverless::Application
+    Condition: IsStandalone
+    DependsOn: StandaloneResources
+    Properties:
+      Location: './periodic-tasks.yaml'
+      Parameters:
+        Environment: !Ref Environment
+        ProjectName: !Ref ProjectName
+        AvlConsumerApiBaseUrl: !Ref AvlConsumerApiBaseUrl
+        CavlConsumerUrl: !Ref CavlConsumerUrl
+        GtfsApiBaseUrl: !Ref GtfsApiBaseUrl
+        RdsDbHostAddr: !Ref RdsDbHostAddr
+        RdsDbPort: !Ref RdsDbPort
+        BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
   TimetablesEtl:
     Type: AWS::Serverless::Application
+    Condition: IsNotStandalone
     Properties:
       Location: './timetables-etl.yaml'
       Parameters:
         Environment: !Ref Environment
         ProjectName: !Ref ProjectName
         RdsDbHostAddr: !Ref RdsDbHostAddr
+        RdsDbPort: !Ref RdsDbPort
+        BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
+  TimetablesEtlStandalone:
+    Type: AWS::Serverless::Application
+    Condition: IsStandalone
+    DependsOn: StandaloneResources
+    Properties:
+      Location: './timetables-etl.yaml'
+      Parameters:
+        Environment: !Ref Environment
+        ProjectName: !Ref ProjectName
         RdsDbPort: !Ref RdsDbPort
         BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
 
