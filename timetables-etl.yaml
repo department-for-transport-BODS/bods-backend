@@ -72,7 +72,7 @@ Globals:
     Environment:
       Variables:
         HTTPS_PROXY: !If
-          - IsNotLocal
+          - IsUsingBodsInfra
           - !Sub 'http://squid.bodds.${Environment}:3128'
           - !Ref AWS::NoValue
         PROJECT_ENV: !Ref Environment
