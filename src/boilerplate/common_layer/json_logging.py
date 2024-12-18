@@ -15,7 +15,7 @@ from structlog.types import EventDict
 class AWSCloudWatchLogs:
     """
     Render a log line compatible with AWS CloudWatch Logs.
-    AWS Cloudwatch Logs lets allows for two space separated items before the json log
+    AWS CloudWatch Logs allows for two space separated items before the json log
     Which makes reading them in the logs easier
 
     """
