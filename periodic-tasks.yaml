@@ -184,7 +184,13 @@ Resources:
         - 'AWSLambdaBasicExecutionRole'
         - 'AWSLambdaVPCAccessExecutionRole'
         - S3WritePolicy:
-            BucketName: !Sub '{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
+            BucketName: !If
+              - IsUsingBodsInfra
+              - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
+              - !If
+                - IsStandalone
+                - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-s3-bucket-name'
+                - !Ref AWS::NoValue
         - Version: '2012-10-17'
           Statement:
             - Effect: Allow
@@ -219,7 +225,13 @@ Resources:
               - 'arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess'
       Environment:
         Variables:
-          AWS_SIRIVM_STORAGE_BUCKET_NAME: !Sub '{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
+          AWS_SIRIVM_STORAGE_BUCKET_NAME: !If
+            - IsUsingBodsInfra
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
+            - !If
+              - IsStandalone
+              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-s3-bucket-name'
+              - !Ref AWS::NoValue
           CAVL_CONSUMER_URL: !Ref CavlConsumerUrl
           GTFS_API_BASE_URL: !Ref GtfsApiBaseUrl
           # GTFS_API_ACTIVE: 'True'
@@ -230,18 +242,36 @@ Resources:
           PROJECT_ENV: !Ref Environment
           PROJECT_NAME: !Ref ProjectName
           POSTGRES_HOST: !If
-            - IsNotLocal
+            - IsUsingBodsInfra
             - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
-            - !Ref RdsDbHostAddr
-          POSTGRES_PORT: !Ref RdsDbPort
+            - !If
+              - IsStandalone
+              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-endpoint'
+              - !If
+                - IsNotLocal
+                - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-endpoint}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
+                - !Ref RdsDbHostAddr
+          POSTGRES_PORT: !If
+            - IsUsingBodsInfra
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-port}}'
+            - !If
+              - IsStandalone
+              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-port'
+              - !Ref RdsDbPort
           POSTGRES_DB: !If
-            - IsNotLocal
+            - IsUsingBodsInfra
             - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
-            - postgres
+            - !If
+              - IsStandalone
+              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-db-name'
+              - !Ref RdsDbName
           POSTGRES_USER: !If
-            - IsNotLocal
+            - IsUsingBodsInfra
             - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
-            - bodds_rw
+            - !If
+              - IsStandalone
+              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-app-username'
+              - !Ref RdsDbUsername
       LoggingConfig:
         LogGroup: !Ref GenerateGtfsRtLambdaLogGroup
 
@@ -273,7 +303,13 @@ Resources:
         - 'AWSLambdaBasicExecutionRole'
         - 'AWSLambdaVPCAccessExecutionRole'
         - S3WritePolicy:
-            BucketName: !Sub '{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
+            BucketName: !If
+              - IsUsingBodsInfra
+              - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
+              - !If
+                - IsStandalone
+                - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-s3-bucket-name'
+                - !Ref AWS::NoValue
         - Version: '2012-10-17'
           Statement:
             - Effect: Allow
@@ -312,7 +348,13 @@ Resources:
           - !Ref AWS::NoValue
       Environment:
         Variables:
-          AWS_SIRIVM_STORAGE_BUCKET_NAME: !Sub '{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
+          AWS_SIRIVM_STORAGE_BUCKET_NAME: !If
+            - IsUsingBodsInfra
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
+            - !If
+              - IsStandalone
+              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-s3-bucket-name'
+              - !Ref AWS::NoValue
           AVL_CONSUMER_API_BASE_URL: !Ref AvlConsumerApiBaseUrl
           HTTPS_PROXY: !If
             - IsNotLocal
@@ -382,7 +424,13 @@ Resources:
         - 'AWSLambdaBasicExecutionRole'
         - 'AWSLambdaVPCAccessExecutionRole'
         - S3WritePolicy:
-            BucketName: !Sub '{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
+            BucketName: !If
+              - IsUsingBodsInfra
+              - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
+              - !If
+                - IsStandalone
+                - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-s3-bucket-name'
+                - !Ref AWS::NoValue
         - Version: '2012-10-17'
           Statement:
             - Effect: Allow
@@ -421,7 +469,13 @@ Resources:
           - !Ref AWS::NoValue
       Environment:
         Variables:
-          AWS_SIRIVM_STORAGE_BUCKET_NAME: !Sub '{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
+          AWS_SIRIVM_STORAGE_BUCKET_NAME: !If
+            - IsUsingBodsInfra
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
+            - !If
+              - IsStandalone
+              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-s3-bucket-name'
+              - !Ref AWS::NoValue
           AVL_CONSUMER_API_BASE_URL: !Ref AvlConsumerApiBaseUrl
           HTTPS_PROXY: !If
             - IsNotLocal
