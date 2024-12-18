@@ -122,7 +122,7 @@ def lambda_handler(event, context):
         # Backward compatibility with python file handler
         file_object = s3_handler.get_object(file_path=key)
         file_object.name = key
-        av_scanner.scan(  )  # noqa
+        av_scanner.scan(file_object)  # noqa
         msg = f"Successfully scanned the file '{key}' from bucket '{bucket}'"
 
         prefix = unzip(s3_client=s3_handler, file_path=key, prefix="ext") \
