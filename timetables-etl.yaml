@@ -686,7 +686,7 @@ Resources:
       Description: Run manually to create DB Tables for standalone
       FunctionName: !Sub '${ProjectName}-${Environment}-create-tables-lambda'
       Role: !GetAtt CommonLambdaExecutionRole.Arn
-      CodeUri: ./src/standalone
+      CodeUri: ./src/standalone/create_tables
       Handler: create_db_tables.lambda_handler
       Layers:
         - !Ref BoilerplateLambdaLayerArn
