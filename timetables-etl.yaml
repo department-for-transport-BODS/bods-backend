@@ -577,7 +577,7 @@ Resources:
                 Action: s3:ListBucket
                 Resource: !If
                   - IsUsingBodsInfra
-                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3-app-bucket}}'
+                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/app/arn}}'
                   - !If
                     - IsStandalone
                     - !Sub
@@ -592,7 +592,7 @@ Resources:
                   - s3:PutObject*
                 Resource: !If
                   - IsUsingBodsInfra
-                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3-app-bucket}}'
+                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/app/arn}}'
                   - !If
                     - IsStandalone
                     - !Sub
