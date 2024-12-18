@@ -1,10 +1,1 @@
-lxml
-structlog
-pydantic
-boto3
-psycopg2-binary
-sqlalchemy
-pyproj
-pydantic-settings
-geoalchemy2
-shapely
+pyproj==3.7.0
