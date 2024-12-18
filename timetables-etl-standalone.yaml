@@ -22,6 +22,8 @@ Resources:
   # S3 Bucket
   StandaloneS3Bucket:
     Type: AWS::S3::Bucket
+    ## checkov:skip=CKV_AWS_21:Ensure the S3 bucket has versioning enabled, not needed
+    ## checkov:skip=CKV_AWS_18:Ensure the S3 bucket has access logging enabled, not needed
     Properties:
       BucketName: !Sub '${ProjectName}-${Environment}-bucket'
       PublicAccessBlockConfiguration:
@@ -213,6 +215,7 @@ Resources:
           FromPort: 5432
           ToPort: 5432
           SourceSecurityGroupId: !Ref StandaloneLambdaSecurityGroup
+          Description: RDS Ingress
   StandaloneLambdaSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -251,6 +254,8 @@ Resources:
   # RDS Proxy
   StandaloneRDSProxy:
     Type: AWS::RDS::DBProxy
+    ## checkov:skip=CKV_AWS_157:Ensure that RDS instances have Multi-AZ enabled, Test/Dev so not needed
+    ## checkov:skip=CKV_AWS_118:Ensure that enhanced monitoring is enabled for Amazon RDS instances, not required
     Properties:
       DBProxyName: !Sub '${ProjectName}-${Environment}-proxy'
       EngineFamily: POSTGRESQL
@@ -307,12 +312,14 @@ Resources:
           FromPort: 5432
           ToPort: 5432
           SourceSecurityGroupId: !Ref StandaloneLambdaSecurityGroup
+          Description: Standalone RDS Proxy Ingress
       Tags:
         - Key: Name
           Value: !Sub '${ProjectName}-${Environment}-rds-proxy-sg'
   RDSProxyToRDSIngress:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
+      Description: 'ETL Standalone RDS Proxy to RDS Ingress'
       GroupId: !Ref StandaloneRDSSecurityGroup
       IpProtocol: tcp
       FromPort: 5432
@@ -322,6 +329,7 @@ Resources:
   RDSProxyEgress:
     Type: AWS::EC2::SecurityGroupEgress
     Properties:
+      Description: 'ETL Standalone RDS Proxy Egress'
       GroupId: !Ref StandaloneRDSProxySecurityGroup
       IpProtocol: tcp
       FromPort: 5432
@@ -342,6 +350,7 @@ Resources:
 
   StandaloneRDSUserSetupLambda:
     Type: AWS::Serverless::Function
+    ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     DependsOn:
       - SecretsManagerEndpoint
       - CloudWatchLogsEndpoint

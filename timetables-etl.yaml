@@ -675,6 +675,7 @@ Resources:
 
   CreateTablesLambda:
     Type: AWS::Serverless::Function
+    ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Condition: IsStandalone
     Properties:
       Description: Run manually to create DB Tables for standalone
