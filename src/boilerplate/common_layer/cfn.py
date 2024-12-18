@@ -1,7 +1,7 @@
 """
 Cloudformation Response Decorator
 When using a lambda as part of a cloudformation custom resource
-The result of the execution needst to be sent to the platform
+The result of the execution needs to be sent to the platform
 """
 
 import functools
