@@ -9,6 +9,7 @@ from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 from common_layer.database.create_tables import create_db_tables
+from common_layer.txc.parser.parser_txc import parse_txc_file
 from structlog.stdlib import get_logger
 
 from boilerplate.common_layer.database.client import (
@@ -18,7 +19,6 @@ from boilerplate.common_layer.database.client import (
     SqlDB,
 )
 from timetables_etl.etl.app.pipeline import transform_data
-from timetables_etl.etl.app.txc.parser.parser_txc import parse_txc_file
 from tools.local_etl.mock_task_data import create_task_data
 from tools.local_etl.models import TestConfig
 from tools.local_etl.timing import TimingStats, print_timing_report

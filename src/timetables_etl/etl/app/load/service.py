@@ -5,11 +5,11 @@ Gen and load of Transmodel Services
 from common_layer.database import SqlDB
 from common_layer.database.models import TransmodelService
 from common_layer.database.repos import TransmodelServiceRepo
+from common_layer.txc.models.txc_service import TXCService
 from structlog.stdlib import get_logger
 
 from ..models import TaskData
 from ..transform.services import make_transmodel_service
-from ..txc.models.txc_service import TXCService
 
 log = get_logger()
 

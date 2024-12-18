@@ -9,10 +9,10 @@ from common_layer.database.models import (
     ETLErrorCode,
     OrganisationDatasetRevision,
 )
+from common_layer.txc.models.txc_data import TXCData
 
 from timetables_etl.etl.app.load.txc_file_attributes import make_txc_file_attributes
 from timetables_etl.etl.app.models import ETLInputData, TaskData
-from timetables_etl.etl.app.txc.models.txc_data import TXCData
 
 
 def create_task_data(
@@ -61,9 +61,9 @@ def create_task_data(
         revision=revision,
         file_attributes=file_attributes,
         input_data=ETLInputData(
-            task_id=123,
-            file_attributes_id=file_attributes.id,
-            s3_bucket_name="test",
-            s3_file_key="test",
+            DatasetEtlTaskResultId=123,
+            fileAttributesId=file_attributes.id,
+            Bucket="test",
+            ObjectKey="test",
         ),
     )

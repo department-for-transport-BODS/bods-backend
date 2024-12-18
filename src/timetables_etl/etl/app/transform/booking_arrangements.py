@@ -9,9 +9,8 @@ from common_layer.database.models import (
     TransmodelBookingArrangements,
     TransmodelService,
 )
+from common_layer.txc.models import TXCService
 from structlog.stdlib import get_logger
-
-from ..txc.models import TXCService
 
 log = get_logger()
 

@@ -15,14 +15,13 @@ from common_layer.database.models.model_transmodel import (
 from common_layer.database.models.model_transmodel_vehicle_journey import (
     TransmodelVehicleJourney,
 )
-from structlog.stdlib import get_logger
-
-from ..txc.models import (
+from common_layer.txc.models import (
     TXCFlexibleVehicleJourney,
     TXCJourneyPatternSection,
     TXCJourneyPatternStopUsage,
     TXCVehicleJourney,
 )
+from structlog.stdlib import get_logger
 
 log = get_logger()
 

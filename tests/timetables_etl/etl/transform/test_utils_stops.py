@@ -3,17 +3,17 @@ Test Stop Handling Utils
 """
 
 import pytest
+from common_layer.txc.models import (
+    TXCJourneyPattern,
+    TXCJourneyPatternSection,
+    TXCJourneyPatternStopUsage,
+    TXCJourneyPatternTimingLink,
+)
 
 from tests.timetables_etl.factories.database.naptan import NaptanStopPointFactory
 from timetables_etl.etl.app.transform.utils_stops import (
     get_first_last_stops,
     get_terminal_stop_points,
-)
-from timetables_etl.etl.app.txc.models import (
-    TXCJourneyPattern,
-    TXCJourneyPatternSection,
-    TXCJourneyPatternStopUsage,
-    TXCJourneyPatternTimingLink,
 )
 
 STOP_MAPPING_DATA = [

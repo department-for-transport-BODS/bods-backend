@@ -5,8 +5,7 @@ Factories for a TXC Service
 from datetime import date
 
 import factory
-
-from timetables_etl.etl.app.txc.models import (
+from common_layer.txc.models import (
     TXCJourneyPattern,
     TXCLine,
     TXCLineDescription,
