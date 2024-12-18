@@ -125,6 +125,24 @@
               "ObjectKey.$": "$.Key",
               "DatasetRevisionId.$": "$.DatasetRevisionId"
             },
+            "Next": "ETLProcess",
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ExceptionHandler"
+              }
+            ]
+          },
+          "ETLProcess": {
+            "Type": "Task",
+            "Resource": "${ETLProcessLambdaArn}",
+            "Parameters": {
+              "Bucket.$": "$.Bucket",
+              "ObjectKey.$": "$.Key",
+              "DatasetRevisionId.$": "$.DatasetRevisionId"
+            },
             "Next": "Success",
             "Catch": [
               {
