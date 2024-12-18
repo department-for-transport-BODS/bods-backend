@@ -90,6 +90,7 @@ python_functions = ["test_*"]
 omit = [
   "src/boilerplate/db/models.py",
   "src/boilerplate/common_layer/database/**/*", # Ignoring for now whilst mock scheme is devised
+  "src/standalone/**/*",                        # Standalone Deployment Scripts
 ]
 
 [tool.black]
