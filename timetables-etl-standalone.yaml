@@ -229,6 +229,8 @@ Resources:
 
   StandaloneRDSInstance:
     Type: AWS::RDS::DBInstance
+    ## checkov:skip=CKV_AWS_157:Ensure that RDS instances have Multi-AZ enabled, for dev not needed
+    ## checkov:skip=CKV_AWS_118:Ensure that enhanced monitoring is enabled for Amazon RDS instances, not required
     Properties:
       Engine: postgres
       EngineVersion: '13.13'
@@ -351,6 +353,7 @@ Resources:
   StandaloneRDSUserSetupLambda:
     Type: AWS::Serverless::Function
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
+    ## checkov:skip=CKV_AWS_173:Check encryption settings for Lambda environment variable, dev db so not a priority
     DependsOn:
       - SecretsManagerEndpoint
       - CloudWatchLogsEndpoint
