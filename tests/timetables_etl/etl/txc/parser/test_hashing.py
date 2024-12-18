@@ -6,8 +6,7 @@ import platform
 from pathlib import Path
 
 import pytest
-
-from timetables_etl.etl.app.txc.parser.hashing import get_file_hash
+from common_layer.txc.parser.hashing import get_file_hash
 
 
 @pytest.mark.parametrize(

@@ -5,13 +5,12 @@ XML Parsing Types Functions Tests
 from datetime import datetime, timezone
 
 import pytest
-from lxml import etree
-
-from timetables_etl.etl.app.txc.parser.utils_attributes import (
+from common_layer.txc.parser.utils_attributes import (
     parse_xml_attribute,
     parse_xml_datetime,
     parse_xml_int,
 )
+from lxml import etree
 
 
 @pytest.mark.parametrize(

@@ -3,10 +3,9 @@ Testing Route XML Parsing
 """
 
 import pytest
+from common_layer.txc.models import TXCRoute, TXCRouteLink, TXCRouteSection
+from common_layer.txc.parser.routes import parse_routes
 from lxml import etree
-
-from timetables_etl.etl.app.txc.models import TXCRoute, TXCRouteLink, TXCRouteSection
-from timetables_etl.etl.app.txc.parser.routes import parse_routes
 
 
 @pytest.mark.parametrize(
