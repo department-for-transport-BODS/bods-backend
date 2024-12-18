@@ -141,7 +141,9 @@
             "Parameters": {
               "Bucket.$": "$.Bucket",
               "ObjectKey.$": "$.Key",
-              "DatasetRevisionId.$": "$.DatasetRevisionId"
+              "DatasetRevisionId.$": "$.DatasetRevisionId",
+              "fileAttributesId.$": "$.fileAttributesEtl.id",
+              "DatasetEtlTaskResultId.$": "$.detail.datasetEtlTaskResultId"
             },
             "Next": "Success",
             "Catch": [

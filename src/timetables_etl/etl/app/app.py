@@ -91,6 +91,7 @@ def lambda_handler(event, _):
     Timetable ETL
     """
     configure_logging()
+    log.debug("Input Data", data=event)
     input_data = ETLInputData(**event)
     db = SqlDB()
     txc_data = extract_txc_data(input_data.s3_bucket_name, input_data.s3_file_key)
