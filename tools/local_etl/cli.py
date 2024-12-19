@@ -4,9 +4,9 @@ import asyncio
 from pathlib import Path
 
 import typer
+from common_layer.json_logging import configure_logging
 from structlog.stdlib import get_logger
 
-from timetables_etl.etl.app.log_setup import configure_logging
 from tools.common.models import TestConfig
 from tools.common.xml_tools import get_xml_paths
 from tools.local_etl.processing import process_files

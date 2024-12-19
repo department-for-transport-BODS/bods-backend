@@ -6,10 +6,10 @@ from pathlib import Path
 
 import typer
 from common_layer.database.client import SqlDB
+from common_layer.json_logging import configure_logging
 from common_layer.txc.parser.parser_txc import parse_txc_file
 from structlog.stdlib import get_logger
 
-from timetables_etl.etl.app.log_setup import configure_logging
 from timetables_etl.file_attributes_etl import (
     FileAttributesInputData,
     process_file_attributes,

@@ -10,10 +10,10 @@ from common_layer.database.models import OrganisationDatasetRevision
 from common_layer.database.repos.repo_organisation import (
     OrganisationDatasetRevisionRepo,
 )
+from common_layer.json_logging import configure_logging
 from structlog.stdlib import get_logger
 
 from tests.factories.database.organisation import OrganisationDatasetRevisionFactory
-from timetables_etl.etl.app.log_setup import configure_logging
 from tools.common.db_tools import setup_process_db
 from tools.common.models import TestConfig
 

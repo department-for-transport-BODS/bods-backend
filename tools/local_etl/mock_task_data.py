@@ -47,6 +47,8 @@ def create_task_data(
         username="",
         short_description="Jon Test SingleXML Upload",
         num_of_timing_points=40,
+        modified_file_hash="123",
+        original_file_hash="123",
     )
     file_attributes = make_txc_file_attributes(txc, revision)
     file_attributes.id = 123
