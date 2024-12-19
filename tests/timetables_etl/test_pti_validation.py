@@ -7,7 +7,9 @@ from common_layer.exceptions.pipeline_exceptions import PipelineException
 from tests.conftest import decorator_mock
 
 # Patch the file processing decorator before importing the module
-with patch("common_layer.db.file_processing_result.file_processing_result_to_db") as m_file_processing_result_to_db:
+with patch(
+    "common_layer.db.file_processing_result.file_processing_result_to_db"
+) as m_file_processing_result_to_db:
 
     def decorator_mock(step_name):
         def wrapper(func):
@@ -22,7 +24,7 @@ with patch("common_layer.db.file_processing_result.file_processing_result_to_db"
 
 @pytest.fixture(autouse=True, scope="module")
 def m_db_manager():
-    with patch("pti_validation.DbManager") as m_db:
+    with patch("pti_validation.SqlDB") as m_db:
         yield m_db
 
 
@@ -31,7 +33,9 @@ def m_db_manager():
 @patch("pti_validation.S3")
 @patch("pti_validation.TxcFileAttributesRepository")
 @patch("pti_validation.PTIValidationService")
-def test_lambda_hander(m_pti_validation_service, m_file_attribute_repo, m_s3, m_revision_repo, m_dynamodb):
+def test_lambda_hander(
+    m_pti_validation_service, m_file_attribute_repo, m_s3, m_revision_repo, m_dynamodb
+):
     revision_id = 123
     event = {
         "Bucket": "test-bucket",
@@ -52,15 +56,21 @@ def test_lambda_hander(m_pti_validation_service, m_file_attribute_repo, m_s3, m_
 
     assert result == {"statusCode": 200}
     m_s3.return_value.get_object.assert_called_once_with(file_path="test-key")
-    m_pti_validation_service.return_value.validate.assert_called_once_with(revision, s3_file_obj, txc_file_attributes)
-    m_file_processing_result_to_db.assert_called_once_with(step_name=StepName.PTI_VALIDATION)
+    m_pti_validation_service.return_value.validate.assert_called_once_with(
+        revision, s3_file_obj, txc_file_attributes
+    )
+    m_file_processing_result_to_db.assert_called_once_with(
+        step_name=StepName.PTI_VALIDATION
+    )
 
 
 @patch("pti_validation.DatasetRevisionRepository")
 @patch("pti_validation.S3")
 @patch("pti_validation.TxcFileAttributesRepository")
 @patch("pti_validation.PTIValidationService")
-def test_lambda_hander_no_valid_files(m_pti_validation_service, m_file_attribute_repo, m_s3, m_revision_repo):
+def test_lambda_hander_no_valid_files(
+    m_pti_validation_service, m_file_attribute_repo, m_s3, m_revision_repo
+):
     revision_id = 123
     event = {
         "Bucket": "test-bucket",
@@ -72,4 +82,6 @@ def test_lambda_hander_no_valid_files(m_pti_validation_service, m_file_attribute
     with pytest.raises(PipelineException):
         pti_validation.lambda_handler(event, {})
 
-    m_file_processing_result_to_db.assert_called_once_with(step_name=StepName.PTI_VALIDATION)
+    m_file_processing_result_to_db.assert_called_once_with(
+        step_name=StepName.PTI_VALIDATION
+    )
