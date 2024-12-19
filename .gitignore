@@ -63,3 +63,6 @@ venv.bak/
 
 # Pycharm
 .idea/
+
+# Ignore Generated CSVs from db_viewer
+data/

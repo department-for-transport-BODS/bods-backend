@@ -1,3 +1,7 @@
+"""
+Shared Pydantic Models for the CLI
+"""
+
 from dataclasses import dataclass
 from pathlib import Path
 
