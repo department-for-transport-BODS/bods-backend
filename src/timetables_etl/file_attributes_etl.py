@@ -58,6 +58,10 @@ def make_txc_file_attributes(
     if len(txc.Services) > 1:
         log.warning("There are more than 1 TXC Service, using first")
 
+    if len(txc.Services) == 0:
+        log.error("TXCData does not contain services")
+        raise ValueError("TXC Data has no Services")
+
     return OrganisationTXCFileAttributes(
         schema_version=validate_schema_version(metadata.SchemaVersion),
         modification_datetime=metadata.ModificationDateTime,

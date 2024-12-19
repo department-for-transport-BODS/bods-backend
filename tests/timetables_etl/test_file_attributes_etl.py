@@ -96,11 +96,6 @@ from timetables_etl.file_attributes_etl import make_txc_file_attributes
             id="Mixed Services With And Without End Dates",
         ),
         pytest.param(
-            TXCDataFactory(Services=[]),
-            OrganisationDatasetRevisionFactory.create_with_id(9),
-            id="No Services At All",
-        ),
-        pytest.param(
             TXCDataFactory(
                 Services=[
                     TXCServiceFactory.create(
@@ -209,6 +204,12 @@ def test_make_txc_file_attributes_success(
             OrganisationDatasetRevisionFactory.create_with_id(2),
             ValueError,
             id="Unsupported Schema Version (2.5)",
+        ),
+        pytest.param(
+            TXCDataFactory(Services=[]),
+            OrganisationDatasetRevisionFactory.create_with_id(9),
+            ValueError,
+            id="No Services At All",
         ),
     ],
 )
