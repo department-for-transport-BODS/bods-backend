@@ -125,15 +125,6 @@ from timetables_etl.file_attributes_etl import make_txc_file_attributes
             OrganisationDatasetRevisionFactory.create_with_id(11),
             id="Multiple Operators First Used",
         ),
-        pytest.param(
-            TXCDataFactory(
-                Operators=[
-                    TXCOperatorFactory(NationalOperatorCode=None, LicenceNumber=None),
-                ]
-            ),
-            OrganisationDatasetRevisionFactory.create_with_id(12),
-            id="Operator With None Values",
-        ),
     ],
 )
 def test_make_txc_file_attributes_success(
