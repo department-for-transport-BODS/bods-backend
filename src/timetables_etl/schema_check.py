@@ -1,3 +1,4 @@
+import io
 import json
 import os
 from pathlib import Path
@@ -121,6 +122,7 @@ def lambda_handler(event, context):
         s3_handler = S3(bucket_name=bucket)
         file_object = s3_handler.get_object(file_path=filename)
         validator = DatasetTXCValidator(db, revision=revision)
+        file_object = io.BytesIO(file_object.read())
         violations = validator.get_violations(file_object)
         schema_violation = SchemaViolation(db)
         schema_violation.create(violations)
