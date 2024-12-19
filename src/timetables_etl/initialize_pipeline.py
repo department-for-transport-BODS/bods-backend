@@ -8,7 +8,7 @@ from common_layer.database.repos.repo_organisation import (
 )
 from common_layer.enums import FeedStatus
 from common_layer.exceptions.pipeline_exceptions import PipelineException
-from etl.app.log_setup import configure_logging
+from common_layer.json_logging import configure_logging
 from pydantic import BaseModel
 from structlog.stdlib import get_logger
 
