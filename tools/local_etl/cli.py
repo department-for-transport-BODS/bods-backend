@@ -61,6 +61,26 @@ def main(
         "--log-json",
         help="Enable Structured logging output",
     ),
+    create_tables: bool = typer.Option(
+        False,
+        "--create-tables",
+        help="Creates Tables via SQLAlchemy. Do not run on BODs DB managed by Django!",
+    ),
+    task_id: int | None = typer.Option(
+        None,
+        "--task-id",
+        help="Optional task ID for processing",
+    ),
+    file_attributes_id: int | None = typer.Option(
+        None,
+        "--file-attributes-id",
+        help="Optional file attributes ID",
+    ),
+    revision_id: int | None = typer.Option(
+        None,
+        "--revision-id",
+        help="Optional revision ID",
+    ),
 ):
     """Process TXC XML files for transformation testing"""
     if log_json:
@@ -76,6 +96,10 @@ def main(
         db_port=db_port,
         parallel=parallel,
         max_workers=max_workers,
+        create_tables=create_tables,
+        task_id=task_id,
+        file_attributes_id=file_attributes_id,
+        revision_id=revision_id,
     )
 
     asyncio.run(process_files(config))

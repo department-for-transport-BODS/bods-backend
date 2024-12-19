@@ -15,7 +15,7 @@ from timetables_etl.etl.app.load.txc_file_attributes import make_txc_file_attrib
 from timetables_etl.etl.app.models import ETLInputData, TaskData
 
 
-def create_task_data(
+def create_mocked_task_data(
     txc: TXCData,
 ) -> TaskData:
     """Create task data for testing"""
