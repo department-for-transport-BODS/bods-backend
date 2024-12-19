@@ -9,7 +9,7 @@ import pytest
 from common_layer.database.models import TransmodelService
 from common_layer.txc.models import TXCService
 
-from tests.timetables_etl.factories.database import (
+from tests.factories.database.organisation import (
     OrganisationDatasetRevisionFactory,
     OrganisationTXCFileAttributesFactory,
 )

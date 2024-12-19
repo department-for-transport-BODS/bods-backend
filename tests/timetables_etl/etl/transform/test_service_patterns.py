@@ -16,8 +16,8 @@ from geoalchemy2.shape import to_shape
 from shapely import Point
 from shapely.geometry import LineString
 
-from tests.timetables_etl.factories.database.naptan import NaptanStopPointFactory
-from tests.timetables_etl.factories.database.organisation import (
+from tests.factories.database import (
+    NaptanStopPointFactory,
     OrganisationDatasetRevisionFactory,
 )
 from tests.timetables_etl.factories.txc import (

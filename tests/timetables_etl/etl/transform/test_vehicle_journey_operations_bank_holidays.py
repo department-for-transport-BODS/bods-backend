@@ -12,9 +12,7 @@ from common_layer.database.models import (
 )
 from common_layer.txc.models import TXCBankHolidayDays, TXCBankHolidayOperation
 
-from tests.timetables_etl.factories.database.transmodel import (
-    TransmodelVehicleJourneyFactory,
-)
+from tests.factories.database.transmodel import TransmodelVehicleJourneyFactory
 from timetables_etl.etl.app.transform.vehicle_journey_operations import (
     process_bank_holidays,
 )

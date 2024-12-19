@@ -18,10 +18,8 @@ from common_layer.txc.models import (
     TXCService,
 )
 
-from tests.timetables_etl.factories.database import TransmodelServiceFactory
-from tests.timetables_etl.factories.database.transmodel import (
-    TransmodelBookingArrangementsFactory,
-)
+from tests.factories.database import TransmodelServiceFactory
+from tests.factories.database.transmodel import TransmodelBookingArrangementsFactory
 from timetables_etl.etl.app.transform.booking_arrangements import (
     create_booking_arrangements,
 )
