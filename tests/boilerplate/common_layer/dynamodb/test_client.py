@@ -1,11 +1,11 @@
 from gc import freeze
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-from freezegun import freeze_time
 import pytest
 from common_layer import dynamodb
-from common_layer.dynamodb.client import DynamoDB, TABLE_NAME
+from common_layer.dynamodb.client import TABLE_NAME, DynamoDB
 from common_layer.exceptions.pipeline_exceptions import PipelineException
+from freezegun import freeze_time
 
 
 @pytest.fixture
@@ -29,7 +29,7 @@ def test_put(m_boto_client):
             Item={
                 "Key": {"S": "test-key"},
                 "Value": {"M": {"key": {"S": "value"}}},
-                "ttl": expected_dynamo_ttl,
+                "ttl": {"S": str(expected_dynamo_ttl)},
             },
         )
 
