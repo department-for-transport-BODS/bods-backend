@@ -43,6 +43,7 @@ from .model_transmodel_vehicle_journey import (
     TransmodelOperatingProfile,
     TransmodelVehicleJourney,
 )
+from .model_users import UsersUser
 
 __all__ = [
     # Enums
@@ -77,4 +78,5 @@ __all__ = [
     "TransmodelTracks",
     "TransmodelTracksVehicleJourney",
     "TransmodelVehicleJourney",
+    "UsersUser",
 ]

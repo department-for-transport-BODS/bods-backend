@@ -8,8 +8,9 @@ from datetime import UTC, datetime
 from enum import Enum
 from typing import Optional
 
-from sqlalchemy import DateTime, Integer, String
+from sqlalchemy import DateTime
 from sqlalchemy import Enum as SQLEnum
+from sqlalchemy import Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .common import BaseSQLModel, TimeStampedMixin
@@ -112,9 +113,9 @@ class DatasetETLTaskResult(TaskResult):
 
     error_code: Mapped[Optional[ETLErrorCode]] = mapped_column(
         SQLEnum(ETLErrorCode),
-        nullable=True,
+        nullable=False,
         index=True,
-        default=None,
+        default="",
         kw_only=True,
         doc="The error code returned for the failed task",
     )
