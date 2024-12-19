@@ -1,18 +1,42 @@
-"""Test TXC transformation using SQLite database"""
+"""
+Runs the File Attributes ETL Process against specified database
+"""
 
-import asyncio
 from pathlib import Path
 
 import typer
+from common_layer.database.client import SqlDB
+from common_layer.txc.parser.parser_txc import parse_txc_file
 from structlog.stdlib import get_logger
 
 from timetables_etl.etl.app.log_setup import configure_logging
+from timetables_etl.file_attributes_etl import (
+    FileAttributesInputData,
+    process_file_attributes,
+)
+from tools.common.db_tools import setup_process_db
 from tools.common.models import TestConfig
 from tools.common.xml_tools import get_xml_paths
-from tools.local_etl.processing import process_files
 
 app = typer.Typer()
 log = get_logger()
+
+
+def process_txc(xml_paths: list[Path], revision_id: int, db: SqlDB):
+    """
+    Process file attributes
+    """
+    input_data = FileAttributesInputData(
+        DatasetRevisionId=revision_id, Bucket="Test", ObjectKey="Test"
+    )
+
+    for xml_path in xml_paths:
+        log.info("Processing XML File", path=xml_path)
+        txc_data = parse_txc_file(xml_path, False, True)
+        try:
+            process_file_attributes(input_data, txc_data, db)
+        except ValueError as e:
+            log.error("Revision ID Not found, can't add File Attributes", error=str(e))
 
 
 @app.command()
@@ -46,15 +70,10 @@ def main(
         "--db-port",
         help="Database port",
     ),
-    parallel: bool = typer.Option(
-        False,
-        "--parallel",
-        help="Enable parallel processing",
-    ),
-    max_workers: int = typer.Option(
-        10,
-        "--max-workers",
-        help="Maximum number of parallel workers (only used if --parallel is set)",
+    revision_id: int = typer.Option(
+        5432,
+        "--revision-id",
+        help="The Revision ID to use",
     ),
     log_json: bool = typer.Option(
         False,
@@ -74,11 +93,9 @@ def main(
         db_user=db_user,
         db_password=db_password,
         db_port=db_port,
-        parallel=parallel,
-        max_workers=max_workers,
     )
-
-    asyncio.run(process_files(config))
+    db = setup_process_db(config)
+    process_txc(xml_paths, revision_id, db)
 
 
 if __name__ == "__main__":

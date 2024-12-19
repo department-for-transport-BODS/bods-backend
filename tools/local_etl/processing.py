@@ -12,33 +12,13 @@ from common_layer.database.create_tables import create_db_tables
 from common_layer.txc.parser.parser_txc import parse_txc_file
 from structlog.stdlib import get_logger
 
-from boilerplate.common_layer.database.client import (
-    DatabaseBackend,
-    DatabaseSettings,
-    PostgresSettings,
-    SqlDB,
-)
 from timetables_etl.etl.app.pipeline import transform_data
+from tools.common.db_tools import setup_process_db
+from tools.common.models import TestConfig
 from tools.local_etl.mock_task_data import create_task_data
-from tools.local_etl.models import TestConfig
 from tools.local_etl.timing import TimingStats, print_timing_report
 
 log = get_logger()
-
-
-def setup_process_db(config: TestConfig) -> SqlDB:
-    """Initialize database connection for each process"""
-    pg_settings = PostgresSettings(
-        POSTGRES_HOST=config.db_host,
-        POSTGRES_DB=config.db_name,
-        POSTGRES_USER=config.db_user,
-        POSTGRES_PASSWORD=config.db_password,
-        POSTGRES_PORT=config.db_port,
-    )
-    settings = DatabaseSettings(
-        postgres=pg_settings,
-    )
-    return SqlDB(DatabaseBackend.POSTGRESQL, settings)
 
 
 def process_single_file(config: TestConfig, file_path: Path) -> TimingStats:
