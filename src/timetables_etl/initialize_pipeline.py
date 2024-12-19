@@ -19,20 +19,13 @@ class InitializePipelineEvent(BaseModel):
     DatasetRevisionId: int
 
 
-def lambda_handler(event, context):
-    configure_logging()
-    parsed_event = InitializePipelineEvent(**event)
-
-    logger.info(
-        f"Initializing pipeline for DatasetRevision {parsed_event.DatasetRevisionId}"
-    )
-
-    db = SqlDB()
+def initialize_pipeline(db: SqlDB, event: InitializePipelineEvent):
+    logger.info(f"Initializing pipeline for DatasetRevision {event.DatasetRevisionId}")
     revision_repo = OrganisationDatasetRevisionRepo(db)
-    revision = revision_repo.get_by_id(parsed_event.DatasetRevisionId)
+    revision = revision_repo.get_by_id(event.DatasetRevisionId)
     if revision is None:
         raise PipelineException(
-            f"DatasetRevision with id {parsed_event.DatasetRevisionId} not found."
+            f"DatasetRevision with id {event.DatasetRevisionId} not found."
         )
 
     # Set revision status to indexing
@@ -41,17 +34,28 @@ def lambda_handler(event, context):
 
     # Create DatasetETLTaskResult to track progress
     task_result_repo = ETLTaskResultRepo(db)
-    task = DatasetETLTaskResult(
+    task_result = DatasetETLTaskResult(
         revision_id=revision.id,
         status=TaskState.STARTED,
         task_id=str(uuid4()),
     )
-    created_task = task_result_repo.insert(task)
+    created_task_result = task_result_repo.insert(task_result)
 
-    logger.info(f"Pipeline initialized with DatasetETLTaskResult id {created_task.id}")
+    logger.info(
+        f"Pipeline initialized with DatasetETLTaskResult id {created_task_result.id}"
+    )
+    return created_task_result.id
+
+
+def lambda_handler(event, context):
+    configure_logging()
+    parsed_event = InitializePipelineEvent(**event)
+
+    db = SqlDB()
+    created_task_result_id = initialize_pipeline(db, parsed_event)
 
     return {
         "status_code": 200,
         "message": "Pipeline Initialized",
-        "DatasetEtlTaskResultId": created_task.id,
+        "DatasetEtlTaskResultId": created_task_result_id,
     }
