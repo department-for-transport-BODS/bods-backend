@@ -1,11 +1,14 @@
 from uuid import uuid4
 
+from common_layer import dynamodb
 from common_layer.database.client import SqlDB
 from common_layer.database.models.model_pipelines import DatasetETLTaskResult, TaskState
 from common_layer.database.repos.repo_etl_task import ETLTaskResultRepo
 from common_layer.database.repos.repo_organisation import (
     OrganisationDatasetRevisionRepo,
 )
+from common_layer.dynamodb.client import DynamoDB
+from common_layer.dynamodb.data_manager import FileProcessingDataManager
 from common_layer.enums import FeedStatus
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 from common_layer.json_logging import configure_logging
@@ -19,7 +22,7 @@ class InitializePipelineEvent(BaseModel):
     DatasetRevisionId: int
 
 
-def initialize_pipeline(db: SqlDB, event: InitializePipelineEvent):
+def initialize_pipeline(db: SqlDB, dynamodb: DynamoDB, event: InitializePipelineEvent):
     logger.info(f"Initializing pipeline for DatasetRevision {event.DatasetRevisionId}")
     revision_repo = OrganisationDatasetRevisionRepo(db)
     revision = revision_repo.get_by_id(event.DatasetRevisionId)
@@ -45,6 +48,12 @@ def initialize_pipeline(db: SqlDB, event: InitializePipelineEvent):
     created_task_result = task_result_repo.insert(task_result)
 
     logger.info(
+        "Pre-fetching data for file-level processing", dataset_revision_id=revision.id
+    )
+    data_manager = FileProcessingDataManager(db, dynamodb)
+    data_manager.prefetch_and_cache_data(revision)
+
+    logger.info(
         f"Pipeline initialized with DatasetETLTaskResult",
         dataset_etl_task_result_id=created_task_result.id,
     )
@@ -56,7 +65,8 @@ def lambda_handler(event, context):
     parsed_event = InitializePipelineEvent(**event)
 
     db = SqlDB()
-    created_task_result_id = initialize_pipeline(db, parsed_event)
+    dynamodb = DynamoDB()
+    created_task_result_id = initialize_pipeline(db, dynamodb, parsed_event)
 
     return {
         "status_code": 200,
