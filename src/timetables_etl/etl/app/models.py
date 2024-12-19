@@ -20,7 +20,7 @@ class ETLInputData(BaseModel):
         Allow us to map Bucket / Object Key
         """
 
-        allow_population_by_field_name = True
+        populate_by_name = True
 
     task_id: int = Field(alias="DatasetEtlTaskResultId")
     file_attributes_id: int = Field(alias="fileAttributesId")

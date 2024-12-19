@@ -10,7 +10,7 @@ from common_layer.txc.models import (
     TXCJourneyPatternTimingLink,
 )
 
-from tests.timetables_etl.factories.database.naptan import NaptanStopPointFactory
+from tests.factories.database.naptan import NaptanStopPointFactory
 from timetables_etl.etl.app.transform.utils_stops import (
     get_first_last_stops,
     get_terminal_stop_points,

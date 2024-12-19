@@ -15,7 +15,7 @@ from timetables_etl.etl.app.load.txc_file_attributes import make_txc_file_attrib
 from timetables_etl.etl.app.models import ETLInputData, TaskData
 
 
-def create_task_data(
+def create_mocked_task_data(
     txc: TXCData,
 ) -> TaskData:
     """Create task data for testing"""
@@ -47,6 +47,8 @@ def create_task_data(
         username="",
         short_description="Jon Test SingleXML Upload",
         num_of_timing_points=40,
+        modified_file_hash="123",
+        original_file_hash="123",
     )
     file_attributes = make_txc_file_attributes(txc, revision)
     file_attributes.id = 123

@@ -17,7 +17,7 @@ from common_layer.txc.models import (
     TXCStandardService,
 )
 
-from tests.timetables_etl.factories.database.naptan import NaptanStopPointFactory
+from tests.factories.database.naptan import NaptanStopPointFactory
 from tests.timetables_etl.factories.txc import TXCLineDescriptionFactory, TXCLineFactory
 from timetables_etl.etl.app.transform.service_pattern_metadata import (
     LineDescription,

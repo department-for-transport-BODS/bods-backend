@@ -62,6 +62,8 @@ class OrganisationDatasetRevisionFactory(factory.Factory):
     num_of_timing_points = 40
     created = LazyFunction(lambda: datetime.now(UTC))
     modified = LazyFunction(lambda: datetime.now(UTC))
+    modified_file_hash = factory.Faker("sha1")
+    original_file_hash = factory.Faker("sha1")
 
     @classmethod
     def create_with_id(cls, id_number: int, **kwargs) -> OrganisationDatasetRevision:

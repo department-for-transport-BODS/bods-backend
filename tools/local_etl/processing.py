@@ -15,7 +15,7 @@ from structlog.stdlib import get_logger
 from timetables_etl.etl.app.pipeline import transform_data
 from tools.common.db_tools import setup_process_db
 from tools.common.models import TestConfig
-from tools.local_etl.mock_task_data import create_task_data
+from tools.local_etl.make_task_data import create_task_data_from_inputs
 from tools.local_etl.timing import TimingStats, print_timing_report
 
 log = get_logger()
@@ -37,8 +37,9 @@ def process_single_file(config: TestConfig, file_path: Path) -> TimingStats:
 
         # Time transformation
         transform_start = time.time()
-        task_data = create_task_data(txc)
-
+        task_data = create_task_data_from_inputs(
+            txc, config.task_id, config.file_attributes_id, config.revision_id, db
+        )
         log.info("✅ Setup Complete, starting ETL Task")
         transform_data(txc, task_data, db)
         stats.transform_time = time.time() - transform_start
@@ -118,7 +119,11 @@ async def process_files_parallel(
 async def process_files(config: TestConfig):
     """Process files based on configuration"""
     start_time = time.time()
-    create_db_tables(setup_process_db(config))
+    if config.create_tables:
+        log.warning(
+            "Creating Database Tables (And potentially modifying existing ones!)"
+        )
+        create_db_tables(setup_process_db(config))
 
     log.info(
         "Starting processing",
