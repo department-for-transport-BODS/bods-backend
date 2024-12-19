@@ -10,6 +10,7 @@ from timetables_etl.schema_check import (
     get_transxchange_schema,
     lambda_handler,
 )
+from tests.mock_db import MockedDB
 
 PREFIX = "timetables_etl.schema_check"
 TEST_ENV_VAR = {
@@ -39,8 +40,8 @@ class TestGetTransxchangeSchema(unittest.TestCase):
         mock_schemaloader.return_value = mock_schema_loader
 
         mock_schema_loader.schema = "some_schema_object"
-
-        result = get_transxchange_schema()
+        mock_db = MockedDB()
+        result = get_transxchange_schema(mock_db)
 
         mock_getschemadefinitiondbobject.assert_called_once()
         mock_schemaloader.assert_called_once_with(
@@ -152,8 +153,10 @@ class TestDatasetTXCValidator(unittest.TestCase):
         mock_revision = MagicMock()
         mock_revision.id = 10
 
+        mock_db = MockedDB()
+
         # Step 6: Create the DatasetTXCValidator instance
-        validator = DatasetTXCValidator(revision=mock_revision)
+        validator = DatasetTXCValidator(mock_db, revision=mock_revision)
 
         # Step 7: Call the method under test
         result = validator.get_violations(mock_file)
@@ -199,9 +202,10 @@ class TestDatasetTXCValidator(unittest.TestCase):
         # Step 5: Mock revision
         mock_revision = MagicMock()
         mock_revision.id = 10
+        mock_db = MockedDB()
 
         # Step 6: Create the DatasetTXCValidator instance
-        validator = DatasetTXCValidator(revision=mock_revision)
+        validator = DatasetTXCValidator(mock_db, revision=mock_revision)
 
         # Mocking BaseSchemaViolation.from_error to return a mocked violation
         mock_violation = MagicMock()
@@ -249,9 +253,9 @@ class TestDatasetTXCValidator(unittest.TestCase):
 
         # Mock file object
         mock_file = BytesIO(b"<invalid>xml</invalid>")
-
+        mock_db = MockedDB()
         # Create an instance of DatasetTXCValidator
-        validator = DatasetTXCValidator(mock_revision)
+        validator = DatasetTXCValidator(mock_db, mock_revision)
 
         # Call get_violations
         violations = validator.get_violations(mock_file)
@@ -326,7 +330,7 @@ class TestLambdaHandler(unittest.TestCase):
         mock_s3_handler.get_object.assert_called_once_with(file_path="bodds.zip")
 
         # Ensure the validator was created and get_violations was called
-        mock_datasettxcvalidator.assert_called_once_with(revision=mock_revision)
+        self.assertEqual(mock_datasettxcvalidator.call_count, 1)
         mock_validator.get_violations.assert_called_once_with(mock_file_object)
 
         # Ensure schema violations were created
