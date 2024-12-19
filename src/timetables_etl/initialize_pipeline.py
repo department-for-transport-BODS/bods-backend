@@ -29,6 +29,9 @@ def initialize_pipeline(db: SqlDB, event: InitializePipelineEvent):
         )
 
     # Set revision status to indexing
+    logger.debug(
+        f"Setting Revision.status to indexing", dataset_revision_id=revision.id
+    )
     revision.status = FeedStatus.indexing.value
     revision_repo.update(revision)
 
@@ -42,7 +45,8 @@ def initialize_pipeline(db: SqlDB, event: InitializePipelineEvent):
     created_task_result = task_result_repo.insert(task_result)
 
     logger.info(
-        f"Pipeline initialized with DatasetETLTaskResult id {created_task_result.id}"
+        f"Pipeline initialized with DatasetETLTaskResult",
+        dataset_etl_task_result_id=created_task_result.id,
     )
     return created_task_result.id
 
