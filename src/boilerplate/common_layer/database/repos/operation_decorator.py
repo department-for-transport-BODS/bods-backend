@@ -65,6 +65,28 @@ def extract_error_details(exc: Exception) -> tuple[str, dict[str, Any]]:
         return f"Error extracting details: {str(e)}", {}
 
 
+def get_operation_logger(instance: Any | None, func: Callable) -> Any:
+    """
+    Get appropriate logger for repository operation
+    Multiple Fallbacks to ensure that it won't cause a crash or None
+    """
+    log = logger
+    try:
+        # First try: Get repository's pre-configured logger
+        if hasattr(instance, "_log"):
+            if instance is not None:
+                log = instance._log  # pylint: disable=protected-access
+        # Second try: Create logger with repository name from instance
+        elif instance and hasattr(instance, "__class__"):
+            log = logger.bind(repository=instance.__class__.__name__)
+
+        # Always bind the operation name regardless of which logger we're using
+        return log.bind(operation=func.__name__)
+
+    except Exception:  # pylint: disable=broad-exception-caught
+        return logger.bind(operation=func.__name__)
+
+
 def handle_repository_errors(func: Callable[P, T]) -> Callable[P, T]:
     """
     Decorator to handle common repository exceptions
@@ -78,8 +100,8 @@ def handle_repository_errors(func: Callable[P, T]) -> Callable[P, T]:
 
     @wraps(func)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
-        repo_name, operation = get_operation_name(func, args)
-        log = logger.bind(repo=repo_name, operation=operation)
+        instance = args[0] if args else None
+        log = get_operation_logger(instance, func)
 
         try:
             result = func(*args, **kwargs)
