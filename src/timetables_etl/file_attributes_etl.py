@@ -89,11 +89,29 @@ class FileAttributesInputData(BaseModel):
         Allow us to map Bucket / Object Key
         """
 
-        allow_population_by_field_name = True
+        populate_by_name = True
 
     revision_id: int = Field(alias="DatasetRevisionId")
     s3_bucket_name: str = Field(alias="Bucket")
     s3_file_key: str = Field(alias="ObjectKey")
+
+
+def process_file_attributes(
+    input_data: FileAttributesInputData, txc_data: TXCData, db: SqlDB
+) -> OrganisationTXCFileAttributes:
+    """
+    Process the file attributes
+    """
+    revision = OrganisationDatasetRevisionRepo(db).get_by_id(input_data.revision_id)
+    if revision is None:
+        log.error("Could not Find Revision by ID", revision_id=input_data.revision_id)
+        raise ValueError("Revision ID Not Found")
+
+    file_attributes_data = make_txc_file_attributes(txc_data, revision)
+    log.debug(
+        "TXC File Attributes Processed", file_attributes_data=file_attributes_data
+    )
+    return OrganisationTXCFileAttributesRepo(db).insert(file_attributes_data)
 
 
 @file_processing_result_to_db(StepName.TXC_ATTRIBUTE_EXTRACTION)
@@ -103,13 +121,8 @@ def lambda_handler(event, _context) -> dict[str, dict[str, int]]:
     """
     configure_logging()
     input_data = FileAttributesInputData(**event)
-    db = SqlDB()
-    revision = OrganisationDatasetRevisionRepo(db).get_by_id(input_data.revision_id)
-    if revision is None:
-        log.error("Could not Find Revision by ID", revision_id=input_data.revision_id)
-        raise ValueError("Revision ID Missing")
     txc_data = download_and_parse_txc(input_data.s3_bucket_name, input_data.s3_file_key)
-
-    file_attributes_data = make_txc_file_attributes(txc_data, revision)
-    inserted_data = OrganisationTXCFileAttributesRepo(db).insert(file_attributes_data)
+    db = SqlDB()
+    inserted_data = process_file_attributes(input_data, txc_data, db)
+    log.info("TXC File Attributes added to database", inserted_data=inserted_data)
     return {"fileAttributesEtl": {"id": inserted_data.id}}
