@@ -1,66 +1,81 @@
-from structlog.stdlib import get_logger
 from common_layer.database.models import (
-    TransmodelService,
-    TransmodelServicePattern,
-    TransmodelServicePatternStop,
-    TransmodelStopActivity,
-    TransmodelServiceServicePattern,
-    TransmodelServicePatternLocality,
-    TransmodelServicePatternAdminAreas,
-    TransmodelTracksVehicleJourney,
     TransmodelBookingArrangements,
     TransmodelFlexibleServiceOperationPeriod,
-    TransmodelServicedOrganisationVehicleJourney,
+    TransmodelService,
     TransmodelServicedOrganisations,
+    TransmodelServicedOrganisationVehicleJourney,
     TransmodelServicedOrganisationWorkingDays,
+    TransmodelServicePattern,
+    TransmodelServicePatternAdminAreas,
+    TransmodelServicePatternLocality,
+    TransmodelServicePatternStop,
+    TransmodelServiceServicePattern,
+    TransmodelStopActivity,
+)
+from common_layer.database.models.model_transmodel_vehicle_journey import (
+    TransmodelVehicleJourney,
 )
 from common_layer.database.repos import (
-    TransmodelServiceRepo,
-    TransmodelServicePatternRepo,
-    TransmodelServicePatternStopRepo,
-    TransmodelStopActivityRepo,
-    TransmodelServiceServicePatternRepo,
-    TransmodelServicePatternLocalityRepo,
-    TransmodelServicePatternAdminAreaRepo,
-    TransmodelVehicleJourneyRepo,
     TransmodelBookingArrangementsRepo,
     TransmodelFlexibleServiceOperationPeriodRepo,
-    TransmodelServicedOrganisationVehicleJourneyRepo,
     TransmodelServicedOrganisationsRepo,
+    TransmodelServicedOrganisationVehicleJourneyRepo,
     TransmodelServicedOrganisationWorkingDaysRepo,
+    TransmodelServicePatternAdminAreaRepo,
+    TransmodelServicePatternLocalityRepo,
+    TransmodelServicePatternRepo,
+    TransmodelServicePatternStopRepo,
+    TransmodelServiceRepo,
+    TransmodelServiceServicePatternRepo,
+    TransmodelStopActivityRepo,
+    TransmodelVehicleJourneyRepo,
 )
-from .utils import (
-    SqlDB,
-    csv_extractor,
-)
+from structlog.stdlib import get_logger
+
+from .utils import SqlDB, csv_extractor
 
 logger = get_logger()
 
 
 @csv_extractor()
-def extract_service_by_revision_id(
+def extract_services_by_revision_id(
     db: SqlDB, revision_id: int
 ) -> list[TransmodelService]:
     """
-    Extract service details from DB.
+    Get the list of services associated to a revision_id
+    And output to csv
     """
     repo = TransmodelServiceRepo(db)
-    return repo.get_by_revision_id(revision_id)  # type: ignore
+    return repo.get_by_revision_id(revision_id)
 
 
 @csv_extractor()
-def extract_service_by_id(db: SqlDB, id: int) -> list[TransmodelService]:
+def extract_service_by_id(
+    db: SqlDB,
+    service_id: int,
+) -> TransmodelService | None:
     """
     Extract service details from DB.
     """
     repo = TransmodelServiceRepo(db)
-    return repo.get_by_id(id)  # type: ignore
+    return repo.get_by_id(service_id)
 
 
 @csv_extractor()
-def extract_servicepattern(
+def extract_servicepatterns_by_ids(
+    db: SqlDB, service_pattern_ids: list[int]
+) -> list[TransmodelServicePattern]:
+    """
+    Extract service pattern details from DB.
+    """
+    repo = TransmodelServicePatternRepo(db)
+    return repo.get_by_ids(service_pattern_ids)
+
+
+@csv_extractor()
+def extract_servicepatterns_by_revision_id(
     db: SqlDB, revision_id: int
-) -> tuple[list[int], list[TransmodelServicePattern]]:
+) -> list[TransmodelServicePattern]:
     """
     Extract service pattern details from DB.
     """
@@ -72,6 +87,9 @@ def extract_servicepattern(
 def extract_servicepatternstop(
     db: SqlDB, service_pattern_ids: list[int]
 ) -> list[TransmodelServicePatternStop]:
+    """
+    Extract the Service Pattern Stops by id
+    """
     repo = TransmodelServicePatternStopRepo(db)
     return repo.get_by_service_pattern_ids(service_pattern_ids)
 
@@ -106,7 +124,7 @@ def extract_servicepattern_localities(
     Extract service pattern localities
     """
     repo = TransmodelServicePatternLocalityRepo(db)
-    return repo.get_by_pattern_ids(servicepattern_ids)  # type: ignore
+    return repo.get_by_pattern_ids(servicepattern_ids)
 
 
 @csv_extractor()
@@ -123,12 +141,12 @@ def extract_servicepattern_admin_areas(
 @csv_extractor()
 def extract_vehiclejourney(
     db: SqlDB, vehicle_journey_ids: list[int]
-) -> list[TransmodelTracksVehicleJourney]:
+) -> list[TransmodelVehicleJourney]:
     """
     Extract vehicle journey details from DB.
     """
     repo = TransmodelVehicleJourneyRepo(db)
-    return repo.get_by_ids(vehicle_journey_ids)  # type: ignore
+    return repo.get_by_ids(vehicle_journey_ids)
 
 
 @csv_extractor()
@@ -146,7 +164,9 @@ def extract_bookingarrangements(
 def extract_flexibleserviceoperationperiod(
     db: SqlDB, vehicle_journey_ids: list[int]
 ) -> list[TransmodelFlexibleServiceOperationPeriod]:
-    """ """
+    """
+    Flexible Service Operation Period
+    """
     repo = TransmodelFlexibleServiceOperationPeriodRepo(db)
     return repo.get_by_vehicle_journey_ids(vehicle_journey_ids)
 
