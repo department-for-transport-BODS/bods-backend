@@ -8,7 +8,7 @@ from common_layer.dynamodb.models import TXCFileAttributes
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 
 from tests.conftest import decorator_mock
-from tests.timetables_etl.factories.database.organisation import (
+from tests.factories.database.organisation import (
     OrganisationDatasetRevisionFactory,
     OrganisationTXCFileAttributesFactory,
 )

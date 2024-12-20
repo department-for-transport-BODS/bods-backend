@@ -8,7 +8,7 @@ from common_layer.dynamodb.data_manager import FileProcessingDataManager
 from common_layer.dynamodb.models import TXCFileAttributes
 from freezegun import freeze_time
 
-from tests.timetables_etl.factories.database.organisation import (
+from tests.factories.database.organisation import (
     OrganisationDatasetRevisionFactory,
     OrganisationTXCFileAttributesFactory,
 )
