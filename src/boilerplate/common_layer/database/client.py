@@ -29,9 +29,11 @@ class ProjectEnvironment(str, Enum):
     """Supported project environments."""
 
     LOCAL = "local"
-    DEVELOPMENT = "development"
+    DEVELOPMENT = "dev"
     STAGING = "staging"
-    PRODUCTION = "production"
+    TEST = "test"
+    UAT = "uat"
+    PRODUCTION = "prod"
     STANDALONE = "standalone"
 
 
