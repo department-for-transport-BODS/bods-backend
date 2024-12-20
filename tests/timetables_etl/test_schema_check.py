@@ -3,7 +3,7 @@ import os
 import unittest
 from io import BytesIO
 from unittest.mock import MagicMock, call, patch
-
+from common_layer.db.schema_definition import SchemaCategory
 from timetables_etl.schema_check import (
     DatasetTXCValidator,
     SchemaLoader,
@@ -32,7 +32,7 @@ class TestGetTransxchangeSchema(unittest.TestCase):
         self, mock_schemaloader, mock_getschemadefinitiondbobject
     ):
         mock_definition = MagicMock()
-        mock_definition.category = "category1"
+        mock_definition.category = SchemaCategory.TXC
         mock_definition.schema = "some_schema.zip"
         mock_getschemadefinitiondbobject.return_value = mock_definition
 
@@ -65,7 +65,7 @@ class TestGetTransxchangeSchema(unittest.TestCase):
     def test_path_property(self, mock_logger, mock_path_class, mock_zipfile):
         # Mock definition with category and schema
         mock_definition = MagicMock()
-        mock_definition.category = "test_category"
+        mock_definition.category = SchemaCategory.TXC
         mock_definition.schema = MagicMock()
 
         # Mock schema path

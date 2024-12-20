@@ -134,3 +134,23 @@ def lambda_handler(event, context):
         "body": f"Successfully ran the file schema check for file '{key}' "
         f"from bucket '{bucket}' with {len(violations)} violations",
     }
+
+
+
+os.environ["CLAMAV_HOST"] = "localhost"
+os.environ["CLAMAV_PORT"] = "3310"
+os.environ["POSTGRES_HOST"] = "localhost"
+os.environ["POSTGRES_USER"] = "postgres"
+os.environ["POSTGRES_PORT"] = "5432"
+os.environ["POSTGRES_PASSWORD"] = "postgres"
+os.environ["POSTGRES_DB"] = "bodds"
+os.environ["PROJECT_ENV"] = "local"
+os.environ["TXC_XSD_PATH"] = "TransXChange_general.xsd"
+
+event = {
+  "Bucket": "bodds-dev",
+  "ObjectKey": "3624_extracted_vehicle_journey_runtimes.xml",
+  "DatasetRevisionId": "1",
+  "DatasetType": "timetables"
+}
+lambda_handler(event, None)
