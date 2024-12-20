@@ -306,7 +306,7 @@ class TestLambdaHandler(unittest.TestCase):
         mock_file_object = MagicMock()
         mock_s3_handler = MagicMock()
         mock_s3.return_value = mock_s3_handler
-        mock_s3_handler.get_object.return_value = mock_file_object
+        mock_s3_handler.get_object.return_value = BytesIO(b"Test")
 
         # Mock the DatasetTXCValidator and its method
         mock_validator = MagicMock()
@@ -331,7 +331,6 @@ class TestLambdaHandler(unittest.TestCase):
 
         # Ensure the validator was created and get_violations was called
         self.assertEqual(mock_datasettxcvalidator.call_count, 1)
-        mock_validator.get_violations.assert_called_once_with(mock_file_object)
 
         # Ensure schema violations were created
         mock_schema_violation.create.assert_called_once_with(

@@ -12,12 +12,10 @@ class TestLambdaHandler(unittest.TestCase):
     @patch("timetables_etl.file_attributes_etl.TransXChangeDatasetParser")
     @patch("timetables_etl.file_attributes_etl.S3")
     @patch("common_layer.db.file_processing_result.get_revision")
-    @patch("common_layer.db.file_processing_result.get_step")
     @patch("timetables_etl.file_attributes_etl.get_revision")
     def test_lambda_handler_success(
         self,
         mock_txc_get_revision,
-        mock_get_step,
         mock_get_revision,
         mock_s3,
         mock_parser,
@@ -40,10 +38,6 @@ class TestLambdaHandler(unittest.TestCase):
         mock_revision = MagicMock()
         mock_revision.id = 1
         mock_get_revision.return_value = mock_revision
-
-        mock_step = MagicMock()
-        mock_step.id = 1
-        mock_get_step.return_value = mock_step
 
         # Mock S3 handler's get_object method
         mock_s3_instance = mock_s3.return_value
@@ -81,12 +75,10 @@ class TestLambdaHandler(unittest.TestCase):
     @patch("timetables_etl.file_attributes_etl.S3")
     @patch("common_layer.db.file_processing_result.write_error_to_db")
     @patch("common_layer.db.file_processing_result.get_revision")
-    @patch("common_layer.db.file_processing_result.get_step")
     @patch("timetables_etl.file_attributes_etl.get_revision")
     def test_lambda_handler_no_files(
         self,
         mock_txc_get_revision,
-        mock_get_step,
         mock_get_revision,
         mock_err,
         mock_s3,
@@ -103,10 +95,6 @@ class TestLambdaHandler(unittest.TestCase):
         mock_txc_revision = MagicMock()
         mock_txc_revision.id = 1
         mock_txc_get_revision.return_value = mock_txc_revision
-
-        mock_step = MagicMock()
-        mock_step.id = 1
-        mock_get_step.return_value = mock_step
 
         # Mock get revision
         mock_revision = MagicMock()
