@@ -80,7 +80,7 @@ class DynamoDB:
             }
             if ttl:
                 expiration_time = int(time.time()) + ttl
-                item["ttl"] = expiration_time
+                item["ttl"] = {"S": str(expiration_time)}
 
             self._client.put_item(TableName=TABLE_NAME, Item=item)
         except Exception as e:

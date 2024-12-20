@@ -15,7 +15,8 @@
     },
     "python.analysis.extraPaths": [
         "src",
-        "src/boilerplate"
+        "src/boilerplate",
+        "src/timetables_etl"
     ],
     "yaml.customTags": [
         "!Cidr",

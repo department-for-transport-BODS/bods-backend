@@ -8,10 +8,26 @@ from common_layer.exceptions.pipeline_exceptions import PipelineException
 from timetables_etl.initialize_pipeline import lambda_handler
 
 
+@pytest.fixture(autouse=True, scope="module")
+def m_dynamodb():
+    with patch("timetables_etl.initialize_pipeline.DynamoDB") as m_dynamo:
+        yield m_dynamo
+
+
+@pytest.fixture(autouse=True, scope="module")
+def m_db():
+    with patch("timetables_etl.initialize_pipeline.SqlDB") as m_sqldb:
+        yield m_sqldb
+
+
+@patch("timetables_etl.initialize_pipeline.FileProcessingDataManager")
 @patch("timetables_etl.initialize_pipeline.ETLTaskResultRepo")
 @patch("timetables_etl.initialize_pipeline.OrganisationDatasetRevisionRepo")
-@patch("timetables_etl.initialize_pipeline.SqlDB")
-def test_initialize_pipeline_success(m_db, m_revision_repo, m_task_result_repo):
+def test_initialize_pipeline_success(
+    m_revision_repo,
+    m_task_result_repo,
+    m_file_processing_data_manager,
+):
     revision_id = 123
     event = {"DatasetRevisionId": revision_id}
 
@@ -49,10 +65,14 @@ def test_initialize_pipeline_success(m_db, m_revision_repo, m_task_result_repo):
         == TaskState.STARTED
     )
 
+    # File-level processing data pre-fetched
+    m_file_processing_data_manager.return_value.prefetch_and_cache_data.assert_called_once_with(
+        revision
+    )
+
 
 @patch("timetables_etl.initialize_pipeline.OrganisationDatasetRevisionRepo")
-@patch("timetables_etl.initialize_pipeline.SqlDB")
-def test_initialize_pipeline_error(m_db, m_revision_repo):
+def test_initialize_pipeline_error(m_revision_repo):
     event = {"DatasetRevisionId": 123}
 
     # No revision found
