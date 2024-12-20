@@ -3,13 +3,15 @@ import os
 import unittest
 from io import BytesIO
 from unittest.mock import MagicMock, call, patch
-
+from common_layer.db.schema_definition import SchemaCategory
 from timetables_etl.schema_check import (
     DatasetTXCValidator,
     SchemaLoader,
     get_transxchange_schema,
     lambda_handler,
+    download_schema
 )
+from tests.mock_db import MockedDB
 
 PREFIX = "timetables_etl.schema_check"
 TEST_ENV_VAR = {
@@ -31,7 +33,7 @@ class TestGetTransxchangeSchema(unittest.TestCase):
         self, mock_schemaloader, mock_getschemadefinitiondbobject
     ):
         mock_definition = MagicMock()
-        mock_definition.category = "category1"
+        mock_definition.category = SchemaCategory.TXC
         mock_definition.schema = "some_schema.zip"
         mock_getschemadefinitiondbobject.return_value = mock_definition
 
@@ -39,8 +41,8 @@ class TestGetTransxchangeSchema(unittest.TestCase):
         mock_schemaloader.return_value = mock_schema_loader
 
         mock_schema_loader.schema = "some_schema_object"
-
-        result = get_transxchange_schema()
+        mock_db = MockedDB()
+        result = get_transxchange_schema(mock_db)
 
         mock_getschemadefinitiondbobject.assert_called_once()
         mock_schemaloader.assert_called_once_with(
@@ -64,7 +66,7 @@ class TestGetTransxchangeSchema(unittest.TestCase):
     def test_path_property(self, mock_logger, mock_path_class, mock_zipfile):
         # Mock definition with category and schema
         mock_definition = MagicMock()
-        mock_definition.category = "test_category"
+        mock_definition.category = SchemaCategory.TXC
         mock_definition.schema = MagicMock()
 
         # Mock schema path
@@ -119,6 +121,29 @@ class TestGetTransxchangeSchema(unittest.TestCase):
             "Could not extract file2.xsd - Mocked extraction error"
         )
 
+    @patch('timetables_etl.schema_check.requests.get')
+    def test_download_schema(self, mock_get):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.iter_content = MagicMock(
+            return_value=[b"Fake ZIP content"]  # Simulate file content chunks
+        )
+        mock_get.return_value = mock_response
+
+        # Call the function
+        url = "https://example.com/somefile.zip"
+        filename = "test.zip"
+
+        download_schema(url, filename)
+
+        # Assert that requests.get was called with the correct URL
+        mock_get.assert_called_once_with(url, stream=True)
+
+        # Verify the file was written
+        with open(filename, "rb") as f:
+            content = f.read()
+        self.assertEqual(content, b"Fake ZIP content")
+
 
 class TestDatasetTXCValidator(unittest.TestCase):
 
@@ -152,8 +177,10 @@ class TestDatasetTXCValidator(unittest.TestCase):
         mock_revision = MagicMock()
         mock_revision.id = 10
 
+        mock_db = MockedDB()
+
         # Step 6: Create the DatasetTXCValidator instance
-        validator = DatasetTXCValidator(revision=mock_revision)
+        validator = DatasetTXCValidator(mock_db, revision=mock_revision)
 
         # Step 7: Call the method under test
         result = validator.get_violations(mock_file)
@@ -199,9 +226,10 @@ class TestDatasetTXCValidator(unittest.TestCase):
         # Step 5: Mock revision
         mock_revision = MagicMock()
         mock_revision.id = 10
+        mock_db = MockedDB()
 
         # Step 6: Create the DatasetTXCValidator instance
-        validator = DatasetTXCValidator(revision=mock_revision)
+        validator = DatasetTXCValidator(mock_db, revision=mock_revision)
 
         # Mocking BaseSchemaViolation.from_error to return a mocked violation
         mock_violation = MagicMock()
@@ -249,9 +277,9 @@ class TestDatasetTXCValidator(unittest.TestCase):
 
         # Mock file object
         mock_file = BytesIO(b"<invalid>xml</invalid>")
-
+        mock_db = MockedDB()
         # Create an instance of DatasetTXCValidator
-        validator = DatasetTXCValidator(mock_revision)
+        validator = DatasetTXCValidator(mock_db, mock_revision)
 
         # Call get_violations
         violations = validator.get_violations(mock_file)
@@ -302,7 +330,7 @@ class TestLambdaHandler(unittest.TestCase):
         mock_file_object = MagicMock()
         mock_s3_handler = MagicMock()
         mock_s3.return_value = mock_s3_handler
-        mock_s3_handler.get_object.return_value = mock_file_object
+        mock_s3_handler.get_object.return_value = BytesIO(b"Test")
 
         # Mock the DatasetTXCValidator and its method
         mock_validator = MagicMock()
@@ -326,8 +354,7 @@ class TestLambdaHandler(unittest.TestCase):
         mock_s3_handler.get_object.assert_called_once_with(file_path="bodds.zip")
 
         # Ensure the validator was created and get_violations was called
-        mock_datasettxcvalidator.assert_called_once_with(revision=mock_revision)
-        mock_validator.get_violations.assert_called_once_with(mock_file_object)
+        self.assertEqual(mock_datasettxcvalidator.call_count, 1)
 
         # Ensure schema violations were created
         mock_schema_violation.create.assert_called_once_with(

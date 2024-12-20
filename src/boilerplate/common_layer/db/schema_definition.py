@@ -1,14 +1,13 @@
+from enum import Enum
 import time
 from common_layer.db import BodsDB
 from common_layer.logger import logger
-from django.db.models import TextChoices
-from django.utils.translation import gettext_lazy as _
 from common_layer.exceptions.schema_exceptions import NoSchemaDefinition
 
 
-class SchemaCategory(TextChoices):
-    TXC = ("txc", _("TxC"))
-    NETEX = ("netex", _("NeTeX"))
+class SchemaCategory(Enum):
+    TXC   = "txc"
+    NETEX = "netex"
 
 
 def get_schema_definition_db_object(db: BodsDB, category: SchemaCategory):
@@ -29,11 +28,11 @@ def get_schema_definition_db_object(db: BodsDB, category: SchemaCategory):
         start_query_op = time.time()
         schema_definition_obj = (
             session.query(schema_definition)
-            .where(schema_definition.category == category)
+            .where(schema_definition.category == category.value)
             .first()
         )
         end_query_op = time.time()
         logger.info(f"Query execution time: {end_query_op-start_query_op:.2f} seconds")
         if schema_definition_obj is None:
-            raise NoSchemaDefinition(category=category)
+            raise NoSchemaDefinition(category=category.value)
         return schema_definition_obj
