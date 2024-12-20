@@ -116,24 +116,19 @@ class TestClamAVScanner(unittest.TestCase):
             "DatasetType": "timetables",
         }
 
-        # Mock write_processing_step
-        buf_ = "common_layer.db.file_processing_result.write_processing_step"
+        mock_db.return_value = MockedDB()
 
-        with patch(buf_) as mock_step:
-            mock_step.return_value = MagicMock(id=1)
-            mock_db.return_value = MockedDB()
+        # Execute lambda_handler
+        result = lambda_handler(event, None)
 
-            # Execute lambda_handler
-            result = lambda_handler(event, None)
+        # Assert success response
+        self.assertEqual(result["statusCode"], 200)
+        self.assertIn("Successfully scanned", result["body"]["message"])
 
-            # Assert success response
-            self.assertEqual(result["statusCode"], 200)
-            self.assertIn("Successfully scanned", result["body"]["message"])
-
-            # Verify S3 and FileScanner were called correctly
-            mock_s3.assert_called_once_with(bucket_name="test-bucket")
-            self.assertEqual(mock_s3_instance.get_object.call_count, 2)
-            mock_scanner_instance.clamav.ping.assert_called_once()
+        # Verify S3 and FileScanner were called correctly
+        mock_s3.assert_called_once_with(bucket_name="test-bucket")
+        self.assertEqual(mock_s3_instance.get_object.call_count, 2)
+        mock_scanner_instance.clamav.ping.assert_called_once()
 
     @patch("timetables_etl.clamav_scanner.S3")
     @patch("timetables_etl.clamav_scanner.FileScanner")
@@ -170,23 +165,19 @@ class TestClamAVScanner(unittest.TestCase):
             "DatasetType": "timetables",
         }
 
-        # Mock write_processing_step
-        buf_ = "common_layer.db.file_processing_result.write_processing_step"
-        with patch(buf_) as mock_step:
-            mock_step.return_value = MagicMock(id=1)
-            mock_db.return_value = MockedDB()
-            # Mock write_error_to_db
-            buf_ = "common_layer.db.file_processing_result.write_error_to_db"
-            with patch(buf_) as mock_write_db:
-                mock_write_db.return_value = "Transaction committed"
-                # Assert exception due to ClamAV unreachability
-                with self.assertRaises(ClamConnectionError) as context:
-                    lambda_handler(event, None)
+        mock_db.return_value = MockedDB()
+        # Mock write_error_to_db
+        buf_ = "common_layer.db.file_processing_result.write_error_to_db"
+        with patch(buf_) as mock_write_db:
+            mock_write_db.return_value = "Transaction committed"
+            # Assert exception due to ClamAV unreachability
+            with self.assertRaises(ClamConnectionError) as context:
+                lambda_handler(event, None)
 
-                # Verify the exception message
-                self.assertIn(
-                    "ClamAV is not running or accessible.", str(context.exception)
-                )
+            # Verify the exception message
+            self.assertIn(
+                "ClamAV is not running or accessible.", str(context.exception)
+            )
 
     @patch("timetables_etl.clamav_scanner.S3")
     @patch("timetables_etl.clamav_scanner.FileScanner")
@@ -223,21 +214,18 @@ class TestClamAVScanner(unittest.TestCase):
             "DatasetRevisionId": 123,
             "DatasetType": "timetables",
         }
-        # Mock write_processing_step
-        buf_ = "common_layer.db.file_processing_result.write_processing_step"
-        with patch(buf_) as mock_step:
-            mock_step.return_value = MagicMock(id=1)
-            mock_db.return_value = MockedDB()
-            # Mock write_error_to_db
-            buf_ = "common_layer.db.file_processing_result.write_error_to_db"
-            with patch(buf_) as mock_write_db:
-                mock_write_db.return_value = "Transaction committed"
-                # Assert exception due to scan error
-                with self.assertRaises(Exception) as context:
-                    lambda_handler(event, None)
 
-                # Verify the exception message
-                self.assertIn("Scan failed", str(context.exception))
+        mock_db.return_value = MockedDB()
+        # Mock write_error_to_db
+        buf_ = "common_layer.db.file_processing_result.write_error_to_db"
+        with patch(buf_) as mock_write_db:
+            mock_write_db.return_value = "Transaction committed"
+            # Assert exception due to scan error
+            with self.assertRaises(Exception) as context:
+                lambda_handler(event, None)
+
+            # Verify the exception message
+            self.assertIn("Scan failed", str(context.exception))
 
 
 if __name__ == "__main__":

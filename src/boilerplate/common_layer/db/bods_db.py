@@ -29,7 +29,8 @@ class BodsDB:
             self._initialise_engine()
 
         if self._session is None:
-            SessionMaker = sessionmaker(bind=self._engine)
+            SessionMaker = sessionmaker(bind=self._engine,
+                                        expire_on_commit=False)
             self._session = SessionMaker()
 
         return self._session

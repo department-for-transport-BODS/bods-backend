@@ -39,7 +39,7 @@ class pipeline_processing_step(Base):
 class pipeline_error_code(Base):
     __tablename__ = "pipelines_pipelineerrorcode"
     id = Column(Integer, primary_key=True)
-    status = Column(String(255))
+    error = Column(String(255))
 
 
 class organisation_datasetrevision(Base):
