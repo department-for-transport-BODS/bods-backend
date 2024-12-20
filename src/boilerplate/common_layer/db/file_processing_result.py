@@ -10,67 +10,105 @@ from common_layer.db import BodsDB
 from common_layer.db.constants import StepName
 from common_layer.db.manager import DbManager
 from common_layer.db.repositories.dataset_revision import get_revision
+from common_layer.exceptions.db_exceptions import *
+from common_layer.exceptions.file_exceptions import *
+from common_layer.exceptions.schema_exceptions import *
+from common_layer.exceptions.xml_file_exceptions import *
+from common_layer.exceptions.zip_file_exceptions import *
 from common_layer.logger import logger
 from sqlalchemy.exc import NoResultFound, SQLAlchemyError
 
 
-def map_exception_to_error_code(exception):
-    """
-    Maps exceptions to corresponding error codes.
-    """
-    exception_mapping = {
-        "ClamConnectionError": "SYSTEM_ERROR",
-        "SuspiciousFile": "SUSPICIOUS_FILE",
-        "AntiVirusError": "SUSPICIOUS_FILE",
-        "NestedZipForbidden": "NESTED_ZIP_FORBIDDEN",
-        "ZipTooLarge": "ZIP_TOO_LARGE",
-        "NoDataFound": "NO_DATA_FOUND",
-        "FileTooLarge": "FILE_TOO_LARGE",
-        "XMLSyntaxError": "XML_SYNTAX_ERROR",
-        "DangerousXML": "DANGEROUS_XML_ERROR",
-        "NoSchemaDefinition": "NO_SCHEMA_DEFINITION",
-        "NoRowFound": "NO_ROW_FOUND",
-    }
-    return exception_mapping.get(exception.__class__.__name__,
-                                 "SUSPICIOUS_FILE")
+def write_error_to_db(db, uuid, exceptions):
+    status, error_status = "FAILURE", "SUSPICIOUS_FILE"
+    if isinstance(exceptions, ClamConnectionError):
+        status, error_status = "FAILURE", "SYSTEM_ERROR"
+    elif isinstance(exceptions, SuspiciousFile):
+        status, error_status = "FAILURE", "SUSPICIOUS_FILE"
+    elif isinstance(exceptions, AntiVirusError):
+        status, error_status = "FAILURE", "SUSPICIOUS_FILE"
+    elif isinstance(exceptions, NestedZipForbidden):
+        status, error_status = "FAILURE", "NESTED_ZIP_FORBIDDEN"
+    elif isinstance(exceptions, ZipTooLarge):
+        status, error_status = "FAILURE", "ZIP_TOO_LARGE"
+    elif isinstance(exceptions, NoDataFound):
+        status, error_status = "FAILURE", "NO_DATA_FOUND"
+    elif isinstance(exceptions, FileTooLarge):
+        status, error_status = "FAILURE", "FILE_TOO_LARGE"
+    elif isinstance(exceptions, XMLSyntaxError):
+        status, error_status = "FAILURE", "XML_SYNTAX_ERROR"
+    elif isinstance(exceptions, DangerousXML):
+        status, error_status = "FAILURE", "DANGEROUS_XML_ERROR"
+    elif isinstance(exceptions, NoSchemaDefinition):
+        status, error_status = "FAILURE", "NO_SCHEMA_DEFINITION"
+    elif isinstance(exceptions, NoRowFound):
+        status, error_status = "FAILURE", "NO_ROW_FOUND"
+
+    result_obj = PipelineFileProcessingResult(db)
+    result = dict(
+        status=status,
+        completed=datetime.now(),
+        error_code=get_file_processing_error_code(db, error_status),
+    )
+    result_obj.update(uuid, **result)
 
 
-def write_error_to_db(db, uuid, exception):
-    error_status = map_exception_to_error_code(exception)
-    error_code = get_file_processing_error_code(db, error_status)
-    update_data = {
-        "status": "FAILURE",
-        "completed": datetime.now(),
-        "error_code": error_code,
-    }
-    PipelineFileProcessingResult(db).update(uuid, **update_data)
+def get_file_processing_result_obj(db, **kwargs):
+    return db.classes.pipelines_fileprocessingresult(
+        created=datetime.now(),
+        modified=datetime.now(),
+        task_id=kwargs.get("task_id"),
+        status=kwargs.get("status"),
+        filename=kwargs.get("filename"),
+        pipeline_processing_step_id=kwargs.get("pipeline_processing_step_id"),
+        revision_id=kwargs.get("revision_id"),
+    )
+
+
+def get_record(db, class_name, filter_condition, error_message):
+    with db.session as session:
+        try:
+            result = session.query(class_name).filter(filter_condition).one()
+        except NoResultFound as error:
+            logger.error(error_message)
+            raise error
+        else:
+            return result
 
 
 def get_file_processing_error_code(db, status):
-    """
-    Retrieves the error code object for a given status.
-    """
-    model = db.classes.pipelines_pipelineerrorcode
-    with db.session as session:
-        return session.query(model).filter(model.error == status).one()
+    class_name = db.classes.pipelines_pipelineerrorcode
+    filter_condition = class_name.status == status
+    error_message = f"Processing error status {status} doesn't exist"
+    return get_record(db, class_name, filter_condition, error_message)
 
 
-def get_or_create_step(db, name, category):
-    """
-    Gets an existing step or creates it if it doesn't exist.
-    """
+def get_step(db, name, category):
     with db.session as session:
         class_name = db.classes.pipelines_pipelineprocessingstep
-        step = session.query(class_name).filter(
-            class_name.name == name, class_name.category == category
-        ).one_or_none()
+        return (
+            session.query(class_name)
+            .filter(class_name.name == name)
+            .filter(class_name.category == category)
+            .one()
+        )
 
-        if step is None:
-            step = class_name(name=name, category=category)
-            session.add(step)
-            session.commit()
-            # session.refresh(step)
-        return step
+
+def write_processing_step(db, name, category):
+    with db.session as session_:
+        try:
+            class_name = db.classes.pipelines_pipelineprocessingstep
+            step = get_step(db, name, category)
+            if step:
+                return step
+            new_step = class_name(name=name, category=category)
+            session_.add(new_step)
+            session_.commit()
+            return new_step.id
+        except SQLAlchemyError as err:
+            session_.rollback()
+            logger.error(f" Failed to add record {err}", exc_info=True)
+            raise err
 
 
 def get_dataset_type(event):
@@ -81,38 +119,34 @@ def get_dataset_type(event):
 def file_processing_result_to_db(step_name: StepName):
     def decorator(func):
         def wrapper(event, context):
-            logger.info(f"processing step: {step_name}, event: {event}")
+            logger.info(f"step: {step_name}, event: {event}")
             _db = DbManager.get_db()
-            task_id = str(uuid4())
+            uuid = str(uuid4())
             try:
                 revision = get_revision(_db, int(event["DatasetRevisionId"]))
-                step = get_or_create_step(_db,
-                                          step_name.value,
-                                          get_dataset_type(event))
-                # Create initial processing record
-                processing_result = {
-                    "task_id": task_id,
-                    "status": "STARTED",
-                    "filename": event["ObjectKey"].split("/")[-1],
-                    "pipeline_processing_step_id": step.id,
-                    "revision_id": revision.id,
-                    "created": datetime.now(),
-                    "modified": datetime.now(),
-                }
-                PipelineFileProcessingResult(_db).create(processing_result)
+                step = write_processing_step(_db, step_name, get_dataset_type(event))
+                result = get_file_processing_result_obj(
+                    db=_db,
+                    task_id=uuid,
+                    status="STARTED",
+                    filename=event["ObjectKey"].split("/")[-1],
+                    pipeline_processing_step_id=step.id,
+                    revision_id=revision.id,
+                )
+                fpr_ins = PipelineFileProcessingResult(_db)
+                # Add lambda entry
+                fpr_ins.create(result)
 
-                # Execute the Lambda function
+                # Call the original Lambda handler function
                 result = func(event, context)
                 logger.info(f"lambda returns: {result}")
+                # Add lambda exit
+                params = dict(status="SUCCESS", completed=datetime.now())
+                fpr_ins.update(uuid, **params)
 
-                # Update processing record on success
-                PipelineFileProcessingResult(_db).update(
-                    task_id, status="SUCCESS", completed=datetime.now()
-                )
                 return result
             except Exception as error:
-                logger.error(error, exc_info=True)
-                write_error_to_db(_db, task_id, error)
+                write_error_to_db(_db, uuid, error)
                 raise error
 
         return wrapper
@@ -125,10 +159,6 @@ class PipelineFileProcessingResult:
     def __init__(self, db):
         self._db: BodsDB = db
 
-    @property
-    def db(self):
-        return self._db
-
     def create(self, file_processing_result):
         """
         Creates a new FileProcessingResult instance
@@ -137,13 +167,10 @@ class PipelineFileProcessingResult:
         :return: None if the operation was successful,
                  otherwise an exception
         """
-        with self.db.session as session:
+        with self._db.session as session:
             try:
-                row = self.db.classes.pipelines_fileprocessingresult(
-                    **file_processing_result)
-                session.add(row)
+                session.add(file_processing_result)
                 session.commit()
-                # session.refresh(row)
                 return "File processing entity created successfully!"
             except SQLAlchemyError as err:
                 session.rollback()
@@ -158,12 +185,11 @@ class PipelineFileProcessingResult:
         :return: return file processing result by revision ID
                  or None if no file processing result was found
         """
-        with self.db.session as session:
+        with self._db.session as session:
             try:
-                buf_ = self.db.classes.pipelines_fileprocessingresult
+                buf_ = self._db.classes.pipelines_fileprocessingresult
                 result = (
-                    session.query(buf_).filter(
-                        buf_.revision_id == revision_id).one()
+                    session.query(buf_).filter(buf_.revision_id == revision_id).one()
                 )
             except NoResultFound as error:
                 msg = (
@@ -183,23 +209,26 @@ class PipelineFileProcessingResult:
         :param kwargs: dict of fields to update
         :return:
         """
-        with self.db.session as session:
+        with self._db.session as session:
             try:
                 # Get the record using task_id
-                model = self.db.classes.pipelines_fileprocessingresult
-                record = session.query(model).filter(
-                    model.task_id == task_id).one_or_none()
-                if not record:
+                buf_ = self._db.classes.pipelines_fileprocessingresult
+                result = session.query(buf_).filter(buf_.task_id == task_id).one()
+                if not result:
                     logger.warning(
                         f"No file processing result found for task {task_id}"
                     )
                     return None
                 # update the record
-                for field, value in kwargs.items():
-                    setattr(record, field, value)
-                session.add(record)
+                if kwargs.get("status"):
+                    result.status = kwargs.get("status")
+                if kwargs.get("completed"):
+                    result.completed = kwargs.get("completed")
+                if kwargs.get("error_message"):
+                    result.error_message = kwargs.get("error_message")
+
+                session.add(result)
                 session.commit()
-                # session.refresh(record)
                 return "File processing result updated successfully!"
             except Exception as error:
                 session.rollback()
@@ -213,7 +242,11 @@ class PipelineFileProcessingResult:
 
 def txc_file_attributes_to_db(revision_id, attributes):
     """
-    Writes TXC file attributes to the database in bulk.
+    Writes attributes to database
+    :param revision_id: int value of revision id
+    :param attributes: List of attributes type TXCFile
+    :return: None, Raise exception when not successful
+
     """
     try:
         db_: BodsDB = DbManager.get_db()

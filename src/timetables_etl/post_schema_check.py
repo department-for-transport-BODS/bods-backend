@@ -1,5 +1,6 @@
-import io
+import json
 import re
+
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.db.manager import DbManager
@@ -39,9 +40,7 @@ def lambda_handler(event, context):
     filename = key.replace("+", " ")
     try:
         s3_handler = S3(bucket_name=bucket)
-        file_object = s3_handler.get_object(file_path=filename)
-        file_object = io.BytesIO(file_object.read())
-        violation = get_violation(file_object)
+        violation = get_violation(s3_handler.get_object(file_path=filename))
         if violation:
             params = dict(filename=filename, details=violation, revision_id=revision.id)
             post_schema_violation = PostSchemaViolationRepository(db)
