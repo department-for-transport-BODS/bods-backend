@@ -13,7 +13,7 @@ from common_layer.txc.parser.parser_txc import parse_txc_file
 from structlog.stdlib import get_logger
 
 from timetables_etl.etl.app.pipeline import transform_data
-from tools.common.db_tools import setup_process_db
+from tools.common.db_tools import setup_db_instance
 from tools.common.models import TestConfig
 from tools.local_etl.make_task_data import create_task_data_from_inputs
 from tools.local_etl.timing import TimingStats, print_timing_report
@@ -24,7 +24,7 @@ log = get_logger()
 def process_single_file(config: TestConfig, file_path: Path) -> TimingStats:
     """Process a single XML file and return timing statistics"""
     # Create a new database connection for each process
-    db = setup_process_db(config)
+    db = setup_db_instance(config.db_config)
 
     stats = TimingStats(file_path=file_path)
     start_time = time.time()
@@ -58,7 +58,7 @@ def process_files_sequential(
 ) -> list[TimingStats]:
     """Process multiple files sequentially"""
     timing_stats = []
-    setup_process_db(config)
+    setup_db_instance(config.db_config)
 
     log.info("Starting sequential processing", total_files=len(files))
 
@@ -123,7 +123,7 @@ async def process_files(config: TestConfig):
         log.warning(
             "Creating Database Tables (And potentially modifying existing ones!)"
         )
-        create_db_tables(setup_process_db(config))
+        create_db_tables(setup_db_instance(config.db_config))
 
     log.info(
         "Starting processing",

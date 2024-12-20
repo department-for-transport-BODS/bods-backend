@@ -4,6 +4,8 @@ Database View Tool to search by revision id or service ID
 
 from pathlib import Path
 
+import typer
+from common_layer.database.client import SqlDB
 from common_layer.database.models import NaptanStopPoint
 from common_layer.database.models.model_transmodel import (
     TransmodelServicePattern,
@@ -13,7 +15,8 @@ from common_layer.database.repos import NaptanStopPointRepo
 from structlog.stdlib import get_logger
 from typer import BadParameter, Option, Typer
 
-from .config import DbConfig
+from tools.common.db_tools import create_db_config, setup_db_instance
+
 from .organisation import (
     extract_dataset,
     extract_dataset_revision,
@@ -36,7 +39,7 @@ from .transmodel import (
     extract_stopactivity,
     extract_vehiclejourney,
 )
-from .utils import SqlDB, csv_extractor, get_db_instance
+from .utils import csv_extractor
 
 logger = get_logger()
 app = Typer()
@@ -246,16 +249,25 @@ def main(
         "--service-id",
         help="Service id",
     ),
+    use_dotenv: bool = Option(
+        False,
+        "--use-dotenv",
+        help="Load database configuration from .env file",
+    ),
 ):
     """
     This tool queries a database then creates CSVs for ETL data for a
     specific revision id or service id
     """
     validate_params(revision_id, service_id)
-    config = DbConfig(
-        host=db_host, port=db_port, user=db_user, password=db_password, database=db_name
-    )
-    db = get_db_instance(config)
+    try:
+        config = create_db_config(
+            use_dotenv, db_host, db_port, db_name, db_user, db_password
+        )
+    except ValueError as e:
+        logger.error("Database configuration error", error=str(e))
+        raise typer.Exit(1)
+    db = setup_db_instance(config)
     if output_path is None:
         output_path = make_default_output_path(revision_id, service_id)
     if revision_id:

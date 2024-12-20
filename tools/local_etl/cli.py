@@ -7,6 +7,7 @@ import typer
 from common_layer.json_logging import configure_logging
 from structlog.stdlib import get_logger
 
+from tools.common.db_tools import create_db_config
 from tools.common.models import TestConfig
 from tools.common.xml_tools import get_xml_paths
 from tools.local_etl.processing import process_files
@@ -81,19 +82,28 @@ def main(
         "--revision-id",
         help="Optional revision ID",
     ),
+    use_dotenv: bool = typer.Option(
+        False,
+        "--use-dotenv",
+        help="Load database configuration from .env file",
+    ),
 ):
     """Process TXC XML files for transformation testing"""
     if log_json:
         configure_logging()
 
     xml_paths = get_xml_paths(paths)
+
+    try:
+        db_config = create_db_config(
+            use_dotenv, db_host, db_port, db_name, db_user, db_password
+        )
+    except ValueError as e:
+        log.error("Database configuration error", error=str(e))
+        raise typer.Exit(1)
     config = TestConfig(
         txc_paths=xml_paths,
-        db_host=db_host,
-        db_name=db_name,
-        db_user=db_user,
-        db_password=db_password,
-        db_port=db_port,
+        db_config=db_config,
         parallel=parallel,
         max_workers=max_workers,
         create_tables=create_tables,

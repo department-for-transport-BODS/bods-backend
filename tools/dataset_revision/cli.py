@@ -14,7 +14,7 @@ from common_layer.json_logging import configure_logging
 from structlog.stdlib import get_logger
 
 from tests.factories.database.organisation import OrganisationDatasetRevisionFactory
-from tools.common.db_tools import setup_process_db
+from tools.common.db_tools import create_db_config, setup_db_instance
 from tools.common.models import TestConfig
 
 app = typer.Typer()
@@ -131,22 +131,33 @@ def main(
         "--log-json",
         help="Enable Structured logging output",
     ),
+    use_dotenv: bool = typer.Option(
+        False,
+        "--use-dotenv",
+        help="Load database configuration from .env file",
+    ),
 ):
     """Create a new dataset revision in the database"""
     if log_json:
 
         configure_logging()
 
-    config = TestConfig(
-        txc_paths=[],
-        db_host=db_host,
-        db_name=db_name,
-        db_user=db_user,
-        db_password=db_password,
-        db_port=db_port,
-    )
+    try:
+        db_config = create_db_config(
+            use_dotenv, db_host, db_port, db_name, db_user, db_password
+        )
+        log.info(
+            "Using Database config",
+            host=db_config.host,
+            port=db_config.port,
+            db_name=db_config.database,
+            user=db_config.user,
+        )
+    except ValueError as e:
+        log.error("Database configuration error", error=str(e))
+        raise typer.Exit(1)
 
-    db = setup_process_db(config)
+    db = setup_db_instance(db_config)
 
     try:
         revision = create_revision(
