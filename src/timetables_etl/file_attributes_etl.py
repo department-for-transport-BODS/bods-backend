@@ -23,6 +23,7 @@ from common_layer.txc.helpers.service import (
     get_all_line_names,
     get_service_destinations,
     get_service_end_dates,
+    get_service_modes,
     get_service_origins,
     get_service_start_dates,
 )
@@ -61,7 +62,11 @@ def make_txc_file_attributes(
     if len(txc.Services) == 0:
         log.error("TXCData does not contain services")
         raise ValueError("TXC Data has no Services")
-
+    modes = get_service_modes(txc.Services)
+    if len(modes) > 1:
+        log.warning("More than 1 Mode, using first service's", modes=modes)
+    if len(modes) == 0:
+        log.warning("No Modes found, defaulting to bus")
     return OrganisationTXCFileAttributes(
         schema_version=validate_schema_version(metadata.SchemaVersion),
         modification_datetime=metadata.ModificationDateTime,
@@ -80,6 +85,7 @@ def make_txc_file_attributes(
         filename=metadata.FileName,
         hash=metadata.FileHash or "",
         revision_id=revision.id,
+        service_mode=modes[0] if modes else "bus",
     )
 
 

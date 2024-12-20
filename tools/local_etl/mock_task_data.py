@@ -11,8 +11,8 @@ from common_layer.database.models import (
 )
 from common_layer.txc.models.txc_data import TXCData
 
-from timetables_etl.etl.app.load.txc_file_attributes import make_txc_file_attributes
 from timetables_etl.etl.app.models import ETLInputData, TaskData
+from timetables_etl.file_attributes_etl import make_txc_file_attributes
 
 
 def create_mocked_task_data(
