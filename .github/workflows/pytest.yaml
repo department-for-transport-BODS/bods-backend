@@ -58,13 +58,6 @@ jobs:
           PROJECT_ENV: local
         run: poetry run create-tables-dev
 
-      - name: Debug Directory Structure
-        run: |
-          echo "Current directory:"
-          pwd
-          echo "Directory structure:"
-          ls -R
-
       - name: Run Pytest
         run: poetry run pytest --junitxml=junit/test-results.xml --cov-report term
 
