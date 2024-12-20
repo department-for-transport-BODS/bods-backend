@@ -2,6 +2,7 @@ import io
 import json
 import os
 from pathlib import Path
+import requests
 from zipfile import ZipFile
 
 from common_layer.constants import SCHEMA_DIR
@@ -20,9 +21,25 @@ from common_layer.violations import BaseSchemaViolation
 from common_layer.xml_validator import XMLValidator
 from lxml import etree
 
+SCHEMA_URL = "http://www.transxchange.org.uk/schema/2.4/TransXChange_schema_2.4.zip"
+
+
+def download_schema(url, output_file):
+    try:
+        response = requests.get(url, stream=True)
+        response.raise_for_status()
+        with open(output_file, "wb") as file:
+            for chunk in response.iter_content(chunk_size=1024):
+                file.write(chunk)
+        logger.info(f"ZIP file downloaded successfully: {output_file}")
+    except Exception as e:
+        logger.error(f"Failed to download file {e}", exc_info=True)
+        raise e
+
 
 def get_transxchange_schema(db):
     definition = get_schema_definition_db_object(db, SchemaCategory.TXC)
+    download_schema(SCHEMA_URL, definition.schema)
     schema_loader = SchemaLoader(definition, os.environ["TXC_XSD_PATH"])
     return schema_loader.schema
 
@@ -134,23 +151,3 @@ def lambda_handler(event, context):
         "body": f"Successfully ran the file schema check for file '{key}' "
         f"from bucket '{bucket}' with {len(violations)} violations",
     }
-
-
-
-os.environ["CLAMAV_HOST"] = "localhost"
-os.environ["CLAMAV_PORT"] = "3310"
-os.environ["POSTGRES_HOST"] = "localhost"
-os.environ["POSTGRES_USER"] = "postgres"
-os.environ["POSTGRES_PORT"] = "5432"
-os.environ["POSTGRES_PASSWORD"] = "postgres"
-os.environ["POSTGRES_DB"] = "bodds"
-os.environ["PROJECT_ENV"] = "local"
-os.environ["TXC_XSD_PATH"] = "TransXChange_general.xsd"
-
-event = {
-  "Bucket": "bodds-dev",
-  "ObjectKey": "3624_extracted_vehicle_journey_runtimes.xml",
-  "DatasetRevisionId": "1",
-  "DatasetType": "timetables"
-}
-lambda_handler(event, None)

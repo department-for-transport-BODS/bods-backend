@@ -9,6 +9,7 @@ from timetables_etl.schema_check import (
     SchemaLoader,
     get_transxchange_schema,
     lambda_handler,
+    download_schema
 )
 from tests.mock_db import MockedDB
 
@@ -119,6 +120,29 @@ class TestGetTransxchangeSchema(unittest.TestCase):
         mock_logger.warning.assert_any_call(
             "Could not extract file2.xsd - Mocked extraction error"
         )
+
+    @patch('timetables_etl.schema_check.requests.get')
+    def test_download_schema(self, mock_get):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.iter_content = MagicMock(
+            return_value=[b"Fake ZIP content"]  # Simulate file content chunks
+        )
+        mock_get.return_value = mock_response
+
+        # Call the function
+        url = "https://example.com/somefile.zip"
+        filename = "test.zip"
+
+        download_schema(url, filename)
+
+        # Assert that requests.get was called with the correct URL
+        mock_get.assert_called_once_with(url, stream=True)
+
+        # Verify the file was written
+        with open(filename, "rb") as f:
+            content = f.read()
+        self.assertEqual(content, b"Fake ZIP content")
 
 
 class TestDatasetTXCValidator(unittest.TestCase):
