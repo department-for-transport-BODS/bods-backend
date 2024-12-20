@@ -11,8 +11,8 @@ from common_layer.dynamodb.client import DynamoDB
 from common_layer.dynamodb.data_manager import FileProcessingDataManager
 from common_layer.dynamodb.models import TXCFileAttributes
 from common_layer.exceptions.pipeline_exceptions import PipelineException
+from common_layer.json_logging import configure_logging
 from common_layer.s3 import S3
-from etl.app.log_setup import configure_logging
 from pti.service import PTIValidationService
 from pydantic import BaseModel, ConfigDict
 from structlog.stdlib import get_logger
