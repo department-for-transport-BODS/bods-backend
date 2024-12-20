@@ -7,6 +7,8 @@ from datetime import date
 from structlog.stdlib import get_logger
 
 from ..models import (
+    ActivityT,
+    TransportModeT,
     TXCFixedStopUsage,
     TXCFlexibleJourneyPattern,
     TXCFlexibleStopUsage,
@@ -14,7 +16,6 @@ from ..models import (
     TXCJourneyPatternSection,
     TXCService,
 )
-from ..models.txc_types import ActivityT
 from .jps import get_jps_by_id, get_stops_from_journey_pattern_section
 
 log = get_logger()
@@ -172,3 +173,13 @@ def get_stop_activity_details(
             raise ValueError(f"Unknown stop type: {type(stop_point)}")
 
     return is_timing_point, activity_type
+
+
+def get_service_modes(services: list[TXCService]) -> list[TransportModeT]:
+    """
+    Get a list of of modes
+    """
+    modes: list[TransportModeT] = []
+    for service in services:
+        modes.append(service.Mode)
+    return modes

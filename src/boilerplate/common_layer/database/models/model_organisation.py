@@ -181,3 +181,4 @@ class OrganisationTXCFileAttributes(BaseSQLModel):
     destination: Mapped[str] = mapped_column(String(512), nullable=False)
     origin: Mapped[str] = mapped_column(String(512), nullable=False)
     hash: Mapped[str] = mapped_column(String(40), nullable=False)
+    service_mode: Mapped[str] = mapped_column(String(20), nullable=False)

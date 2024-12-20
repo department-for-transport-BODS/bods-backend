@@ -122,6 +122,7 @@ class OrganisationTXCFileAttributesFactory(factory.Factory):
     destination = "Plymouth"
     origin = "London"
     hash = factory.Faker("sha1")
+    service_mode = "bus"
 
     @classmethod
     def create_with_id(cls, id_number: int, **kwargs) -> OrganisationTXCFileAttributes:
