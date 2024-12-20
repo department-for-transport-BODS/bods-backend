@@ -14,7 +14,7 @@ from timetables_etl.file_attributes_etl import (
     FileAttributesInputData,
     process_file_attributes,
 )
-from tools.common.db_tools import setup_process_db
+from tools.common.db_tools import create_db_config, setup_db_instance
 from tools.common.models import TestConfig
 from tools.common.xml_tools import get_xml_paths
 
@@ -80,21 +80,25 @@ def main(
         "--log-json",
         help="Enable Structured logging output",
     ),
+    use_dotenv: bool = typer.Option(
+        False,
+        "--use-dotenv",
+        help="Load database configuration from .env file",
+    ),
 ):
     """Process TXC XML files for transformation testing"""
     if log_json:
         configure_logging()
 
     xml_paths = get_xml_paths(paths)
-    config = TestConfig(
-        txc_paths=xml_paths,
-        db_host=db_host,
-        db_name=db_name,
-        db_user=db_user,
-        db_password=db_password,
-        db_port=db_port,
-    )
-    db = setup_process_db(config)
+    try:
+        db_config = create_db_config(
+            use_dotenv, db_host, db_port, db_name, db_user, db_password
+        )
+    except ValueError as e:
+        log.error("Database configuration error", error=str(e))
+        raise typer.Exit(1)
+    db = setup_db_instance(db_config)
     process_txc(xml_paths, revision_id, db)
 
 

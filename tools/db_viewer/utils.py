@@ -2,26 +2,21 @@
 Utility functions to support db viwer tool
 """
 
-from csv import DictWriter, QUOTE_MINIMAL
-from datetime import datetime, date, time
-from dataclasses import is_dataclass, fields
+from csv import QUOTE_MINIMAL, DictWriter
+from dataclasses import fields, is_dataclass
+from datetime import date, datetime, time
 from decimal import Decimal
 from functools import wraps
-from uuid import UUID
 from io import StringIO
 from pathlib import Path
 from typing import Any, Callable, ParamSpec, TypeVar, cast
+from uuid import UUID
+
+from common_layer.database.client import SqlDB
+from common_layer.database.models.common import BaseSQLModel
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.shape import to_shape
 from structlog.stdlib import get_logger
-from common_layer.database.models.common import BaseSQLModel
-from common_layer.database.client import (
-    DatabaseBackend,
-    DatabaseSettings,
-    PostgresSettings,
-    SqlDB,
-)
-from .config import DbConfig
 
 logger = get_logger()
 
@@ -73,21 +68,6 @@ def csv_extractor():
         return wrapper
 
     return decorator
-
-
-def get_db_instance(config: DbConfig) -> SqlDB:
-    """Initialize and get database instance"""
-    pg_settings = PostgresSettings(
-        POSTGRES_HOST=config.host,
-        POSTGRES_DB=config.database,
-        POSTGRES_USER=config.user,
-        POSTGRES_PASSWORD=config.password,
-        POSTGRES_PORT=config.port,
-    )
-    settings = DatabaseSettings(
-        postgres=pg_settings,
-    )
-    return SqlDB(DatabaseBackend.POSTGRESQL, settings)
 
 
 def model_to_dict(instance: BaseSQLModel) -> dict:
