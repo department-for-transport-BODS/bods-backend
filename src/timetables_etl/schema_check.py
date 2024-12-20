@@ -1,6 +1,8 @@
+import io
 import json
 import os
 from pathlib import Path
+import requests
 from zipfile import ZipFile
 
 from common_layer.constants import SCHEMA_DIR
@@ -8,7 +10,10 @@ from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.db.manager import DbManager
 from common_layer.db.repositories.dataset_revision import get_revision
-from common_layer.db.schema_definition import get_schema_definition_db_object
+from common_layer.db.schema_definition import (
+    get_schema_definition_db_object,
+    SchemaCategory,
+)
 from common_layer.db.schema_violation import SchemaViolation
 from common_layer.logger import logger
 from common_layer.s3 import S3
@@ -16,9 +21,25 @@ from common_layer.violations import BaseSchemaViolation
 from common_layer.xml_validator import XMLValidator
 from lxml import etree
 
+SCHEMA_URL = "http://www.transxchange.org.uk/schema/2.4/TransXChange_schema_2.4.zip"
 
-def get_transxchange_schema():
-    definition = get_schema_definition_db_object()
+
+def download_schema(url, output_file):
+    try:
+        response = requests.get(url, stream=True)
+        response.raise_for_status()
+        with open(output_file, "wb") as file:
+            for chunk in response.iter_content(chunk_size=1024):
+                file.write(chunk)
+        logger.info(f"ZIP file downloaded successfully: {output_file}")
+    except Exception as e:
+        logger.error(f"Failed to download file {e}", exc_info=True)
+        raise e
+
+
+def get_transxchange_schema(db):
+    definition = get_schema_definition_db_object(db, SchemaCategory.TXC)
+    download_schema(SCHEMA_URL, definition.schema)
     schema_loader = SchemaLoader(definition, os.environ["TXC_XSD_PATH"])
     return schema_loader.schema
 
@@ -73,8 +94,8 @@ class SchemaLoader:
 
 
 class DatasetTXCValidator:
-    def __init__(self, revision):
-        self._schema = get_transxchange_schema()
+    def __init__(self, db, revision):
+        self._schema = get_transxchange_schema(db)
         self.revision = revision
 
     def get_violations(self, file_):
@@ -117,10 +138,10 @@ def lambda_handler(event, context):
     try:
         s3_handler = S3(bucket_name=bucket)
         file_object = s3_handler.get_object(file_path=filename)
-        validator = DatasetTXCValidator(revision=revision)
+        validator = DatasetTXCValidator(db, revision=revision)
+        file_object = io.BytesIO(file_object.read())
         violations = validator.get_violations(file_object)
-        db_obj = DbManager.get_db()
-        schema_violation = SchemaViolation(db_obj)
+        schema_violation = SchemaViolation(db)
         schema_violation.create(violations)
     except Exception as e:
         logger.error(f"Error scanning object '{key}' from bucket '{bucket}'")
