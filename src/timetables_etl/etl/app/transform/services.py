@@ -7,10 +7,9 @@ from common_layer.database.models import (
     OrganisationTXCFileAttributes,
     TransmodelService,
 )
+from common_layer.txc.helpers.service import get_line_names
+from common_layer.txc.models.txc_service import TXCService
 from structlog.stdlib import get_logger
-
-from ..txc.helpers.service import get_line_names
-from ..txc.models.txc_service import TXCService
 
 log = get_logger()
 

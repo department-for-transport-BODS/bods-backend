@@ -6,6 +6,12 @@ from common_layer.database.models import (
     OrganisationDatasetRevision,
     TransmodelServicePattern,
 )
+from common_layer.txc.helpers.jps import get_stops_from_sections
+from common_layer.txc.models import (
+    TXCJourneyPattern,
+    TXCJourneyPatternSection,
+    TXCService,
+)
 from geoalchemy2 import WKBElement
 from geoalchemy2.shape import from_shape
 from shapely import Point
@@ -17,8 +23,6 @@ from ..transform.service_pattern_metadata import (
     extract_pattern_metadata,
     make_service_pattern_id,
 )
-from ..txc.helpers.jps import get_stops_from_sections
-from ..txc.models import TXCJourneyPattern, TXCJourneyPatternSection, TXCService
 
 log = get_logger()
 

@@ -1,3 +1,7 @@
+"""
+Shared Pydantic Models for the CLI
+"""
+
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -14,3 +18,7 @@ class TestConfig:
     db_port: int = 5432
     parallel: bool = False
     max_workers: int = 10
+    create_tables: bool = False
+    task_id: int | None = None
+    file_attributes_id: int | None = None
+    revision_id: int | None = None

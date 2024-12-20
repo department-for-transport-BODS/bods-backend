@@ -3,13 +3,9 @@ TXC Route Section Location XML to Pydantic Test
 """
 
 import pytest
+from common_layer.txc.models import TXCLocation
+from common_layer.txc.parser.route_sections import parse_location, parse_locations
 from lxml import etree
-
-from timetables_etl.etl.app.txc.models import TXCLocation
-from timetables_etl.etl.app.txc.parser.route_sections import (
-    parse_location,
-    parse_locations,
-)
 
 
 @pytest.mark.parametrize(

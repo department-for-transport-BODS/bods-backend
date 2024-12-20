@@ -16,18 +16,18 @@ from common_layer.database.repos import (
     TransmodelServicePatternAdminAreaRepo,
     TransmodelServicePatternLocalityRepo,
 )
+from common_layer.txc.models import (
+    TXCData,
+    TXCFlexibleJourneyPattern,
+    TXCJourneyPattern,
+    TXCService,
+)
 from structlog.stdlib import get_logger
 
 from ..helpers import ReferenceDataLookups
 from ..transform.service_pattern_associations import (
     generate_pattern_admin_areas,
     generate_pattern_localities,
-)
-from ..txc.models import (
-    TXCData,
-    TXCFlexibleJourneyPattern,
-    TXCJourneyPattern,
-    TXCService,
 )
 from .vehicle_journey import process_service_pattern_vehicle_journeys
 from .vehicle_journey_tracks import load_vehicle_journey_tracks

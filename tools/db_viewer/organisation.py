@@ -1,4 +1,7 @@
-from structlog.stdlib import get_logger
+"""
+Organisation Data fetching
+"""
+
 from common_layer.database.models import (
     OrganisationDataset,
     OrganisationDatasetRevision,
@@ -8,14 +11,12 @@ from common_layer.database.models import (
 from common_layer.database.repos import (
     OrganisationDatasetRepo,
     OrganisationDatasetRevisionRepo,
-    OrganisationTXCFileAttributesRepo,
     OrganisationOrganisationRepo,
+    OrganisationTXCFileAttributesRepo,
 )
-from .utils import (
-    SqlDB,
-    csv_extractor,
-    DatasetRevisionNotFoundError,
-)
+from structlog.stdlib import get_logger
+
+from .utils import DatasetRevisionNotFoundError, SqlDB, csv_extractor
 
 logger = get_logger()
 
@@ -37,21 +38,23 @@ def extract_dataset_revision(
 
 
 @csv_extractor()
-def extract_dataset(db: SqlDB, dataset_id: int) -> OrganisationDataset:
+def extract_dataset(db: SqlDB, dataset_id: int) -> OrganisationDataset | None:
     """
-    Extract the dataset details from DB.
+    Extract the OrganisationDataset
     """
     repo = OrganisationDatasetRepo(db)
-    return repo.get_by_id(dataset_id)  # type: ignore
+    return repo.get_by_id(dataset_id)
 
 
 @csv_extractor()
-def extract_organisation(db: SqlDB, organisation_id: int) -> OrganisationOrganisation:
+def extract_organisation(
+    db: SqlDB, organisation_id: int
+) -> OrganisationOrganisation | None:
     """
     Extarct Organisation details from DB.
     """
     repo = OrganisationOrganisationRepo(db)
-    return repo.get_by_id(organisation_id)  # type: ignore
+    return repo.get_by_id(organisation_id)
 
 
 @csv_extractor()
@@ -62,4 +65,4 @@ def extract_txc_attributes(
     Extract TXC file attributes from DB.
     """
     repo = OrganisationTXCFileAttributesRepo(db)
-    return repo.get_by_revision_id(revision_id=revision_id)  # type: ignore
+    return repo.get_by_revision_id(revision_id=revision_id)

@@ -5,9 +5,7 @@ Test Parsing TXC Service
 from datetime import date
 
 import pytest
-from lxml import etree
-
-from timetables_etl.etl.app.txc.models import (
+from common_layer.txc.models import (
     TXCBookingArrangements,
     TXCFixedStopUsage,
     TXCFlexibleJourneyPattern,
@@ -20,13 +18,14 @@ from timetables_etl.etl.app.txc.models import (
     TXCService,
     TXCStandardService,
 )
-from timetables_etl.etl.app.txc.parser.services import (
+from common_layer.txc.parser.services import (
     parse_journey_pattern,
     parse_line,
     parse_line_description,
     parse_service,
     parse_standard_service,
 )
+from lxml import etree
 
 from .utils import assert_model_equal
 

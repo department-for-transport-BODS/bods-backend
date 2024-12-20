@@ -1,0 +1,6 @@
+psycopg[binary,pool]
+boto3
+structlog
+urllib3
+shapely
+pydantic_settings

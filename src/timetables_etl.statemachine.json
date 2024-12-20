@@ -7,7 +7,26 @@
       "Parameters": {
         "detail.$": "$[0].detail"
       },
-      "Next": "ClamAvScanner"
+      "Next": "InitializePipeline"
+    },
+    "InitializePipeline": {
+      "Type": "Task",
+      "Resource": "${InitializePipelineLambdaArn}",
+      "Parameters": {
+        "Bucket.$": "$.detail.bucket.name",
+        "ObjectKey.$": "$.detail.object.key",
+        "DatasetRevisionId.$": "$.detail.dataset_revision_id",
+        "DatasetType.$": "$.detail.dataset_type"
+      },
+      "ResultPath": "$.initializePipeline",
+      "Next": "ClamAvScanner",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "ParseError",
+          "ResultPath": "$.error_info"
+        }
+      ]
     },
     "ClamAvScanner": {
       "Type": "Task",
@@ -124,6 +143,26 @@
               "Bucket.$": "$.Bucket",
               "ObjectKey.$": "$.Key",
               "DatasetRevisionId.$": "$.DatasetRevisionId"
+            },
+            "Next": "ETLProcess",
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ExceptionHandler"
+              }
+            ]
+          },
+          "ETLProcess": {
+            "Type": "Task",
+            "Resource": "${ETLProcessLambdaArn}",
+            "Parameters": {
+              "Bucket.$": "$.Bucket",
+              "ObjectKey.$": "$.Key",
+              "DatasetRevisionId.$": "$.DatasetRevisionId",
+              "fileAttributesId.$": "$.fileAttributesEtl.id",
+              "DatasetEtlTaskResultId.$": "$.detail.datasetEtlTaskResultId"
             },
             "Next": "Success",
             "Catch": [

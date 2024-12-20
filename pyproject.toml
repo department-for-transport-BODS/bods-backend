@@ -12,6 +12,8 @@ packages = [
 
 [tool.poetry.scripts]
 local-etl = "tools.local_etl.cli:app"
+file-attributes = "tools.file_attributes.cli:app"
+create-revision = "tools.dataset_revision.cli:app"
 db-viewer = "tools.db_viewer.cli:app"
 create-tables-dev = "src.boilerplate.common_layer.database.create_tables:create_db_tables"
 
@@ -90,6 +92,7 @@ python_functions = ["test_*"]
 omit = [
   "src/boilerplate/db/models.py",
   "src/boilerplate/common_layer/database/**/*", # Ignoring for now whilst mock scheme is devised
+  "src/standalone/**/*",                        # Standalone Deployment Scripts
 ]
 
 [tool.black]

@@ -3,11 +3,8 @@ Test Service Helpers
 """
 
 import pytest
-
-from timetables_etl.etl.app.txc.helpers.service import (
-    extract_flexible_pattern_stop_refs,
-)
-from timetables_etl.etl.app.txc.models import (
+from common_layer.txc.helpers.service import extract_flexible_pattern_stop_refs
+from common_layer.txc.models import (
     TXCFixedStopUsage,
     TXCFlexibleJourneyPattern,
     TXCFlexibleStopUsage,

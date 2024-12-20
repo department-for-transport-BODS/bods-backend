@@ -46,5 +46,7 @@
         "!Select sequence",
         "!Split",
         "!Split sequence"
-    ]
+    ],
+    "cfnLint.format.singleQuote": true,
+    "yaml.format.singleQuote": true
 }

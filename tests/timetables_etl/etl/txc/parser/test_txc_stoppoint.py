@@ -3,9 +3,7 @@ TXC Stoppoint XML to Pydantic Test
 """
 
 import pytest
-from lxml.etree import fromstring
-
-from timetables_etl.etl.app.txc.models import (
+from common_layer.txc.models import (
     AnnotatedStopPointRef,
     BearingStructure,
     BusStopStructure,
@@ -17,7 +15,7 @@ from timetables_etl.etl.app.txc.models import (
     StopClassificationStructure,
     TXCStopPoint,
 )
-from timetables_etl.etl.app.txc.parser.stop_points import (
+from common_layer.txc.parser.stop_points import (
     parse_bearing_structure,
     parse_bus_stop_structure,
     parse_descriptor_structure,
@@ -29,6 +27,7 @@ from timetables_etl.etl.app.txc.parser.stop_points import (
     parse_stop_points,
     parse_txc_stop_point,
 )
+from lxml.etree import fromstring
 
 
 @pytest.mark.parametrize(

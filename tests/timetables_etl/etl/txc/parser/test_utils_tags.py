@@ -5,9 +5,7 @@ Test XML Tag Extraction Functions
 from datetime import date, datetime
 
 import pytest
-from lxml import etree
-
-from timetables_etl.etl.app.txc.parser.utils_tags import (
+from common_layer.txc.parser.utils_tags import (
     does_element_exist,
     get_elem_bool_default,
     get_element_bool,
@@ -17,6 +15,7 @@ from timetables_etl.etl.app.txc.parser.utils_tags import (
     get_element_text,
     get_element_texts,
 )
+from lxml import etree
 
 
 @pytest.mark.parametrize(

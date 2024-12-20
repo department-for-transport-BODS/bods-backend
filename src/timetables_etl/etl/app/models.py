@@ -7,7 +7,7 @@ from common_layer.database.models import (
     OrganisationDatasetRevision,
     OrganisationTXCFileAttributes,
 )
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ETLInputData(BaseModel):
@@ -15,10 +15,17 @@ class ETLInputData(BaseModel):
     Input data for the ETL Function
     """
 
-    task_id: int
-    file_attributes_id: int
-    s3_bucket_name: str
-    s3_file_key: str
+    class Config:
+        """
+        Allow us to map Bucket / Object Key
+        """
+
+        populate_by_name = True
+
+    task_id: int = Field(alias="DatasetEtlTaskResultId")
+    file_attributes_id: int = Field(alias="fileAttributesId")
+    s3_bucket_name: str = Field(alias="Bucket")
+    s3_file_key: str = Field(alias="ObjectKey")
 
 
 class TaskData(BaseModel):

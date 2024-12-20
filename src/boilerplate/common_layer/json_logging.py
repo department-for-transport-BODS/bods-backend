@@ -1,5 +1,5 @@
 """
-Configure JSON logging for lambda output
+Structlog Config for JSON Logging Tailored for AWS
 """
 
 import json
@@ -15,7 +15,7 @@ from structlog.types import EventDict
 class AWSCloudWatchLogs:
     """
     Render a log line compatible with AWS CloudWatch Logs.
-    AWS Cloudwatch Logs lets allows for two space separated items before the json log
+    AWS CloudWatch Logs allows for two space separated items before the json log
     Which makes reading them in the logs easier
 
     """
@@ -85,7 +85,8 @@ _PROCESSORS = (
 
 def configure_logging():
     """
-    Configure logging for the application.
+    Configure Structured JSON logging for the application
+    Import and run this as the first thing in a lambda function
     """
 
     # Structlog configuration

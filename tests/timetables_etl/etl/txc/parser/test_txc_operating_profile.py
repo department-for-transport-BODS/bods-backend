@@ -5,10 +5,7 @@ Operating Profile Tests for Vehicle Journeys
 from datetime import date
 
 import pytest
-from lxml import etree
-from pydantic import ValidationError
-
-from timetables_etl.etl.app.txc.models import (
+from common_layer.txc.models import (
     TXCBankHolidayDays,
     TXCBankHolidayOperation,
     TXCDateRange,
@@ -18,7 +15,7 @@ from timetables_etl.etl.app.txc.models import (
     TXCServicedOrganisationDayType,
     TXCSpecialDaysOperation,
 )
-from timetables_etl.etl.app.txc.parser.operating_profile import (
+from common_layer.txc.parser.operating_profile import (
     parse_bank_holiday_days,
     parse_bank_holiday_operation,
     parse_date_range,
@@ -29,6 +26,8 @@ from timetables_etl.etl.app.txc.parser.operating_profile import (
     parse_serviced_organisation_days,
     parse_special_days_operation,
 )
+from lxml import etree
+from pydantic import ValidationError
 
 
 @pytest.mark.parametrize(

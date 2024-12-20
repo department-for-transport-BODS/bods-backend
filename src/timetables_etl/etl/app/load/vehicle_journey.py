@@ -16,6 +16,14 @@ from common_layer.database.repos.repo_transmodel_flexible import (
 from common_layer.database.repos.repo_transmodel_vehicle_journey import (
     TransmodelVehicleJourneyRepo,
 )
+from common_layer.txc.models import (
+    TXCData,
+    TXCFlexibleJourneyPattern,
+    TXCFlexibleVehicleJourney,
+    TXCJourneyPattern,
+    TXCServicedOrganisation,
+    TXCVehicleJourney,
+)
 from structlog.stdlib import get_logger
 
 from ..helpers import ServicedOrgLookup
@@ -26,14 +34,6 @@ from ..load.service_pattern_stop import (
 from ..transform.vehicle_journeys import (
     generate_flexible_service_operation_period,
     generate_pattern_vehicle_journeys,
-)
-from ..txc.models import (
-    TXCData,
-    TXCFlexibleJourneyPattern,
-    TXCFlexibleVehicleJourney,
-    TXCJourneyPattern,
-    TXCServicedOrganisation,
-    TXCVehicleJourney,
 )
 from .vehicle_journey_operating_profile import process_operating_profile
 

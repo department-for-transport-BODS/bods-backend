@@ -4,36 +4,15 @@ import asyncio
 from pathlib import Path
 
 import typer
+from common_layer.json_logging import configure_logging
 from structlog.stdlib import get_logger
 
-from timetables_etl.etl.app.log_setup import configure_logging
-from tools.local_etl.models import TestConfig
+from tools.common.models import TestConfig
+from tools.common.xml_tools import get_xml_paths
 from tools.local_etl.processing import process_files
 
 app = typer.Typer()
 log = get_logger()
-
-
-def get_xml_paths(paths: list[Path]) -> list[Path]:
-    """Process provided paths to handle both files and directories"""
-    xml_paths: list[Path] = []
-
-    if not paths:
-        log.info("No paths provided, using default test files")
-    else:
-        for path in paths:
-            if path.is_dir():
-                xml_paths.extend(path.glob("**/*.xml"))
-            elif path.is_file() and path.suffix.lower() == ".xml":
-                xml_paths.append(path)
-            else:
-                log.warning("Skipping invalid path", path=path)
-
-    if not xml_paths:
-        log.error("No valid XML files found in the specified paths", paths=paths)
-        raise typer.Exit(code=1)
-
-    return xml_paths
 
 
 @app.command()
@@ -82,6 +61,26 @@ def main(
         "--log-json",
         help="Enable Structured logging output",
     ),
+    create_tables: bool = typer.Option(
+        False,
+        "--create-tables",
+        help="Creates Tables via SQLAlchemy. Do not run on BODs DB managed by Django!",
+    ),
+    task_id: int | None = typer.Option(
+        None,
+        "--task-id",
+        help="Optional task ID for processing",
+    ),
+    file_attributes_id: int | None = typer.Option(
+        None,
+        "--file-attributes-id",
+        help="Optional file attributes ID",
+    ),
+    revision_id: int | None = typer.Option(
+        None,
+        "--revision-id",
+        help="Optional revision ID",
+    ),
 ):
     """Process TXC XML files for transformation testing"""
     if log_json:
@@ -97,6 +96,10 @@ def main(
         db_port=db_port,
         parallel=parallel,
         max_workers=max_workers,
+        create_tables=create_tables,
+        task_id=task_id,
+        file_attributes_id=file_attributes_id,
+        revision_id=revision_id,
     )
 
     asyncio.run(process_files(config))
