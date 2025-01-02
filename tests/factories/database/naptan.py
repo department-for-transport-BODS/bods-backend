@@ -3,7 +3,8 @@ Factories for Naptan Database Data
 """
 
 import factory
-from common_layer.database.models.model_naptan import NaptanStopPoint
+from common_layer.database.models.model_naptan import NaptanAdminArea, NaptanStopPoint
+from factory.fuzzy import FuzzyChoice
 from geoalchemy2.shape import from_shape
 from shapely import Point
 
@@ -55,3 +56,36 @@ class NaptanStopPointFactory(factory.Factory):
             )
             for atco, name, (lon, lat) in stop_data
         }
+
+
+class NaptanAdminAreaFactory(factory.Factory):
+    """
+    Factory for creating NaptanAdmin instances using the repository pattern.
+    """
+
+    class Meta:  # type: ignore
+        model = NaptanAdminArea
+
+    name = FuzzyChoice(
+        choices=[
+            "Stockton-on-Tees",
+            "West Dunbartonshire",
+            "East Dunbartonshire",
+            "Surrey",
+            "Thurrock",
+        ]
+    )
+
+    traveline_region_id = FuzzyChoice(
+        choices=[
+            "N",
+            "NE",
+            "E",
+            "SE",
+            "S",
+            "SW",
+            "W",
+        ]
+    )
+    atco_code = factory.Sequence(lambda n: f"ATC00{n}")
+    ui_lta_id = None
