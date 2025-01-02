@@ -30,7 +30,7 @@ def test_get_service_by_registration_number_weca(test_db):
         session.commit()
 
     # Run the query
-    repo = OtcServiceRepository(test_db)
+    repo = OtcServiceRepo(test_db)
     service_with_region = repo.get_service_with_traveline_region(registration_number)
 
     # Assertions
@@ -74,7 +74,7 @@ def test_get_service_by_registration_number_otc(test_db):
         session.add(registration)
         session.commit()  # Final commit
 
-    repo = OtcServiceRepository(test_db)
+    repo = OtcServiceRepo(test_db)
     service_with_region = repo.get_service_with_traveline_region(registration_number)
 
     assert service_with_region is not None
@@ -112,7 +112,7 @@ def test_get_service_with_multiple_traveline_regions(test_db):
         session.add(registration)
         session.commit()
 
-    repo = OtcServiceRepository(test_db)
+    repo = OtcServiceRepo(test_db)
     service_with_region = repo.get_service_with_traveline_region(registration_number)
 
     assert service_with_region is not None
@@ -124,7 +124,7 @@ def test_get_service_with_multiple_traveline_regions(test_db):
 
 
 def test_get_service_with_traveline_region_not_found(test_db):
-    repo = OtcServiceRepository(test_db)
+    repo = OtcServiceRepo(test_db)
     service_with_region = repo.get_service_with_traveline_region("9999")
     assert service_with_region is None
 
@@ -136,7 +136,7 @@ def test_get_service_with_traveline_region_exception(test_db):
     )
     test_db.session_scope = m_session
 
-    repo = OtcServiceRepository(test_db)
+    repo = OtcServiceRepo(test_db)
     with pytest.raises(
         PipelineException,
         match="Error retrieving service with traveline region with registration number 9999.",
