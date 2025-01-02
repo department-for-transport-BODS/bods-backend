@@ -10,10 +10,9 @@ from typing import Type
 
 from psycopg2 import ProgrammingError
 from sqlalchemy import Column as SQLColumn
-from sqlalchemy import Engine, MetaData
+from sqlalchemy import Engine, Enum, MetaData
 from sqlalchemy import Table as SQLTable
 from sqlalchemy import inspect, text
-from sqlalchemy.dialects.postgresql import ENUM as PG_ENUM
 from sqlalchemy.sql.schema import Table
 from structlog.stdlib import get_logger
 
@@ -30,7 +29,7 @@ def handle_enum_types(engine: Engine, model: Type[BaseSQLModel]) -> None:
     Ensure the enum type exists and can be used.
     """
     for column in model.__table__.columns:
-        if isinstance(column.type, PG_ENUM):
+        if isinstance(column.type, Enum):
             # Preliminary logging of enum type discovery
             log.info(
                 "Processing enum type",
