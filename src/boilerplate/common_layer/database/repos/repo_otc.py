@@ -2,13 +2,13 @@ import logging
 from dataclasses import dataclass
 
 from common_layer.database.client import SqlDB
-from common_layer.database.models import (
-    NaptanAdminArea,
+from common_layer.database.models import NaptanAdminArea
+from common_layer.database.models.model_otc import (
     OtcLocalAuthority,
     OtcLocalAuthorityRegistrationNumbers,
     OtcService,
-    UiLta,
 )
+from common_layer.database.models.model_ui import UiLta
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 
 logger = logging.getLogger(__name__)
