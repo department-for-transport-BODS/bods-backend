@@ -13,7 +13,6 @@ from sqlalchemy import Engine, MetaData
 from sqlalchemy import Table as SQLTable
 from sqlalchemy import inspect, text
 from sqlalchemy.dialects.postgresql import ENUM as PG_ENUM
-from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.sql.schema import Table
 from structlog.stdlib import get_logger
 
@@ -34,18 +33,44 @@ def handle_enum_types(engine: Engine, model: Type[BaseSQLModel]) -> None:
             try:
                 # Check if the enum type already exists
                 with engine.connect() as conn:
-                    result = conn.execute(
-                        text("SELECT 1 FROM pg_type WHERE typname = :enum_name"),
-                        {"enum_name": column.type.name},
+                    # Get existing enum values
+                    enum_values_query = text(
+                        f'SELECT unnest(enum_range(NULL::"{column.type.name}")) AS enum_value'
                     )
-                    if result.scalar() is not None:
-                        # Prevent enum recreation if it exists
-                        column.type.create = lambda *args, **kwargs: None
+
+                    existing_enum_values = (
+                        conn.execute(enum_values_query).scalars().all()
+                    )
+
+                    # Get enum values from the column type
+                    model_enum_values = column.type.enums
+
+                    # Find missing enum values
+                    missing_values = set(model_enum_values) - set(existing_enum_values)
+
+                    # Add missing enum values
+                    if missing_values:
+                        for value in missing_values:
+                            alter_type_query = text(
+                                f"ALTER TYPE \"{column.type.name}\" ADD VALUE '{value}'"
+                            )
+                            conn.execute(alter_type_query)
+                            log.info(
+                                "Added missing enum value",
+                                enum_name=column.type.name,
+                                value=value,
+                                model=model.__name__,
+                            )
+
+                    # Override the create method to prevent recreation
+                    column.type.create = lambda *args, **kwargs: None
 
                 log.info(
                     "Enum type handling completed",
                     enum_name=column.type.name,
                     model=model.__name__,
+                    existing_values=existing_enum_values,
+                    model_values=model_enum_values,
                 )
 
             except Exception as e:
