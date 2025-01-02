@@ -55,7 +55,15 @@ def mock_revision():
     return revision
 
 
+@pytest.fixture
+def mock_data_downloader():
+    return DataDownloader("https://fakeurl.com")
+
+
 def test_bytes_are_zip_file_valid_zip():
+    """
+    Test the `bytes_are_zip_file` function with a valid ZIP file content.
+    """
     zip_buffer = BytesIO()
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
         zip_file.writestr("test.txt", "This is a test file.")
@@ -67,21 +75,33 @@ def test_bytes_are_zip_file_valid_zip():
 
 
 def test_bytes_are_zip_file_invalid_zip():
+    """
+    Test the `bytes_are_zip_file` function with a invalid ZIP file content.
+    """
     invalid_zip_content = b"not a zip file"
     assert bytes_are_zip_file(invalid_zip_content) is False
 
 
 def test_bytes_are_zip_file_empty():
+    """
+    Test the `bytes_are_zip_file` function with a empty ZIP file content.
+    """
     empty_content = b""
     assert bytes_are_zip_file(empty_content) is False
 
 
 def test_bytes_are_zip_file_xml():
+    """
+    Test the `bytes_are_zip_file` function with a valid xml file content.
+    """
     xml_content = b"<?xml version='1.0' encoding='UTF-8'?>"
     assert bytes_are_zip_file(xml_content) is False
 
 
 def test_get_filetype_from_response_zip():
+    """
+    Test the `get_filetype_from_response` function with a ZIP file response.
+    """
     mock_response = MagicMock()
     mock_response.headers = {"Content-Type": "application/zip"}
     mock_response.content = b"\x50\x4b\x03\x04"  # Start of a zip file
@@ -89,6 +109,9 @@ def test_get_filetype_from_response_zip():
 
 
 def test_get_filetype_from_response_xml():
+    """
+    Test the `get_filetype_from_response` function with a xml file response.
+    """
     mock_response = MagicMock()
     mock_response.headers = {"Content-Type": "application/xml"}
     mock_response.content = b"<?xml version='1.0' encoding='UTF-8'?>"
@@ -96,6 +119,9 @@ def test_get_filetype_from_response_xml():
 
 
 def test_get_filetype_from_response_unknown():
+    """
+    Test the `get_filetype_from_response` function with a unknown file response.
+    """
     mock_response = MagicMock()
     mock_response.headers = {"Content-Type": "application/json"}
     mock_response.content = b"{}"
@@ -103,6 +129,9 @@ def test_get_filetype_from_response_unknown():
 
 
 def test_get_filetype_from_response_zip_by_content():
+    """
+    Test the `get_filetype_from_response` function with a ZIP file response.
+    """
     zip_buffer = BytesIO()
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
         zip_file.writestr("test.txt", "This is a test file.")
@@ -115,12 +144,10 @@ def test_get_filetype_from_response_zip_by_content():
     assert result == "zip"
 
 
-@pytest.fixture
-def mock_data_downloader():
-    return DataDownloader("https://fakeurl.com")
-
-
 def test_get_zip(mock_data_downloader):
+    """
+    Test the `get` method of the `mock_data_downloader` to handle ZIP file responses.
+    """
     mock_response = MagicMock()
     mock_response.headers = {"Content-Type": "application/zip"}
     mock_response.content = b"\x50\x4b\x03\x04"
@@ -132,6 +159,9 @@ def test_get_zip(mock_data_downloader):
 
 
 def test_get_xml(mock_data_downloader):
+    """
+    Test the `get` method of the `mock_data_downloader` to handle xml file responses.
+    """
     mock_response = MagicMock()
     mock_response.headers = {"Content-Type": "application/xml"}
     mock_response.content = b"<?xml version='1.0' encoding='UTF-8'?>"
@@ -143,6 +173,9 @@ def test_get_xml(mock_data_downloader):
 
 
 def test_get_unknown_filetype(mock_data_downloader):
+    """
+    Test the `get` method of the `mock_data_downloader` to handle unknown file responses.
+    """
     mock_response = MagicMock()
     mock_response.headers = {"Content-Type": "text/plain"}
     mock_response.content = b"Invalid content"
@@ -154,6 +187,9 @@ def test_get_unknown_filetype(mock_data_downloader):
 
 @patch("requests.get")
 def test_write_temp_file(mock_get):
+    """
+    Test the `write_temp_file` method of to create temp file
+    """
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_response.iter_content.return_value = [b"file content"]
@@ -169,6 +205,9 @@ def test_write_temp_file(mock_get):
 @patch("builtins.open", new_callable=MagicMock)
 @patch("timetables_etl.download_dataset.S3.put_object")
 def test_upload_file_to_s3(mock_put, mock_open):
+    """
+    Test the `upload_file_to_s3` method to upload file to s3
+    """
     mock_file = MagicMock()
     mock_file.read.return_value = b"file content"
     mock_open.return_value.__enter__.return_value = mock_file
@@ -186,6 +225,9 @@ def test_upload_file_to_s3(mock_put, mock_open):
 @patch("common_layer.db.file_processing_result.DbManager")
 @patch.dict("os.environ", TEST_ENV_VAR)
 def test_lambda_handler_no_url_link(mock_DbManager):
+    """
+    Test the `lambda_hanlder` method to with no url link
+    """
     mock_db_instance = MagicMock()
     mock_event = {
         "Bucket": "my-bucket",
@@ -202,10 +244,34 @@ def test_lambda_handler_no_url_link(mock_DbManager):
     assert response["body"] == "nothing to download"
 
 
+@patch("common_layer.db.file_processing_result.DbManager")
+@patch.dict("os.environ", TEST_ENV_VAR)
+def test_lambda_handler_invalid_url_link(mock_DbManager):
+    """
+    Test the `lambda_hanlder` method to with no url link
+    """
+    mock_db_instance = MagicMock()
+    mock_event = {
+        "Bucket": "my-bucket",
+        "ObjectKey": "file.zip",
+        "DatasetRevisionId": 1,
+        "DatasetEtlTaskResultId": "1234",
+        "URLLink": "//fakeurl.com/file.zip",
+    }
+    mock_context = MagicMock()
+    mock_db_instance = MagicMock()
+    mock_DbManager.get_db.return_value = mock_db_instance
+    with pytest.raises(ValueError) as exc_info:
+        lambda_handler(mock_event, mock_context)
+
+
 @patch("timetables_etl.download_dataset.download_and_upload_dataset")
 @patch("common_layer.db.file_processing_result.DbManager")
 @patch.dict("os.environ", TEST_ENV_VAR)
 def test_lambda_handler(mock_DbManager, mock_download_upload_dataset):
+    """
+    Test the `lambda_hanlder` method to with valid url link
+    """
     mock_event = {
         "Bucket": "my-bucket",
         "ObjectKey": "file.zip",
@@ -243,6 +309,9 @@ def test_download_and_upload_dataset(
     mock_get_db,
     mock_s3,
 ):
+    """
+    Test the `download_and_upload_dataset` method to download the file from url and update the db object
+    """
     EXPECTED_RESPONSE = {"body": "file downloaded successfully", "statusCode": 200}
     mock_get_db.return_value = MagicMock()
     mock_s3.return_value = MagicMock()
@@ -258,7 +327,7 @@ def test_download_and_upload_dataset(
     mock_get_remote_file_name.return_value = "some_file_name"
     mock_write_temp_file.return_value = "/tmp/tempfile"
 
-    response = download_and_upload_dataset(input_data, "UTC")
+    response = download_and_upload_dataset(input_data, False)
 
     assert response == EXPECTED_RESPONSE
     mock_upload_file_to_s3.assert_called_once_with(
@@ -283,6 +352,9 @@ def test_download_and_upload_dataset(
     ],
 )
 def test_get_remote_file_name(url_link, is_time_zone, expected_name):
+    """
+    Test the `get_remote_file_name` method to get the name for the remote file
+    """
     revision = Revision(url_link=url_link, dataset=Dataset(id=123))
     response = Response(
         filetype="csv" if "csv" in url_link else url_link.split(".")[-1]
