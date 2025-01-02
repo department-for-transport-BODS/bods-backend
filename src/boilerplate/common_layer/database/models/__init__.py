@@ -52,7 +52,6 @@ from .model_transmodel_vehicle_journey import (
     TransmodelOperatingProfile,
     TransmodelVehicleJourney,
 )
-from .model_ui import UiLta
 from .model_users import UsersUser
 
 __all__ = [
@@ -89,7 +88,6 @@ __all__ = [
     "TransmodelTracks",
     "TransmodelTracksVehicleJourney",
     "TransmodelVehicleJourney",
-    "UiLta",
     "UsersUser",
     # OTC Models
     "OtcLocalAuthority",
