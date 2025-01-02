@@ -10,7 +10,7 @@ from typing import Optional
 
 from sqlalchemy import DateTime
 from sqlalchemy import Enum as SQLEnum
-from sqlalchemy import Integer, String
+from sqlalchemy import ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .common import BaseSQLModel, TimeStampedMixin
@@ -123,3 +123,61 @@ class DatasetETLTaskResult(TaskResult):
     additional_info: Mapped[Optional[str]] = mapped_column(
         String(512), default=None, nullable=True, kw_only=True
     )
+
+
+class FileProcessingResult(TaskResult):
+    """Pipelines File Processing Result Table"""
+
+    __tablename__ = "pipelines_fileprocessingresult"
+
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, init=False, autoincrement=True
+    )
+
+    filename: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    pipeline_error_code_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("public.pipelines_pipelineerrorcode.id"), nullable=True
+    )
+
+    pipeline_processing_step_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("public.pipelines_pipelineprocessingstep.id"),
+        nullable=False,
+    )
+
+    revision_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("public.organisation_datasetrevision.id"), nullable=False
+    )
+
+
+class PipelineErrorCode(BaseSQLModel):
+    """
+    Pipeline Error Code table representing predefined error codes
+    """
+
+    __tablename__ = "pipelines_pipelineerrorcode"
+
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, init=False, autoincrement=True
+    )
+
+    error: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+
+
+class PipelineProcessingStep(BaseSQLModel):
+    """
+    Pipeline Processing Step table representing different steps in ETL pipeline
+    """
+
+    __tablename__ = "pipelines_pipelineprocessingstep"
+
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, init=False, autoincrement=True
+    )
+
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    category: Mapped[str] = mapped_column(String(20), nullable=False)

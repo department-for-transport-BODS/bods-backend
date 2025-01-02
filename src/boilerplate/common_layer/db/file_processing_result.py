@@ -3,214 +3,156 @@ Description: Module contains the database functionality for
              FileProcessingResult table
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
+from typing import Literal
 from uuid import uuid4
 
-from common_layer.db import BodsDB
+from common_layer.database.client import SqlDB
+from common_layer.database.models.model_pipelines import (
+    ETLErrorCode,
+    FileProcessingResult,
+    PipelineErrorCode,
+    PipelineProcessingStep,
+    TaskState,
+)
+from common_layer.database.repos.repo_etl_task import (
+    FileProcessingResultRepo,
+    PipelineErrorCodeRepository,
+    PipelineProcessingStepRepository,
+)
 from common_layer.db.constants import StepName
-from common_layer.db.manager import DbManager
-from common_layer.db.repositories.dataset_revision import get_revision
-from sqlalchemy.exc import NoResultFound, SQLAlchemyError
 from structlog.stdlib import get_logger
 
 log = get_logger()
 
 
-def map_exception_to_error_code(exception):
+def map_exception_to_error_code(exception) -> ETLErrorCode:
     """
-    Maps exceptions to corresponding error codes.
+    Maps exceptions to corresponding ETL error codes.
     """
     exception_mapping = {
-        "ClamConnectionError": "SYSTEM_ERROR",
-        "SuspiciousFile": "SUSPICIOUS_FILE",
-        "AntiVirusError": "SUSPICIOUS_FILE",
-        "NestedZipForbidden": "NESTED_ZIP_FORBIDDEN",
-        "ZipTooLarge": "ZIP_TOO_LARGE",
-        "NoDataFound": "NO_DATA_FOUND",
-        "FileTooLarge": "FILE_TOO_LARGE",
-        "XMLSyntaxError": "XML_SYNTAX_ERROR",
-        "DangerousXML": "DANGEROUS_XML_ERROR",
-        "NoSchemaDefinition": "NO_SCHEMA_DEFINITION",
-        "NoRowFound": "NO_ROW_FOUND",
+        "ClamConnectionError": ETLErrorCode.AV_CONNECTION_ERROR,
+        "SuspiciousFile": ETLErrorCode.SUSPICIOUS_FILE,
+        "AntiVirusError": ETLErrorCode.ANTIVIRUS_FAILURE,
+        "NestedZipForbidden": ETLErrorCode.NESTED_ZIP_FORBIDDEN,
+        "ZipTooLarge": ETLErrorCode.ZIP_TOO_LARGE,
+        "NoDataFound": ETLErrorCode.NO_DATA_FOUND,
+        "FileTooLarge": ETLErrorCode.FILE_TOO_LARGE,
+        "XMLSyntaxError": ETLErrorCode.XML_SYNTAX_ERROR,
+        "DangerousXML": ETLErrorCode.DANGEROUS_XML_ERROR,
+        "NoSchemaDefinition": ETLErrorCode.SCHEMA_VERSION_MISSING,
+        "NoRowFound": ETLErrorCode.NO_VALID_FILE_TO_PROCESS,
     }
-    return exception_mapping.get(exception.__class__.__name__, "SUSPICIOUS_FILE")
+    return exception_mapping.get(
+        exception.__class__.__name__, ETLErrorCode.SUSPICIOUS_FILE
+    )
 
 
-def write_error_to_db(db, uuid, exception):
-    error_status = map_exception_to_error_code(exception)
-    error_code = get_file_processing_error_code(db, error_status)
-    update_data = {
-        "status": "FAILURE",
-        "completed": datetime.now(),
-        "error_code": error_code,
-    }
-    PipelineFileProcessingResult(db).update(uuid, **update_data)
-
-
-def get_file_processing_error_code(db, status):
+def get_file_processing_error_code(
+    db: SqlDB, status: ETLErrorCode
+) -> PipelineErrorCode | None:
     """
     Retrieves the error code object for a given status.
     """
-    model = db.classes.pipelines_pipelineerrorcode
-    with db.session as session:
-        return session.query(model).filter(model.error == status).one()
+    return PipelineErrorCodeRepository(db).get_by_error_code(status)
 
 
-def get_or_create_step(db, name, category):
+def write_error_to_db(db: SqlDB, processing_result: FileProcessingResult, exception):
     """
-    Gets an existing step or creates it if it doesn't exist.
+    Update the FileProcessingResult with the error returned by the lambda
     """
-    with db.session as session:
-        class_name = db.classes.pipelines_pipelineprocessingstep
-        step = (
-            session.query(class_name)
-            .filter(class_name.name == name, class_name.category == category)
-            .one_or_none()
-        )
+    error_status = map_exception_to_error_code(exception)
+    error_code = get_file_processing_error_code(db, error_status)
 
-        if step is None:
-            step = class_name(name=name, category=category)
-            session.add(step)
-            session.commit()
-            # session.refresh(step)
-        return step
+    processing_result.status = TaskState.FAILURE
+    processing_result.completed = datetime.now(UTC)
+    if error_code is None:
+        log.warning("Error Code was not found in DB, defaulting to 1")
+    processing_result.pipeline_error_code_id = 1
+    FileProcessingResultRepo(db).update(processing_result)
 
 
-def get_dataset_type(event):
-    dataset_type = event.get("DatasetType", "timetables")
+def get_or_create_step(db: SqlDB, name: str, category: str) -> PipelineProcessingStep:
+    """
+    Gets an existing processing step or creates it if it doesn't exist.
+    """
+    repo = PipelineProcessingStepRepository(db)
+    return repo.get_or_create_by_name_and_category(name, category)
+
+
+def get_dataset_type(event: dict) -> Literal["TIMETABLES", "FARES"]:
+    """
+    Get the type of dataset from the event
+    """
+    dataset_type = event.get("DatasetType", "TIMETABLES")
     return "TIMETABLES" if dataset_type.startswith("timetable") else "FARES"
 
 
 def file_processing_result_to_db(step_name: StepName):
+    """
+    Decorator to create a DatasetETLTaskResult
+    """
+
     def decorator(func):
         def wrapper(event, context):
-            log.info("Processing Step", step_name=step_name, input_data=event)
-            _db = DbManager.get_db()
+            db = None
             task_id = str(uuid4())
+            processing_result = None
+            result = None
+            error_occurred = False
+
+            # Attempt to set up before executing the lambda function
             try:
-                revision = get_revision(_db, int(event["DatasetRevisionId"]))
-                step = get_or_create_step(_db, step_name.value, get_dataset_type(event))
-                # Create initial processing record
-                processing_result = {
-                    "task_id": task_id,
-                    "status": "STARTED",
-                    "filename": event["ObjectKey"].split("/")[-1],
-                    "pipeline_processing_step_id": step.id,
-                    "revision_id": revision.id,
-                    "created": datetime.now(),
-                    "modified": datetime.now(),
-                }
-                PipelineFileProcessingResult(_db).create(processing_result)
-
-                # Execute the Lambda function
-                result = func(event, context)
-                log.info(" returns: {result}")
-
-                # Update processing record on success
-                PipelineFileProcessingResult(_db).update(
-                    task_id, status="SUCCESS", completed=datetime.now()
+                log.info("Processing Step", step_name=step_name, input_data=event)
+                db = SqlDB()
+                step = get_or_create_step(db, step_name.value, get_dataset_type(event))
+                processing_result = FileProcessingResult(
+                    task_id=task_id,
+                    status=TaskState.STARTED,
+                    filename=event["ObjectKey"].split("/")[-1],
+                    pipeline_processing_step_id=step.id,
+                    revision_id=event["datasetRevisionId"],
+                    error_message="",
+                    pipeline_error_code_id=0,
                 )
-                return result
-            except Exception as error:
-                log.error("An Exception Occured", exc_info=True)
-                write_error_to_db(_db, task_id, error)
-                raise error
+                processing_result = FileProcessingResultRepo(db).insert(
+                    processing_result
+                )
+            except Exception as setup_error:  # pylint: disable=broad-exception-caught
+                log.error("An Exception Occurred During Setup", exc_info=True)
+                error_occurred = True
+                if db is not None and processing_result is not None:
+                    write_error_to_db(db, processing_result, setup_error)
+
+            # Execute the lambda function regardless of setup success
+            try:
+                result = func(event, context)
+                log.info("Lambda Returned", result=result)
+            except Exception as lambda_error:  # pylint: disable=broad-exception-caught
+                log.error(
+                    "An Exception Occurred During Lambda Execution", exc_info=True
+                )
+                error_occurred = True
+                if db is not None and processing_result is not None:
+                    write_error_to_db(db, processing_result, lambda_error)
+
+            # Attempt to tear down after executing the lambda function
+            try:
+                if db is not None and processing_result is not None:
+                    processing_result.status = (
+                        TaskState.FAILURE if error_occurred else TaskState.SUCCESS
+                    )
+                    processing_result.completed = datetime.now(UTC)
+                    FileProcessingResultRepo(db).update(processing_result)
+            except (
+                Exception  # pylint: disable=broad-exception-caught
+            ) as teardown_error:
+                log.error("An Exception Occurred During Teardown", exc_info=True)
+                if db is not None and processing_result is not None:
+                    write_error_to_db(db, processing_result, teardown_error)
+
+            return result
 
         return wrapper
 
     return decorator
-
-
-class PipelineFileProcessingResult:
-
-    def __init__(self, db):
-        self._db: BodsDB = db
-
-    @property
-    def db(self):
-        return self._db
-
-    def create(self, file_processing_result):
-        """
-        Creates a new FileProcessingResult instance
-        :param self: class instance
-        :param file_processing_result: FileProcessingResult data
-        :return: None if the operation was successful,
-                 otherwise an exception
-        """
-        with self.db.session as session:
-            try:
-                row = self.db.classes.pipelines_fileprocessingresult(
-                    **file_processing_result
-                )
-                session.add(row)
-                session.commit()
-                # session.refresh(row)
-                return "File processing entity created successfully!"
-            except SQLAlchemyError as err:
-                session.rollback()
-                log.error(
-                    "Failed to Create File Processing Result Entry", exc_info=True
-                )
-                raise err
-
-    def read(self, revision_id):
-        """
-        Get file processing result by revision ID
-        :param self: class instance
-        :param revision_id: int
-        :return: return file processing result by revision ID
-                 or None if no file processing result was found
-        """
-        with self.db.session as session:
-            try:
-                buf_ = self.db.classes.pipelines_fileprocessingresult
-                result = (
-                    session.query(buf_).filter(buf_.revision_id == revision_id).one()
-                )
-            except NoResultFound as error:
-                msg = (
-                    f"Revision {revision_id} "
-                    f"doesn't exist pipelines_fileprocessingresult"
-                )
-                log.error(msg)
-                raise error
-            else:
-                return result
-
-    def update(self, task_id, **kwargs):
-        """
-        Update file processing result by revision ID
-        :param self: class instance
-        :param task_id: uuid.uuid4
-        :param kwargs: dict of fields to update
-        :return:
-        """
-        with self.db.session as session:
-            try:
-                # Get the record using task_id
-                model = self.db.classes.pipelines_fileprocessingresult
-                record = (
-                    session.query(model).filter(model.task_id == task_id).one_or_none()
-                )
-                if not record:
-                    log.warning(
-                        "No file processing result found for task",
-                        task_id=task_id,
-                    )
-                    return None
-                # update the record
-                for field, value in kwargs.items():
-                    setattr(record, field, value)
-                session.add(record)
-                session.commit()
-                # session.refresh(record)
-                return "File processing result updated successfully!"
-            except Exception as error:
-                session.rollback()
-                log.error(
-                    "Failed to update file processing result for task",
-                    task_id=task_id,
-                    exc_info=True,
-                )
-                raise error

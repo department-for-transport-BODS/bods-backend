@@ -2,9 +2,7 @@
 Export models for DB queries
 """
 
-from .model_avl import (
-    AvlCavlDataArchive,
-)
+from .model_avl import AvlCavlDataArchive
 from .model_junction import (
     TransmodelServicePatternAdminAreas,
     TransmodelServicePatternLocality,
@@ -18,7 +16,13 @@ from .model_organisation import (
     OrganisationOrganisation,
     OrganisationTXCFileAttributes,
 )
-from .model_pipelines import DatasetETLTaskResult, ETLErrorCode
+from .model_pipelines import (
+    DatasetETLTaskResult,
+    ETLErrorCode,
+    FileProcessingResult,
+    PipelineErrorCode,
+    PipelineProcessingStep,
+)
 from .model_transmodel import (
     TransmodelBankHolidays,
     TransmodelService,
@@ -51,14 +55,15 @@ __all__ = [
     "ETLErrorCode",
     # Database Models
     "AvlCavlDataArchive",
-    "DatasetETLTaskResult",
     "NaptanAdminArea",
     "NaptanLocality",
     "NaptanStopPoint",
+    # Organisation
     "OrganisationDataset",
     "OrganisationDatasetRevision",
     "OrganisationOrganisation",
     "OrganisationTXCFileAttributes",
+    # Transmodel
     "TransmodelBankHolidays",
     "TransmodelBookingArrangements",
     "TransmodelFlexibleServiceOperationPeriod",
@@ -79,4 +84,9 @@ __all__ = [
     "TransmodelTracksVehicleJourney",
     "TransmodelVehicleJourney",
     "UsersUser",
+    # Pipelines
+    "FileProcessingResult",
+    "DatasetETLTaskResult",
+    "PipelineErrorCode",
+    "PipelineProcessingStep",
 ]

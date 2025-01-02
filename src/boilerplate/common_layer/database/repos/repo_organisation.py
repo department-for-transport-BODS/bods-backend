@@ -2,8 +2,6 @@
 SQLAlchemy Organisation Repos
 """
 
-from common_layer.db.models import OrganisationTxcfileattributes
-
 from ..client import SqlDB
 from ..models import (
     OrganisationDataset,
