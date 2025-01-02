@@ -1,30 +1,40 @@
 """
 Description: Module to provide access to S3 objects
 """
-from io import BytesIO
+
+import mimetypes
 import os
+import shutil
+import tempfile
+from io import BytesIO
+from pathlib import Path
+from typing import Iterator, cast
 
 import boto3
+from botocore.exceptions import BotoCoreError, ClientError
 from botocore.response import StreamingBody
-from botocore.exceptions import (
-    ClientError,
-    BotoCoreError)
-from common_layer.logger import logger
+from structlog.stdlib import get_logger
+
+logger = get_logger()
 
 
 class S3:
     """
     Description: Class to provide access to S3 objects
     """
+
     def __init__(self, bucket_name: str):
         self._client = self._create_s3_client()
         self._bucket_name = bucket_name
 
     @property
     def bucket_name(self) -> str:
+        """
+        S3 Bucket Name configured for Client
+        """
         return self._bucket_name
 
-    def _create_s3_client(self):# noqa
+    def _create_s3_client(self):
         """
         Creates an S3 client. If running locally (PROJECT_ENV=local),
         it points to the LocalStack S3 service; otherwise, it connects to AWS
@@ -38,70 +48,141 @@ class S3:
                 aws_access_key_id="dummy",
                 aws_secret_access_key="dummy",
             )
-        else:
-            logger.info("Using AWS S3 (production or non-local environment)")
-            return boto3.client("s3")
+        logger.info("Using AWS S3 (production or non-local environment)")
+        return boto3.client("s3")
+
+    def _get_content_type(self, file_path: str) -> str:
+        """
+        Try to guess content type via it's path
+        Defaults to binary/octet-stream if type cannot be guessed
+        """
+        content_type, _ = mimetypes.guess_type(file_path)
+
+        if content_type is None:
+            content_type = "application/octet-stream"
+        logger.debug("S3: Determined Content Type", content_type=content_type)
+        return content_type
 
     def put_object(self, file_path: str, file_data: bytes):
-        logger.info(f"Uploading file to {self.bucket_name}/{file_path}")
+        """
+        Upload File data to S3
+        """
+        logger.info(
+            "S3: Uploading file",
+            bucket_name=self.bucket_name,
+            object_key=file_path,
+        )
 
-        # Determine the content type based on file extension
-        content_type = None
-        extension = os.path.splitext(file_path)[-1].lower()
-
-        if extension == '.zip':
-            content_type = 'application/zip'
-        elif extension == '.xml':
-            content_type = 'application/xml'
-        elif extension == '.csv':
-            content_type = 'text/csv'
-        elif extension == '.txt':
-            content_type = 'text/plain'
+        content_type = self._get_content_type(file_path)
 
         try:
-            # Upload the file with appropriate content type
             self._client.put_object(
                 Bucket=self.bucket_name,
                 Key=file_path,
                 Body=file_data,
-                ContentType=content_type
+                ContentType=content_type,
             )
-            logger.info(f"Uploaded file successfully to "
-                        f"{self.bucket_name}/{file_path}")
+            logger.info(
+                "S3: Uploaded file successfully",
+                bucket_name=self.bucket_name,
+                object_key=file_path,
+            )
             return True
         except (ClientError, BotoCoreError) as err:
             logger.error(f"Error uploading file {file_path}: {err}")
             raise err
 
-    def download_fileobj(self, file_path) -> BytesIO: # noqa
+    def download_fileobj(self, file_path: str) -> BytesIO:
+        """
+        Get S3 Object as BytesIO
+        """
         try:
             file_stream = BytesIO()
             self._client.download_fileobj(
-                Bucket=self._bucket_name,
-                Key=file_path,
-                Fileobj=file_stream
+                Bucket=self._bucket_name, Key=file_path, Fileobj=file_stream
             )
             file_stream.seek(0)
             return file_stream
         except (ClientError, BotoCoreError) as err:
-            logger.error(f"Error downloading file "
-                         f"{self.bucket_name}/{file_path}: {err}")
+            logger.error(
+                "S3: Error downloading file",
+                bucket_name=self.bucket_name,
+                object_key=file_path,
+                exc_info=True,
+            )
             raise err
 
     def get_object(self, file_path: str) -> StreamingBody:
+        """
+        Get S3 Object as StreamingBody
+        """
         try:
-            response = self._client.get_object(Bucket=self._bucket_name,
-                                               Key=file_path)
+            response = self._client.get_object(Bucket=self._bucket_name, Key=file_path)
             return response["Body"]
         except (ClientError, BotoCoreError) as err:
-            logger.error(f"Error downloading file object "
-                         f"{self.bucket_name}/{file_path}: {err}")
+            logger.error(
+                "S3: Error downloading file object",
+                bucket_name=self.bucket_name,
+                object_key=file_path,
+                exc_info=True,
+            )
             raise err
 
-    def get_list_objects_v2(self, prefix):
+    def get_list_objects_v2(self, prefix: str) -> Iterator:
+        """
+        Return the ListObjectsV2PaginatorOutput as an Iterator
+        """
         # Get the paginator
-        paginator = self._client.get_paginator('list_objects_v2')
+        paginator = self._client.get_paginator("list_objects_v2")
 
         # Paginate through the API results
-        for page in paginator.paginate(Bucket=self.bucket_name, Prefix=prefix):
-            yield page
+        paginator = self._client.get_paginator("list_objects_v2")
+        yield from paginator.paginate(Bucket=self.bucket_name, Prefix=prefix)
+
+    def download_to_tempfile(self, file_path: str) -> Path:
+        """
+        Downloads S3 object to a temporary file, preserving the original filename.
+        Returns the temp file path.
+        """
+
+        logger.info(
+            "S3: Downloading file to tempfile",
+            bucket_name=self.bucket_name,
+            object_key=file_path,
+        )
+
+        # Get just the filename without the path
+        filename = Path(file_path).name
+        temp_dir: str | None = None
+
+        try:
+            # Create temp dir to store the file with original name
+            temp_dir = cast(str, tempfile.mkdtemp(prefix="s3_download_"))
+            temp_path = Path(temp_dir) / filename
+
+            # Download directly to the temp file
+            with temp_path.open("wb") as temp_file:
+                self._client.download_fileobj(
+                    Bucket=self._bucket_name, Key=file_path, Fileobj=temp_file
+                )
+
+            logger.info(
+                "S3: Successfully downloaded to tempfile",
+                bucket_name=self.bucket_name,
+                object_key=file_path,
+                temp_path=str(temp_path),
+            )
+
+            return temp_path
+
+        except (ClientError, BotoCoreError):
+
+            logger.error(
+                "S3: Error downloading file to tempfile",
+                bucket_name=self.bucket_name,
+                object_key=file_path,
+                exc_info=True,
+            )
+            if temp_dir is not None:
+                shutil.rmtree(temp_dir, ignore_errors=True)
+            raise
