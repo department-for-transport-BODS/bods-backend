@@ -7,10 +7,10 @@ from common_layer.database.models import TransmodelService
 from common_layer.database.repos.repo_transmodel_flexible import (
     TransmodelBookingArrangementsRepo,
 )
+from common_layer.txc.models import TXCService
 from structlog.stdlib import get_logger
 
 from ..transform.booking_arrangements import create_booking_arrangements
-from ..txc.models import TXCService
 
 log = get_logger()
 

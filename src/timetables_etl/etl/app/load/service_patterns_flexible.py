@@ -8,13 +8,13 @@ from common_layer.database.models import (
     TransmodelServicePattern,
 )
 from common_layer.database.repos import TransmodelServicePatternRepo
+from common_layer.txc.models import TXCData, TXCFlexibleJourneyPattern, TXCService
 from structlog.stdlib import get_logger
 
 from ..helpers import ReferenceDataLookups, StopsLookup
 from ..models import TaskData
 from ..transform.service_patterns_flexible import create_flexible_service_pattern
 from ..transform.utils_stops_flexible import get_flexible_pattern_stops
-from ..txc.models import TXCData, TXCFlexibleJourneyPattern, TXCService
 from .servicepatterns_common import process_pattern_common
 
 log = get_logger()

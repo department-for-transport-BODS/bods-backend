@@ -5,8 +5,7 @@ Factories for a TXC Service
 from datetime import date
 
 import factory
-
-from timetables_etl.etl.app.txc.models import (
+from common_layer.txc.models import (
     TXCJourneyPattern,
     TXCLine,
     TXCLineDescription,
@@ -139,3 +138,41 @@ class TXCServiceFactory(factory.DictFactory):
             FlexibleService=factory.SubFactory(TXCFlexibleServiceFactory),
             Lines=factory.List([factory.SubFactory(TXCLineFactory, LineName="53M")]),
         )
+
+    @classmethod
+    def without_end_date(cls, **kwargs) -> TXCService:
+        """Creates a service with no end date for testing date handling"""
+        return cls.create(EndDate=None, **kwargs)
+
+    @classmethod
+    def multiple_lines(cls, line_names: list[str], **kwargs) -> TXCService:
+        """Creates a service with multiple line names for testing line name collection"""
+        return cls.create(
+            Lines=[TXCLineFactory(LineName=name) for name in line_names], **kwargs
+        )
+
+    @classmethod
+    def with_no_origin_destination(cls, **kwargs) -> TXCService:
+        """Creates a service with empty origin/destination for testing fallbacks"""
+        return cls.create(
+            StandardService=TXCStandardServiceFactory(Origin="", Destination=""),
+            **kwargs,
+        )
+
+    @classmethod
+    def flexible_with_origin_destination(
+        cls, origin: str, destination: str, **kwargs
+    ) -> TXCService:
+        """Creates a flexible service with specific origin/destination"""
+        return cls.create(
+            StandardService=None,
+            FlexibleService=TXCFlexibleServiceFactory(
+                Origin=origin, Destination=destination
+            ),
+            **kwargs,
+        )
+
+    @classmethod
+    def non_public_use(cls, **kwargs) -> TXCService:
+        """Creates a non-public service for testing public_use field"""
+        return cls.create(PublicUse=False, **kwargs)

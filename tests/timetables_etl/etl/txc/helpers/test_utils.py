@@ -5,8 +5,7 @@ Test TXC Helper Utils
 from datetime import time
 
 import pytest
-
-from timetables_etl.etl.app.txc.helpers.utils import parse_departure_time
+from common_layer.txc.helpers.utils import parse_departure_time
 
 
 @pytest.mark.parametrize(

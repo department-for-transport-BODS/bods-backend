@@ -7,14 +7,14 @@ from typing import Callable
 
 import pytest
 from common_layer.database.models import TransmodelService
+from common_layer.txc.models import TXCService
 
-from tests.timetables_etl.factories.database import (
+from tests.factories.database.organisation import (
     OrganisationDatasetRevisionFactory,
     OrganisationTXCFileAttributesFactory,
 )
 from tests.timetables_etl.factories.txc import TXCServiceFactory
 from timetables_etl.etl.app.transform.services import make_transmodel_service
-from timetables_etl.etl.app.txc.models import TXCService
 
 
 @pytest.mark.parametrize(

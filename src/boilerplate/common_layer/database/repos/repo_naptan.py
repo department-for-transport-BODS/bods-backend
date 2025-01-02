@@ -81,6 +81,14 @@ class NaptanStopPointRepo(BaseRepository[NaptanStopPoint]):
             statement = statement.limit(limit)
         return self._fetch_all(statement)
 
+    @handle_repository_errors
+    def get_by_locality_ids(self, locality_ids: list[int]) -> list[NaptanStopPoint]:
+        """
+        Get all stops in a locality
+        """
+        statement = self._build_query().where(self._model.locality_id.in_(locality_ids))
+        return self._fetch_all(statement)
+
 
 class NaptanLocalityRepo(BaseRepository[NaptanLocality]):
     """Repository for managing Naptan Locality entities"""

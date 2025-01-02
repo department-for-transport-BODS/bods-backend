@@ -3,19 +3,18 @@ Test Parsing Funtions for xml of journey pattern sections
 """
 
 import pytest
-from lxml import etree
-
-from timetables_etl.etl.app.txc.models import (
+from common_layer.txc.models import (
     TXCJourneyPatternSection,
     TXCJourneyPatternStopUsage,
     TXCJourneyPatternTimingLink,
 )
-from timetables_etl.etl.app.txc.parser.journey_pattern_sections import (
+from common_layer.txc.parser.journey_pattern_sections import (
     parse_journey_pattern_section,
     parse_journey_pattern_sections,
     parse_journey_pattern_stop_usage,
     parse_journey_pattern_timing_link,
 )
+from lxml import etree
 
 
 @pytest.mark.parametrize(

@@ -15,7 +15,8 @@
     },
     "python.analysis.extraPaths": [
         "src",
-        "src/boilerplate"
+        "src/boilerplate",
+        "src/timetables_etl"
     ],
     "yaml.customTags": [
         "!Cidr",
@@ -46,5 +47,7 @@
         "!Select sequence",
         "!Split",
         "!Split sequence"
-    ]
+    ],
+    "cfnLint.format.singleQuote": true,
+    "yaml.format.singleQuote": true
 }

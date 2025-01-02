@@ -4,6 +4,7 @@ from unittest.mock import patch
 from common_layer.db.schema_definition import (
     get_schema_definition_db_object,
     NoSchemaDefinition,
+    SchemaCategory
 )
 from common_layer.db.models import PipelinesSchemadefinition
 
@@ -21,7 +22,7 @@ def test_get_schema_definition_db_object_success(mock_bods_db):
     # Mock the database query and session
     mock_db_instance.db.session = mock_session
     mock_schema_definition = mock.Mock(PipelinesSchemadefinition)
-    mock_schema_definition.category = "CategoryA"  # Mocked category
+    mock_schema_definition.category = SchemaCategory.TXC
 
     # Simulate that the query will return the mock schema_definition
     mock_session.query.return_value.where.return_value.first.return_value = (
@@ -29,13 +30,15 @@ def test_get_schema_definition_db_object_success(mock_bods_db):
     )
 
     # Call the function with a valid category
-    result = get_schema_definition_db_object(mock_db_instance, "CategoryA")
+    result = get_schema_definition_db_object(mock_db_instance,
+                                             SchemaCategory.TXC)
     print(f"result: {result}")
 
     # Validate results
     assert result == mock_schema_definition
+    model = mock_db_instance.db.classes.pipelines_schemadefinition
     mock_session.query.return_value.where.assert_called_once_with(
-        mock_db_instance.db.classes.pipelines_schemadefinition.category == "CategoryA"
+        model.category == SchemaCategory.TXC
     )
     mock_session.query.return_value.where.return_value.first.assert_called_once()
 
@@ -58,7 +61,7 @@ def test_get_schema_definition_db_object_not_found(mock_bods_db):
 
     # Call the function and assert the exception is raised
     with pytest.raises(NoSchemaDefinition):
-        get_schema_definition_db_object(mock_db_instance, "CategoryA")
+        get_schema_definition_db_object(mock_db_instance, SchemaCategory.TXC)
 
 
 @patch("common_layer.db.schema_definition.BodsDB")
@@ -69,4 +72,4 @@ def test_get_schema_definition_db_object_invalid_event(mock_bods_db):
 
     # Call the function and assert that it raises the expected exception
     with pytest.raises(ValueError):
-        get_schema_definition_db_object(mock_db_instance, "CategoryA")
+        get_schema_definition_db_object(mock_db_instance, SchemaCategory.TXC)

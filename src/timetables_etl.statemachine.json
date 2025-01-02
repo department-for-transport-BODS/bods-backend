@@ -1,17 +1,25 @@
 {
-  "StartAt": "scanAndUnpack",
+  "StartAt": "ProcessInput",
   "States": {
-    "scanAndUnpack": {
+    "ProcessInput": {
+      "Type": "Pass",
+      "ResultPath": "$",
+      "Parameters": {
+        "detail.$": "$[0].detail"
+      },
+      "Next": "InitializePipeline"
+    },
+    "InitializePipeline": {
       "Type": "Task",
-      "Resource": "${ClamAvScannerLambdaArn}",
+      "Resource": "${InitializePipelineLambdaArn}",
       "Parameters": {
         "Bucket.$": "$.detail.bucket.name",
         "ObjectKey.$": "$.detail.object.key",
         "DatasetRevisionId.$": "$.detail.dataset_revision_id",
         "DatasetType.$": "$.detail.dataset_type"
       },
-      "ResultPath": "$.scanAndUnpack",
-      "Next": "fileLevelProcessing",
+      "ResultPath": "$.initializePipeline",
+      "Next": "ClamAvScanner",
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
@@ -20,13 +28,37 @@
         }
       ]
     },
-    "fileLevelProcessing": {
+    "ClamAvScanner": {
+      "Type": "Task",
+      "Resource": "${ClamAvScannerLambdaArn}",
+      "Parameters": {
+        "Bucket.$": "$.detail.bucket.name",
+        "ObjectKey.$": "$.detail.object.key",
+        "DatasetRevisionId.$": "$.detail.datasetRevisionId",
+        "DatasetType.$": "$.detail.datasetType"
+      },
+      "ResultPath": "$.scanner",
+      "Next": "FileLevelProcessing",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "ParseError",
+          "ResultPath": "$.error_info"
+        }
+      ]
+    },
+    "FileLevelProcessing": {
       "Type": "Map",
+      "Parameters": {
+        "DatasetRevisionId.$": "$.detail.datasetRevisionId"
+      },
       "ItemReader": {
         "Resource": "arn:aws:states:::s3:listObjectsV2",
         "Parameters": {
           "Bucket.$": "$.detail.bucket.name",
-          "Prefix.$": "$.scanAndUnpack.body.generatedPrefix"
+          "Prefix.$": "$.scanner.body.generatedPrefix"
         }
       },
       "ItemProcessor": {
@@ -34,130 +66,127 @@
           "Mode": "DISTRIBUTED",
           "ExecutionType": "STANDARD"
         },
-        "StartAt": "basicFileValidation",
+        "StartAt": "FileValidation",
         "States": {
-          "basicFileValidation": {
+          "FileValidation": {
             "Type": "Task",
-            "Resource": "${PlaceholderLambdaArn}",
+            "Resource": "${FileValidationLambdaArn}",
             "Parameters": {
               "Bucket.$": "$.Bucket",
               "ObjectKey.$": "$.Key"
             },
-            "Next": "schemaValidation",
+            "Next": "SchemaCheck",
             "Catch": [
               {
-                "ErrorEquals": ["States.ALL"],
-                "Next": "exceptionHandler"
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ExceptionHandler"
               }
             ]
           },
-          "schemaValidation": {
+          "SchemaCheck": {
             "Type": "Task",
-            "Resource": "${PlaceholderLambdaArn}",
+            "Resource": "${SchemaCheckLambdaArn}",
             "Parameters": {
               "Bucket.$": "$.Bucket",
               "ObjectKey.$": "$.Key"
             },
-            "Next": "piiCheck",
+            "Next": "PostSchemaCheck",
             "Catch": [
               {
-                "ErrorEquals": ["States.ALL"],
-                "Next": "exceptionHandler"
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ExceptionHandler"
               }
             ]
           },
-          "piiCheck": {
+          "PostSchemaCheck": {
             "Type": "Task",
-            "Resource": "${PlaceholderLambdaArn}",
+            "Resource": "${PostSchemaCheckLambdaArn}",
             "Parameters": {
               "Bucket.$": "$.Bucket",
               "ObjectKey.$": "$.Key"
             },
-            "Next": "fileAttributesEtl",
+            "Next": "FileAttributesEtl",
             "Catch": [
               {
-                "ErrorEquals": ["States.ALL"],
-                "Next": "exceptionHandler"
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ExceptionHandler"
               }
             ]
           },
-          "fileAttributesEtl": {
+          "FileAttributesEtl": {
             "Type": "Task",
-            "Resource": "${PlaceholderLambdaArn}",
+            "Resource": "${FileAttributesEtlLambdaArn}",
             "Parameters": {
               "Bucket.$": "$.Bucket",
               "ObjectKey.$": "$.Key"
             },
-            "Next": "ptiValidation",
+            "Next": "PtiValidation",
             "Catch": [
               {
-                "ErrorEquals": ["States.ALL"],
-                "Next": "exceptionHandler"
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ExceptionHandler"
               }
             ]
           },
-          "ptiValidation": {
+          "PtiValidation": {
             "Type": "Task",
-            "Resource": "${PTIValidationLambdaArn}",
+            "Resource": "${PtiValidationLambdaArn}",
             "Parameters": {
               "Bucket.$": "$.Bucket",
               "ObjectKey.$": "$.Key",
-              "DatasetRevisionId.$": "$.detail.dataset_revision_id"
+              "DatasetRevisionId.$": "$.DatasetRevisionId"
             },
-            "Next": "timetablesEtl",
+            "Next": "ETLProcess",
             "Catch": [
               {
-                "ErrorEquals": ["States.ALL"],
-                "Next": "exceptionHandler"
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ExceptionHandler"
               }
             ]
           },
-          "timetablesEtl": {
+          "ETLProcess": {
             "Type": "Task",
-            "Resource": "${PlaceholderLambdaArn}",
+            "Resource": "${ETLProcessLambdaArn}",
             "Parameters": {
               "Bucket.$": "$.Bucket",
-              "ObjectKey.$": "$.Key"
+              "ObjectKey.$": "$.Key",
+              "DatasetRevisionId.$": "$.DatasetRevisionId",
+              "fileAttributesId.$": "$.fileAttributesEtl.id",
+              "DatasetEtlTaskResultId.$": "$.detail.datasetEtlTaskResultId"
             },
-            "Next": "downstreamProcess",
+            "Next": "Success",
             "Catch": [
               {
-                "ErrorEquals": ["States.ALL"],
-                "Next": "exceptionHandler"
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ExceptionHandler"
               }
             ]
           },
-          "downstreamProcess": {
-            "Type": "Task",
-            "Resource": "arn:aws:states:::sqs:sendMessage",
-            "Parameters": {
-              "QueueUrl": "${PlaceholderSQSQueueUrl}",
-              "MessageBody.$": "$.input.message"
-            },
-            "Next": "success"
-          },
-          "success": {
+          "Success": {
             "Type": "Succeed"
           },
-          "exceptionHandler": {
+          "ExceptionHandler": {
             "Type": "Task",
             "Resource": "${ExceptionHandlerLambdaArn}",
             "Parameters": {
               "Bucket.$": "$.Bucket",
               "ObjectKey.$": "$.Key"
             },
-            "Next": "notifyFailure"
+            "Next": "Fail"
           },
-          "notifyFailure": {
-            "Type": "Task",
-            "Resource": "arn:aws:states:::sns:publish",
-            "Parameters": {
-              "TopicArn": "${PlaceholderSNSTopicArn}",
-              "Message.$": "$.input.message"
-            },
-            "Next": "fail"
-          },
-          "fail": {
+          "Fail": {
             "Type": "Fail"
           }
         }
@@ -171,13 +200,13 @@
         "ParsedCause.$": "States.StringToJson($.error_info.Cause)"
       },
       "ResultPath": "$.parsed_error",
-      "Next": "mainExceptionHandler"
+      "Next": "ParentExceptionHandler"
     },
-    "mainExceptionHandler": {
+    "ParentExceptionHandler": {
       "Type": "Task",
       "Resource": "${ExceptionHandlerLambdaArn}",
       "Parameters": {
-        "DatasetEtlTaskResultId.$": "$.detail.dataset_etl_task_result_id",
+        "DatasetEtlTaskResultId.$": "$.detail.datasetEtlTaskResultId",
         "ErrorInfo.$": "States.StringToJson($.parsed_error.ParsedCause.errorMessage)"
       },
       "End": true

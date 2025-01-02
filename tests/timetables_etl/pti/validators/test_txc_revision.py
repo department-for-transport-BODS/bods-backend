@@ -6,10 +6,7 @@ from freezegun import freeze_time
 from pti.validators.txc_revision import TXCRevisionValidator
 
 
-@patch("pti.validators.txc_revision.DatasetRepository")
-@patch("pti.validators.txc_revision.DatasetRevisionRepository")
-@patch("pti.validators.txc_revision.TxcFileAttributesRepository")
-def test_revision_get_by_service_code_and_lines(m_file_attributes_repo, m_dataset_revision_repo, m_dataset_repo):
+def test_revision_get_by_service_code_and_lines():
     """
     GIVEN a DatasetRevision with two TXCFileAttributes with the same service_code and
     lines.
@@ -18,53 +15,47 @@ def test_revision_get_by_service_code_and_lines(m_file_attributes_repo, m_datase
     revision_number
     """
     live_revision_id = 123
-    m_revision = MagicMock(upload_file=None, dataset_id=234)
-    m_dataset_repo.return_value.get_by_id.return_value = MagicMock(id=234, live_revision_id=live_revision_id)
-    m_dataset_revision_repo.return_value.get_by_id.return_value = MagicMock(id=live_revision_id)
 
     service_code = "ABC"
     lines = ["1", "2"]
 
-    m_txc_file_attributes_1 = MagicMock(
-        revision=m_revision,
+    txc_file_attributes_1 = MagicMock(
         service_code=service_code,
         revision_number=0,
         line_names=lines,
     )
-    m_txc_file_attributes_2 = MagicMock(
-        revision=m_revision,
+    txc_file_attributes_2 = MagicMock(
         service_code=service_code,
         revision_number=2,
         line_names=lines,
     )
-    m_txc_file_attributes_3 = MagicMock(
-        revision=m_revision,
+    txc_file_attributes_3 = MagicMock(
         service_code=service_code,
         revision_number=2,
     )
 
-    # TXCFileAttributes returned without sorting or filtering
-    m_file_attributes_repo.return_value.get_all.return_value = [
-        m_txc_file_attributes_2,
-        m_txc_file_attributes_1,
-        m_txc_file_attributes_3,
+    # TXCFileAttributes without sorting or filtering
+    live_txc_file_attributes = [
+        txc_file_attributes_2,
+        txc_file_attributes_1,
+        txc_file_attributes_3,
     ]
 
     # Result should be filtered by line names and service code and sorted by revision number
-    expected = [m_txc_file_attributes_1, m_txc_file_attributes_2]
+    expected = [txc_file_attributes_1, txc_file_attributes_2]
 
-    validator = TXCRevisionValidator(m_revision, txc_file_attributes=MagicMock(), db=MagicMock())
-    result = validator.get_live_attributes_by_service_code_and_lines(service_code, lines)
+    validator = TXCRevisionValidator(
+        txc_file_attributes=MagicMock(),
+        live_txc_file_attributes=live_txc_file_attributes,
+    )
+    result = validator.get_live_attributes_by_service_code_and_lines(
+        service_code, lines
+    )
 
     assert expected == result
 
 
-@patch("pti.validators.txc_revision.DatasetRepository")
-@patch("pti.validators.txc_revision.DatasetRevisionRepository")
-@patch("pti.validators.txc_revision.TxcFileAttributesRepository")
-def test_filter_by_service_code_and_lines_matches_lines_in_any_order(
-    m_file_attributes_repo, m_dataset_revision_repo, m_dataset_repo
-):
+def test_filter_by_service_code_and_lines_matches_lines_in_any_order():
     """
     GIVEN a DatasetRevision with two TXCFileAttributes with the same service_code and
     lines that are not in order.
@@ -72,37 +63,35 @@ def test_filter_by_service_code_and_lines_matches_lines_in_any_order(
     THEN a list of TXCFileAttributes are returned ordered in ascending order by
     revision_number
     """
-    live_revision_id = 123
-    m_revision = MagicMock(upload_file=None, dataset_id=234)
-    m_dataset_repo.return_value.get_by_id.return_value = MagicMock(id=234, live_revision_id=live_revision_id)
-    m_dataset_revision_repo.return_value.get_by_id.return_value = MagicMock(id=live_revision_id)
     service_code = "ABC"
 
-    m_txc_file_attributes_1 = MagicMock(
-        revision=m_revision,
+    txc_file_attributes_1 = MagicMock(
         service_code=service_code,
         revision_number=0,
         line_names=["1", "2"],
     )
-    m_txc_file_attributes_2 = MagicMock(
-        revision=m_revision,
+    txc_file_attributes_2 = MagicMock(
         service_code=service_code,
         revision_number=2,
         line_names=["2", "1"],  # Same line names, different order
     )
-    m_file_attributes_repo.return_value.get_all.return_value = [m_txc_file_attributes_2, m_txc_file_attributes_1]
+    live_txc_file_attributes = [txc_file_attributes_2, txc_file_attributes_1]
 
-    validator = TXCRevisionValidator(m_revision, txc_file_attributes=MagicMock(), db=MagicMock())
-    expected = [m_txc_file_attributes_1, m_txc_file_attributes_2]
-    actual = validator.get_live_attributes_by_service_code_and_lines(service_code, m_txc_file_attributes_1.line_names)
+    validator = TXCRevisionValidator(
+        txc_file_attributes=MagicMock(),
+        live_txc_file_attributes=live_txc_file_attributes,
+    )
+    expected = [txc_file_attributes_1, txc_file_attributes_2]
+    actual = validator.get_live_attributes_by_service_code_and_lines(
+        service_code, txc_file_attributes_1.line_names
+    )
     assert expected == actual
-    actual = validator.get_live_attributes_by_service_code_and_lines(service_code, m_txc_file_attributes_2.line_names)
+    actual = validator.get_live_attributes_by_service_code_and_lines(
+        service_code, txc_file_attributes_2.line_names
+    )
     assert expected == actual
 
 
-@patch("pti.validators.txc_revision.DatasetRepository")
-@patch("pti.validators.txc_revision.DatasetRevisionRepository")
-@patch("pti.validators.txc_revision.TxcFileAttributesRepository")
 @pytest.mark.parametrize(
     ("live_number", "draft_number", "modification_datetime_changed", "violation_count"),
     [
@@ -115,9 +104,6 @@ def test_filter_by_service_code_and_lines_matches_lines_in_any_order(
     ],
 )
 def test_revision_number_violation(
-    m_file_attributes_repo,
-    m_dataset_revision_repo,
-    m_dataset_repo,
     live_number,
     draft_number,
     modification_datetime_changed,
@@ -140,10 +126,9 @@ def test_revision_number_violation(
     dataset = MagicMock(id=234, live_revision_id=live_revision_id)
 
     live_revision = MagicMock(id=live_revision_id, upload_file=None, is_published=True)
-    draft_revision = MagicMock(dataset_id=dataset.id, upload_file=None, is_published=False)
-
-    m_dataset_repo.return_value.get_by_id.return_value = dataset
-    m_dataset_revision_repo.return_value.get_by_id.return_value = live_revision
+    draft_revision = MagicMock(
+        dataset_id=dataset.id, upload_file=None, is_published=False
+    )
 
     with freeze_time("2024-01-05 10:30:00"):
         now = datetime.now()
@@ -170,16 +155,15 @@ def test_revision_number_violation(
             revision_number=draft_number,
             modification_datetime=draft_modification_datetime,
         )
-        m_file_attributes_repo.return_value.get_all.return_value = [live_revision_file_attributes]
 
-        validator = TXCRevisionValidator(draft_revision, draft_file_attributes, MagicMock())
+        validator = TXCRevisionValidator(
+            txc_file_attributes=draft_file_attributes,
+            live_txc_file_attributes=[live_revision_file_attributes],
+        )
         violations = validator.get_violations()
         assert len(violations) == violation_count
 
 
-@patch("pti.validators.txc_revision.DatasetRepository")
-@patch("pti.validators.txc_revision.DatasetRevisionRepository")
-@patch("pti.validators.txc_revision.TxcFileAttributesRepository")
 @pytest.mark.parametrize(
     (
         "live_number",
@@ -199,9 +183,6 @@ def test_revision_number_violation(
     ],
 )
 def test_revision_number_service_and_line_violation(
-    m_file_attributes_repo,
-    m_dataset_revision_repo,
-    m_dataset_repo,
     live_number,
     draft_number,
     live_lines,
@@ -226,9 +207,6 @@ def test_revision_number_service_and_line_violation(
     live_revision = MagicMock(id=123, upload_file=None, is_published=True)
     draft_revision = MagicMock(dataset_id=dataset, upload_file=None, is_published=False)
 
-    m_dataset_repo.return_value.get_by_id.return_value = dataset
-    m_dataset_revision_repo.return_value.get_by_id.return_value = live_revision
-
     with freeze_time("2024-01-05 10:30:00"):
         now = datetime.now()
         live_modification_datetime = now - timedelta(days=1)
@@ -251,8 +229,10 @@ def test_revision_number_service_and_line_violation(
             modification_datetime=draft_modification_datetime,
             line_names=draft_lines,
         )
-        m_file_attributes_repo.return_value.get_all.return_value = [live_revision_file_attributes]
 
-        validator = TXCRevisionValidator(draft_revision, draft_file_attributes, MagicMock())
+        validator = TXCRevisionValidator(
+            draft_file_attributes,
+            live_txc_file_attributes=[live_revision_file_attributes],
+        )
         violations = validator.get_violations()
         assert len(violations) == violation_count

@@ -102,6 +102,8 @@ class OrganisationDatasetRevision(TimeStampedMixin, BaseSQLModel):
     username: Mapped[str] = mapped_column(String(255), nullable=False)
     short_description: Mapped[str] = mapped_column(String(30), nullable=False)
     num_of_timing_points: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    modified_file_hash: Mapped[str] = mapped_column(String(40), nullable=False)
+    original_file_hash: Mapped[str] = mapped_column(String(40), nullable=False)
 
 
 class OrganisationOrganisation(TimeStampedMixin, BaseSQLModel):
@@ -179,3 +181,4 @@ class OrganisationTXCFileAttributes(BaseSQLModel):
     destination: Mapped[str] = mapped_column(String(512), nullable=False)
     origin: Mapped[str] = mapped_column(String(512), nullable=False)
     hash: Mapped[str] = mapped_column(String(40), nullable=False)
+    service_mode: Mapped[str] = mapped_column(String(20), nullable=False)

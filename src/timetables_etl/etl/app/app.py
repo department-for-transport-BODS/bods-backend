@@ -9,24 +9,18 @@ from common_layer.database.repos import (
     OrganisationDatasetRevisionRepo,
     OrganisationTXCFileAttributesRepo,
 )
+from common_layer.json_logging import configure_logging
 from common_layer.s3 import S3
+from common_layer.txc.models import TXCData
+from common_layer.txc.parser.parser_txc import load_xml_data, parse_txc_from_element
 from lxml.etree import _Element
 from structlog.stdlib import get_logger
 
 from .exception_handler import handle_lambda_errors
-from .log_setup import configure_logging
 from .models import ETLInputData, TaskData
 from .pipeline import transform_data
-from .txc.models import TXCData
-from .txc.parser.parser_txc import load_xml_data, parse_txc_from_element
 
 log = get_logger()
-
-
-def set_logger_context():
-    """
-    Add the task data to the logger context
-    """
 
 
 def get_txc_xml(s3_bucket_name: str, s3_file_key: str) -> _Element:
@@ -91,6 +85,7 @@ def lambda_handler(event, _):
     Timetable ETL
     """
     configure_logging()
+    log.debug("Input Data", data=event)
     input_data = ETLInputData(**event)
     db = SqlDB()
     txc_data = extract_txc_data(input_data.s3_bucket_name, input_data.s3_file_key)

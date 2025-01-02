@@ -5,7 +5,7 @@ Unlike the ones in /txc which are independent
 
 import pytest
 
-from tests.timetables_etl.factories.database.naptan import NaptanStopPointFactory
+from tests.factories.database.naptan import NaptanStopPointFactory
 from timetables_etl.etl.app.transform.utils_stops_flexible import (
     map_stop_refs_to_naptan,
 )

@@ -8,11 +8,15 @@ from common_layer.database.models.model_transmodel_vehicle_journey import (
     TransmodelVehicleJourney,
 )
 from common_layer.database.repos import TransmodelTracksVehicleJourneyRepo
+from common_layer.txc.models import (
+    TXCData,
+    TXCFlexibleJourneyPattern,
+    TXCJourneyPattern,
+)
 from structlog.stdlib import get_logger
 
 from ..helpers import TrackLookup
 from ..transform.vehicle_journey_tracks import generate_vehicle_journey_tracks
-from ..txc.models import TXCData, TXCFlexibleJourneyPattern, TXCJourneyPattern
 
 log = get_logger()
 

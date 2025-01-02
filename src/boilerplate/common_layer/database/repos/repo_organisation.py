@@ -2,6 +2,8 @@
 SQLAlchemy Organisation Repos
 """
 
+from common_layer.db.models import OrganisationTxcfileattributes
+
 from ..client import SqlDB
 from ..models import (
     OrganisationDataset,
@@ -50,6 +52,25 @@ class OrganisationTXCFileAttributesRepo(
 
     def __init__(self, db: SqlDB):
         super().__init__(db, OrganisationTXCFileAttributes)
+
+    @handle_repository_errors
+    def get_by_revision_id(
+        self, revision_id: int
+    ) -> list[OrganisationTXCFileAttributes]:
+        statement = self._build_query().where(self._model.revision_id == revision_id)
+        return self._fetch_all(statement)
+
+    @handle_repository_errors
+    def get_by_revision_id_and_filename(
+        self, revision_id: int, filename: str
+    ) -> OrganisationTXCFileAttributes | None:
+        """
+        Get all TXCFileAttributes by given revision ID
+        """
+        statement = self._build_query().where(
+            self._model.revision_id == revision_id and self._model.filename == filename
+        )
+        return self._fetch_one(statement)
 
 
 class OrganisationOrganisationRepo(BaseRepositoryWithId[OrganisationOrganisation]):

@@ -17,20 +17,20 @@ from common_layer.database.models.model_transmodel_vehicle_journey import (
     TransmodelOperatingProfile,
     TransmodelVehicleJourney,
 )
-from structlog.stdlib import get_logger
-
-from ..helpers import ServicedOrgLookup
-from ..txc.models import TXCDateRange, TXCDaysOfWeek, TXCVehicleJourney
-from ..txc.models.txc_serviced_organisation import (
+from common_layer.txc.models import TXCDateRange, TXCDaysOfWeek, TXCVehicleJourney
+from common_layer.txc.models.txc_serviced_organisation import (
     TXCServicedOrganisation,
     TXCServicedOrganisationDatePattern,
 )
-from ..txc.models.txc_vehicle_journey import (
+from common_layer.txc.models.txc_vehicle_journey import (
     TXCBankHolidayDays,
     TXCBankHolidayOperation,
     TXCServicedOrganisationDayType,
     TXCSpecialDaysOperation,
 )
+from structlog.stdlib import get_logger
+
+from ..helpers import ServicedOrgLookup
 
 log = get_logger()
 

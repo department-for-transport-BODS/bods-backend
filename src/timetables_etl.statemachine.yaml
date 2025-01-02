@@ -1,0 +1,130 @@
+StartAt: scanAndUnpack
+States:
+  scanAndUnpack:
+    Type: Task
+    Resource: ${PlaceholderLambdaArn}
+    Parameters:
+      Bucket.$: '$.detail.bucket.name'
+      ObjectKey.$: '$.detail.object.key'
+    ResultPath: '$.scanAndUnpack'
+    Next: fileLevelProcessing
+
+  fileLevelProcessing:
+    Type: Map
+    ItemReader:
+      Resource: arn:aws:states:::s3:listObjectsV2
+      Parameters:
+        Bucket.$: '$.detail.bucket.name'
+        Prefix.$: '$.scanAndUnpack.generatedPrefix'
+    ItemProcessor:
+      ProcessorConfig:
+        Mode: DISTRIBUTED
+        ExecutionType: EXPRESS
+      StartAt: basicFileValidation
+      States:
+        basicFileValidation:
+          Type: Task
+          Resource: ${PlaceholderLambdaArn}
+          Parameters:
+            Bucket.$: '$.Bucket'
+            ObjectKey.$: '$.Key'
+          Next: schemaValidation
+          Catch:
+            - ErrorEquals:
+                - States.ALL
+              Next: exceptionHandler
+
+        schemaValidation:
+          Type: Task
+          Resource: ${PlaceholderLambdaArn}
+          Parameters:
+            Bucket.$: '$.Bucket'
+            ObjectKey.$: '$.Key'
+          Next: piiCheck
+          Catch:
+            - ErrorEquals:
+                - States.ALL
+              Next: exceptionHandler
+
+        piiCheck:
+          Type: Task
+          Resource: ${PlaceholderLambdaArn}
+          Parameters:
+            Bucket.$: '$.Bucket'
+            ObjectKey.$: '$.Key'
+          Next: ptiValidation
+          Catch:
+            - ErrorEquals:
+                - States.ALL
+              Next: exceptionHandler
+
+        ptiValidation:
+          Type: Task
+          Resource: ${PlaceholderLambdaArn}
+          Parameters:
+            Bucket.$: '$.Bucket'
+            ObjectKey.$: '$.Key'
+          Next: fileAttributesEtl
+          Catch:
+            - ErrorEquals:
+                - States.ALL
+              Next: exceptionHandler
+
+        fileAttributesEtl:
+          Type: Task
+          Resource: ${PlaceholderLambdaArn}
+          Parameters:
+            Bucket.$: '$.Bucket'
+            ObjectKey.$: '$.Key'
+          Next: timetablesEtl
+          Catch:
+            - ErrorEquals:
+                - States.ALL
+              Next: exceptionHandler
+
+        timetablesEtl:
+          Type: Task
+          Resource: ${PlaceholderLambdaArn}
+          Parameters:
+            Bucket.$: '$.Bucket'
+            ObjectKey.$: '$.Key'
+          Next: downstreamProcess
+          Catch:
+            - ErrorEquals:
+                - States.ALL
+              Next: exceptionHandler
+
+        downstreamProcess:
+          Type: Task
+          Resource: arn:aws:states:::sqs:sendMessage
+          Parameters:
+            QueueUrl: ${PlaceholderSQSQueueUrl}
+            MessageBody.$: '$.input.message'
+          Next: success
+
+        success:
+          Type: Succeed
+
+        exceptionHandler:
+          Type: Task
+          Resource: ${PlaceholderLambdaArn}
+          Parameters:
+            Bucket.$: '$.Bucket'
+            ObjectKey.$: '$.Key'
+          Next: notifyFailure
+
+        notifyFailure:
+          Type: Task
+          Resource: arn:aws:states:::sns:publish
+          Parameters:
+            TopicArn: ${PlaceholderSNSTopicArn}
+            Message.$: '$.input.message'
+          Next: fail
+
+        fail:
+          Type: Fail
+
+    MaxConcurrency: 1000
+    ItemBatcher:
+      MaxItemsPerBatch: 10
+    End: true

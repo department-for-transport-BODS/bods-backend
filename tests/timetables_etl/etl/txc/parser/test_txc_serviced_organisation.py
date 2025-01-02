@@ -5,20 +5,20 @@ Tests for parsing Servied Organisations
 from datetime import date
 
 import pytest
-from lxml import etree
-
-from tests.timetables_etl.etl.txc.parser.utils import assert_model_equal
-from timetables_etl.etl.app.txc.models import (
+from common_layer.txc.models import (
     TXCServicedOrganisation,
     TXCServicedOrganisationAnnotatedNptgLocalityRef,
     TXCServicedOrganisationDatePattern,
 )
-from timetables_etl.etl.app.txc.parser.serviced_organisation import (
+from common_layer.txc.parser.serviced_organisation import (
     parse_date_range,
     parse_holidays,
     parse_serviced_organisation,
     parse_working_days,
 )
+from lxml import etree
+
+from tests.timetables_etl.etl.txc.parser.utils import assert_model_equal
 
 
 @pytest.mark.parametrize(

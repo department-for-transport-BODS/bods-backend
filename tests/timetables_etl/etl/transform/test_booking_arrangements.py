@@ -9,21 +9,19 @@ from common_layer.database.models import (
     TransmodelBookingArrangements,
     TransmodelService,
 )
-
-from tests.timetables_etl.factories.database import TransmodelServiceFactory
-from tests.timetables_etl.factories.database.transmodel import (
-    TransmodelBookingArrangementsFactory,
-)
-from timetables_etl.etl.app.transform.booking_arrangements import (
-    create_booking_arrangements,
-)
-from timetables_etl.etl.app.txc.models import (
+from common_layer.txc.models import (
     TXCBookingArrangements,
     TXCFlexibleJourneyPattern,
     TXCFlexibleService,
     TXCLine,
     TXCPhone,
     TXCService,
+)
+
+from tests.factories.database import TransmodelServiceFactory
+from tests.factories.database.transmodel import TransmodelBookingArrangementsFactory
+from timetables_etl.etl.app.transform.booking_arrangements import (
+    create_booking_arrangements,
 )
 
 

@@ -124,13 +124,15 @@ def lambda_handler(event, context):
         file_object.name = key
         av_scanner.scan(file_object)  # noqa
         msg = f"Successfully scanned the file '{key}' from bucket '{bucket}'"
+
+        prefix = unzip(s3_client=s3_handler, file_path=key, prefix="ext") \
+            if key.endswith("zip") else ''
+
         return {
             "statusCode": 200,
             "body": {
                 "message": msg,
-                "generatedPrefix": unzip(
-                    s3_client=s3_handler, file_path=key, prefix="ext"
-                ),
+                "generatedPrefix": prefix,
             },
         }
     except Exception as e:

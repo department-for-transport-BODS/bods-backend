@@ -3,19 +3,14 @@ Test Parsing the Operators section
 """
 
 import pytest
-from lxml import etree
-
-from timetables_etl.etl.app.txc.models import (
-    LicenceClassificationT,
-    TransportModeT,
-    TXCOperator,
-)
-from timetables_etl.etl.app.txc.parser.operators import (
+from common_layer.txc.models import LicenceClassificationT, TransportModeT, TXCOperator
+from common_layer.txc.parser.operators import (
     parse_licence_classification,
     parse_operator,
     parse_operators,
     parse_transport_mode,
 )
+from lxml import etree
 
 
 @pytest.mark.parametrize(

@@ -61,8 +61,8 @@ venv.bak/
 # SAM default build folder
 .aws-sam/
 
-# code coverage
-.coverage
-
-# pycharm
+# Pycharm
 .idea/
+
+# Ignore Generated CSVs from db_viewer
+data/
