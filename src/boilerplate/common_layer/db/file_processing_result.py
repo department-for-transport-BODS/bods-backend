@@ -21,6 +21,7 @@ from common_layer.database.repos.repo_etl_task import (
     PipelineProcessingStepRepository,
 )
 from common_layer.db.constants import StepName
+from common_layer.json_logging import configure_logging
 from structlog.stdlib import get_logger
 
 log = get_logger()
@@ -100,7 +101,7 @@ def file_processing_result_to_db(step_name: StepName):
             processing_result = None
             result = None
             error_occurred = False
-
+            configure_logging()
             # Attempt to set up before executing the lambda function
             try:
                 log.info("Processing Step", step_name=step_name, input_data=event)
