@@ -24,42 +24,38 @@ from .models.common import BaseSQLModel
 log = get_logger()
 
 
-def ensure_enum_type(engine: Engine, enum_type: PG_ENUM, model_name: str) -> None:
-    """
-    Ensure that the enum type exists in the database. If it does not exist, create it.
-    TODO: Figure out how to add new values to an existing enum
-    """
-    enum_name = enum_type.name
-    try:
-        # Try to create the enum type
-        enum_type.create(bind=engine, checkfirst=True)
-        log.info(
-            "Enum type created or already exists", enum_name=enum_name, model=model_name
-        )
-    except ProgrammingError as e:
-        # Check if the error is because the enum type already exists
-        if "already exists" in str(e):
-            log.warning(
-                "Enum type already exists and changes are not handled automatically",
-                enum_name=enum_name,
-                model=model_name,
-            )
-        else:
-            log.error(
-                "Failed to create enum type",
-                enum_name=enum_name,
-                model=model_name,
-                error=str(e),
-            )
-
-
 def handle_enum_types(engine: Engine, model: Type[BaseSQLModel]) -> None:
     """
     Handle enum types for a given model.
+    Ensure the enum type exists and can be used.
     """
     for column in model.__table__.columns:
         if isinstance(column.type, PG_ENUM):
-            ensure_enum_type(engine, column.type, model.__name__)
+            try:
+                # Check if the enum type already exists
+                with engine.connect() as conn:
+                    result = conn.execute(
+                        text("SELECT 1 FROM pg_type WHERE typname = :enum_name"),
+                        {"enum_name": column.type.name},
+                    )
+                    if result.scalar() is not None:
+                        # Prevent enum recreation if it exists
+                        column.type.create = lambda *args, **kwargs: None
+
+                log.info(
+                    "Enum type handling completed",
+                    enum_name=column.type.name,
+                    model=model.__name__,
+                )
+
+            except Exception as e:
+                log.error(
+                    "Error handling enum type",
+                    enum_name=column.type.name,
+                    model=model.__name__,
+                    error=str(e),
+                )
+                raise
 
 
 def get_existing_columns(engine: Engine, table_name: str) -> dict[str, SQLColumn]:
@@ -81,9 +77,14 @@ def compare_and_alter_table(
     Compare existing table columns with model columns and alter table if needed.
     TODO: IF columns are NOT NULL and existing rows are there, this will fail
     """
+    inspector = inspect(engine)
     existing_columns = get_existing_columns(engine, table.name)
     model_columns = {col.name: col for col in model.__table__.columns}
-
+    if not inspector.has_table(table.name):
+        log.warning(
+            "Table does not exist, skipping column comparison", table=table.name
+        )
+        return
     # Find missing columns (in DB but not in model)
     missing_in_model = set(existing_columns.keys()) - set(model_columns.keys())
     if missing_in_model:
