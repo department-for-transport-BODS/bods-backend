@@ -240,19 +240,78 @@ def get_model_classes(model_module: ModuleType) -> list[Type[BaseSQLModel]]:
 
 
 def create_table_definition(model: Type[BaseSQLModel], metadata: MetaData) -> SQLTable:
-    """Create SQLAlchemy Table definition from model."""
+    """
+    Create SQLAlchemy Table definition from model.
+
+    Modifies column creation to handle enum types more carefully,
+    preventing duplicate enum type creation.
+    """
     name = model.__tablename__
-    columns = [
-        SQLColumn(
-            column.key,
-            column.type,
-            primary_key=column.primary_key,
-            nullable=column.nullable,
-            index=column.index,
-            unique=column.unique,
-        )
-        for column in model.__table__.columns
-    ]
+    columns = []
+
+    log.info(
+        "Creating table definition",
+        model_name=model.__name__,
+        table_name=name,
+        total_columns=len(model.__table__.columns),
+    )
+
+    for column in model.__table__.columns:
+        # Preliminary column logging
+        column_log_data = {
+            "column_name": column.key,
+            "column_type": str(column.type),
+            "is_primary_key": column.primary_key,
+            "is_nullable": column.nullable,
+            "has_index": column.index,
+            "is_unique": column.unique,
+        }
+
+        # Special handling for Enum types
+        if isinstance(column.type, SQLEnum):
+            log.info(
+                "Processing enum column",
+                **column_log_data,
+                enum_name=column.type.name,
+                enum_values=column.type.enums,
+            )
+
+            # Override the create method to prevent recreation
+            column.type.create = lambda *args, **kwargs: None
+
+            log.debug(
+                "Disabled enum type recreation (handled in the handle enum types)",
+                enum_name=column.type.name,
+            )
+
+        # Create the column with modified type
+        try:
+            column_def = SQLColumn(
+                column.key,
+                column.type,
+                primary_key=column.primary_key,
+                nullable=column.nullable,
+                index=column.index,
+                unique=column.unique,
+            )
+            columns.append(column_def)
+
+            log.debug("Added column to table definition", **column_log_data)
+        except Exception as e:
+            log.error(
+                "Failed to create column definition",
+                **column_log_data,
+                error=str(e),
+                error_type=type(e).__name__,
+            )
+            raise
+
+    log.info(
+        "Table definition created successfully",
+        model_name=model.__name__,
+        table_name=name,
+        total_columns=len(columns),
+    )
 
     return SQLTable(name, metadata, *columns, extend_existing=True)
 
