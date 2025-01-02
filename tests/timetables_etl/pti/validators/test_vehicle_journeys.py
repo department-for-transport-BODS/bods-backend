@@ -2,8 +2,8 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-from pti.constants import PTI_SCHEMA_PATH
 from common_layer.pti.models import Schema
+from pti.constants import PTI_SCHEMA_PATH
 from pti.validators.pti import PTIValidator
 
 from tests.timetables_etl.pti.validators.conftest import JSONFile, TXCFile
@@ -26,12 +26,13 @@ def test_destination_display(filename, expected):
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file, MagicMock())
+    pti = PTIValidator(json_file, MagicMock(), MagicMock())
     txc_path = DATA_DIR / filename
 
     with txc_path.open("r") as txc:
         is_valid = pti.is_valid(txc)
     assert is_valid == expected
+
 
 @pytest.mark.parametrize(
     ("has_vj_ref", "has_profile", "expected"),
@@ -77,7 +78,7 @@ def test_validate_vehicle_journey_ref(has_vj_ref, has_profile, expected):
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file, MagicMock())
+    pti = PTIValidator(json_file, MagicMock(), MagicMock())
 
     txc = TXCFile(xml)
     is_valid = pti.is_valid(txc)

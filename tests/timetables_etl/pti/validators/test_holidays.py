@@ -1,10 +1,11 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
-import pytest
 
-from pti.constants import PTI_SCHEMA_PATH
+import pytest
 from common_layer.pti.models import Schema
+from pti.constants import PTI_SCHEMA_PATH
 from pti.validators.pti import PTIValidator
+
 from tests.timetables_etl.pti.validators.conftest import JSONFile
 from tests.timetables_etl.pti.validators.factories import SchemaFactory
 
@@ -19,7 +20,7 @@ def test_bank_holidays_scottish_holidays(m_is_service_in_scotland):
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file, MagicMock())
+    pti = PTIValidator(json_file, MagicMock(), MagicMock())
     txc_path = DATA_DIR / filename
 
     with txc_path.open("r") as txc:
@@ -35,7 +36,7 @@ def test_bank_holidays_scottish_holidays_error(m_is_service_in_scotland):
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file, MagicMock())
+    pti = PTIValidator(json_file, MagicMock(), MagicMock())
     txc_path = DATA_DIR / filename
 
     with txc_path.open("r") as txc:
@@ -51,7 +52,7 @@ def test_bank_holidays_english_holidays(m_is_service_in_scotland):
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file, MagicMock())
+    pti = PTIValidator(json_file, MagicMock(), MagicMock())
     txc_path = DATA_DIR / filename
 
     with txc_path.open("r") as txc:
@@ -67,7 +68,7 @@ def test_bank_holidays_english_holidays_error(m_is_service_in_scotland):
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file, MagicMock())
+    pti = PTIValidator(json_file, MagicMock(), MagicMock())
     txc_path = DATA_DIR / filename
 
     with txc_path.open("r") as txc:

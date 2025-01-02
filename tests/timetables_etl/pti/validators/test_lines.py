@@ -2,8 +2,8 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-from pti.constants import PTI_SCHEMA_PATH
 from common_layer.pti.models import Schema
+from pti.constants import PTI_SCHEMA_PATH
 from pti.validators.pti import PTIValidator
 
 from tests.timetables_etl.pti.validators.conftest import JSONFile, TXCFile
@@ -12,7 +12,7 @@ from tests.timetables_etl.pti.validators.factories import SchemaFactory
 DATA_DIR = Path(__file__).parent / "data" / "lines"
 
 
-@pytest.fixture(autouse=True, scope='module')
+@pytest.fixture(autouse=True, scope="module")
 def m_stop_point_repo():
     with patch("pti.validators.functions.StopPointRepository") as m_repo:
         yield m_repo
@@ -36,7 +36,7 @@ def test_validate_less_than_two_lines():
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file, MagicMock())
+    pti = PTIValidator(json_file, MagicMock(), MagicMock())
     txc = TXCFile(xml)
     is_valid = pti.is_valid(txc)
     assert is_valid
@@ -57,7 +57,7 @@ def test_related_lines(filename, expected):
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file, MagicMock())
+    pti = PTIValidator(json_file, MagicMock(), MagicMock())
     txc_path = DATA_DIR / filename
     with txc_path.open("r") as txc:
         is_valid = pti.is_valid(txc)
@@ -79,7 +79,7 @@ def test_non_related_with_stop_areas(m_stop_point_repo):
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
     schema = SchemaFactory(observations=observations)
     json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file, MagicMock())
+    pti = PTIValidator(json_file, MagicMock(), MagicMock())
     txc_path = DATA_DIR / "nonrelatedlines.xml"
     with txc_path.open("r") as txc:
         assert pti.is_valid(txc)
