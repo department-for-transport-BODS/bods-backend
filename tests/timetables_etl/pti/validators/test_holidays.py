@@ -1,7 +1,6 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
 from common_layer.pti.models import Schema
 from pti.constants import PTI_SCHEMA_PATH
 from pti.validators.pti import PTIValidator
