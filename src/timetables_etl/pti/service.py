@@ -59,7 +59,7 @@ class PTIValidationService:
                 f"File for revision {revision.dataset_id} unchanged, skipping PTI validation."
             )
         else:
-            validator = get_xml_file_pti_validator(self._dynamodb)
+            validator = get_xml_file_pti_validator(self._dynamodb, self._db)
             violations = validator.get_violations(revision, xml_file)
 
             revision_validator = TXCRevisionValidator(
