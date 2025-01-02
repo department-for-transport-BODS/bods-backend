@@ -12,6 +12,8 @@ from sqlalchemy import Column as SQLColumn
 from sqlalchemy import Engine, MetaData
 from sqlalchemy import Table as SQLTable
 from sqlalchemy import inspect, text
+from sqlalchemy.dialects.postgresql import ENUM as PG_ENUM
+from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.sql.schema import Table
 from structlog.stdlib import get_logger
 
@@ -20,6 +22,44 @@ from .client import SqlDB
 from .models.common import BaseSQLModel
 
 log = get_logger()
+
+
+def ensure_enum_type(engine: Engine, enum_type: PG_ENUM, model_name: str) -> None:
+    """
+    Ensure that the enum type exists in the database. If it does not exist, create it.
+    TODO: Figure out how to add new values to an existing enum
+    """
+    enum_name = enum_type.name
+    try:
+        # Try to create the enum type
+        enum_type.create(bind=engine, checkfirst=True)
+        log.info(
+            "Enum type created or already exists", enum_name=enum_name, model=model_name
+        )
+    except ProgrammingError as e:
+        # Check if the error is because the enum type already exists
+        if "already exists" in str(e):
+            log.warning(
+                "Enum type already exists and changes are not handled automatically",
+                enum_name=enum_name,
+                model=model_name,
+            )
+        else:
+            log.error(
+                "Failed to create enum type",
+                enum_name=enum_name,
+                model=model_name,
+                error=str(e),
+            )
+
+
+def handle_enum_types(engine: Engine, model: Type[BaseSQLModel]) -> None:
+    """
+    Handle enum types for a given model.
+    """
+    for column in model.__table__.columns:
+        if isinstance(column.type, PG_ENUM):
+            ensure_enum_type(engine, column.type, model.__name__)
 
 
 def get_existing_columns(engine: Engine, table_name: str) -> dict[str, SQLColumn]:
@@ -156,6 +196,7 @@ def create_db_tables(db: SqlDB | None = None) -> None:
     log.info("Models Found", count=len(model_classes))
 
     for model in model_classes:
+        handle_enum_types(db.engine, model)
         table = create_table_definition(model, metadata)
 
         # First try to create the table
