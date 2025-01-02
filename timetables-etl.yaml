@@ -141,7 +141,7 @@ Resources:
             Action: sts:AssumeRole
       Policies:
         - StepFunctionsExecutionPolicy:
-          StateMachineName: !Sub '${ProjectName}-${Environment}-${SubFunction}-sm'
+            StateMachineName: !Sub '${ProjectName}-${Environment}-${SubFunction}-sm'
         - PolicyName: StateMachineLambdaInvokePolicy
           PolicyDocument:
             Version: '2012-10-17'
