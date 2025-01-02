@@ -4,11 +4,13 @@ from pathlib import Path
 from typing import IO, Any, Callable
 from urllib.parse import unquote
 
-from lxml import etree
+from common_layer.database.client import SqlDB
 from common_layer.dynamodb.client import DynamoDB
-from pti.constants import FLEXIBLE_SERVICE, STANDARD_SERVICE
 from common_layer.pti.models import Observation, Schema, Violation
-from pti.validators.functions import (
+from lxml import etree
+
+from ..constants import FLEXIBLE_SERVICE, STANDARD_SERVICE
+from .functions import (
     cast_to_bool,
     cast_to_date,
     check_description_for_inbound_description,
@@ -38,13 +40,13 @@ from pti.validators.functions import (
     validate_run_time,
     validate_timing_link_stops,
 )
-from pti.validators.holidays import get_validate_bank_holidays
+from .holidays import get_validate_bank_holidays
 
 logger = logging.getLogger(__name__)
 
 
 class PTIValidator:
-    def __init__(self, source: IO[Any], dynamo: DynamoDB):
+    def __init__(self, source: IO[Any], dynamo: DynamoDB, db: SqlDB):
         json_ = json.load(source)
         self.schema = Schema(**json_)
         self.namespaces = self.schema.header.namespaces
@@ -110,7 +112,7 @@ class PTIValidator:
         self.register_function("validate_timing_link_stops", validate_timing_link_stops)
 
         self.register_function(
-            "validate_bank_holidays", get_validate_bank_holidays(dynamo)
+            "validate_bank_holidays", get_validate_bank_holidays(dynamo, db)
         )
 
         self.register_function("validate_licence_number", validate_licence_number)
