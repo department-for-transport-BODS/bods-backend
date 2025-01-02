@@ -5,7 +5,14 @@ Clam AV Scanner Lambda Tests
 from unittest.mock import MagicMock, patch
 
 import pytest
-from clamav_scanner import get_clamav_config, process_file_to_s3
+from clamav_scanner import (
+    ClamAVConfig,
+    FileScanner,
+    get_clamav_config,
+    lambda_handler,
+    process_file_to_s3,
+)
+from common_layer.exceptions.file_exceptions import SuspiciousFile
 
 
 @pytest.mark.parametrize(
@@ -84,3 +91,59 @@ def test_process_file_to_s3(file_scenario, tmp_path):
     mock_s3.put_object.assert_called_once()
     args = mock_s3.put_object.call_args[0]
     assert args[0] == file_scenario["prefix"]
+
+
+def test_scan_file_no_threats_found(tmp_path):
+    """
+    Test scanning a file with no threats found.
+    No exception should be raised
+    """
+    test_file = tmp_path / "safe_file.txt"
+    test_file.write_text("This is a safe file content")
+
+    clamav_config = ClamAVConfig(host="localhost", port=3310)
+    mock_clamav = MagicMock()
+    mock_clamav.instream.return_value = {"stream": ("OK", None)}
+
+    with patch("clamav_scanner.ClamdNetworkSocket", return_value=mock_clamav):
+        scanner = FileScanner(clamav_config)
+        scanner.scan(test_file)
+
+
+def test_scan_file_threats_found(tmp_path):
+    """Test scanning a file with threats found."""
+    test_file = tmp_path / "infected_file.txt"
+    test_file.write_text("This file contains a virus")
+
+    clamav_config = ClamAVConfig(host="localhost", port=3310)
+    mock_clamav = MagicMock()
+    mock_clamav.instream.return_value = {"stream": ("FOUND", "Eicar-Test-Signature")}
+
+    with patch("clamav_scanner.ClamdNetworkSocket", return_value=mock_clamav):
+        scanner = FileScanner(clamav_config)
+        with pytest.raises(SuspiciousFile) as exc_info:
+            scanner.scan(test_file)
+        assert "Eicar-Test-Signature" in str(exc_info.value)
+
+
+@patch("clamav_scanner.SqlDB")
+@patch("clamav_scanner.S3")
+@patch("clamav_scanner.get_clamav_config")
+def test_lambda_handler_success(mock_get_clamav_config, mock_s3, mock_db, tmp_path):
+    """Test lambda handler with successful file processing."""
+    event = {
+        "Bucket": "test-bucket",
+        "ObjectKey": "test-file.txt",
+        "DatasetRevisionId": 123,
+    }
+
+    mock_get_clamav_config.return_value = ClamAVConfig(host="localhost", port=3310)
+    test_file = tmp_path / "test-file.txt"
+    test_file.write_text("Safe file content")
+    mock_s3.return_value.download_to_tempfile.return_value = str(test_file)
+
+    result = lambda_handler(event, None)
+
+    assert result["statusCode"] == 200
+    assert "Successfully scanned" in result["body"]["message"]
+    mock_s3.return_value.put_object.assert_called()  # Ensure file was uploaded
