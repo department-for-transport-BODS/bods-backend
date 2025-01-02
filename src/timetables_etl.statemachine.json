@@ -51,7 +51,11 @@
     "FileLevelProcessing": {
       "Type": "Map",
       "Parameters": {
-        "DatasetRevisionId.$": "$.detail.datasetRevisionId"
+        "DatasetRevisionId.$": "$.detail.datasetRevisionId",
+        "Bucket.$": "$.detail.bucket.name",
+        "Key.$": "$$.Map.Item.Value.Key",
+        "DatasetEtlTaskResultId.$": "$.detail.datasetEtlTaskResultId",
+        "detail.$": "$.detail"
       },
       "ItemReader": {
         "Resource": "arn:aws:states:::s3:listObjectsV2",
