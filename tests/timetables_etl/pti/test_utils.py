@@ -6,17 +6,12 @@ from pti.constants import SCOTLAND_TRAVELINE_REGIONS
 from pti.utils import get_service_in_scotland_from_db, is_service_in_scotland
 
 
-@pytest.fixture(autouse=True, scope="module")
-def m_db_manager():
-    with patch("pti.utils.DbManager") as m_db_manager:
-        yield m_db_manager
-
-
 def test_is_service_in_scotland():
     cache = MagicMock()
+    db = MagicMock()
     cache.get_or_compute.return_value = True
 
-    result = is_service_in_scotland("PH0006633:01010001", cache)
+    result = is_service_in_scotland("PH0006633:01010001", cache, db)
 
     assert result is True
 
@@ -32,7 +27,9 @@ def test_is_service_in_scotland():
     ) as m_get_service_in_scotland_from_db:
         m_get_service_in_scotland_from_db.return_value = True
         result = compute_fn()
-        m_get_service_in_scotland_from_db.assert_called_once_with("PH0006633:01010001")
+        m_get_service_in_scotland_from_db.assert_called_once_with(
+            "PH0006633:01010001", db
+        )
 
 
 @patch("pti.utils.OtcServiceRepository")
@@ -48,7 +45,7 @@ def test_get_service_in_scotland_from_db(
     )
     service_ref = "PH0006633/01010001"
 
-    result = get_service_in_scotland_from_db(service_ref)
+    result = get_service_in_scotland_from_db(service_ref, MagicMock())
 
     assert result is expected_result
     m_service_repo.return_value.get_service_with_traveline_region.assert_called_once_with(
