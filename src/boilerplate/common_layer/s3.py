@@ -132,10 +132,7 @@ class S3:
         """
         Return the ListObjectsV2PaginatorOutput as an Iterator
         """
-        # Get the paginator
-        paginator = self._client.get_paginator("list_objects_v2")
 
-        # Paginate through the API results
         paginator = self._client.get_paginator("list_objects_v2")
         yield from paginator.paginate(Bucket=self.bucket_name, Prefix=prefix)
 
