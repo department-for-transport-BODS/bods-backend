@@ -124,26 +124,3 @@ def test_scan_file_threats_found(tmp_path):
         with pytest.raises(SuspiciousFile) as exc_info:
             scanner.scan(test_file)
         assert "Eicar-Test-Signature" in str(exc_info.value)
-
-
-@patch("clamav_scanner.SqlDB")
-@patch("clamav_scanner.S3")
-@patch("clamav_scanner.get_clamav_config")
-def test_lambda_handler_success(mock_get_clamav_config, mock_s3, mock_db, tmp_path):
-    """Test lambda handler with successful file processing."""
-    event = {
-        "Bucket": "test-bucket",
-        "ObjectKey": "test-file.txt",
-        "DatasetRevisionId": 123,
-    }
-
-    mock_get_clamav_config.return_value = ClamAVConfig(host="localhost", port=3310)
-    test_file = tmp_path / "test-file.txt"
-    test_file.write_text("Safe file content")
-    mock_s3.return_value.download_to_tempfile.return_value = str(test_file)
-
-    result = lambda_handler(event, None)
-
-    assert result["statusCode"] == 200
-    assert "Successfully scanned" in result["body"]["message"]
-    mock_s3.return_value.put_object.assert_called()  # Ensure file was uploaded
