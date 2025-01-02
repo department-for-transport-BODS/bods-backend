@@ -194,13 +194,6 @@ Resources:
                           Fn::ImportValue:
                             Fn::Sub: '${ProjectName}-${Environment}-standalone-s3-bucket-name'
                     - '*'
-        - PolicyName: StartStateMachineExecutionOfSelfPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action: states:StartExecution
-                Resource: !Ref TimetablesStateMachine
   ##########################################
   #### TIMETABLES STATE MACHINE TRIGGER ####
   ##########################################
