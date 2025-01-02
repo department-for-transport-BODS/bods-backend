@@ -242,18 +242,63 @@ def av_scan_file(clam_av_config: ClamAVConfig, file_to_scan: Path) -> None:
     av_scanner.scan(file_to_scan)
 
 
+def process_file_to_s3(s3_client: S3, file_path: Path, destination_prefix: str) -> str:
+    """
+    Copy a single file and upload it to S3 in a dedicated folder.
+    State Machine Map does not work on single files, requires a folder
+    """
+    file_name = file_path.name
+    folder_name = f"{destination_prefix.rstrip('/')}_{Path(file_name).stem}/"
+    s3_key = f"{folder_name}{file_name}"
+
+    log.info(
+        "Copying single file into a new folder",
+        file_path=str(file_path),
+        destination=folder_name,
+    )
+
+    try:
+        with open(file_path, "rb") as file:
+            s3_client.put_object(s3_key, file.read())
+            log.debug(
+                "Successfully uploaded file to new location",
+                filename=file_name,
+                s3_key=s3_key,
+            )
+
+        log.info(
+            "Completed file processing",
+            file_path=str(file_path),
+            destination=folder_name,
+        )
+
+        return folder_name
+
+    except Exception as e:
+        log.error(
+            "Failed to copy file to new location",
+            file_path=str(file_path),
+            s3_key=s3_key,
+            error=str(e),
+        )
+        raise
+
+
 def unzip_and_upload_files(s3_handler: S3, file_path: Path) -> str:
     """
     If the file is a zip, unzip and upload its contents to S3.
-    Otherwise, return the original file path.
+    Otherwise, copy the single file to a new folder and return that folder path.
     """
     if file_path.suffix.lower() == ".zip":
         log.info("Input File is a Zip. Processing...", file_path=str(file_path))
         return process_zip_to_s3(
             s3_client=s3_handler, zip_path=file_path, destination_prefix="ext"
         )
+
     log.info("Input file is a single file", path=str(file_path))
-    return str(file_path)
+    return process_file_to_s3(
+        s3_client=s3_handler, file_path=file_path, destination_prefix="ext"
+    )
 
 
 @file_processing_result_to_db(step_name=StepName.CLAM_AV_SCANNER)
