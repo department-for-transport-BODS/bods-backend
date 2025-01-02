@@ -44,6 +44,30 @@ class OrganisationDatasetRevisionRepo(
         statement = self._build_query().where(self._model.dataset_id == dataset_id)
         return self._fetch_all(statement)
 
+    @handle_repository_errors
+    def update_original_file_hash(self, revision_id: int, new_hash: str) -> None:
+        """
+        Update the original file hash for a specific revision
+        """
+        statement = self._build_query().where(self._model.id == revision_id)
+
+        def update_hash(record: OrganisationDatasetRevision) -> None:
+            record.original_file_hash = new_hash
+
+        self._execute_update(update_hash, statement)
+
+    @handle_repository_errors
+    def update_modified_file_hash(self, revision_id: int, new_hash: str) -> None:
+        """
+        Update the modified file hash for a specific revision
+        """
+        statement = self._build_query().where(self._model.id == revision_id)
+
+        def update_hash(record: OrganisationDatasetRevision) -> None:
+            record.modified_file_hash = new_hash
+
+        self._execute_update(update_hash, statement)
+
 
 class OrganisationTXCFileAttributesRepo(
     BaseRepositoryWithId[OrganisationTXCFileAttributes]
