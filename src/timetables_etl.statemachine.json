@@ -15,8 +15,7 @@
       "Parameters": {
         "Bucket.$": "$.detail.bucket.name",
         "ObjectKey.$": "$.detail.object.key",
-        "DatasetRevisionId.$": "$.detail.dataset_revision_id",
-        "DatasetType.$": "$.detail.dataset_type"
+        "DatasetRevisionId.$": "$.detail.datasetRevisionId"
       },
       "ResultPath": "$.initializePipeline",
       "Next": "ClamAvScanner",
