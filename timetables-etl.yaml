@@ -140,6 +140,13 @@ Resources:
               Service: states.amazonaws.com
             Action: sts:AssumeRole
       Policies:
+        - PolicyName: StartStateMachineExecutionOfSelfPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: states:StartExecution
+                Resource: !Sub 'arn:${AWS::Partition}:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${ProjectName}-${Environment}-${SubFunction}-sm'
         - PolicyName: StateMachineLambdaInvokePolicy
           PolicyDocument:
             Version: '2012-10-17'
@@ -155,7 +162,38 @@ Resources:
                   - !GetAtt FileAttributesEtlLambda.Arn
                   - !GetAtt PtiValidationLambda.Arn
                   - !GetAtt ExceptionHandlerLambda.Arn
-
+        - PolicyName: S3BucketAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !If
+                  - IsUsingBodsInfra
+                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/app/arn}}'
+                  - !If
+                    - IsStandalone
+                    - !Sub
+                      - 'arn:aws:s3:::${BucketName}'
+                      - BucketName:
+                          Fn::ImportValue:
+                            Fn::Sub: '${ProjectName}-${Environment}-standalone-s3-bucket-name'
+                    - '*'
+              - Effect: Allow
+                Action:
+                  - s3:GetObject*
+                  - s3:PutObject*
+                Resource: !If
+                  - IsUsingBodsInfra
+                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/app/arn}}/*'
+                  - !If
+                    - IsStandalone
+                    - !Sub
+                      - 'arn:aws:s3:::${BucketName}/*'
+                      - BucketName:
+                          Fn::ImportValue:
+                            Fn::Sub: '${ProjectName}-${Environment}-standalone-s3-bucket-name'
+                    - '*'
   ##########################################
   #### TIMETABLES STATE MACHINE TRIGGER ####
   ##########################################
@@ -223,13 +261,13 @@ Resources:
                   - sqs:DeleteMessage
                   - sqs:GetQueueAttributes
                 Resource: !GetAtt TimetablesProcessQueue.Arn
-        - PolicyName: StateMachineInvokePolicy
+        - PolicyName: StartStateMachineExecutionOfSelfPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action: states:StartExecution
-                Resource: !GetAtt TimetablesStateMachine.Arn
+                Resource: !Sub 'arn:${AWS::Partition}:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${ProjectName}-${Environment}-${SubFunction}-sm'
         - PolicyName: KMSAccessPolicy
           PolicyDocument:
             Version: '2012-10-17'
