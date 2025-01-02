@@ -23,7 +23,7 @@ class ServiceWithRegion:
     traveline_region: str
 
 
-class OtcServiceRepository:
+class OtcServiceRepo:
     def __init__(self, db: SqlDB):
         self._db = db
 
@@ -36,7 +36,6 @@ class OtcServiceRepository:
         Returns: Tuple of (query with traveline_region_weca column, column label)
         """
 
-        # TODO: use NaptanAdminArea.traveline_region_id.distinct() once tests are moved to postgres
         traveline_region_weca_subquery = (
             session.query(
                 func.string_agg(
@@ -66,7 +65,6 @@ class OtcServiceRepository:
         Returns: Tuple of (query with traveline_region_otc column, column label)
         """
 
-        # TODO: use NaptanAdminArea.traveline_region_id.distinct() once tests are moved to postgres
         traveline_region_otc_subquery = (
             session.query(
                 func.string_agg(
