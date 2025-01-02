@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from common_layer.database.models.model_otc import OtcLocalAuthorityRegistrationNumbers
-from common_layer.database.repos.repo_otc import OtcServiceRepository
+from common_layer.database.repos.repo_otc import OtcServiceRepo
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 
 from tests.factories.database.naptan import NaptanAdminAreaFactory
