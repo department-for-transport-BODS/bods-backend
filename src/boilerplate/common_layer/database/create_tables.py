@@ -10,7 +10,9 @@ from typing import Type
 
 from psycopg2 import ProgrammingError
 from sqlalchemy import Column as SQLColumn
-from sqlalchemy import Engine, Enum, MetaData
+from sqlalchemy import Engine
+from sqlalchemy import Enum as SQLEnum
+from sqlalchemy import MetaData
 from sqlalchemy import Table as SQLTable
 from sqlalchemy import inspect, text
 from sqlalchemy.sql.schema import Table
@@ -29,21 +31,42 @@ def handle_enum_types(engine: Engine, model: Type[BaseSQLModel]) -> None:
     Ensure the enum type exists and can be used.
     """
     for column in model.__table__.columns:
-        if isinstance(column.type, Enum):
+        if isinstance(column.type, SQLEnum):
             # Preliminary logging of enum type discovery
             log.info(
                 "Processing enum type",
                 column_name=column.name,
                 enum_name=column.type.name,
                 model_name=model.__name__,
-                model_enum_values=column.type.enums,
+                enum_values=column.type.enums,
             )
 
             try:
                 with engine.connect() as conn:
-                    # Enum name from the column type
+                    # Enum name and values from the column type
                     enum_name = column.type.name
                     model_enum_values = column.type.enums
+
+                    # First, create the type if it doesn't exist
+                    create_type_query = text(
+                        f"""
+                        DO $$
+                        BEGIN
+                            IF NOT EXISTS (
+                                SELECT 1 FROM pg_type WHERE typname = '{enum_name}'
+                            ) THEN
+                                CREATE TYPE "{enum_name}" AS ENUM {tuple(model_enum_values)};
+                            END IF;
+                        END $$;
+                    """
+                    )
+                    conn.execute(create_type_query)
+
+                    log.info(
+                        "Ensured enum type exists",
+                        enum_name=enum_name,
+                        enum_values=model_enum_values,
+                    )
 
                     # Check existing enum values
                     enum_values_query = text(
@@ -54,39 +77,15 @@ def handle_enum_types(engine: Engine, model: Type[BaseSQLModel]) -> None:
                         )
                     )
 
-                    try:
-                        existing_enum_values = list(
-                            conn.execute(enum_values_query).scalars().all()
-                        )
+                    existing_enum_values = list(
+                        conn.execute(enum_values_query).scalars().all()
+                    )
 
-                        log.info(
-                            "Existing enum values discovered",
-                            enum_name=enum_name,
-                            existing_values=existing_enum_values,
-                        )
-                    except ProgrammingError:
-                        # Enum type doesn't exist, create it
-                        existing_enum_values = []
-
-                        log.warning(
-                            "Enum type not found - creating new type",
-                            enum_name=enum_name,
-                            model_name=model.__name__,
-                            enum_values=model_enum_values,
-                        )
-
-                        create_enum_query = text(
-                            f"""
-                            CREATE TYPE "{enum_name}" AS ENUM {tuple(model_enum_values)}
-                        """
-                        )
-                        conn.execute(create_enum_query)
-
-                        log.info(
-                            "New enum type created successfully",
-                            enum_name=enum_name,
-                            values=model_enum_values,
-                        )
+                    log.info(
+                        "Existing enum values discovered",
+                        enum_name=enum_name,
+                        existing_values=existing_enum_values,
+                    )
 
                     # Find and add missing enum values
                     missing_values = set(model_enum_values) - set(existing_enum_values)
