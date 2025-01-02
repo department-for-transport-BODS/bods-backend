@@ -263,13 +263,8 @@ Resources:
                   - sqs:DeleteMessage
                   - sqs:GetQueueAttributes
                 Resource: !GetAtt TimetablesProcessQueue.Arn
-        - PolicyName: StateMachineInvokePolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action: states:StartExecution
-                Resource: !GetAtt TimetablesStateMachine.Arn
+        - StepFunctionsExecutionPolicy:
+            StateMachineName: !Sub '${ProjectName}-${Environment}-${SubFunction}-sm'
         - PolicyName: KMSAccessPolicy
           PolicyDocument:
             Version: '2012-10-17'
