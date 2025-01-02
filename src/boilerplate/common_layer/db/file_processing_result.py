@@ -10,8 +10,10 @@ from common_layer.db import BodsDB
 from common_layer.db.constants import StepName
 from common_layer.db.manager import DbManager
 from common_layer.db.repositories.dataset_revision import get_revision
-from common_layer.logger import logger
 from sqlalchemy.exc import NoResultFound, SQLAlchemyError
+from structlog.stdlib import get_logger
+
+log = get_logger()
 
 
 def map_exception_to_error_code(exception):
@@ -31,8 +33,7 @@ def map_exception_to_error_code(exception):
         "NoSchemaDefinition": "NO_SCHEMA_DEFINITION",
         "NoRowFound": "NO_ROW_FOUND",
     }
-    return exception_mapping.get(exception.__class__.__name__,
-                                 "SUSPICIOUS_FILE")
+    return exception_mapping.get(exception.__class__.__name__, "SUSPICIOUS_FILE")
 
 
 def write_error_to_db(db, uuid, exception):
@@ -61,9 +62,11 @@ def get_or_create_step(db, name, category):
     """
     with db.session as session:
         class_name = db.classes.pipelines_pipelineprocessingstep
-        step = session.query(class_name).filter(
-            class_name.name == name, class_name.category == category
-        ).one_or_none()
+        step = (
+            session.query(class_name)
+            .filter(class_name.name == name, class_name.category == category)
+            .one_or_none()
+        )
 
         if step is None:
             step = class_name(name=name, category=category)
@@ -81,14 +84,12 @@ def get_dataset_type(event):
 def file_processing_result_to_db(step_name: StepName):
     def decorator(func):
         def wrapper(event, context):
-            logger.info(f"processing step: {step_name}, event: {event}")
+            log.info("Processing Step", step_name=step_name, input_data=event)
             _db = DbManager.get_db()
             task_id = str(uuid4())
             try:
                 revision = get_revision(_db, int(event["DatasetRevisionId"]))
-                step = get_or_create_step(_db,
-                                          step_name.value,
-                                          get_dataset_type(event))
+                step = get_or_create_step(_db, step_name.value, get_dataset_type(event))
                 # Create initial processing record
                 processing_result = {
                     "task_id": task_id,
@@ -103,7 +104,7 @@ def file_processing_result_to_db(step_name: StepName):
 
                 # Execute the Lambda function
                 result = func(event, context)
-                logger.info(f"lambda returns: {result}")
+                log.info(" returns: {result}")
 
                 # Update processing record on success
                 PipelineFileProcessingResult(_db).update(
@@ -111,7 +112,7 @@ def file_processing_result_to_db(step_name: StepName):
                 )
                 return result
             except Exception as error:
-                logger.error(error, exc_info=True)
+                log.error("An Exception Occured", exc_info=True)
                 write_error_to_db(_db, task_id, error)
                 raise error
 
@@ -140,14 +141,17 @@ class PipelineFileProcessingResult:
         with self.db.session as session:
             try:
                 row = self.db.classes.pipelines_fileprocessingresult(
-                    **file_processing_result)
+                    **file_processing_result
+                )
                 session.add(row)
                 session.commit()
                 # session.refresh(row)
                 return "File processing entity created successfully!"
             except SQLAlchemyError as err:
                 session.rollback()
-                logger.error(f" Failed to add record {err}", exc_info=True)
+                log.error(
+                    "Failed to Create File Processing Result Entry", exc_info=True
+                )
                 raise err
 
     def read(self, revision_id):
@@ -162,15 +166,14 @@ class PipelineFileProcessingResult:
             try:
                 buf_ = self.db.classes.pipelines_fileprocessingresult
                 result = (
-                    session.query(buf_).filter(
-                        buf_.revision_id == revision_id).one()
+                    session.query(buf_).filter(buf_.revision_id == revision_id).one()
                 )
             except NoResultFound as error:
                 msg = (
                     f"Revision {revision_id} "
                     f"doesn't exist pipelines_fileprocessingresult"
                 )
-                logger.error(msg)
+                log.error(msg)
                 raise error
             else:
                 return result
@@ -187,11 +190,13 @@ class PipelineFileProcessingResult:
             try:
                 # Get the record using task_id
                 model = self.db.classes.pipelines_fileprocessingresult
-                record = session.query(model).filter(
-                    model.task_id == task_id).one_or_none()
+                record = (
+                    session.query(model).filter(model.task_id == task_id).one_or_none()
+                )
                 if not record:
-                    logger.warning(
-                        f"No file processing result found for task {task_id}"
+                    log.warning(
+                        "No file processing result found for task",
+                        task_id=task_id,
                     )
                     return None
                 # update the record
@@ -203,47 +208,9 @@ class PipelineFileProcessingResult:
                 return "File processing result updated successfully!"
             except Exception as error:
                 session.rollback()
-                msg = (
-                    f"Failed to update file processing result for task "
-                    f"{task_id} {error}"
+                log.error(
+                    "Failed to update file processing result for task",
+                    task_id=task_id,
+                    exc_info=True,
                 )
-                logger.error(msg)
                 raise error
-
-
-def txc_file_attributes_to_db(revision_id, attributes):
-    """
-    Writes TXC file attributes to the database in bulk.
-    """
-    try:
-        db_: BodsDB = DbManager.get_db()
-        with db_.session as session_:
-            db_table = db_.classes.organisation_txcfileattributes
-            buffer = [
-                db_table(
-                    revision_id=revision_id,
-                    schema_version=it.header.schema_version,
-                    modification=it.header.modification,
-                    revision_number=it.header.revision_number,
-                    creation_datetime=it.header.creation_datetime,
-                    modification_datetime=it.header.modification_datetime,
-                    filename=it.header.filename,
-                    national_operator_code=it.operator.national_operator_code,
-                    licence_number=it.operator.licence_number,
-                    service_code=it.service.service_code,
-                    origin=it.service.origin,
-                    destination=it.service.destination,
-                    operating_period_start_date=it.service.operating_period_start_date,
-                    operating_period_end_date=it.service.operating_period_end_date,
-                    public_use=it.service.public_use,
-                    line_names=[line.line_name for line in it.service.lines],
-                    hash=it.hash,
-                )
-                for it in attributes
-            ]
-            session_.bulk_save_objects(buffer)
-            session_.commit()
-    except Exception as error:
-        session_.rollback()
-        logger.error(f"Failed to add record {error}", exc_info=True)
-        raise error
