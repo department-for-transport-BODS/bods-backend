@@ -1,8 +1,8 @@
-import pytest
-from unittest.mock import MagicMock, patch
 from io import BytesIO
-from botocore.response import StreamingBody
+from unittest.mock import MagicMock, patch
 
+import pytest
+from botocore.response import StreamingBody
 from pti.validators.xml_file import XmlFilePTIValidator
 
 
@@ -15,7 +15,9 @@ def test_get_violations_validates_file(m_pti_validator):
     m_pti_validator.return_value.is_valid = MagicMock()
     m_pti_validator.return_value.violations = ["violation1", "violation2"]
 
-    validator = XmlFilePTIValidator(schema=BytesIO(), dynamodb=MagicMock())
+    validator = XmlFilePTIValidator(
+        schema=BytesIO(), dynamodb=MagicMock(), db=MagicMock()
+    )
 
     result = validator.get_violations(revision, xml_file)
 
