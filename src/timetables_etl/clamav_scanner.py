@@ -16,10 +16,14 @@ from common_layer.exceptions.file_exceptions import (
     ClamConnectionError,
     SuspiciousFile,
 )
-from common_layer.logger import logger
+from common_layer.json_logging import configure_logging
 from common_layer.s3 import S3
 from common_layer.utils import sha1sum
 from common_layer.zip import unzip
+from pydantic import BaseModel, Field
+from structlog.stdlib import get_logger
+
+log = get_logger()
 
 SCAN_ATTEMPTS = 5
 MULTIPLIER = 1
@@ -53,7 +57,7 @@ class FileScanner:
 
     def __init__(self, host: str, port: int):
         """Scan f with ClamAV antivirus scanner"""
-        logger.info("Antivirus scan: Started")
+        log.info("Antivirus scan: Started")
         self.clamav = ClamdNetworkSocket(host=host, port=port)
 
     def scan(self, file_: BinaryIO):
@@ -63,12 +67,12 @@ class FileScanner:
             raise exc
 
         if result.status == "ERROR":
-            logger.info("Antivirus scan: FAILED")
+            log.info("Antivirus scan: FAILED")
             raise AntiVirusError(file_.name)
         elif result.status == "FOUND":
-            logger.exception("Antivirus scan: FOUND")
+            log.exception("Antivirus scan: FOUND")
             raise SuspiciousFile(file_.name, result.reason)
-        logger.info("Antivirus scan: OK")
+        log.info("Antivirus scan: OK")
 
     def _perform_scan(self, file_: BinaryIO) -> ScanResult:
         try:
@@ -77,12 +81,28 @@ class FileScanner:
             return ScanResult(status=status, reason=reason)
         except BufferTooLongError as e:
             msg = "Antivirus scan failed due to BufferTooLongError"
-            logger.exception(msg, exc_info=True)
+            log.exception(msg, exc_info=True)
             raise AntiVirusError(file_.name, message=msg) from e
         except ConnectionError as e:
             msg = "Antivirus scan failed due to ConnectionError"
-            logger.exception(msg, exc_info=True)
+            log.exception(msg, exc_info=True)
             raise ClamConnectionError(file_.name, message=msg) from e
+
+
+class ClamAVScannerInputData(BaseModel):
+    """
+    Lambda Input Data
+    """
+
+    class Config:
+        """
+        Allow us to map Bucket / Object Key
+        """
+
+        populate_by_name = True
+
+    s3_bucket_name: str = Field(alias="Bucket")
+    s3_file_key: str = Field(alias="ObjectKey")
 
 
 @file_processing_result_to_db(step_name=StepName.CLAM_AV_SCANNER)
@@ -90,19 +110,15 @@ def lambda_handler(event, context):
     """
     Main lambda handler
     """
-    # Extract the bucket name and object key from the S3 event
-    bucket = event["Bucket"]
-    key = event["ObjectKey"]
-
-    # URL-decode the key if it has special characters
-    key = key.replace("+", " ")
+    configure_logging()
+    input_data = ClamAVScannerInputData(**event)
 
     try:
         # Get S3 handler
-        s3_handler = S3(bucket_name=bucket)
+        s3_handler = S3(bucket_name=input_data.s3_bucket_name)
 
         # Fetch the object from s3
-        file_object = s3_handler.get_object(file_path=key)
+        file_object = s3_handler.get_object(file_path=input_data.s3_file_key)
 
         update_file_hash_in_db(
             event["ObjectKey"],
@@ -125,8 +141,11 @@ def lambda_handler(event, context):
         av_scanner.scan(file_object)  # noqa
         msg = f"Successfully scanned the file '{key}' from bucket '{bucket}'"
 
-        prefix = unzip(s3_client=s3_handler, file_path=key, prefix="ext") \
-            if key.endswith("zip") else ''
+        prefix = (
+            unzip(s3_client=s3_handler, file_path=key, prefix="ext")
+            if key.endswith("zip")
+            else ""
+        )
 
         return {
             "statusCode": 200,
@@ -136,5 +155,5 @@ def lambda_handler(event, context):
             },
         }
     except Exception as e:
-        logger.error(f"Error scanning object '{key}' from bucket '{bucket}'")
+        log.error(f"Error scanning object '{key}' from bucket '{bucket}'")
         raise e
