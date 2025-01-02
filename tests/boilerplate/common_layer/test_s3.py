@@ -2,7 +2,6 @@
 S3 Client Unit Tests
 """
 
-import unittest
 from io import BytesIO
 from unittest.mock import MagicMock, patch
 
