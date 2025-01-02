@@ -140,8 +140,13 @@ Resources:
               Service: states.amazonaws.com
             Action: sts:AssumeRole
       Policies:
-        - StepFunctionsExecutionPolicy:
-            StateMachineName: !Sub '${ProjectName}-${Environment}-${SubFunction}-sm'
+        - PolicyName: StartStateMachineExecutionOfSelfPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: states:StartExecution
+                Resource: !Sub 'arn:${AWS::Partition}:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${ProjectName}-${Environment}-${SubFunction}-sm'
         - PolicyName: StateMachineLambdaInvokePolicy
           PolicyDocument:
             Version: '2012-10-17'
@@ -263,8 +268,13 @@ Resources:
                   - sqs:DeleteMessage
                   - sqs:GetQueueAttributes
                 Resource: !GetAtt TimetablesProcessQueue.Arn
-        - StepFunctionsExecutionPolicy:
-            StateMachineName: !Sub '${ProjectName}-${Environment}-${SubFunction}-sm'
+        - PolicyName: StartStateMachineExecutionOfSelfPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: states:StartExecution
+                Resource: !Sub 'arn:${AWS::Partition}:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${ProjectName}-${Environment}-${SubFunction}-sm'
         - PolicyName: KMSAccessPolicy
           PolicyDocument:
             Version: '2012-10-17'
