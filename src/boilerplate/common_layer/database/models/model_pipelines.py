@@ -139,17 +139,17 @@ class FileProcessingResult(TaskResult):
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     pipeline_error_code_id: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("public.pipelines_pipelineerrorcode.id"), nullable=True
+        Integer, ForeignKey("pipelines_pipelineerrorcode.id"), nullable=True
     )
 
     pipeline_processing_step_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("public.pipelines_pipelineprocessingstep.id"),
+        ForeignKey("pipelines_pipelineprocessingstep.id"),
         nullable=False,
     )
 
     revision_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("public.organisation_datasetrevision.id"), nullable=False
+        Integer, ForeignKey("organisation_datasetrevision.id"), nullable=False
     )
 
 
