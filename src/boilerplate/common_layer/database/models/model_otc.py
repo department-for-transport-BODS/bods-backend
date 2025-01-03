@@ -37,21 +37,21 @@ class OtcService(BaseSQLModel):
     atco_code: Mapped[str | None] = mapped_column(Text)
 
 
-# class OtcLocalAuthorityRegistrationNumbers(BaseSQLModel):
-#     __tablename__ = "otc_localauthority_registration_numbers"
+class OtcLocalAuthorityRegistrationNumbers(BaseSQLModel):
+    __tablename__ = "otc_localauthority_registration_numbers"
 
-#     id: Mapped[int] = mapped_column(
-#         Integer,
-#         primary_key=True,
-#         init=False,
-#     )
-#     localauthority_id: Mapped[int] = mapped_column(Integer)
-#     service_id: Mapped[int] = mapped_column(Integer)
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+        init=False,
+    )
+    localauthority_id: Mapped[int] = mapped_column(Integer)
+    service_id: Mapped[int] = mapped_column(Integer)
 
 
-# class OtcLocalAuthority(BaseSQLModel):
-#     __tablename__ = "otc_localauthority"
+class OtcLocalAuthority(BaseSQLModel):
+    __tablename__ = "otc_localauthority"
 
-#     id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
-#     name: Mapped[str] = mapped_column(Text)
-#     ui_lta_id: Mapped[Optional[int]] = mapped_column(Integer)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
+    name: Mapped[str] = mapped_column(Text)
+    ui_lta_id: Mapped[int | None] = mapped_column(Integer)
