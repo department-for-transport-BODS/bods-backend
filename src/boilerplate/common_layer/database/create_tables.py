@@ -25,7 +25,7 @@ structlog.configure(
     processors=[
         structlog.processors.add_log_level,
         structlog.processors.StackInfoRenderer(),
-        structlog.dev.ConsoleRenderer(force_colors=True),
+        structlog.dev.ConsoleRenderer(),
     ]
 )
 
