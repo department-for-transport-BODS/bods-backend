@@ -390,8 +390,8 @@ Resources:
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-schema-check-lambda'
       Role: !GetAtt CommonLambdaExecutionRole.Arn
-      CodeUri: ./src/timetables_etl
-      Handler: schema_check.lambda_handler
+      CodeUri: ./src/timetables_etl/schema_check
+      Handler: app.app.lambda_handler
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       Environment:

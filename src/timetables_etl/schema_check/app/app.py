@@ -2,17 +2,17 @@ import io
 import json
 import os
 from pathlib import Path
-import requests
 from zipfile import ZipFile
 
+import requests
 from common_layer.constants import SCHEMA_DIR
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.db.manager import DbManager
 from common_layer.db.repositories.dataset_revision import get_revision
 from common_layer.db.schema_definition import (
-    get_schema_definition_db_object,
     SchemaCategory,
+    get_schema_definition_db_object,
 )
 from common_layer.db.schema_violation import SchemaViolation
 from common_layer.logger import logger
