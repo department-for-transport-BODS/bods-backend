@@ -106,14 +106,6 @@ class naptan_stoppoint(Base):
     stop_areas = Column(JSON)
 
 
-class otc_service(Base):
-    __tablename__ = "otc_service"
-    id = Column(Integer, primary_key=True)
-    registration_number = Column(String(25))
-    api_type = Column(String(10))
-    atco_code = Column(String(255))
-
-
 class naptan_adminarea(Base):
     __tablename__ = "naptan_adminarea"
     id = Column(Integer, primary_key=True)
@@ -172,7 +164,6 @@ class MockedDB:
             data_quality_ptiobservation=data_quality_ptiobservation,
             organisation_dataset=organisation_dataset,
             naptan_stoppoint=naptan_stoppoint,
-            otc_service=otc_service,
             naptan_adminarea=naptan_adminarea,
             ui_lta=ui_lta,
             otc_localauthority=otc_localauthority,
