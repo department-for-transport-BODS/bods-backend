@@ -59,21 +59,6 @@ def get_file_processing_error_code(
     return PipelineErrorCodeRepository(db).get_by_error_code(status)
 
 
-def write_error_to_db(db: SqlDB, processing_result: FileProcessingResult, exception):
-    """
-    Update the FileProcessingResult with the error returned by the lambda
-    """
-    error_status = map_exception_to_error_code(exception)
-    error_code = get_file_processing_error_code(db, error_status)
-
-    processing_result.status = TaskState.FAILURE
-    processing_result.completed = datetime.now(UTC)
-    if error_code is None:
-        log.warning("Error Code was not found in DB, defaulting to 1")
-    processing_result.pipeline_error_code_id = 1
-    FileProcessingResultRepo(db).update(processing_result)
-
-
 def get_or_create_step(db: SqlDB, name: str, category: str) -> PipelineProcessingStep:
     """
     Gets an existing processing step or creates it if it doesn't exist.
@@ -147,7 +132,7 @@ def initialize_processing(
             pipeline_processing_step_id=step.id,
             revision_id=get_revision_id(event),
             error_message="",
-            pipeline_error_code_id=0,
+            pipeline_error_code_id=None,
         )
         context.db = db
         context.processing_result = FileProcessingResultRepo(db).insert(
@@ -167,6 +152,25 @@ def initialize_processing(
         return context
 
     return context
+
+
+def write_error_to_db(db: SqlDB, processing_result: FileProcessingResult, exception):
+    """
+    Update the FileProcessingResult with the error returned by the lambda
+    """
+    error_status = map_exception_to_error_code(exception)
+    error_code = get_file_processing_error_code(db, error_status)
+
+    processing_result.status = TaskState.FAILURE
+    processing_result.completed = datetime.now(UTC)
+
+    if error_code is None:
+        processing_result.pipeline_error_code_id = None
+        log.warning("Error Code was not found in DB, setting to NULL")
+    else:
+        processing_result.pipeline_error_code_id = error_code.id
+
+    FileProcessingResultRepo(db).update(processing_result)
 
 
 def handle_lambda_success(context: ProcessingContext) -> None:
