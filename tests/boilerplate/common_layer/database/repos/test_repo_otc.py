@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from common_layer.database.models.model_otc import OtcLocalAuthorityRegistrationNumbers
@@ -134,14 +134,14 @@ def test_get_service_with_traveline_region_exception(test_db):
     m_session.return_value.__enter__.return_value.query.side_effect = Exception(
         "DB Exception"
     )
-    test_db.session_scope = m_session
 
     repo = OtcServiceRepo(test_db)
-    with pytest.raises(
-        PipelineException,
-        match="Error retrieving service with traveline region with registration number 9999.",
-    ):
-        repo.get_service_with_traveline_region("9999")
+    with patch.object(test_db, "session_scope", m_session):
+        with pytest.raises(
+            PipelineException,
+            match="Error retrieving service with traveline region with registration number 9999.",
+        ):
+            repo.get_service_with_traveline_region("9999")
 
 
 def test_get_service_with_distinct_traveline_regions(test_db):
