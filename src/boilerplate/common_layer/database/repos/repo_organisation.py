@@ -42,14 +42,6 @@ class OrganisationDatasetRevisionRepo(
         statement = self._build_query().where(self._model.dataset_id == dataset_id)
         return self._fetch_all(statement)
 
-    @handle_repository_errors
-    def get_by_id(self, id_column_id: int) -> OrganisationDatasetRevision | None:
-        """
-        Get a dataset revision by id
-        """
-        statement = self._build_query().where(self._model.id == id_column_id)
-        return self._fetch_one(statement)
-
 
 class OrganisationTXCFileAttributesRepo(
     BaseRepositoryWithId[OrganisationTXCFileAttributes]

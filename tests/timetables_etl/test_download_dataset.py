@@ -9,13 +9,16 @@ from pydantic import BaseModel
 from timetables_etl.download_dataset import (
     DataDownloader,
     DownloadException,
+    OrganisationDatasetRevisionRepo,
     PipelineException,
+    SqlDB,
     UnknownFileType,
     bytes_are_zip_file,
     download_and_upload_dataset,
     download_data_from_remote_url,
     get_filetype_from_response,
     lambda_handler,
+    update_dataset_revision,
     upload_file_to_s3,
     write_temp_file,
 )
@@ -343,3 +346,46 @@ def test_download_data_failure(mock_revision):
         with pytest.raises(PipelineException, match="Download failed"):
             download_data_from_remote_url(mock_revision)
         mock_get.assert_called_once()
+
+
+@patch("timetables_etl.download_dataset.log")
+@patch("timetables_etl.download_dataset.OrganisationDatasetRevisionRepo")
+def test_update_dataset_revision_revision_exists(mock_repo_class, mock_log):
+    """
+    test the 'update_dataset_revision' method if revision exists
+    """
+    mock_db = MagicMock(SqlDB)
+    mock_revision_repo = MagicMock()
+    mock_repo_class.return_value = mock_revision_repo
+    mock_revision = MagicMock()
+    mock_revision.upload_file = None
+    mock_revision_repo.get_by_id.return_value = mock_revision
+    revision_id = 1
+    file_name = "new_file.csv"
+
+    update_dataset_revision(revision_id, file_name, mock_db)
+    mock_revision_repo.get_by_id.assert_called_once_with(revision_id)
+    assert mock_revision.upload_file == file_name
+    mock_revision_repo.update.assert_called_once_with(mock_revision)
+    mock_log.info.assert_called_once_with("Dataset revision updated with new file.")
+
+
+@patch("timetables_etl.download_dataset.log")
+@patch("timetables_etl.download_dataset.OrganisationDatasetRevisionRepo")
+def test_update_dataset_revision_revision_not_found(mock_repo_class, mock_log):
+    """
+    test the 'update_dataset_revision' method if revision doesn't exists
+    """
+    mock_db = MagicMock(SqlDB)
+    mock_revision_repo = MagicMock()
+    mock_repo_class.return_value = mock_revision_repo
+    revision_id = 1
+    file_name = "new_file.csv"
+    mock_revision_repo.get_by_id.return_value = None
+
+    update_dataset_revision(revision_id, file_name, mock_db)
+    mock_revision_repo.get_by_id.assert_called_once_with(revision_id)
+    mock_revision_repo.update.assert_not_called()
+    mock_log.info.assert_called_once_with(
+        "Dataset revision not found.", extra={"revision_id": revision_id}
+    )

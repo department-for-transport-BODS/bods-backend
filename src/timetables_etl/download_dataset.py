@@ -266,9 +266,12 @@ def update_dataset_revision(revision_id: int, file_name: str, db: SqlDB) -> None
     """
     dataset_revision = OrganisationDatasetRevisionRepo(db)
     revision = dataset_revision.get_by_id(revision_id)
-    revision.upload_file = file_name
-    dataset_revision.update(revision)
-    log.info("Dataset revision updated with new file.")
+    if revision:
+        revision.upload_file = file_name
+        dataset_revision.update(revision)
+        log.info("Dataset revision updated with new file.")
+    else:
+        log.info("Dataset revision not found.", extra={"revision_id": revision_id})
 
 
 @file_processing_result_to_db(step_name=StepName.DOWNLOAD_DATASET)
