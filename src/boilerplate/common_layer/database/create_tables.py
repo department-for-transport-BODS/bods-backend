@@ -228,9 +228,7 @@ def get_model_classes(model_module: ModuleType) -> list[Type[BaseSQLModel]]:
 def create_table_definition(model: Type[BaseSQLModel], metadata: MetaData) -> SQLTable:
     """
     Create SQLAlchemy Table definition from model.
-
-    Modifies column creation to handle enum types more carefully,
-    preventing duplicate enum type creation.
+    Prevents duplicate enum creation by modifying enum columns.
     """
     name = model.__tablename__
     columns = []
@@ -243,7 +241,6 @@ def create_table_definition(model: Type[BaseSQLModel], metadata: MetaData) -> SQ
     )
 
     for column in model.__table__.columns:
-        # Preliminary column logging
         column_log_data = {
             "column_name": column.key,
             "column_type": str(column.type),
@@ -253,36 +250,59 @@ def create_table_definition(model: Type[BaseSQLModel], metadata: MetaData) -> SQ
             "is_unique": column.unique,
         }
 
-        # Special handling for Enum types
-        if isinstance(column.type, SQLEnum):
-            log.info(
-                "Processing enum column",
-                **column_log_data,
-                enum_name=column.type.name,
-                enum_values=column.type.enums,
-            )
-
-            # Override the create method to prevent recreation
-            column.type.create = lambda *args, **kwargs: None
-
-            log.debug(
-                "Disabled enum type recreation (handled in the handle enum types)",
-                enum_name=column.type.name,
-            )
-
-        # Create the column with modified type
         try:
-            column_def = SQLColumn(
-                column.key,
-                column.type,
-                primary_key=column.primary_key,
-                nullable=column.nullable,
-                index=column.index,
-                unique=column.unique,
-            )
-            columns.append(column_def)
+            if isinstance(column.type, SQLEnum):
+                # For enum columns, create a new column with the existing enum type
+                enum_name = (
+                    column.type.name.lower()
+                    if column.type.name
+                    else f"{name}_{column.key}_enum"
+                )
 
+                log.info(
+                    "Processing enum column",
+                    **column_log_data,
+                    enum_name=enum_name,
+                    enum_values=column.type.enums,
+                )
+
+                # Create a new enum type that won't try to create the type in postgres
+                modified_enum = SQLEnum(
+                    *column.type.enums,
+                    name=enum_name,
+                    create_type=False,  # This prevents type creation
+                    native_enum=True,  # Use native postgres enum
+                    inherit_schema=True,
+                )
+
+                column_def = SQLColumn(
+                    column.key,
+                    modified_enum,
+                    primary_key=column.primary_key,
+                    nullable=column.nullable,
+                    index=column.index,
+                    unique=column.unique,
+                )
+
+                log.debug(
+                    "Disabled enum type recreation (handled in the handle enum types)",
+                    enum_name=enum_name,
+                )
+
+            else:
+                # For non-enum columns, create the column as is
+                column_def = SQLColumn(
+                    column.key,
+                    column.type,
+                    primary_key=column.primary_key,
+                    nullable=column.nullable,
+                    index=column.index,
+                    unique=column.unique,
+                )
+
+            columns.append(column_def)
             log.debug("Added column to table definition", **column_log_data)
+
         except Exception as e:
             log.error(
                 "Failed to create column definition",
