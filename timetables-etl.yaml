@@ -120,6 +120,7 @@ Resources:
       DefinitionSubstitutions:
         InitializePipelineLambdaArn: !GetAtt InitializePipelineLambda.Arn
         ClamAvScannerLambdaArn: !GetAtt ClamAvScannerLambda.Arn
+        DownloadDatasetLambdaArn: !GetAtt DownloadDatasetLambda.Arn
         FileValidationLambdaArn: !GetAtt FileValidationLambda.Arn
         SchemaCheckLambdaArn: !GetAtt SchemaCheckLambda.Arn
         PostSchemaCheckLambdaArn: !GetAtt PostSchemaCheckLambda.Arn
@@ -156,6 +157,7 @@ Resources:
                 Resource:
                   - !GetAtt InitializePipelineLambda.Arn
                   - !GetAtt ClamAvScannerLambda.Arn
+                  - !GetAtt DownloadDatasetLambda.Arn
                   - !GetAtt FileValidationLambda.Arn
                   - !GetAtt SchemaCheckLambda.Arn
                   - !GetAtt PostSchemaCheckLambda.Arn
@@ -343,6 +345,39 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-clamav-scanner-lambda'
+      KmsKeyId: !If
+        - IsUsingBodsInfra
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - !Ref AWS::NoValue
+      RetentionInDays: 30
+    
+  ################################
+  #### DOWNLOAD DATASET LAMBDA ####
+  ################################
+  DownloadDatasetLambda:
+    Type: AWS::Serverless::Function
+    ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-download-dataset-lambda'
+      Role: !GetAtt CommonLambdaExecutionRole.Arn
+      CodeUri: ./src/timetables_etl
+      Handler: download_dataset.lambda_handler
+      Layers:
+        - !Ref BoilerplateLambdaLayerArn
+      Environment:
+        Variables:
+          CLAMAV_HOST: !Sub 'clamav.bodds.${Environment}'
+          CLAMAV_PORT: 3310
+      LoggingConfig:
+        LogGroup: !Ref DownloadDatasetLambdaLogGroup
+
+  DownloadDatasetLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-download-dataset-lambda'
       KmsKeyId: !If
         - IsUsingBodsInfra
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
