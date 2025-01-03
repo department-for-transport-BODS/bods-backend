@@ -5,8 +5,11 @@ from common_layer.db.bods_db import BodsDB
 from sqlalchemy.orm import sessionmaker
 
 
-@pytest.fixture()
-def test_db():
+@pytest.fixture(scope="session")
+def setup_db():
+    """
+    Session-scoped fixture to set up the database schema
+    """
     postgres_settings = PostgresSettings(
         POSTGRES_HOST="localhost",
         POSTGRES_PORT=5432,
@@ -18,8 +21,18 @@ def test_db():
     db_settings = DatabaseSettings(postgres=postgres_settings)
     db = SqlDB(settings=db_settings)
 
-    # Create tables if they don't already exist
+    # Create tables once for the test session (existing tables will be skipped)
     create_db_tables(db)
+
+    yield db
+
+
+@pytest.fixture()
+def test_db(setup_db):
+    """
+    Function-scoped fixture for isolated db transactions in tests
+    """
+    db = setup_db
 
     # Start a new connection and transaction for the test
     connection = db.engine.connect()
@@ -33,4 +46,3 @@ def test_db():
     # Cleanup after the test
     transaction.rollback()
     connection.close()
-    db.engine.dispose()
