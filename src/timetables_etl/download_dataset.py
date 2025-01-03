@@ -27,6 +27,7 @@ from common_layer.exceptions.pipeline_exceptions import PipelineException
 from common_layer.json_logging import configure_logging
 from common_layer.s3 import S3
 from pydantic import BaseModel, Field
+from requests.exceptions import RequestException
 from structlog.stdlib import get_logger
 
 DT_FORMAT = "%Y-%m-%d_%H-%M-%S"
@@ -160,18 +161,44 @@ class DataDownloader:
         return DownloaderResponse(content=response.content, filetype=filetype)
 
 
-def write_temp_file(url: str) -> str:
+def write_temp_file(url: str) -> Path | None:
     """
-    Download a file from a given URL and write its content to a temporary file.
+    Download file from a URL to a temporary file.
     """
-    with tempfile.NamedTemporaryFile(delete=False, mode="wb") as temp_file:
-        response = requests.get(url, stream=True)
-        response.raise_for_status()
-        for chunk in response.iter_content(chunk_size=8192):
-            if chunk:
-                temp_file.write(chunk)
-        temp_filename = temp_file.name
-    return temp_filename
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, mode="wb") as temp_file:
+            log.info(
+                "Starting file download",
+                extra={"url": url, "temp_path": temp_file.name},
+            )
+            with requests.get(url, stream=True, timeout=60) as response:
+                log.debug(f"HTTP Response: {response.status_code}, URL: {url}")
+                response.raise_for_status()
+                log.info(
+                    "Response received",
+                    extra={"url": url, "status_code": response.status_code},
+                )
+                downloaded_size = 0
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        temp_file.write(chunk)
+                        downloaded_size += len(chunk)
+                temp_file.flush()
+                log.info(
+                    "Download completed successfully",
+                    extra={
+                        "url": url,
+                        "temp_path": temp_file.name,
+                        "size_bytes": downloaded_size,
+                    },
+                )
+                return Path(temp_file.name)
+    except RequestException as exc:
+        log.error(
+            "Download failed",
+            extra={"url": url, "error": str(exc), "error_type": type(exc).__name__},
+        )
+        raise PipelineException(f"Exception {exc}") from exc
 
 
 def upload_file_to_s3(temp_filename: str, filename: str, s3_handler: S3) -> None:
@@ -203,7 +230,7 @@ def get_remote_file_name(
     is_time_zone: bool,
 ) -> str:
     """
-    create the name for the remote file using the current date and timestamp
+    Create the name for the remote file using the current date and timestamp
     """
     now = datetime.now(tz=timezone.utc if is_time_zone else None).strftime(DT_FORMAT)
     url_path = Path(revision.url_link)

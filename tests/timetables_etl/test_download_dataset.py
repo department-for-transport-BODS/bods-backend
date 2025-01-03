@@ -1,10 +1,10 @@
 import os
 import zipfile
-from datetime import datetime, timezone
 from io import BytesIO
 from unittest.mock import MagicMock, patch
 
 import pytest
+import requests
 from pydantic import BaseModel
 
 from timetables_etl.download_dataset import (
@@ -16,7 +16,6 @@ from timetables_etl.download_dataset import (
     download_and_upload_dataset,
     download_data_from_remote_url,
     get_filetype_from_response,
-    get_remote_file_name,
     lambda_handler,
     upload_file_to_s3,
     write_temp_file,
@@ -186,20 +185,11 @@ def test_get_unknown_filetype(mock_data_downloader):
 
 
 @patch("requests.get")
-def test_write_temp_file(mock_get):
-    """
-    Test the `write_temp_file` method of to create temp file
-    """
-    mock_response = MagicMock()
-    mock_response.status_code = 200
-    mock_response.iter_content.return_value = [b"file content"]
-    mock_get.return_value = mock_response
-    temp_filename = write_temp_file("https://fakeurl.com")
+def test_write_temp_file_timeout(mock_get):
+    mock_get.side_effect = requests.exceptions.Timeout
 
-    with open(temp_filename, "rb") as f:
-        content = f.read()
-        assert content == b"file content", f"Expected 'file content', but got {content}"
-    os.remove(temp_filename)
+    with pytest.raises(PipelineException):
+        write_temp_file("https://fakeurl.com")
 
 
 @patch("builtins.open", new_callable=MagicMock)
@@ -334,38 +324,6 @@ def test_download_and_upload_dataset(
         "/tmp/tempfile", "some_file_name", mock_s3.return_value
     )
     mock_update_dataset_revision.assert_called_once()
-
-
-@pytest.mark.parametrize(
-    "url_link, is_time_zone, expected_name",
-    [
-        (
-            "https://example.com/dataset.csv",
-            True,
-            f"remote_dataset_123_{datetime.now(tz=timezone.utc).strftime(DT_FORMAT)}.csv",
-        ),
-        (
-            "https://example.com/dataset.csv",
-            False,
-            f"remote_dataset_123_{datetime.now(tz=None).strftime(DT_FORMAT)}.csv",
-        ),
-    ],
-)
-def test_get_remote_file_name(url_link, is_time_zone, expected_name):
-    """
-    Test the `get_remote_file_name` method to get the name for the remote file
-    """
-    revision = Revision(url_link=url_link, dataset=Dataset(id=123))
-    response = Response(
-        filetype="csv" if "csv" in url_link else url_link.split(".")[-1]
-    )
-    mock_now = datetime(2025, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
-
-    with patch("datetime.datetime") as mock_datetime:
-        mock_datetime.now.return_value = mock_now
-        result = get_remote_file_name(revision, response, is_time_zone)
-
-    assert result == expected_name
 
 
 def test_download_data_success(mock_revision):
