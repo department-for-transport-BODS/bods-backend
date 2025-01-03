@@ -8,6 +8,7 @@ Useful for setting up local testing
 from types import ModuleType
 from typing import Any, Type, cast
 
+import structlog
 from sqlalchemy import Column as SQLColumn
 from sqlalchemy import Engine, MetaData, inspect, text
 from sqlalchemy.dialects.postgresql import ENUM
@@ -19,6 +20,14 @@ from structlog.stdlib import get_logger
 from . import models
 from .client import SqlDB
 from .models.common import BaseSQLModel
+
+structlog.configure(
+    processors=[
+        structlog.processors.add_log_level,
+        structlog.processors.StackInfoRenderer(),
+        structlog.dev.ConsoleRenderer(),
+    ]
+)
 
 log = get_logger()
 
