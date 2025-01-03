@@ -87,7 +87,7 @@ def get_dataset_type(event: dict) -> Literal["TIMETABLES", "FARES"]:
     Get the type of dataset from the event
     """
     dataset_type = event.get("DatasetType", "TIMETABLES")
-    return "TIMETABLES" if dataset_type.startswith("timetable") else "FARES"
+    return "TIMETABLES" if "timetable" in dataset_type.lower() else "FARES"
 
 
 T = TypeVar("T")  # Return type of the wrapped function
