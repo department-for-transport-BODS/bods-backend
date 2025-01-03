@@ -9,12 +9,14 @@ from typing import Optional
 from urllib.parse import unquote
 
 import requests
+from common_layer.database import SqlDB
+from common_layer.database.repos.repo_organisation import (
+    OrganisationDatasetRevisionRepo,
+)
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
-from common_layer.db.manager import BodsDB, DbManager
 from common_layer.db.models import OrganisationDatasetrevision
 from common_layer.db.repositories.dataset_revision import (
-    DatasetRevisionRepository,
     get_revision,
 )
 from common_layer.exceptions.file_exceptions import (
@@ -26,7 +28,7 @@ from common_layer.exceptions.file_exceptions import (
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 from common_layer.json_logging import configure_logging
 from common_layer.s3 import S3
-from pydantic import BaseModel, Field
+from pydantic import AnyUrl, BaseModel, Field
 from requests.exceptions import RequestException
 from structlog.stdlib import get_logger
 
@@ -49,7 +51,7 @@ class DownloadDatasetInputData(BaseModel):
     task_id: int = Field(alias="DatasetEtlTaskResultId")
     s3_bucket_name: str = Field(alias="Bucket")
     s3_file_key: str = Field(alias="ObjectKey")
-    remote_dataset_url_link: str = Field(alias="URLLink", default=None)
+    remote_dataset_url_link: AnyUrl = Field(alias="URLLink", default=None)
     revision_id: int = Field(alias="DatasetRevisionId")
 
 
@@ -247,7 +249,7 @@ def download_and_upload_dataset(
     """
     Template function to download the dataset, upload to S3 and update database
     """
-    db = DbManager.get_db()
+    db = SqlDB()
     revision = get_revision(db, input_data.revision_id)
     s3_handler = S3(bucket_name=input_data.s3_bucket_name)
     response = download_data_from_remote_url(revision)
@@ -258,11 +260,11 @@ def download_and_upload_dataset(
     return {"statusCode": 200, "body": "file downloaded successfully"}
 
 
-def update_dataset_revision(revision_id: int, file_name: str, db: BodsDB) -> None:
+def update_dataset_revision(revision_id: int, file_name: str, db: SqlDB) -> None:
     """
     Update the dataset revision in the database with the new file name.
     """
-    dataset_revision = DatasetRevisionRepository(db)
+    dataset_revision = OrganisationDatasetRevisionRepo(db)
     revision = dataset_revision.get_by_id(revision_id)
     revision.upload_file = file_name
     dataset_revision.update(revision)

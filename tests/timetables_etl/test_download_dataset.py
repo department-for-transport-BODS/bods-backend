@@ -1,4 +1,3 @@
-import os
 import zipfile
 from io import BytesIO
 from unittest.mock import MagicMock, patch
@@ -282,8 +281,8 @@ def test_lambda_handler(mock_DbManager, mock_download_upload_dataset):
 
 
 @patch("timetables_etl.download_dataset.S3")
-@patch("common_layer.db.file_processing_result.DbManager.get_db")
-@patch("timetables_etl.download_dataset.DatasetRevisionRepository")
+@patch("common_layer.database.client.SqlDB")
+@patch("timetables_etl.download_dataset.get_revision")
 @patch("timetables_etl.download_dataset.download_data_from_remote_url")
 @patch("timetables_etl.download_dataset.get_remote_file_name")
 @patch("timetables_etl.download_dataset.write_temp_file")
@@ -295,17 +294,17 @@ def test_download_and_upload_dataset(
     mock_write_temp_file,
     mock_get_remote_file_name,
     mock_download_data_from_remote_url,
-    mock_dataset_revision_repo,
-    mock_get_db,
+    mock_get_revision,
+    mock_sqldb,
     mock_s3,
 ):
     """
     Test the `download_and_upload_dataset` method to download the file from url and update the db object
     """
     EXPECTED_RESPONSE = {"body": "file downloaded successfully", "statusCode": 200}
-    mock_get_db.return_value = MagicMock()
+    mock_sqldb.return_value = MagicMock()
     mock_s3.return_value = MagicMock()
-    mock_dataset_revision_repo.return_value = MagicMock()
+    mock_get_revision.return_value = MagicMock()
     input_data = MagicMock()
     input_data.revision_id = 123
     input_data.remote_dataset_url_link = "https://example.com/dataset.csv"
