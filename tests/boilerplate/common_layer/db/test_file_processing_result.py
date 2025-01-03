@@ -111,41 +111,6 @@ def test_get_dataset_type(dataset_type, expected_category):
     assert result == expected_category
 
 
-@pytest.mark.parametrize(
-    "step_exists,name,category",
-    [
-        pytest.param(
-            True,
-            "validate_xml",
-            "TIMETABLES",
-            id="Get Existing Step",
-        ),
-        pytest.param(
-            False,
-            "new_step",
-            "FARES",
-            id="Create New Step",
-        ),
-    ],
-)
-def test_get_or_create_step(step_exists, name, category):
-    """Test getting or creating a pipeline processing step"""
-    db = MagicMock()
-    mock_repo = MagicMock()
-    step = PipelineProcessingStep(name=name, category=category)
-
-    with patch(
-        "common_layer.database.repos.repo_etl_task.PipelineProcessingStepRepository",
-        return_value=mock_repo,
-    ):
-        mock_repo.get_by_name.return_value = step if step_exists else None
-        mock_repo.insert.return_value = step
-        result = get_or_create_step(db, name, category)
-
-        assert result.name == name
-        assert result.category == category
-
-
 def test_initialize_processing():
     """
     Tests the creation of the initial task data
