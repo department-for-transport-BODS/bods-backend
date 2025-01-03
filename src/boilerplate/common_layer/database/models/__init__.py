@@ -16,6 +16,11 @@ from .model_organisation import (
     OrganisationOrganisation,
     OrganisationTXCFileAttributes,
 )
+from .model_otc import (
+    OtcLocalAuthority,
+    OtcLocalAuthorityRegistrationNumbers,
+    OtcService,
+)
 from .model_pipelines import (
     DatasetETLTaskResult,
     ETLErrorCode,
@@ -47,6 +52,7 @@ from .model_transmodel_vehicle_journey import (
     TransmodelOperatingProfile,
     TransmodelVehicleJourney,
 )
+from .model_ui import UiLta
 from .model_users import UsersUser
 
 __all__ = [
@@ -71,19 +77,25 @@ __all__ = [
     "TransmodelOperatingDatesExceptions",
     "TransmodelOperatingProfile",
     "TransmodelService",
-    "TransmodelServicePattern",
-    "TransmodelServicePatternStop",
-    "TransmodelServiceServicePattern",
-    "TransmodelServicePatternAdminAreas",
-    "TransmodelServicePatternLocality",
     "TransmodelServicedOrganisations",
     "TransmodelServicedOrganisationVehicleJourney",
     "TransmodelServicedOrganisationWorkingDays",
+    "TransmodelServicePattern",
+    "TransmodelServicePatternAdminAreas",
+    "TransmodelServicePatternLocality",
+    "TransmodelServicePatternStop",
+    "TransmodelServiceServicePattern",
     "TransmodelStopActivity",
     "TransmodelTracks",
     "TransmodelTracksVehicleJourney",
     "TransmodelVehicleJourney",
     "UsersUser",
+    # OTC Models
+    "OtcLocalAuthority",
+    "OtcLocalAuthorityRegistrationNumbers",
+    "OtcService",
+    # Ui Models
+    "UiLta",
     # Pipelines
     "FileProcessingResult",
     "DatasetETLTaskResult",

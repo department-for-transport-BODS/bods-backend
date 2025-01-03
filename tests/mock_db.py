@@ -1,6 +1,17 @@
-from sqlalchemy import Column, Integer, String, Boolean, JSON, TIMESTAMP, Text, create_engine, event
-from sqlalchemy.orm import sessionmaker, declarative_base
 from types import SimpleNamespace
+
+from sqlalchemy import (
+    JSON,
+    TIMESTAMP,
+    Boolean,
+    Column,
+    Integer,
+    String,
+    Text,
+    create_engine,
+    event,
+)
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 Base = declarative_base()
 
@@ -95,14 +106,6 @@ class naptan_stoppoint(Base):
     stop_areas = Column(JSON)
 
 
-class otc_service(Base):
-    __tablename__ = "otc_service"
-    id = Column(Integer, primary_key=True)
-    registration_number = Column(String(25))
-    api_type = Column(String(10))
-    atco_code = Column(String(255))
-
-
 class naptan_adminarea(Base):
     __tablename__ = "naptan_adminarea"
     id = Column(Integer, primary_key=True)
@@ -143,31 +146,9 @@ class data_quality_ptiobservation(Base):
     reference = Column(String(64))
 
 
-class StringAgg:
-    """
-    Temporary patch to support string_agg function
-    TODO: Remove this once we're running tests in postgres
-    """
-
-    def __init__(self):
-        self.values = set()
-
-    def step(self, value, delimiter):
-        if value is not None:
-            self.values.add(value)
-
-    def finalize(self):
-        return "|".join(self.values)
-
-
 class MockedDB:
     def __init__(self):
         self.engine = create_engine("sqlite:///:memory:")
-
-        # Register the custom string_agg aggregate function
-        @event.listens_for(self.engine, "connect")
-        def register_custom_functions(dbapi_connection, connection_record):
-            dbapi_connection.create_aggregate("string_agg", 2, StringAgg)
 
         SessionLocal = sessionmaker(bind=self.engine)
         self.session = SessionLocal()
@@ -183,7 +164,6 @@ class MockedDB:
             data_quality_ptiobservation=data_quality_ptiobservation,
             organisation_dataset=organisation_dataset,
             naptan_stoppoint=naptan_stoppoint,
-            otc_service=otc_service,
             naptan_adminarea=naptan_adminarea,
             ui_lta=ui_lta,
             otc_localauthority=otc_localauthority,

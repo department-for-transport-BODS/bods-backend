@@ -20,6 +20,7 @@ from .repo_organisation import (
     OrganisationOrganisationRepo,
     OrganisationTXCFileAttributesRepo,
 )
+from .repo_otc import OtcServiceRepo
 from .repo_transmodel import (
     TransmodelBankHolidaysRepo,
     TransmodelServicePatternRepo,
@@ -49,6 +50,7 @@ __all__ = [
     "OrganisationDatasetRevisionRepo",
     "OrganisationOrganisationRepo",
     "OrganisationTXCFileAttributesRepo",
+    "OtcServiceRepo",
     "TransmodelServicedOrganisationsRepo",
     "TransmodelVehicleJourneyRepo",
     "TransmodelFlexibleServiceOperationPeriodRepo",
