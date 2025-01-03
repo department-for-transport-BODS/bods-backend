@@ -74,7 +74,8 @@
             "Resource": "${FileValidationLambdaArn}",
             "Parameters": {
               "Bucket.$": "$.Bucket",
-              "ObjectKey.$": "$.Key"
+              "ObjectKey.$": "$.Key",
+              "DatasetRevisionId.$": "$.DatasetRevisionId"
             },
             "Next": "SchemaCheck",
             "Catch": [
@@ -89,7 +90,8 @@
             "Resource": "${SchemaCheckLambdaArn}",
             "Parameters": {
               "Bucket.$": "$.Bucket",
-              "ObjectKey.$": "$.Key"
+              "ObjectKey.$": "$.Key",
+              "DatasetRevisionId.$": "$.DatasetRevisionId"
             },
             "Next": "PostSchemaCheck",
             "Catch": [
@@ -104,7 +106,8 @@
             "Resource": "${PostSchemaCheckLambdaArn}",
             "Parameters": {
               "Bucket.$": "$.Bucket",
-              "ObjectKey.$": "$.Key"
+              "ObjectKey.$": "$.Key",
+              "DatasetRevisionId.$": "$.DatasetRevisionId"
             },
             "Next": "FileAttributesEtl",
             "Catch": [
@@ -119,7 +122,8 @@
             "Resource": "${FileAttributesEtlLambdaArn}",
             "Parameters": {
               "Bucket.$": "$.Bucket",
-              "ObjectKey.$": "$.Key"
+              "ObjectKey.$": "$.Key",
+              "DatasetRevisionId.$": "$.DatasetRevisionId"
             },
             "Next": "PtiValidation",
             "Catch": [
