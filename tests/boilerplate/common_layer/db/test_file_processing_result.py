@@ -1,342 +1,253 @@
-import unittest
-import uuid
-from datetime import datetime
-from unittest.mock import MagicMock, patch
+"""
+Tests for the file_processing_result_to_db decorator
+Used to update task status in the lambdas
+"""
 
+from unittest.mock import MagicMock, patch
+from uuid import UUID
+
+import pytest
+from common_layer.database.models.model_pipelines import (
+    ETLErrorCode,
+    PipelineErrorCode,
+    PipelineProcessingStep,
+    TaskState,
+)
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import (
-    PipelineFileProcessingResult,
     file_processing_result_to_db,
+    get_dataset_type,
     get_file_processing_error_code,
-    txc_file_attributes_to_db,
+    get_or_create_step,
+    handle_lambda_error,
+    handle_lambda_success,
+    initialize_processing,
+    map_exception_to_error_code,
+    write_error_to_db,
 )
-from sqlalchemy.exc import NoResultFound, SQLAlchemyError
 
-from tests.mock_db import MockedDB
-
-
-class TestFileProcessingResult(unittest.TestCase):
-    def test_create_result(self):
-        mock_db = MockedDB()
-        result_data = {
-            "status": "STARTED",
-            "filename": "sample.txt",
-            "pipeline_processing_step_id": 1,
-            "revision_id": 1,
-            "created": datetime.now(),
-            "modified": datetime.now(),
-        }
-        result = PipelineFileProcessingResult(mock_db).create(result_data)
-        self.assertTrue(result,
-                        "File processing entity created successfully!")
-
-    def test_read_result(self):
-        mock_db = MockedDB()
-        params = dict(
-            status="READY",
-            pipeline_processing_step_id=1,
-            revision_id=3467,
-        )
-        result = PipelineFileProcessingResult(mock_db).create(params)
-        self.assertTrue(result, "File processing entity created successfully!")
-        ret_obj = PipelineFileProcessingResult(mock_db).read(revision_id=3467)
-        self.assertTrue(
-            params,
-            dict(
-                task_id=ret_obj.task_id,
-                status=ret_obj.status,
-                pipeline_processing_ste_id=ret_obj.pipeline_processing_step_id,
-                revision_id=ret_obj.revision_id,
-            ),
-        )
-
-    def test_update_result(self):
-        mock_db = MockedDB()
-        task_id = str(uuid.uuid4())
-        params = dict(
-            task_id=task_id,
-            status="READY",
-            pipeline_processing_step_id=1,
-            revision_id=3467,
-        )
-        result = PipelineFileProcessingResult(mock_db).create(params)
-        self.assertTrue(result, "File processing entity created successfully!")
-        update_params = dict(
-            status="UPDATED",
-            completed=datetime.now(),
-            error_message="DATASET_EXPIRED",
-        )
-        result = PipelineFileProcessingResult(mock_db).update(
-            task_id, **update_params)
-        self.assertTrue(result, "File processing result updated successfully!")
-
-        ret_obj = PipelineFileProcessingResult(mock_db).read(revision_id=3467)
-        self.assertTrue(task_id, ret_obj.task_id)
-
-    def test_create_raises_exception(self):
-        mock_db = MockedDB()
-        mock_db.session = MagicMock()
-        mock_db.session.__enter__.return_value.add.side_effect = SQLAlchemyError(
-            "Add failed"
-        )
-        params = dict(
-            task_id=str(uuid.uuid4()),
-            status="READY",
-            pipeline_processing_step_id=1,
-            revision_id=3467,
-        )
-        with self.assertRaises(SQLAlchemyError) as _context:
-            PipelineFileProcessingResult(mock_db).create(params)
-
-        self.assertEqual(str(_context.exception), "Add failed")
-
-        mock_db.session.__enter__.return_value.rollback.assert_called_once()
-
-    def test_read_raises_exception(self):
-        mock_db = MockedDB()
-        mock_db.session = MagicMock()
-        mock_db.session.__enter__.return_value.query.side_effect = NoResultFound(
-            "No record found"
-        )
-        with self.assertRaises(NoResultFound) as _context:
-            PipelineFileProcessingResult(mock_db).read(1234)
-
-        self.assertEqual(str(_context.exception), "No record found")
-        mock_db.session.__enter__.return_value.query.assert_called_once()
-
-    def test_update_raises_exception(self):
-        mock_db = MockedDB()
-        mock_db.session = MagicMock()
-        mock_db.session.__enter__.return_value.add.side_effect = Exception(
-            "Update failed"
-        )
-        test_obj = PipelineFileProcessingResult(mock_db)
-        data = {"a": "Test"}
-        with self.assertRaises(Exception) as _context:
-            test_obj.update(3467, **data)
-
-        self.assertEqual(str(_context.exception), "Update failed")
-
-        mock_db.session.__enter__.return_value.rollback.assert_called_once()
-
-    def test_get_file_processing_error_code(self):
-        error_status = "NO_DATA_FOUND"
-        mock_db = MockedDB()
-        result_data = mock_db.classes.pipelines_pipelineerrorcode(
-            error=error_status)
-        mock_db.session.add(result_data)
-        mock_db.session.commit()
-
-        buf_ = get_file_processing_error_code(mock_db, error_status)
-        self.assertTrue(buf_.id, 1)
-
-    def test_get_file_processing_error_code_exception(self):
-        error_status = "NO_DATA_FOUND"
-        mock_db = MockedDB()
-        mock_db.session = MagicMock()
-        mock_db.session.__enter__.return_value.query.side_effect = (
-            NoResultFound("No record found"))
-        test_obj = PipelineFileProcessingResult(mock_db)
-        with self.assertRaises(NoResultFound) as _context:
-            get_file_processing_error_code(mock_db, error_status)
-
-        self.assertEqual(str(_context.exception), "No record found")
-        mock_db.session.__enter__.return_value.query.assert_called_once()
-
-    @patch("common_layer.db.file_processing_result.DbManager")
-    @patch("common_layer.db.file_processing_result.PipelineFileProcessingResult")
-    @patch("common_layer.db.file_processing_result.write_error_to_db")
-    def test_file_processing_result_to_db_success(
-        self,
-        mock_write_error_to_db,
-        mock_file_proc_result,
-        mock_db_manager,
-    ):
-        # Configure mocks
-        mock_result_obj = MagicMock()
-        mock_pipeline_result_instance = mock_file_proc_result.return_value
-
-        # Create a sample event and context
-        event = {
-            "Bucket": "test-bucket",
-            "ObjectKey": "test-key",
-            "DatasetRevisionId": 123,
-            "DatasetType": "timetables",
-        }
-
-        context = {}
-
-        # Define a simple lambda handler to use with the decorator
-        @file_processing_result_to_db(step_name=StepName.CLAM_AV_SCANNER)
-        def lambda_handler(event, context):
-            return "Handler executed successfully"
-
-        # Execute the lambda handler with the decorator
-        result = lambda_handler(event, context)
-
-        # Assert expected result
-        self.assertEqual(result, "Handler executed successfully")
-
-        # Assert create and update methods were called on
-        mock_pipeline_result_instance.update.assert_called_once()
-
-        # Assert write_error_to_db was not called
-        mock_write_error_to_db.assert_not_called()
-
-    @patch("common_layer.db.file_processing_result.DbManager")
-    @patch("common_layer.db.file_processing_result.PipelineFileProcessingResult")
-    @patch("common_layer.db.file_processing_result.write_error_to_db")
-    def test_file_processing_result_to_db_failure(
-        self,
-        mock_write_error_to_db,
-        mock_file_proc_result,
-        mock_db_manager,
-    ):
-        # Configure mocks
-        mock_db_instance = mock_db_manager.get_db.return_value
-        mock_result_obj = MagicMock()
-        mock_pipeline_result_instance = mock_file_proc_result.return_value
-
-        # Create a sample event and context
-        event = {
-            "Bucket": "test-bucket",
-            "ObjectKey": "test-key",
-            "DatasetRevisionId": 123,
-            "DatasetType": "timetables",
-        }
-        context = {}
-
-        # Define a lambda handler that raises an exception to trigger the error
-        # path
-        @file_processing_result_to_db(step_name=StepName.TIMETABLE_SCHEMA_CHECK)
-        def lambda_handler(event, context):
-            raise ValueError("An error occurred")
-
-        # Run the lambda handler and assert it raises an exception
-        with self.assertRaises(ValueError):
-            lambda_handler(event, context)
-
-        # Assert write_error_to_db was called with the correct arguments
-        mock_write_error_to_db.assert_called_once()
-
-        # Assert create was called, but update was not (due to the exception)
-        mock_pipeline_result_instance.update.assert_not_called()
-
-    @patch("common_layer.db.file_processing_result.DbManager")
-    def test_txc_file_attributes_to_db(self, mock_db_manager):
-        mock_db_instance = mock_db_manager.get_db.return_value
-
-        # Mock the session context manager
-        mock_session = MagicMock()
-        mock_db_instance.session.__enter__.return_value = mock_session
-        mock_db_instance.session.__exit__.return_value = (
-            None  # Ensure context manager exits cleanly
-        )
-
-        # Mock the organisation_txcfileattributes class
-        mock_class = MagicMock()
-        mock_db_instance.classes.organisation_txcfileattributes = mock_class
-
-        # Create a mock TXCFile attribute
-        date_time_ = datetime.now()
-        mock_attribute = MagicMock()
-        mock_attribute.header.schema_version = "1.0"
-        mock_attribute.header.modification = "new"
-        mock_attribute.header.revision_number = "2"
-        mock_attribute.header.creation_datetime = date_time_
-        mock_attribute.header.modification_datetime = date_time_
-        mock_attribute.header.filename = "file.xml"
-        mock_attribute.operator.national_operator_code = "ABC123"
-        mock_attribute.operator.licence_number = "LIC123"
-        mock_attribute.service.service_code = "SERV123"
-        mock_attribute.service.origin = "Origin"
-        mock_attribute.service.destination = "Destination"
-        mock_attribute.service.operating_period_start_date = date_time_.date()
-        mock_attribute.service.operating_period_end_date = date_time_.date()
-        mock_attribute.service.public_use = True
-        mock_attribute.service.lines = [
-            MagicMock(line_name="Line1"),
-            MagicMock(line_name="Line2"),
-        ]
-        mock_attribute.hash = "hash123"
-
-        # Call the function with mock data
-        txc_file_attributes_to_db(revision_id=1, attributes=[mock_attribute])
-
-        # Check that the db class constructor was called correctly
-        mock_class.assert_called_with(
-            revision_id=1,
-            schema_version="1.0",
-            modification="new",
-            revision_number="2",
-            creation_datetime=date_time_,
-            modification_datetime=date_time_,
-            filename="file.xml",
-            national_operator_code="ABC123",
-            licence_number="LIC123",
-            service_code="SERV123",
-            origin="Origin",
-            destination="Destination",
-            operating_period_start_date=date_time_.date(),
-            operating_period_end_date=date_time_.date(),
-            public_use=True,
-            line_names=["Line1", "Line2"],
-            hash="hash123",
-        )
-
-        # Check that bulk_save_objects and commit were called
-        mock_session.bulk_save_objects.assert_called_once()
-        mock_session.commit.assert_called_once()
-
-    @patch("common_layer.db.file_processing_result.DbManager")
-    def test_txc_file_attributes_to_db_exception(self, mock_db_manager):
-        mock_db_instance = mock_db_manager.get_db.return_value
-
-        # Mock the session context manager
-        mock_session = MagicMock()
-        mock_db_instance.session.__enter__.return_value.bulk_save_objects.side_effect = Exception(
-            "An error occurred"
-        )
-
-        # Mock the organisation_txcfileattributes class
-        mock_class = MagicMock()
-        mock_db_instance.classes.organisation_txcfileattributes = mock_class
-
-        # Create a mock TXCFile attribute
-        date_time_ = datetime.now()
-        mock_attribute = MagicMock()
-        mock_attribute.header.schema_version = "1.0"
-        mock_attribute.header.modification = "new"
-        mock_attribute.header.revision_number = "2"
-        mock_attribute.header.creation_datetime = date_time_
-        mock_attribute.header.modification_datetime = date_time_
-        mock_attribute.header.filename = "file.xml"
-        mock_attribute.operator.national_operator_code = "ABC123"
-        mock_attribute.operator.licence_number = "LIC123"
-        mock_attribute.service.service_code = "SERV123"
-        mock_attribute.service.origin = "Origin"
-        mock_attribute.service.destination = "Destination"
-        mock_attribute.service.operating_period_start_date = date_time_.date()
-        mock_attribute.service.operating_period_end_date = date_time_.date()
-        mock_attribute.service.public_use = True
-        mock_attribute.service.lines = [
-            MagicMock(line_name="Line1"),
-            MagicMock(line_name="Line2"),
-        ]
-        mock_attribute.hash = "hash123"
-
-        # Call the function with mock data
-        # txc_file_attributes_to_db(revision_id=1, attributes=[mock_attribute])
-
-        # Check that bulk_save_objects and commit were called
-        # mock_session.bulk_save_objects.assert_called_once()
-        # mock_session.commit.assert_called_once()
-        with self.assertRaises(Exception) as _context:
-            txc_file_attributes_to_db(revision_id=1, attributes=[mock_attribute])
-
-        self.assertEqual(str(_context.exception), "An error occurred")
-        mock_db_instance.session.__enter__.return_value.bulk_save_objects.assert_called_once()
+from tests.factories.database.pipelines import (
+    FileProcessingResultFactory,
+    PipelineErrorCodeFactory,
+)
 
 
-if __name__ == "__main__":
-    unittest.main()
+@pytest.mark.parametrize(
+    "exception_class,expected_code",
+    [
+        pytest.param(
+            "ClamConnectionError",
+            ETLErrorCode.AV_CONNECTION_ERROR,
+            id="Map Antivirus Connection Error",
+        ),
+        pytest.param(
+            "SuspiciousFile",
+            ETLErrorCode.SUSPICIOUS_FILE,
+            id="Map Suspicious File Error",
+        ),
+        pytest.param(
+            "AntiVirusError",
+            ETLErrorCode.ANTIVIRUS_FAILURE,
+            id="Map Antivirus Failure",
+        ),
+        pytest.param(
+            "NestedZipForbidden",
+            ETLErrorCode.NESTED_ZIP_FORBIDDEN,
+            id="Map Nested Zip Error",
+        ),
+        pytest.param(
+            "UnknownError",
+            ETLErrorCode.SUSPICIOUS_FILE,
+            id="Map Unknown Error To Default",
+        ),
+    ],
+)
+def test_map_exception_to_error_code(exception_class, expected_code):
+    """
+    Map the Python exceptions to the DB Statuses
+    """
+    exception = type(exception_class, (Exception,), {})()
+
+    result = map_exception_to_error_code(exception)
+
+    assert result == expected_code
+
+
+@pytest.mark.parametrize(
+    "dataset_type,expected_category",
+    [
+        pytest.param(
+            "timetables",
+            "TIMETABLES",
+            id="Timetables Dataset Type",
+        ),
+        pytest.param(
+            "timetables_v1",
+            "TIMETABLES",
+            id="Timetables With Version",
+        ),
+        pytest.param(
+            "fares",
+            "FARES",
+            id="Fares Dataset Type",
+        ),
+        pytest.param(
+            None,
+            "TIMETABLES",
+            id="Default Dataset Type",
+        ),
+    ],
+)
+def test_get_dataset_type(dataset_type, expected_category):
+    """
+    Get the correct dataset type
+    """
+    event = {}
+    if dataset_type:
+        event["DatasetType"] = dataset_type
+
+    result = get_dataset_type(event)
+
+    assert result == expected_category
+
+
+def test_initialize_processing():
+    """
+    Tests the creation of the initial task data
+    """
+    event = {
+        "ObjectKey": "test/file.xml",
+        "datasetRevisionId": 123,
+        "DatasetType": "timetables",
+    }
+
+    with patch("common_layer.database.client.SqlDB") as mock_db:
+        context = initialize_processing(event, StepName.CLAM_AV_SCANNER)
+
+    assert context is not None
+    assert isinstance(context.task_id, str)
+    assert UUID(context.task_id)
+    assert context.step_name == StepName.CLAM_AV_SCANNER
+
+
+def test_initialize_processing_db_failure():
+    """
+    Test when the DB could not be created
+    """
+    event = {
+        "ObjectKey": "test/file.xml",
+        "datasetRevisionId": 123,
+        "DatasetType": "timetables",
+    }
+
+    with patch("common_layer.database.client.SqlDB", side_effect=Exception("DB Error")):
+        context = initialize_processing(event, StepName.CLAM_AV_SCANNER)
+
+    assert context is not None
+    assert context.db is None
+    assert context.processing_result is None
+
+
+@pytest.mark.parametrize(
+    "has_db_connection",
+    [
+        pytest.param(True, id="With Database Connection"),
+        pytest.param(False, id="Without Database Connection"),
+    ],
+)
+def test_handle_lambda_success(has_db_connection):
+    """
+    Test for sucessfully creating a lambda
+    """
+    db = MagicMock() if has_db_connection else None
+    processing_result = FileProcessingResultFactory() if has_db_connection else None
+    context = MagicMock(
+        db=db,
+        processing_result=processing_result,
+        step_name=StepName.CLAM_AV_SCANNER,
+        task_id=str(UUID(bytes=b"1" * 16)),
+    )
+
+    handle_lambda_success(context)
+
+    if has_db_connection:
+        assert context.processing_result.status == TaskState.SUCCESS
+        assert context.processing_result.completed is not None
+
+
+@pytest.mark.parametrize(
+    "exception_type,has_db_connection",
+    [
+        pytest.param(
+            "XMLSyntaxError",
+            True,
+            id="XML Error With DB",
+        ),
+        pytest.param(
+            "FileTooLarge",
+            True,
+            id="File Size Error With DB",
+        ),
+        pytest.param(
+            "XMLSyntaxError",
+            False,
+            id="XML Error Without DB",
+        ),
+    ],
+)
+def test_handle_lambda_error(exception_type, has_db_connection):
+    db = MagicMock() if has_db_connection else None
+    processing_result = FileProcessingResultFactory() if has_db_connection else None
+    context = MagicMock(
+        db=db,
+        processing_result=processing_result,
+        step_name=StepName.CLAM_AV_SCANNER,
+        task_id=str(UUID(bytes=b"1" * 16)),
+    )
+    error = type(exception_type, (Exception,), {})()
+
+    handle_lambda_error(context, error)
+
+    if has_db_connection:
+        assert context.processing_result.status == TaskState.FAILURE
+        assert context.processing_result.completed is not None
+
+
+@pytest.mark.parametrize(
+    "success,db_available",
+    [
+        pytest.param(True, True, id="Success With DB"),
+        pytest.param(True, False, id="Success Without DB"),
+        pytest.param(False, True, id="Failure With DB"),
+        pytest.param(False, False, id="Failure Without DB"),
+    ],
+)
+def test_file_processing_result_to_db_decorator(success, db_available):
+    """
+    Test the decorator
+    """
+    event = {
+        "ObjectKey": "test/file.xml",
+        "datasetRevisionId": 123,
+        "DatasetType": "timetables",
+    }
+    context = MagicMock()
+
+    @file_processing_result_to_db(step_name=StepName.CLAM_AV_SCANNER)
+    def test_lambda(event, context):
+        if not success:
+            raise ValueError("Test error")
+        return "success"
+
+    # Mock DB connection based on db_available
+    db_patch = patch("common_layer.database.client.SqlDB")
+    if not db_available:
+        db_patch.side_effect = Exception("DB connection failed")  # type: ignore
+
+    with db_patch:
+        if success:
+            result = test_lambda(event, context)
+            assert result == "success"
+        else:
+            with pytest.raises(ValueError):
+                test_lambda(event, context)

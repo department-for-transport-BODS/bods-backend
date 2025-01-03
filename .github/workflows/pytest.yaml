@@ -59,7 +59,7 @@ jobs:
         run: poetry run create-tables-dev
 
       - name: Run Pytest
-        run: poetry run pytest --junitxml=junit/test-results.xml --cov-report term
+        run: poetry run pytest --junitxml=junit/test-results.xml --cov-report term --color=yes
 
       - name: Generate Test Summary
         id: test-summary

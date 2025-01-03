@@ -74,8 +74,10 @@
             "Resource": "${FileValidationLambdaArn}",
             "Parameters": {
               "Bucket.$": "$.Bucket",
-              "ObjectKey.$": "$.Key"
+              "ObjectKey.$": "$.Key",
+              "DatasetRevisionId.$": "$.DatasetRevisionId"
             },
+            "ResultPath": "$.fileValidation",
             "Next": "SchemaCheck",
             "Catch": [
               {
@@ -89,8 +91,11 @@
             "Resource": "${SchemaCheckLambdaArn}",
             "Parameters": {
               "Bucket.$": "$.Bucket",
-              "ObjectKey.$": "$.Key"
+              "ObjectKey.$": "$.Key",
+              "DatasetRevisionId.$": "$.DatasetRevisionId",
+              "ValidationResult.$": "$.fileValidation"
             },
+            "ResultPath": "$.schemaCheck",
             "Next": "PostSchemaCheck",
             "Catch": [
               {
@@ -104,8 +109,11 @@
             "Resource": "${PostSchemaCheckLambdaArn}",
             "Parameters": {
               "Bucket.$": "$.Bucket",
-              "ObjectKey.$": "$.Key"
+              "ObjectKey.$": "$.Key",
+              "DatasetRevisionId.$": "$.DatasetRevisionId",
+              "SchemaCheckResult.$": "$.schemaCheck"
             },
+            "ResultPath": "$.postSchemaCheck",
             "Next": "FileAttributesEtl",
             "Catch": [
               {
@@ -119,8 +127,11 @@
             "Resource": "${FileAttributesEtlLambdaArn}",
             "Parameters": {
               "Bucket.$": "$.Bucket",
-              "ObjectKey.$": "$.Key"
+              "ObjectKey.$": "$.Key",
+              "DatasetRevisionId.$": "$.DatasetRevisionId",
+              "PostSchemaCheckResult.$": "$.postSchemaCheck"
             },
+            "ResultPath": "$.fileAttributesEtl",
             "Next": "PtiValidation",
             "Catch": [
               {
@@ -135,8 +146,10 @@
             "Parameters": {
               "Bucket.$": "$.Bucket",
               "ObjectKey.$": "$.Key",
-              "DatasetRevisionId.$": "$.DatasetRevisionId"
+              "DatasetRevisionId.$": "$.DatasetRevisionId",
+              "FileAttributesResult.$": "$.fileAttributesEtl"
             },
+            "ResultPath": "$.ptiValidation",
             "Next": "ETLProcess",
             "Catch": [
               {
@@ -153,8 +166,10 @@
               "ObjectKey.$": "$.Key",
               "DatasetRevisionId.$": "$.DatasetRevisionId",
               "fileAttributesId.$": "$.fileAttributesEtl.id",
-              "DatasetEtlTaskResultId.$": "$.detail.datasetEtlTaskResultId"
+              "DatasetEtlTaskResultId.$": "$.DatasetEtlTaskResultId",
+              "ValidationResult.$": "$.ptiValidation"
             },
+            "ResultPath": "$.etlProcess",
             "Next": "Success",
             "Catch": [
               {
@@ -171,7 +186,8 @@
             "Resource": "${ExceptionHandlerLambdaArn}",
             "Parameters": {
               "Bucket.$": "$.Bucket",
-              "ObjectKey.$": "$.Key"
+              "ObjectKey.$": "$.Key",
+              "ErrorInfo.$": "$"
             },
             "Next": "Fail"
           },

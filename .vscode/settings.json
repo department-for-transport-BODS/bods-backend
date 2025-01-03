@@ -2,7 +2,8 @@
     "python.testing.pytestEnabled": true,
     "python.testing.pytestArgs": [
         "-vv",
-        "--capture=tee-sys"
+        "--capture=tee-sys",
+        "--no-cov"
     ],
     "python.analysis.typeCheckingMode": "standard",
     "editor.formatOnSave": true,
@@ -49,5 +50,20 @@
         "!Split sequence"
     ],
     "cfnLint.format.singleQuote": true,
-    "yaml.format.singleQuote": true
+    "yaml.format.singleQuote": true,
+    "[github-actions-workflow]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "prettier.singleQuote": true
+    },
+    "[json]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true
+    },
+    "[asl]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true
+    },
+    "files.associations": {
+        "*.statemachine.json": "asl"
+    },
 }

@@ -3,15 +3,17 @@ import os
 import unittest
 from io import BytesIO
 from unittest.mock import MagicMock, call, patch
+
 from common_layer.db.schema_definition import SchemaCategory
+
+from tests.mock_db import MockedDB
 from timetables_etl.schema_check import (
     DatasetTXCValidator,
     SchemaLoader,
+    download_schema,
     get_transxchange_schema,
     lambda_handler,
-    download_schema
 )
-from tests.mock_db import MockedDB
 
 PREFIX = "timetables_etl.schema_check"
 TEST_ENV_VAR = {
@@ -121,7 +123,7 @@ class TestGetTransxchangeSchema(unittest.TestCase):
             "Could not extract file2.xsd - Mocked extraction error"
         )
 
-    @patch('timetables_etl.schema_check.requests.get')
+    @patch("timetables_etl.schema_check.requests.get")
     def test_download_schema(self, mock_get):
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -150,7 +152,6 @@ class TestDatasetTXCValidator(unittest.TestCase):
     @patch(f"{PREFIX}.get_transxchange_schema")
     @patch(f"{PREFIX}.XMLValidator")
     @patch("lxml.etree.parse")
-    @patch.dict("os.environ", TEST_ENV_VAR)
     def test_get_violations_no_violations(
         self, mock_etree_parse, mock_xmlValidator, mock_gettransxchangeschema
     ):
@@ -295,21 +296,19 @@ class TestDatasetTXCValidator(unittest.TestCase):
 
 class TestLambdaHandler(unittest.TestCase):
 
-    @patch(f"{PREFIX}.S3")
-    @patch(f"{PREFIX}.get_revision")
-    @patch(f"{PREFIX}.DatasetTXCValidator")
-    @patch(f"{PREFIX}.SchemaViolation")
-    @patch("common_layer.db.file_processing_result.DbManager")
     @patch(f"{PREFIX}.logger")
+    @patch(f"{PREFIX}.SchemaViolation")
+    @patch(f"{PREFIX}.DatasetTXCValidator")
+    @patch(f"{PREFIX}.get_revision")
+    @patch(f"{PREFIX}.S3")
     @patch.dict("os.environ", TEST_ENV_VAR)
     def test_lambda_handler_success(
         self,
-        mock_logger,
-        mock_db,
-        mock_schemaviolation,
-        mock_datasettxcvalidator,
-        mock_getdatasetrevision,
         mock_s3,
+        mock_getdatasetrevision,
+        mock_datasettxcvalidator,
+        mock_schemaviolation,
+        mock_logger,
     ):
         # Setup mocks
         mock_event = {
@@ -366,21 +365,19 @@ class TestLambdaHandler(unittest.TestCase):
             f"Received event:{json.dumps(mock_event, indent=2)}"
         )
 
-    @patch(f"{PREFIX}.S3")
-    @patch(f"{PREFIX}.get_revision")
-    @patch(f"{PREFIX}.DatasetTXCValidator")
-    @patch(f"{PREFIX}.SchemaViolation")
-    @patch("common_layer.db.file_processing_result.DbManager")
     @patch(f"{PREFIX}.logger")
+    @patch(f"{PREFIX}.SchemaViolation")
+    @patch(f"{PREFIX}.DatasetTXCValidator")
+    @patch(f"{PREFIX}.get_revision")
+    @patch(f"{PREFIX}.S3")
     @patch.dict("os.environ", {"TEST_ENV_VAR": "value"})
     def test_lambda_handler_exception(
         self,
-        mock_logger,
-        mock_db,
-        mock_schemaviolation,
-        mock_datasettxcvalidator,
-        mock_getdatasetrevision,
         mock_s3,
+        mock_getdatasetrevision,
+        mock_datasettxcvalidator,
+        mock_schemaviolation,
+        mock_logger,
     ):
         # Setup mocks
         mock_event = {
