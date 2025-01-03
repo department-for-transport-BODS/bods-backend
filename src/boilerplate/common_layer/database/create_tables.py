@@ -336,6 +336,4 @@ def create_db_tables(db: SqlDB | None = None) -> None:
     sorted_models = sorted(model_classes, key=lambda m: m.__name__)
 
     for model in sorted_models:
-        if getattr(model, "__abstract__", False):
-            continue
         handle_enums_and_create_table(model, metadata, db.engine)
