@@ -104,6 +104,31 @@ class ProcessingContext:
     processing_result: FileProcessingResult | None = None
 
 
+def get_object_key(event: dict[str, str]) -> str:
+    """Extracts filename from event's ObjectKey, falling back to UNKNOWN if unavailable."""
+    object_key = event.get("ObjectKey")
+    if not object_key:
+        log.warning("Could not determine Filename from ObjectKey")
+        return "UNKNOWN"
+    try:
+        return object_key.split("/")[-1]
+    except (AttributeError, IndexError):
+        return object_key
+
+
+def get_revision_id(event: dict[str, str | int]) -> int:
+    """Extracts revision ID from event, trying both casing variants."""
+    revision_id = event.get("datasetRevisionId") or event.get("DatasetRevisionId")
+    if revision_id is None:
+        raise ValueError("No revision ID found in event")
+    try:
+        return int(revision_id)
+    except ValueError as exc:
+        raise ValueError(
+            f"Revision ID '{revision_id}' could not be converted to integer"
+        ) from exc
+
+
 def initialize_processing(
     event: dict[str, Any],
     step_name: StepName,
@@ -118,9 +143,9 @@ def initialize_processing(
         processing_result = FileProcessingResult(
             task_id=str(task_id),
             status=TaskState.STARTED,
-            filename=event["ObjectKey"].split("/")[-1],
+            filename=get_object_key(event),
             pipeline_processing_step_id=step.id,
-            revision_id=event["datasetRevisionId"],
+            revision_id=get_revision_id(event),
             error_message="",
             pipeline_error_code_id=0,
         )
