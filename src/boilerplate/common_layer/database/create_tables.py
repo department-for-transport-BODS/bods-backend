@@ -8,7 +8,6 @@ Useful for setting up local testing
 from types import ModuleType
 from typing import Type
 
-from psycopg2 import ProgrammingError
 from sqlalchemy import Column as SQLColumn
 from sqlalchemy import Engine
 from sqlalchemy import Enum as SQLEnum
@@ -32,114 +31,101 @@ def handle_enum_types(engine: Engine, model: Type[BaseSQLModel]) -> None:
     """
     for column in model.__table__.columns:
         if isinstance(column.type, SQLEnum):
+            if not column.type.name:
+                # If enum has no name, generate one based on table and column
+                enum_name = f"{model.__tablename__}_{column.name}_enum"
+            else:
+                enum_name = column.type.name.lower()  # Ensure consistent casing
+
             # Preliminary logging of enum type discovery
             log.info(
                 "Processing enum type",
                 column_name=column.name,
-                enum_name=column.type.name,
+                enum_name=enum_name,
                 model_name=model.__name__,
                 enum_values=column.type.enums,
             )
 
             try:
                 with engine.connect() as conn:
-                    # Enum name and values from the column type
-                    enum_name = column.type.name
-                    model_enum_values = column.type.enums
-
-                    # First, create the type if it doesn't exist
-                    create_type_query = text(
-                        f"""
-                        DO $$
-                        BEGIN
-                            IF NOT EXISTS (
-                                SELECT 1 FROM pg_type WHERE typname = '{enum_name}'
-                            ) THEN
-                                CREATE TYPE "{enum_name}" AS ENUM {tuple(model_enum_values)};
-                            END IF;
-                        END $$;
-                    """
-                    )
-                    conn.execute(create_type_query)
-
-                    log.info(
-                        "Ensured enum type exists",
-                        enum_name=enum_name,
-                        enum_values=model_enum_values,
-                    )
-
-                    # Check existing enum values
-                    enum_values_query = text(
+                    # Check if type exists first
+                    check_type_query = text(
                         """
-                        SELECT unnest(enum_range(NULL::"{enum_name}")) AS enum_value
-                    """.format(
-                            enum_name=enum_name
+                        SELECT 1 FROM pg_type WHERE typname = :enum_name
+                        """
+                    )
+                    exists = (
+                        conn.execute(
+                            check_type_query, {"enum_name": enum_name}
+                        ).scalar()
+                        is not None
+                    )
+
+                    if not exists:
+                        # First time seeing this enum type - create it
+                        create_type_query = text(
+                            f"""
+                            CREATE TYPE "{enum_name}" AS ENUM {tuple(column.type.enums)};
+                            """
                         )
-                    )
-
-                    existing_enum_values = list(
-                        conn.execute(enum_values_query).scalars().all()
-                    )
-
-                    log.info(
-                        "Existing enum values discovered",
-                        enum_name=enum_name,
-                        existing_values=existing_enum_values,
-                    )
-
-                    # Find and add missing enum values
-                    missing_values = set(model_enum_values) - set(existing_enum_values)
-
-                    if missing_values:
-                        log.warning(
-                            "Missing enum values detected",
-                            enum_name=enum_name,
-                            missing_values=list(missing_values),
-                            existing_values=existing_enum_values,
-                        )
-
-                        for value in missing_values:
-                            try:
-                                alter_type_query = text(
-                                    f"ALTER TYPE \"{enum_name}\" ADD VALUE '{value}'"
-                                )
-                                conn.execute(alter_type_query)
-
-                                log.info(
-                                    "Added missing enum value",
-                                    enum_name=enum_name,
-                                    added_value=value,
-                                    model_name=model.__name__,
-                                )
-                            except Exception as add_value_error:
-                                log.warning(
-                                    "Failed to add enum value",
-                                    enum_name=enum_name,
-                                    attempted_value=value,
-                                    error=str(add_value_error),
-                                    model_name=model.__name__,
-                                )
-                    else:
+                        conn.execute(create_type_query)
+                        conn.commit()
                         log.info(
-                            "No missing enum values - all values present",
+                            "Created new enum type",
                             enum_name=enum_name,
-                            existing_values=existing_enum_values,
+                            enum_values=column.type.enums,
+                        )
+                    else:
+                        # Type exists - check values
+                        enum_values_query = text(
+                            f"""
+                            SELECT unnest(enum_range(NULL::"{enum_name}")) AS enum_value
+                            """
+                        )
+                        existing_enum_values = list(
+                            conn.execute(enum_values_query).scalars().all()
                         )
 
-                    # Override the create method to prevent recreation
+                        # Add any missing values
+                        missing_values = set(column.type.enums) - set(
+                            existing_enum_values
+                        )
+                        if missing_values:
+                            for value in missing_values:
+                                try:
+                                    alter_type_query = text(
+                                        f"ALTER TYPE \"{enum_name}\" ADD VALUE '{value}'"
+                                    )
+                                    conn.execute(alter_type_query)
+                                    conn.commit()
+                                    log.info(
+                                        "Added new enum value",
+                                        enum_name=enum_name,
+                                        new_value=value,
+                                    )
+                                except Exception as add_error:
+                                    log.warning(
+                                        "Failed to add enum value - might already exist",
+                                        enum_name=enum_name,
+                                        value=value,
+                                        error=str(add_error),
+                                    )
+
+                    # Instead of trying to modify the enum type's create attribute,
+                    # we override its create method to do nothing
                     column.type.create = lambda *args, **kwargs: None
 
                     log.info(
                         "Enum type handling completed",
                         enum_name=enum_name,
-                        final_values=model_enum_values,
+                        final_values=column.type.enums,
                         model_name=model.__name__,
                     )
 
             except Exception as e:
                 log.error(
                     "Critical error in enum type handling",
-                    enum_name=column.type.name,
+                    enum_name=enum_name,
                     model_name=model.__name__,
                     error=str(e),
                     error_type=type(e).__name__,
