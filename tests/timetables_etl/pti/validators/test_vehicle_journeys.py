@@ -25,7 +25,7 @@ def test_destination_display(filename, expected):
     schema = Schema.from_path(PTI_SCHEMA_PATH)
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
     schema = SchemaFactory(observations=observations)
-    json_file = JSONFile(schema.json())
+    json_file = JSONFile(schema.model_dump_json())
     pti = PTIValidator(json_file, MagicMock(), MagicMock())
     txc_path = DATA_DIR / filename
 
@@ -77,7 +77,7 @@ def test_validate_vehicle_journey_ref(has_vj_ref, has_profile, expected):
     schema = Schema.from_path(PTI_SCHEMA_PATH)
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
     schema = SchemaFactory(observations=observations)
-    json_file = JSONFile(schema.json())
+    json_file = JSONFile(schema.model_dump_json())
     pti = PTIValidator(json_file, MagicMock(), MagicMock())
 
     txc = TXCFile(xml)

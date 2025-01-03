@@ -32,7 +32,7 @@ def test_non_naptan_stop_points(filename, expected):
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
 
     schema = SchemaFactory(observations=observations)
-    json_file = JSONFile(schema.json())
+    json_file = JSONFile(schema.model_dump_json())
     pti = PTIValidator(json_file, MagicMock(), MagicMock())
 
     txc_path = DATA_DIR / filename
