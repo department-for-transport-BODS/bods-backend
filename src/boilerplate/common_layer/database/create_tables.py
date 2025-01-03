@@ -11,6 +11,7 @@ from typing import Any, Type, cast
 from sqlalchemy import Column as SQLColumn
 from sqlalchemy import Engine, MetaData, inspect, text
 from sqlalchemy.dialects.postgresql import ENUM
+from sqlalchemy.engine.interfaces import ReflectedColumn
 from sqlalchemy.sql.schema import Table
 from sqlalchemy.types import Enum as SQLEnumType
 from structlog.stdlib import get_logger
@@ -22,10 +23,10 @@ from .models.common import BaseSQLModel
 log = get_logger()
 
 
-def get_existing_columns(engine: Engine, table_name: str) -> dict[str, SQLColumn]:
+def get_existing_columns(engine: Engine, table_name: str) -> dict[str, ReflectedColumn]:
     """Get existing columns from database table."""
     inspector = inspect(engine)
-    columns = {}
+    columns: dict[str, ReflectedColumn] = {}
 
     if inspector.has_table(table_name):
         for column in inspector.get_columns(table_name):
@@ -325,7 +326,11 @@ def create_db_tables(db: SqlDB | None = None) -> None:
     metadata = MetaData()
 
     model_classes = get_model_classes(models)
-    log.info("Models Found", count=len(model_classes))
+    log.info(
+        "Models Found",
+        count=len(model_classes),
+        models=[cls.__name__ for cls in model_classes],
+    )
 
     # Sort models to ensure consistent creation order
     sorted_models = sorted(model_classes, key=lambda m: m.__name__)
