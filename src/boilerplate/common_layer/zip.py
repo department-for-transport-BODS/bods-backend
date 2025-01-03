@@ -1,35 +1,123 @@
+"""
+Zip Handling Utilities
+"""
+
+import shutil
+import tempfile
 from io import BytesIO
-from zipfile import ZipFile, is_zipfile, BadZipFile
+from pathlib import Path
+from typing import Generator
+from zipfile import BadZipFile, ZipFile, is_zipfile
+
 from common_layer.exceptions.zip_file_exceptions import (
     NestedZipForbidden,
-    ZipValidationException,
-    ZipTooLarge,
     NoDataFound,
+    ZipTooLarge,
+    ZipValidationException,
 )
-from common_layer.utils import get_file_size
 from common_layer.logger import logger
+from common_layer.s3 import S3
+from common_layer.utils import get_file_size
+from structlog.stdlib import get_logger
+
+log = get_logger()
 
 
-def unzip(s3_client, file_path: str, prefix='') -> str:
+def extract_zip_file(zip_path: Path) -> Generator[tuple[str, Path], None, None]:
+    """
+    Generator that extracts files from a zip one at a time to a temporary location.
+    Yields:
+        Tuple of (original filename, path to extracted file)
+
+    Raises:
+        BadZipFile: If the file is not a valid zip
+    """
+    with tempfile.TemporaryDirectory() as temp_dir:
+        try:
+            with ZipFile(zip_path) as zip_obj:
+                # Get list of all files (including those in subdirectories)
+                file_list = [
+                    (
+                        f.decode("cp437").encode("utf8").decode("utf8")
+                        if isinstance(f, bytes)
+                        else f
+                    )
+                    for f in zip_obj.namelist()
+                    if not f.endswith("/")  # Skip directory entries
+                ]
+
+                for file_path in file_list:
+                    try:
+                        extracted_path = Path(temp_dir) / file_path
+                        extracted_path.parent.mkdir(parents=True, exist_ok=True)
+
+                        with zip_obj.open(file_path) as source, open(
+                            extracted_path, "wb"
+                        ) as target:
+                            shutil.copyfileobj(source, target, length=8192)
+
+                        yield file_path, extracted_path
+
+                    except Exception as e:
+                        log.error(
+                            "Failed to extract file from zip",
+                            file_path=file_path,
+                            error=str(e),
+                        )
+                        raise
+
+        except BadZipFile as e:
+            log.error("Invalid zip file", zip_path=zip_path, error=str(e))
+            raise
+
+
+def process_zip_to_s3(s3_client: S3, zip_path: Path, destination_prefix: str) -> str:
+    """
+    Process a zip file and upload its contents to S3 efficiently.
+
+    Returns:
+        The S3 prefix where files were uploaded
+
+    Raises:
+        BadZipFile: If the file is not a valid zip
+    """
+    zip_name = zip_path.stem
+    folder_name = f"{destination_prefix.rstrip('/')}_{zip_name}/"
+
+    log.info("Processing zip file", zip_path=str(zip_path), destination=folder_name)
+
     try:
-        zip_content = BytesIO(s3_client.get_object(file_path).read())
-        split_path = file_path.split('/')
-        zip_name = split_path[-1].split('.')[0]
-        base_dir = f"{'/'.join(split_path[:-1])}"
-        folder_name = f"{base_dir}/{prefix}_{zip_name}/" if base_dir else \
-            f"{prefix}_{zip_name}/"
-        with ZipFile(zip_content) as zipObj:
-            for filename in zipObj.namelist():
-                file_content = zipObj.read(filename)
-                new_key = f"{folder_name}{filename}"
-                s3_client.put_object(new_key, file_content)
+        for filename, extracted_path in extract_zip_file(zip_path):
+            s3_key = f"{folder_name}{filename}"
+
+            log.debug(
+                "Uploading extracted file to S3", filename=filename, s3_key=s3_key
+            )
+
+            with open(extracted_path, "rb") as file:
+                try:
+                    s3_client.put_object(s3_key, file.read())
+                    log.debug(
+                        "Successfully uploaded file", filename=filename, s3_key=s3_key
+                    )
+                except Exception as e:
+                    log.error(
+                        "Failed to upload file to S3",
+                        filename=filename,
+                        s3_key=s3_key,
+                        error=str(e),
+                    )
+                    raise
+
+        log.info(
+            "Completed zip processing", zip_path=str(zip_path), destination=folder_name
+        )
+
         return folder_name
-    except BadZipFile as e:
-        logger.error(f"{file_path} is not a valid zip file: {e}")
-        raise e
+
     except Exception as e:
-        print(f"Unexpected error: {e}")
-        raise e
+        log.error("Failed to process zip file", zip_path=str(zip_path), error=str(e))
+        raise
 
 
 class ZippedValidator:

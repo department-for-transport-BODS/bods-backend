@@ -1,6 +1,9 @@
+"""
+Lambda: InitializePipeline
+"""
+
 from uuid import uuid4
 
-from common_layer import dynamodb
 from common_layer.database.client import SqlDB
 from common_layer.database.models.model_pipelines import DatasetETLTaskResult, TaskState
 from common_layer.database.repos.repo_etl_task import ETLTaskResultRepo
@@ -19,11 +22,23 @@ logger = get_logger()
 
 
 class InitializePipelineEvent(BaseModel):
+    """
+    Lambda Event Input Data
+    """
+
     DatasetRevisionId: int
 
 
 def initialize_pipeline(db: SqlDB, dynamodb: DynamoDB, event: InitializePipelineEvent):
-    logger.info(f"Initializing pipeline for DatasetRevision {event.DatasetRevisionId}")
+    """
+    - Set the Revision Status to Indexing
+    - Create DatasetETLTaskResult
+    - Add Revision to DynamoDB Cache
+    """
+    logger.info(
+        "Initializing pipeline for DatasetRevision",
+        dataset_revision_id=event.DatasetRevisionId,
+    )
     revision_repo = OrganisationDatasetRevisionRepo(db)
     revision = revision_repo.get_by_id(event.DatasetRevisionId)
     if revision is None:
@@ -32,9 +47,7 @@ def initialize_pipeline(db: SqlDB, dynamodb: DynamoDB, event: InitializePipeline
         )
 
     # Set revision status to indexing
-    logger.debug(
-        f"Setting Revision.status to indexing", dataset_revision_id=revision.id
-    )
+    logger.debug("Setting Revision.status to indexing", dataset_revision_id=revision.id)
     revision.status = FeedStatus.indexing.value
     revision_repo.update(revision)
 
@@ -54,13 +67,16 @@ def initialize_pipeline(db: SqlDB, dynamodb: DynamoDB, event: InitializePipeline
     data_manager.prefetch_and_cache_data(revision)
 
     logger.info(
-        f"Pipeline initialized with DatasetETLTaskResult",
+        "Pipeline initialized with DatasetETLTaskResult",
         dataset_etl_task_result_id=created_task_result.id,
     )
     return created_task_result.id
 
 
-def lambda_handler(event, context):
+def lambda_handler(event, _context):
+    """
+    Handler for InitializePipeline
+    """
     configure_logging()
     parsed_event = InitializePipelineEvent(**event)
 

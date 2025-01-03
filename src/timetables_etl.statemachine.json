@@ -15,8 +15,7 @@
       "Parameters": {
         "Bucket.$": "$.detail.bucket.name",
         "ObjectKey.$": "$.detail.object.key",
-        "DatasetRevisionId.$": "$.detail.dataset_revision_id",
-        "DatasetType.$": "$.detail.dataset_type"
+        "DatasetRevisionId.$": "$.detail.datasetRevisionId"
       },
       "ResultPath": "$.initializePipeline",
       "Next": "ClamAvScanner",
@@ -41,9 +40,7 @@
       "Next": "FileLevelProcessing",
       "Catch": [
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "Next": "ParseError",
           "ResultPath": "$.error_info"
         }
@@ -52,7 +49,11 @@
     "FileLevelProcessing": {
       "Type": "Map",
       "Parameters": {
-        "DatasetRevisionId.$": "$.detail.datasetRevisionId"
+        "DatasetRevisionId.$": "$.detail.datasetRevisionId",
+        "Bucket.$": "$.detail.bucket.name",
+        "Key.$": "$$.Map.Item.Value.Key",
+        "DatasetEtlTaskResultId.$": "$.initializePipeline.DatasetEtlTaskResultId",
+        "detail.$": "$.detail"
       },
       "ItemReader": {
         "Resource": "arn:aws:states:::s3:listObjectsV2",
@@ -78,9 +79,7 @@
             "Next": "SchemaCheck",
             "Catch": [
               {
-                "ErrorEquals": [
-                  "States.ALL"
-                ],
+                "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler"
               }
             ]
@@ -95,9 +94,7 @@
             "Next": "PostSchemaCheck",
             "Catch": [
               {
-                "ErrorEquals": [
-                  "States.ALL"
-                ],
+                "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler"
               }
             ]
@@ -112,9 +109,7 @@
             "Next": "FileAttributesEtl",
             "Catch": [
               {
-                "ErrorEquals": [
-                  "States.ALL"
-                ],
+                "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler"
               }
             ]
@@ -129,9 +124,7 @@
             "Next": "PtiValidation",
             "Catch": [
               {
-                "ErrorEquals": [
-                  "States.ALL"
-                ],
+                "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler"
               }
             ]
@@ -147,9 +140,7 @@
             "Next": "ETLProcess",
             "Catch": [
               {
-                "ErrorEquals": [
-                  "States.ALL"
-                ],
+                "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler"
               }
             ]
@@ -167,9 +158,7 @@
             "Next": "Success",
             "Catch": [
               {
-                "ErrorEquals": [
-                  "States.ALL"
-                ],
+                "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler"
               }
             ]
