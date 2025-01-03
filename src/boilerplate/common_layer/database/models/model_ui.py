@@ -1,5 +1,5 @@
 from common_layer.database.models.common import BaseSQLModel
-from sqlalchemy import Identity, Integer, Text
+from sqlalchemy import Integer, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 
