@@ -19,25 +19,19 @@ TEST_ENV_VAR = {
 
 class TestLambdaHandler(unittest.TestCase):
 
-    @patch("timetables_etl.post_schema_check.DbManager.get_db")
-    @patch("timetables_etl.post_schema_check.get_revision")
-    @patch("timetables_etl.post_schema_check.get_violation")
+    @patch("timetables_etl.post_schema_check.PostSchemaViolationRepository")
     @patch("timetables_etl.post_schema_check.S3")
-    @patch(
-        "timetables_etl.post_schema_check." "PostSchemaViolationRepository"
-    )
-    @patch("common_layer.db.file_processing_result.DbManager")
-    @patch("common_layer.db.file_processing_result.get_revision")
+    @patch("timetables_etl.post_schema_check.get_violation")
+    @patch("timetables_etl.post_schema_check.get_revision")
+    @patch("timetables_etl.post_schema_check.DbManager.get_db")
     @patch.dict("os.environ", TEST_ENV_VAR)
     def test_lambda_handler_success(
         self,
-        mock_get_rev,
         mock_bodds_db,
-        mock_post_repo,
-        mock_s3,
+        mock_get_rev,
         mock_get_violation,
-        mock_get_revision,
-        mock_get_db,
+        mock_s3,
+        mock_post_repo,
     ):
         """
         Test lambda_handler for a successful run.
@@ -52,12 +46,8 @@ class TestLambdaHandler(unittest.TestCase):
         mock_context = {}
 
         # Mock return values
-        mock_db = MagicMock()
-        mock_get_db.return_value = mock_db
-
         mock_revision = MagicMock()
         mock_revision.id = 1
-        mock_get_revision.return_value = mock_revision
 
         xml_content = b'<TransXChange FileName="test.xml">'
         mock_s3_instance = MagicMock()
@@ -121,12 +111,9 @@ class TestLambdaHandler(unittest.TestCase):
 
     @patch("timetables_etl.post_schema_check.logger.error")
     @patch("timetables_etl.post_schema_check.get_revision")
-    @patch("common_layer.db.file_processing_result.DbManager")
     @patch("timetables_etl.post_schema_check.S3")
     @patch.dict("os.environ", TEST_ENV_VAR)
-    def test_lambda_handler_error_handling(
-        self, mock_s3, m_db_manager, mock_get_revision, mock_logger
-    ):
+    def test_lambda_handler_error_handling(self, mock_s3, m_db_manager, mock_logger):
         """
         Test lambda_handler handles exceptions and logs errors.
         """
@@ -146,19 +133,16 @@ class TestLambdaHandler(unittest.TestCase):
 
         mock_revision = MagicMock()
         mock_revision.id = 1
-        mock_get_revision.return_value = mock_revision
 
         # Mock return values
         m_db_manager.get_db.return_value = MockedDB()
 
         # mock_bodds_db.return_value = MockedDB()
-        with patch(
-            "common_layer.db.file_processing_result.get_revision"
-        ) as mock_revision:
-            mock_revision.return_value = 123
-            with self.assertRaises(Exception) as context:
-                lambda_handler(mock_event, mock_context)
 
-                self.assertEqual(
-                    "No row was found when one was required", str(context.exception)
-                )
+        mock_revision.return_value = 123
+        with self.assertRaises(Exception) as context:
+            lambda_handler(mock_event, mock_context)
+
+            self.assertEqual(
+                "No row was found when one was required", str(context.exception)
+            )

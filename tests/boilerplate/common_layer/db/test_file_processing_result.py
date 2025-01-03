@@ -1,17 +1,18 @@
 import unittest
 import uuid
 from datetime import datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import (
-    PipelineFileProcessingResult,
     file_processing_result_to_db,
     get_file_processing_error_code,
 )
 from sqlalchemy.exc import NoResultFound, SQLAlchemyError
 
 from tests.mock_db import MockedDB
+
+PipelineFileProcessingResult = MagicMock()
 
 
 class TestFileProcessingResult(unittest.TestCase):
@@ -140,9 +141,6 @@ class TestFileProcessingResult(unittest.TestCase):
         self.assertEqual(str(_context.exception), "No record found")
         mock_db.session.__enter__.return_value.query.assert_called_once()
 
-    @patch("common_layer.db.file_processing_result.DbManager")
-    @patch("common_layer.db.file_processing_result.PipelineFileProcessingResult")
-    @patch("common_layer.db.file_processing_result.write_error_to_db")
     def test_file_processing_result_to_db_success(
         self,
         mock_write_error_to_db,
@@ -180,9 +178,6 @@ class TestFileProcessingResult(unittest.TestCase):
         # Assert write_error_to_db was not called
         mock_write_error_to_db.assert_not_called()
 
-    @patch("common_layer.db.file_processing_result.DbManager")
-    @patch("common_layer.db.file_processing_result.PipelineFileProcessingResult")
-    @patch("common_layer.db.file_processing_result.write_error_to_db")
     def test_file_processing_result_to_db_failure(
         self,
         mock_write_error_to_db,

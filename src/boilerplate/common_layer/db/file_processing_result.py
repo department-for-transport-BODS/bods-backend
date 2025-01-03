@@ -3,8 +3,9 @@ Description: Module contains the database functionality for
              FileProcessingResult table
 """
 
+from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Literal
+from typing import Any, Callable, Literal, TypeVar
 from uuid import uuid4
 
 from common_layer.database.client import SqlDB
@@ -89,70 +90,141 @@ def get_dataset_type(event: dict) -> Literal["TIMETABLES", "FARES"]:
     return "TIMETABLES" if dataset_type.startswith("timetable") else "FARES"
 
 
+T = TypeVar("T")  # Return type of the wrapped function
+Context = TypeVar("Context")  # AWS Lambda context type
+
+
+@dataclass
+class ProcessingContext:
+    """Context for the file processing operation"""
+
+    task_id: str
+    step_name: StepName
+    db: SqlDB | None = None
+    processing_result: FileProcessingResult | None = None
+
+
+def initialize_processing(
+    event: dict[str, Any],
+    step_name: StepName,
+) -> ProcessingContext:
+    """Initialize the processing context with database connection and task"""
+    task_id = str(uuid4())
+    context = ProcessingContext(task_id=task_id, step_name=step_name)
+
+    try:
+        db = SqlDB()
+        step = get_or_create_step(db, step_name.value, get_dataset_type(event))
+        processing_result = FileProcessingResult(
+            task_id=str(task_id),
+            status=TaskState.STARTED,
+            filename=event["ObjectKey"].split("/")[-1],
+            pipeline_processing_step_id=step.id,
+            revision_id=event["datasetRevisionId"],
+            error_message="",
+            pipeline_error_code_id=0,
+        )
+        context.db = db
+        context.processing_result = FileProcessingResultRepo(db).insert(
+            processing_result
+        )
+
+    except Exception as setup_error:  # pylint: disable=broad-exception-caught
+        log.error(
+            "Database Setup Failed",
+            error_type=setup_error.__class__.__name__,
+            error_message=str(setup_error),
+            step_name=step_name.value,
+            task_id=str(task_id),
+            exc_info=True,
+        )
+        # Return context without DB connection - lambda will still execute
+        return context
+
+    return context
+
+
+def handle_lambda_success(context: ProcessingContext) -> None:
+    """Handle successful lambda execution by updating database"""
+    if context.db is not None and context.processing_result is not None:
+        try:
+            context.processing_result.status = TaskState.SUCCESS
+            context.processing_result.completed = datetime.now(UTC)
+            FileProcessingResultRepo(context.db).update(context.processing_result)
+        except Exception as teardown_error:  # pylint: disable=broad-exception-caught
+            log.error(
+                "Failed to Update Database with Success Result",
+                error_type=teardown_error.__class__.__name__,
+                error_message=str(teardown_error),
+                step_name=context.step_name.value,
+                task_id=str(context.task_id),
+                exc_info=True,
+            )
+
+
+def handle_lambda_error(context: ProcessingContext, error: Exception) -> None:
+    """Handle lambda execution failure by updating database"""
+    if context.db is not None and context.processing_result is not None:
+        try:
+            write_error_to_db(context.db, context.processing_result, error)
+        except Exception as db_error:  # pylint: disable=broad-exception-caught
+            log.error(
+                "Failed to Write Error to Database",
+                error_type=db_error.__class__.__name__,
+                error_message=str(db_error),
+                step_name=context.step_name.value,
+                task_id=str(context.task_id),
+                exc_info=True,
+            )
+
+
 def file_processing_result_to_db(step_name: StepName):
     """
-    Decorator to create a DatasetETLTaskResult
+    Decorator to create a DatasetETLTaskResult with structured logging
     """
 
-    def decorator(func):
-        def wrapper(event, context):
-            db = None
-            task_id = str(uuid4())
-            processing_result = None
-            result = None
-            error_occurred = False
+    def decorator(func: Callable[[dict, Context], T]) -> Callable[[dict, Context], T]:
+        def wrapper(event: dict, context: Context) -> T:
             configure_logging()
-            # Attempt to set up before executing the lambda function
-            try:
-                log.info("Processing Step", step_name=step_name, input_data=event)
-                db = SqlDB()
-                step = get_or_create_step(db, step_name.value, get_dataset_type(event))
-                processing_result = FileProcessingResult(
-                    task_id=task_id,
-                    status=TaskState.STARTED,
-                    filename=event["ObjectKey"].split("/")[-1],
-                    pipeline_processing_step_id=step.id,
-                    revision_id=event["datasetRevisionId"],
-                    error_message="",
-                    pipeline_error_code_id=0,
-                )
-                processing_result = FileProcessingResultRepo(db).insert(
-                    processing_result
-                )
-            except Exception as setup_error:  # pylint: disable=broad-exception-caught
-                log.error("An Exception Occurred During Setup", exc_info=True)
-                error_occurred = True
-                if db is not None and processing_result is not None:
-                    write_error_to_db(db, processing_result, setup_error)
+            processing_context = initialize_processing(event, step_name)
 
-            # Execute the lambda function regardless of setup success
             try:
+                # Execute the lambda function regardless of DB connection status
                 result = func(event, context)
-                log.info("Lambda Returned", result=result)
+                log.info("Lambda Execution Complete", result=result)
+
+                # Only attempt to update DB if connection exists
+                if (
+                    processing_context.db is not None
+                    and processing_context.processing_result is not None
+                ):
+                    handle_lambda_success(processing_context)
+                else:
+                    log.warning(
+                        "Database Connection not available, cannot update FileProcessingResult"
+                    )
+                return result
+
             except Exception as lambda_error:  # pylint: disable=broad-exception-caught
                 log.error(
-                    "An Exception Occurred During Lambda Execution", exc_info=True
+                    "Lambda Execution Failed",
+                    error_type=lambda_error.__class__.__name__,
+                    error_message=str(lambda_error),
+                    step_name=step_name.value,
+                    task_id=str(processing_context.task_id),
+                    exc_info=True,
                 )
-                error_occurred = True
-                if db is not None and processing_result is not None:
-                    write_error_to_db(db, processing_result, lambda_error)
-
-            # Attempt to tear down after executing the lambda function
-            try:
-                if db is not None and processing_result is not None:
-                    processing_result.status = (
-                        TaskState.FAILURE if error_occurred else TaskState.SUCCESS
+                # Only attempt to write error to DB if connection exists
+                if (
+                    processing_context.db is not None
+                    and processing_context.processing_result is not None
+                ):
+                    handle_lambda_error(processing_context, lambda_error)
+                else:
+                    log.warning(
+                        "Database Connection not available, cannot update FileProcessingResult"
                     )
-                    processing_result.completed = datetime.now(UTC)
-                    FileProcessingResultRepo(db).update(processing_result)
-            except (
-                Exception  # pylint: disable=broad-exception-caught
-            ) as teardown_error:
-                log.error("An Exception Occurred During Teardown", exc_info=True)
-                if db is not None and processing_result is not None:
-                    write_error_to_db(db, processing_result, teardown_error)
-
-            return result
+                raise
 
         return wrapper
 
