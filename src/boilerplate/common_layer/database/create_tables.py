@@ -14,6 +14,7 @@ from sqlalchemy import Enum as SQLEnum
 from sqlalchemy import MetaData
 from sqlalchemy import Table as SQLTable
 from sqlalchemy import inspect, text
+from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.sql.schema import Table
 from structlog.stdlib import get_logger
 
@@ -338,6 +339,179 @@ def create_single_table(table: Table, engine: Engine) -> None:
         raise RuntimeError(f"Failed to create table {table.name}: {str(e)}") from e
 
 
+def handle_enums_and_create_table(
+    model: Type[BaseSQLModel], metadata: MetaData, engine: Engine
+) -> None:
+    """
+    Handle enum types and create table in a way that prevents duplicate enum creation.
+    """
+    name = model.__tablename__
+    columns = []
+    enum_types = {}
+
+    log.info(
+        "Starting table creation process",
+        model_name=model.__name__,
+        table_name=name,
+        is_abstract=getattr(model, "__abstract__", False),
+    )
+
+    # First pass: Create all enum types in database
+    enum_columns = [
+        col for col in model.__table__.columns if isinstance(col.type, SQLEnum)
+    ]
+    log.info(
+        "Found enum columns",
+        model_name=model.__name__,
+        enum_count=len(enum_columns),
+        column_names=[col.key for col in enum_columns],
+    )
+
+    for column in enum_columns:
+        if not isinstance(column.type, SQLEnum):
+            continue
+
+        enum_name = (
+            column.type.name.lower()
+            if column.type.name
+            else f"{name}_{column.key}_enum"
+        )
+        enum_values = column.type.enums
+
+        log.info(
+            "Processing enum column",
+            model_name=model.__name__,
+            column_name=column.key,
+            enum_name=enum_name,
+            enum_values=enum_values,
+        )
+
+        # Store enum info for second pass
+        enum_types[column.key] = (enum_name, enum_values)
+
+        # Create enum in database if it doesn't exist
+        with engine.connect() as conn:
+            check_type_query = text(
+                """
+                SELECT 1 FROM pg_type WHERE typname = :enum_name
+                """
+            )
+            exists = (
+                conn.execute(check_type_query, {"enum_name": enum_name}).scalar()
+                is not None
+            )
+
+            log.info("Checked enum type existence", enum_name=enum_name, exists=exists)
+
+            if not exists:
+                try:
+                    create_type_query = text(
+                        f"""
+                        CREATE TYPE "{enum_name}" AS ENUM {tuple(enum_values)};
+                        """
+                    )
+                    conn.execute(create_type_query)
+                    conn.commit()
+                    log.info(
+                        "Successfully created enum type",
+                        enum_name=enum_name,
+                        enum_values=enum_values,
+                    )
+                except Exception as e:
+                    log.error(
+                        "Failed to create enum type",
+                        enum_name=enum_name,
+                        error=str(e),
+                        error_type=type(e).__name__,
+                    )
+                    raise
+
+    # Second pass: Create table definition using existing enum types
+    log.info(
+        "Starting table column definition",
+        model_name=model.__name__,
+        total_columns=len(model.__table__.columns),
+    )
+
+    for column in model.__table__.columns:
+        log_context = {
+            "model_name": model.__name__,
+            "column_name": column.key,
+            "column_type": str(column.type),
+            "is_enum": column.key in enum_types,
+            "is_primary_key": column.primary_key,
+            "is_nullable": column.nullable,
+            "has_index": column.index,
+            "is_unique": column.unique,
+        }
+
+        try:
+            if column.key in enum_types:
+                enum_name, enum_values = enum_types[column.key]
+                log.info(
+                    "Creating enum column definition",
+                    **log_context,
+                    enum_name=enum_name,
+                    enum_values=enum_values,
+                )
+                # Create column using PostgreSQL ENUM type that references existing enum
+                column_def = SQLColumn(
+                    column.key,
+                    ENUM(*enum_values, name=enum_name, create_type=False),
+                    primary_key=column.primary_key,
+                    nullable=column.nullable,
+                    index=column.index,
+                    unique=column.unique,
+                )
+            else:
+                log.info("Creating standard column definition", **log_context)
+                # Non-enum columns
+                column_def = SQLColumn(
+                    column.key,
+                    column.type,
+                    primary_key=column.primary_key,
+                    nullable=column.nullable,
+                    index=column.index,
+                    unique=column.unique,
+                )
+            columns.append(column_def)
+            log.debug("Successfully added column definition", **log_context)
+
+        except Exception as e:
+            log.error(
+                "Failed to create column definition",
+                **log_context,
+                error=str(e),
+                error_type=type(e).__name__,
+            )
+            raise
+
+    # Create the table
+    log.info(
+        "Attempting to create table",
+        model_name=model.__name__,
+        table_name=name,
+        total_columns=len(columns),
+    )
+
+    table = SQLTable(name, metadata, *columns)
+    try:
+        table.create(engine)
+        log.info(
+            "Successfully created table", model_name=model.__name__, table_name=name
+        )
+    except Exception as e:
+        log.warning(
+            "Table creation failed, checking if table exists",
+            model_name=model.__name__,
+            table_name=name,
+            error=str(e),
+            error_type=type(e).__name__,
+        )
+        # Still want to compare and alter if table exists
+        compare_and_alter_table(model, table, engine)
+
+
 def create_db_tables(db: SqlDB | None = None) -> None:
     """Initialize database tables using models from timetables_etl."""
     log.warning(
@@ -350,16 +524,10 @@ def create_db_tables(db: SqlDB | None = None) -> None:
     model_classes = get_model_classes(models)
     log.info("Models Found", count=len(model_classes))
 
-    for model in model_classes:
-        handle_enum_types(db.engine, model)
-        table = create_table_definition(model, metadata)
+    # Sort models to ensure consistent creation order
+    sorted_models = sorted(model_classes, key=lambda m: m.__name__)
 
-        # First try to create the table
-        try:
-            create_single_table(table, db.engine)
-        except Exception:
-            log.info(
-                "Table already exists, checking for column updates", table=table.name
-            )
-            # If table exists, check and update columns
-            compare_and_alter_table(model, table, db.engine)
+    for model in sorted_models:
+        if getattr(model, "__abstract__", False):
+            continue
+        handle_enums_and_create_table(model, metadata, db.engine)
