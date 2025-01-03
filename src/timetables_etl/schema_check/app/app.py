@@ -1,153 +1,189 @@
-import io
-import json
-import os
-from pathlib import Path
-from zipfile import ZipFile
+"""
+SchemaCheckLambda
+"""
 
-import requests
-from common_layer.constants import SCHEMA_DIR
+from datetime import UTC, datetime
+from enum import Enum
+from pathlib import Path
+
+from botocore.exceptions import BotoCoreError, ClientError
+from common_layer.database.client import SqlDB
+from common_layer.database.models.model_data_quality import DataQualitySchemaViolation
+from common_layer.database.repos.repo_data_quality import DataQualitySchemaViolationRepo
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
-from common_layer.db.manager import DbManager
-from common_layer.db.repositories.dataset_revision import get_revision
-from common_layer.db.schema_definition import (
-    SchemaCategory,
-    get_schema_definition_db_object,
-)
-from common_layer.db.schema_violation import SchemaViolation
-from common_layer.logger import logger
+from common_layer.json_logging import configure_logging
 from common_layer.s3 import S3
-from common_layer.violations import BaseSchemaViolation
-from common_layer.xml_validator import XMLValidator
 from lxml import etree
+from pydantic import BaseModel, Field
+from structlog.stdlib import get_logger
 
-SCHEMA_URL = "http://www.transxchange.org.uk/schema/2.4/TransXChange_schema_2.4.zip"
+log = get_logger()
 
 
-def download_schema(url, output_file):
+class SchemaCheckInputData(BaseModel):
+    """
+    Input data for the ETL Function
+    """
+
+    class Config:
+        """
+        Allow us to map Bucket / Object Key
+        """
+
+        populate_by_name = True
+
+    revision_id: int = Field(alias="DatasetRevisionId")
+    s3_bucket_name: str = Field(alias="Bucket")
+    s3_file_key: str = Field(alias="ObjectKey")
+
+
+class TXCVersion(Enum):
+    """Supported TransXChange schema versions."""
+
+    V2_4 = "2.4"
+
+
+def load_txc_schema(version: str = "2.4") -> etree.XMLSchema:
+    """
+    Load the TransXChange XML schema for the specified version.
+    """
     try:
-        response = requests.get(url, stream=True)
-        response.raise_for_status()
-        with open(output_file, "wb") as file:
-            for chunk in response.iter_content(chunk_size=1024):
-                file.write(chunk)
-        logger.info(f"ZIP file downloaded successfully: {output_file}")
-    except Exception as e:
-        logger.error(f"Failed to download file {e}", exc_info=True)
-        raise e
+        txc_version = TXCVersion(version)
+    except ValueError:
+        log.error(
+            "Unsupported TXC Schema Version",
+            version_provided=version,
+            supported_versions=[v.value for v in TXCVersion],
+        )
+        raise
+
+    schema_path = (
+        Path(__file__).parent
+        / "schema"
+        / "txc"
+        / txc_version.value
+        / "TransXChange_general.xsd"
+    )
+
+    if not schema_path.exists():
+        log.error("Schema File not Found", schema_path=str(schema_path))
+        raise FileNotFoundError(f"Schema file not found at: {schema_path}")
+
+    try:
+        with open(schema_path, "rb") as schema_file:
+            schema_doc = etree.parse(schema_file)
+            return etree.XMLSchema(schema_doc)
+    except (etree.XMLSchemaParseError, etree.ParseError) as e:
+        log.error("schema_parse_error", error=str(e))
+        raise
 
 
-def get_transxchange_schema(db):
-    definition = get_schema_definition_db_object(db, SchemaCategory.TXC)
-    download_schema(SCHEMA_URL, definition.schema)
-    schema_loader = SchemaLoader(definition, os.environ["TXC_XSD_PATH"])
-    return schema_loader.schema
-
-
-class SchemaLoader:
+def create_violation_from_error(
+    error: etree._LogEntry, revision_id: int
+) -> DataQualitySchemaViolation:
     """
-    Class for unzipping xsd schemas onto local filesystem
+    Create a DataQualitySchemaViolation instance from an lxml error
     """
-
-    def __init__(self, definition, xsd_path: str):
-        self.definition = definition
-        self._path = xsd_path
-        self._schema_dir: str = SCHEMA_DIR
-
-    @property
-    def path(self) -> Path:
-        """
-        Returns path of main XSD file for use in schema validation.
-        If the path doesnt exist in the local filesystem it is re acquired
-        """
-        directory = Path(self._schema_dir) / self.definition.category
-        if not directory.exists():
-            directory.mkdir(parents=True)
-            logger.info(f"Directory {directory} created")
-
-        path = directory / self._path
-
-        if not path.exists():
-            with ZipFile(self.definition.schema) as zin:
-                for filepath in zin.namelist():
-                    # Not sure why this is necessary but the netex zip triggers
-                    # zip bomb warning and a couple of examples cant be
-                    # extracted This is probably fine because these are known
-                    # zip files from DfT
-                    try:
-                        zin.extract(filepath, directory)
-                    except (OSError, ValueError) as e:
-                        logger.warning(f"Could not extract {filepath} - {e}")
-                        # We probably want to fail the pipeline if there are
-                        # any other exceptions
-
-        return path
-
-    @property
-    def schema(self) -> etree.XMLSchema:
-        """
-        Return a complete XSD XMLSchema object
-        """
-        with self.path.open("r") as f:
-            doc = etree.parse(f)
-            return etree.XMLSchema(doc)
+    filename = Path(error.filename).name
+    return DataQualitySchemaViolation(
+        filename=filename,
+        line=error.line,
+        details=error.message,
+        created=datetime.now(UTC),
+        revision_id=revision_id,
+    )
 
 
-class DatasetTXCValidator:
-    def __init__(self, db, revision):
-        self._schema = get_transxchange_schema(db)
-        self.revision = revision
+def get_schema_violations(
+    txc_schema: etree.XMLSchema, txc_file: etree._Element, revision_id: int
+) -> list[DataQualitySchemaViolation]:
+    """
+    Validate parsed XML document against schema and collect any violations
+    """
+    violations: list[DataQualitySchemaViolation] = []
+    is_valid = txc_schema.validate(txc_file)
 
-    def get_violations(self, file_):
-        violations = []
-        error = XMLValidator(file_).dangerous_xml_check()
-        if error:
-            file_.seek(0)
-            violations.append(
-                BaseSchemaViolation.from_error(error[0], revision_id=self.revision.id)
-            )
-            return violations
-        file_.seek(0)
-        doc = etree.parse(file_)
-        is_valid = self._schema.validate(doc)
-        if not is_valid:
-            for error in self._schema.error_log:
-                violations.append(
-                    BaseSchemaViolation.from_error(error, revision_id=self.revision.id)
-                )
-        return violations
+    if not is_valid:
+        for error in txc_schema.error_log:
+            violation = create_violation_from_error(error, revision_id)
+
+            violations.append(violation)
+    if violations:
+        log.warning(
+            "Schema Violations Found", count=len(violations), revision_id=revision_id
+        )
+    else:
+        log.info("No Violations Found", revision_id=revision_id)
+    return violations
+
+
+def parse_xml_from_s3(input_data: SchemaCheckInputData) -> etree._Element:
+    """
+    Parse XML document from S3 object, streaming directly from S3 to lxml parser
+    """
+    s3_client = S3(bucket_name=input_data.s3_bucket_name)
+    try:
+        streaming_body = s3_client.get_object(input_data.s3_file_key)
+        return etree.parse(streaming_body).getroot()
+    except (ClientError, BotoCoreError) as e:
+        log.error("S3 Operation Failed", s3_key=input_data.s3_file_key, error=str(e))
+        raise
+    except etree.XMLSyntaxError as e:
+        log.error("XML Parsing Failed", s3_key=input_data.s3_file_key, error=str(e))
+        raise
+
+
+def process_schema_check(
+    input_data: SchemaCheckInputData,
+) -> list[DataQualitySchemaViolation]:
+    """
+    Process Schema Check
+    """
+    txc_schema = load_txc_schema()
+    txc_data = parse_xml_from_s3(input_data)
+
+    return get_schema_violations(txc_schema, txc_data, input_data.revision_id)
+
+
+def add_violations_to_db(
+    db: SqlDB, violations: list[DataQualitySchemaViolation]
+) -> list[DataQualitySchemaViolation]:
+    """
+    Add Schema Violations Found to Database
+    """
+    if len(violations) == 0:
+        log.info("No Violations found. Skipping Database Insert of Violations")
+        return []
+    log.info("Adding Violations to DB", count=len(violations))
+    result = DataQualitySchemaViolationRepo(db).bulk_insert(violations)
+    log.info("Successfully added violations to DB", count=len(result))
+    return result
 
 
 @file_processing_result_to_db(step_name=StepName.TIMETABLE_SCHEMA_CHECK)
-def lambda_handler(event, context):
+def lambda_handler(event, _context):
     """
     Main lambda handler
     """
-    logger.info(f"Received event:{json.dumps(event, indent=2)}")
+    configure_logging()
+    input_data = SchemaCheckInputData(**event)
+    db = SqlDB()
 
-    # Extract the bucket name and object key from the S3 event
-    bucket = event["Bucket"]
-    key = event["ObjectKey"]
-
-    # Get revision
-    db = DbManager.get_db()
-    revision = get_revision(db, int(event["DatasetRevisionId"]))
-
-    # URL-decode the key if it has special characters
-    filename = key.replace("+", " ")
     try:
-        s3_handler = S3(bucket_name=bucket)
-        file_object = s3_handler.get_object(file_path=filename)
-        validator = DatasetTXCValidator(db, revision=revision)
-        file_object = io.BytesIO(file_object.read())
-        violations = validator.get_violations(file_object)
-        schema_violation = SchemaViolation(db)
-        schema_violation.create(violations)
+        violations = process_schema_check(input_data)
+
+        if violations:
+            add_violations_to_db(db, violations)
     except Exception as e:
-        logger.error(f"Error scanning object '{key}' from bucket '{bucket}'")
+        log.error(
+            "Error scanning file",
+            bucket=input_data.s3_bucket_name,
+            file_key=input_data.s3_file_key,
+        )
         raise e
     return {
         "statusCode": 200,
-        "body": f"Successfully ran the file schema check for file '{key}' "
-        f"from bucket '{bucket}' with {len(violations)} violations",
+        "body": f"Successfully ran the file schema check for file '{input_data.s3_file_key}' "
+        f"from bucket '{input_data.s3_bucket_name}' with {len(violations)} violations",
     }

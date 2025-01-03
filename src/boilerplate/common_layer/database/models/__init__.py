@@ -3,6 +3,7 @@ Export models for DB queries
 """
 
 from .model_avl import AvlCavlDataArchive
+from .model_data_quality import DataQualitySchemaViolation
 from .model_junction import (
     TransmodelServicePatternAdminAreas,
     TransmodelServicePatternLocality,
@@ -83,10 +84,13 @@ __all__ = [
     "TransmodelTracks",
     "TransmodelTracksVehicleJourney",
     "TransmodelVehicleJourney",
+    # Users
     "UsersUser",
     # Pipelines
     "FileProcessingResult",
     "DatasetETLTaskResult",
     "PipelineErrorCode",
     "PipelineProcessingStep",
+    # Data Quality
+    "DataQualitySchemaViolation",
 ]

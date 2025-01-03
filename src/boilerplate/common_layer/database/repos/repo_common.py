@@ -12,7 +12,6 @@ from typing import (
     runtime_checkable,
 )
 
-from common_layer.database.repos.operation_decorator import handle_repository_errors
 from sqlalchemy import Column, Select, select
 from structlog.stdlib import get_logger
 
