@@ -62,7 +62,7 @@
                     "Next": "ParseError",
                     "ResultPath": "$.error_info",
                 }
-            ],
+            ]
         },
         "FileLevelProcessing": {
             "Type": "Map",
