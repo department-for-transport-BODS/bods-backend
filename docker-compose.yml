@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 services:
   clamav:
     container_name: clamav
@@ -30,9 +30,10 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: bodds
-      POSTGRES_USER: bodds_rw
+      POSTGRES_DB: bodds_test
+      POSTGRES_USER: bodds_test
       POSTGRES_PASSWORD: password
+
     volumes:
       - ${PWD}/sql/local:/docker-entrypoint-initdb.d:ro
       - postgres-data:/var/lib/postgresql/data

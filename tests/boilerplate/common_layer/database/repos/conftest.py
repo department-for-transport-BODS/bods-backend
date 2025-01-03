@@ -13,8 +13,8 @@ def setup_db():
     postgres_settings = PostgresSettings(
         POSTGRES_HOST="localhost",
         POSTGRES_PORT=5432,
-        POSTGRES_DB="bodds",
-        POSTGRES_USER="bodds_rw",
+        POSTGRES_DB="bodds_test",
+        POSTGRES_USER="bodds_test",
         POSTGRES_PASSWORD="password",
     )
 
