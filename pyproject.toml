@@ -16,6 +16,7 @@ file-attributes = "tools.file_attributes.cli:app"
 create-revision = "tools.dataset_revision.cli:app"
 db-viewer = "tools.db_viewer.cli:app"
 create-tables-dev = "src.boilerplate.common_layer.database.create_tables:create_db_tables"
+schema-check = "tools.schema_check.cli:app"
 
 [tool.poetry.dependencies]
 python = "^3.11"
