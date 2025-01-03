@@ -148,18 +148,12 @@ class PipelineProcessingStepRepository(BaseRepositoryWithId[PipelineProcessingSt
     def __init__(self, db: SqlDB):
         super().__init__(db, PipelineProcessingStep)
 
-    def get_by_name(self, name: str) -> PipelineProcessingStep | None:
+    def get_by_name(self, name: str) -> list[PipelineProcessingStep]:
         """
         Retrieve a PipelineProcessingStep by its name
-
-        Args:
-            name (str): The name to search for
-
-        Returns:
-            Optional[PipelineProcessingStep]: The matching processing step or None
         """
         statement = self._build_query().where(self._model.name == name)
-        return self._fetch_one(statement)
+        return self._fetch_all(statement)
 
     def get_by_category(self, category: str) -> list[PipelineProcessingStep]:
         """
@@ -168,6 +162,17 @@ class PipelineProcessingStepRepository(BaseRepositoryWithId[PipelineProcessingSt
         statement = self._build_query().where(self._model.category == category)
         return self._fetch_all(statement)
 
+    def get_by_name_and_category(
+        self, name: str, category: str
+    ) -> PipelineProcessingStep | None:
+        """
+        Retrieve a unique PipelineProcessingStep by its name and category
+        """
+        statement = self._build_query().where(
+            self._model.name == name, self._model.category == category
+        )
+        return self._fetch_one(statement)
+
     def get_or_create_by_name_and_category(
         self, name: str, category: str
     ) -> PipelineProcessingStep:
@@ -175,9 +180,8 @@ class PipelineProcessingStepRepository(BaseRepositoryWithId[PipelineProcessingSt
         Retrieves the processing step by name and category.
         Creates a new processing step if it doesn't exist.
         """
-        # Try to find existing processing step
-        existing_step = self.get_by_name(name)
-        if existing_step and existing_step.category == category:
+        existing_step = self.get_by_name_and_category(name, category)
+        if existing_step:
             return existing_step
 
         # Create new processing step if not found
