@@ -121,7 +121,7 @@ def test_initialize_processing():
         "DatasetType": "timetables",
     }
 
-    with patch("common_layer.database.client.SqlDB") as mock_db:
+    with patch("common_layer.db.file_processing_result.SqlDB") as mock_db:
         context = initialize_processing(event, StepName.CLAM_AV_SCANNER)
 
     assert context is not None
@@ -140,7 +140,10 @@ def test_initialize_processing_db_failure():
         "DatasetType": "timetables",
     }
 
-    with patch("common_layer.database.client.SqlDB", side_effect=Exception("DB Error")):
+    with patch(
+        "common_layer.db.file_processing_result.SqlDB",
+        side_effect=Exception("DB Error"),
+    ):
         context = initialize_processing(event, StepName.CLAM_AV_SCANNER)
 
     assert context is not None
@@ -240,7 +243,7 @@ def test_file_processing_result_to_db_decorator(success, db_available):
         return "success"
 
     # Mock DB connection based on db_available
-    db_patch = patch("common_layer.database.client.SqlDB")
+    db_patch = patch("common_layer.db.file_processing_result.SqlDB")
     if not db_available:
         db_patch.side_effect = Exception("DB connection failed")  # type: ignore
 
