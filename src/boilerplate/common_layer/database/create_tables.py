@@ -17,9 +17,13 @@ from sqlalchemy.sql.schema import Table
 from sqlalchemy.types import Enum as SQLEnumType
 from structlog.stdlib import get_logger
 
-from . import models
-from .client import SqlDB
-from .models.common import BaseSQLModel
+structlog.configure(
+    processors=[
+        structlog.processors.add_log_level,
+        structlog.processors.StackInfoRenderer(),
+        structlog.dev.ConsoleRenderer(),
+    ]
+)
 
 structlog.configure(
     processors=[
