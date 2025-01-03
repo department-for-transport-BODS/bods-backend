@@ -73,7 +73,7 @@ def bytes_are_zip_file(content: bytes) -> bool:
     return zipfile.is_zipfile(io.BytesIO(content))
 
 
-def get_filetype_from_response(response) -> Optional[str]:
+def get_filetype_from_response(response) -> str | None:
     """
     Extract the file type from the HTTP response headers or content.
     """
@@ -286,5 +286,8 @@ def lambda_handler(event, context) -> dict:
     if input_data.remote_dataset_url_link:
         return download_and_upload_dataset(input_data, TIME_ZONE)
     else:
-        log.info("nothing to download.")
-        return {"statusCode": 200, "body": "nothing to download"}
+        log.info("url link is not specified, nothing to download.")
+        return {
+            "statusCode": 200,
+            "body": "url link is not specified, nothing to download",
+        }
