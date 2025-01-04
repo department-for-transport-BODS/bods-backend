@@ -1,18 +1,21 @@
 import io
-import requests
 import time
-from common_layer.db.manager import DbManager
 from datetime import datetime, timezone
+from os import environ
+from zipfile import ZIP_DEFLATED, ZipFile
+
+import requests
+from common_layer.db.manager import DbManager
 from common_layer.db.repositories.avl_cavldataarchive import (
     get_cavl_db_object,
     update_record_in_db,
 )
 from common_layer.enums import CAVLDataFormat
-from common_layer.logger import logger
-from os import environ
-from requests import RequestException
 from common_layer.s3 import S3
-from zipfile import ZIP_DEFLATED, ZipFile
+from requests import RequestException
+from structlog.stdlib import get_logger
+
+log = get_logger()
 
 
 class ArchivingError(Exception):
@@ -70,12 +73,12 @@ class ConsumerAPIArchiver:
             response = requests.get(self.url)
         except RequestException:
             msg = f"Unable to retrieve data from {self.url}"
-            logger.error(msg)
+            log.error("Unable to retrive data", url=self.url)
             raise ArchivingError(msg)
         else:
             self._access_time = datetime.now(timezone.utc)
-            logger.info(
-                f"{self.logger_prefix} Total time elapsed to get response from {self.url} is {response.elapsed.total_seconds()} for job-task_create_{self.filename_prefix}_zipfile"
+            log.info(
+                f"Total time elapsed to get response from {self.url} is {response.elapsed.total_seconds()} for job-task_create_{self.filename_prefix}_zipfile"
             )
             return response.content
 
@@ -85,8 +88,9 @@ class ConsumerAPIArchiver:
         with ZipFile(bytesio, mode="w", compression=ZIP_DEFLATED) as zf:
             zf.writestr(self.content_filename, content)
         end_file_op = time.time()
-        logger.info(
-            f"{self.logger_prefix} File operation took {end_file_op-start_get_file_op:.2f} seconds for job-task_create_{self.filename_prefix}_zipfile"
+        log.info(
+            f" File operation took completed for job-task_create_{self.filename_prefix}_zipfile",
+            time=end_file_op - start_get_file_op,
         )
         return bytesio
 
@@ -94,8 +98,8 @@ class ConsumerAPIArchiver:
         start_db_op = time.time()
         archive = get_cavl_db_object(self.db, self.data_format)
         end_db_op = time.time()
-        logger.info(
-            f"{self.logger_prefix} File operation took {end_db_op-start_db_op:.2f} seconds for job-task_create_{self.filename_prefix}_zipfile"
+        log.info(
+            f"File operation took {end_db_op-start_db_op:.2f} seconds for job-task_create_{self.filename_prefix}_zipfile"
         )
         return archive
 
@@ -106,8 +110,8 @@ class ConsumerAPIArchiver:
         self._archive.last_updated = datetime.now(timezone.utc)
         update_record_in_db(self._archive, self.db)
         end_s3_op = time.time()
-        logger.info(
-            f"{self.logger_prefix} S3 archive operation took {end_s3_op-start_s3_op:.2f} seconds for job-task_create_{self.filename_prefix}_zipfile"
+        log.info(
+            f"S3 archive operation took {end_s3_op-start_s3_op:.2f} seconds for job-task_create_{self.filename_prefix}_zipfile"
         )
 
     def upload_file_to_s3(self, bytesio):

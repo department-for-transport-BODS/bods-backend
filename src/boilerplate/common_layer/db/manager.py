@@ -1,8 +1,10 @@
-
 import datetime
 import time
+
 from common_layer.db import BodsDB
-from common_layer.logger import logger
+from structlog.stdlib import get_logger
+
+log = get_logger()
 
 db_instance = None
 token_expiration_time = None
@@ -29,12 +31,12 @@ class DbManager:
             or token_expiration_time is None
             or current_time >= token_expiration_time
         ):
-            logger.debug(
+            log.debug(
                 "Initialising new BodsDB instance with refreshed IAM authentication token"
             )
             db_instance, token_expiration_time = DbManager._initialise_db()
         else:
-            logger.debug("Re-using cached BodsDB instance as still valid")
+            log.debug("Re-using cached BodsDB instance as still valid")
 
         return db_instance
 
@@ -47,7 +49,7 @@ class DbManager:
         token_expiration = (
             time.time() + (15 * 60) - 30
         )  # AWS default token expiration is 15 minutes. Settings to time less 30s as safeguard
-        logger.debug(
+        log.debug(
             f"New token expiration set for {datetime.datetime.utcfromtimestamp(token_expiration)}"
         )
         return db, token_expiration

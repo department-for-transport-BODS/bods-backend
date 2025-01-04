@@ -3,13 +3,14 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import List, Optional
 
-from lxml import etree
-from pydantic import BaseModel
-from common_layer.logger import logger
 from common_layer.utils import sha1sum
 from common_layer.xmlelements import XMLElement
 from common_layer.zip import ZippedValidator
+from lxml import etree
+from pydantic import BaseModel
+from structlog.stdlib import get_logger
 
+log = get_logger()
 GRID_LOCATION = "Grid"
 WSG84_LOCATION = "WGS84"
 PRINCIPAL_TIMING_POINTS = ["PTP", "principalTimingPoint"]
@@ -461,9 +462,14 @@ class TransXChangeZip(ZippedValidator):
         """
         filenames = self.get_files()
         count = len(filenames)
-        logger.info(f"[TransXChange] Validating {count} files.")
+        log.info("[TransXChange] Validating files", count=count)
         for ind, name in enumerate(filenames, start=1):
-            logger.info(f"[TransXChange] => Validating {name} file {ind} of {count}.")
+            log.info(
+                "[TransXChange] => Validating file",
+                name=name,
+                index=ind,
+                total=count,
+            )
             self.get_doc_from_name(name)
 
     def validate(self):
