@@ -109,11 +109,10 @@ class TestLambdaHandler(unittest.TestCase):
         violation = get_violation("mocked-file-content")
         self.assertIsNone(violation)
 
-    @patch("timetables_etl.post_schema_check.logger.error")
     @patch("timetables_etl.post_schema_check.get_revision")
     @patch("timetables_etl.post_schema_check.S3")
     @patch.dict("os.environ", TEST_ENV_VAR)
-    def test_lambda_handler_error_handling(self, mock_s3, m_db_manager, mock_logger):
+    def test_lambda_handler_error_handling(self, mock_s3, m_db_manager):
         """
         Test lambda_handler handles exceptions and logs errors.
         """

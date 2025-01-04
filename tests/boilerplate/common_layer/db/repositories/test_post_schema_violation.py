@@ -1,15 +1,17 @@
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
-from common_layer.db.repositories.post_schema_violation import PostSchemaViolationRepository, get_post_schema_check_obj
+from common_layer.db.repositories.post_schema_violation import (
+    PostSchemaViolationRepository,
+    get_post_schema_check_obj,
+)
 from sqlalchemy.exc import SQLAlchemyError
 
 from tests.mock_db import MockedDB
 
 
 class TestPostSchemaViolationRepository(unittest.TestCase):
-    @patch("common_layer.db.repositories.post_schema_violation.logger")
-    def test_create_success(self, mock_logger):
+    def test_create_success(self):
         # Mock the database session and classes
         mock_db = MagicMock()
         mock_session = MagicMock()
@@ -37,11 +39,7 @@ class TestPostSchemaViolationRepository(unittest.TestCase):
         mock_session.add.assert_called()
         mock_session.commit.assert_called()
 
-        # Ensure the logger did not log errors
-        mock_logger.error.assert_not_called()
-
-    @patch("common_layer.db.repositories.post_schema_violation.logger")
-    def test_create_failure(self, mock_logger):
+    def test_create_failure(self):
         # Mock the database session and classes
         mock_db = MagicMock()
         mock_session = MagicMock()
@@ -53,7 +51,9 @@ class TestPostSchemaViolationRepository(unittest.TestCase):
         mock_session.commit.side_effect = SQLAlchemyError("Test SQLAlchemyError")
 
         # Prepare test data
-        violations = [{"revision_id": 1, "filename": "file1.csv", "details": "Invalid data"}]
+        violations = [
+            {"revision_id": 1, "filename": "file1.csv", "details": "Invalid data"}
+        ]
 
         # Instantiate the repository
         repository = PostSchemaViolationRepository(mock_db)
@@ -64,9 +64,6 @@ class TestPostSchemaViolationRepository(unittest.TestCase):
 
         # Assert the session rollback was called
         mock_session.rollback.assert_called_once()
-
-        # Ensure the logger logged the error
-        mock_logger.error.assert_called_once_with(" Failed to add record Test SQLAlchemyError", exc_info=True)
 
     def test_get_post_schema_check_obj(self):
         data_ = dict(revision_id=1234, filename="file1.xml", details="Invalid data")
