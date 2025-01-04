@@ -4,7 +4,6 @@ Zip Handling Utilities
 
 import shutil
 import tempfile
-from io import BytesIO
 from pathlib import Path
 from typing import Generator
 from zipfile import BadZipFile, ZipFile, is_zipfile
@@ -15,7 +14,6 @@ from common_layer.exceptions.zip_file_exceptions import (
     ZipTooLarge,
     ZipValidationException,
 )
-from common_layer.logger import logger
 from common_layer.s3 import S3
 from common_layer.utils import get_file_size
 from structlog.stdlib import get_logger
