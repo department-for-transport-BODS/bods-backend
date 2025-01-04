@@ -1,8 +1,6 @@
 import logging
+
 from common_layer.db import BodsDB, DbManager
-from common_layer.db.repositories.dataset_etl_task_result import (
-    DatasetETLTaskResultRepository
-)
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -17,11 +15,9 @@ def get_revision(db, dataset_revision_id):
     return revision_repo.get_by_id(dataset_revision_id)
 
 
-def update_file_hash_in_db(file_name,
-                           revision_id,
-                           original_file_hash=None,
-                           modified_file_hash=None
-                           ):
+def update_file_hash_in_db(
+    file_name, revision_id, original_file_hash=None, modified_file_hash=None
+):
     """
     Update modified hash to db
     """
@@ -47,9 +43,11 @@ class DatasetRevisionRepository:
     def get_by_id(self, id: int):
         try:
             with self._db.session as session:
-                result = session.query(
-                    self._db.classes.organisation_datasetrevision).\
-                    filter_by(id=id).one()
+                result = (
+                    session.query(self._db.classes.organisation_datasetrevision)
+                    .filter_by(id=id)
+                    .one()
+                )
         except NoResultFound as exc:
             message = f"DatasetRevision {id} does not exist."
             logger.exception(message, exc_info=True)
