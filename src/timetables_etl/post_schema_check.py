@@ -1,5 +1,6 @@
 import io
 import re
+
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.db.manager import DbManager
@@ -7,9 +8,12 @@ from common_layer.db.repositories.dataset_revision import get_revision
 from common_layer.db.repositories.post_schema_violation import (
     PostSchemaViolationRepository,
 )
-from common_layer.logger import logger
+from common_layer.json_logging import configure_logging
 from common_layer.s3 import S3
 from common_layer.timetables.transxchange import TransXChangeDocument
+from structlog.stdlib import get_logger
+
+log = get_logger()
 
 
 def get_violation(file_obj):
@@ -27,6 +31,7 @@ def lambda_handler(event, context):
     """
     Main lambda handler
     """
+    configure_logging()
     # Extract the bucket name and object key from the S3 event
     bucket = event["Bucket"]
     key = event["ObjectKey"]
@@ -47,8 +52,12 @@ def lambda_handler(event, context):
             post_schema_violation = PostSchemaViolationRepository(db)
             post_schema_violation.create(**params)
     except Exception as e:
-        logger.error(
-            f"Error {StepName.TIMETABLE_POST_SCHEMA_CHECK} '{key}' from bucket '{bucket}'"
+        log.error(
+            f"Error Processing",
+            key=key,
+            step=StepName.TIMETABLE_POST_SCHEMA_CHECK,
+            bucket=bucket,
+            exc_info=True,
         )
         raise e
     msg = f"Successfully ran {StepName.TIMETABLE_POST_SCHEMA_CHECK} for file '{key}' from '{bucket}'"

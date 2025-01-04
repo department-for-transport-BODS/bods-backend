@@ -1,10 +1,14 @@
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from zipfile import ZipFile, ZIP_DEFLATED
+from zipfile import ZIP_DEFLATED, ZipFile
+
 from common_layer.db.repositories.dataset_revision import update_file_hash_in_db
-from common_layer.logger import logger
+from common_layer.json_logging import configure_logging
 from common_layer.s3 import S3
 from common_layer.utils import sha1sum
+from structlog.stdlib import get_logger
+
+log = get_logger()
 
 
 def get_file_path_and_name(full_path_name):
@@ -21,13 +25,13 @@ def get_files_in_s3_folder(s3_handler, s3_folder):
     """
     files = []
     for page in s3_handler.get_list_objects_v2(s3_folder):
-        if 'Contents' not in page:
+        if "Contents" not in page:
             print(f"No files found in {s3_folder}")
             continue
 
-        for obj in page['Contents']:
-            file_key = obj['Key']
-            if file_key.endswith('/'):  # Skip folders
+        for obj in page["Contents"]:
+            file_key = obj["Key"]
+            if file_key.endswith("/"):  # Skip folders
                 continue
             files.append(file_key)
     return files
@@ -50,6 +54,7 @@ def lambda_handler(event, context):
     """
     Lambda handler to recreate zip archive
     """
+    configure_logging()
     bucket = event["Bucket"]
     key = event["ObjectKey"]
     valid_files = event["ValidFiles"]
@@ -67,32 +72,34 @@ def lambda_handler(event, context):
 
         msg = None
         if len(xml_files) == len(valid_files):
-            logger.info(f"No modified files found in {valid_s3_folders}")
+            log.info(f"No modified files found in {valid_s3_folders}")
             msg = f"No modified files found in {valid_s3_folders}"
         else:
-            logger.info(f"Modified files found in {valid_s3_folders}")
+            log.info(
+                "Modified files found",
+                valid_s3_folders=valid_s3_folders,
+            )
 
-            temp_filename = create_zip_archive(s3_handler,
-                                               key.split('/')[-1],
-                                               xml_files)
+            temp_filename = create_zip_archive(
+                s3_handler, key.split("/")[-1], xml_files
+            )
 
             # Upload the zip file directly to S3
-            logger.info(f"Uploading zip file {key} to S3")
+            log.info("Uploading zip file to S3", key=key)
             with open(temp_filename, "rb") as temp_file_data:
                 s3_handler.put_object(key, temp_file_data.read())
 
             # Hashing the file
-            logger.info(f"Hashing the file {key}")
+            log.info("Hashing the file", key=key)
             stream = s3_handler.get_object(key)
 
-            update_file_hash_in_db(event["ObjectKey"],
-                                   event["DatasetRevisionId"],
-                                   modified_file_hash=sha1sum(stream.read()))
+            update_file_hash_in_db(
+                event["ObjectKey"],
+                event["DatasetRevisionId"],
+                modified_file_hash=sha1sum(stream.read()),
+            )
             msg = f"Modified hash is updated"
-        return {
-            "statusCode": 200,
-            "body": msg
-        }
+        return {"statusCode": 200, "body": msg}
     except Exception as err:
-        logger.error("Error while re-zipping files")
+        log.error("Error while re-zipping files", exc_info=True)
         raise err

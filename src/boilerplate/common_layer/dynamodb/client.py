@@ -5,7 +5,9 @@ from typing import Any, Callable
 import boto3
 from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
 from common_layer.exceptions.pipeline_exceptions import PipelineException
-from common_layer.logger import logger
+from structlog.stdlib import get_logger
+
+log = get_logger()
 
 TABLE_NAME = os.getenv("DYNAMODB_TABLE_NAME")
 
@@ -41,10 +43,10 @@ class DynamoDB:
         cached_value = self.get(key)
 
         if cached_value is not None:
-            logger.info(f"Cache hit for key: {key}")
+            log.info("DynamoDB: Cache hit", key=key)
             return cached_value
 
-        logger.info(f"Cache miss for key: {key}, computing value")
+        log.info("DynamoDB: Cache miss, computing value", key=key)
         computed_value = compute_fn()
 
         self.put(key, computed_value, ttl=ttl)
@@ -65,7 +67,7 @@ class DynamoDB:
             return result
         except Exception as e:
             message = f"Failed to get item with key '{key}': {str(e)}"
-            logger.error(message)
+            log.error("DynamoDB: Failed ot get item", key=key)
             raise PipelineException(message) from e
 
     def put(self, key: str, value: Any, ttl: int | None = None):
@@ -85,5 +87,5 @@ class DynamoDB:
             self._client.put_item(TableName=TABLE_NAME, Item=item)
         except Exception as e:
             message = f"Failed to set item with key '{key}': {str(e)}"
-            logger.error(message)
+            log.error("Failed to set item", key=key, exc_info=True)
             raise PipelineException(message) from e

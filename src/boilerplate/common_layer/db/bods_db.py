@@ -1,11 +1,15 @@
-import boto3
 import time
 import urllib.parse
-from common_layer.logger import logger
 from os import environ
+
+import boto3
+from sqlalchemy import create_engine
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine
+from structlog.stdlib import get_logger
+
+log = get_logger()
+
 
 class BodsDB:
     """
@@ -29,8 +33,7 @@ class BodsDB:
             self._initialise_engine()
 
         if self._session is None:
-            SessionMaker = sessionmaker(bind=self._engine,
-                                        expire_on_commit=False)
+            SessionMaker = sessionmaker(bind=self._engine, expire_on_commit=False)
             self._session = SessionMaker()
 
         return self._session
@@ -49,7 +52,7 @@ class BodsDB:
         Initialises the SQLAlchemy engine. This is cached globally and reused across invocations
         """
         connection_details = self._get_connection_details()
-        logger.info("Connecting to DB")
+        log.info("Connecting to DB")
 
         try:
             start_init_op = time.time()
@@ -57,11 +60,11 @@ class BodsDB:
                 self._generate_connection_string(**connection_details)
             )
             end_init_op = time.time()
-            logger.info(
+            log.info(
                 f"DB initialisation operation took {end_init_op-start_init_op:.2f} seconds"
             )
         except Exception as e:
-            logger.error(f"Failed to initialise SQLAlchemy engine: {e}")
+            log.error(f"Failed to initialise SQLAlchemy engine: {e}")
             raise
 
     def _initialise_database_classes(self):
@@ -73,10 +76,10 @@ class BodsDB:
             self._initialise_engine()
 
         self._sqlalchemy_base = automap_base()
-        logger.info("Preparing SQLAlchemy base")
+        log.info("Preparing SQLAlchemy base")
         self._sqlalchemy_base.prepare(autoload_with=self._engine)
         self._classes = self._sqlalchemy_base.classes
-        logger.info("Set DB classes")
+        log.info("Set DB classes")
 
     def _get_connection_details(self):
         """
@@ -89,7 +92,7 @@ class BodsDB:
         connection_details["port"] = environ.get("POSTGRES_PORT")
         try:
             if environ.get("PROJECT_ENV") != "local":
-                logger.debug("Getting DB IAM authentication token")
+                log.debug("Getting DB IAM authentication token")
                 start_auth_op = time.time()
                 connection_details["password"] = self._generate_rds_iam_auth_token(
                     connection_details["host"],
@@ -97,26 +100,26 @@ class BodsDB:
                     connection_details["user"],
                 )
                 end_auth_op = time.time()
-                logger.debug(
+                log.debug(
                     f"DB IAM authentication token generation took {end_auth_op-start_auth_op:.2f} seconds"
                 )
                 connection_details["sslmode"] = "require"
             else:
-                logger.debug(
+                log.debug(
                     "Running in local environment, using DB password obtained from environment variables"
                 )
                 connection_details["password"] = environ.get(
                     "POSTGRES_PASSWORD", "password"
                 )
-                logger.debug("Got DB password")
+                log.debug("Got DB password")
                 connection_details["sslmode"] = "disable"
             for key, value in connection_details.items():
                 if value is None:
-                    logger.error(f"Missing connection details value: {key}")
+                    log.error(f"Missing connection details value: {key}")
                     raise ValueError
             return connection_details
         except Exception as e:
-            logger.error("Failed to get connection details for database")
+            log.error("Failed to get connection details for database")
             raise e
 
     def _generate_connection_string(self, **kwargs) -> str:
@@ -177,5 +180,5 @@ class BodsDB:
             )
             return urllib.parse.quote_plus(token)
         except Exception as e:
-            logger.error(f"An error occurred while generating the IAM auth token: {e}")
+            log.error(f"An error occurred while generating the IAM auth token: {e}")
             return None
