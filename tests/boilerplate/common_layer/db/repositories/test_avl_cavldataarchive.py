@@ -1,18 +1,18 @@
 import unittest
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 from common_layer.db.repositories.avl_cavldataarchive import (
     get_cavl_db_object,
     update_cavl_db_object,
-    update_record_in_db
+    update_record_in_db,
 )
 
 
 class TestCavlDbFunctions(unittest.TestCase):
 
     @patch("common_layer.db.repositories.avl_cavldataarchive.BodsDB")
-    @patch("common_layer.db.repositories.avl_cavldataarchive.logger")
-    def test_get_cavl_db_object_existing_record(self, mock_logger, mock_bodsdb):
+    def test_get_cavl_db_object_existing_record(self, mock_bodsdb):
         """
         Test get_cavl_db_object retrieves an existing record from the database.
         """
@@ -22,7 +22,9 @@ class TestCavlDbFunctions(unittest.TestCase):
         # Mocking the database session and query
         mock_bodsdb.session.__enter__.return_value = mock_session
         mock_cavl_data_archive.data_format = "JSON"
-        mock_session.query.return_value.where.return_value.first.return_value = mock_cavl_data_archive
+        mock_session.query.return_value.where.return_value.first.return_value = (
+            mock_cavl_data_archive
+        )
         mock_bodsdb.classes.avl_cavldataarchive = MagicMock()
 
         record = get_cavl_db_object(mock_bodsdb, "JSON")
@@ -30,11 +32,9 @@ class TestCavlDbFunctions(unittest.TestCase):
         # Assertions
         mock_session.query.assert_called_once()
         assert record == mock_cavl_data_archive
-        mock_logger.info.assert_called_once()
 
     @patch("common_layer.db.repositories.avl_cavldataarchive.BodsDB")
-    @patch("common_layer.db.repositories.avl_cavldataarchive.logger")
-    def test_get_cavl_db_object_new_record(self, mock_logger, mock_bodsdb):
+    def test_get_cavl_db_object_new_record(self, mock_bodsdb):
         """
         Test get_cavl_db_object creates a new record if none exists in the database.
         """
@@ -51,12 +51,12 @@ class TestCavlDbFunctions(unittest.TestCase):
         # Assertions
         mock_cavl_data_archive_class.assert_called_once()
         assert record is not None
-        mock_logger.info.assert_called_once()
 
     @patch("common_layer.db.repositories.avl_cavldataarchive.get_cavl_db_object")
     @patch("common_layer.db.repositories.avl_cavldataarchive.update_record_in_db")
-    def test_update_cavl_db_object(self, mock_update_record_in_db,
-                                   mock_get_cavl_db_object):
+    def test_update_cavl_db_object(
+        self, mock_update_record_in_db, mock_get_cavl_db_object
+    ):
         """
         Test update_cavl_db_object updates the record correctly.
         """
@@ -73,8 +73,7 @@ class TestCavlDbFunctions(unittest.TestCase):
         assert mock_archive.data == "test_file.json"
         mock_update_record_in_db.assert_called_once_with(mock_archive, mock_db)
 
-    @patch("common_layer.db.repositories.avl_cavldataarchive.logger")
-    def test_update_record_in_db_success(self, mock_logger):
+    def test_update_record_in_db_success(self):
         """
         Test update_record_in_db commits the record successfully.
         """
@@ -91,8 +90,7 @@ class TestCavlDbFunctions(unittest.TestCase):
         mock_session.add.assert_called_once_with(mock_record)
         mock_session.commit.assert_called_once()
 
-    @patch("common_layer.db.repositories.avl_cavldataarchive.logger")
-    def test_update_record_in_db_failure(self, mock_logger):
+    def test_update_record_in_db_failure(self):
         """
         Test update_record_in_db rolls back on failure.
         """
@@ -110,8 +108,6 @@ class TestCavlDbFunctions(unittest.TestCase):
         # Assertions
         mock_session.add.assert_called_once_with(mock_record)
         mock_session.rollback.assert_called_once()
-        mock_logger.error.assert_called_once_with(
-            "Failed to update record: Commit failed")
 
 
 if __name__ == "__main__":

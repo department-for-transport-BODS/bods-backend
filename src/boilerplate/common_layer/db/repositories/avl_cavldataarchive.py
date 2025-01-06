@@ -1,7 +1,10 @@
 import time
-from common_layer.db import BodsDB
 from datetime import datetime, timezone
-from common_layer.logger import logger
+
+from common_layer.db import BodsDB
+from structlog.stdlib import get_logger
+
+log = get_logger()
 
 
 def get_cavl_db_object(db: BodsDB, data_format: str):
@@ -24,7 +27,7 @@ def get_cavl_db_object(db: BodsDB, data_format: str):
             .first()
         )
         end_query_op = time.time()
-        logger.info(f"Query execution time: {end_query_op-start_query_op:.2f} seconds")
+        log.info("Query executed", time_taken=end_query_op - start_query_op)
         if archive is None:
             archive = cavl_data_archive(
                 data_format=data_format,
@@ -60,7 +63,7 @@ def update_record_in_db(record, db: BodsDB):
         try:
             session.add(record)
             session.commit()
-        except Exception as e:
+        except Exception:
             session.rollback()
-            logger.error(f"Failed to update record: {e}")
+            log.error("Failed to update record", exc_info=True)
             raise

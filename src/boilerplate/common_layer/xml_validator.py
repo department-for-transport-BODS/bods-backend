@@ -1,8 +1,15 @@
-from defusedxml import DefusedXmlException, ElementTree as detree
-from lxml import etree
-from common_layer.exceptions.xml_file_exceptions import FileTooLarge, XMLSyntaxError, DangerousXML
-from common_layer.logger import logger
+from common_layer.exceptions.xml_file_exceptions import (
+    DangerousXML,
+    FileTooLarge,
+    XMLSyntaxError,
+)
 from common_layer.utils import get_file_size
+from defusedxml import DefusedXmlException
+from defusedxml import ElementTree as detree
+from lxml import etree
+from structlog.stdlib import get_logger
+
+log = get_logger()
 
 
 class FileValidator:
@@ -122,7 +129,7 @@ def get_lxml_schema(schema):
         return
 
     if not isinstance(schema, etree.XMLSchema):
-        logger.info(f"[XML] => Parsing {schema}.")
+        log.info("[XML] => Parsing Schema", schema=schema)
         root = etree.parse(schema)
         schema = etree.XMLSchema(root)
     return schema

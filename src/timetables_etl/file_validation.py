@@ -5,10 +5,13 @@ from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.exceptions.xml_file_exceptions import XMLValidationException
 from common_layer.exceptions.zip_file_exceptions import ZipValidationException
-from common_layer.logger import logger
+from common_layer.json_logging import configure_logging
 from common_layer.s3 import S3
 from common_layer.xml_validator import FileValidator, XMLValidator
 from common_layer.zip import ZippedValidator
+from structlog.stdlib import get_logger
+
+log = get_logger()
 
 
 class TimetableFileValidator:
@@ -52,6 +55,7 @@ class TimetableFileValidator:
 
 @file_processing_result_to_db(step_name=StepName.TXC_FILE_VALIDATOR)
 def lambda_handler(event, context):
+    configure_logging()
     bucket = event["Bucket"]
     key = event["ObjectKey"]
     try:
@@ -59,11 +63,11 @@ def lambda_handler(event, context):
         validator.validate()
     except ZipValidationException as exc:
         message = exc.message
-        logger.error(message, exc_info=True)
+        log.error(message, exc_info=True)
         raise exc
     except XMLValidationException as exc:
         message = exc.message
-        logger.error(message, exc_info=True)
+        log.error(message, exc_info=True)
         raise exc
     except Exception as exc:
         raise exc

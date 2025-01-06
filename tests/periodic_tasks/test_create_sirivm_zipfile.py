@@ -1,5 +1,6 @@
 import unittest
 from unittest.mock import patch
+
 from periodic_tasks.create_sirivm_zip import lambda_handler
 
 MODULE_PATH = "periodic_tasks.create_sirivm_zip"
@@ -13,14 +14,10 @@ class TestSiriVMZipfile(unittest.TestCase):
         lambda_handler({}, "")
         mock_instance.archive.assert_called_once()
 
-    @patch(f"{MODULE_PATH}.logger")
     @patch(f"{MODULE_PATH}.SiriVMArchiver")
-    def test_general_exception(self, mock_archiver, mock_logger):
+    def test_general_exception(self, mock_archiver):
         mock_instance = mock_archiver.return_value
         mock_instance.url = "http://fakeurl.com"
         mock_instance.archive.side_effect = Exception("General error")
 
         lambda_handler({}, "")
-        mock_logger.error.assert_called_once_with(
-            "SIRIVM zip task failed due to General error"
-        )

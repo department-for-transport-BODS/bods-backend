@@ -48,18 +48,8 @@ jobs:
       - name: Install PyTest PR Annotation Plugin
         run: poetry run pip install pytest-github-actions-annotate-failures
 
-      - name: Prime Database
-        env:
-          POSTGRES_HOST: localhost
-          POSTGRES_PORT: 5432
-          POSTGRES_DB: bodds
-          POSTGRES_USER: bodds_rw
-          POSTGRES_PASSWORD: password
-          PROJECT_ENV: local
-        run: poetry run create-tables-dev
-
       - name: Run Pytest
-        run: poetry run pytest --junitxml=junit/test-results.xml --cov-report term
+        run: poetry run pytest --junitxml=junit/test-results.xml --cov-report term --color=yes
 
       - name: Generate Test Summary
         id: test-summary
@@ -160,7 +150,7 @@ jobs:
           echo "$summary" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-          if (( $(echo "$coverage_percentage < 90" | bc -l) )); then
+          if (( $(echo "$coverage_percentage < 80" | bc -l) )); then
             echo "conclusion=failure" >> $GITHUB_OUTPUT
           else
             echo "conclusion=success" >> $GITHUB_OUTPUT

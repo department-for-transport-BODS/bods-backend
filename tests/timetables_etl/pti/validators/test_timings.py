@@ -1,8 +1,8 @@
 from unittest.mock import MagicMock
-import pytest
 
-from pti.constants import PTI_SCHEMA_PATH
+import pytest
 from common_layer.pti.models import Schema
+from pti.constants import PTI_SCHEMA_PATH
 from pti.validators.pti import PTIValidator
 
 from tests.timetables_etl.pti.validators.conftest import JSONFile, TXCFile
@@ -44,8 +44,8 @@ def test_timing_link_validation(refs, expected):
     schema = Schema.from_path(PTI_SCHEMA_PATH)
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
     schema = SchemaFactory(observations=observations)
-    json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file, MagicMock())
+    json_file = JSONFile(schema.model_dump_json())
+    pti = PTIValidator(json_file, MagicMock(), MagicMock())
 
     txc = TXCFile(xml)
     is_valid = pti.is_valid(txc)
@@ -87,8 +87,8 @@ def test_from_has_sequence_number_true(from_seq, to_seq, expected):
     schema = Schema.from_path(PTI_SCHEMA_PATH)
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
     schema = SchemaFactory(observations=observations)
-    json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file, MagicMock())
+    json_file = JSONFile(schema.model_dump_json())
+    pti = PTIValidator(json_file, MagicMock(), MagicMock())
 
     txc = TXCFile(xml)
     is_valid = pti.is_valid(txc)
@@ -128,7 +128,11 @@ def test_run_time_validation(run_time, jptl_ref, has_to_from, expected):
         run_time = "<RunTime>{0}</RunTime>".format(run_time)
 
     if jptl_ref:
-        jptl_ref = "<JourneyPatternTimingLinkRef>{0}</JourneyPatternTimingLinkRef>".format(jptl_ref)
+        jptl_ref = (
+            "<JourneyPatternTimingLinkRef>{0}</JourneyPatternTimingLinkRef>".format(
+                jptl_ref
+            )
+        )
 
     if has_to_from:
         to_from = """
@@ -173,8 +177,8 @@ def test_run_time_validation(run_time, jptl_ref, has_to_from, expected):
     schema = Schema.from_path(PTI_SCHEMA_PATH)
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
     schema = SchemaFactory(observations=observations)
-    json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file, MagicMock())
+    json_file = JSONFile(schema.model_dump_json())
+    pti = PTIValidator(json_file, MagicMock(), MagicMock())
     txc = TXCFile(xml)
     is_valid = pti.is_valid(txc)
     assert is_valid == expected

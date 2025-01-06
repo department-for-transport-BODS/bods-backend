@@ -2,7 +2,12 @@
 Exported repos
 """
 
-from .repo_etl_task import ETLTaskResultRepo
+from .repo_data_quality import DataQualitySchemaViolationRepo
+from .repo_etl_task import (
+    ETLTaskResultRepo,
+    FileProcessingResultRepo,
+    PipelineErrorCodeRepository,
+)
 from .repo_junction import (
     TransmodelServicePatternAdminAreaRepo,
     TransmodelServicePatternLocalityRepo,
@@ -13,9 +18,10 @@ from .repo_naptan import NaptanAdminAreaRepo, NaptanLocalityRepo, NaptanStopPoin
 from .repo_organisation import (
     OrganisationDatasetRepo,
     OrganisationDatasetRevisionRepo,
-    OrganisationTXCFileAttributesRepo,
     OrganisationOrganisationRepo,
+    OrganisationTXCFileAttributesRepo,
 )
+from .repo_otc import OtcServiceRepo
 from .repo_transmodel import (
     TransmodelBankHolidaysRepo,
     TransmodelServicePatternRepo,
@@ -43,7 +49,9 @@ from .repo_transmodel_vehicle_journey import (
 __all__ = [
     "OrganisationDatasetRepo",
     "OrganisationDatasetRevisionRepo",
+    "OrganisationOrganisationRepo",
     "OrganisationTXCFileAttributesRepo",
+    "OtcServiceRepo",
     "TransmodelServicedOrganisationsRepo",
     "TransmodelVehicleJourneyRepo",
     "TransmodelFlexibleServiceOperationPeriodRepo",
@@ -70,4 +78,8 @@ __all__ = [
     "TransmodelBankHolidaysRepo",
     "TransmodelTracksVehicleJourneyRepo",
     "TransmodelTrackRepo",
+    "FileProcessingResultRepo",
+    "PipelineErrorCodeRepository",
+    # Data Quality
+    "DataQualitySchemaViolationRepo",
 ]

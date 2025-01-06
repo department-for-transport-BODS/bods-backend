@@ -6,26 +6,36 @@ Useful for setting up local testing
 """
 
 from types import ModuleType
-from typing import Type
+from typing import Any, Type, cast
 
+import structlog
 from sqlalchemy import Column as SQLColumn
-from sqlalchemy import Engine, MetaData
-from sqlalchemy import Table as SQLTable
-from sqlalchemy import inspect, text
+from sqlalchemy import Engine, MetaData, inspect, text
+from sqlalchemy.dialects.postgresql import ENUM
+from sqlalchemy.engine.interfaces import ReflectedColumn
 from sqlalchemy.sql.schema import Table
+from sqlalchemy.types import Enum as SQLEnumType
 from structlog.stdlib import get_logger
 
 from . import models
 from .client import SqlDB
 from .models.common import BaseSQLModel
 
+structlog.configure(
+    processors=[
+        structlog.processors.add_log_level,
+        structlog.processors.StackInfoRenderer(),
+        structlog.dev.ConsoleRenderer(),
+    ]
+)
+
 log = get_logger()
 
 
-def get_existing_columns(engine: Engine, table_name: str) -> dict[str, SQLColumn]:
+def get_existing_columns(engine: Engine, table_name: str) -> dict[str, ReflectedColumn]:
     """Get existing columns from database table."""
     inspector = inspect(engine)
-    columns = {}
+    columns: dict[str, ReflectedColumn] = {}
 
     if inspector.has_table(table_name):
         for column in inspector.get_columns(table_name):
@@ -41,9 +51,14 @@ def compare_and_alter_table(
     Compare existing table columns with model columns and alter table if needed.
     TODO: IF columns are NOT NULL and existing rows are there, this will fail
     """
+    inspector = inspect(engine)
     existing_columns = get_existing_columns(engine, table.name)
     model_columns = {col.name: col for col in model.__table__.columns}
-
+    if not inspector.has_table(table.name):
+        log.warning(
+            "Table does not exist, skipping column comparison", table=table.name
+        )
+        return
     # Find missing columns (in DB but not in model)
     missing_in_model = set(existing_columns.keys()) - set(model_columns.keys())
     if missing_in_model:
@@ -109,38 +124,205 @@ def get_model_classes(model_module: ModuleType) -> list[Type[BaseSQLModel]]:
     ]
 
 
-def create_table_definition(model: Type[BaseSQLModel], metadata: MetaData) -> SQLTable:
-    """Create SQLAlchemy Table definition from model."""
-    name = model.__tablename__
-    columns = [
-        SQLColumn(
-            column.key,
-            column.type,
-            primary_key=column.primary_key,
-            nullable=column.nullable,
-            index=column.index,
-            unique=column.unique,
+def check_enum_exists(engine: Engine, enum_name: str) -> bool:
+    """
+    Check if a PostgreSQL enum type already exists in the database
+    """
+    with engine.connect() as conn:
+        check_type_query = text("SELECT 1 FROM pg_type WHERE typname = :enum_name")
+        return (
+            conn.execute(check_type_query, {"enum_name": enum_name}).scalar()
+            is not None
         )
-        for column in model.__table__.columns
+
+
+def create_enum_type(
+    engine: Engine, enum_name: str, enum_values: tuple[str, ...]
+) -> None:
+    """
+    Create a new PostgreSQL enum type in the database
+    """
+    try:
+        with engine.connect() as conn:
+            create_type_query = text(
+                f'CREATE TYPE "{enum_name}" AS ENUM {enum_values};'
+            )
+            conn.execute(create_type_query)
+            conn.commit()
+            log.info(
+                "Successfully created enum type",
+                enum_name=enum_name,
+                enum_values=enum_values,
+            )
+    except Exception as e:
+        log.error(
+            "Failed to create enum type",
+            enum_name=enum_name,
+            error=str(e),
+            error_type=type(e).__name__,
+        )
+        raise
+
+
+def get_enum_info(
+    model: Type[BaseSQLModel], table_name: str
+) -> dict[str, tuple[str, tuple[str, ...]]]:
+    """
+    Extract enum information from a SQLAlchemy model's columns.
+    Returns a mapping of column names to their enum type information.
+    """
+    enum_columns = [
+        col for col in model.__table__.columns if isinstance(col.type, SQLEnumType)
     ]
 
-    return SQLTable(name, metadata, *columns, extend_existing=True)
+    if not enum_columns:
+        return {}
+
+    log.info(
+        "Found enum columns",
+        model_name=model.__name__,
+        enum_count=len(enum_columns),
+        column_names=[col.key for col in enum_columns],
+    )
+
+    enum_types: dict[str, tuple[str, tuple[str, ...]]] = {}
+    for column in enum_columns:
+        enum_type = cast(SQLEnumType, column.type)
+        # Handle the case where name might be None
+        if enum_type.name:
+            enum_name = enum_type.name.lower()
+        else:
+            # Fallback to generating a name based on table and column
+            enum_name = f"{table_name}_{column.key}_enum"
+
+        enum_values = tuple(enum_type.enums)
+
+        log.info(
+            "Processing enum column",
+            model_name=model.__name__,
+            column_name=column.key,
+            enum_name=enum_name,
+            enum_values=enum_values,
+        )
+        enum_types[column.key] = (enum_name, enum_values)
+
+    return enum_types
 
 
-def create_single_table(table: Table, engine: Engine) -> None:
-    """Create single table in database."""
-    inspector = inspect(engine)
+def create_column_definition(
+    column: SQLColumn, enum_info: tuple[str, tuple[str, ...]] | None = None
+) -> SQLColumn:
+    """
+    Create a SQLAlchemy column definition, handling both enum and standard columns
+    """
+    log_context = {
+        "column_name": column.key,
+        "column_type": str(column.type),
+        "is_enum": enum_info is not None,
+        "is_primary_key": column.primary_key,
+        "is_nullable": column.nullable,
+        "has_index": column.index,
+        "is_unique": column.unique,
+    }
 
-    if inspector.has_table(table.name):
-        raise RuntimeError(f"Table {table.name} already exists")
+    log.info("Creating column definition", **log_context)
 
     try:
-        log.info("Creating table", table_name=table.name)
-        table.create(engine, checkfirst=False)
-        log.info("Successfully created table", table_name=table.name)
+        if enum_info:
+            enum_name, enum_values = enum_info
+            return SQLColumn(
+                column.key,
+                ENUM(*enum_values, name=enum_name, create_type=False),
+                primary_key=column.primary_key,
+                nullable=column.nullable,
+                index=column.index,
+                unique=column.unique,
+            )
+        else:
+            return SQLColumn(
+                column.key,
+                column.type,
+                primary_key=column.primary_key,
+                nullable=column.nullable,
+                index=column.index,
+                unique=column.unique,
+            )
     except Exception as e:
-        log.error("Failed to create table", table_name=table.name, error=str(e))
-        raise RuntimeError(f"Failed to create table {table.name}: {str(e)}") from e
+        log.error(
+            "Failed to create column definition",
+            **log_context,
+            error=str(e),
+            error_type=type(e).__name__,
+        )
+        raise
+
+
+def create_table_columns(
+    model: Type[BaseSQLModel], enum_types: dict[str, tuple[str, tuple[str, ...]]]
+) -> list[SQLColumn[Any]]:
+    """
+    Create all column definitions for a table, properly handling column types
+    """
+    columns: list[SQLColumn[Any]] = []
+
+    for column in model.__table__.columns:
+        typed_column = cast(SQLColumn[Any], column)
+        enum_info = enum_types.get(column.key)
+        column_def = create_column_definition(typed_column, enum_info)
+        columns.append(column_def)
+
+    return columns
+
+
+def handle_enums_and_create_table(
+    model: Type[BaseSQLModel], metadata: MetaData, engine: Engine
+) -> None:
+    """
+    Create a database table for a SQLAlchemy model, handling PostgreSQL enum types.
+    First creates any required enum types if they don't exist, then creates the table
+    with proper column definitions including enum references
+    """
+    table_name = model.__tablename__
+    log.info(
+        "Starting table creation process",
+        model_name=model.__name__,
+        table_name=table_name,
+        is_abstract=getattr(model, "__abstract__", False),
+    )
+
+    # Handle enum types
+    enum_types = get_enum_info(model, table_name)
+    for enum_name, enum_values in enum_types.values():
+        if not check_enum_exists(engine, enum_name):
+            create_enum_type(engine, enum_name, enum_values)
+
+    columns = create_table_columns(model, enum_types)
+
+    # Create table
+    log.info(
+        "Attempting to create table",
+        model_name=model.__name__,
+        table_name=table_name,
+        total_columns=len(columns),
+    )
+
+    table = Table(table_name, metadata, *columns)
+    try:
+        table.create(engine)
+        log.info(
+            "Successfully created table",
+            model_name=model.__name__,
+            table_name=table_name,
+        )
+    except Exception as e:
+        log.warning(
+            "Table creation failed, checking if table exists",
+            model_name=model.__name__,
+            table_name=table_name,
+            error=str(e),
+            error_type=type(e).__name__,
+        )
+        compare_and_alter_table(model, table, engine)
 
 
 def create_db_tables(db: SqlDB | None = None) -> None:
@@ -153,17 +335,14 @@ def create_db_tables(db: SqlDB | None = None) -> None:
     metadata = MetaData()
 
     model_classes = get_model_classes(models)
-    log.info("Models Found", count=len(model_classes))
+    log.info(
+        "Models Found",
+        count=len(model_classes),
+        models=[cls.__name__ for cls in model_classes],
+    )
 
-    for model in model_classes:
-        table = create_table_definition(model, metadata)
+    # Sort models to ensure consistent creation order
+    sorted_models = sorted(model_classes, key=lambda m: m.__name__)
 
-        # First try to create the table
-        try:
-            create_single_table(table, db.engine)
-        except Exception:
-            log.info(
-                "Table already exists, checking for column updates", table=table.name
-            )
-            # If table exists, check and update columns
-            compare_and_alter_table(model, table, db.engine)
+    for model in sorted_models:
+        handle_enums_and_create_table(model, metadata, db.engine)

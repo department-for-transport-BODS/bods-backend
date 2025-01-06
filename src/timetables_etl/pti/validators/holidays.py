@@ -1,3 +1,4 @@
+from common_layer.database.client import SqlDB
 from common_layer.dynamodb.client import DynamoDB
 from pti.constants import (
     BANK_HOLIDAYS,
@@ -24,7 +25,7 @@ def get_service_ref_from_element(element, ns):
     return service_ref
 
 
-def get_validate_bank_holidays(dynamo: DynamoDB):
+def get_validate_bank_holidays(dynamo: DynamoDB, db: SqlDB):
 
     def validate_bank_holidays(context, bank_holidays):
         bank_holiday = bank_holidays[0]
@@ -54,7 +55,7 @@ def get_validate_bank_holidays(dynamo: DynamoDB):
             return False
 
         service_ref = get_service_ref_from_element(element, ns)
-        if service_ref and is_service_in_scotland(service_ref, dynamo):
+        if service_ref and is_service_in_scotland(service_ref, dynamo, db):
             english_removed = list(set(holidays) - set(BANK_HOLIDAYS_ONLY_ENGLISH))
             return sorted(SCOTTISH_BANK_HOLIDAYS) == sorted(english_removed)
 

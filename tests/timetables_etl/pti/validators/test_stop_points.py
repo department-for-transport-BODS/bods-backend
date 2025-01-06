@@ -2,9 +2,9 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
+from common_layer.pti.models import Schema
 from lxml import etree
 from pti.constants import PTI_SCHEMA_PATH
-from common_layer.pti.models import Schema
 from pti.validators.functions import validate_non_naptan_stop_points
 from pti.validators.pti import PTIValidator
 
@@ -32,8 +32,8 @@ def test_non_naptan_stop_points(filename, expected):
     observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
 
     schema = SchemaFactory(observations=observations)
-    json_file = JSONFile(schema.json())
-    pti = PTIValidator(json_file, MagicMock())
+    json_file = JSONFile(schema.model_dump_json())
+    pti = PTIValidator(json_file, MagicMock(), MagicMock())
 
     txc_path = DATA_DIR / filename
     with txc_path.open("r") as txc:

@@ -3,8 +3,7 @@ AVL Models
 SQLAlchemy Models
 """
 
-from datetime import datetime
-from sqlalchemy import DateTime, Integer, String
+from sqlalchemy import Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .common import BaseSQLModel, TimeStampedMixin
@@ -12,6 +11,7 @@ from .common import BaseSQLModel, TimeStampedMixin
 
 class AvlCavlDataArchive(TimeStampedMixin, BaseSQLModel):
     """AVL CAVL Data Archive Table"""
+
     include_created = True
     include_last_updated = True
     include_modified = False

@@ -2,9 +2,8 @@
 Export models for DB queries
 """
 
-from .model_avl import (
-    AvlCavlDataArchive,
-)
+from .model_avl import AvlCavlDataArchive
+from .model_data_quality import DataQualitySchemaViolation
 from .model_junction import (
     TransmodelServicePatternAdminAreas,
     TransmodelServicePatternLocality,
@@ -18,7 +17,18 @@ from .model_organisation import (
     OrganisationOrganisation,
     OrganisationTXCFileAttributes,
 )
-from .model_pipelines import DatasetETLTaskResult, ETLErrorCode
+from .model_otc import (
+    OtcLocalAuthority,
+    OtcLocalAuthorityRegistrationNumbers,
+    OtcService,
+)
+from .model_pipelines import (
+    DatasetETLTaskResult,
+    ETLErrorCode,
+    FileProcessingResult,
+    PipelineErrorCode,
+    PipelineProcessingStep,
+)
 from .model_transmodel import (
     TransmodelBankHolidays,
     TransmodelService,
@@ -43,6 +53,7 @@ from .model_transmodel_vehicle_journey import (
     TransmodelOperatingProfile,
     TransmodelVehicleJourney,
 )
+from .model_ui import UiLta
 from .model_users import UsersUser
 
 __all__ = [
@@ -51,14 +62,15 @@ __all__ = [
     "ETLErrorCode",
     # Database Models
     "AvlCavlDataArchive",
-    "DatasetETLTaskResult",
     "NaptanAdminArea",
     "NaptanLocality",
     "NaptanStopPoint",
+    # Organisation
     "OrganisationDataset",
     "OrganisationDatasetRevision",
     "OrganisationOrganisation",
     "OrganisationTXCFileAttributes",
+    # Transmodel
     "TransmodelBankHolidays",
     "TransmodelBookingArrangements",
     "TransmodelFlexibleServiceOperationPeriod",
@@ -66,17 +78,31 @@ __all__ = [
     "TransmodelOperatingDatesExceptions",
     "TransmodelOperatingProfile",
     "TransmodelService",
-    "TransmodelServicePattern",
-    "TransmodelServicePatternStop",
-    "TransmodelServiceServicePattern",
-    "TransmodelServicePatternAdminAreas",
-    "TransmodelServicePatternLocality",
     "TransmodelServicedOrganisations",
     "TransmodelServicedOrganisationVehicleJourney",
     "TransmodelServicedOrganisationWorkingDays",
+    "TransmodelServicePattern",
+    "TransmodelServicePatternAdminAreas",
+    "TransmodelServicePatternLocality",
+    "TransmodelServicePatternStop",
+    "TransmodelServiceServicePattern",
     "TransmodelStopActivity",
     "TransmodelTracks",
     "TransmodelTracksVehicleJourney",
     "TransmodelVehicleJourney",
+    # Users
     "UsersUser",
+    # OTC Models
+    "OtcLocalAuthority",
+    "OtcLocalAuthorityRegistrationNumbers",
+    "OtcService",
+    # Ui Models
+    "UiLta",
+    # Pipelines
+    "FileProcessingResult",
+    "DatasetETLTaskResult",
+    "PipelineErrorCode",
+    "PipelineProcessingStep",
+    # Data Quality
+    "DataQualitySchemaViolation",
 ]

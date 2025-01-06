@@ -100,19 +100,15 @@ class TestTimetableFileValidator(unittest.TestCase):
 
 class TestLambdaHandler(unittest.TestCase):
     @patch(f"{TEST_MODULE}.TimetableFileValidator")
-    @patch("common_layer.db.file_processing_result.DbManager")
-    @patch("common_layer.db.file_processing_result.get_revision")
     @patch.dict("os.environ", TEST_ENV_VAR)
-    def test_lambda_handler_success(
-        self, mock_get_revision, mock_db, mock_timetable_file_validator
-    ):
+    def test_lambda_handler_success(self, mock_timetable_file_validator):
         """Test lambda_handler success response when validation passes."""
         # Mock the return values for the various calls
         mock_revision = MagicMock()
         mock_revision.id = 1
-        mock_get_revision.return_value = mock_revision
+        mock_get_revision = mock_revision
 
-        mock_db.return_value = MockedDB()
+        mock_db = MockedDB()
 
         # Mock TimetableFileValidator to simulate successful validation
         mock_validator = mock_timetable_file_validator.return_value
@@ -132,14 +128,8 @@ class TestLambdaHandler(unittest.TestCase):
         self.assertIn("File validation completed", response["body"])
 
     @patch(f"{TEST_MODULE}.TimetableFileValidator")
-    @patch("common_layer.db.file_processing_result.PipelineFileProcessingResult")
-    @patch("common_layer.db.file_processing_result.DbManager")
-    @patch("common_layer.db.file_processing_result.get_revision")
     def test_lambda_handler_zip_validation_exception(
         self,
-        mock_get_revision,
-        mock_db,
-        mock_pipeline_file_processing,
         mock_timetable_file_validator,
     ):
         """Test lambda_handler raises ZipValidationException and logs the error."""
@@ -148,7 +138,6 @@ class TestLambdaHandler(unittest.TestCase):
 
         mock_revision = MagicMock()
         mock_revision.id = 1
-        mock_get_revision.return_value = mock_revision
 
         for excep in (ZipTooLarge, NestedZipForbidden, NoDataFound):
             mock_validator.validate.side_effect = excep("Zip validation failed")
@@ -159,9 +148,6 @@ class TestLambdaHandler(unittest.TestCase):
                 "DatasetRevisionId": 123,
                 "DatasetType": "timetables",
             }
-            mock_db.return_value = MockedDB()
-            mock_pipeline_file_processing = mock_pipeline_file_processing.return_value
-            mock_pipeline_file_processing.return_value.update = None
 
             err_code = (
                 "common_layer.db.file_processing_result.get_file_processing_error_code"
@@ -174,14 +160,8 @@ class TestLambdaHandler(unittest.TestCase):
                     lambda_handler(event=event, context=None)
 
     @patch(f"{TEST_MODULE}.TimetableFileValidator")
-    @patch("common_layer.db.file_processing_result.PipelineFileProcessingResult")
-    @patch("common_layer.db.file_processing_result.DbManager")
-    @patch("common_layer.db.file_processing_result.get_revision")
     def test_lambda_handler_xml_validation_exception(
         self,
-        mock_get_revision,
-        mock_db,
-        mock_pipeline_file_processing,
         mock_timetable_file_validator,
     ):
         """Test lambda_handler raises XMLValidationException and logs the error."""
@@ -190,7 +170,6 @@ class TestLambdaHandler(unittest.TestCase):
 
         mock_revision = MagicMock()
         mock_revision.id = 1
-        mock_get_revision.return_value = mock_revision
 
         for excep in (XMLSyntaxError, DangerousXML, FileTooLarge):
             mock_validator.validate.side_effect = excep("XML validation failed")
@@ -201,9 +180,6 @@ class TestLambdaHandler(unittest.TestCase):
                 "DatasetRevisionId": 123,
                 "DatasetType": "timetables",
             }
-            mock_db.return_value = MockedDB()
-            mock_pipeline_file_processing = mock_pipeline_file_processing.return_value
-            mock_pipeline_file_processing.return_value.update = None
 
             # Mock write_processing_step
             err_code = (

@@ -6,6 +6,8 @@
 		"ms-python.isort",
 		"redhat.vscode-yaml",
 		"redhat.vscode-xml",
+		"esbenp.prettier-vscode",
+		"amazonwebservices.aws-toolkit-vscode"
 	],
 	"unwantedRecommendations": []
 }
