@@ -54,6 +54,7 @@ def test_lambda_hander(
         "Bucket": "test-bucket",
         "ObjectKey": "test-key",
         "DatasetRevisionId": revision_id,
+        "TxcFileAttributesId": 123,
     }
 
     revision = OrganisationDatasetRevisionFactory.create_with_id(id_number=revision_id)
@@ -99,6 +100,7 @@ def test_lambda_hander_no_valid_files(
         "Bucket": "test-bucket",
         "ObjectKey": "test-key",
         "DatasetRevisionId": revision_id,
+        "TxcFileAttributesId": 123,
     }
     m_file_attribute_repo.return_value.get_by_id.return_value = None
 
