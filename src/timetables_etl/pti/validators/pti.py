@@ -21,6 +21,7 @@ from .functions import (
     check_inbound_outbound_description,
     check_service_group_validations,
     contains_date,
+    get_lines_validator,
     has_destination_display,
     has_flexible_or_standard_service,
     has_flexible_service_classification,
@@ -34,7 +35,6 @@ from .functions import (
     today,
     validate_licence_number,
     validate_line_id,
-    validate_lines,
     validate_modification_date_time,
     validate_non_naptan_stop_points,
     validate_run_time,
@@ -100,7 +100,7 @@ class PTIValidator:
         self.register_function("today", today)
 
         self.register_function("validate_line_id", validate_line_id)
-        self.register_function("validate_lines", validate_lines)
+        self.register_function("validate_lines", get_lines_validator)
 
         self.register_function(
             "validate_modification_date_time", validate_modification_date_time
