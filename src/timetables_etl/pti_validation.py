@@ -1,6 +1,5 @@
-import io
+from io import BytesIO
 
-from botocore.response import StreamingBody
 from common_layer.database.client import SqlDB
 from common_layer.database.models.model_organisation import OrganisationDatasetRevision
 from common_layer.database.repos.repo_organisation import (
@@ -36,7 +35,7 @@ class PTITaskData(BaseModel):
     revision: OrganisationDatasetRevision
     txc_file_attributes: TXCFileAttributes
     live_txc_file_attributes: list[TXCFileAttributes]
-    xml_file_object: io.BytesIO
+    xml_file_object: BytesIO
 
 
 def get_task_data(
@@ -50,7 +49,7 @@ def get_task_data(
     s3_handler = S3(bucket_name=event.Bucket)
     filename = event.ObjectKey
     s3_streaming_body = s3_handler.get_object(file_path=filename)
-    xml_file_object = io.BytesIO(s3_streaming_body.read())
+    xml_file_object = BytesIO(s3_streaming_body.read())
 
     txc_file_attributes_repo = OrganisationTXCFileAttributesRepo(db)
     txc_file_attributes = txc_file_attributes_repo.get_by_id(event.TxcFileAttributesId)
