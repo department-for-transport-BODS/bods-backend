@@ -18,26 +18,6 @@
         "DatasetRevisionId.$": "$.detail.datasetRevisionId"
       },
       "ResultPath": "$.initializePipeline",
-      "Next": "DownloadDatasetLambda",
-      "Catch": [
-        {
-          "ErrorEquals": ["States.ALL"],
-          "Next": "ParseError",
-          "ResultPath": "$.error_info"
-        }
-      ]
-    },
-    "DownloadDatasetLambda": {
-      "Type": "Task",
-      "Resource": "${DownloadDatasetLambdaArn}",
-      "Parameters": {
-        "Bucket.$": "$.detail.bucket.name",
-        "ObjectKey.$": "$.detail.object.key",
-        "DatasetRevisionId.$": "$.detail.datasetRevisionId",
-        "DatasetType.$": "$.detail.datasetType"
-        "URLLink.$": "$.detail.urlLink"
-      },
-      "ResultPath": "$.scanner",
       "Next": "ClamAvScanner",
       "Catch": [
         {

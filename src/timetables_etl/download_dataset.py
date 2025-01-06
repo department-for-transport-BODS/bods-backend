@@ -15,13 +15,9 @@ from common_layer.database.repos.repo_organisation import (
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.db.models import OrganisationDatasetrevision
-from common_layer.db.repositories.dataset_revision import (
-    get_revision,
-)
 from common_layer.exceptions.file_exceptions import (
     DownloadException,
     DownloadTimeout,
-    PermissionDenied,
     UnknownFileType,
 )
 from common_layer.exceptions.pipeline_exceptions import PipelineException
@@ -109,24 +105,6 @@ class DataDownloader:
         self.password = password
         self.username = username
 
-    def raise_for_status(self, response):
-        """Check the requests.Response code and raise a downloader exception.
-
-        Args:
-            response (Response): a requests.Response object.
-
-        Raises:
-            PermissionDenied: if status_code is 401 or 403
-            DownloadException: if status_code is greater than 400 but not 401 or 403.
-
-        """
-        status_code = response.status_code
-        if status_code in [401, 403]:
-            raise PermissionDenied(self.url)
-        elif status_code > 400:
-            message = f"Unable to download from {self.url} with code {status_code}."
-            raise DownloadException(self.url, message)
-
     def _make_request(self, method, **kwargs):
         if "timeout" not in kwargs:
             kwargs["timeout"] = 30
@@ -143,7 +121,7 @@ class DataDownloader:
         except requests.RequestException as exc:
             raise DownloadException(self.url) from exc
         else:
-            self.raise_for_status(response)
+            response.raise_for_status()
             return response
 
     def get(self, **kwargs) -> DownloaderResponse:
@@ -249,7 +227,7 @@ def download_and_upload_dataset(
     Template function to download the dataset, upload to S3 and update database
     """
     db = SqlDB()
-    revision = get_revision(db, input_data.revision_id)
+    revision = OrganisationDatasetRevisionRepo(db).get_by_id(input_data.revision_id)
     s3_handler = S3(bucket_name=input_data.s3_bucket_name)
     response = download_data_from_remote_url(revision)
     file_name = get_remote_file_name(revision, response, is_time_zone)
@@ -270,7 +248,7 @@ def update_dataset_revision(revision_id: int, file_name: str, db: SqlDB) -> None
         dataset_revision.update(revision)
         log.info("Dataset revision updated with new file.")
     else:
-        log.info("Dataset revision not found.", extra={"revision_id": revision_id})
+        log.info("Dataset revision not found.", revision_id=revision_id)
 
 
 @file_processing_result_to_db(step_name=StepName.DOWNLOAD_DATASET)

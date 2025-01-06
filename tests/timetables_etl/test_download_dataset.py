@@ -121,43 +121,51 @@ def test_get_filetype_from_response(content_type, content, expected_filetype, te
 
 
 @pytest.mark.parametrize(
-    "content_type, content, expected_filetype, should_raise, test_id",
+    "content_type, content, expected_filetype, test_id",
     [
-        ("application/zip", b"\x50\x4b\x03\x04", "zip", False, "ZIP file response"),
+        ("application/zip", b"\x50\x4b\x03\x04", "zip", "ZIP file response"),
         (
             "application/xml",
             b"<?xml version='1.0' encoding='UTF-8'?>",
             "xml",
-            False,
             "XML file response",
         ),
-        ("text/plain", b"Invalid content", None, True, "Unknown file response"),
     ],
-    ids=["ZIP file response", "XML file response", "Unknown file response"],
+    ids=["ZIP file response", "XML file response"],
 )
-def test_get(
-    mock_data_downloader,
-    content_type,
-    content,
-    expected_filetype,
-    should_raise,
-    test_id,
+def test_get_no_exception(
+    mock_data_downloader, content_type, content, expected_filetype, test_id
 ):
     """
-    Test the `get` method of the `mock_data_downloader` to handle various file responses.
+    Test the `get` method of the `mock_data_downloader` for valid file responses.
+    """
+    mock_response = MagicMock()
+    mock_response.headers = {"Content-Type": content_type}
+    mock_response.content = content
+    mock_data_downloader._make_request = MagicMock(return_value=mock_response)
+    result = mock_data_downloader.get()
+    assert result.filetype == expected_filetype
+    assert result.content == content, f"Failed for test case: {test_id}"
+
+
+@pytest.mark.parametrize(
+    "content_type, content, test_id",
+    [
+        ("text/plain", b"Invalid content", "Unknown file response"),
+    ],
+    ids=["Unknown file response"],
+)
+def test_get_exception(mock_data_downloader, content_type, content, test_id):
+    """
+    Test the `get` method of the `mock_data_downloader` for unknown file responses (raises exception).
     """
     mock_response = MagicMock()
     mock_response.headers = {"Content-Type": content_type}
     mock_response.content = content
     mock_data_downloader._make_request = MagicMock(return_value=mock_response)
 
-    if should_raise:
-        with pytest.raises(UnknownFileType):
-            mock_data_downloader.get()
-    else:
-        result = mock_data_downloader.get()
-        assert result.filetype == expected_filetype
-        assert result.content == content, f"Failed for test case: {test_id}"
+    with pytest.raises(UnknownFileType):
+        mock_data_downloader.get()
 
 
 @patch("requests.get")
@@ -189,7 +197,43 @@ def test_upload_file_to_s3(mock_put, mock_open):
 
 
 @pytest.mark.parametrize(
-    "event, expected_status_code, expected_body, should_raise, test_id",
+    "event, test_id",
+    [
+        (
+            {
+                "Bucket": "my-bucket",
+                "ObjectKey": "file.zip",
+                "DatasetRevisionId": 1,
+                "DatasetEtlTaskResultId": "1234",
+                "URLLink": "//fakeurl.com/file.zip",
+            },
+            "Invalid URL Link",
+        ),
+    ],
+    ids=["Invalid URL Link"],
+)
+@patch("common_layer.db.file_processing_result.SqlDB")
+@patch("timetables_etl.download_dataset.download_and_upload_dataset")
+@patch.dict("os.environ", TEST_ENV_VAR)
+def test_lambda_handler_exception(
+    mock_download_upload_dataset,
+    mock_sqldb,
+    event,
+    test_id,
+):
+    """
+    Test the `lambda_handler` method when an exception is expected.
+    """
+    mock_db_instance = MagicMock()
+    mock_sqldb.get_db.return_value = mock_db_instance
+    mock_context = MagicMock()
+
+    with pytest.raises(ValueError):
+        lambda_handler(event, mock_context)
+
+
+@pytest.mark.parametrize(
+    "event, expected_status_code, expected_body, test_id",
     [
         (
             # Test case 1: No URL link
@@ -201,25 +245,10 @@ def test_upload_file_to_s3(mock_put, mock_open):
             },
             200,
             "url link is not specified, nothing to download",
-            False,
             "No URL Link",
         ),
         (
-            # Test case 2: Invalid URL link (should raise ValueError)
-            {
-                "Bucket": "my-bucket",
-                "ObjectKey": "file.zip",
-                "DatasetRevisionId": 1,
-                "DatasetEtlTaskResultId": "1234",
-                "URLLink": "//fakeurl.com/file.zip",
-            },
-            None,
-            None,
-            True,
-            "Invalid URL Link",
-        ),
-        (
-            # Test case 3: Valid URL link
+            # Test case 2: Valid URL link
             {
                 "Bucket": "my-bucket",
                 "ObjectKey": "file.zip",
@@ -229,45 +258,40 @@ def test_upload_file_to_s3(mock_put, mock_open):
             },
             200,
             "file downloaded successfully",
-            False,
             "Valid URL Link",
         ),
     ],
-    ids=["No URL Link", "Invalid URL Link", "Valid URL Link"],
+    ids=["No URL Link", "Valid URL Link"],
 )
 @patch("common_layer.db.file_processing_result.SqlDB")
 @patch("timetables_etl.download_dataset.download_and_upload_dataset")
 @patch.dict("os.environ", TEST_ENV_VAR)
-def test_lambda_handler(
+def test_lambda_handler_no_exception(
     mock_download_upload_dataset,
     mock_sqldb,
     event,
     expected_status_code,
     expected_body,
-    should_raise,
     test_id,
 ):
     """
-    Test the `lambda_handler` method with various event conditions.
+    Test the `lambda_handler` method when no exception is raised.
     """
     mock_db_instance = MagicMock()
     mock_sqldb.get_db.return_value = mock_db_instance
-    mock_response = {"statusCode": 200, "body": "file downloaded successfully"}
+    mock_response = {"statusCode": 200, "body": expected_body}
     mock_download_upload_dataset.return_value = mock_response
     mock_context = MagicMock()
 
-    if should_raise:
-        with pytest.raises(ValueError):
-            lambda_handler(event, mock_context)
-    else:
-        response = lambda_handler(event, mock_context)
-        assert response["statusCode"] == expected_status_code
-        assert response["body"] == expected_body, f"Failed for {test_id}"
+    response = lambda_handler(event, mock_context)
+
+    assert response["statusCode"] == expected_status_code
+    assert response["body"] == expected_body, f"Failed for {test_id}"
 
 
 @patch("timetables_etl.download_dataset.S3")
 @patch("common_layer.database.client.SqlDB")
-@patch("timetables_etl.download_dataset.get_revision")
+@patch("timetables_etl.download_dataset.OrganisationDatasetRevisionRepo")
 @patch("timetables_etl.download_dataset.download_data_from_remote_url")
 @patch("timetables_etl.download_dataset.get_remote_file_name")
 @patch("timetables_etl.download_dataset.write_temp_file")
@@ -279,7 +303,7 @@ def test_download_and_upload_dataset(
     mock_write_temp_file,
     mock_get_remote_file_name,
     mock_download_data_from_remote_url,
-    mock_get_revision,
+    mock_repo_class,
     mock_sqldb,
     mock_s3,
 ):
@@ -289,7 +313,7 @@ def test_download_and_upload_dataset(
     EXPECTED_RESPONSE = {"body": "file downloaded successfully", "statusCode": 200}
     mock_sqldb.return_value = MagicMock()
     mock_s3.return_value = MagicMock()
-    mock_get_revision.return_value = MagicMock()
+    mock_repo_class.return_value = MagicMock()
     input_data = MagicMock()
     input_data.revision_id = 123
     input_data.remote_dataset_url_link = "https://example.com/dataset.csv"
@@ -311,31 +335,32 @@ def test_download_and_upload_dataset(
 
 
 @pytest.mark.parametrize(
-    "side_effect, expected_exception, mock_response, test_id",
-    [
-        (None, None, b"fake data", "Success Case"),
-        (DownloadException("Download failed"), PipelineException, None, "Failure Case"),
-    ],
-    ids=["Success Case", "Failure Case"],
+    "mock_response, test_id", [(b"fake data", "Success Case")], ids=["Success Case"]
 )
-def test_download_data(
-    mock_revision, side_effect, expected_exception, mock_response, test_id
-):
+def test_download_data_success(mock_revision, mock_response, test_id):
     """
-    Test the `download_data_from_remote_url` function for both success and failure cases.
+    Test the `download_data_from_remote_url` function for the success case.
     """
-    # Mock the DataDownloader.get method to return a predefined response or raise an exception
+    with patch.object(
+        DataDownloader, "get", return_value=MagicMock(content=mock_response)
+    ) as mock_get:
+        response = download_data_from_remote_url(mock_revision)
+        assert response.content == mock_response
+        mock_get.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    "side_effect, expected_exception, test_id",
+    [(DownloadException("Download failed"), PipelineException, "Failure Case")],
+    ids=["Failure Case"],
+)
+def test_download_data_failure(mock_revision, side_effect, expected_exception, test_id):
+    """
+    Test the `download_data_from_remote_url` function for the failure case (exception handling).
+    """
     with patch.object(DataDownloader, "get", side_effect=side_effect) as mock_get:
-        if expected_exception:
-            # Test failure case where the exception is raised
-            with pytest.raises(expected_exception, match="Download failed"):
-                download_data_from_remote_url(mock_revision)
-        else:
-            # Test success case where the download is successful
-            mock_get.return_value = MagicMock(content=mock_response)
-            response = download_data_from_remote_url(mock_revision)
-            assert response.content == mock_response
-            mock_get.assert_called_once()
+        with pytest.raises(expected_exception, match="Download failed"):
+            download_data_from_remote_url(mock_revision)
 
 
 @pytest.mark.parametrize(
