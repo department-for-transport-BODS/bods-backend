@@ -4,19 +4,21 @@
     "ProcessInput": {
       "Type": "Pass",
       "ResultPath": "$",
-      "Parameters": { "detail.$": "$[0].detail" },
+      "Parameters": {
+        "detail.$": "$[0].detail"
+      },
       "Next": "InitializePipeline"
     },
     "InitializePipeline": {
       "Type": "Task",
       "Resource": "${InitializePipelineLambdaArn}",
       "Parameters": {
-        "Bucket.$": "$.Bucket",
-        "ObjectKey.$": "$.Key",
-        "DatasetRevisionId.$": "$.DatasetRevisionId"
+        "Bucket.$": "$.detail.bucket.name",
+        "ObjectKey.$": "$.detail.object.key",
+        "DatasetRevisionId.$": "$.detail.datasetRevisionId"
       },
-      "ResultPath": "$.fileValidation",
-      "Next": "SchemaCheck",
+      "ResultPath": "$.initializePipeline",
+      "Next": "DownloadDatasetLambda",
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
@@ -25,17 +27,18 @@
         }
       ]
     },
-    "DownloadDataset": {
+    "DownloadDatasetLambda": {
       "Type": "Task",
       "Resource": "${DownloadDatasetLambdaArn}",
       "Parameters": {
-        "Bucket.$": "$.Bucket",
-        "ObjectKey.$": "$.Key",
-        "DatasetRevisionId.$": "$.DatasetRevisionId",
-        "ValidationResult.$": "$.fileValidation"
+        "Bucket.$": "$.detail.bucket.name",
+        "ObjectKey.$": "$.detail.object.key",
+        "DatasetRevisionId.$": "$.detail.datasetRevisionId",
+        "DatasetType.$": "$.detail.datasetType"
+        "URLLink.$": "$.detail.urlLink"
       },
-      "ResultPath": "$.schemaCheck",
-      "Next": "PostSchemaCheck",
+      "ResultPath": "$.scanner",
+      "Next": "ClamAvScanner",
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
@@ -48,13 +51,13 @@
       "Type": "Task",
       "Resource": "${ClamAvScannerLambdaArn}",
       "Parameters": {
-        "Bucket.$": "$.Bucket",
-        "ObjectKey.$": "$.Key",
-        "DatasetRevisionId.$": "$.DatasetRevisionId",
-        "SchemaCheckResult.$": "$.schemaCheck"
+        "Bucket.$": "$.detail.bucket.name",
+        "ObjectKey.$": "$.detail.object.key",
+        "DatasetRevisionId.$": "$.detail.datasetRevisionId",
+        "DatasetType.$": "$.detail.datasetType"
       },
-      "ResultPath": "$.postSchemaCheck",
-      "Next": "FileAttributesEtl",
+      "ResultPath": "$.scanner",
+      "Next": "FileLevelProcessing",
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
@@ -66,68 +69,170 @@
     "FileLevelProcessing": {
       "Type": "Map",
       "Parameters": {
-        "Bucket.$": "$.Bucket",
-        "ObjectKey.$": "$.Key",
-        "DatasetRevisionId.$": "$.DatasetRevisionId",
-        "PostSchemaCheckResult.$": "$.postSchemaCheck"
+        "DatasetRevisionId.$": "$.detail.datasetRevisionId",
+        "Bucket.$": "$.detail.bucket.name",
+        "Key.$": "$$.Map.Item.Value.Key",
+        "DatasetEtlTaskResultId.$": "$.initializePipeline.DatasetEtlTaskResultId",
+        "detail.$": "$.detail"
       },
-      "ResultPath": "$.fileAttributesEtl",
-      "Next": "PtiValidation",
-      "Catch": [
-        {
-          "ErrorEquals": ["States.ALL"],
-          "Next": "ExceptionHandler"
+      "ItemReader": {
+        "Resource": "arn:aws:states:::s3:listObjectsV2",
+        "Parameters": {
+          "Bucket.$": "$.detail.bucket.name",
+          "Prefix.$": "$.scanner.body.generatedPrefix"
         }
-      ]
+      },
+      "ItemProcessor": {
+        "ProcessorConfig": {
+          "Mode": "DISTRIBUTED",
+          "ExecutionType": "STANDARD"
+        },
+        "StartAt": "FileValidation",
+        "States": {
+          "FileValidation": {
+            "Type": "Task",
+            "Resource": "${FileValidationLambdaArn}",
+            "Parameters": {
+              "Bucket.$": "$.Bucket",
+              "ObjectKey.$": "$.Key",
+              "DatasetRevisionId.$": "$.DatasetRevisionId"
+            },
+            "ResultPath": "$.fileValidation",
+            "Next": "SchemaCheck",
+            "Catch": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "Next": "ExceptionHandler"
+              }
+            ]
+          },
+          "SchemaCheck": {
+            "Type": "Task",
+            "Resource": "${SchemaCheckLambdaArn}",
+            "Parameters": {
+              "Bucket.$": "$.Bucket",
+              "ObjectKey.$": "$.Key",
+              "DatasetRevisionId.$": "$.DatasetRevisionId",
+              "ValidationResult.$": "$.fileValidation"
+            },
+            "ResultPath": "$.schemaCheck",
+            "Next": "PostSchemaCheck",
+            "Catch": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "Next": "ExceptionHandler"
+              }
+            ]
+          },
+          "PostSchemaCheck": {
+            "Type": "Task",
+            "Resource": "${PostSchemaCheckLambdaArn}",
+            "Parameters": {
+              "Bucket.$": "$.Bucket",
+              "ObjectKey.$": "$.Key",
+              "DatasetRevisionId.$": "$.DatasetRevisionId",
+              "SchemaCheckResult.$": "$.schemaCheck"
+            },
+            "ResultPath": "$.postSchemaCheck",
+            "Next": "FileAttributesEtl",
+            "Catch": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "Next": "ExceptionHandler"
+              }
+            ]
+          },
+          "FileAttributesEtl": {
+            "Type": "Task",
+            "Resource": "${FileAttributesEtlLambdaArn}",
+            "Parameters": {
+              "Bucket.$": "$.Bucket",
+              "ObjectKey.$": "$.Key",
+              "DatasetRevisionId.$": "$.DatasetRevisionId",
+              "PostSchemaCheckResult.$": "$.postSchemaCheck"
+            },
+            "ResultPath": "$.fileAttributesEtl",
+            "Next": "PtiValidation",
+            "Catch": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "Next": "ExceptionHandler"
+              }
+            ]
+          },
+          "PtiValidation": {
+            "Type": "Task",
+            "Resource": "${PtiValidationLambdaArn}",
+            "Parameters": {
+              "Bucket.$": "$.Bucket",
+              "ObjectKey.$": "$.Key",
+              "DatasetRevisionId.$": "$.DatasetRevisionId",
+              "FileAttributesResult.$": "$.fileAttributesEtl"
+            },
+            "ResultPath": "$.ptiValidation",
+            "Next": "ETLProcess",
+            "Catch": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "Next": "ExceptionHandler"
+              }
+            ]
+          },
+          "ETLProcess": {
+            "Type": "Task",
+            "Resource": "${ETLProcessLambdaArn}",
+            "Parameters": {
+              "Bucket.$": "$.Bucket",
+              "ObjectKey.$": "$.Key",
+              "DatasetRevisionId.$": "$.DatasetRevisionId",
+              "fileAttributesId.$": "$.fileAttributesEtl.id",
+              "DatasetEtlTaskResultId.$": "$.DatasetEtlTaskResultId",
+              "ValidationResult.$": "$.ptiValidation"
+            },
+            "ResultPath": "$.etlProcess",
+            "Next": "Success",
+            "Catch": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "Next": "ExceptionHandler"
+              }
+            ]
+          },
+          "Success": {
+            "Type": "Succeed"
+          },
+          "ExceptionHandler": {
+            "Type": "Task",
+            "Resource": "${ExceptionHandlerLambdaArn}",
+            "Parameters": {
+              "Bucket.$": "$.Bucket",
+              "ObjectKey.$": "$.Key",
+              "ErrorInfo.$": "$"
+            },
+            "Next": "Fail"
+          },
+          "Fail": {
+            "Type": "Fail"
+          }
+        }
+      },
+      "MaxConcurrency": 1000,
+      "End": true
     },
-    "PtiValidation": {
-      "Type": "Task",
-      "Resource": "${PtiValidationLambdaArn}",
+    "ParseError": {
+      "Type": "Pass",
       "Parameters": {
-        "Bucket.$": "$.Bucket",
-        "ObjectKey.$": "$.Key",
-        "DatasetRevisionId.$": "$.DatasetRevisionId",
-        "FileAttributesResult.$": "$.fileAttributesEtl"
+        "ParsedCause.$": "States.StringToJson($.error_info.Cause)"
       },
-      "ResultPath": "$.ptiValidation",
-      "Next": "ETLProcess",
-      "Catch": [
-        {
-          "ErrorEquals": ["States.ALL"],
-          "Next": "ExceptionHandler"
-        }
-      ]
+      "ResultPath": "$.parsed_error",
+      "Next": "ParentExceptionHandler"
     },
-    "ETLProcess": {
-      "Type": "Task",
-      "Resource": "${ETLProcessLambdaArn}",
-      "Parameters": {
-        "Bucket.$": "$.Bucket",
-        "ObjectKey.$": "$.Key",
-        "DatasetRevisionId.$": "$.DatasetRevisionId",
-        "fileAttributesId.$": "$.fileAttributesEtl.id",
-        "DatasetEtlTaskResultId.$": "$.DatasetEtlTaskResultId",
-        "ValidationResult.$": "$.ptiValidation"
-      },
-      "ResultPath": "$.etlProcess",
-      "Next": "Success",
-      "Catch": [
-        {
-          "ErrorEquals": ["States.ALL"],
-          "Next": "ExceptionHandler"
-        }
-      ]
-    },
-    "Success": {
-      "Type": "Succeed"
-    },
-    "ExceptionHandler": {
+    "ParentExceptionHandler": {
       "Type": "Task",
       "Resource": "${ExceptionHandlerLambdaArn}",
       "Parameters": {
-        "Bucket.$": "$.Bucket",
-        "ObjectKey.$": "$.Key",
-        "ErrorInfo.$": "$"
+        "DatasetEtlTaskResultId.$": "$.detail.datasetEtlTaskResultId",
+        "ErrorInfo.$": "States.StringToJson($.parsed_error.ParsedCause.errorMessage)"
       },
       "End": true
     }
