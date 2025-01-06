@@ -15,12 +15,12 @@ from .functions import (
     cast_to_date,
     check_description_for_inbound_description,
     check_description_for_outbound_description,
-    check_flexible_service_stop_point_ref,
     check_flexible_service_times,
     check_flexible_service_timing_status,
     check_inbound_outbound_description,
     check_service_group_validations,
     contains_date,
+    get_flexible_service_stop_point_ref_validator,
     get_lines_validator,
     has_destination_display,
     has_flexible_or_standard_service,
@@ -61,7 +61,7 @@ class PTIValidator:
 
         self.register_function(
             "check_flexible_service_stop_point_ref",
-            check_flexible_service_stop_point_ref,
+            get_flexible_service_stop_point_ref_validator(db),
         )
 
         self.register_function(

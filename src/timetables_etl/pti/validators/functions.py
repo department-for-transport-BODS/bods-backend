@@ -123,29 +123,31 @@ def get_stop_point_ref_list(stop_points, ns):
     return stop_point_ref_list
 
 
-def check_flexible_service_stop_point_ref(context, flexiblejourneypatterns):
-    atco_codes_list = []
-    flexiblejourneypattern = flexiblejourneypatterns[0]
-    ns = {"x": flexiblejourneypattern.nsmap.get(None)}
-    stop_points_in_seq_list = flexiblejourneypattern.xpath(
-        "x:StopPointsInSequence", namespaces=ns
-    )
-    stop_points_in_flexzone_list = flexiblejourneypattern.xpath(
-        "x:FlexibleZones", namespaces=ns
-    )
-    atco_codes_list = list(
-        set(
-            get_stop_point_ref_list(stop_points_in_seq_list, ns)
-            + get_stop_point_ref_list(stop_points_in_flexzone_list, ns)
+def get_flexible_service_stop_point_ref_validator(db: SqlDB):
+    def check_flexible_service_stop_point_ref(context, flexiblejourneypatterns):
+        atco_codes_list = []
+        flexiblejourneypattern = flexiblejourneypatterns[0]
+        ns = {"x": flexiblejourneypattern.nsmap.get(None)}
+        stop_points_in_seq_list = flexiblejourneypattern.xpath(
+            "x:StopPointsInSequence", namespaces=ns
         )
-    )
-    db = DbManager.get_db()
-    repo = StopPointRepository(db)
-    total_compliant = repo.get_count(
-        atco_codes=atco_codes_list, bus_stop_type="FLX", stop_type="BCT"
-    )
+        stop_points_in_flexzone_list = flexiblejourneypattern.xpath(
+            "x:FlexibleZones", namespaces=ns
+        )
+        atco_codes_list = list(
+            set(
+                get_stop_point_ref_list(stop_points_in_seq_list, ns)
+                + get_stop_point_ref_list(stop_points_in_flexzone_list, ns)
+            )
+        )
+        repo = StopPointRepo(db)
+        total_compliant = repo.get_count(
+            atco_codes=atco_codes_list, bus_stop_type="FLX", stop_type="BCT"
+        )
 
-    return total_compliant == len(atco_codes_list)
+        return total_compliant == len(atco_codes_list)
+
+    return check_flexible_service_stop_point_ref
 
 
 def check_inbound_outbound_description(context, services):
