@@ -1,9 +1,13 @@
+# pylint: disable=too-few-public-methods
 """
 Export models for DB queries
 """
 
 from .model_avl import AvlCavlDataArchive
-from .model_data_quality import DataQualitySchemaViolation
+from .model_data_quality import (
+    DataQualityPostSchemaViolation,
+    DataQualitySchemaViolation,
+)
 from .model_junction import (
     TransmodelServicePatternAdminAreas,
     TransmodelServicePatternLocality,
@@ -105,4 +109,5 @@ __all__ = [
     "PipelineProcessingStep",
     # Data Quality
     "DataQualitySchemaViolation",
+    "DataQualityPostSchemaViolation",
 ]

@@ -2,7 +2,10 @@
 Exported repos
 """
 
-from .repo_data_quality import DataQualitySchemaViolationRepo
+from .repo_data_quality import (
+    DataQualityPostSchemaViolationRepo,
+    DataQualitySchemaViolationRepo,
+)
 from .repo_etl_task import (
     ETLTaskResultRepo,
     FileProcessingResultRepo,
@@ -82,4 +85,5 @@ __all__ = [
     "PipelineErrorCodeRepository",
     # Data Quality
     "DataQualitySchemaViolationRepo",
+    "DataQualityPostSchemaViolationRepo",
 ]

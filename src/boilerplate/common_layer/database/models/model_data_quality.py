@@ -27,3 +27,21 @@ class DataQualitySchemaViolation(BaseSQLModel):
         ),
         nullable=False,
     )
+
+
+class DataQualityPostSchemaViolation(BaseSQLModel):
+    """Data Quality Post Schema Violation Table"""
+
+    __tablename__ = "data_quality_postschemaviolation"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
+    filename: Mapped[str] = mapped_column(String(256), nullable=False)
+    details: Mapped[str] = mapped_column(String(1024), nullable=False)
+    created: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    revision_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey(
+            "organisation_datasetrevision.id", deferrable=True, initially="DEFERRED"
+        ),
+        nullable=False,
+    )
