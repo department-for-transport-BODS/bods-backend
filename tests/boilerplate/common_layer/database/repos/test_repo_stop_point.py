@@ -66,7 +66,7 @@ def test_get_count_non_found(test_db):
 
 def test_get_count_exception(test_db):
     m_session = MagicMock()
-    m_session.__enter__.return_value.query = MagicMock(
+    m_session.return_value.__enter__.return_value.query = MagicMock(
         side_effect=Exception("DB Exception")
     )
 
@@ -112,7 +112,7 @@ def test_get_stop_area_map_no_result(test_db):
 
 def test_get_stop_area_map_exception(test_db):
     m_session = MagicMock()
-    m_session.__enter__.return_value.query = MagicMock(
+    m_session.return_value.__enter__.return_value.query = MagicMock(
         side_effect=Exception("DB Exception")
     )
     with patch.object(test_db, "session_scope", m_session):
