@@ -5,7 +5,6 @@ from typing import List, Union
 from common_layer.database.client import SqlDB
 from common_layer.database.repos.repo_stop_point import StopPointRepo
 from common_layer.db.manager import DbManager
-from common_layer.db.repositories.stop_point import StopPointRepository
 from dateutil import parser
 from isoduration import DurationParsingException, parse_duration
 from isoduration.types import TimeDuration
