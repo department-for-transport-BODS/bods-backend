@@ -44,7 +44,7 @@ class S3:
             logger.info("Using LocalStack for S3 (local environment)")
             return boto3.client(
                 "s3",
-                endpoint_url="http://localhost:4566",
+                endpoint_url="http://host.docker.internal:4566",
                 aws_access_key_id="dummy",
                 aws_secret_access_key="dummy",
             )
