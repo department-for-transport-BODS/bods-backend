@@ -100,7 +100,7 @@ class PTIValidator:
         self.register_function("today", today)
 
         self.register_function("validate_line_id", validate_line_id)
-        self.register_function("validate_lines", get_lines_validator)
+        self.register_function("validate_lines", get_lines_validator(db))
 
         self.register_function(
             "validate_modification_date_time", validate_modification_date_time
