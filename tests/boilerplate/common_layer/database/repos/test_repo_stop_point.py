@@ -81,7 +81,7 @@ def test_get_stop_area_map(test_db):
     stops = [
         NaptanStopPointFactory.create(atco_code="270002700155", stop_areas=["Area1"]),
         NaptanStopPointFactory.create(atco_code="270002700156", stop_areas=["Area2"]),
-        NaptanStopPointFactory.create(atco_code="270002700156", stop_areas=[]),
+        NaptanStopPointFactory.create(atco_code="270002700157", stop_areas=[]),
     ]
     expected_result = {"270002700155": ["Area1"], "270002700156": ["Area2"]}
     with test_db.session_scope() as session:
