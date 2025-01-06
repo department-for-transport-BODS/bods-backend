@@ -54,6 +54,7 @@ def test_lambda_hander(
         "Bucket": "test-bucket",
         "ObjectKey": "test-key",
         "DatasetRevisionId": revision_id,
+        "TxcFileAttributesId": 123,
     }
 
     revision = OrganisationDatasetRevisionFactory.create_with_id(id_number=revision_id)
@@ -64,9 +65,7 @@ def test_lambda_hander(
     m_s3.return_value.get_object.return_value = s3_file_obj
 
     txc_file_attributes = OrganisationTXCFileAttributesFactory.create()
-    m_file_attribute_repo.return_value.get_by_revision_id_and_filename.return_value = (
-        txc_file_attributes
-    )
+    m_file_attribute_repo.return_value.get_by_id.return_value = txc_file_attributes
     expected_file_attributes = TXCFileAttributes.from_orm(txc_file_attributes)
 
     result = pti_validation.lambda_handler(event, {})
@@ -101,10 +100,9 @@ def test_lambda_hander_no_valid_files(
         "Bucket": "test-bucket",
         "ObjectKey": "test-key",
         "DatasetRevisionId": revision_id,
+        "TxcFileAttributesId": 123,
     }
-    m_file_attribute_repo.return_value.get_by_revision_id_and_filename.return_value = (
-        None
-    )
+    m_file_attribute_repo.return_value.get_by_id.return_value = None
 
     with pytest.raises(PipelineException):
         pti_validation.lambda_handler(event, {})

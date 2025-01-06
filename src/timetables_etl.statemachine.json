@@ -147,7 +147,7 @@
               "Bucket.$": "$.Bucket",
               "ObjectKey.$": "$.Key",
               "DatasetRevisionId.$": "$.DatasetRevisionId",
-              "FileAttributesResult.$": "$.fileAttributesEtl"
+              "TxcFileAttributesId.$": "$.fileAttributesEtl.id"
             },
             "ResultPath": "$.ptiValidation",
             "Next": "ETLProcess",
