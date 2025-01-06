@@ -235,12 +235,12 @@ def test_upload_file_to_s3(mock_put, mock_open):
     ],
     ids=["No URL Link", "Invalid URL Link", "Valid URL Link"],
 )
-@patch("common_layer.db.file_processing_result.DbManager")
+@patch("common_layer.db.file_processing_result.SqlDB")
 @patch("timetables_etl.download_dataset.download_and_upload_dataset")
 @patch.dict("os.environ", TEST_ENV_VAR)
 def test_lambda_handler(
     mock_download_upload_dataset,
-    mock_DbManager,
+    mock_sqldb,
     event,
     expected_status_code,
     expected_body,
@@ -251,7 +251,7 @@ def test_lambda_handler(
     Test the `lambda_handler` method with various event conditions.
     """
     mock_db_instance = MagicMock()
-    mock_DbManager.get_db.return_value = mock_db_instance
+    mock_sqldb.get_db.return_value = mock_db_instance
     mock_response = {"statusCode": 200, "body": "file downloaded successfully"}
     mock_download_upload_dataset.return_value = mock_response
     mock_context = MagicMock()

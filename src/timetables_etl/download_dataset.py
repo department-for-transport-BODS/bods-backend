@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from os import environ
 from pathlib import Path
-from typing import Optional
 from urllib.parse import unquote
 
 import requests
