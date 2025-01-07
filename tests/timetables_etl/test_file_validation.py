@@ -11,6 +11,7 @@ from timetables_etl.file_validation import (
     lambda_handler,
 )
 
+
 @pytest.fixture
 def valid_xml_bytesio():
     """
@@ -58,10 +59,13 @@ def test_dangerous_xml_check_valid(valid_xml_bytesio):
     try:
         dangerous_xml_check(valid_xml_bytesio)
     except Exception as e:
-        pytest.fail(f"dangerous_xml_check should not have raised an exception. Got: {e}")
+        pytest.fail(
+            f"dangerous_xml_check should not have raised an exception. Got: {e}"
+        )
 
 
-def test_dangerous_xml_check_parse_error(invalid_xml_bytesio):
+@patch("timetables_etl.file_validation.log")
+def test_dangerous_xml_check_parse_error(mock_log, invalid_xml_bytesio):
     """
     Test that parsing invalid XML raises XMLSyntaxError
     """
@@ -69,7 +73,8 @@ def test_dangerous_xml_check_parse_error(invalid_xml_bytesio):
         dangerous_xml_check(invalid_xml_bytesio)
 
 
-def test_dangerous_xml_check_dangerous_xml(dangerous_xml_bytesio):
+@patch("timetables_etl.file_validation.log")
+def test_dangerous_xml_check_dangerous_xml(mock_log, dangerous_xml_bytesio):
     """
     Test that parsing an XML with a DOCTYPE or other dangerous constructs
     raises DangerousXML
@@ -78,7 +83,7 @@ def test_dangerous_xml_check_dangerous_xml(dangerous_xml_bytesio):
         dangerous_xml_check(dangerous_xml_bytesio)
 
 
-@patch.object(S3, 'download_fileobj')
+@patch.object(S3, "download_fileobj")
 def test_get_xml_file_object(mock_download, valid_xml_bytesio):
     """
     Test that get_xml_file_object returns a BytesIO object
@@ -91,6 +96,7 @@ def test_get_xml_file_object(mock_download, valid_xml_bytesio):
     assert b"<root>" in result.getvalue()  # check that content is correct
     mock_download.assert_called_once_with("fake-key")
 
+
 @patch("timetables_etl.file_validation.get_xml_file_object")
 def test_process_file_validation_success(mock_get_xml_file_object, valid_xml_bytesio):
     """
@@ -98,9 +104,7 @@ def test_process_file_validation_success(mock_get_xml_file_object, valid_xml_byt
     """
     mock_get_xml_file_object.return_value = valid_xml_bytesio
     input_data = FileValidationInputData(
-        DatasetRevisionId=1,
-        Bucket="fake-bucket",
-        ObjectKey="fake-key"
+        DatasetRevisionId=1, Bucket="fake-bucket", ObjectKey="fake-key"
     )
 
     process_file_validation(input_data)
@@ -108,16 +112,17 @@ def test_process_file_validation_success(mock_get_xml_file_object, valid_xml_byt
 
 
 @patch("timetables_etl.file_validation.get_xml_file_object")
-def test_process_file_validation_failure(mock_get_xml_file_object, invalid_xml_bytesio):
+@patch("timetables_etl.file_validation.log")
+def test_process_file_validation_failure(
+    mock_log, mock_get_xml_file_object, invalid_xml_bytesio
+):
     """
     Test that process_file_validation raises an exception for invalid XML
     """
 
     mock_get_xml_file_object.return_value = invalid_xml_bytesio
     input_data = FileValidationInputData(
-        DatasetRevisionId=1,
-        Bucket="fake-bucket",
-        ObjectKey="fake-key"
+        DatasetRevisionId=1, Bucket="fake-bucket", ObjectKey="fake-key"
     )
 
     with pytest.raises(XMLSyntaxError):
@@ -130,11 +135,7 @@ def test_lambda_handler_success(mock_process, caplog):
     Test that lambda_handler returns a success response
     """
     mock_process.return_value = True
-    event = {
-        "DatasetRevisionId": 1,
-        "Bucket": "fake-bucket",
-        "ObjectKey": "fake-key"
-    }
+    event = {"DatasetRevisionId": 1, "Bucket": "fake-bucket", "ObjectKey": "fake-key"}
 
     response = lambda_handler(event, None)
     assert response["statusCode"] == 200
@@ -142,17 +143,15 @@ def test_lambda_handler_success(mock_process, caplog):
     mock_process.assert_called_once()
 
 
-@patch("timetables_etl.file_validation.process_file_validation",
-       side_effect=XMLSyntaxError("test.xml", "parse error"))
+@patch(
+    "timetables_etl.file_validation.process_file_validation",
+    side_effect=XMLSyntaxError("test.xml", "parse error"),
+)
 def test_lambda_handler_failure(mock_process, caplog):
     """
     Test that lambda_handler raises an exception when process_file_validation fails
     """
-    event = {
-        "DatasetRevisionId": 1,
-        "Bucket": "fake-bucket",
-        "ObjectKey": "fake-key"
-    }
+    event = {"DatasetRevisionId": 1, "Bucket": "fake-bucket", "ObjectKey": "fake-key"}
 
     with pytest.raises(XMLSyntaxError):
         lambda_handler(event, None)
