@@ -8,13 +8,13 @@ from sqlalchemy.orm import sessionmaker
 
 
 @pytest.fixture(scope="session")
-def setup_db(caplog: pytest.LogCaptureFixture):
+def setup_db():
     """
     Session-scoped fixture to set up the database schema
     """
     postgres_settings = PostgresSettings(
         POSTGRES_HOST="localhost",
-        POSTGRES_PORT=54325,
+        POSTGRES_PORT=5432,
         POSTGRES_DB="bodds_test",
         POSTGRES_USER="bodds_test",
         POSTGRES_PASSWORD="password",
@@ -24,8 +24,7 @@ def setup_db(caplog: pytest.LogCaptureFixture):
     db = SqlDB(settings=db_settings)
 
     # Create tables once for the test session (existing tables will be skipped)
-    with caplog.at_level(DEBUG):
-        create_db_tables(db)
+    create_db_tables(db)
 
     yield db
 

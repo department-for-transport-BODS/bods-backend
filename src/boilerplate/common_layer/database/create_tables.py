@@ -325,6 +325,12 @@ def handle_enums_and_create_table(
         compare_and_alter_table(model, table, engine)
 
 
+def enable_postgis_extension(engine: Engine):
+    postgis_stmt = "CREATE EXTENSION IF NOT EXISTS postgis;"
+    with engine.begin() as conn:
+        conn.execute(text(postgis_stmt))
+
+
 def create_db_tables(db: SqlDB | None = None) -> None:
     """Initialize database tables using models from timetables_etl."""
     log.warning(
@@ -333,6 +339,8 @@ def create_db_tables(db: SqlDB | None = None) -> None:
     if db is None:
         db = SqlDB()
     metadata = MetaData()
+
+    enable_postgis_extension(db.engine)
 
     model_classes = get_model_classes(models)
     log.info(

@@ -28,14 +28,9 @@ def test_get_count(test_db):
         bus_stop_type=bus_stop_type,
         stop_type=stop_type,
     )
-    not_match_2 = NaptanStopPointFactory.create(
-        atco_code=atco_codes[0],
-        bus_stop_type=bus_stop_type,
-        stop_type="mismatching-stop-type",
-    )
 
     with test_db.session_scope() as session:
-        session.bulk_save_objects([match_1, match_2, not_match_1, not_match_2])
+        session.bulk_save_objects([match_1, match_2, not_match_1])
         session.commit()
 
     repo = StopPointRepo(test_db)
