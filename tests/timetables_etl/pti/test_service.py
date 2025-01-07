@@ -5,7 +5,7 @@ from common_layer.pti.models import Violation
 from pti.service import PTIValidationService
 
 
-@patch("pti.service.PTIObservationRepository")
+@patch("pti.service.DataQualityPTIObservationRepo")
 @patch("pti.service.TXCRevisionValidator")
 @patch("pti.service.get_xml_file_pti_validator")
 def test_validate(
@@ -33,12 +33,12 @@ def test_validate(
     m_get_xml_file_pti_validator.return_value.get_violations.assert_called_once_with(
         revision, xml_file
     )
-    m_observation_repo.return_value.create.assert_called_once_with(
+    m_observation_repo.return_value.create_from_violations.assert_called_once_with(
         revision.id, violations
     )
 
 
-@patch("pti.service.PTIObservationRepository")
+@patch("pti.service.DataQualityPTIObservationRepo")
 @patch("pti.service.sha1sum")
 @patch("pti.service.TXCRevisionValidator")
 @patch("pti.service.get_xml_file_pti_validator")
@@ -75,4 +75,4 @@ def test_validate_unchanged_file(
     m_txc_revision_validator.return_value.get_violations.assert_not_called()
 
     # Observations not created
-    m_observation_repo.return_value.create.assert_not_called()
+    m_observation_repo.return_value.create_from_violations.assert_not_called()
