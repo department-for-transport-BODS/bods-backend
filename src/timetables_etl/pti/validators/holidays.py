@@ -1,6 +1,6 @@
 from common_layer.database.client import SqlDB
 from common_layer.dynamodb.client import DynamoDB
-from pti.constants import (
+from common_layer.pti.constants import (
     BANK_HOLIDAYS,
     BANK_HOLIDAYS_ONLY_ENGLISH,
     BANK_HOLIDAYS_ONLY_SCOTTISH,

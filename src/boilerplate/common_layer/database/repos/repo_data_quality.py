@@ -2,9 +2,9 @@
 SQL Alchemy Repos for Tables prefixed with data_quality_
 """
 
+from common_layer.pti.models import Violation
 from structlog.stdlib import get_logger
 
-from ...pti.models import Violation
 from ..client import SqlDB
 from ..models.model_data_quality import (
     DataQualityPostSchemaViolation,
