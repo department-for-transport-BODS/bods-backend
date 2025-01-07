@@ -31,10 +31,10 @@ def dangerous_xml_check(file_object: BytesIO):
             file_object, forbid_dtd=True, forbid_entities=True, forbid_external=True
         )
     except detree.ParseError as err:
-        log.error("XML syntax error", error=err.msg)
+        log.error("XML syntax error", exc_info=True)
         raise XMLSyntaxError(file_object.name, message=err.msg)
     except DefusedXmlException as err:
-        log.error("Dangerous XML", error=err)
+        log.error("Dangerous XML", exc_info=True)
         raise DangerousXML(file_object.name, message=err)
 
 
@@ -63,7 +63,7 @@ def process_file_validation(input_data: FileValidationInputData):
 def lambda_handler(event, context):
     try:
         process_file_validation(FileValidationInputData(**event))
-    except Exception as e:
-        raise
+    except Exception as excep:
+        raise excep
 
     return {"statusCode": 200, "body": "Completed File Validation"}
