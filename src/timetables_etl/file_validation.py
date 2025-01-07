@@ -26,7 +26,9 @@ class TimetableFileValidator:
 
     @property
     def file(self):
-        return BytesIO(self._s3_obj.get_object(self._key).read())
+        byte_stream = BytesIO(self._s3_obj.get_object(self._key).read())
+        byte_stream.name = self._key
+        return byte_stream
 
     def validate(self):
         """Validates a Timetable DatasetRevision.
