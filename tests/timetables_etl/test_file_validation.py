@@ -1,197 +1,159 @@
-import unittest
 from io import BytesIO
-from unittest.mock import MagicMock, patch
+import pytest
+from unittest.mock import patch, MagicMock
+from common_layer.exceptions.xml_file_exceptions import DangerousXML, XMLSyntaxError
+from common_layer.s3 import S3
+from timetables_etl.file_validation import (
+    FileValidationInputData,
+    dangerous_xml_check,
+    get_xml_file_object,
+    process_file_validation,
+    lambda_handler,
+)
 
-from common_layer.exceptions.xml_file_exceptions import *
-from common_layer.exceptions.zip_file_exceptions import *
-
-from tests.mock_db import MockedDB
-from timetables_etl.file_validation import TimetableFileValidator, lambda_handler
-
-TEST_MODULE = "timetables_etl.file_validation"
-TEST_ENV_VAR = {
-    "PROJECT_ENV": "dev",
-    "CLAMAV_HOST": "abc",
-    "CLAMAV_PORT": "1234",
-    "POSTGRES_HOST": "sample_host",
-    "POSTGRES_PORT": "1234",
-    "POSTGRES_USER": "sample_user",
-    "POSTGRES_PASSWORD": "<PASSWORD>",
-}
+@pytest.fixture
+def valid_xml_bytesio():
+    """
+    Returns a BytesIO object containing valid XML
+    """
+    xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
+    <root>
+        <child>Some Text</child>
+    </root>
+    """
+    file_obj = BytesIO(xml_content)
+    file_obj.name = "valid.xml"
+    return file_obj
 
 
-class TestTimetableFileValidator(unittest.TestCase):
-    @patch(f"{TEST_MODULE}.S3")
-    def setUp(self, mock_s3):
-        # Mock S3 object and the file it returns
-        self.mock_s3 = mock_s3.return_value
-        self.mock_s3.get_object.return_value.read.return_value = (
-            b"Test content for a file"
-        )
+@pytest.fixture
+def invalid_xml_bytesio():
+    """
+    Returns a BytesIO object containing invalid (unparseable) XML
+    """
+    xml_content = b"""<root><child>Missing closing tag"""
+    file_obj = BytesIO(xml_content)
+    file_obj.name = "invalid.xml"
+    return file_obj
 
-        # Create a sample S3 event
-        self.event = {
-            "Bucket": "bodds-dev",
-            "ObjectKey": "22122022105110.zip",
-            "DatasetRevisionId": 123,
-            "DatasetType": "timetables",
-        }
 
-        # Initialize TimetableFileValidator with the mocked S3 object
-        self.validator = TimetableFileValidator(self.event)
+@pytest.fixture
+def dangerous_xml_bytesio():
+    """
+    Returns a BytesIO object containing XML that might trigger defusedxml's protections.
+    For demonstration, we’ll include a DOCTYPE which is commonly disallowed.
+    """
+    xml_content = b"""<!DOCTYPE data [ <!ENTITY myent SYSTEM "file:///etc/passwd"> ]>
+    <root>&myent;</root>
+    """
+    file_obj = BytesIO(xml_content)
+    file_obj.name = "dangerous.xml"
+    return file_obj
 
-    def test_is_zip(self):
-        """Test if the file is correctly identified as a zip file."""
-        # Mock is_zipfile to return True
-        with patch(f"{TEST_MODULE}.is_zipfile", return_value=True):
-            self.assertTrue(self.validator.is_zip)
 
-    def test_is_not_zip(self):
-        """Test if the file is correctly identified as not a zip file."""
-        # Mock is_zipfile to return False
-        with patch(f"{TEST_MODULE}.is_zipfile", return_value=False):
-            self.assertFalse(self.validator.is_zip)
+def test_dangerous_xml_check_valid(valid_xml_bytesio):
+    """
+    Test that parsing a valid XML raises no exceptions
+    """
+    try:
+        dangerous_xml_check(valid_xml_bytesio)
+    except Exception as e:
+        pytest.fail(f"dangerous_xml_check should not have raised an exception. Got: {e}")
 
-    def test_file_content(self):
-        """Test that the file content is retrieved correctly."""
-        self.assertEqual(self.validator.file.read(), b"Test content for a file")
 
-    @patch(f"{TEST_MODULE}.ZippedValidator")
-    @patch(f"{TEST_MODULE}.XMLValidator")
-    def test_validate_zip_with_xml_files(
-        self, mock_xml_validator, mock_zipped_validator
-    ):
-        """Test validation for a zip file containing XML files."""
-        # Mock XMLValidator and ZippedValidator behavior
-        mock_zipped_validator = mock_zipped_validator.return_value
-        mock_zipped_validator.get_files.return_value = ["file1.xml", "file2.xml"]
+def test_dangerous_xml_check_parse_error(invalid_xml_bytesio):
+    """
+    Test that parsing invalid XML raises XMLSyntaxError
+    """
+    with pytest.raises(XMLSyntaxError):
+        dangerous_xml_check(invalid_xml_bytesio)
 
-        # Call validate and ensure no exceptions are raised
-        self.validator.validate()
-        mock_xml_validator.return_value.dangerous_xml_check.assert_called()
 
-    @patch(f"{TEST_MODULE}.ZippedValidator")
-    @patch(f"{TEST_MODULE}.is_zipfile")
-    def test_validate_zip(self, mock_is_zipfile, mock_zipped_validator):
-        """Test validation for a zip file"""
-        mock_is_zipfile.return_value = True
+def test_dangerous_xml_check_dangerous_xml(dangerous_xml_bytesio):
+    """
+    Test that parsing an XML with a DOCTYPE or other dangerous constructs
+    raises DangerousXML
+    """
+    with pytest.raises(DangerousXML):
+        dangerous_xml_check(dangerous_xml_bytesio)
 
-        mock_zipped_instance = mock_zipped_validator.return_value
-        mock_zipped_instance.__enter__.return_value = mock_zipped_instance
-        mock_zipped_instance.get_files.return_value = ["file1.xml", "file2.xml"]
-        mock_zipped_instance.open.side_effect = lambda name: BytesIO(
-            b"<xml>mock data</xml>"
-        )
 
-        # Call validate and ensure no exceptions are raised
-        self.validator.validate()
+@patch.object(S3, 'download_fileobj')
+def test_get_xml_file_object(mock_download, valid_xml_bytesio):
+    """
+    Test that get_xml_file_object returns a BytesIO object
+    from the S3 download
+    """
+    mock_download.return_value = valid_xml_bytesio
+    result = get_xml_file_object("fake-bucket", "fake-key")
 
-        self.assertEqual(mock_zipped_instance.validate.call_count, 1)
+    assert isinstance(result, BytesIO)
+    assert b"<root>" in result.getvalue()  # check that content is correct
+    mock_download.assert_called_once_with("fake-key")
 
-    @patch(
-        f"{TEST_MODULE}.FileValidator.is_too_large",
-        side_effect=ZipValidationException("File too large"),
+@patch("timetables_etl.file_validation.get_xml_file_object")
+def test_process_file_validation_success(mock_get_xml_file_object, valid_xml_bytesio):
+    """
+    Test that process_file_validation returns True when valid
+    """
+    mock_get_xml_file_object.return_value = valid_xml_bytesio
+    input_data = FileValidationInputData(
+        DatasetRevisionId=1,
+        Bucket="fake-bucket",
+        ObjectKey="fake-key"
     )
-    def test_file_too_large_exception(self, mock_file_validator_too_large):
-        """Test that a ZipValidationException is raised when the file is too large."""
-        with self.assertRaises(ZipValidationException):
-            self.validator.validate()
+
+    process_file_validation(input_data)
+    mock_get_xml_file_object.assert_called_once_with("fake-bucket", "fake-key")
 
 
-class TestLambdaHandler(unittest.TestCase):
-    @patch(f"{TEST_MODULE}.TimetableFileValidator")
-    @patch.dict("os.environ", TEST_ENV_VAR)
-    def test_lambda_handler_success(self, mock_timetable_file_validator):
-        """Test lambda_handler success response when validation passes."""
-        # Mock the return values for the various calls
-        mock_revision = MagicMock()
-        mock_revision.id = 1
-        mock_get_revision = mock_revision
+@patch("timetables_etl.file_validation.get_xml_file_object")
+def test_process_file_validation_failure(mock_get_xml_file_object, invalid_xml_bytesio):
+    """
+    Test that process_file_validation raises an exception for invalid XML
+    """
 
-        mock_db = MockedDB()
+    mock_get_xml_file_object.return_value = invalid_xml_bytesio
+    input_data = FileValidationInputData(
+        DatasetRevisionId=1,
+        Bucket="fake-bucket",
+        ObjectKey="fake-key"
+    )
 
-        # Mock TimetableFileValidator to simulate successful validation
-        mock_validator = mock_timetable_file_validator.return_value
-        mock_validator.validate.return_value = None  # No exception means success
-
-        # Create a sample S3 event
-        event = {
-            "Bucket": "bodds-dev",
-            "ObjectKey": "22122022105110.zip",
-            "DatasetRevisionId": 123,
-            "DatasetType": "timetables",
-        }
-
-        # Call the lambda_handler and verify the response
-        response = lambda_handler(event=event, context=None)
-        self.assertEqual(response["statusCode"], 200)
-        self.assertIn("File validation completed", response["body"])
-
-    @patch(f"{TEST_MODULE}.TimetableFileValidator")
-    def test_lambda_handler_zip_validation_exception(
-        self,
-        mock_timetable_file_validator,
-    ):
-        """Test lambda_handler raises ZipValidationException and logs the error."""
-        # Mock TimetableFileValidator to raise ZipValidationException
-        mock_validator = mock_timetable_file_validator.return_value
-
-        mock_revision = MagicMock()
-        mock_revision.id = 1
-
-        for excep in (ZipTooLarge, NestedZipForbidden, NoDataFound):
-            mock_validator.validate.side_effect = excep("Zip validation failed")
-
-            event = {
-                "Bucket": "bodds-dev",
-                "ObjectKey": "22122022105110.zip",
-                "DatasetRevisionId": 123,
-                "DatasetType": "timetables",
-            }
-
-            err_code = (
-                "common_layer.db.file_processing_result.get_file_processing_error_code"
-            )
-
-            with patch(err_code) as mock_err_code:
-                mock_err_code.return_value = MagicMock(id=1)
-                # Verify that lambda_handler raises ZipValidationException
-                with self.assertRaises(excep):
-                    lambda_handler(event=event, context=None)
-
-    @patch(f"{TEST_MODULE}.TimetableFileValidator")
-    def test_lambda_handler_xml_validation_exception(
-        self,
-        mock_timetable_file_validator,
-    ):
-        """Test lambda_handler raises XMLValidationException and logs the error."""
-        # Mock TimetableFileValidator to raise XMLValidationException
-        mock_validator = mock_timetable_file_validator.return_value
-
-        mock_revision = MagicMock()
-        mock_revision.id = 1
-
-        for excep in (XMLSyntaxError, DangerousXML, FileTooLarge):
-            mock_validator.validate.side_effect = excep("XML validation failed")
-
-            event = {
-                "Bucket": "bodds-dev",
-                "ObjectKey": "22122022105110.zip",
-                "DatasetRevisionId": 123,
-                "DatasetType": "timetables",
-            }
-
-            # Mock write_processing_step
-            err_code = (
-                "common_layer.db.file_processing_result.get_file_processing_error_code"
-            )
-
-            with patch(err_code) as mock_err_code:
-                mock_err_code.return_value = MagicMock(id=1)
-                # Verify that lambda_handler raises XMLValidationException
-                with self.assertRaises(excep):
-                    lambda_handler(event=event, context=None)
+    with pytest.raises(XMLSyntaxError):
+        process_file_validation(input_data)
 
 
-if __name__ == "__main__":
-    unittest.main()
+@patch("timetables_etl.file_validation.process_file_validation")
+def test_lambda_handler_success(mock_process, caplog):
+    """
+    Test that lambda_handler returns a success response
+    """
+    mock_process.return_value = True
+    event = {
+        "DatasetRevisionId": 1,
+        "Bucket": "fake-bucket",
+        "ObjectKey": "fake-key"
+    }
+
+    response = lambda_handler(event, None)
+    assert response["statusCode"] == 200
+    assert "Completed File Validation" in response["body"]
+    mock_process.assert_called_once()
+
+
+@patch("timetables_etl.file_validation.process_file_validation",
+       side_effect=XMLSyntaxError("test.xml", "parse error"))
+def test_lambda_handler_failure(mock_process, caplog):
+    """
+    Test that lambda_handler raises an exception when process_file_validation fails
+    """
+    event = {
+        "DatasetRevisionId": 1,
+        "Bucket": "fake-bucket",
+        "ObjectKey": "fake-key"
+    }
+
+    with pytest.raises(XMLSyntaxError):
+        lambda_handler(event, None)
+    mock_process.assert_called_once()
