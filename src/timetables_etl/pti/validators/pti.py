@@ -6,10 +6,10 @@ from urllib.parse import unquote
 
 from common_layer.database.client import SqlDB
 from common_layer.dynamodb.client import DynamoDB
+from common_layer.pti.constants import FLEXIBLE_SERVICE, STANDARD_SERVICE
 from common_layer.pti.models import Observation, Schema, Violation
 from lxml import etree
 
-from ..constants import FLEXIBLE_SERVICE, STANDARD_SERVICE
 from .functions import (
     cast_to_bool,
     cast_to_date,

@@ -1,8 +1,8 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from common_layer.pti.constants import PTI_SCHEMA_PATH
 from common_layer.pti.models import Schema
+from pti.constants import PTI_SCHEMA_PATH
 from pti.validators.pti import PTIValidator
 
 from tests.timetables_etl.pti.validators.conftest import JSONFile
