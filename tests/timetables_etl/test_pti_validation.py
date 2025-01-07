@@ -60,8 +60,8 @@ def test_lambda_hander(
     revision = OrganisationDatasetRevisionFactory.create_with_id(id_number=revision_id)
     m_revision_repo.return_value.get_by_id.return_value = revision
 
-    s3_file_obj = MagicMock()
-    s3_file_obj = StreamingBody(BytesIO(b"<xml-content>"), len(b"<xml-content>"))
+    s3_file_content = BytesIO(b"<xml-content>")
+    s3_file_obj = StreamingBody(s3_file_content, len(b"<xml-content>"))
     m_s3.return_value.get_object.return_value = s3_file_obj
 
     txc_file_attributes = OrganisationTXCFileAttributesFactory.create()
@@ -72,8 +72,15 @@ def test_lambda_hander(
 
     assert result == {"statusCode": 200}
     m_s3.return_value.get_object.assert_called_once_with(file_path="test-key")
-    m_pti_validation_service.return_value.validate.assert_called_once_with(
-        revision, s3_file_obj, expected_file_attributes
+
+    assert m_pti_validation_service.return_value.validate.call_args[0][0] == revision
+    assert (
+        m_pti_validation_service.return_value.validate.call_args[0][1].getvalue()
+        == s3_file_content.getvalue()
+    )
+    assert (
+        m_pti_validation_service.return_value.validate.call_args[0][2]
+        == expected_file_attributes
     )
     m_file_processing_result_to_db.assert_called_once_with(
         step_name=StepName.PTI_VALIDATION
@@ -102,6 +109,11 @@ def test_lambda_hander_no_valid_files(
         "DatasetRevisionId": revision_id,
         "TxcFileAttributesId": 123,
     }
+
+    m_s3_streaming_body = MagicMock()
+    m_s3_streaming_body.read.return_value = b"file_content"
+    m_s3.return_value.get_object.return_value = m_s3_streaming_body
+
     m_file_attribute_repo.return_value.get_by_id.return_value = None
 
     with pytest.raises(PipelineException):
