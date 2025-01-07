@@ -66,7 +66,7 @@ def test_get_count_exception(test_db):
     )
 
     with patch.object(test_db, "session_scope", m_session):
-        repo = StopPointRepo(test_db)
+        repo = NaptanStopPointRepo(test_db)
 
         with pytest.raises(PipelineException):
             repo.get_count(atco_codes=[])
