@@ -40,42 +40,6 @@ class Schema(BaseModel):
             return cls(**d)
 
 
-class Header(BaseModel):
-    namespaces: Dict[str, str]
-    version: str
-    notes: str
-    guidance_document: str
-
-
-class Schema(BaseModel):
-    observations: List[Observation]
-    header: Header
-
-    @classmethod
-    def from_path(cls, path: Path):
-        with path.open("r") as f:
-            d = json.load(f)
-            return cls(**d)
-
-
-class Header(BaseModel):
-    namespaces: Dict[str, str]
-    version: str
-    notes: str
-    guidance_document: str
-
-
-class Schema(BaseModel):
-    observations: List[Observation]
-    header: Header
-
-    @classmethod
-    def from_path(cls, path: Path):
-        with path.open("r") as f:
-            d = json.load(f)
-            return cls(**d)
-
-
 class Violation(BaseModel):
     line: int
     filename: str
@@ -95,7 +59,9 @@ class Violation(BaseModel):
             "line": self.line,
             "name": self.name,
             "observation_category": self.observation.category,
-            "observation_details": self.observation.details.format(element_text=self.element_text),
+            "observation_details": self.observation.details.format(
+                element_text=self.element_text
+            ),
             "reference": ref,
         }
 
@@ -112,8 +78,12 @@ class VehicleJourney(BaseModel):
         namespaces = {"x": xml.nsmap.get(None)}
         code = xml.xpath("string(x:VehicleJourneyCode)", namespaces=namespaces)
         line_ref = xml.xpath("string(x:LineRef)", namespaces=namespaces)
-        journey_pattern_ref = xml.xpath("string(x:JourneyPatternRef)", namespaces=namespaces)
-        vehicle_journey_ref = xml.xpath("string(x:VehicleJourneyRef)", namespaces=namespaces)
+        journey_pattern_ref = xml.xpath(
+            "string(x:JourneyPatternRef)", namespaces=namespaces
+        )
+        vehicle_journey_ref = xml.xpath(
+            "string(x:VehicleJourneyRef)", namespaces=namespaces
+        )
         service_ref = xml.xpath("string(x:ServiceRef)", namespaces=namespaces)
         return cls(
             code=code,
