@@ -3,8 +3,7 @@ from datetime import datetime
 from typing import List, Union
 
 from common_layer.database.client import SqlDB
-from common_layer.database.repos.repo_stop_point import StopPointRepo
-from common_layer.db.manager import DbManager
+from common_layer.database.repos import NaptanStopPointRepo
 from dateutil import parser
 from isoduration import DurationParsingException, parse_duration
 from isoduration.types import TimeDuration
@@ -139,7 +138,7 @@ def get_flexible_service_stop_point_ref_validator(db: SqlDB):
                 + get_stop_point_ref_list(stop_points_in_flexzone_list, ns)
             )
         )
-        repo = StopPointRepo(db)
+        repo = NaptanStopPointRepo(db)
         total_compliant = repo.get_count(
             atco_codes=atco_codes_list, bus_stop_type="FLX", stop_type="BCT"
         )
@@ -509,7 +508,7 @@ def has_servicedorganisation_working_days(context, service_organisations):
 def get_lines_validator(db: SqlDB):
     def validate_lines(context, lines_list: List[etree._Element]) -> bool:
         lines = lines_list[0]
-        repo = StopPointRepo(db)
+        repo = NaptanStopPointRepo(db)
         stop_area_map = repo.get_stop_area_map()
         validator = LinesValidator(lines, stop_area_map=stop_area_map)
         return validator.validate()
