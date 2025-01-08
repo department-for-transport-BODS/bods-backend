@@ -41,7 +41,6 @@ def dangerous_xml_check(file_object: BytesIO) -> ElementTree:
         )
         log.info(
             "XML successfully validated with no dangerous content",
-            file_name=file_object.name,
         )
         return parsed_xml
     except detree.ParseError as err:
@@ -86,7 +85,7 @@ def process_file_validation(input_data: FileValidationInputData) -> None:
         input_data.s3_bucket_name, input_data.s3_file_key
     )
     dangerous_xml_check(xml_file_data)
-    log.info("File validation passed")
+    log.info("File validation passed", file_name=input_data.s3_file_key)
 
 
 @file_processing_result_to_db(step_name=StepName.TXC_FILE_VALIDATOR)
