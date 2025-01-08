@@ -274,12 +274,12 @@ def process_file_to_s3(s3_client: S3, file_path: Path, destination_prefix: str) 
 
         return folder_name
 
-    except Exception as e:
+    except Exception:
         log.error(
             "Failed to copy file to new location",
             file_path=str(file_path),
             s3_key=s3_key,
-            error=str(e),
+            exc_info=True,
         )
         raise
 
@@ -312,48 +312,36 @@ def lambda_handler(event, _context):
     clam_av_config = get_clamav_config()
     db = SqlDB()
 
+    # Fetch the object from s3
+    downloaded_file_path = s3_handler.download_to_tempfile(
+        file_path=input_data.s3_file_key
+    )
+
     try:
-        # Fetch the object from s3
-        downloaded_file_path = s3_handler.download_to_tempfile(
-            file_path=input_data.s3_file_key
+        # Calculate hash and scan file
+        calculate_and_update_file_hash(db, input_data, downloaded_file_path)
+        av_scan_file(clam_av_config, downloaded_file_path)
+
+        # Handle zip extraction if needed
+        generated_prefix = unzip_and_upload_files(
+            s3_handler=s3_handler, file_path=Path(downloaded_file_path)
         )
 
-        try:
-            # Calculate hash and scan file
-            calculate_and_update_file_hash(db, input_data, downloaded_file_path)
-            av_scan_file(clam_av_config, downloaded_file_path)
-
-            # Handle zip extraction if needed
-            generated_prefix = unzip_and_upload_files(
-                s3_handler=s3_handler, file_path=Path(downloaded_file_path)
-            )
-
-            msg = (
-                f"Successfully scanned the file '{input_data.s3_file_key}' "
-                f"from bucket '{input_data.s3_bucket_name}'"
-            )
-
-            log.info(
-                "Sucessfully processed input file", generated_prefix=generated_prefix
-            )
-
-            return {
-                "statusCode": 200,
-                "body": {
-                    "message": msg,
-                    "generatedPrefix": generated_prefix,
-                },
-            }
-
-        finally:
-            # Clean up the temp file
-            shutil.rmtree(Path(downloaded_file_path).parent)
-
-    except Exception as e:
-        log.error(
-            "Error processing file",
-            file_key=input_data.s3_file_key,
-            bucket=input_data.s3_bucket_name,
-            error=str(e),
+        msg = (
+            f"Successfully scanned the file '{input_data.s3_file_key}' "
+            f"from bucket '{input_data.s3_bucket_name}'"
         )
-        raise
+
+        log.info("Sucessfully processed input file", generated_prefix=generated_prefix)
+
+        return {
+            "statusCode": 200,
+            "body": {
+                "message": msg,
+                "generatedPrefix": generated_prefix,
+            },
+        }
+
+    finally:
+        # Clean up the temp file
+        shutil.rmtree(Path(downloaded_file_path).parent)
