@@ -46,6 +46,10 @@ Globals:
     Runtime: python3.11
     Timeout: 60
     MemorySize: 256
+    Tags:
+      env: !Ref Environment
+      service: !Sub '${ProjectName}-${Environment}-${SubFunction}'
+    PropagateTags: true
     KmsKeyArn: !If
       - IsUsingBodsInfra
       - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
@@ -123,6 +127,10 @@ Resources:
         Destinations:
           - CloudWatchLogsLogGroup:
               LogGroupArn: !GetAtt StepFunctionsLogGroup.Arn
+      Tags:
+        env: !Ref Environment
+        service: !Sub '${ProjectName}-${Environment}-${SubFunction}'
+      PropagateTags: true
       DefinitionSubstitutions:
         InitializePipelineLambdaArn: !GetAtt InitializePipelineLambda.Arn
         ClamAvScannerLambdaArn: !GetAtt ClamAvScannerLambda.Arn
