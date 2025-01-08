@@ -91,6 +91,7 @@ class ETLErrorCode(str, Enum):
     ANTIVIRUS_FAILURE = "ANTIVIRUS_FAILURE"
     AV_CONNECTION_ERROR = "AV_CONNECTION_ERROR"
     SYSTEM_ERROR = "SYSTEM_ERROR"
+    EMPTY = ""
 
 
 class DatasetETLTaskResult(TaskResult):
@@ -111,7 +112,7 @@ class DatasetETLTaskResult(TaskResult):
 
     task_name_failed: Mapped[str] = mapped_column(String(255), default="", kw_only=True)
 
-    error_code: Mapped[ETLErrorCode] | Literal[""] = mapped_column(
+    error_code: Mapped[ETLErrorCode] = mapped_column(
         SQLEnum(ETLErrorCode),
         nullable=False,
         index=True,
