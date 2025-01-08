@@ -64,7 +64,7 @@ def test_get_clamav_config_exceptions(config_scenario):
         pytest.param(
             {
                 "name": "test.xml",
-                "prefix": "ext_test/test.xml",
+                "prefix": "ext/test.xml",
                 "content": b"xml content",
             },
             id="Process XML File",
@@ -72,7 +72,7 @@ def test_get_clamav_config_exceptions(config_scenario):
         pytest.param(
             {
                 "name": "data.json",
-                "prefix": "ext_data/data.json",
+                "prefix": "ext/data.json",
                 "content": b"json data",
             },
             id="Process JSON File",
@@ -85,9 +85,9 @@ def test_process_file_to_s3(file_scenario, tmp_path):
     test_file.write_bytes(file_scenario["content"])
 
     mock_s3 = MagicMock()
-    result = process_file_to_s3(mock_s3, test_file, "ext")
+    result = process_file_to_s3(mock_s3, test_file, "ext/")
 
-    assert result.startswith("ext_")
+    assert result.startswith("ext/")
     mock_s3.put_object.assert_called_once()
     args = mock_s3.put_object.call_args[0]
     assert args[0] == file_scenario["prefix"]
