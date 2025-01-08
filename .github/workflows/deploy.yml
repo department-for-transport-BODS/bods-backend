@@ -164,7 +164,7 @@ jobs:
             --no-confirm-changeset \
             --no-fail-on-empty-changeset \
             --s3-bucket $RC_SRC --s3-prefix bods-backend/deployments/$RC_ENV \
-            --tags "BuiltFrom=${VERSION} ProjectName=${{ vars.PROJECT_NAME }} Environment=${RC_ENV}"
+            --tags "BuiltFrom=${VERSION} version=${VERSION} ProjectName=${{ vars.PROJECT_NAME }} Environment=${RC_ENV} AppManagerCFNStackKey=${{ steps.get-stack.outputs.result }}"
           echo "[INFO] Application with version [${VERSION}] successfully deployed into ${RC_ENV^^}"
 
       - name: update confluence page
