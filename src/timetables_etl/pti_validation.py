@@ -1,4 +1,5 @@
-from botocore.response import StreamingBody
+from io import BytesIO
+
 from common_layer.database.client import SqlDB
 from common_layer.database.models.model_organisation import OrganisationDatasetRevision
 from common_layer.database.repos.repo_organisation import (
@@ -24,6 +25,7 @@ class PTIValidationEvent(BaseModel):
     DatasetRevisionId: int
     Bucket: str
     ObjectKey: str
+    TxcFileAttributesId: int
 
 
 class PTITaskData(BaseModel):
@@ -33,13 +35,12 @@ class PTITaskData(BaseModel):
     revision: OrganisationDatasetRevision
     txc_file_attributes: TXCFileAttributes
     live_txc_file_attributes: list[TXCFileAttributes]
-    xml_file_object: StreamingBody
+    xml_file_object: BytesIO
 
 
 def get_task_data(
     event: PTIValidationEvent, db: SqlDB, dynamodb: DynamoDB
 ) -> PTITaskData:
-
     dataset_revision_repo = OrganisationDatasetRevisionRepo(db)
     revision = dataset_revision_repo.get_by_id(event.DatasetRevisionId)
     if not revision:
@@ -47,12 +48,11 @@ def get_task_data(
 
     s3_handler = S3(bucket_name=event.Bucket)
     filename = event.ObjectKey
-    xml_file_object = s3_handler.get_object(file_path=filename)
+    s3_streaming_body = s3_handler.get_object(file_path=filename)
+    xml_file_object = BytesIO(s3_streaming_body.read())
 
     txc_file_attributes_repo = OrganisationTXCFileAttributesRepo(db)
-    txc_file_attributes = txc_file_attributes_repo.get_by_revision_id_and_filename(
-        revision_id=event.DatasetRevisionId, filename=event.ObjectKey
-    )
+    txc_file_attributes = txc_file_attributes_repo.get_by_id(event.TxcFileAttributesId)
     if not txc_file_attributes:
         message = (
             f"No TXCFileAttributes to process for DatasetRevision id {revision.id} "
@@ -86,7 +86,6 @@ def run_validation(task_data: PTITaskData, db: SqlDB, dynamodb: DynamoDB):
 def lambda_handler(event, context):
     configure_logging()
     parsed_event = PTIValidationEvent(**event)
-
     db = SqlDB()
     dynamodb = DynamoDB()
     task_data = get_task_data(parsed_event, db, dynamodb)

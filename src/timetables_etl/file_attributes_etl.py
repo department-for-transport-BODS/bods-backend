@@ -125,7 +125,7 @@ def process_file_attributes(
 
 
 @file_processing_result_to_db(StepName.TXC_ATTRIBUTE_EXTRACTION)
-def lambda_handler(event, _context) -> dict[str, dict[str, int]]:
+def lambda_handler(event, _context) -> dict[str, int]:
     """
     Main lambda handler
     """
@@ -135,4 +135,4 @@ def lambda_handler(event, _context) -> dict[str, dict[str, int]]:
     db = SqlDB()
     inserted_data = process_file_attributes(input_data, txc_data, db)
     log.info("TXC File Attributes added to database", inserted_data=inserted_data)
-    return {"fileAttributesEtl": {"id": inserted_data.id}}
+    return {"id": inserted_data.id}

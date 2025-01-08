@@ -1,3 +1,4 @@
+from ast import Bytes
 from io import BytesIO
 from typing import IO, Any, List
 
@@ -15,15 +16,14 @@ class XmlFilePTIValidator:
     def __init__(self, schema: IO[Any], dynamodb: DynamoDB, db: SqlDB):
         self._validator = PTIValidator(schema, dynamodb, db)
 
-    def get_violations(self, revision, xml_file: StreamingBody) -> List[Violation]:
+    def get_violations(self, revision, xml_file_content: BytesIO) -> List[Violation]:
         """
         Get any PTI violations for the given XML File.
         Will skip validation if the file exists in the live revision and is unchanged.
         """
         log.info(f"File for revision {revision.dataset_id} changed, validating...")
 
-        file_content = xml_file.read()
-        self._validator.is_valid(BytesIO(file_content))
+        self._validator.is_valid(xml_file_content)
 
         log.info(f"File for revision {revision.dataset_id} completed validation")
         log.info(f"File contains {len(self._validator.violations)} violations.")

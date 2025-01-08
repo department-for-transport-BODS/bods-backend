@@ -1,3 +1,5 @@
+from io import BytesIO
+
 from botocore.response import StreamingBody
 from common_layer.database.client import SqlDB
 from common_layer.database.models.model_organisation import OrganisationDatasetRevision
@@ -46,14 +48,15 @@ class PTIValidationService:
     def validate(
         self,
         revision: OrganisationDatasetRevision,
-        xml_file: StreamingBody,
+        xml_file: BytesIO,
         txc_file_attributes: TXCFileAttributes,
     ):
 
         log.info("Starting PTI Profile validation.")
 
-        file_content = xml_file.read()
-        file_hash = sha1sum(file_content)
+        file_content_bytes = xml_file.read()
+        file_hash = sha1sum(file_content_bytes)
+        xml_file.seek(0)
 
         if self.is_file_unchanged(file_hash, self._live_revision_attributes):
             log.info(
