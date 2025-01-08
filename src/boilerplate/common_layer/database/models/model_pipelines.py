@@ -116,7 +116,7 @@ class DatasetETLTaskResult(TaskResult):
         SQLEnum(ETLErrorCode),
         nullable=False,
         index=True,
-        default="",
+        default=ETLErrorCode.EMPTY,
         kw_only=True,
         doc="The error code returned for the failed task",
     )
