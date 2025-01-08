@@ -1,5 +1,4 @@
 from io import BytesIO
-from re import error
 
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
@@ -37,10 +36,10 @@ def dangerous_xml_check(file_object: BytesIO):
         )
     except detree.ParseError as err:
         log.error("XML syntax error", exc_info=True)
-        raise XMLSyntaxError(file_object.name, message=err.msg)
+        raise XMLSyntaxError(file_object.name, message=err.msg) from err
     except DefusedXmlException as err:
         log.error("Dangerous XML", exc_info=True)
-        raise DangerousXML(file_object.name, message=err)
+        raise DangerousXML(file_object.name, message=err) from err
 
 
 def get_xml_file_object(s3_bucket: str, s3_key: str) -> BytesIO:
@@ -77,11 +76,9 @@ def process_file_validation(input_data: FileValidationInputData):
 
 
 @file_processing_result_to_db(step_name=StepName.TXC_FILE_VALIDATOR)
-def lambda_handler(event, context):
-    try:
-        process_file_validation(FileValidationInputData(**event))
-    except Exception as excep:
-        log.error("File vlaidation is failed", error=str(excep))
-        raise
-
+def lambda_handler(event, _):
+    """
+    Lambda handler for file validation
+    """
+    process_file_validation(FileValidationInputData(**event))
     return {"statusCode": 200, "body": "Completed File Validation"}

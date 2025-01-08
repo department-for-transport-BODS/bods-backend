@@ -1,23 +1,25 @@
 from io import BytesIO
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 from common_layer.exceptions.xml_file_exceptions import (
     DangerousXML,
+    FileNotXML,
     XMLSyntaxError,
-    FileNotXML
 )
 from common_layer.s3 import S3
+
 from timetables_etl.file_validation import (
     FileValidationInputData,
     dangerous_xml_check,
     get_xml_file_object,
-    process_file_validation,
+    is_xml_file,
     lambda_handler,
-    is_xml_file
+    process_file_validation,
 )
 
 
-@pytest.fixture
+@pytest.fixture(name="valid_xml_bytesio")
 def valid_xml_bytesio():
     """
     Returns a BytesIO object containing valid XML
@@ -32,7 +34,7 @@ def valid_xml_bytesio():
     return file_obj
 
 
-@pytest.fixture
+@pytest.fixture(name="invalid_xml_bytesio")
 def invalid_xml_bytesio():
     """
     Returns a BytesIO object containing invalid (unparseable) XML
@@ -43,7 +45,7 @@ def invalid_xml_bytesio():
     return file_obj
 
 
-@pytest.fixture
+@pytest.fixture(name="dangerous_xml_bytesio")
 def dangerous_xml_bytesio():
     """
     Returns a BytesIO object containing XML that might trigger defusedxml's protections.
@@ -113,8 +115,7 @@ def test_process_file_validation_success(mock_get_xml_file_object, valid_xml_byt
     )
 
     process_file_validation(input_data)
-    mock_get_xml_file_object.assert_called_once_with("fake-bucket",
-                                                     "fake-key.xml")
+    mock_get_xml_file_object.assert_called_once_with("fake-bucket", "fake-key.xml")
 
 
 @patch("timetables_etl.file_validation.get_xml_file_object")
@@ -151,7 +152,7 @@ def test_lambda_handler_success(mock_process, caplog):
 
 @patch(
     "timetables_etl.file_validation.process_file_validation",
-    side_effect=XMLSyntaxError("test.xml", "parse error"),
+    side_effect=XMLSyntaxError("test.xml", "parse error"),  # type: ignore
 )
 def test_lambda_handler_failure(mock_process, caplog):
     """
