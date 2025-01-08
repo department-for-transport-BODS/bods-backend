@@ -83,13 +83,13 @@ def process_zip_to_s3(s3_client: S3, zip_path: Path, destination_prefix: str) ->
     Returns:
         The S3 prefix where files were uploaded
     """
-    zip_name = zip_path.stem
-    folder_name = f"{destination_prefix.rstrip('/')}_{zip_name}/"
     success_count = 0
     fail_count = 0
     skip_count = 0
 
-    log.info("Processing zip file", zip_path=str(zip_path), destination=folder_name)
+    log.info(
+        "Processing zip file", zip_path=str(zip_path), destination=destination_prefix
+    )
 
     try:
         for filename, extracted_path in extract_zip_file(zip_path):
@@ -98,7 +98,7 @@ def process_zip_to_s3(s3_client: S3, zip_path: Path, destination_prefix: str) ->
                 skip_count += 1
                 continue
 
-            s3_key = f"{folder_name}{filename}"
+            s3_key = f"{destination_prefix}{filename}"
 
             log.debug("Uploading XML file to S3", filename=filename, s3_key=s3_key)
 
@@ -123,13 +123,13 @@ def process_zip_to_s3(s3_client: S3, zip_path: Path, destination_prefix: str) ->
         log.info(
             "Completed zip processing",
             zip_path=str(zip_path),
-            destination=folder_name,
+            destination=destination_prefix,
             files_processed=success_count,
             files_failed=fail_count,
             files_skipped=skip_count,
         )
 
-        return folder_name
+        return destination_prefix
 
     except Exception:
         log.error(

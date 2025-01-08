@@ -248,13 +248,12 @@ def process_file_to_s3(s3_client: S3, file_path: Path, destination_prefix: str) 
     State Machine Map does not work on single files, requires a folder
     """
     file_name = file_path.name
-    folder_name = f"{destination_prefix.rstrip('/')}_{Path(file_name).stem}/"
-    s3_key = f"{folder_name}{file_name}"
+    s3_key = f"{destination_prefix}{file_name}"
 
     log.info(
         "Copying single file into a new folder",
         file_path=str(file_path),
-        destination=folder_name,
+        destination=destination_prefix,
     )
 
     try:
@@ -269,10 +268,10 @@ def process_file_to_s3(s3_client: S3, file_path: Path, destination_prefix: str) 
         log.info(
             "Completed file processing",
             file_path=str(file_path),
-            destination=folder_name,
+            destination=destination_prefix,
         )
 
-        return folder_name
+        return destination_prefix
 
     except Exception:
         log.error(
@@ -284,7 +283,9 @@ def process_file_to_s3(s3_client: S3, file_path: Path, destination_prefix: str) 
         raise
 
 
-def unzip_and_upload_files(s3_handler: S3, file_path: Path) -> str:
+def unzip_and_upload_files(
+    s3_handler: S3, file_path: Path, s3_output_folder: str
+) -> str:
     """
     If the file is a zip, unzip and upload its contents to S3.
     Otherwise, copy the single file to a new folder and return that folder path.
@@ -292,17 +293,33 @@ def unzip_and_upload_files(s3_handler: S3, file_path: Path) -> str:
     if file_path.suffix.lower() == ".zip":
         log.info("Input File is a Zip. Processing...", file_path=str(file_path))
         return process_zip_to_s3(
-            s3_client=s3_handler, zip_path=file_path, destination_prefix="ext"
+            s3_client=s3_handler,
+            zip_path=file_path,
+            destination_prefix=s3_output_folder,
         )
 
     log.info("Input file is a single file", path=str(file_path))
     return process_file_to_s3(
-        s3_client=s3_handler, file_path=file_path, destination_prefix="ext"
+        s3_client=s3_handler, file_path=file_path, destination_prefix=s3_output_folder
     )
 
 
+def make_output_folder_name(
+    file_path: Path,
+    request_id: str,
+) -> str:
+    """
+    Generate a folder structure based on filename and request ID for easy lookup
+    of multiple runs of the same file.
+    filename/request_id/
+    """
+    file_stem = file_path.stem
+
+    return f"{file_stem}/{request_id}/"
+
+
 @file_processing_result_to_db(step_name=StepName.CLAM_AV_SCANNER)
-def lambda_handler(event, _context):
+def lambda_handler(event, context):
     """
     Main lambda handler
     """
@@ -311,12 +328,13 @@ def lambda_handler(event, _context):
     s3_handler = S3(bucket_name=input_data.s3_bucket_name)
     clam_av_config = get_clamav_config()
     db = SqlDB()
-
     # Fetch the object from s3
     downloaded_file_path = s3_handler.download_to_tempfile(
         file_path=input_data.s3_file_key
     )
-
+    s3_output_folder = make_output_folder_name(
+        downloaded_file_path, context.aws_request_id
+    )
     try:
         # Calculate hash and scan file
         calculate_and_update_file_hash(db, input_data, downloaded_file_path)
@@ -324,7 +342,7 @@ def lambda_handler(event, _context):
 
         # Handle zip extraction if needed
         generated_prefix = unzip_and_upload_files(
-            s3_handler=s3_handler, file_path=Path(downloaded_file_path)
+            s3_handler, downloaded_file_path, s3_output_folder
         )
 
         msg = (
