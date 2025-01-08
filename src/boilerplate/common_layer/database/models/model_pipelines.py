@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Optional
+from typing import Literal, Optional
 
 from sqlalchemy import DateTime
 from sqlalchemy import Enum as SQLEnum
@@ -111,7 +111,7 @@ class DatasetETLTaskResult(TaskResult):
 
     task_name_failed: Mapped[str] = mapped_column(String(255), default="", kw_only=True)
 
-    error_code: Mapped[Optional[ETLErrorCode]] = mapped_column(
+    error_code: Mapped[ETLErrorCode] | Literal[""] = mapped_column(
         SQLEnum(ETLErrorCode),
         nullable=False,
         index=True,
