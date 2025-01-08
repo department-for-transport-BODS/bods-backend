@@ -27,13 +27,13 @@ def _extract_text(elements, default=None):
             text = item
         else:
             text = item.text
-    elif isinstance(elements, tr):
+    elif isinstance(elements, str):
         text = elements
     elif hasattr(elements, "text"):
         text = elements.text
     else:
         text = default
-    return texts
+    return text
 
 
 def cast_to_date(context, date):
