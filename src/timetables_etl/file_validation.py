@@ -1,79 +1,99 @@
+"""
+FileValidation Lambda
+"""
+
 from io import BytesIO
-from zipfile import is_zipfile
+from xml.etree.ElementTree import ElementTree
 
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
-from common_layer.exceptions.xml_file_exceptions import XMLValidationException
-from common_layer.exceptions.zip_file_exceptions import ZipValidationException
-from common_layer.json_logging import configure_logging
+from common_layer.exceptions.xml_file_exceptions import (
+    DangerousXML,
+    FileNotXML,
+    XMLSyntaxError,
+)
 from common_layer.s3 import S3
-from common_layer.xml_validator import FileValidator, XMLValidator
-from common_layer.zip import ZippedValidator
+from defusedxml import DefusedXmlException
+from defusedxml import ElementTree as detree
+from pydantic import BaseModel, Field
 from structlog.stdlib import get_logger
 
 log = get_logger()
 
 
-class TimetableFileValidator:
-    def __init__(self, event):
-        self._s3_obj = S3(event["Bucket"])
-        self._key = event["ObjectKey"]
+class FileValidationInputData(BaseModel):
+    """
+    Input data for the File Validation
+    """
 
-    @property
-    def is_zip(self):
-        with BytesIO(self._s3_obj.get_object(self._key).read()) as file_object:
-            return is_zipfile(file_object)
+    revision_id: int = Field(alias="DatasetRevisionId")
+    s3_bucket_name: str = Field(alias="Bucket")
+    s3_file_key: str = Field(alias="ObjectKey")
 
-    @property
-    def file(self):
-        byte_stream = BytesIO(self._s3_obj.get_object(self._key).read())
-        byte_stream.name = self._key
-        return byte_stream
 
-    def validate(self):
-        """Validates a Timetable DatasetRevision.
+def dangerous_xml_check(file_object: BytesIO) -> ElementTree:
+    """
+    Parse and check the file object syntax error
+    """
+    try:
+        parsed_xml = detree.parse(
+            file_object, forbid_dtd=True, forbid_entities=True, forbid_external=True
+        )
+        log.info(
+            "XML successfully validated with no dangerous content",
+            file_name=file_object.name,
+        )
+        return parsed_xml
+    except detree.ParseError as err:
+        log.error("XML syntax error", exc_info=True)
+        raise XMLSyntaxError(file_object.name, message=err.msg) from err
+    except DefusedXmlException as err:
+        log.error("Dangerous XML", exc_info=True)
+        raise DangerousXML(file_object.name, message=err) from err
 
-        Raises:
-            FileTooLarge: if file size is greater than max_file_size.
 
-            DangerousXML: if DefusedXmlException is raised during parsing.
-            XMLSyntaxError: if the file cannot be parsed.
+def get_xml_file_object(s3_bucket: str, s3_key: str) -> BytesIO:
+    """
+    Download XML from S3
+    """
+    s3_client = S3(s3_bucket)
+    file_obj = s3_client.download_fileobj(s3_key)
+    file_size = file_obj.getbuffer().nbytes
+    file_obj.seek(0)
+    log.info(
+        "Downloaded XML file", file_size_bytes=file_size, bucket=s3_bucket, key=s3_key
+    )
+    return file_obj
 
-            NestedZipForbidden: if zip file contains another zip file.
-            ZipTooLarge: if zip file or sum of uncompressed files are
-                greater than max_file_size.
-            NoDataFound: if zip file contains no files with data_file_ext extension.
-        """
-        FileValidator(self.file).is_too_large()
-        if self.is_zip:
-            with ZippedValidator(self.file) as zv:
-                zv.validate()
-                for name in zv.get_files():
-                    with zv.open(name) as f:
-                        XMLValidator(f).dangerous_xml_check()
-        else:
-            XMLValidator(self.file).dangerous_xml_check()
+
+def is_xml_file(file_name: str) -> bool:
+    """
+    Check file extension ends in .xml
+    """
+    if not file_name.lower().endswith(".xml"):
+        log.error("File is not a xml file", file_name=file_name)
+        raise FileNotXML(file_name)
+    return True
+
+
+def process_file_validation(input_data: FileValidationInputData) -> None:
+    """
+    Process the file validation
+    """
+    log.info("Processing file validation", file_name=input_data.s3_file_key)
+    is_xml_file(input_data.s3_file_key)
+    xml_file_data = get_xml_file_object(
+        input_data.s3_bucket_name, input_data.s3_file_key
+    )
+    dangerous_xml_check(xml_file_data)
+    log.info("File validation passed")
 
 
 @file_processing_result_to_db(step_name=StepName.TXC_FILE_VALIDATOR)
-def lambda_handler(event, context):
-    configure_logging()
-    bucket = event["Bucket"]
-    key = event["ObjectKey"]
-    try:
-        validator = TimetableFileValidator(event)
-        validator.validate()
-    except ZipValidationException as exc:
-        message = exc.message
-        log.error(message, exc_info=True)
-        raise exc
-    except XMLValidationException as exc:
-        message = exc.message
-        log.error(message, exc_info=True)
-        raise exc
-    except Exception as exc:
-        raise exc
-    return {
-        "statusCode": 200,
-        "body": f"File validation completed '{key}' from bucket '{bucket}'",
-    }
+def lambda_handler(event, _context) -> dict[str, str | int]:
+    """
+    Lambda handler for file validation
+    """
+    input_data = FileValidationInputData(**event)
+    process_file_validation(input_data)
+    return {"statusCode": 200, "body": "Completed File Validation"}

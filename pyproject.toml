@@ -18,6 +18,7 @@ db-viewer = "tools.db_viewer.cli:app"
 create-tables-dev = "src.boilerplate.common_layer.database.create_tables:create_db_tables"
 schema-check = "tools.schema_check.cli:app"
 post-schema-check = "tools.post_schema_check.cli:app"
+file-validation = "tools.file_validation.cli:app"
 
 [tool.poetry.dependencies]
 python = "^3.11"
