@@ -125,6 +125,8 @@ Resources:
           - CloudWatchLogsLogGroup:
               LogGroupArn: !GetAtt StepFunctionsLogGroup.Arn
       PropagateTags: true
+      Tracing:
+        Enabled: True
       DefinitionSubstitutions:
         InitializePipelineLambdaArn: !GetAtt InitializePipelineLambda.Arn
         ClamAvScannerLambdaArn: !GetAtt ClamAvScannerLambda.Arn
@@ -159,6 +161,8 @@ Resources:
             Principal:
               Service: states.amazonaws.com
             Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Policies:
         - PolicyName: StartStateMachineExecutionOfSelfPolicy
           PolicyDocument:
