@@ -21,3 +21,8 @@ class XMLSyntaxError(XMLValidationException):
 class DangerousXML(XMLValidationException):
     code = "DANGEROUS_XML_ERROR"
     message_template = "XML file {filename} contains dangerous XML."
+
+
+class FileNotXML(XMLValidationException):
+    code = "FILE_NOT_XML_ERROR"
+    message_template = "File {filename} is not a XML file."

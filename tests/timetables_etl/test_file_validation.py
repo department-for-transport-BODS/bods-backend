@@ -1,7 +1,11 @@
 from io import BytesIO
 import pytest
 from unittest.mock import patch, MagicMock
-from common_layer.exceptions.xml_file_exceptions import DangerousXML, XMLSyntaxError
+from common_layer.exceptions.xml_file_exceptions import (
+    DangerousXML,
+    XMLSyntaxError,
+    FileNotXML
+)
 from common_layer.s3 import S3
 from timetables_etl.file_validation import (
     FileValidationInputData,
@@ -9,6 +13,7 @@ from timetables_etl.file_validation import (
     get_xml_file_object,
     process_file_validation,
     lambda_handler,
+    is_xml_file
 )
 
 
@@ -104,11 +109,12 @@ def test_process_file_validation_success(mock_get_xml_file_object, valid_xml_byt
     """
     mock_get_xml_file_object.return_value = valid_xml_bytesio
     input_data = FileValidationInputData(
-        DatasetRevisionId=1, Bucket="fake-bucket", ObjectKey="fake-key"
+        DatasetRevisionId=1, Bucket="fake-bucket", ObjectKey="fake-key.xml"
     )
 
     process_file_validation(input_data)
-    mock_get_xml_file_object.assert_called_once_with("fake-bucket", "fake-key")
+    mock_get_xml_file_object.assert_called_once_with("fake-bucket",
+                                                     "fake-key.xml")
 
 
 @patch("timetables_etl.file_validation.get_xml_file_object")
@@ -122,7 +128,7 @@ def test_process_file_validation_failure(
 
     mock_get_xml_file_object.return_value = invalid_xml_bytesio
     input_data = FileValidationInputData(
-        DatasetRevisionId=1, Bucket="fake-bucket", ObjectKey="fake-key"
+        DatasetRevisionId=1, Bucket="fake-bucket", ObjectKey="fake-key.xml"
     )
 
     with pytest.raises(XMLSyntaxError):
@@ -156,3 +162,16 @@ def test_lambda_handler_failure(mock_process, caplog):
     with pytest.raises(XMLSyntaxError):
         lambda_handler(event, None)
     mock_process.assert_called_once()
+
+
+def test_valid_xml_filename():
+    for filename in ["example.xml", "example.XML"]:
+        assert is_xml_file(filename) == True
+
+
+def test_invalid_filename_failure():
+    for filename in ["example", "example.txt", ""]:
+        # Should raise InvalidFileFormatError
+        with pytest.raises(FileNotXML) as context:
+            is_xml_file(filename)
+            assert "FILE_NOT_XML_ERROR" in str(context.value) is True

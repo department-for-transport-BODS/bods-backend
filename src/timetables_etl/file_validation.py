@@ -3,7 +3,11 @@ from re import error
 
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
-from common_layer.exceptions.xml_file_exceptions import DangerousXML, XMLSyntaxError
+from common_layer.exceptions.xml_file_exceptions import (
+    DangerousXML,
+    FileNotXML,
+    XMLSyntaxError,
+)
 from common_layer.s3 import S3
 from defusedxml import DefusedXmlException
 from defusedxml import ElementTree as detree
@@ -47,12 +51,23 @@ def get_xml_file_object(s3_bucket: str, s3_key: str) -> BytesIO:
     return s3_client.download_fileobj(s3_key)
 
 
+def is_xml_file(file_name: str) -> bool:
+    """
+    Check file name whether its a xml file
+    """
+    if not file_name.lower().endswith(".xml"):
+        log.error("File is not a xml file", file_name=file_name)
+        raise FileNotXML(file_name)
+    return True
+
+
 def process_file_validation(input_data: FileValidationInputData):
     """
     Process the file validation
     """
     log.info("Processing file validation", file_name=input_data.s3_file_key)
     try:
+        is_xml_file(input_data.s3_file_key)
         dangerous_xml_check(
             get_xml_file_object(input_data.s3_bucket_name, input_data.s3_file_key)
         )
