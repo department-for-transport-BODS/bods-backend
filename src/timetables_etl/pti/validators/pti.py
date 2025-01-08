@@ -6,21 +6,22 @@ from urllib.parse import unquote
 
 from common_layer.database.client import SqlDB
 from common_layer.dynamodb.client import DynamoDB
+from common_layer.pti.constants import FLEXIBLE_SERVICE, STANDARD_SERVICE
 from common_layer.pti.models import Observation, Schema, Violation
 from lxml import etree
 
-from ..constants import FLEXIBLE_SERVICE, STANDARD_SERVICE
 from .functions import (
     cast_to_bool,
     cast_to_date,
     check_description_for_inbound_description,
     check_description_for_outbound_description,
-    check_flexible_service_stop_point_ref,
     check_flexible_service_times,
     check_flexible_service_timing_status,
     check_inbound_outbound_description,
     check_service_group_validations,
     contains_date,
+    get_flexible_service_stop_point_ref_validator,
+    get_lines_validator,
     has_destination_display,
     has_flexible_or_standard_service,
     has_flexible_service_classification,
@@ -34,7 +35,6 @@ from .functions import (
     today,
     validate_licence_number,
     validate_line_id,
-    validate_lines,
     validate_modification_date_time,
     validate_non_naptan_stop_points,
     validate_run_time,
@@ -61,7 +61,7 @@ class PTIValidator:
 
         self.register_function(
             "check_flexible_service_stop_point_ref",
-            check_flexible_service_stop_point_ref,
+            get_flexible_service_stop_point_ref_validator(db),
         )
 
         self.register_function(
@@ -100,7 +100,7 @@ class PTIValidator:
         self.register_function("today", today)
 
         self.register_function("validate_line_id", validate_line_id)
-        self.register_function("validate_lines", validate_lines)
+        self.register_function("validate_lines", get_lines_validator(db))
 
         self.register_function(
             "validate_modification_date_time", validate_modification_date_time

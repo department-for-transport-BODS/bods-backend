@@ -2,9 +2,9 @@ import re
 from datetime import datetime
 from typing import List, Union
 
-from common_layer.db.manager import DbManager
+from common_layer.database.client import SqlDB
+from common_layer.database.repos import NaptanStopPointRepo
 from dateutil import parser
-from common_layer.db.repositories.stop_point import StopPointRepository
 from isoduration import DurationParsingException, parse_duration
 from isoduration.types import TimeDuration
 from lxml import etree
@@ -72,18 +72,29 @@ def check_flexible_service_timing_status(context, flexiblejourneypatterns):
     timing_status_value_list = []
     flexiblejourneypattern = flexiblejourneypatterns[0]
     ns = {"x": flexiblejourneypattern.nsmap.get(None)}
-    stop_points_in_seq_list = flexiblejourneypattern.xpath("x:StopPointsInSequence", namespaces=ns)
+    stop_points_in_seq_list = flexiblejourneypattern.xpath(
+        "x:StopPointsInSequence", namespaces=ns
+    )
     for stop_points_in_seq in stop_points_in_seq_list:
-        fixed_stop_usage_list = stop_points_in_seq.xpath("x:FixedStopUsage", namespaces=ns)
-        flexible_stop_usage_list = stop_points_in_seq.xpath("x:FlexibleStopUsage", namespaces=ns)
+        fixed_stop_usage_list = stop_points_in_seq.xpath(
+            "x:FixedStopUsage", namespaces=ns
+        )
+        flexible_stop_usage_list = stop_points_in_seq.xpath(
+            "x:FlexibleStopUsage", namespaces=ns
+        )
 
         if len(fixed_stop_usage_list) > 0 and len(flexible_stop_usage_list) > 0:
             for fixed_stop_usage in fixed_stop_usage_list:
                 timing_status_value_list.append(
-                    _extract_text(fixed_stop_usage.xpath("x:TimingStatus", namespaces=ns), "")
+                    _extract_text(
+                        fixed_stop_usage.xpath("x:TimingStatus", namespaces=ns), ""
+                    )
                 )
 
-    result = all(timing_status_value == "otherPoint" for timing_status_value in timing_status_value_list)
+    result = all(
+        timing_status_value == "otherPoint"
+        for timing_status_value in timing_status_value_list
+    )
     return result
 
 
@@ -96,33 +107,45 @@ def validate_non_naptan_stop_points(context, points):
 def get_stop_point_ref_list(stop_points, ns):
     stop_point_ref_list = []
     for flex_stop_point in stop_points:
-        flexible_stop_usage_list = flex_stop_point.xpath("x:FlexibleStopUsage", namespaces=ns)
+        flexible_stop_usage_list = flex_stop_point.xpath(
+            "x:FlexibleStopUsage", namespaces=ns
+        )
         if len(flexible_stop_usage_list) > 0:
             for flexible_stop_usage in flexible_stop_usage_list:
                 stop_point_ref_list.append(
-                    _extract_text(flexible_stop_usage.xpath("x:StopPointRef", namespaces=ns), "")
+                    _extract_text(
+                        flexible_stop_usage.xpath("x:StopPointRef", namespaces=ns), ""
+                    )
                 )
 
     return stop_point_ref_list
 
 
-def check_flexible_service_stop_point_ref(context, flexiblejourneypatterns):
-    atco_codes_list = []
-    flexiblejourneypattern = flexiblejourneypatterns[0]
-    ns = {"x": flexiblejourneypattern.nsmap.get(None)}
-    stop_points_in_seq_list = flexiblejourneypattern.xpath("x:StopPointsInSequence", namespaces=ns)
-    stop_points_in_flexzone_list = flexiblejourneypattern.xpath("x:FlexibleZones", namespaces=ns)
-    atco_codes_list = list(
-        set(
-            get_stop_point_ref_list(stop_points_in_seq_list, ns)
-            + get_stop_point_ref_list(stop_points_in_flexzone_list, ns)
+def get_flexible_service_stop_point_ref_validator(db: SqlDB):
+    def check_flexible_service_stop_point_ref(context, flexiblejourneypatterns):
+        atco_codes_list = []
+        flexiblejourneypattern = flexiblejourneypatterns[0]
+        ns = {"x": flexiblejourneypattern.nsmap.get(None)}
+        stop_points_in_seq_list = flexiblejourneypattern.xpath(
+            "x:StopPointsInSequence", namespaces=ns
         )
-    )
-    db = DbManager.get_db()
-    repo = StopPointRepository(db)
-    total_compliant = repo.get_count(atco_codes=atco_codes_list, bus_stop_type="FLX", stop_type="BCT")
+        stop_points_in_flexzone_list = flexiblejourneypattern.xpath(
+            "x:FlexibleZones", namespaces=ns
+        )
+        atco_codes_list = list(
+            set(
+                get_stop_point_ref_list(stop_points_in_seq_list, ns)
+                + get_stop_point_ref_list(stop_points_in_flexzone_list, ns)
+            )
+        )
+        repo = NaptanStopPointRepo(db)
+        total_compliant = repo.get_count(
+            atco_codes=atco_codes_list, bus_stop_type="FLX", stop_type="BCT"
+        )
 
-    return total_compliant == len(atco_codes_list)
+        return total_compliant == len(atco_codes_list)
+
+    return check_flexible_service_stop_point_ref
 
 
 def check_inbound_outbound_description(context, services):
@@ -133,11 +156,20 @@ def check_inbound_outbound_description(context, services):
     """
     for service in services:
         ns = {"x": service.nsmap.get(None)}
-        standard_service_list = service.xpath("x:Service/x:StandardService", namespaces=ns)
+        standard_service_list = service.xpath(
+            "x:Service/x:StandardService", namespaces=ns
+        )
         if standard_service_list:
-            inbound_description_list = service.xpath("x:Service/x:Lines/x:Line/x:InboundDescription", namespaces=ns)
-            outbound_description_list = service.xpath("x:Service/x:Lines/x:Line/x:OutboundDescription", namespaces=ns)
-            if len(inbound_description_list) == 0 and len(outbound_description_list) == 0:
+            inbound_description_list = service.xpath(
+                "x:Service/x:Lines/x:Line/x:InboundDescription", namespaces=ns
+            )
+            outbound_description_list = service.xpath(
+                "x:Service/x:Lines/x:Line/x:OutboundDescription", namespaces=ns
+            )
+            if (
+                len(inbound_description_list) == 0
+                and len(outbound_description_list) == 0
+            ):
                 return False
 
         return True
@@ -157,9 +189,13 @@ def check_description_for_inbound_description(context, services):
     for service in services:
         inbound_description_list = []
         ns = {"x": service.nsmap.get(None)}
-        standard_service_list = service.xpath("x:Service/x:StandardService", namespaces=ns)
+        standard_service_list = service.xpath(
+            "x:Service/x:StandardService", namespaces=ns
+        )
         if standard_service_list:
-            inbound_description_list = service.xpath("x:Service/x:Lines/x:Line/x:InboundDescription", namespaces=ns)
+            inbound_description_list = service.xpath(
+                "x:Service/x:Lines/x:Line/x:InboundDescription", namespaces=ns
+            )
         for inbound_description_tag in inbound_description_list:
             if len(inbound_description_tag.xpath("x:Description", namespaces=ns)) == 0:
                 return False
@@ -180,9 +216,13 @@ def check_description_for_outbound_description(context, services):
     for service in services:
         outbound_description_tag = []
         ns = {"x": service.nsmap.get(None)}
-        standard_service_list = service.xpath("x:Service/x:StandardService", namespaces=ns)
+        standard_service_list = service.xpath(
+            "x:Service/x:StandardService", namespaces=ns
+        )
         if standard_service_list:
-            outbound_description_list = service.xpath("x:Service/x:Lines/x:Line/x:OutboundDescription", namespaces=ns)
+            outbound_description_list = service.xpath(
+                "x:Service/x:Lines/x:Line/x:OutboundDescription", namespaces=ns
+            )
         for outbound_description_tag in outbound_description_list:
             if len(outbound_description_tag.xpath("x:Description", namespaces=ns)) == 0:
                 return False
@@ -195,10 +235,14 @@ def check_flexible_service_times(context, vehiclejourneys):
     is also present at least once. If not present at all, then return False.
     """
     ns = {"x": vehiclejourneys[0].nsmap.get(None)}
-    flexible_vehiclejourneys = vehiclejourneys[0].xpath("x:FlexibleVehicleJourney", namespaces=ns)
+    flexible_vehiclejourneys = vehiclejourneys[0].xpath(
+        "x:FlexibleVehicleJourney", namespaces=ns
+    )
     if flexible_vehiclejourneys:
         for flexible_journey in flexible_vehiclejourneys:
-            flexible_service_times = flexible_journey.xpath("x:FlexibleServiceTimes", namespaces=ns)
+            flexible_service_times = flexible_journey.xpath(
+                "x:FlexibleServiceTimes", namespaces=ns
+            )
             if len(flexible_service_times) == 0:
                 return False
 
@@ -243,7 +287,9 @@ def has_flexible_or_standard_service(context, services):
     """
     for service in services:
         ns = {"x": service.nsmap.get(None)}
-        service_classification = service.xpath("x:ServiceClassification/x:Flexible", namespaces=ns)
+        service_classification = service.xpath(
+            "x:ServiceClassification/x:Flexible", namespaces=ns
+        )
 
         if service_classification:
             flexible_service_list = service.xpath("x:FlexibleService", namespaces=ns)
@@ -271,7 +317,9 @@ def has_flexible_service_classification(context, services):
         if not flexible_service_list:
             return True
 
-        service_classification_list = service.xpath("x:ServiceClassification", namespaces=ns)
+        service_classification_list = service.xpath(
+            "x:ServiceClassification", namespaces=ns
+        )
         if not service_classification_list:
             return False
 
@@ -297,7 +345,9 @@ def check_service_group_validations(context, services):
     registered_standard_service = len(
         list(
             filter(
-                lambda s: registered_code_regex.match(s.xpath("string(x:ServiceCode)", namespaces=ns))
+                lambda s: registered_code_regex.match(
+                    s.xpath("string(x:ServiceCode)", namespaces=ns)
+                )
                 and s.xpath("x:StandardService", namespaces=ns),
                 service_list,
             )
@@ -306,7 +356,9 @@ def check_service_group_validations(context, services):
     unregistered_services = len(
         list(
             filter(
-                lambda s: unregistered_code_regex.match(s.xpath("string(x:ServiceCode)", namespaces=ns)),
+                lambda s: unregistered_code_regex.match(
+                    s.xpath("string(x:ServiceCode)", namespaces=ns)
+                ),
                 service_list,
             )
         )
@@ -314,19 +366,27 @@ def check_service_group_validations(context, services):
     registered_flexible_service = len(
         list(
             filter(
-                lambda s: registered_code_regex.match(s.xpath("string(x:ServiceCode)", namespaces=ns))
+                lambda s: registered_code_regex.match(
+                    s.xpath("string(x:ServiceCode)", namespaces=ns)
+                )
                 and s.xpath("x:ServiceClassification/x:Flexible", namespaces=ns),
                 service_list,
             )
         )
     )
 
-    total_services = registered_standard_service + registered_flexible_service + unregistered_services
+    total_services = (
+        registered_standard_service
+        + registered_flexible_service
+        + unregistered_services
+    )
 
     # More than one services are allowed only when there is a registered flexible service.
     # If there is a registered standard service then no other service types should be present
     if total_services == 1 or (
-        total_services > 1 and registered_flexible_service == 1 and registered_standard_service == 0
+        total_services > 1
+        and registered_flexible_service == 1
+        and registered_standard_service == 0
     ):
         return True
 
@@ -445,13 +505,15 @@ def has_servicedorganisation_working_days(context, service_organisations):
     return is_valid
 
 
-def validate_lines(context, lines: List[etree._Element]) -> bool:
-    lines = lines[0]
-    db = DbManager.get_db()
-    repo = StopPointRepository(db)
-    stop_area_map = repo.get_stop_area_map()
-    validator = LinesValidator(lines, stop_area_map=stop_area_map)
-    return validator.validate()
+def get_lines_validator(db: SqlDB):
+    def validate_lines(context, lines_list: List[etree._Element]) -> bool:
+        lines = lines_list[0]
+        repo = NaptanStopPointRepo(db)
+        stop_area_map = repo.get_stop_area_map()
+        validator = LinesValidator(lines, stop_area_map=stop_area_map)
+        return validator.validate()
+
+    return validate_lines
 
 
 def validate_run_time(context, timing_links):
