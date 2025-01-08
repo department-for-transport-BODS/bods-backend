@@ -325,7 +325,13 @@ def test_download_and_upload_dataset(
     mock_get_remote_file_name.return_value = "some_file_name"
     mock_write_temp_file.return_value = "/tmp/tempfile"
 
-    response = download_and_upload_dataset(input_data, False)
+    response = download_and_upload_dataset(
+        mock_sqldb,
+        input_data.s3_bucket_name,
+        input_data.revision_id,
+        input_data.remote_dataset_url_link,
+        False,
+    )
 
     assert response == EXPECTED_RESPONSE
     mock_upload_file_to_s3.assert_called_once_with(

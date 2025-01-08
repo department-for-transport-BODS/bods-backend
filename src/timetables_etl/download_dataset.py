@@ -221,19 +221,18 @@ def get_remote_file_name(
 
 
 def download_and_upload_dataset(
-    input_data: DownloadDatasetInputData, is_time_zone: bool
+    db: SqlDB, s3_bucket_name: str, revision_id: int, url_link: str, is_time_zone: bool
 ) -> dict:
     """
     Template function to download the dataset, upload to S3 and update database
     """
-    db = SqlDB()
-    revision = OrganisationDatasetRevisionRepo(db).get_by_id(input_data.revision_id)
-    s3_handler = S3(bucket_name=input_data.s3_bucket_name)
+    revision = OrganisationDatasetRevisionRepo(db).get_by_id(revision_id)
+    s3_handler = S3(bucket_name=s3_bucket_name)
     response = download_data_from_remote_url(revision)
     file_name = get_remote_file_name(revision, response, is_time_zone)
-    temp_file_name = write_temp_file(input_data.remote_dataset_url_link)
+    temp_file_name = write_temp_file(url_link)
     upload_file_to_s3(temp_file_name, file_name, s3_handler)
-    update_dataset_revision(input_data.revision_id, file_name, db)
+    update_dataset_revision(revision_id, file_name, db)
     return {"statusCode": 200, "body": "file downloaded successfully"}
 
 
@@ -260,8 +259,15 @@ def lambda_handler(event, context) -> dict:
     log.debug("Input Data", data=event)
     TIME_ZONE = environ.get("USE_TZ", default=False)
     input_data = DownloadDatasetInputData(**event)
+    db = SqlDB()
     if input_data.remote_dataset_url_link:
-        return download_and_upload_dataset(input_data, TIME_ZONE)
+        return download_and_upload_dataset(
+            db,
+            input_data.s3_bucket_name,
+            input_data.revision_id,
+            input_data.remote_dataset_url_link,
+            TIME_ZONE,
+        )
     else:
         log.info("url link is not specified, nothing to download.")
         return {
