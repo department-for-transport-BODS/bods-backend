@@ -1,4 +1,5 @@
 from io import BytesIO
+from re import error
 
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
@@ -50,6 +51,7 @@ def process_file_validation(input_data: FileValidationInputData):
     """
     Process the file validation
     """
+    log.info("Processing file validation", file_name=input_data.s3_file_key)
     try:
         dangerous_xml_check(
             get_xml_file_object(input_data.s3_bucket_name, input_data.s3_file_key)
@@ -64,6 +66,7 @@ def lambda_handler(event, context):
     try:
         process_file_validation(FileValidationInputData(**event))
     except Exception as excep:
-        raise excep
+        log.error("File vlaidation is failed", error=str(excep))
+        raise
 
     return {"statusCode": 200, "body": "Completed File Validation"}
