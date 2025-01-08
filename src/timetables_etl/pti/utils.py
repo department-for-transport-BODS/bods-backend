@@ -1,13 +1,15 @@
 import logging
+from functools import lru_cache
 
 from common_layer.database.client import SqlDB
 from common_layer.database.repos import OtcServiceRepo
 from common_layer.dynamodb.client import DynamoDB
-from pti.constants import SCOTLAND_TRAVELINE_REGIONS
+from common_layer.pti.constants import SCOTLAND_TRAVELINE_REGIONS
 
 logger = logging.getLogger(__name__)
 
 
+@lru_cache()
 def is_service_in_scotland(service_ref: str, dynamo: DynamoDB, db: SqlDB) -> bool:
     cache_key = f"{service_ref.replace(':', '-')}-is-scottish-region"
     return dynamo.get_or_compute(

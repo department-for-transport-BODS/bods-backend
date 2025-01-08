@@ -62,13 +62,6 @@
           "Prefix.$": "$.scanner.body.generatedPrefix"
         }
       },
-      "ResultWriter": {
-        "Resource": "arn:aws:states:::s3:putObject",
-        "Parameters": {
-          "Bucket.$": "$.detail.bucket.name",
-          "Prefix.$": "tt-etl-map-results"
-        }
-      },
       "ItemProcessor": {
         "ProcessorConfig": {
           "Mode": "DISTRIBUTED",

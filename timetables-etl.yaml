@@ -161,6 +161,7 @@ Resources:
                   - !GetAtt PostSchemaCheckLambda.Arn
                   - !GetAtt FileAttributesEtlLambda.Arn
                   - !GetAtt PtiValidationLambda.Arn
+                  - !GetAtt ETLProcessLambda.Arn
                   - !GetAtt ExceptionHandlerLambda.Arn
         - PolicyName: S3BucketAccessPolicy
           PolicyDocument:
@@ -500,6 +501,7 @@ Resources:
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: pti_validation.lambda_handler
+      Timeout: 300
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
