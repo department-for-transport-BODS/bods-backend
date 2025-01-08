@@ -239,9 +239,17 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
+                  - logs:CreateLogDelivery
                   - logs:CreateLogStream
+                  - logs:GetLogDelivery
+                  - logs:UpdateLogDelivery
+                  - logs:DeleteLogDelivery
+                  - logs:ListLogDeliveries
                   - logs:PutLogEvents
-                Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-sm:*'
+                  - logs:PutResourcePolicy
+                  - logs:DescribeResourcePolicies
+                  - logs:DescribeLogGroups
+                Resource: '*'
   ##########################################
   #### TIMETABLES STATE MACHINE TRIGGER ####
   ##########################################
