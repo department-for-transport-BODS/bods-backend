@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Literal, Optional
+from typing import Optional
 
 from sqlalchemy import DateTime
 from sqlalchemy import Enum as SQLEnum
