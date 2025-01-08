@@ -38,7 +38,7 @@ def test_s3_client_local_stack(monkeypatch):
     """Test LocalStack configuration for local environment"""
     monkeypatch.setenv("PROJECT_ENV", "local")
     s3 = S3(bucket_name="test_bucket")
-    assert s3._client.meta.endpoint_url == "http://localhost:4566"
+    assert s3._client.meta.endpoint_url == "http://host.docker.internal:4566"
 
 
 def test_bucket_name(s3_client):

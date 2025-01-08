@@ -6,6 +6,7 @@ Export models for DB queries
 from .model_avl import AvlCavlDataArchive
 from .model_data_quality import (
     DataQualityPostSchemaViolation,
+    DataQualityPTIObservation,
     DataQualitySchemaViolation,
 )
 from .model_junction import (
@@ -110,4 +111,5 @@ __all__ = [
     # Data Quality
     "DataQualitySchemaViolation",
     "DataQualityPostSchemaViolation",
+    "DataQualityPTIObservation",
 ]

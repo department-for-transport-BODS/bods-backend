@@ -46,6 +46,7 @@ Globals:
     Runtime: python3.11
     Timeout: 60
     MemorySize: 256
+    PropagateTags: true
     KmsKeyArn: !If
       - IsUsingBodsInfra
       - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
@@ -117,6 +118,13 @@ Resources:
       Name: !Sub '${ProjectName}-${Environment}-${SubFunction}-sm'
       Role: !GetAtt TimetablesStateMachineRole.Arn
       DefinitionUri: './src/timetables_etl.statemachine.json'
+      Logging:
+        Level: ALL
+        IncludeExecutionData: true
+        Destinations:
+          - CloudWatchLogsLogGroup:
+              LogGroupArn: !GetAtt StepFunctionsLogGroup.Arn
+      PropagateTags: true
       DefinitionSubstitutions:
         InitializePipelineLambdaArn: !GetAtt InitializePipelineLambda.Arn
         ClamAvScannerLambdaArn: !GetAtt ClamAvScannerLambda.Arn
@@ -128,6 +136,18 @@ Resources:
         PtiValidationLambdaArn: !GetAtt PtiValidationLambda.Arn
         ExceptionHandlerLambdaArn: !GetAtt ExceptionHandlerLambda.Arn
         ETLProcessLambdaArn: !GetAtt ETLProcessLambda.Arn
+  StepFunctionsLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-sm'
+      KmsKeyId: !If
+        - IsUsingBodsInfra
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - !Ref AWS::NoValue
+      RetentionInDays: 30
 
   TimetablesStateMachineRole:
     Type: AWS::IAM::Role
@@ -163,6 +183,7 @@ Resources:
                   - !GetAtt PostSchemaCheckLambda.Arn
                   - !GetAtt FileAttributesEtlLambda.Arn
                   - !GetAtt PtiValidationLambda.Arn
+                  - !GetAtt ETLProcessLambda.Arn
                   - !GetAtt ExceptionHandlerLambda.Arn
         - PolicyName: S3BucketAccessPolicy
           PolicyDocument:
@@ -214,6 +235,15 @@ Resources:
                     - IsStandalone
                     - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
                     - '*'
+        - PolicyName: CloudWatchLogsPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-sm:*'
   ##########################################
   #### TIMETABLES STATE MACHINE TRIGGER ####
   ##########################################
@@ -535,6 +565,7 @@ Resources:
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: pti_validation.lambda_handler
+      Timeout: 300
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:

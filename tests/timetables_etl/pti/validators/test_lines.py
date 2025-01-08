@@ -14,7 +14,7 @@ DATA_DIR = Path(__file__).parent / "data" / "lines"
 
 @pytest.fixture(autouse=True, scope="module")
 def m_stop_point_repo():
-    with patch("pti.validators.functions.StopPointRepository") as m_repo:
+    with patch("pti.validators.functions.NaptanStopPointRepo") as m_repo:
         yield m_repo
 
 

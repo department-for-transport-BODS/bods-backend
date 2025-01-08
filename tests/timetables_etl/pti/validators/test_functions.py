@@ -11,12 +11,12 @@ from pti.validators.functions import (
     cast_to_date,
     check_description_for_inbound_description,
     check_description_for_outbound_description,
-    check_flexible_service_stop_point_ref,
     check_flexible_service_times,
     check_flexible_service_timing_status,
     check_inbound_outbound_description,
     check_service_group_validations,
     contains_date,
+    get_flexible_service_stop_point_ref_validator,
     has_flexible_or_standard_service,
     has_flexible_service_classification,
     has_name,
@@ -136,7 +136,9 @@ def test_check_flexible_service_timing_status(values, expected):
     """
     string_xml = timing_status.format(*values)
     doc = etree.fromstring(string_xml)
-    elements = doc.xpath("//x:Service/x:FlexibleService/x:FlexibleJourneyPattern", namespaces=NAMESPACE)
+    elements = doc.xpath(
+        "//x:Service/x:FlexibleService/x:FlexibleJourneyPattern", namespaces=NAMESPACE
+    )
     actual = check_flexible_service_timing_status("", elements)
     assert actual == expected
 
@@ -569,7 +571,9 @@ def test_check_only_outbound_description():
     assert actual == True
 
 
-@pytest.mark.parametrize("args, expected", [(["Sunday", "Monday"], True), (["Monday", "Tuesday"], False)])
+@pytest.mark.parametrize(
+    "args, expected", [(["Sunday", "Monday"], True), (["Monday", "Tuesday"], False)]
+)
 def test_has_name(args, expected):
     context = Mock()
     s = TXC_START + "<Sunday />" + TXC_END
@@ -590,7 +594,9 @@ def test_has_name(args, expected):
         (False, False, False, False),
     ],
 )
-def test_has_flexible_or_standard_service(flexible_classification, flexible_service, standard_service, expected):
+def test_has_flexible_or_standard_service(
+    flexible_classification, flexible_service, standard_service, expected
+):
     NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
     flexible_classification_present = """
         <ServiceClassification>
@@ -642,7 +648,9 @@ def test_has_flexible_or_standard_service(flexible_classification, flexible_serv
                 standard_service,
             )
         else:
-            string_xml = service.format(flexible_classification_present, "", standard_service)
+            string_xml = service.format(
+                flexible_classification_present, "", standard_service
+            )
     else:
         if standard_service:
             string_xml = service.format("", "", standard_service_present)
@@ -663,7 +671,9 @@ def test_has_flexible_or_standard_service(flexible_classification, flexible_serv
         (False, False, False),
     ],
 )
-def test_has_flexible_service_classification(service_classification, flexible, expected):
+def test_has_flexible_service_classification(
+    service_classification, flexible, expected
+):
     NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
     service_classification_present = """
         <ServiceClassification>
@@ -982,7 +992,9 @@ def test_validate_licence_number_non_coach_data_failed():
     This test case validates LicenceNumber is a mandatory element for Non Coach Operators
     """
     NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
-    string_xml = DATA_DIR / "coaches" / "non_coach_data_operator_without_licence_number.xml"
+    string_xml = (
+        DATA_DIR / "coaches" / "non_coach_data_operator_without_licence_number.xml"
+    )
     with string_xml.open("r") as txc_xml:
         doc = etree.parse(txc_xml)
         elements = doc.xpath("//x:Operator", namespaces=NAMESPACE)
@@ -1052,10 +1064,16 @@ def test_has_servicedorganisation_working_days_not_present():
     This test case validates working days tag is present for ServicedOrganisation
     """
     NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
-    string_xml = DATA_DIR / "servicedorganisations" / "servicedorganisation_working_days_not_present.xml"
+    string_xml = (
+        DATA_DIR
+        / "servicedorganisations"
+        / "servicedorganisation_working_days_not_present.xml"
+    )
     with string_xml.open("r") as txc_xml:
         doc = etree.parse(txc_xml)
-        elements = doc.xpath("//x:ServicedOrganisations/x:ServicedOrganisation", namespaces=NAMESPACE)
+        elements = doc.xpath(
+            "//x:ServicedOrganisations/x:ServicedOrganisation", namespaces=NAMESPACE
+        )
         actual = has_servicedorganisation_working_days("", elements)
         assert actual == False
 
@@ -1065,17 +1083,23 @@ def test_has_servicedorganisation_working_days_present():
     This test case validates working days tag is present for ServicedOrganisation
     """
     NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
-    string_xml = DATA_DIR / "servicedorganisations" / "servicedorganisation_working_days_present.xml"
+    string_xml = (
+        DATA_DIR
+        / "servicedorganisations"
+        / "servicedorganisation_working_days_present.xml"
+    )
     with string_xml.open("r") as txc_xml:
         doc = etree.parse(txc_xml)
-        elements = doc.xpath("//x:ServicedOrganisations/x:ServicedOrganisation", namespaces=NAMESPACE)
+        elements = doc.xpath(
+            "//x:ServicedOrganisations/x:ServicedOrganisation", namespaces=NAMESPACE
+        )
         actual = has_servicedorganisation_working_days("", elements)
         assert actual == True
 
 
 @pytest.fixture
 def m_stop_point_repo():
-    with patch("pti.validators.functions.StopPointRepository") as m_repo:
+    with patch("pti.validators.functions.NaptanStopPointRepo") as m_repo:
         yield m_repo
 
 
@@ -1120,16 +1144,22 @@ def test_check_flexible_service_stop_points_in_sequence_stop_type(
     string_xml = flexible_service_xml.format(*stop_point_ref_values)
 
     doc = etree.fromstring(string_xml)
-    elements = doc.xpath("//x:Service/x:FlexibleService/x:FlexibleJourneyPattern", namespaces=NAMESPACE)
+    elements = doc.xpath(
+        "//x:Service/x:FlexibleService/x:FlexibleJourneyPattern", namespaces=NAMESPACE
+    )
 
-    result = check_flexible_service_stop_point_ref("", elements)
+    validator = get_flexible_service_stop_point_ref_validator(db=MagicMock())
+    result = validator("", elements)
 
     assert result == expected_result
     assert m_stop_point_repo.return_value.get_count.call_count == 1
-    assert sorted(m_stop_point_repo.return_value.get_count.call_args[1]["atco_codes"]) == sorted(stop_point_ref_values)
-    assert m_stop_point_repo.return_value.get_count.call_args[1]["bus_stop_type"] == "FLX"
+    assert sorted(
+        m_stop_point_repo.return_value.get_count.call_args[1]["atco_codes"]
+    ) == sorted(stop_point_ref_values)
+    assert (
+        m_stop_point_repo.return_value.get_count.call_args[1]["bus_stop_type"] == "FLX"
+    )
     assert m_stop_point_repo.return_value.get_count.call_args[1]["stop_type"] == "BCT"
-
 
 
 @pytest.mark.parametrize(
@@ -1175,13 +1205,19 @@ def test_check_flexible_service_stop_point_flexible_zone_stop_type(
     string_xml = flexible_zone_xml.format(*stop_point_ref_values)
 
     doc = etree.fromstring(string_xml)
-    elements = doc.xpath("//x:Service/x:FlexibleService/x:FlexibleJourneyPattern", namespaces=NAMESPACE)
+    elements = doc.xpath(
+        "//x:Service/x:FlexibleService/x:FlexibleJourneyPattern", namespaces=NAMESPACE
+    )
 
-    result = check_flexible_service_stop_point_ref("", elements)
+    validator = get_flexible_service_stop_point_ref_validator(db=MagicMock())
+    result = validator("", elements)
 
     assert result == expected_result
     assert m_stop_point_repo.return_value.get_count.call_count == 1
-    assert sorted(m_stop_point_repo.return_value.get_count.call_args[1]["atco_codes"]) == sorted(stop_point_ref_values)
-    assert m_stop_point_repo.return_value.get_count.call_args[1]["bus_stop_type"] == "FLX"
+    assert sorted(
+        m_stop_point_repo.return_value.get_count.call_args[1]["atco_codes"]
+    ) == sorted(stop_point_ref_values)
+    assert (
+        m_stop_point_repo.return_value.get_count.call_args[1]["bus_stop_type"] == "FLX"
+    )
     assert m_stop_point_repo.return_value.get_count.call_args[1]["stop_type"] == "BCT"
-

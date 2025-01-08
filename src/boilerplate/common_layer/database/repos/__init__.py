@@ -73,7 +73,6 @@ __all__ = [
     "NaptanStopPointRepo",
     "TransmodelServiceServicePatternRepo",
     "NaptanLocalityRepo",
-    "NaptanStopPointRepo",
     "TransmodelServiceServicePatternRepo",
     "TransmodelServicePatternAdminAreaRepo",
     "TransmodelServicePatternLocalityRepo",
