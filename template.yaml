@@ -50,6 +50,9 @@ Resources:
         RdsDbHostAddr: !Ref RdsDbHostAddr
         RdsDbPort: !Ref RdsDbPort
         BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
+      Tags:
+        env: !Ref Environment
+        service: !Sub '${ProjectName}-${Environment}-periodic-tasks'
   PeriodicTasksStandalone:
     Type: AWS::Serverless::Application
     Condition: IsStandalone
@@ -65,6 +68,9 @@ Resources:
         RdsDbHostAddr: !Ref RdsDbHostAddr
         RdsDbPort: !Ref RdsDbPort
         BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
+      Tags:
+        env: !Ref Environment
+        service: !Sub '${ProjectName}-${Environment}-periodic-tasks'
   TimetablesEtl:
     Type: AWS::Serverless::Application
     Condition: IsNotStandalone
@@ -76,6 +82,9 @@ Resources:
         RdsDbHostAddr: !Ref RdsDbHostAddr
         RdsDbPort: !Ref RdsDbPort
         BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
+      Tags:
+        env: !Ref Environment
+        service: !Sub '${ProjectName}-${Environment}-timetables-etl'
   TimetablesEtlStandalone:
     Type: AWS::Serverless::Application
     Condition: IsStandalone
@@ -87,7 +96,9 @@ Resources:
         ProjectName: !Ref ProjectName
         RdsDbPort: !Ref RdsDbPort
         BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
-
+      Tags:
+        env: !Ref Environment
+        service: !Sub '${ProjectName}-${Environment}-timetables-etl'
   BoilerplateLambdaLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
