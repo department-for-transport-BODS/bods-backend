@@ -10,7 +10,7 @@ from common_layer.json_logging import configure_logging
 from lxml import etree
 from structlog.stdlib import get_logger
 
-from src.timetables_etl.schema_check.app.app import (
+from src.timetables_etl.schema_check.app.schema_check import (
     get_schema_violations,
     load_txc_schema,
 )
