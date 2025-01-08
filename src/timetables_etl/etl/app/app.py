@@ -9,6 +9,8 @@ from common_layer.database.repos import (
     OrganisationDatasetRevisionRepo,
     OrganisationTXCFileAttributesRepo,
 )
+from common_layer.db.constants import StepName
+from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.json_logging import configure_logging
 from common_layer.s3 import S3
 from common_layer.txc.models import TXCData
@@ -79,7 +81,7 @@ def extract_txc_data(s3_bucket: str, s3_key: str) -> TXCData:
     return txc_data
 
 
-@handle_lambda_errors
+@file_processing_result_to_db(step_name=StepName.ETL_PROCESS)
 def lambda_handler(event, _):
     """
     Timetable ETL
