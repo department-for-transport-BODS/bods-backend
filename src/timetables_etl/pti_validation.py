@@ -1,5 +1,6 @@
 from io import BytesIO
 
+from aws_lambda_powertools import Tracer
 from common_layer.database.client import SqlDB
 from common_layer.database.models.model_organisation import OrganisationDatasetRevision
 from common_layer.database.repos.repo_organisation import (
@@ -18,6 +19,7 @@ from pti.service import PTIValidationService
 from pydantic import BaseModel, ConfigDict
 from structlog.stdlib import get_logger
 
+tracer = Tracer()
 logger = get_logger()
 
 
@@ -82,6 +84,7 @@ def run_validation(task_data: PTITaskData, db: SqlDB, dynamodb: DynamoDB):
     )
 
 
+@tracer.capture_lambda_handler
 @file_processing_result_to_db(step_name=StepName.PTI_VALIDATION)
 def lambda_handler(event, context):
     configure_logging()

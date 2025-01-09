@@ -6,6 +6,7 @@ import re
 from datetime import UTC, datetime
 from typing import Callable
 
+from aws_lambda_powertools import Tracer
 from common_layer.database.client import SqlDB
 from common_layer.database.models.model_data_quality import (
     DataQualityPostSchemaViolation,
@@ -21,6 +22,7 @@ from common_layer.txc.models.txc_data import TXCData
 from pydantic import BaseModel, Field
 from structlog.stdlib import get_logger
 
+tracer = Tracer()
 log = get_logger()
 
 
