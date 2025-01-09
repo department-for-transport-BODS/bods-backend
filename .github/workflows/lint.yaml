@@ -1,0 +1,120 @@
+name: Code Linting
+permissions: read-all
+on:
+  push:
+    branches:
+      - dev
+    paths:
+      - 'src/**'
+  pull_request:
+    paths:
+      - 'src/**'
+jobs:
+  changes:
+    name: Get list of Changed Python Files in src/
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+      contents: read
+    outputs:
+      py_files: ${{ steps.changed-files.outputs.all_changed_files }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v42
+        with:
+          files: |
+            src/**/*.py
+
+  black:
+    name: Black Formatter Check
+    needs: changes
+    if: needs.changes.outputs.py_files != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run Black
+        uses: psf/black@stable
+        with:
+          options: '--check --verbose'
+          src: ${{ needs.changes.outputs.py_files }}
+
+  pyright:
+    name: pyright type checking (VS Code's Pylance Backend)
+    needs: changes
+    if: needs.changes.outputs.py_files != ''
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.11']
+    permissions:
+      id-token: write
+      contents: read
+      statuses: write
+      checks: write
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install poetry
+        run: pipx install poetry
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+      - name: Install Dependencies
+        run: poetry install
+      - name: Add poetry env to PATH to allow pyright to use it
+        run: echo "$(poetry env info --path)/bin" >> $GITHUB_PATH
+      - name: pyright
+        uses: jakebailey/pyright-action@v2
+        with:
+          pylance-version: latest-release
+          extra-args: ${{ needs.changes.outputs.py_files }}
+
+  pylint:
+    name: pylint check
+    needs: changes
+    if: needs.changes.outputs.py_files != ''
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.11']
+    permissions:
+      id-token: write
+      contents: read
+      statuses: write
+      checks: write
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install poetry
+        run: pipx install poetry
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+      - name: Install Dependencies
+        run: poetry install
+      - name: Run pylint
+        run: poetry run pylint ${{ needs.changes.outputs.py_files }} --output-format=colorized --reports=y
