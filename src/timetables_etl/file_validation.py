@@ -31,7 +31,7 @@ class FileValidationInputData(BaseModel):
     s3_file_key: str = Field(alias="ObjectKey")
 
 
-def dangerous_xml_check(file_object: BytesIO) -> ElementTree:
+def dangerous_xml_check(file_object: BytesIO, file_name: str) -> ElementTree:
     """
     Parse and check the file object syntax error
     """
@@ -45,10 +45,10 @@ def dangerous_xml_check(file_object: BytesIO) -> ElementTree:
         return parsed_xml
     except detree.ParseError as err:
         log.error("XML syntax error", exc_info=True)
-        raise XMLSyntaxError(file_object.name, message=err.msg) from err
+        raise XMLSyntaxError(file_name, message=err.msg) from err
     except DefusedXmlException as err:
         log.error("Dangerous XML", exc_info=True)
-        raise DangerousXML(file_object.name, message=err) from err
+        raise DangerousXML(file_name, message=err) from err
 
 
 def get_xml_file_object(s3_bucket: str, s3_key: str) -> BytesIO:
@@ -84,7 +84,7 @@ def process_file_validation(input_data: FileValidationInputData) -> None:
     xml_file_data = get_xml_file_object(
         input_data.s3_bucket_name, input_data.s3_file_key
     )
-    dangerous_xml_check(xml_file_data)
+    dangerous_xml_check(xml_file_data, file_name=input_data.s3_file_key)
     log.info("File validation passed", file_name=input_data.s3_file_key)
 
 
