@@ -1,3 +1,7 @@
+"""
+PtiValidation Lambda
+"""
+
 from io import BytesIO
 
 from aws_lambda_powertools import Tracer
@@ -24,6 +28,10 @@ logger = get_logger()
 
 
 class PTIValidationEvent(BaseModel):
+    """
+    Lambda Input Data
+    """
+
     DatasetRevisionId: int
     Bucket: str
     ObjectKey: str
@@ -31,6 +39,9 @@ class PTIValidationEvent(BaseModel):
 
 
 class PTITaskData(BaseModel):
+    """
+    Task Data Container
+    """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -43,6 +54,9 @@ class PTITaskData(BaseModel):
 def get_task_data(
     event: PTIValidationEvent, db: SqlDB, dynamodb: DynamoDB
 ) -> PTITaskData:
+    """
+    Fetch Required Task Data
+    """
     dataset_revision_repo = OrganisationDatasetRevisionRepo(db)
     revision = dataset_revision_repo.get_by_id(event.DatasetRevisionId)
     if not revision:
@@ -62,9 +76,9 @@ def get_task_data(
         logger.exception(message)
         raise PipelineException(message)
 
-    dataManager = FileProcessingDataManager(db, dynamodb)
+    data_manager = FileProcessingDataManager(db, dynamodb)
     cached_live_txc_file_attributes = (
-        dataManager.get_cached_live_txc_file_attributes(revision.id) or []
+        data_manager.get_cached_live_txc_file_attributes(revision.id) or []
     )
 
     return PTITaskData(
@@ -76,6 +90,9 @@ def get_task_data(
 
 
 def run_validation(task_data: PTITaskData, db: SqlDB, dynamodb: DynamoDB):
+    """
+    Run PTI Validation
+    """
     validation_service = PTIValidationService(
         db, dynamodb, task_data.live_txc_file_attributes
     )
@@ -87,6 +104,9 @@ def run_validation(task_data: PTITaskData, db: SqlDB, dynamodb: DynamoDB):
 @tracer.capture_lambda_handler
 @file_processing_result_to_db(step_name=StepName.PTI_VALIDATION)
 def lambda_handler(event, _context: LambdaContext):
+    """
+    PTI Validation Lambda Entrypoint
+    """
     parsed_event = PTIValidationEvent(**event)
     db = SqlDB()
     dynamodb = DynamoDB()
