@@ -76,7 +76,7 @@ def initialize_pipeline(db: SqlDB, dynamodb: DynamoDB, event: InitializePipeline
 
 
 @tracer.capture_lambda_handler
-def lambda_handler(event, _context):
+def lambda_handler(event, context):
     """
     Handler for InitializePipeline
     """
