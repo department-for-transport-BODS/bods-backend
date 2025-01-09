@@ -8,6 +8,7 @@ import datetime
 class Base(MappedAsDataclass, DeclarativeBase):
     pass
 
+test: str = 1
 
 class NaptanDistrict(Base):
     __tablename__ = 'naptan_district'
