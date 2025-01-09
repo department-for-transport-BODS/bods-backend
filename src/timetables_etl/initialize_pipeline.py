@@ -80,7 +80,7 @@ def lambda_handler(event, _context):
     """
     Handler for InitializePipeline
     """
-    configure_logging()
+    configure_logging(context)
     parsed_event = InitializePipelineEvent(**event)
 
     db = SqlDB()

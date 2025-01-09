@@ -23,7 +23,6 @@ from common_layer.exceptions.file_exceptions import (
     ClamConnectionError,
     SuspiciousFile,
 )
-from common_layer.json_logging import configure_logging
 from common_layer.s3 import S3
 from common_layer.txc.parser.hashing import get_file_hash
 from common_layer.zip import process_zip_to_s3
@@ -326,7 +325,6 @@ def lambda_handler(event, context):
     """
     Main lambda handler
     """
-    configure_logging()
     input_data = ClamAVScannerInputData(**event)
     s3_handler = S3(bucket_name=input_data.s3_bucket_name)
     clam_av_config = get_clamav_config()
