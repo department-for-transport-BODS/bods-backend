@@ -69,6 +69,7 @@ aws-sam-cli = "^1.131.0"
 aws-sam-cli-local = "^1.70.0"
 python-dotenv = "^1.0.1"
 typer = "^0.15.1"
+aws-lambda-powertools = {extras = ["all"], version = "^3.4.0"}
 
 [build-system]
 requires = ["poetry-core"]
