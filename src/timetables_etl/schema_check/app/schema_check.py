@@ -128,7 +128,7 @@ def parse_xml_from_s3(input_data: SchemaCheckInputData) -> etree._Element:
     """
     s3_client = S3(bucket_name=input_data.s3_bucket_name)
     try:
-        log.info("Downloading TXC XML from S3", input_data.s3_file_key)
+        log.info("Downloading TXC XML from S3", s3_key=input_data.s3_file_key)
         streaming_body = s3_client.get_object(input_data.s3_file_key)
         txc_data = etree.parse(streaming_body).getroot()
         log.info("Successfully Parsed TXC Data as LXML etree._Element")
