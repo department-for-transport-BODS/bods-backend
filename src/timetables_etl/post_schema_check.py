@@ -176,12 +176,12 @@ def process_post_schema_check(
     add_violations_to_db(db, db_violations)
 
 
+@tracer.capture_lambda_handler
 @file_processing_result_to_db(step_name=StepName.TIMETABLE_POST_SCHEMA_CHECK)
 def lambda_handler(event, _context):
     """
     PostSchemaCheck Currently only checks for file paths in FileName
     """
-    configure_logging()
     input_data = PostSchemaCheckInputData(**event)
     db = SqlDB()
     txc_data = download_and_parse_txc(input_data.s3_bucket_name, input_data.s3_file_key)

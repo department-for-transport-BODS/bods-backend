@@ -1,6 +1,7 @@
 from io import BytesIO
 
 from aws_lambda_powertools import Tracer
+from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.database.client import SqlDB
 from common_layer.database.models.model_organisation import OrganisationDatasetRevision
 from common_layer.database.repos.repo_organisation import (
@@ -13,7 +14,6 @@ from common_layer.dynamodb.client import DynamoDB
 from common_layer.dynamodb.data_manager import FileProcessingDataManager
 from common_layer.dynamodb.models import TXCFileAttributes
 from common_layer.exceptions.pipeline_exceptions import PipelineException
-from common_layer.json_logging import configure_logging
 from common_layer.s3 import S3
 from pti.service import PTIValidationService
 from pydantic import BaseModel, ConfigDict
@@ -86,8 +86,7 @@ def run_validation(task_data: PTITaskData, db: SqlDB, dynamodb: DynamoDB):
 
 @tracer.capture_lambda_handler
 @file_processing_result_to_db(step_name=StepName.PTI_VALIDATION)
-def lambda_handler(event, context):
-    configure_logging()
+def lambda_handler(event, _context: LambdaContext):
     parsed_event = PTIValidationEvent(**event)
     db = SqlDB()
     dynamodb = DynamoDB()

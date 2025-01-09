@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from typing import Any, Callable, Literal, TypeVar
 from uuid import uuid4
 
+from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.database.client import SqlDB
 from common_layer.database.models.model_pipelines import (
     ETLErrorCode,
@@ -76,7 +77,6 @@ def get_dataset_type(event: dict) -> Literal["TIMETABLES", "FARES"]:
 
 
 T = TypeVar("T")  # Return type of the wrapped function
-Context = TypeVar("Context")  # AWS Lambda context type
 
 
 @dataclass
@@ -212,9 +212,11 @@ def file_processing_result_to_db(step_name: StepName):
     Decorator to create a DatasetETLTaskResult with structured logging
     """
 
-    def decorator(func: Callable[[dict, Context], T]) -> Callable[[dict, Context], T]:
-        def wrapper(event: dict, context: Context) -> T:
-            configure_logging()
+    def decorator(
+        func: Callable[[dict, LambdaContext], T]
+    ) -> Callable[[dict, LambdaContext], T]:
+        def wrapper(event: dict, context: LambdaContext) -> T:
+            configure_logging(context)
             processing_context = initialize_processing(event, step_name)
 
             try:
