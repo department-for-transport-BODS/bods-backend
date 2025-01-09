@@ -9,12 +9,12 @@ from urllib.parse import unquote
 
 import requests
 from common_layer.database import SqlDB
+from common_layer.database.models import OrganisationDatasetRevision
 from common_layer.database.repos.repo_organisation import (
     OrganisationDatasetRevisionRepo,
 )
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
-from common_layer.db.models import OrganisationDatasetrevision
 from common_layer.exceptions.file_exceptions import (
     DownloadException,
     DownloadTimeout,
@@ -189,7 +189,7 @@ def upload_file_to_s3(temp_filename: str, filename: str, s3_handler: S3) -> None
 
 
 def download_data_from_remote_url(
-    revision: OrganisationDatasetrevision,
+    revision: OrganisationDatasetRevision,
 ) -> DownloaderResponse:
     """
     Get the response from the given url and return the pydantic model DownloaderResponse
@@ -204,7 +204,7 @@ def download_data_from_remote_url(
 
 
 def get_remote_file_name(
-    revision: OrganisationDatasetrevision,
+    revision: OrganisationDatasetRevision,
     response: DownloaderResponse,
     is_time_zone: bool,
 ) -> str:
