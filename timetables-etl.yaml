@@ -48,6 +48,9 @@ Globals:
     MemorySize: 256
     Layers:
       - !Sub arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV3-python311-x86_64:5
+    LoggingConfig:
+      LogFormat: JSON
+    Tracing: Active
     PropagateTags: true
     KmsKeyArn: !If
       - IsUsingBodsInfra
@@ -74,6 +77,7 @@ Globals:
         - !Ref AWS::NoValue
     Environment:
       Variables:
+        POWERTOOLS_SERVICE_NAME: !Sub '${ProjectName}-${Environment}-timetables-etl'
         HTTPS_PROXY: !If
           - IsUsingBodsInfra
           - !Sub 'http://squid.bodds.${Environment}:3128'
@@ -368,6 +372,7 @@ Resources:
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-initialize-pipeline-lambda'
+      Description: Timetables ETL - Initial Environment Setup
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: initialize_pipeline.lambda_handler
@@ -394,6 +399,7 @@ Resources:
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-clamav-scanner-lambda'
+      Description: Timetables ETL - Antivirus and Extract Files to S3 for Individual File Processing
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: clamav_scanner.lambda_handler
@@ -427,6 +433,7 @@ Resources:
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-file-validation-lambda'
+      Description: Timetables ETL - Initial Environment Setup
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: file_validation.lambda_handler
@@ -456,6 +463,7 @@ Resources:
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-schema-check-lambda'
+      Description: Timetables ETL - FileProcessing - Validation Against TXC XSD Schema
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl/schema_check
       Handler: app.schema_check.lambda_handler
@@ -488,6 +496,7 @@ Resources:
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-post-schema-check-lambda'
+      Description: Timetables ETL - FileProcessing - Extra Checks such as for PII
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: post_schema_check.lambda_handler
@@ -517,6 +526,7 @@ Resources:
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-file-attributes-etl-lambda'
+      Description: Timetables ETL - FileProcessing - Creation of TXC File Attributes DB Record
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: file_attributes_etl.lambda_handler
@@ -546,6 +556,7 @@ Resources:
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-pti-validation-lambda'
+      Description: Timetables ETL - FileProcessing - Validate TXC File against PTI requirements
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: pti_validation.lambda_handler
@@ -576,7 +587,7 @@ Resources:
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-etl-process-lambda'
-      Description: Takes a TXC XML and generates transmodel_ database table data
+      Description: Timetables ETL - FileProcessing - Takes a TXC XML and generates transmodel_ database table data
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl/etl
       Handler: app.app.lambda_handler
@@ -707,6 +718,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
         - !If
           - IsUsingBodsInfra
           - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-rw-user-access-policy-arn}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
