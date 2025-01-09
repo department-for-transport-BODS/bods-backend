@@ -69,11 +69,14 @@ def load_txc_schema(version: str = "2.4") -> etree.XMLSchema:
     if not schema_path.exists():
         log.error("Schema File not Found", schema_path=str(schema_path))
         raise FileNotFoundError(f"Schema file not found at: {schema_path}")
-
+    log.info("Loading TXC Schema", schema_path=schema_path)
     try:
         with open(schema_path, "rb") as schema_file:
             schema_doc = etree.parse(schema_file)
-            return etree.XMLSchema(schema_doc)
+            log.debug("Parsed Schema Doc as _ElementTree[_Element]")
+            txc_schema = etree.XMLSchema(schema_doc)
+            log.info("Sucessfully parsed Schema Doc as XMLSchema")
+            return txc_schema
     except (etree.XMLSchemaParseError, etree.ParseError) as e:
         log.error("schema_parse_error", error=str(e))
         raise
@@ -102,6 +105,7 @@ def get_schema_violations(
     Validate parsed XML document against schema and collect any violations
     """
     violations: list[DataQualitySchemaViolation] = []
+    log.info("Validating TXC File Against Schema")
     is_valid = txc_schema.validate(txc_file)
 
     if not is_valid:
@@ -124,8 +128,11 @@ def parse_xml_from_s3(input_data: SchemaCheckInputData) -> etree._Element:
     """
     s3_client = S3(bucket_name=input_data.s3_bucket_name)
     try:
+        log.info("Downloading TXC XML from S3", input_data.s3_file_key)
         streaming_body = s3_client.get_object(input_data.s3_file_key)
-        return etree.parse(streaming_body).getroot()
+        txc_data = etree.parse(streaming_body).getroot()
+        log.info("Successfully Parsed TXC Data as LXML etree._Element")
+        return txc_data
     except (ClientError, BotoCoreError) as e:
         log.error("S3 Operation Failed", s3_key=input_data.s3_file_key, error=str(e))
         raise

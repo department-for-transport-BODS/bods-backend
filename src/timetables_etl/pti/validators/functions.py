@@ -1,6 +1,6 @@
 import re
 from datetime import datetime
-from typing import List, Union
+from typing import Union
 
 from common_layer.database.client import SqlDB
 from common_layer.database.repos import NaptanStopPointRepo
@@ -11,8 +11,11 @@ from lxml import etree
 from pti.validators.destination_display import DestinationDisplayValidator
 from pti.validators.lines import LinesValidator
 from pti.validators.stop_point import StopPointValidator
+from structlog.stdlib import get_logger
 
-ElementsOrStr = Union[List[etree.Element], List[str], str]
+log = get_logger()
+
+ElementsOrStr = Union[list[etree.Element], list[str], str]
 PROHIBITED_CHARS = r",[]{}^=@:;#$£?%+<>«»\/|~_¬"
 ZERO_TIME_DURATION = TimeDuration(hours=0, minutes=0, seconds=0)
 
@@ -69,6 +72,9 @@ def contains_date(context, text):
 
 
 def check_flexible_service_timing_status(context, flexiblejourneypatterns):
+    log.info(
+        "Validation Start: Flexible Service Timing Status",
+    )
     timing_status_value_list = []
     flexiblejourneypattern = flexiblejourneypatterns[0]
     ns = {"x": flexiblejourneypattern.nsmap.get(None)}
@@ -99,6 +105,9 @@ def check_flexible_service_timing_status(context, flexiblejourneypatterns):
 
 
 def validate_non_naptan_stop_points(context, points):
+    log.info(
+        "Validation Start: Non Naptan Stop Points",
+    )
     point = points[0]
     validator = StopPointValidator(point)
     return validator.validate()
@@ -123,6 +132,9 @@ def get_stop_point_ref_list(stop_points, ns):
 
 def get_flexible_service_stop_point_ref_validator(db: SqlDB):
     def check_flexible_service_stop_point_ref(context, flexiblejourneypatterns):
+        log.info(
+            "Validation Start: Check Flexible Service Stop Point Ref",
+        )
         atco_codes_list = []
         flexiblejourneypattern = flexiblejourneypatterns[0]
         ns = {"x": flexiblejourneypattern.nsmap.get(None)}
@@ -154,6 +166,9 @@ def check_inbound_outbound_description(context, services):
         - If both InboundDescription and OutboundDescription are not present, return False.
         - All other combinations are acceptable, return True.
     """
+    log.info(
+        "Validation Start: Check Inbound / Outbound Description",
+    )
     for service in services:
         ns = {"x": service.nsmap.get(None)}
         standard_service_list = service.xpath(
@@ -186,6 +201,9 @@ def check_description_for_inbound_description(context, services):
     Returns:
         bool: True if all services have descriptions for InboundDescription, False otherwise.
     """
+    log.info(
+        "Validation Start: Description for Inbound Description",
+    )
     for service in services:
         inbound_description_list = []
         ns = {"x": service.nsmap.get(None)}
@@ -213,6 +231,9 @@ def check_description_for_outbound_description(context, services):
     Returns:
         bool: True if all services have descriptions for OutboundDescription, False otherwise.
     """
+    log.info(
+        "Validation Start: Description for Outbound Description",
+    )
     for service in services:
         outbound_description_tag = []
         ns = {"x": service.nsmap.get(None)}
@@ -223,9 +244,12 @@ def check_description_for_outbound_description(context, services):
             outbound_description_list = service.xpath(
                 "x:Service/x:Lines/x:Line/x:OutboundDescription", namespaces=ns
             )
-        for outbound_description_tag in outbound_description_list:
-            if len(outbound_description_tag.xpath("x:Description", namespaces=ns)) == 0:
-                return False
+            for outbound_description_tag in outbound_description_list:
+                if (
+                    len(outbound_description_tag.xpath("x:Description", namespaces=ns))
+                    == 0
+                ):
+                    return False
         return True
 
 
@@ -234,6 +258,9 @@ def check_flexible_service_times(context, vehiclejourneys):
     Check when FlexibleVehicleJourney is present, that FlexibleServiceTimes
     is also present at least once. If not present at all, then return False.
     """
+    log.info(
+        "Validation Start: Check Flexible Service Times",
+    )
     ns = {"x": vehiclejourneys[0].nsmap.get(None)}
     flexible_vehiclejourneys = vehiclejourneys[0].xpath(
         "x:FlexibleVehicleJourney", namespaces=ns
@@ -259,6 +286,9 @@ def has_destination_display(context, patterns):
     If both conditions above fail, then DestinationDisplay should
     mandatory nside VehicleJourney.
     """
+    log.info(
+        "Validation Start: Has Destination Display",
+    )
     pattern = patterns[0]
     validator = DestinationDisplayValidator(pattern)
     return validator.validate()
@@ -285,6 +315,9 @@ def has_flexible_or_standard_service(context, services):
     then it should have a StandardService defined. If validation fails,
     then a validation issue should be recorded in validation report.
     """
+    log.info(
+        "Validation Start: Has Flexible or Standard Service",
+    )
     for service in services:
         ns = {"x": service.nsmap.get(None)}
         service_classification = service.xpath(
@@ -310,6 +343,9 @@ def has_flexible_service_classification(context, services):
     FlexibleService), it has ServiceClassification and Flexible elements.
     If the file also has a standard service, then return True.
     """
+    log.info(
+        "Validation Start: Has Flexible Service Classification",
+    )
     for service in services:
         ns = {"x": service.nsmap.get(None)}
         flexible_service_list = service.xpath("x:FlexibleService", namespaces=ns)
@@ -331,11 +367,18 @@ def has_flexible_service_classification(context, services):
 
 
 def has_prohibited_chars(context, element):
+    log.info(
+        "Validation Start: Prohibited Characters",
+    )
     chars = _extract_text(element, "")
     return len([c for c in chars if c in PROHIBITED_CHARS]) > 0
 
 
 def check_service_group_validations(context, services):
+    log.info(
+        "Validation Start: Service Group Validations",
+        count=len(services),
+    )
     services = services[0]
     ns = {"x": services.nsmap.get(None)}
     service_list = services.xpath("x:Service", namespaces=ns)
@@ -418,6 +461,10 @@ def validate_line_id(context, lines):
     """
     Validates that Line@id has the correct format.
     """
+    log.info(
+        "Validation Start: Line ID",
+        count=len(lines),
+    )
     line = lines[0]
     ns = {"x": line.nsmap.get(None)}
 
@@ -439,6 +486,10 @@ def validate_line_id(context, lines):
 
 
 def validate_modification_date_time(context, roots):
+    log.info(
+        "Validation Start: Modification Datetime",
+        count=len(roots),
+    )
     root = roots[0]
     modification_date = root.attrib.get("ModificationDateTime")
     creation_date = root.attrib.get("CreationDateTime")
@@ -450,7 +501,7 @@ def validate_modification_date_time(context, roots):
         return creation_date < modification_date
 
 
-def validate_licence_number(context, elements: List[etree._Element]) -> bool:
+def validate_licence_number(context, elements: list[etree._Element]) -> bool:
     """
     Validate the license number within a list of XML elements if Primary Mode is not coach.
 
@@ -464,6 +515,10 @@ def validate_licence_number(context, elements: List[etree._Element]) -> bool:
         bool: True if all elements are valid according to the specified rules,
               False otherwise.
     """
+    log.info(
+        "Validation Start: Licence Number",
+        count=len(elements),
+    )
     ns = {"x": elements[0].nsmap.get(None)}
     for element in elements:
         primary_mode = element.xpath(".//x:PrimaryMode", namespaces=ns)
@@ -496,6 +551,10 @@ def has_servicedorganisation_working_days(context, service_organisations):
               False otherwise.
 
     """
+    log.info(
+        "Validation Start: Serviced Organisation Working Days",
+        count=len(service_organisations),
+    )
     is_valid = True
     for service_organisation in service_organisations:
         ns = {"x": service_organisation.nsmap.get(None)}
@@ -506,7 +565,11 @@ def has_servicedorganisation_working_days(context, service_organisations):
 
 
 def get_lines_validator(db: SqlDB):
-    def validate_lines(context, lines_list: List[etree._Element]) -> bool:
+    def validate_lines(context, lines_list: list[etree._Element]) -> bool:
+        log.info(
+            "Validation Start: Lines",
+            lines_count=len(lines_list),
+        )
         lines = lines_list[0]
         repo = NaptanStopPointRepo(db)
         stop_area_map = repo.get_stop_area_map()
@@ -552,6 +615,10 @@ def validate_timing_link_stops(context, sections):
     Validates that all links in a section are ordered coherently by
     stop point ref.
     """
+    log.info(
+        "Validation Start: Timing Link Stops",
+        sections=len(sections),
+    )
     section = sections[0]
     ns = {"x": section.nsmap.get(None)}
     links = section.xpath("x:JourneyPatternTimingLink", namespaces=ns)

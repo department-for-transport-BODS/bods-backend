@@ -8,4 +8,5 @@ class StepName(str, Enum):
     TXC_FILE_VALIDATOR = "TxC File Validator"
     TXC_ATTRIBUTE_EXTRACTION = "TxC attributes extraction"
     PTI_VALIDATION = "PTI Validation"
-    DOWNLOAD_DATASET = "DOWNLOAD DATASET"
+    DOWNLOAD_DATASET = "Download Dataset"
+    ETL_PROCESS = "ETL Process"

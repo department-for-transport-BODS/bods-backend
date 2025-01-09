@@ -69,52 +69,74 @@ def extract_zip_file(zip_path: Path) -> Generator[tuple[str, Path], None, None]:
             raise
 
 
+def is_xml_file(file_path: str) -> bool:
+    """
+    Check if a file is an XML file based on its extension.
+    """
+    return Path(file_path).suffix.lower() == ".xml"
+
+
 def process_zip_to_s3(s3_client: S3, zip_path: Path, destination_prefix: str) -> str:
     """
     Process a zip file and upload its contents to S3 efficiently.
 
     Returns:
         The S3 prefix where files were uploaded
-
-    Raises:
-        BadZipFile: If the file is not a valid zip
     """
-    zip_name = zip_path.stem
-    folder_name = f"{destination_prefix.rstrip('/')}_{zip_name}/"
+    success_count = 0
+    fail_count = 0
+    skip_count = 0
 
-    log.info("Processing zip file", zip_path=str(zip_path), destination=folder_name)
+    log.info(
+        "Processing zip file", zip_path=str(zip_path), destination=destination_prefix
+    )
 
     try:
         for filename, extracted_path in extract_zip_file(zip_path):
-            s3_key = f"{folder_name}{filename}"
+            if not is_xml_file(filename):
+                log.debug("Skipping non-XML file", filename=filename)
+                skip_count += 1
+                continue
 
-            log.debug(
-                "Uploading extracted file to S3", filename=filename, s3_key=s3_key
-            )
+            s3_key = f"{destination_prefix}{filename}"
 
-            with open(extracted_path, "rb") as file:
-                try:
+            log.debug("Uploading XML file to S3", filename=filename, s3_key=s3_key)
+
+            try:
+                with open(extracted_path, "rb") as file:
                     s3_client.put_object(s3_key, file.read())
-                    log.debug(
-                        "Successfully uploaded file", filename=filename, s3_key=s3_key
-                    )
-                except Exception as e:
-                    log.error(
-                        "Failed to upload file to S3",
-                        filename=filename,
-                        s3_key=s3_key,
-                        error=str(e),
-                    )
-                    raise
+
+                log.debug(
+                    "Successfully uploaded XML file", filename=filename, s3_key=s3_key
+                )
+                success_count += 1
+
+            except Exception:
+                log.error(
+                    "Failed to upload file to S3",
+                    filename=filename,
+                    s3_key=s3_key,
+                    exc_info=True,
+                )
+                fail_count += 1
 
         log.info(
-            "Completed zip processing", zip_path=str(zip_path), destination=folder_name
+            "Completed zip processing",
+            zip_path=str(zip_path),
+            destination=destination_prefix,
+            files_processed=success_count,
+            files_failed=fail_count,
+            files_skipped=skip_count,
         )
 
-        return folder_name
+        return destination_prefix
 
-    except Exception as e:
-        log.error("Failed to process zip file", zip_path=str(zip_path), error=str(e))
+    except Exception:
+        log.error(
+            "Critical error processing zip file",
+            zip_path=str(zip_path),
+            exc_info=True,
+        )
         raise
 
 

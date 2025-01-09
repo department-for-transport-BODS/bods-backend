@@ -197,6 +197,7 @@
         }
       },
       "MaxConcurrency": 1000,
+      "ToleratedFailurePercentage": 100,
       "End": true
     },
     "ParseError": {

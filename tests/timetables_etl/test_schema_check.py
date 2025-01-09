@@ -8,7 +8,10 @@ from unittest.mock import Mock
 import pytest
 from freezegun import freeze_time
 from lxml import etree
-from schema_check.app.app import create_violation_from_error, get_schema_violations
+from schema_check.app.schema_check import (
+    create_violation_from_error,
+    get_schema_violations,
+)
 
 
 @pytest.mark.parametrize(

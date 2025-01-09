@@ -125,6 +125,8 @@ Resources:
           - CloudWatchLogsLogGroup:
               LogGroupArn: !GetAtt StepFunctionsLogGroup.Arn
       PropagateTags: true
+      Tracing:
+        Enabled: True
       DefinitionSubstitutions:
         InitializePipelineLambdaArn: !GetAtt InitializePipelineLambda.Arn
         ClamAvScannerLambdaArn: !GetAtt ClamAvScannerLambda.Arn
@@ -160,6 +162,8 @@ Resources:
             Principal:
               Service: states.amazonaws.com
             Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Policies:
         - PolicyName: StartStateMachineExecutionOfSelfPolicy
           PolicyDocument:
@@ -241,9 +245,22 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
+                  - logs:CreateLogDelivery
+                  - logs:GetLogDelivery
+                  - logs:UpdateLogDelivery
+                  - logs:DeleteLogDelivery
+                  - logs:ListLogDeliveries
+                  - logs:PutResourcePolicy
+                  - logs:DescribeResourcePolicies
+                  - logs:DescribeLogGroups
+                Resource: '*'
+              - Effect: Allow
+                Action:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
-                Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-sm:*'
+                Resource:
+                  - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-sm:*'
+                  - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-sm'
   ##########################################
   #### TIMETABLES STATE MACHINE TRIGGER ####
   ##########################################
@@ -474,7 +491,7 @@ Resources:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-schema-check-lambda'
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl/schema_check
-      Handler: app.app.lambda_handler
+      Handler: app.schema_check.lambda_handler
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       Environment:
