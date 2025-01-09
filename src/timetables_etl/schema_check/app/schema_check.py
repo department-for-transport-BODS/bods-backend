@@ -71,8 +71,9 @@ def load_txc_schema(version: str = "2.4") -> etree.XMLSchema:
         raise FileNotFoundError(f"Schema file not found at: {schema_path}")
     log.info("Loading TXC Schema", schema_path=schema_path)
     try:
+        parser = etree.XMLParser(load_dtd=False, no_network=True)
         with open(schema_path, "rb") as schema_file:
-            schema_doc = etree.parse(schema_file)
+            schema_doc = etree.parse(schema_file, parser)
             log.debug("Parsed Schema Doc as _ElementTree[_Element]")
             txc_schema = etree.XMLSchema(schema_doc)
             log.info("Sucessfully parsed Schema Doc as XMLSchema")
@@ -128,7 +129,7 @@ def parse_xml_from_s3(input_data: SchemaCheckInputData) -> etree._Element:
     """
     s3_client = S3(bucket_name=input_data.s3_bucket_name)
     try:
-        log.info("Downloading TXC XML from S3", input_data.s3_file_key)
+        log.info("Downloading TXC XML from S3", s3_key=input_data.s3_file_key)
         streaming_body = s3_client.get_object(input_data.s3_file_key)
         txc_data = etree.parse(streaming_body).getroot()
         log.info("Successfully Parsed TXC Data as LXML etree._Element")
