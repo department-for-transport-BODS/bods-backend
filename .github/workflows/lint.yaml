@@ -4,15 +4,14 @@ on:
   push:
     branches:
       - dev
+    paths:
+      - 'src/**'
   pull_request:
-    paths-ignore:
-      - '.github/CODEOWNERS'
-      - '.github/settings.yml'
-      - 'README.md'
-      - 'CHANGELOG.md'
-      - '.gitignore'
+    paths:
+      - 'src/**'
 jobs:
   changes:
+    name: Get list of Changed Python Files in src/
     runs-on: ubuntu-latest
     permissions:
       pull-requests: read
@@ -30,6 +29,7 @@ jobs:
             src/**/*.py
 
   black:
+    name: Black Formatter Check
     needs: changes
     if: needs.changes.outputs.py_files != ''
     runs-on: ubuntu-latest
@@ -40,15 +40,16 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - uses: psf/black@stable
+      - name: Run Black
+        uses: psf/black@stable
         with:
           options: '--check --verbose'
           src: ${{ needs.changes.outputs.py_files }}
 
   pyright:
+    name: pyright type checking (VS Code's Pylance Backend)
     needs: changes
     if: needs.changes.outputs.py_files != ''
-    name: pyright type checking (VS Code's Pylance Backend)
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -85,9 +86,9 @@ jobs:
           extra-args: ${{ needs.changes.outputs.py_files }}
 
   pylint:
+    name: pylint check
     needs: changes
     if: needs.changes.outputs.py_files != ''
-    name: pylint
     runs-on: ubuntu-latest
     strategy:
       matrix:
