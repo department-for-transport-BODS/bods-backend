@@ -1,4 +1,4 @@
-name: CI
+name: Code Linting
 permissions: read-all
 on:
   push:
@@ -79,7 +79,7 @@ jobs:
       - name: pyright
         uses: jakebailey/pyright-action@v2
         with:
-          version: latest-release
+          pylance-version: latest-release
           extra-args: ${{ needs.changes.outputs.py_files }}
 
   pylint:
