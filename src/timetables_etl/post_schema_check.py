@@ -6,6 +6,7 @@ import re
 from datetime import UTC, datetime
 from typing import Callable
 
+from aws_lambda_powertools import Tracer
 from common_layer.database.client import SqlDB
 from common_layer.database.models.model_data_quality import (
     DataQualityPostSchemaViolation,
@@ -16,11 +17,11 @@ from common_layer.database.repos.repo_data_quality import (
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.download import download_and_parse_txc
-from common_layer.json_logging import configure_logging
 from common_layer.txc.models.txc_data import TXCData
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from structlog.stdlib import get_logger
 
+tracer = Tracer()
 log = get_logger()
 
 
@@ -29,12 +30,7 @@ class PostSchemaCheckInputData(BaseModel):
     Input data for the Post Schema Check
     """
 
-    class Config:
-        """
-        Allow us to map Bucket / Object Key
-        """
-
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
     revision_id: int = Field(alias="DatasetRevisionId")
     s3_bucket_name: str = Field(alias="Bucket")
@@ -174,12 +170,12 @@ def process_post_schema_check(
     add_violations_to_db(db, db_violations)
 
 
+@tracer.capture_lambda_handler
 @file_processing_result_to_db(step_name=StepName.TIMETABLE_POST_SCHEMA_CHECK)
 def lambda_handler(event, _context):
     """
     PostSchemaCheck Currently only checks for file paths in FileName
     """
-    configure_logging()
     input_data = PostSchemaCheckInputData(**event)
     db = SqlDB()
     txc_data = download_and_parse_txc(input_data.s3_bucket_name, input_data.s3_file_key)

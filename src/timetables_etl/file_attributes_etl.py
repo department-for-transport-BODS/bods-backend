@@ -2,6 +2,7 @@
 File Attributes Lambda
 """
 
+from aws_lambda_powertools import Tracer
 from common_layer.database.client import SqlDB
 from common_layer.database.models import (
     OrganisationDatasetRevision,
@@ -31,6 +32,7 @@ from common_layer.txc.models import TXCData
 from pydantic import BaseModel, Field
 from structlog.stdlib import get_logger
 
+tracer = Tracer()
 log = get_logger()
 
 
@@ -124,6 +126,7 @@ def process_file_attributes(
     return OrganisationTXCFileAttributesRepo(db).insert(file_attributes_data)
 
 
+@tracer.capture_lambda_handler
 @file_processing_result_to_db(StepName.TXC_ATTRIBUTE_EXTRACTION)
 def lambda_handler(event, _context) -> dict[str, int]:
     """

@@ -5,6 +5,7 @@ FileValidation Lambda
 from io import BytesIO
 from xml.etree.ElementTree import ElementTree
 
+from aws_lambda_powertools import Tracer
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.exceptions.xml_file_exceptions import (
@@ -18,6 +19,7 @@ from defusedxml import ElementTree as detree
 from pydantic import BaseModel, Field
 from structlog.stdlib import get_logger
 
+tracer = Tracer()
 log = get_logger()
 
 
@@ -88,6 +90,7 @@ def process_file_validation(input_data: FileValidationInputData) -> None:
     log.info("File validation passed", file_name=input_data.s3_file_key)
 
 
+@tracer.capture_lambda_handler
 @file_processing_result_to_db(step_name=StepName.TXC_FILE_VALIDATOR)
 def lambda_handler(event, _context) -> dict[str, str | int]:
     """

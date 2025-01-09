@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
 
+from aws_lambda_powertools import Tracer
 from botocore.exceptions import BotoCoreError, ClientError
 from common_layer.database.client import SqlDB
 from common_layer.database.models.model_data_quality import DataQualitySchemaViolation
@@ -18,6 +19,7 @@ from lxml import etree
 from pydantic import BaseModel, Field
 from structlog.stdlib import get_logger
 
+tracer = Tracer()
 log = get_logger()
 
 
@@ -169,6 +171,7 @@ def add_violations_to_db(
     return result
 
 
+@tracer.capture_lambda_handler
 @file_processing_result_to_db(step_name=StepName.TIMETABLE_SCHEMA_CHECK)
 def lambda_handler(event, _context):
     """
