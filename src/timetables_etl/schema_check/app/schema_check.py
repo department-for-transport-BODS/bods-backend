@@ -71,7 +71,7 @@ def load_txc_schema(version: str = "2.4") -> etree.XMLSchema:
         raise FileNotFoundError(f"Schema file not found at: {schema_path}")
     log.info("Loading TXC Schema", schema_path=schema_path)
     try:
-        parser = etree.XMLParser(load_dtd=False)
+        parser = etree.XMLParser(load_dtd=False, no_network=True)
         with open(schema_path, "rb") as schema_file:
             schema_doc = etree.parse(schema_file, parser)
             log.debug("Parsed Schema Doc as _ElementTree[_Element]")
