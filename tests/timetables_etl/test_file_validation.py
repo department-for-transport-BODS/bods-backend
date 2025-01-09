@@ -64,7 +64,7 @@ def test_dangerous_xml_check_valid(valid_xml_bytesio):
     Test that parsing a valid XML raises no exceptions
     """
     try:
-        dangerous_xml_check(valid_xml_bytesio)
+        dangerous_xml_check(valid_xml_bytesio, file_name="file-name.xml")
     except Exception as e:
         pytest.fail(
             f"dangerous_xml_check should not have raised an exception. Got: {e}"
@@ -77,7 +77,7 @@ def test_dangerous_xml_check_parse_error(mock_log, invalid_xml_bytesio):
     Test that parsing invalid XML raises XMLSyntaxError
     """
     with pytest.raises(XMLSyntaxError):
-        dangerous_xml_check(invalid_xml_bytesio)
+        dangerous_xml_check(invalid_xml_bytesio, file_name="file-name.xml")
 
 
 @patch("timetables_etl.file_validation.log")
@@ -87,7 +87,7 @@ def test_dangerous_xml_check_dangerous_xml(mock_log, dangerous_xml_bytesio):
     raises DangerousXML
     """
     with pytest.raises(DangerousXML):
-        dangerous_xml_check(dangerous_xml_bytesio)
+        dangerous_xml_check(dangerous_xml_bytesio, file_name="file-name.xml")
 
 
 @patch.object(S3, "download_fileobj")
