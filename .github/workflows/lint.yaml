@@ -117,4 +117,4 @@ jobs:
       - name: Install Dependencies
         run: poetry install
       - name: Run pylint
-        run: poetry run pylint ${{ needs.changes.outputs.py_files }}
+        run: poetry run pylint ${{ needs.changes.outputs.py_files }} --output-format=colorized --reports=y
