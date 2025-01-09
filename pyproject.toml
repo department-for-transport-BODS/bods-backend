@@ -69,7 +69,7 @@ aws-sam-cli = "^1.131.0"
 aws-sam-cli-local = "^1.70.0"
 python-dotenv = "^1.0.1"
 typer = "^0.15.1"
-aws-lambda-powertools = {extras = ["all"], version = "^3.4.0"}
+aws-lambda-powertools = { extras = ["all"], version = "^3.4.0" }
 
 [build-system]
 requires = ["poetry-core"]
@@ -77,6 +77,8 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pylint.MAIN]
 extension-pkg-allow-list = ["lxml", "pydantic", "pydantic_core"]
+[tool.pylint."MESSAGES CONTROL"]
+disable = ["too-few-public-methods"]
 
 [tool.pytest.ini_options]
 pythonpath = ["./src", "./src/timetables_etl", "./tests", "./src/boilerplate"]
