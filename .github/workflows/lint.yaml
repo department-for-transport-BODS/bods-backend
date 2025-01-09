@@ -43,7 +43,6 @@ jobs:
       - uses: psf/black@stable
         with:
           options: '--check --verbose'
-          use_pyproject: true
           src: ${{ needs.changes.outputs.py_files }}
 
   pyright:
