@@ -216,7 +216,7 @@ def get_remote_file_name(
     if url_path.suffix in (".zip", ".xml"):
         name = unquote(url_path.name)
     else:
-        name = f"remote_dataset_{revision.dataset.id}_{now}.{response.filetype}"
+        name = f"remote_dataset_{revision.dataset_id}_{now}.{response.filetype}"
     return name
 
 

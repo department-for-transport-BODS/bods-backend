@@ -5,7 +5,7 @@ from common_layer.database.repos.repo_organisation import (
 )
 from common_layer.db import BodsDB, DbManager
 from common_layer.exceptions.pipeline_exceptions import PipelineException
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import NoResultFound
 
 logger = logging.getLogger(__name__)
 
