@@ -1,3 +1,7 @@
+"""
+Download dataset lambda
+"""
+
 import io
 import tempfile
 import zipfile
@@ -106,8 +110,6 @@ class DataDownloader:
         self.username = username
 
     def _make_request(self, method, **kwargs):
-        if "timeout" not in kwargs:
-            kwargs["timeout"] = 30
 
         if self.username is None or self.password is None:
             auth = None
@@ -115,7 +117,9 @@ class DataDownloader:
             auth = (self.username, self.password)
 
         try:
-            response = requests.request(method, self.url, auth=auth, **kwargs)
+            response = requests.request(
+                method, self.url, auth=auth, timeout=30, **kwargs
+            )
         except requests.Timeout as exc:
             raise DownloadTimeout(self.url) from exc
         except requests.RequestException as exc:
@@ -268,13 +272,13 @@ def update_dataset_revision(
 
 
 @file_processing_result_to_db(step_name=StepName.DOWNLOAD_DATASET)
-def lambda_handler(event, context) -> dict:
+def lambda_handler(event, _context) -> dict:
     """
     Main lambda handler
     """
     configure_logging()
     log.debug("Input Data", data=event)
-    TIME_ZONE = environ.get("USE_TZ", "false").lower() == "true"
+    is_time_zone = environ.get("USE_TZ", "false").lower() == "true"
     input_data = DownloadDatasetInputData(**event)
     db = SqlDB()
     if input_data.remote_dataset_url_link:
@@ -283,11 +287,10 @@ def lambda_handler(event, context) -> dict:
             input_data.s3_bucket_name,
             input_data.revision_id,
             input_data.remote_dataset_url_link,
-            TIME_ZONE,
+            is_time_zone,
         )
-    else:
-        log.info("url link is not specified, nothing to download.")
-        return {
-            "statusCode": 200,
-            "body": "url link is not specified, nothing to download",
-        }
+    log.info("url link is not specified, nothing to download.")
+    return {
+        "statusCode": 200,
+        "body": "url link is not specified, nothing to download",
+    }
