@@ -475,7 +475,7 @@ Resources:
       Timeout: 600
       Layers:
         - !Ref BoilerplateLambdaLayerArn
-      MemorySize: 512
+      MemorySize: 768
       Environment:
         Variables:
           TXC_XSD_PATH: 'TransXChange_general.xsd'
