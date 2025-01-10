@@ -570,7 +570,7 @@ Resources:
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: pti_validation.lambda_handler
-      MemorySize: 768
+      MemorySize: 1024
       Timeout: 900
       Layers:
         - !Ref BoilerplateLambdaLayerArn
@@ -603,7 +603,7 @@ Resources:
       CodeUri: ./src/timetables_etl/etl
       Handler: app.app.lambda_handler
       Timeout: 900
-      MemorySize: 768
+      MemorySize: 1024
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
