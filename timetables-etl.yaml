@@ -44,10 +44,11 @@ Globals:
     Architectures:
       - x86_64
     Runtime: python3.11
-    Timeout: 60
+    Timeout: 300
     MemorySize: 256
     Layers:
       - !Sub arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV3-python311-x86_64:5
+      - !Sub 'arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:53'
     LoggingConfig:
       LogFormat: JSON
     Tracing: Active
@@ -405,6 +406,8 @@ Resources:
       Handler: clamav_scanner.lambda_handler
       Layers:
         - !Ref BoilerplateLambdaLayerArn
+      MemorySize: 512
+      Timeout: 300
       Environment:
         Variables:
           CLAMAV_HOST: !Sub 'clamav.bodds.${Environment}'
@@ -437,6 +440,8 @@ Resources:
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: file_validation.lambda_handler
+      MemorySize: 768
+      Timeout: 300
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
@@ -467,8 +472,10 @@ Resources:
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl/schema_check
       Handler: app.schema_check.lambda_handler
+      Timeout: 600
       Layers:
         - !Ref BoilerplateLambdaLayerArn
+      MemorySize: 768
       Environment:
         Variables:
           TXC_XSD_PATH: 'TransXChange_general.xsd'
@@ -500,6 +507,7 @@ Resources:
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: post_schema_check.lambda_handler
+      MemorySize: 768
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
@@ -530,6 +538,8 @@ Resources:
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: file_attributes_etl.lambda_handler
+      MemorySize: 768
+      Timeout: 300
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
@@ -560,7 +570,8 @@ Resources:
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: pti_validation.lambda_handler
-      Timeout: 300
+      MemorySize: 1024
+      Timeout: 900
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
@@ -591,6 +602,8 @@ Resources:
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl/etl
       Handler: app.app.lambda_handler
+      Timeout: 900
+      MemorySize: 1024
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
@@ -719,6 +732,7 @@ Resources:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
         - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+        - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
         - !If
           - IsUsingBodsInfra
           - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-rw-user-access-policy-arn}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
