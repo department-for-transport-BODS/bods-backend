@@ -38,16 +38,16 @@ log = get_logger()
 
 PARSER_CONFIG = TXCParserConfig(
     metadata=True,
+    services=True,
+    operators=True,
+    file_hash=True,
     serviced_organisations=False,
     stop_points=False,
     route_sections=False,
     routes=False,
     journey_pattern_sections=False,
-    operators=True,
-    services=True,
     vehicle_journeys=False,
     track_data=False,
-    file_hash=True,
 )
 
 
