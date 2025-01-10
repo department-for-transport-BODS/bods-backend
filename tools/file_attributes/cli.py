@@ -7,7 +7,7 @@ from pathlib import Path
 import typer
 from common_layer.database.client import SqlDB
 from common_layer.json_logging import configure_logging
-from common_layer.txc.parser.parser_txc import parse_txc_file
+from common_layer.txc.parser.parser_txc import TXCParserConfig, parse_txc_file
 from structlog.stdlib import get_logger
 
 from timetables_etl.file_attributes_etl import (
@@ -15,11 +15,13 @@ from timetables_etl.file_attributes_etl import (
     process_file_attributes,
 )
 from tools.common.db_tools import create_db_config, setup_db_instance
-from tools.common.models import TestConfig
 from tools.common.xml_tools import get_xml_paths
 
 app = typer.Typer()
 log = get_logger()
+
+
+PARSER_CONFIG = TXCParserConfig(file_hash=True)
 
 
 def process_txc(xml_paths: list[Path], revision_id: int, db: SqlDB):
@@ -32,7 +34,7 @@ def process_txc(xml_paths: list[Path], revision_id: int, db: SqlDB):
 
     for xml_path in xml_paths:
         log.info("Processing XML File", path=xml_path)
-        txc_data = parse_txc_file(xml_path, False, True)
+        txc_data = parse_txc_file(xml_path, PARSER_CONFIG)
         try:
             process_file_attributes(input_data, txc_data, db)
         except ValueError as e:
