@@ -8,8 +8,32 @@ import sys
 from typing import Any, Callable
 
 import structlog
+from aws_lambda_powertools.utilities.typing import LambdaContext
 from structlog.processors import _json_fallback_handler
 from structlog.types import EventDict
+
+
+class RequestIdProcessor:
+    """
+    Processor that adds AWS Lambda request ID to structured logging events.
+    Follows AWS Lambda log format by using 'requestId' as the key.
+    """
+
+    def __init__(self, request_id: str | None = None) -> None:
+        self._request_id = request_id
+
+    def __call__(
+        self,
+        logger: Any,
+        method_name: str,
+        event_dict: EventDict,
+    ) -> EventDict:
+        """
+        Add requestId to the event dict if available.
+        """
+        if self._request_id is not None:
+            event_dict["requestId"] = self._request_id
+        return event_dict
 
 
 class AWSCloudWatchLogs:
@@ -64,34 +88,45 @@ _NOISY_LOG_SOURCES = (
     "s3transfer",
     "aws_xray_sdk",
 )
-_PROCESSORS = (
-    structlog.stdlib.filter_by_level,
-    structlog.stdlib.add_logger_name,
-    structlog.stdlib.add_log_level,
-    structlog.stdlib.PositionalArgumentsFormatter(),
-    structlog.processors.TimeStamper(fmt="iso"),
-    structlog.processors.StackInfoRenderer(),
-    structlog.processors.format_exc_info,
-    structlog.processors.UnicodeDecoder(),
-    structlog.processors.CallsiteParameterAdder(
-        {
-            structlog.processors.CallsiteParameter.FUNC_NAME,
-        }
-    ),
-    structlog.threadlocal.merge_threadlocal,
-    AWSCloudWatchLogs(callouts=["event", "func_name"]),
-)
 
 
-def configure_logging():
+def get_processors(lambda_context: LambdaContext | None = None) -> tuple:
+    """
+    Get the list of processors, optionally including request ID processor
+    """
+    base_processors = [
+        structlog.stdlib.filter_by_level,
+        structlog.stdlib.add_logger_name,
+        structlog.stdlib.add_log_level,
+        structlog.stdlib.PositionalArgumentsFormatter(),
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.processors.StackInfoRenderer(),
+        structlog.processors.format_exc_info,
+        structlog.processors.UnicodeDecoder(),
+        structlog.processors.CallsiteParameterAdder(
+            {
+                structlog.processors.CallsiteParameter.FUNC_NAME,
+            }
+        ),
+        structlog.threadlocal.merge_threadlocal,
+    ]
+
+    if lambda_context:
+        base_processors.append(RequestIdProcessor(lambda_context.aws_request_id))
+
+    base_processors.append(AWSCloudWatchLogs(callouts=["event", "func_name"]))
+    return tuple(base_processors)
+
+
+def configure_logging(lambda_context: LambdaContext | None = None):
     """
     Configure Structured JSON logging for the application
     Import and run this as the first thing in a lambda function
     """
-
+    processors = get_processors(lambda_context)
     # Structlog configuration
     structlog.configure(
-        processors=list(_PROCESSORS),
+        processors=list(processors),
         context_class=dict,
         wrapper_class=structlog.stdlib.BoundLogger,
         logger_factory=structlog.stdlib.LoggerFactory(),

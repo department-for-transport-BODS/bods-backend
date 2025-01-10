@@ -5,6 +5,7 @@ FileValidation Lambda
 from io import BytesIO
 from xml.etree.ElementTree import ElementTree
 
+from aws_lambda_powertools import Tracer
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.exceptions.xml_file_exceptions import (
@@ -18,6 +19,7 @@ from defusedxml import ElementTree as detree
 from pydantic import BaseModel, Field
 from structlog.stdlib import get_logger
 
+tracer = Tracer()
 log = get_logger()
 
 
@@ -31,7 +33,7 @@ class FileValidationInputData(BaseModel):
     s3_file_key: str = Field(alias="ObjectKey")
 
 
-def dangerous_xml_check(file_object: BytesIO) -> ElementTree:
+def dangerous_xml_check(file_object: BytesIO, file_name: str) -> ElementTree:
     """
     Parse and check the file object syntax error
     """
@@ -45,10 +47,10 @@ def dangerous_xml_check(file_object: BytesIO) -> ElementTree:
         return parsed_xml
     except detree.ParseError as err:
         log.error("XML syntax error", exc_info=True)
-        raise XMLSyntaxError(file_object.name, message=err.msg) from err
+        raise XMLSyntaxError(file_name, message=err.msg) from err
     except DefusedXmlException as err:
         log.error("Dangerous XML", exc_info=True)
-        raise DangerousXML(file_object.name, message=err) from err
+        raise DangerousXML(file_name, message=err) from err
 
 
 def get_xml_file_object(s3_bucket: str, s3_key: str) -> BytesIO:
@@ -84,10 +86,11 @@ def process_file_validation(input_data: FileValidationInputData) -> None:
     xml_file_data = get_xml_file_object(
         input_data.s3_bucket_name, input_data.s3_file_key
     )
-    dangerous_xml_check(xml_file_data)
+    dangerous_xml_check(xml_file_data, file_name=input_data.s3_file_key)
     log.info("File validation passed", file_name=input_data.s3_file_key)
 
 
+@tracer.capture_lambda_handler
 @file_processing_result_to_db(step_name=StepName.TXC_FILE_VALIDATOR)
 def lambda_handler(event, _context) -> dict[str, str | int]:
     """

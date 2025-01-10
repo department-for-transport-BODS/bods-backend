@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import BinaryIO
 
+from aws_lambda_powertools import Tracer
 from clamd import BufferTooLongError, ClamdNetworkSocket
 from clamd import ConnectionError as ClamdConnectionError
 from common_layer.database.client import SqlDB
@@ -22,13 +23,13 @@ from common_layer.exceptions.file_exceptions import (
     ClamConnectionError,
     SuspiciousFile,
 )
-from common_layer.json_logging import configure_logging
 from common_layer.s3 import S3
 from common_layer.txc.parser.hashing import get_file_hash
 from common_layer.zip import process_zip_to_s3
 from pydantic import BaseModel, Field, ValidationError
 from structlog.stdlib import get_logger
 
+tracer = Tracer()
 log = get_logger()
 
 
@@ -318,12 +319,12 @@ def make_output_folder_name(
     return f"{file_stem}/{request_id}/"
 
 
+@tracer.capture_lambda_handler
 @file_processing_result_to_db(step_name=StepName.CLAM_AV_SCANNER)
 def lambda_handler(event, context):
     """
     Main lambda handler
     """
-    configure_logging()
     input_data = ClamAVScannerInputData(**event)
     s3_handler = S3(bucket_name=input_data.s3_bucket_name)
     clam_av_config = get_clamav_config()
