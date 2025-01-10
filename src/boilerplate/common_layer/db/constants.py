@@ -1,7 +1,15 @@
+"""
+constants file
+"""
+
 from enum import Enum
 
 
 class StepName(str, Enum):
+    """
+    Enumeration representing various steps or processes in a workflow.
+    """
+
     CLAM_AV_SCANNER = "Clam AV Scanner"
     TIMETABLE_SCHEMA_CHECK = "Timetable Schema Check"
     TIMETABLE_POST_SCHEMA_CHECK = "Timetable Post Schema Check"

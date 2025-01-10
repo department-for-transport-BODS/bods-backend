@@ -1,5 +1,13 @@
-# Exception for File Processing
+"""
+Exception for File Processing
+"""
+
+
 class ValidationException(Exception):
+    """
+    This exception is intended to be used when a validation operation fails.
+    """
+
     code = "VALIDATION_FAILED"
     message_template = "Validation failed for {filename}."
 

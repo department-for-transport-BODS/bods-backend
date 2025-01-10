@@ -120,13 +120,12 @@ class DataDownloader:
             response = requests.request(
                 method, self.url, auth=auth, timeout=30, **kwargs
             )
+            response.raise_for_status()
+            return response
         except requests.Timeout as exc:
             raise DownloadTimeout(self.url) from exc
         except requests.RequestException as exc:
             raise DownloadException(self.url) from exc
-        else:
-            response.raise_for_status()
-            return response
 
     def get(self, **kwargs) -> DownloaderResponse:
         """Get the response content.
