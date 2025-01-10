@@ -292,16 +292,16 @@ Resources:
       TargetParameters:
         InputTemplate: |
           {
-            "detail": {
-              "bucket": {
-                "name": <$.body.detail.bucket.name>
+            'detail': {
+              'bucket': {
+                'name': <$.body.detail.bucket.name>
               },
-              "object": {
-                "key": <$.body.detail.object.key>
+              'object': {
+                'key': <$.body.detail.object.key>
               },
-              "datasetEtlTaskResultId": <$.body.detail.dataset_etl_task_result_id>,
-              "datasetRevisionId": <$.body.detail.dataset_revision_id>,
-              "datasetType": <$.body.detail.dataset_type>
+              'datasetEtlTaskResultId': <$.body.detail.dataset_etl_task_result_id>,
+              'datasetRevisionId': <$.body.detail.dataset_revision_id>,
+              'datasetType': <$.body.detail.dataset_type>
             }
           }
         StepFunctionStateMachineParameters:
