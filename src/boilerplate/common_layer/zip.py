@@ -177,9 +177,8 @@ class ZippedValidator:
         self.file.seek(0)
         self.max_file_size = max_file_size
         self.data_file_ext = data_file_ext
-        self.zip_file = ZipFile(
-            self.file
-        )  # pylint: disable=resource-allocating operations This class will be deleted in new PR
+        # This class will be deleted in new PR
+        self.zip_file = ZipFile(self.file)  # pylint: disable=consider-using-with
 
     def __enter__(self):
         self.zip_file = ZipFile(self.file)
