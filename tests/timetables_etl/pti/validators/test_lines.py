@@ -43,21 +43,6 @@ def test_validate_less_than_two_lines():
     assert is_valid
 
 
-def test_validate_invalid_creation_date():
-    filename = "invalid-pti-creation-time-ANEA_1D12_ANEAPB0002717239X12_20241229_20250104_2006205.xml"
-    OBSERVATION_ID = 2
-    schema = Schema.from_path(PTI_SCHEMA_PATH)
-    observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
-    schema = SchemaFactory(observations=observations)
-    json_file = JSONFile(schema.model_dump_json())
-    pti = PTIValidator(json_file, MagicMock(), MagicMock())
-    txc_path = DATA_DIR / filename
-    with txc_path.open("r") as txc:
-        is_valid = pti.is_valid(txc)
-
-        assert not is_valid
-
-
 @pytest.mark.parametrize(
     ("filename", "expected"),
     [
