@@ -504,6 +504,7 @@ Resources:
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: post_schema_check.lambda_handler
+      MemorySize: 512
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
