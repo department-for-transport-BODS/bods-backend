@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: Supporting services for the execution of the timetables ETL process
 
@@ -12,31 +12,31 @@ Parameters:
   SubFunction:
     Description: The sub-fuction that each resource relates to
     Type: String
-    Default: 'tt'
+    Default: "tt"
   RdsDbHostAddr:
     Type: String
-    Default: ''
+    Default: ""
   RdsDbPort:
     Type: Number
   RdsDbName:
     Type: String
     Description: Database name for local development
-    Default: 'postgres'
+    Default: "postgres"
   RdsDbUsername:
     Type: String
     Description: User name for local development
-    Default: 'bodds_rw'
+    Default: "bodds_rw"
   BoilerplateLambdaLayerArn:
     Type: String
 Conditions:
-  IsNotLocal: !Not [!Equals [!Ref Environment, 'local']]
-  IsNotProd: !Not [!Equals [!Ref Environment, 'prod']]
-  IsStandalone: !Equals [!Ref Environment, 'standalone']
+  IsNotLocal: !Not [!Equals [!Ref Environment, "local"]]
+  IsNotProd: !Not [!Equals [!Ref Environment, "prod"]]
+  IsStandalone: !Equals [!Ref Environment, "standalone"]
   IsUsingBodsInfra:
     !Not [
       !Or [
-        !Equals [!Ref Environment, 'local'],
-        !Equals [!Ref Environment, 'standalone'],
+        !Equals [!Ref Environment, "local"],
+        !Equals [!Ref Environment, "standalone"],
       ],
     ]
 Globals:
@@ -49,62 +49,62 @@ Globals:
     PropagateTags: true
     KmsKeyArn: !If
       - IsUsingBodsInfra
-      - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+      - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
       - !If
         - IsStandalone
-        - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+        - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
         - !Ref AWS::NoValue
     VpcConfig: !If
       - IsUsingBodsInfra
       - SubnetIds:
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-0}}'
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-1}}'
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-2}}'
+          - !Sub "{{resolve:ssm:/bodds/${Environment}/private-subnet-0}}"
+          - !Sub "{{resolve:ssm:/bodds/${Environment}/private-subnet-1}}"
+          - !Sub "{{resolve:ssm:/bodds/${Environment}/private-subnet-2}}"
         SecurityGroupIds:
           - !GetAtt CommonLambdaSecurityGroup.GroupId
       - !If
         - IsStandalone
         - SubnetIds:
-            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-subnet-1-id'
-            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-subnet-2-id'
+            - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-subnet-1-id"
+            - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-subnet-2-id"
           SecurityGroupIds:
-            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-lambda-sg-id'
+            - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-lambda-sg-id"
         - !Ref AWS::NoValue
     Environment:
       Variables:
         HTTPS_PROXY: !If
           - IsUsingBodsInfra
-          - !Sub 'http://squid.bodds.${Environment}:3128'
+          - !Sub "http://squid.bodds.${Environment}:3128"
           - !Ref AWS::NoValue
         PROJECT_ENV: !Ref Environment
         PROJECT_NAME: !Ref ProjectName
         POSTGRES_HOST: !If
           - IsUsingBodsInfra
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-endpoint}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
+          - !Sub "{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-endpoint}}" ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
           - !If
             - IsStandalone
-            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-endpoint'
+            - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-rds-proxy-endpoint"
             - !Ref RdsDbHostAddr
         POSTGRES_PORT: !If
           - IsUsingBodsInfra
           - !Ref RdsDbPort
           - !If
             - IsStandalone
-            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-port'
+            - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-rds-port"
             - !Ref RdsDbPort
         POSTGRES_DB: !If
           - IsUsingBodsInfra
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
+          - !Sub "{{resolve:ssm:/bodds/${Environment}/rds-db-name}}"
           - !If
             - IsStandalone
-            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-db-name'
+            - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-rds-db-name"
             - !Ref RdsDbName
         POSTGRES_USER: !If
           - IsUsingBodsInfra
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
+          - !Sub "{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}"
           - !If
             - IsStandalone
-            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-app-username'
+            - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-rds-app-username"
             - !Ref RdsDbUsername
         DYNAMODB_TABLE_NAME: !Ref TimetablesCache
 
@@ -115,9 +115,9 @@ Resources:
   TimetablesStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
-      Name: !Sub '${ProjectName}-${Environment}-${SubFunction}-sm'
+      Name: !Sub "${ProjectName}-${Environment}-${SubFunction}-sm"
       Role: !GetAtt TimetablesStateMachineRole.Arn
-      DefinitionUri: './src/timetables_etl.statemachine.json'
+      DefinitionUri: "./src/timetables_etl.statemachine.json"
       Logging:
         Level: ALL
         IncludeExecutionData: true
@@ -141,22 +141,22 @@ Resources:
   StepFunctionsLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-sm'
+      LogGroupName: !Sub "/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-sm"
       KmsKeyId: !If
         - IsUsingBodsInfra
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
         - !If
           - IsStandalone
-          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
           - !Ref AWS::NoValue
       RetentionInDays: 30
 
   TimetablesStateMachineRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub '${ProjectName}-${Environment}-${SubFunction}-sm-role'
+      RoleName: !Sub "${ProjectName}-${Environment}-${SubFunction}-sm-role"
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -167,14 +167,14 @@ Resources:
       Policies:
         - PolicyName: StartStateMachineExecutionOfSelfPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action: states:StartExecution
-                Resource: !Sub 'arn:${AWS::Partition}:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${ProjectName}-${Environment}-${SubFunction}-sm'
+                Resource: !Sub "arn:${AWS::Partition}:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${ProjectName}-${Environment}-${SubFunction}-sm"
         - PolicyName: StateMachineLambdaInvokePolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action: lambda:InvokeFunction
@@ -191,21 +191,21 @@ Resources:
                   - !GetAtt ExceptionHandlerLambda.Arn
         - PolicyName: S3BucketAccessPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action: s3:ListBucket
                 Resource: !If
                   - IsUsingBodsInfra
-                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/app/arn}}'
+                  - !Sub "{{resolve:ssm:/bodds/${Environment}/s3/app/arn}}"
                   - !If
                     - IsStandalone
                     - !Sub
-                      - 'arn:aws:s3:::${BucketName}'
+                      - "arn:aws:s3:::${BucketName}"
                       - BucketName:
                           Fn::ImportValue:
-                            Fn::Sub: '${ProjectName}-${Environment}-standalone-s3-bucket-name'
-                    - '*'
+                            Fn::Sub: "${ProjectName}-${Environment}-standalone-s3-bucket-name"
+                    - "*"
               - Effect: Allow
                 Action:
                   - s3:GetObject*
@@ -214,18 +214,18 @@ Resources:
                   - s3:AbortMultipartUpload
                 Resource: !If
                   - IsUsingBodsInfra
-                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/app/arn}}/*'
+                  - !Sub "{{resolve:ssm:/bodds/${Environment}/s3/app/arn}}/*"
                   - !If
                     - IsStandalone
                     - !Sub
-                      - 'arn:aws:s3:::${BucketName}/*'
+                      - "arn:aws:s3:::${BucketName}/*"
                       - BucketName:
                           Fn::ImportValue:
-                            Fn::Sub: '${ProjectName}-${Environment}-standalone-s3-bucket-name'
-                    - '*'
+                            Fn::Sub: "${ProjectName}-${Environment}-standalone-s3-bucket-name"
+                    - "*"
         - PolicyName: KMSAccessPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -234,14 +234,14 @@ Resources:
                   - kms:Encrypt
                 Resource: !If
                   - IsUsingBodsInfra
-                  - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+                  - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
                   - !If
                     - IsStandalone
-                    - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
-                    - '*'
+                    - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
+                    - "*"
         - PolicyName: CloudWatchLogsPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -253,14 +253,14 @@ Resources:
                   - logs:PutResourcePolicy
                   - logs:DescribeResourcePolicies
                   - logs:DescribeLogGroups
-                Resource: '*'
+                Resource: "*"
               - Effect: Allow
                 Action:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource:
-                  - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-sm:*'
-                  - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-sm'
+                  - !Sub "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-sm:*"
+                  - !Sub "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-sm"
   ##########################################
   #### TIMETABLES STATE MACHINE TRIGGER ####
   ##########################################
@@ -268,15 +268,15 @@ Resources:
     Type: AWS::Pipes::Pipe
     Condition: IsNotLocal
     Properties:
-      Name: !Sub '${ProjectName}-${Environment}-${SubFunction}-sm-trigger'
-      Description: !Sub 'EventBridge Pipe used as trigger for ${ProjectName}-${Environment} Timetables ETL State Machine'
+      Name: !Sub "${ProjectName}-${Environment}-${SubFunction}-sm-trigger"
+      Description: !Sub "EventBridge Pipe used as trigger for ${ProjectName}-${Environment} Timetables ETL State Machine"
       RoleArn: !GetAtt TimetablesStateMachineTriggerRole.Arn
       KmsKeyIdentifier: !If
         - IsUsingBodsInfra
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
         - !If
           - IsStandalone
-          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
           - !Ref AWS::NoValue
       Source: !GetAtt TimetablesProcessQueue.Arn
       SourceParameters:
@@ -299,7 +299,7 @@ Resources:
             }
           }
         StepFunctionStateMachineParameters:
-          InvocationType: 'FIRE_AND_FORGET'
+          InvocationType: "FIRE_AND_FORGET"
       # LogConfiguration:
       #   Level: 'INFO'
       #   CloudwatchLogsLogDestination:
@@ -309,18 +309,18 @@ Resources:
     Type: AWS::IAM::Role
     Condition: IsNotLocal
     Properties:
-      RoleName: !Sub '${ProjectName}-${Environment}-${SubFunction}-sm-trigger-role'
+      RoleName: !Sub "${ProjectName}-${Environment}-${SubFunction}-sm-trigger-role"
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
               Service: pipes.amazonaws.com
             Action: sts:AssumeRole
       Policies:
-        - PolicyName: 'StateMachineSQSPolicy'
+        - PolicyName: "StateMachineSQSPolicy"
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -330,14 +330,14 @@ Resources:
                 Resource: !GetAtt TimetablesProcessQueue.Arn
         - PolicyName: StartStateMachineExecutionOfSelfPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action: states:StartExecution
-                Resource: !Sub 'arn:${AWS::Partition}:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${ProjectName}-${Environment}-${SubFunction}-sm'
+                Resource: !Sub "arn:${AWS::Partition}:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${ProjectName}-${Environment}-${SubFunction}-sm"
         - PolicyName: KMSAccessPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -346,8 +346,8 @@ Resources:
                   - kms:Encrypt
                 Resource: !If
                   - IsUsingBodsInfra
-                  - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-                  - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+                  - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
+                  - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
 
   # TimetablesStateMachineTriggerLogGroup:
   #   Type: AWS::Logs::LogGroup
@@ -367,7 +367,7 @@ Resources:
     DependsOn: InitializePipelineLambdaLogGroup
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-initialize-pipeline-lambda'
+      FunctionName: !Sub "${ProjectName}-${Environment}-${SubFunction}-initialize-pipeline-lambda"
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: initialize_pipeline.lambda_handler
@@ -379,10 +379,10 @@ Resources:
   InitializePipelineLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-initialize-pipeline-lambda'
+      LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-initialize-pipeline-lambda"
       KmsKeyId: !If
         - IsNotLocal
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
         - !Ref AWS::NoValue
       RetentionInDays: 30
 
@@ -393,7 +393,7 @@ Resources:
     Type: AWS::Serverless::Function
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-clamav-scanner-lambda'
+      FunctionName: !Sub "${ProjectName}-${Environment}-${SubFunction}-clamav-scanner-lambda"
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: clamav_scanner.lambda_handler
@@ -401,7 +401,7 @@ Resources:
         - !Ref BoilerplateLambdaLayerArn
       Environment:
         Variables:
-          CLAMAV_HOST: !Sub 'clamav.bodds.${Environment}'
+          CLAMAV_HOST: !Sub "clamav.bodds.${Environment}"
           CLAMAV_PORT: 3310
       LoggingConfig:
         LogGroup: !Ref ClamAvScannerLambdaLogGroup
@@ -409,16 +409,16 @@ Resources:
   ClamAvScannerLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-clamav-scanner-lambda'
+      LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-clamav-scanner-lambda"
       KmsKeyId: !If
         - IsUsingBodsInfra
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
         - !If
           - IsStandalone
-          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
           - !Ref AWS::NoValue
       RetentionInDays: 30
-    
+
   ################################
   #### DOWNLOAD DATASET LAMBDA ####
   ################################
@@ -426,29 +426,25 @@ Resources:
     Type: AWS::Serverless::Function
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-download-dataset-lambda'
+      FunctionName: !Sub "${ProjectName}-${Environment}-${SubFunction}-download-dataset-lambda"
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: download_dataset.lambda_handler
       Layers:
         - !Ref BoilerplateLambdaLayerArn
-      Environment:
-        Variables:
-          CLAMAV_HOST: !Sub 'clamav.bodds.${Environment}'
-          CLAMAV_PORT: 3310
       LoggingConfig:
         LogGroup: !Ref DownloadDatasetLambdaLogGroup
 
   DownloadDatasetLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-download-dataset-lambda'
+      LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-download-dataset-lambda"
       KmsKeyId: !If
         - IsUsingBodsInfra
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
         - !If
           - IsStandalone
-          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
           - !Ref AWS::NoValue
       RetentionInDays: 30
 
@@ -459,7 +455,7 @@ Resources:
     Type: AWS::Serverless::Function
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-file-validation-lambda'
+      FunctionName: !Sub "${ProjectName}-${Environment}-${SubFunction}-file-validation-lambda"
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: file_validation.lambda_handler
@@ -471,13 +467,13 @@ Resources:
   FileValidationLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-file-validation-lambda'
+      LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-file-validation-lambda"
       KmsKeyId: !If
         - IsUsingBodsInfra
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
         - !If
           - IsStandalone
-          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
           - !Ref AWS::NoValue
       RetentionInDays: 30
 
@@ -488,7 +484,7 @@ Resources:
     Type: AWS::Serverless::Function
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-schema-check-lambda'
+      FunctionName: !Sub "${ProjectName}-${Environment}-${SubFunction}-schema-check-lambda"
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl/schema_check
       Handler: app.schema_check.lambda_handler
@@ -496,20 +492,20 @@ Resources:
         - !Ref BoilerplateLambdaLayerArn
       Environment:
         Variables:
-          TXC_XSD_PATH: 'TransXChange_general.xsd'
+          TXC_XSD_PATH: "TransXChange_general.xsd"
       LoggingConfig:
         LogGroup: !Ref SchemaCheckLambdaLogGroup
 
   SchemaCheckLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-schema-check-lambda'
+      LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-schema-check-lambda"
       KmsKeyId: !If
         - IsUsingBodsInfra
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
         - !If
           - IsStandalone
-          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
           - !Ref AWS::NoValue
       RetentionInDays: 30
 
@@ -520,7 +516,7 @@ Resources:
     Type: AWS::Serverless::Function
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-post-schema-check-lambda'
+      FunctionName: !Sub "${ProjectName}-${Environment}-${SubFunction}-post-schema-check-lambda"
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: post_schema_check.lambda_handler
@@ -532,13 +528,13 @@ Resources:
   PostSchemaCheckLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-post-schema-check-lambda'
+      LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-post-schema-check-lambda"
       KmsKeyId: !If
         - IsUsingBodsInfra
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
         - !If
           - IsStandalone
-          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
           - !Ref AWS::NoValue
       RetentionInDays: 30
 
@@ -549,7 +545,7 @@ Resources:
     Type: AWS::Serverless::Function
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-file-attributes-etl-lambda'
+      FunctionName: !Sub "${ProjectName}-${Environment}-${SubFunction}-file-attributes-etl-lambda"
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: file_attributes_etl.lambda_handler
@@ -561,13 +557,13 @@ Resources:
   FileAttributesEtlLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-file-attributes-etl-lambda'
+      LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-file-attributes-etl-lambda"
       KmsKeyId: !If
         - IsUsingBodsInfra
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
         - !If
           - IsStandalone
-          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
           - !Ref AWS::NoValue
       RetentionInDays: 30
 
@@ -578,7 +574,7 @@ Resources:
     Type: AWS::Serverless::Function
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-pti-validation-lambda'
+      FunctionName: !Sub "${ProjectName}-${Environment}-${SubFunction}-pti-validation-lambda"
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: pti_validation.lambda_handler
@@ -591,13 +587,13 @@ Resources:
   PtiValidationLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-pti-validation-lambda'
+      LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-pti-validation-lambda"
       KmsKeyId: !If
         - IsUsingBodsInfra
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
         - !If
           - IsStandalone
-          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
           - !Ref AWS::NoValue
       RetentionInDays: 30
 
@@ -608,7 +604,7 @@ Resources:
     Type: AWS::Serverless::Function
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-etl-process-lambda'
+      FunctionName: !Sub "${ProjectName}-${Environment}-${SubFunction}-etl-process-lambda"
       Description: Takes a TXC XML and generates transmodel_ database table data
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl/etl
@@ -621,13 +617,13 @@ Resources:
   ETLProcessLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-etl-process-lambda'
+      LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-etl-process-lambda"
       KmsKeyId: !If
         - IsUsingBodsInfra
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
         - !If
           - IsStandalone
-          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
           - !Ref AWS::NoValue
       RetentionInDays: 30
 
@@ -638,7 +634,7 @@ Resources:
     Type: AWS::Serverless::Function
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-exception-handler-lambda'
+      FunctionName: !Sub "${ProjectName}-${Environment}-${SubFunction}-exception-handler-lambda"
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: exception_handler.lambda_handler
@@ -650,13 +646,13 @@ Resources:
   ExceptionHandlerLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-exception-handler-lambda'
+      LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-exception-handler-lambda"
       KmsKeyId: !If
         - IsUsingBodsInfra
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
         - !If
           - IsStandalone
-          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
           - !Ref AWS::NoValue
       RetentionInDays: 30
 
@@ -667,7 +663,7 @@ Resources:
     Type: AWS::DynamoDB::Table
     ## checkov:skip=CKV_AWS_28:Ensure DynamoDB point in time recovery (backup) is enabled
     Properties:
-      TableName: !Sub '${ProjectName}-${Environment}-${SubFunction}-cache'
+      TableName: !Sub "${ProjectName}-${Environment}-${SubFunction}-cache"
       AttributeDefinitions:
         - AttributeName: Key
           AttributeType: S
@@ -685,32 +681,32 @@ Resources:
           - true
       SSESpecification:
         SSEEnabled: true
-        SSEType: 'KMS'
+        SSEType: "KMS"
         KMSMasterKeyId: !If
           - IsUsingBodsInfra
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+          - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
           - !If
             - IsStandalone
-            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+            - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
             - !Ref AWS::NoValue
 
   CommonLambdaSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Condition: IsNotLocal
     Properties:
-      GroupDescription: !Sub 'Security group for ${ProjectName}-${Environment} Timetables ETL related lambda functions'
-      GroupName: !Sub '${ProjectName}-${Environment}-${SubFunction}-common-lambda'
+      GroupDescription: !Sub "Security group for ${ProjectName}-${Environment} Timetables ETL related lambda functions"
+      GroupName: !Sub "${ProjectName}-${Environment}-${SubFunction}-common-lambda"
       SecurityGroupEgress:
-        - IpProtocol: '-1'
-          Description: 'Allow outbound connectivity to any'
-          CidrIp: '0.0.0.0/0'
+        - IpProtocol: "-1"
+          Description: "Allow outbound connectivity to any"
+          CidrIp: "0.0.0.0/0"
       VpcId: !If
         - IsUsingBodsInfra
-        - Fn::Sub: '{{resolve:ssm:/bodds/${Environment}/vpc-id}}'
-        - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-vpc-id'
+        - Fn::Sub: "{{resolve:ssm:/bodds/${Environment}/vpc-id}}"
+        - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-vpc-id"
       Tags:
         - Key: Name
-          Value: !Sub '${ProjectName}-${Environment}-${SubFunction}-common-lambda'
+          Value: !Sub "${ProjectName}-${Environment}-${SubFunction}-common-lambda"
 
   CommonLambdaSecurityGroupIngress:
     Type: AWS::EC2::SecurityGroupIngress
@@ -718,9 +714,9 @@ Resources:
     Properties:
       GroupId: !If
         - IsUsingBodsInfra
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-sg-id}}'
-        - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-sg-id'
-      Description: !Sub 'Allow inbound connectivity from ${ProjectName}-${Environment}-${SubFunction}-common-lambda'
+        - !Sub "{{resolve:ssm:/bodds/${Environment}/rds-proxy-sg-id}}"
+        - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-rds-sg-id"
+      Description: !Sub "Allow inbound connectivity from ${ProjectName}-${Environment}-${SubFunction}-common-lambda"
       IpProtocol: tcp
       FromPort: 5432
       ToPort: 5432
@@ -729,9 +725,9 @@ Resources:
   CommonLambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub '${ProjectName}-${Environment}-${SubFunction}-common-lambda-execution-role'
+      RoleName: !Sub "${ProjectName}-${Environment}-${SubFunction}-common-lambda-execution-role"
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -742,54 +738,54 @@ Resources:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
         - !If
           - IsUsingBodsInfra
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-rw-user-access-policy-arn}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
+          - !Sub "{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-rw-user-access-policy-arn}}" ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
           - !If
             - IsStandalone
             - !Ref AWS::NoValue
-            - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess'
+            - "arn:aws:iam::aws:policy/AmazonRDSFullAccess"
         - !If
           - IsUsingBodsInfra
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-ro-user-access-policy-arn}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
+          - !Sub "{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-ro-user-access-policy-arn}}" ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
           - !If
             - IsStandalone
             - !Ref AWS::NoValue
-            - 'arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess'
+            - "arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess"
       Policies:
         - PolicyName: S3AccessPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action: s3:ListBucket
                 Resource: !If
                   - IsUsingBodsInfra
-                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/app/arn}}'
+                  - !Sub "{{resolve:ssm:/bodds/${Environment}/s3/app/arn}}"
                   - !If
                     - IsStandalone
                     - !Sub
-                      - 'arn:aws:s3:::${BucketName}'
+                      - "arn:aws:s3:::${BucketName}"
                       - BucketName:
                           Fn::ImportValue:
-                            Fn::Sub: '${ProjectName}-${Environment}-standalone-s3-bucket-name'
-                    - '*'
+                            Fn::Sub: "${ProjectName}-${Environment}-standalone-s3-bucket-name"
+                    - "*"
               - Effect: Allow
                 Action:
                   - s3:GetObject*
                   - s3:PutObject*
                 Resource: !If
                   - IsUsingBodsInfra
-                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/app/arn}}/*'
+                  - !Sub "{{resolve:ssm:/bodds/${Environment}/s3/app/arn}}/*"
                   - !If
                     - IsStandalone
                     - !Sub
-                      - 'arn:aws:s3:::${BucketName}/*'
+                      - "arn:aws:s3:::${BucketName}/*"
                       - BucketName:
                           Fn::ImportValue:
-                            Fn::Sub: '${ProjectName}-${Environment}-standalone-s3-bucket-name'
-                    - '*'
+                            Fn::Sub: "${ProjectName}-${Environment}-standalone-s3-bucket-name"
+                    - "*"
         - PolicyName: KMSAccessPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -798,14 +794,14 @@ Resources:
                   - kms:Encrypt
                 Resource: !If
                   - IsUsingBodsInfra
-                  - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+                  - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
                   - !If
                     - IsStandalone
-                    - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
-                    - '*'
+                    - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
+                    - "*"
         - PolicyName: DynamoDBAccessPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -818,29 +814,29 @@ Resources:
           - IsStandalone
           - PolicyName: RDSProxyAccessPolicy
             PolicyDocument:
-              Version: '2012-10-17'
+              Version: "2012-10-17"
               Statement:
                 - Effect: Allow
                   Action: rds-db:connect
                   Resource:
                     - !Sub
-                      - '${ProxyId}/${AppUsername}'
+                      - "${ProxyId}/${AppUsername}"
                       - ProxyId:
-                          Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-resource-id'
+                          Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-rds-proxy-resource-id"
                         AppUsername:
-                          Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-app-username'
+                          Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-rds-app-username"
           - !Ref AWS::NoValue
   TimetablesProcessQueue:
     Type: AWS::SQS::Queue
     Condition: IsNotLocal
     Properties:
-      QueueName: !Sub '${ProjectName}-${Environment}-${SubFunction}-process-queue'
+      QueueName: !Sub "${ProjectName}-${Environment}-${SubFunction}-process-queue"
       KmsMasterKeyId: !If
         - IsUsingBodsInfra
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
         - !If
           - IsStandalone
-          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
           - !Ref AWS::NoValue
       VisibilityTimeout: 180
       RedrivePolicy:
@@ -851,13 +847,13 @@ Resources:
     Type: AWS::SQS::Queue
     Condition: IsNotLocal
     Properties:
-      QueueName: !Sub '${ProjectName}-${Environment}-${SubFunction}-dead-letter-queue'
+      QueueName: !Sub "${ProjectName}-${Environment}-${SubFunction}-dead-letter-queue"
       KmsMasterKeyId: !If
         - IsUsingBodsInfra
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Sub "{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}"
         - !If
           - IsStandalone
-          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
           - !Ref AWS::NoValue
       VisibilityTimeout: 300
 
@@ -871,7 +867,7 @@ Resources:
     Condition: IsStandalone
     Properties:
       Description: Run manually to create DB Tables for standalone
-      FunctionName: !Sub '${ProjectName}-${Environment}-create-tables-lambda'
+      FunctionName: !Sub "${ProjectName}-${Environment}-create-tables-lambda"
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/standalone/create_tables
       Handler: create_db_tables.lambda_handler
@@ -885,7 +881,7 @@ Resources:
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-create-tables-lambda'
+      LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-create-tables-lambda"
       KmsKeyId:
-        Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+        Fn::ImportValue: !Sub "${ProjectName}-${Environment}-standalone-kms-key-arn"
       RetentionInDays: 30
