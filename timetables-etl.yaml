@@ -507,7 +507,7 @@ Resources:
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: post_schema_check.lambda_handler
-      MemorySize: 512
+      MemorySize: 768
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
@@ -538,7 +538,7 @@ Resources:
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: file_attributes_etl.lambda_handler
-      MemorySize: 512
+      MemorySize: 768
       Timeout: 300
       Layers:
         - !Ref BoilerplateLambdaLayerArn
@@ -570,7 +570,7 @@ Resources:
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: pti_validation.lambda_handler
-      MemorySize: 512
+      MemorySize: 768
       Timeout: 900
       Layers:
         - !Ref BoilerplateLambdaLayerArn
@@ -603,7 +603,7 @@ Resources:
       CodeUri: ./src/timetables_etl/etl
       Handler: app.app.lambda_handler
       Timeout: 900
-      MemorySize: 512
+      MemorySize: 768
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
