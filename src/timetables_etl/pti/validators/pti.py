@@ -1,13 +1,12 @@
 import json
 import logging
-from pathlib import Path
 from typing import IO, Any, Callable
-from urllib.parse import unquote
 
 from common_layer.database.client import SqlDB
 from common_layer.dynamodb.client import DynamoDB
 from common_layer.pti.constants import FLEXIBLE_SERVICE, STANDARD_SERVICE
 from common_layer.pti.models import Observation, Schema, Violation
+from common_layer.txc.parser.metadata import parse_metadata
 from lxml import etree
 
 from .functions import (
@@ -129,7 +128,7 @@ class PTIValidator:
         self.violations.append(violation)
 
     def check_observation(
-        self, observation: Observation, element: etree._Element
+        self, observation: Observation, element: etree._Element, filename: str
     ) -> None:
         for rule in observation.rules:
             result = element.xpath(rule.test, namespaces=self.namespaces)
@@ -138,7 +137,7 @@ class PTIValidator:
                 violation = Violation(
                     line=element.sourceline,
                     name=name,
-                    filename=unquote(Path(element.base).name),
+                    filename=filename,
                     observation=observation,
                     element_text=element.text,
                 )
@@ -164,9 +163,13 @@ class PTIValidator:
 
     def is_valid(self, source: IO[Any]) -> bool:
         document = etree.parse(source)
+        root = document.getroot()
+        metadata = parse_metadata(root)
+        if not metadata:
+            raise ValueError("Missing FileName metadata from XML file")
+
         txc_service_type = self.check_service_type(document)
 
-        service_observations = []
         service_observations = [
             x
             for x in self.schema.observations
@@ -176,6 +179,6 @@ class PTIValidator:
         for observation in service_observations:
             elements = document.xpath(observation.context, namespaces=self.namespaces)
             for element in elements:
-                self.check_observation(observation, element)
+                self.check_observation(observation, element, metadata.FileName)
         logger.info(f"Completed observations for the XML file")
         return len(self.violations) == 0
