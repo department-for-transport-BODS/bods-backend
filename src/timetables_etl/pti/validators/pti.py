@@ -166,7 +166,7 @@ class PTIValidator:
         root = document.getroot()
         metadata = parse_metadata(root)
         if not metadata:
-            raise ValueError("Missing FileName metadata from XML file")
+            raise ValueError("Missing metadata in XML file root element")
 
         txc_service_type = self.check_service_type(document)
 
