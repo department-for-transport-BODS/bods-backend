@@ -440,7 +440,7 @@ Resources:
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: file_validation.lambda_handler
-      MemorySize: 512
+      MemorySize: 768
       Timeout: 300
       Layers:
         - !Ref BoilerplateLambdaLayerArn
