@@ -6,7 +6,7 @@ from io import BytesIO
 from pathlib import Path
 
 from lxml import etree
-from lxml.etree import QName, _Element, parse
+from lxml.etree import QName, _Element, _ElementTree, parse
 from pydantic import BaseModel, Field
 from structlog.stdlib import get_logger
 
@@ -96,13 +96,19 @@ def strip_namespace(xml_data: _Element) -> _Element:
     return xml_data
 
 
+def load_xml_tree(filename: Path | BytesIO) -> _ElementTree:
+    log.info("Opening TXC file", filename=filename)
+    parser = etree.XMLParser()
+    tree = parse(filename, parser=parser)
+    return tree
+
+
 def load_xml_data(filename: Path | BytesIO) -> _Element:
     """
     Load the XML Data and strip namespaces for ease of query
     """
     log.info("Opening TXC file", filename=filename)
-    parser = etree.XMLParser()
-    tree = parse(filename, parser)
+    tree = load_xml_tree(filename)
     return strip_namespace(tree.getroot())
 
 

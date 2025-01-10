@@ -1,5 +1,6 @@
 import json
 import logging
+from io import BytesIO
 from typing import IO, Any, Callable
 
 from common_layer.database.client import SqlDB
@@ -7,6 +8,11 @@ from common_layer.dynamodb.client import DynamoDB
 from common_layer.pti.constants import FLEXIBLE_SERVICE, STANDARD_SERVICE
 from common_layer.pti.models import Observation, Schema, Violation
 from common_layer.txc.parser.metadata import parse_metadata
+from common_layer.txc.parser.parser_txc import (
+    get_root_element,
+    load_xml_data,
+    load_xml_tree,
+)
 from lxml import etree
 
 from .functions import (
@@ -134,8 +140,9 @@ class PTIValidator:
             result = element.xpath(rule.test, namespaces=self.namespaces)
             if not result:
                 name = element.xpath("local-name(.)", namespaces=self.namespaces)
+                line = element.sourceline or 0
                 violation = Violation(
-                    line=element.sourceline,
+                    line=line,
                     name=name,
                     filename=filename,
                     observation=observation,
@@ -161,10 +168,11 @@ class PTIValidator:
             return FLEXIBLE_SERVICE
         return STANDARD_SERVICE
 
-    def is_valid(self, source: IO[Any]) -> bool:
-        document = etree.parse(source)
-        root = document.getroot()
-        metadata = parse_metadata(root)
+    def is_valid(self, source: BytesIO) -> bool:
+        document = load_xml_tree(source)
+
+        xml_root_element = document.getroot()
+        metadata = parse_metadata(xml_root_element)
         if not metadata:
             raise ValueError("Missing metadata in XML file root element")
 
