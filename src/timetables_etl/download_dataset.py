@@ -46,7 +46,7 @@ class DownloadDatasetInputData(BaseModel):
     task_id: int = Field(alias="DatasetEtlTaskResultId")
     s3_bucket_name: str = Field(alias="Bucket")
     s3_file_key: str = Field(alias="ObjectKey")
-    remote_dataset_url_link: AnyUrl = Field(alias="URLLink", default=None)
+    remote_dataset_url_link: AnyUrl = Field(alias="URLLink")
     revision_id: int = Field(alias="DatasetRevisionId")
 
 
@@ -140,7 +140,7 @@ class DataDownloader:
         return DownloaderResponse(content=response.content, filetype=filetype)
 
 
-def write_temp_file(url: str) -> Path | None:
+def write_temp_file(url: AnyUrl) -> Path | None:
     """
     Download file from a URL to a temporary file.
     """
@@ -150,7 +150,7 @@ def write_temp_file(url: str) -> Path | None:
                 "Starting file download",
                 extra={"url": url, "temp_path": temp_file.name},
             )
-            with requests.get(url, stream=True, timeout=60) as response:
+            with requests.get(str(url), stream=True, timeout=60) as response:
                 log.debug(f"HTTP Response: {response.status_code}, URL: {url}")
                 response.raise_for_status()
                 log.info(
@@ -221,33 +221,50 @@ def get_remote_file_name(
 
 
 def download_and_upload_dataset(
-    db: SqlDB, s3_bucket_name: str, revision_id: int, url_link: str, is_time_zone: bool
+    db: SqlDB,
+    s3_bucket_name: str,
+    revision_id: int,
+    url_link: AnyUrl,
+    is_time_zone: bool,
 ) -> dict:
     """
-    Template function to download the dataset, upload to S3 and update database
+    Template function to download the dataset, upload to S3 and update the database.
+    This function downloads the file, uploads it to S3, and updates the revision in the DB.
     """
-    revision = OrganisationDatasetRevisionRepo(db).get_by_id(revision_id)
+    revision_repo = OrganisationDatasetRevisionRepo(db)
+    revision = revision_repo.get_by_id(revision_id)
+    if revision is None:
+        return {
+            "statusCode": 200,
+            "body": f"nothing to update as revision id: {revision_id} not found",
+        }
+
     s3_handler = S3(bucket_name=s3_bucket_name)
     response = download_data_from_remote_url(revision)
     file_name = get_remote_file_name(revision, response, is_time_zone)
     temp_file_name = write_temp_file(url_link)
-    upload_file_to_s3(temp_file_name, file_name, s3_handler)
-    update_dataset_revision(revision_id, file_name, db)
+    upload_file_to_s3(str(temp_file_name), file_name, s3_handler)
+    update_dataset_revision(revision_repo, revision, file_name)
     return {"statusCode": 200, "body": "file downloaded successfully"}
 
 
-def update_dataset_revision(revision_id: int, file_name: str, db: SqlDB) -> None:
+def update_dataset_revision(
+    revision_repo: OrganisationDatasetRevisionRepo,
+    revision: OrganisationDatasetRevision,
+    file_name: str,
+) -> None:
     """
     Update the dataset revision in the database with the new file name.
+    Avoid querying the DB again by using the passed-in `revision` object.
     """
-    dataset_revision = OrganisationDatasetRevisionRepo(db)
-    revision = dataset_revision.get_by_id(revision_id)
     if revision:
-        revision.upload_file = file_name
-        dataset_revision.update(revision)
-        log.info("Dataset revision updated with new file.")
-    else:
-        log.info("Dataset revision not found.", revision_id=revision_id)
+        dataset_revision_row = revision_repo.get_by_id(revision.id)
+        if dataset_revision_row:
+            dataset_revision_row.upload_file = file_name
+            revision_repo.update(dataset_revision_row)
+            log.info("Dataset revision updated with new file.")
+        else:
+            log.info("Dataset revision not found.", revision_id=revision.id)
 
 
 @file_processing_result_to_db(step_name=StepName.DOWNLOAD_DATASET)
@@ -257,7 +274,7 @@ def lambda_handler(event, context) -> dict:
     """
     configure_logging()
     log.debug("Input Data", data=event)
-    TIME_ZONE = environ.get("USE_TZ", default=False)
+    TIME_ZONE = environ.get("USE_TZ", "false").lower() == "true"
     input_data = DownloadDatasetInputData(**event)
     db = SqlDB()
     if input_data.remote_dataset_url_link:

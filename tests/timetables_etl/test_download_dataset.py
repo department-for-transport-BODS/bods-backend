@@ -6,9 +6,11 @@ import pytest
 import requests
 from pydantic import BaseModel
 
+from tests.factories.database.organisation import OrganisationDatasetRevisionFactory
 from timetables_etl.download_dataset import (
     DataDownloader,
     DownloadException,
+    OrganisationDatasetRevision,
     PipelineException,
     SqlDB,
     UnknownFileType,
@@ -200,6 +202,7 @@ def test_upload_file_to_s3(mock_put, mock_open):
     "event, test_id",
     [
         (
+            # Test case 1: Invalid URL link
             {
                 "Bucket": "my-bucket",
                 "ObjectKey": "file.zip",
@@ -209,8 +212,18 @@ def test_upload_file_to_s3(mock_put, mock_open):
             },
             "Invalid URL Link",
         ),
+        (
+            # Test case 2: No URL link
+            {
+                "Bucket": "my-bucket",
+                "ObjectKey": "file.zip",
+                "DatasetRevisionId": 1,
+                "DatasetEtlTaskResultId": "1234",
+            },
+            "No URL Link",
+        ),
     ],
-    ids=["Invalid URL Link"],
+    ids=["Invalid URL Link", "No URL Link"],
 )
 @patch("common_layer.db.file_processing_result.SqlDB")
 @patch("timetables_etl.download_dataset.download_and_upload_dataset")
@@ -236,18 +249,6 @@ def test_lambda_handler_exception(
     "event, expected_status_code, expected_body, test_id",
     [
         (
-            # Test case 1: No URL link
-            {
-                "Bucket": "my-bucket",
-                "ObjectKey": "file.zip",
-                "DatasetRevisionId": 1,
-                "DatasetEtlTaskResultId": "1234",
-            },
-            200,
-            "url link is not specified, nothing to download",
-            "No URL Link",
-        ),
-        (
             # Test case 2: Valid URL link
             {
                 "Bucket": "my-bucket",
@@ -261,7 +262,7 @@ def test_lambda_handler_exception(
             "Valid URL Link",
         ),
     ],
-    ids=["No URL Link", "Valid URL Link"],
+    ids=["Valid URL Link"],
 )
 @patch("common_layer.db.file_processing_result.SqlDB")
 @patch("timetables_etl.download_dataset.download_and_upload_dataset")
@@ -369,41 +370,38 @@ def test_download_data_failure(mock_revision, side_effect, expected_exception, t
             download_data_from_remote_url(mock_revision)
 
 
-@pytest.mark.parametrize(
-    "mock_revision_return, expected_upload_file, expected_update_called, test_id",
-    [
-        # Case 1: Revision exists
-        (MagicMock(upload_file=None), "new_file.csv", True, "Revision Exists"),
-        # Case 2: Revision does not exist
-        (None, None, False, "Revision Not Found"),
-    ],
-    ids=["Revision Exists", "Revision Not Found"],
-)
 @patch("timetables_etl.download_dataset.log")
 @patch("timetables_etl.download_dataset.OrganisationDatasetRevisionRepo")
-def test_update_dataset_revision(
-    mock_repo_class,
-    mock_log,
-    mock_revision_return,
-    expected_upload_file,
-    expected_update_called,
-    test_id,
-):
+def test_update_dataset_revision_not_found(mock_repo_class, mock_log):
     """
-    Test the `update_dataset_revision` method for different revision states.
+    Test the `update_dataset_revision` method for a case where the revision is not found.
     """
     mock_db = MagicMock(SqlDB)
     mock_revision_repo = MagicMock()
     mock_repo_class.return_value = mock_revision_repo
-    mock_revision_repo.get_by_id.return_value = mock_revision_return
+    mock_revision_return = None
+    update_dataset_revision(mock_revision_repo, mock_revision_return, "new_file.csv")
+    mock_revision_repo.update.assert_not_called()
 
-    revision_id = 1
+
+@patch("timetables_etl.download_dataset.log")
+@patch("timetables_etl.download_dataset.OrganisationDatasetRevisionRepo")
+def test_update_dataset_revision_revision_exists(mock_repo_class, mock_log):
+    """
+    Test the `update_dataset_revision` function for the case where the revision exists in the database.
+    """
+    mock_db = MagicMock()
+    mock_revision_repo = MagicMock()
+    mock_repo_class.return_value = mock_revision_repo
+    dataset_revision = OrganisationDatasetRevisionFactory.create(upload_file=None)
+    mock_revision_return = dataset_revision
+
+    mock_revision_repo.get_by_id.return_value = mock_revision_return
     file_name = "new_file.csv"
 
-    update_dataset_revision(revision_id, file_name, mock_db)
-    mock_revision_repo.get_by_id.assert_called_once_with(revision_id)
-    if expected_update_called:
-        mock_revision_repo.update.assert_called_once_with(mock_revision_return)
-        assert mock_revision_return.upload_file == expected_upload_file
-    else:
-        mock_revision_repo.update.assert_not_called()
+    update_dataset_revision(mock_revision_repo, mock_revision_return, file_name)
+
+    mock_revision_repo.get_by_id.assert_called_once_with(mock_revision_return.id)
+    mock_revision_repo.update.assert_called_once_with(mock_revision_return)
+    assert mock_revision_return.upload_file == file_name
+    mock_log.info.assert_called_with("Dataset revision updated with new file.")
