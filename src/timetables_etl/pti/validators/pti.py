@@ -8,11 +8,7 @@ from common_layer.dynamodb.client import DynamoDB
 from common_layer.pti.constants import FLEXIBLE_SERVICE, STANDARD_SERVICE
 from common_layer.pti.models import Observation, Schema, Violation
 from common_layer.txc.parser.metadata import parse_metadata
-from common_layer.txc.parser.parser_txc import (
-    get_root_element,
-    load_xml_data,
-    load_xml_tree,
-)
+from common_layer.txc.parser.parser_txc import load_xml_tree
 from lxml import etree
 
 from .functions import (
