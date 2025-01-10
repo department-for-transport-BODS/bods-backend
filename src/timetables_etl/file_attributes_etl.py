@@ -29,11 +29,26 @@ from common_layer.txc.helpers.service import (
     get_service_start_dates,
 )
 from common_layer.txc.models import TXCData
+from common_layer.txc.parser.parser_txc import TXCParserConfig
 from pydantic import BaseModel, Field
 from structlog.stdlib import get_logger
 
 tracer = Tracer()
 log = get_logger()
+
+PARSER_CONFIG = TXCParserConfig(
+    metadata=True,
+    serviced_organisations=False,
+    stop_points=False,
+    route_sections=False,
+    routes=False,
+    journey_pattern_sections=False,
+    operators=True,
+    services=True,
+    vehicle_journeys=False,
+    track_data=False,
+    file_hash=True,
+)
 
 
 def validate_schema_version(schema_version: str | None) -> str:
@@ -134,7 +149,9 @@ def lambda_handler(event, _context) -> dict[str, int]:
     """
     configure_logging()
     input_data = FileAttributesInputData(**event)
-    txc_data = download_and_parse_txc(input_data.s3_bucket_name, input_data.s3_file_key)
+    txc_data = download_and_parse_txc(
+        input_data.s3_bucket_name, input_data.s3_file_key, PARSER_CONFIG
+    )
     db = SqlDB()
     inserted_data = process_file_attributes(input_data, txc_data, db)
     log.info("TXC File Attributes added to database", inserted_data=inserted_data)

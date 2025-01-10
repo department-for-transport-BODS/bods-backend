@@ -405,6 +405,7 @@ Resources:
       Handler: clamav_scanner.lambda_handler
       Layers:
         - !Ref BoilerplateLambdaLayerArn
+      MemorySize: 512
       Timeout: 300
       Environment:
         Variables:
@@ -592,6 +593,8 @@ Resources:
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl/etl
       Handler: app.app.lambda_handler
+      Timeout: 300
+      MemorySize: 512
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
