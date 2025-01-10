@@ -1,11 +1,8 @@
 import logging
 
-from common_layer.database.repos.repo_organisation import (
-    OrganisationDatasetRevisionRepo,
-)
 from common_layer.db import BodsDB, DbManager
 from common_layer.exceptions.pipeline_exceptions import PipelineException
-from sqlalchemy.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +11,7 @@ def get_revision(db, dataset_revision_id):
     """
     Retrieves the revision corresponding to the given dataset ETL task result.
     """
-    revision_repo = OrganisationDatasetRevisionRepo(db)
+    revision_repo = DatasetRevisionRepository(db)
     return revision_repo.get_by_id(dataset_revision_id)
 
 
