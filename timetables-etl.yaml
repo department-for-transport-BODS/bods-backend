@@ -405,6 +405,7 @@ Resources:
       Handler: clamav_scanner.lambda_handler
       Layers:
         - !Ref BoilerplateLambdaLayerArn
+      Timeout: 300
       Environment:
         Variables:
           CLAMAV_HOST: !Sub 'clamav.bodds.${Environment}'
