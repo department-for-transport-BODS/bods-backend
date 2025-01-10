@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Generator
 from zipfile import BadZipFile, ZipFile, is_zipfile
 
+from botocore.exceptions import ClientError
 from common_layer.exceptions.zip_file_exceptions import (
     NestedZipForbidden,
     NoDataFound,
@@ -67,15 +68,14 @@ def extract_zip_file(zip_path: Path) -> Generator[tuple[str, Path], None, None]:
 
                         yield file_path, extracted_path
 
-                    except Exception as e:
+                    except (OSError, IOError):
                         log.error(
                             "Failed to extract file from zip",
                             file_path=file_path,
-                            error=str(e),
+                            exc_info=True,
                         )
                         raise
                     finally:
-                        # Clean up the extracted file after it's been processed
                         try:
                             if extracted_path.exists():
                                 os.unlink(extracted_path)
@@ -83,15 +83,15 @@ def extract_zip_file(zip_path: Path) -> Generator[tuple[str, Path], None, None]:
                                     "Cleaned up extracted file",
                                     path=str(extracted_path),
                                 )
-                        except Exception as e:
+                        except OSError:
                             log.error(
                                 "Failed to cleanup extracted file",
                                 path=str(extracted_path),
-                                error=str(e),
+                                exc_info=True,
                             )
 
-        except BadZipFile as e:
-            log.error("Invalid zip file", zip_path=zip_path, error=str(e))
+        except BadZipFile:
+            log.error("Invalid zip file", zip_path=zip_path, exc_info=True)
             raise
 
 
@@ -128,7 +128,7 @@ def process_zip_to_s3(s3_client: "S3", zip_path: Path, destination_prefix: str) 
                 )
                 stats.success_count += 1
 
-            except Exception:  # pylint: disable=broad-exception-caught
+            except (IOError, ClientError):
                 log.error(
                     "Failed to upload file to S3",
                     filename=filename,
@@ -148,7 +148,7 @@ def process_zip_to_s3(s3_client: "S3", zip_path: Path, destination_prefix: str) 
 
         return destination_prefix
 
-    except Exception:
+    except (OSError, BadZipFile):
         log.error(
             "Critical error processing zip file",
             zip_path=str(zip_path),
@@ -235,8 +235,10 @@ class ZippedValidator:
 
     def exceeds_uncompressed_size(self):
         """Returns True if the sum of the uncompressed files exceeds max_file_size."""
-        total = sum([zinfo.file_size for zinfo in self.zip_file.filelist])
-        return total > self.max_file_size
+        return (
+            sum(zinfo.file_size for zinfo in self.zip_file.filelist)
+            > self.max_file_size
+        )
 
     def open(self, name):
         """Opens zip_file."""
