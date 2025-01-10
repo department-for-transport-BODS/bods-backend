@@ -439,6 +439,7 @@ Resources:
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl
       Handler: file_validation.lambda_handler
+      Timeout: 300
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
@@ -471,6 +472,7 @@ Resources:
       Handler: app.schema_check.lambda_handler
       Layers:
         - !Ref BoilerplateLambdaLayerArn
+      MemorySize: 512
       Environment:
         Variables:
           TXC_XSD_PATH: 'TransXChange_general.xsd'
