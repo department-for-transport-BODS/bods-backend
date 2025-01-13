@@ -3,16 +3,17 @@ GenerateOutputZip Lambda
 Runs after the End of the FileProcessingMap to Zip the successful files
 """
 
-import json
 import zipfile
 from datetime import UTC, datetime
 from io import BytesIO
 
 from common_layer.json_logging import configure_logging
 from common_layer.s3 import S3
+from generate_output_zip.app.models.model_results import MapExecutionFailed
 from structlog.stdlib import get_logger
 
-from .models import GenerateOutputZipInputData, MapResults, ProcessingResult, ResultFile
+from .map_results import load_map_results
+from .models import GenerateOutputZipInputData, MapExecutionSucceeded, ProcessingResult
 
 log = get_logger()
 
@@ -25,73 +26,78 @@ def extract_map_run_id(map_run_arn: str) -> str:
     """
     try:
         return map_run_arn.split("/")[-1]
-    except Exception:
+    except Exception as exc:
         log.error(
             "Failed to extract Map Run Id from ARN",
             map_run_arn=map_run_arn,
             exc_info=True,
         )
-        raise ValueError(f"Invalid Map Run ARN format: {map_run_arn}")
-
-
-def read_manifest(s3_client: S3, output_prefix: str, map_run_id: str) -> MapResults:
-    """
-    Read and parse the manifest.json file from the map results
-    """
-    manifest_key = f"{output_prefix}/tt-etl-map-results/{map_run_id}/manifest.json"
-
-    log.info(
-        "Reading manifest file",
-        bucket=s3_client.bucket_name,
-        key=manifest_key,
-        map_run_id=map_run_id,
-    )
-
-    try:
-        manifest_data = s3_client.get_object(manifest_key)
-        return MapResults.parse_raw(manifest_data.read())
-    except Exception as e:
-        log.error(
-            "Failed to read manifest file",
-            bucket=s3_client.bucket_name,
-            key=manifest_key,
-            map_run_id=map_run_id,
-            error=str(e),
-        )
-        raise
+        raise ValueError(f"Invalid Map Run ARN format: {map_run_arn}") from exc
 
 
 def create_zip_from_successful_files(
-    s3_client: S3, successful_files: list[ResultFile], output_key: str
+    s3_client: S3, successful_files: list[MapExecutionSucceeded], output_key: str
 ) -> ProcessingResult:
     """
-    Create a zip file containing all successfully processed files
+    Create a zip file containing all successfully processed files with optimized XML compression
     """
     zip_buffer = BytesIO()
     zip_count = 0
     failed_count = 0
 
-    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+    with zipfile.ZipFile(
+        zip_buffer, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9
+    ) as zip_file:
         for file in successful_files:
-            try:
-                file_content = s3_client.get_object(file.Key)
+            if file.parsed_input and file.parsed_input.Key:
+                try:
+                    with s3_client.get_object(file.parsed_input.Key) as stream:
+                        filename = file.parsed_input.Key.split("/")[-1]
+                        zip_file.writestr(filename, stream.read())
+                        zip_count += 1
 
-                # Extract just the filename from the full path
-                filename = file.Key.split("/")[-1]
-                zip_file.writestr(filename, file_content.read())
-                zip_count += 1
+                        log.info(
+                            "Added File to Zip",
+                            filename=filename,
+                            compression_type="deflated",
+                            compression_level=9,
+                        )
+                except (
+                    # We want to always skip error files
+                    Exception  # pylint: disable=broad-exception-caught
+                ):
+                    log.error(
+                        "Failed too Add file to Zip",
+                        filename=file.parsed_input.Key,
+                        exc_info=True,
+                    )
+                    failed_count += 1
+            else:
+                log.warning(
+                    "Sucessful File Missing Parsed Input Data",
+                    input_data=file.Input,
+                    exc_info=True,
+                )
 
-                log.info("Added file to zip", filename=filename)
-            except Exception as e:
-                log.error("Failed to add file to zip", filename=file.Key, error=str(e))
-                failed_count += 1
-
-    # Upload the zip file to S3
     zip_buffer.seek(0)
-    s3_client.put_object(output_key, zip_buffer.getvalue())
+
+    s3_client.put_object(
+        output_key,
+        zip_buffer.getvalue(),
+    )
 
     return ProcessingResult(
         successful_files=zip_count, failed_files=failed_count, zip_location=output_key
+    )
+
+
+def log_failed_files(failed_files: list[MapExecutionFailed]):
+    """
+    Log the Failed Files
+    """
+    log.error(
+        "Failed Files in Map",
+        failed_files=[f.Name for f in failed_files],
     )
 
 
@@ -105,33 +111,13 @@ def process_map_results(input_data: GenerateOutputZipInputData) -> ProcessingRes
     map_run_id = extract_map_run_id(input_data.map_run_arn)
     log.info("Processing map results", map_run_id=map_run_id)
 
-    # Read the manifest file using the correct path with Map Run Id
-    manifest = read_manifest(s3_client, input_data.output_prefix, map_run_id)
+    map_results = load_map_results(s3_client, input_data.output_prefix, map_run_id)
+    log_failed_files(map_results.failed)
 
-    # Log any failed files
-    if manifest.ResultFiles.FAILED:
-        log.warning(
-            "Found failed files in results",
-            count=len(manifest.ResultFiles.FAILED),
-            files=[f.Key for f in manifest.ResultFiles.FAILED],
-        )
-
-        # Log the failure details from FAILED_0.json if it exists
-        try:
-            failed_key = f"{input_data.output_prefix}/tt-etl-map-results/{map_run_id}/FAILED_0.json"
-            failure_content = s3_client.get_object(failed_key)
-            failure_data = json.loads(failure_content.read().decode("utf-8"))
-            log.error("Failure details", details=failure_data)
-        except Exception as e:
-            log.error("Failed to read failure details", error=str(e))
-
-    # Create output zip if there are successful files
     timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     zip_key = f"{input_data.output_prefix}/processed_files_{timestamp}.zip"
 
-    return create_zip_from_successful_files(
-        s3_client, manifest.ResultFiles.SUCCEEDED, zip_key
-    )
+    return create_zip_from_successful_files(s3_client, map_results.succeeded, zip_key)
 
 
 def lambda_handler(event, _context):
