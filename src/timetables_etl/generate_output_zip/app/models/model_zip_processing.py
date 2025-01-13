@@ -12,5 +12,5 @@ class ProcessingResult(BaseModel):
 
     successful_files: int
     failed_files: int
-    zip_location: str
+    output_location: str
     file_hash: str

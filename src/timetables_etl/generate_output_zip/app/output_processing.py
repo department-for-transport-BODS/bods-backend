@@ -13,6 +13,43 @@ from .models import MapExecutionSucceeded
 log = get_logger()
 
 
+def process_single_file(
+    s3_client: S3, file: MapExecutionSucceeded
+) -> tuple[BytesIO, str]:
+    """
+    Process a single file and return it as an XML
+
+    Returns:
+        tuple containing:
+        - BytesIO object containing the file content
+        - filename of the processed file
+    """
+    if not file.parsed_input or not file.parsed_input.Key:
+        log.warning(
+            "File Missing Parsed Input Data",
+            input_data=file.Input,
+            exc_info=True,
+        )
+        raise ValueError("File missing parsed input data")
+
+    try:
+        with s3_client.get_object(file.parsed_input.Key) as stream:
+            file_content = BytesIO(stream.read())
+            filename = file.parsed_input.Key.split("/")[-1]
+            log.info(
+                "Processed single XML file",
+                filename=filename,
+            )
+            return file_content, filename
+    except Exception as e:
+        log.error(
+            "Failed to process XML file",
+            filename=file.parsed_input.Key,
+            exc_info=True,
+        )
+        raise e
+
+
 def generate_zip_file(
     s3_client: S3, successful_files: list[MapExecutionSucceeded]
 ) -> tuple[BytesIO, int, int]:
@@ -67,3 +104,26 @@ def generate_zip_file(
 
     zip_buffer.seek(0)
     return zip_buffer, zip_count, failed_count
+
+
+def process_files(
+    s3_client: S3, successful_files: list[MapExecutionSucceeded]
+) -> tuple[BytesIO, int, int, str]:
+    """
+    Process files based on count - single file returns XML, multiple files returns ZIP
+
+    Returns:
+        tuple containing:
+        - BytesIO object containing the file content
+        - Number of successfully processed files
+        - Number of failed files
+        - Extension of the output file ('.xml' or '.zip')
+    """
+    if len(successful_files) == 1:
+        file_content, _ = process_single_file(s3_client, successful_files[0])
+        return file_content, 1, 0, ".xml"
+
+    zip_content, success_count, failed_count = generate_zip_file(
+        s3_client, successful_files
+    )
+    return zip_content, success_count, failed_count, ".zip"

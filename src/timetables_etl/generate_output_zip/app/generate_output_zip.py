@@ -5,6 +5,7 @@ Runs after the End of the FileProcessingMap to Zip the successful files
 
 from datetime import UTC, datetime
 from io import BytesIO
+from pathlib import Path
 
 from aws_lambda_powertools import Tracer
 from common_layer.database.client import SqlDB
@@ -22,7 +23,7 @@ from .models import (
     MapExecutionSucceeded,
     ProcessingResult,
 )
-from .zip_processing import generate_zip_file
+from .output_processing import process_files
 
 tracer = Tracer()
 log = get_logger()
@@ -45,29 +46,40 @@ def extract_map_run_id(map_run_arn: str) -> str:
         raise ValueError(f"Invalid Map Run ARN format: {map_run_arn}") from exc
 
 
-def upload_zip_to_s3(s3_client: S3, zip_buffer: BytesIO, output_key: str) -> None:
+def upload_output_to_s3(
+    s3_client: S3, file_buffer: BytesIO, output_key: str, content_type: str
+) -> None:
     """
-    Upload a zip file to S3
+    Upload a file to S3
     """
-    log.info("Uploading Generated Zip to S3", output_key=output_key)
+    log.info("Uploading Generated file to S3", output_key=output_key)
     s3_client.upload_fileobj_streaming(
-        fileobj=zip_buffer, file_path=output_key, content_type="application/zip"
+        fileobj=file_buffer, file_path=output_key, content_type=content_type
     )
 
 
-def zip_and_upload_successful_files(
-    s3_client: S3, successful_files: list[MapExecutionSucceeded], output_key: str
+def process_and_upload_successful_files(
+    s3_client: S3, successful_files: list[MapExecutionSucceeded], output_key_base: str
 ) -> ProcessingResult:
     """
-    Create a zip file containing all successfully processed files and upload it to S3
+    Process files and upload to S3 - either as single XML or ZIP file depending on count
     """
-    zip_buffer, zip_count, failed_count = generate_zip_file(s3_client, successful_files)
-    file_hash = get_bytes_hash(zip_buffer)
-    upload_zip_to_s3(s3_client, zip_buffer, output_key)
+    file_buffer, success_count, failed_count, extension = process_files(
+        s3_client, successful_files
+    )
+
+    # Update the output key with the correct extension
+    output_key = f"{output_key_base}{extension}"
+
+    content_type = "application/xml" if extension == ".xml" else "application/zip"
+    file_hash = get_bytes_hash(file_buffer)
+
+    upload_output_to_s3(s3_client, file_buffer, output_key, content_type)
+
     return ProcessingResult(
-        successful_files=zip_count,
+        successful_files=success_count,
         failed_files=failed_count,
-        zip_location=output_key,
+        output_location=output_key,
         file_hash=file_hash,
     )
 
@@ -83,9 +95,33 @@ def log_failed_files(failed_files: list[MapExecutionFailed]):
         )
 
 
+def construct_output_path(original_path: str, is_test_mode: bool = True) -> str:
+    """
+    Construct the output file path based on the original path.
+    In test mode, appends a timestamp to avoid overwriting.
+    In production mode, will overwrite the original file.
+    """
+    path = Path(original_path.rstrip("/"))
+
+    if not is_test_mode:
+        # In production, we'll overwrite the original file
+        return str(path.with_suffix(""))
+
+    # In test mode, create a new file with timestamp
+    timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
+    stem = path.stem  # Get filename without extension
+
+    # Handle cases where the original path might have multiple extensions
+    # e.g. "file.xml.zip" -> "file"
+    while "." in stem:
+        stem = Path(stem).stem
+
+    return str(path.with_name(f"{stem}_etl_output_{timestamp}"))
+
+
 def process_map_results(input_data: GenerateOutputZipInputData) -> ProcessingResult:
     """
-    Process the map results and create a zip file of successful files
+    Process the map results and create an output file of successful files
 
 
     """
@@ -99,10 +135,9 @@ def process_map_results(input_data: GenerateOutputZipInputData) -> ProcessingRes
 
     # TEMPORARY: The ETL is supposed to overwrite the original file
     # However this makes it hard to test so output to a different file for now
-    timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
-    zip_key = f"{input_data.original_object_key}etl_output_{timestamp}.zip"
-    processing_result = zip_and_upload_successful_files(
-        s3_client, map_results.succeeded, zip_key
+    output_key_base = construct_output_path(input_data.original_object_key, True)
+    processing_result = process_and_upload_successful_files(
+        s3_client, map_results.succeeded, output_key_base
     )
     db = SqlDB()
     update_revision_hash(
@@ -121,18 +156,18 @@ def lambda_handler(event, _context):
     result = process_map_results(input_data)
 
     log.info(
-        "Completed zip generation",
+        "Completed output generation",
         successful_files=result.successful_files,
         failed_files=result.failed_files,
-        zip_location=result.zip_location,
+        zip_location=result.output_location,
     )
 
     return {
         "statusCode": 200,
         "body": {
-            "message": "Successfully generated zip file",
+            "message": "Successfully generated output file",
             "successful_files": result.successful_files,
             "failed_files": result.failed_files,
-            "zip_location": result.zip_location,
+            "output_location": result.output_location,
         },
     }
