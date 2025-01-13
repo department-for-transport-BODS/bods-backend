@@ -1,5 +1,5 @@
 """
-Download dataset lambda
+DownloadDatasetLambda lambda function
 """
 
 import io
@@ -274,7 +274,8 @@ def update_dataset_revision(
 @file_processing_result_to_db(step_name=StepName.DOWNLOAD_DATASET)
 def lambda_handler(event, _context) -> dict:
     """
-    Main lambda handler
+    Lambda Handler for DownloadDatasetLambda
+    Downloads a Zip or TransXchange file from a specified URL
     """
     configure_logging()
     log.debug("Input Data", data=event)
