@@ -9,11 +9,15 @@ from io import BytesIO
 
 from common_layer.json_logging import configure_logging
 from common_layer.s3 import S3
-from generate_output_zip.app.models.model_results import MapExecutionFailed
 from structlog.stdlib import get_logger
 
 from .map_results import load_map_results
-from .models import GenerateOutputZipInputData, MapExecutionSucceeded, ProcessingResult
+from .models import (
+    GenerateOutputZipInputData,
+    MapExecutionFailed,
+    MapExecutionSucceeded,
+    ProcessingResult,
+)
 
 log = get_logger()
 

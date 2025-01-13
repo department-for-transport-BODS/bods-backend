@@ -2,7 +2,7 @@
 Functions to load map results
 """
 
-from typing import Generic, Literal, TypeVar, overload
+from typing import Literal, overload
 
 from botocore.exceptions import BotoCoreError, ClientError
 from common_layer.s3 import S3
@@ -13,8 +13,9 @@ from generate_output_zip.app.models import (
     MapResultManifest,
     MapResultSucceeded,
 )
-from generate_output_zip.app.models.model_results import MapResults
 from structlog.stdlib import get_logger
+
+from .models import MapResults
 
 log = get_logger()
 

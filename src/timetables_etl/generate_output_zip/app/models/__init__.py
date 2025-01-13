@@ -12,6 +12,7 @@ from .model_results import (
     MapExecutionFailed,
     MapExecutionSucceeded,
     MapResultFailed,
+    MapResults,
     MapResultSucceeded,
     MapRunExecutionStatus,
 )
