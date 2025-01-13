@@ -204,6 +204,7 @@
         }
       },
       "MaxConcurrency": 1000,
+      "ToleratedFailurePercentage": 100,
       "Next": "GenerateOutputZip",
       "ResultPath": "$.mapResults"
     },
@@ -216,7 +217,6 @@
         "OutputPrefix.$": "$.scanner.body.generatedPrefix",
         "DatasetRevisionId.$": "$.detail.datasetRevisionId"
       },
-      "ToleratedFailurePercentage": 100,
       "End": true
     },
     "ParseError": {
