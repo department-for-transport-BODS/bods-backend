@@ -148,7 +148,7 @@ jobs:
 
       - name: get stack name
         id: get-stack
-        uses: mikefarah/yq@v4.44.6
+        uses: mikefarah/yq@v4.45.1
         with:
           cmd: yq -r '."${{ env.RC_ENV }}".deploy.parameters.stack_name' samconfig.yaml
 
