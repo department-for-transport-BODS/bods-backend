@@ -6,6 +6,7 @@ Runs after the End of the FileProcessingMap to Zip the successful files
 from datetime import UTC, datetime
 from io import BytesIO
 
+from aws_lambda_powertools import Tracer
 from common_layer.database.client import SqlDB
 from common_layer.json_logging import configure_logging
 from common_layer.s3 import S3
@@ -22,6 +23,7 @@ from .models import (
 )
 from .zip_processing import generate_zip_file
 
+tracer = Tracer()
 log = get_logger()
 
 
@@ -108,6 +110,7 @@ def process_map_results(input_data: GenerateOutputZipInputData) -> ProcessingRes
     return processing_result
 
 
+@tracer.capture_lambda_handler
 def lambda_handler(event, _context):
     """
     Lambda handler for generating zip file from map state results
