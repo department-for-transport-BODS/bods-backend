@@ -18,3 +18,4 @@ class StepName(str, Enum):
     PTI_VALIDATION = "PTI Validation"
     DOWNLOAD_DATASET = "Download Dataset"
     ETL_PROCESS = "ETL Process"
+    GENERATE_OUTPUT_ZIP = "Final Output Zip Generation"

@@ -205,6 +205,19 @@
       },
       "MaxConcurrency": 1000,
       "ToleratedFailurePercentage": 100,
+      "Next": "GenerateOutputZip",
+      "ResultPath": "$.mapResults"
+    },
+    "GenerateOutputZip": {
+      "Type": "Task",
+      "Resource": "${GenerateOutputZipLambdaArn}",
+      "Parameters": {
+        "MapRunArn.$": "$.mapResults.MapRunArn",
+        "DestinationBucket.$": "$.detail.bucket.name",
+        "OutputPrefix.$": "$.scanner.body.generatedPrefix",
+        "DatasetRevisionId.$": "$.detail.datasetRevisionId",
+        "OriginalObjectKey.$": "$.detail.object.key"
+      },
       "End": true
     },
     "ParseError": {
