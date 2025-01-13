@@ -97,6 +97,9 @@ def strip_namespace(xml_data: _Element) -> _Element:
 
 
 def load_xml_tree(filename: Path | BytesIO) -> _ElementTree:
+    """
+    Load XML ElementTreee
+    """
     log.info("Opening TXC file", filename=filename)
     parser = etree.XMLParser()
     tree = parse(filename, parser=parser)

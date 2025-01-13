@@ -1,3 +1,7 @@
+"""
+PTI Validator class
+"""
+
 import json
 import logging
 from io import BytesIO
@@ -47,6 +51,10 @@ logger = logging.getLogger(__name__)
 
 
 class PTIValidator:
+    """
+    Class for running PTI validator funtions
+    """
+
     def __init__(self, source: IO[Any], dynamo: DynamoDB, db: SqlDB):
         json_ = json.load(source)
         self.schema = Schema(**json_)
@@ -124,14 +132,23 @@ class PTIValidator:
         )
 
     def register_function(self, key: str, function: Callable) -> None:
+        """
+        Register validator function
+        """
         self.fns[key] = function
 
     def add_violation(self, violation: Violation) -> None:
+        """
+        Record PTI violation
+        """
         self.violations.append(violation)
 
     def check_observation(
         self, observation: Observation, element: etree._Element, filename: str
     ) -> None:
+        """
+        Check for violations of the given observation
+        """
         for rule in observation.rules:
             result = element.xpath(rule.test, namespaces=self.namespaces)
             if not result:
@@ -148,6 +165,9 @@ class PTIValidator:
                 break
 
     def check_service_type(self, document):
+        """
+        Check service type of given document
+        """
         servie_classification_xpath = (
             "//x:Services/x:Service/x:ServiceClassification/x:Flexible"
         )
@@ -165,6 +185,9 @@ class PTIValidator:
         return STANDARD_SERVICE
 
     def is_valid(self, source: BytesIO) -> bool:
+        """
+        Run validator functions and return validity as boolean
+        """
         document = load_xml_tree(source)
 
         xml_root_element = document.getroot()
