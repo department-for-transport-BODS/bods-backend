@@ -6,16 +6,16 @@ from typing import Literal, overload
 
 from botocore.exceptions import BotoCoreError, ClientError
 from common_layer.s3 import S3
-from generate_output_zip.app.models import (
+from structlog.stdlib import get_logger
+
+from .models import (
     MapExecutionFailed,
     MapExecutionSucceeded,
     MapResultFailed,
     MapResultManifest,
+    MapResults,
     MapResultSucceeded,
 )
-from structlog.stdlib import get_logger
-
-from .models import MapResults
 
 log = get_logger()
 
@@ -68,7 +68,9 @@ def load_manifest(
     s3_client: S3, output_prefix: str, map_run_id: str
 ) -> MapResultManifest:
     """Load and parse the manifest.json file"""
-    manifest_key = f"{output_prefix}/tt-etl-map-results/{map_run_id}/manifest.json"
+    output_prefix = output_prefix.rstrip("/")
+
+    manifest_key = f"tt-etl-map-results/{map_run_id}/manifest.json"
 
     try:
         with s3_client.get_object(manifest_key) as file_content:

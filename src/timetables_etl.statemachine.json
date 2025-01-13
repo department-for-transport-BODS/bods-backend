@@ -215,7 +215,8 @@
         "MapRunArn.$": "$.mapResults.MapRunArn",
         "DestinationBucket.$": "$.detail.bucket.name",
         "OutputPrefix.$": "$.scanner.body.generatedPrefix",
-        "DatasetRevisionId.$": "$.detail.datasetRevisionId"
+        "DatasetRevisionId.$": "$.detail.datasetRevisionId",
+        "OriginalObjectKey.$": "$.detail.object.key"
       },
       "End": true
     },

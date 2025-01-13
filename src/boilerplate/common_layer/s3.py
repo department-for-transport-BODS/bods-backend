@@ -183,3 +183,54 @@ class S3:
             if temp_dir is not None:
                 shutil.rmtree(temp_dir, ignore_errors=True)
             raise
+
+    def upload_fileobj_streaming(
+        self,
+        fileobj: BytesIO | tempfile._TemporaryFileWrapper,
+        file_path: str,
+        content_type: str | None = None,
+    ) -> None:
+        """
+        Upload a file-like object to S3 using streaming upload.
+        This method is more memory-efficient than put_object as it:
+        - Streams the data instead of loading it all into memory
+        - Automatically handles multipart uploads for large files
+        - Is ideal for large files or when memory usage is a concern
+
+        Args:
+            fileobj: A file-like object supporting read() and seek()
+            file_path: The S3 key (path) where the file should be uploaded
+            content_type: Optional content type. If not provided, will be guessed from file_path
+        """
+        logger.info(
+            "S3: Starting streaming upload",
+            bucket_name=self.bucket_name,
+            object_key=file_path,
+        )
+
+        try:
+            fileobj.seek(0)
+            extra_args = {
+                "ContentType": content_type or self._get_content_type(file_path)
+            }
+
+            self._client.upload_fileobj(
+                Fileobj=fileobj,
+                Bucket=self.bucket_name,
+                Key=file_path,
+                ExtraArgs=extra_args,
+            )
+
+            logger.info(
+                "S3: Completed streaming upload successfully",
+                bucket_name=self.bucket_name,
+                object_key=file_path,
+            )
+        except (ClientError, BotoCoreError) as err:
+            logger.error(
+                "S3: Error during streaming upload",
+                bucket_name=self.bucket_name,
+                object_key=file_path,
+                exc_info=True,
+            )
+            raise err

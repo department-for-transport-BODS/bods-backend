@@ -2,20 +2,18 @@
 Lambda Specific Models
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class GenerateOutputZipInputData(BaseModel):
     """
-    Input parameters for the Lambda function
+    Input parameters for the GenerateOutputZip Lambda
     """
 
-    class Config:
-        """Configuration for the model"""
-
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
     map_run_arn: str = Field(alias="MapRunArn")
     destination_bucket: str = Field(alias="DestinationBucket")
     output_prefix: str = Field(alias="OutputPrefix")
+    original_object_key: str = Field(alias="OriginalObjectKey")
     dataset_revision_id: int = Field(alias="DatasetRevisionId")

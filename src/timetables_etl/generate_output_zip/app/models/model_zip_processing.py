@@ -2,10 +2,10 @@
 Models Related to Processing the Zip Output
 """
 
-from typing import TypedDict
+from pydantic import BaseModel
 
 
-class ProcessingResult(TypedDict):
+class ProcessingResult(BaseModel):
     """
     Result of processing the zip operation
     """
@@ -13,3 +13,4 @@ class ProcessingResult(TypedDict):
     successful_files: int
     failed_files: int
     zip_location: str
+    file_hash: str
