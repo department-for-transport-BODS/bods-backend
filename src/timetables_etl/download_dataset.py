@@ -178,7 +178,8 @@ def write_temp_file(url: AnyUrl) -> Path | None:
     except RequestException as exc:
         log.error(
             "Download failed",
-            extra={"url": url, "error": str(exc), "error_type": type(exc).__name__},
+            url=url,
+            exc_info=True,
         )
         raise PipelineException(f"Exception {exc}") from exc
 

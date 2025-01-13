@@ -61,13 +61,13 @@ def main(
     url_link: str = typer.Option(
         "https://s3.eu-west-2.amazonaws.com/bodds-test.ops.itoworld.com/Automation_Testing/Timetables/PTI_PASS_DQ_PASS_t9cTb8A%2BTimetable.xml",
         "--url-link",
-        help="Remote file url link"
+        help="Remote file url link",
     ),
     use_dotenv: bool = typer.Option(
         True,
         "--use-dotenv",
         help="Load database configuration from .env file",
-    )
+    ),
 ):
     """Process TXC XML files for transformation testing"""
     if log_json:
@@ -77,17 +77,26 @@ def main(
             use_dotenv, db_host, db_port, db_name, db_user, db_password
         )
     except ValueError as e:
-        log.error("Database configuration error", error=str(e))
+        log.error("Database configuration error", exc_info=True)
         raise typer.Exit(1)
     db = setup_db_instance(db_config)
-    event_data = DownloadDatasetInputData(**{
-        "DatasetEtlTaskResultId": "1234",
-        "Bucket": bucket,
-        "ObjectKey": "dummy.xml",
-        "URLLink": url_link,
-        "DatasetRevisionId": revision_id
-    })
-    download_and_upload_dataset(db, event_data.s3_bucket_name, event_data.revision_id, event_data.remote_dataset_url_link, True)
+    event_data = DownloadDatasetInputData(
+        **{
+            "DatasetEtlTaskResultId": "1234",
+            "Bucket": bucket,
+            "ObjectKey": "dummy.xml",
+            "URLLink": url_link,
+            "DatasetRevisionId": revision_id,
+        }
+    )
+    download_and_upload_dataset(
+        db,
+        event_data.s3_bucket_name,
+        event_data.revision_id,
+        event_data.remote_dataset_url_link,
+        True,
+    )
+
 
 if __name__ == "__main__":
     app()
