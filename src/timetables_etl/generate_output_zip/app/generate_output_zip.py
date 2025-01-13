@@ -8,7 +8,8 @@ from io import BytesIO
 
 from aws_lambda_powertools import Tracer
 from common_layer.database.client import SqlDB
-from common_layer.json_logging import configure_logging
+from common_layer.db.constants import StepName
+from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.s3 import S3
 from common_layer.txc.parser.hashing import get_bytes_hash
 from structlog.stdlib import get_logger
@@ -111,11 +112,11 @@ def process_map_results(input_data: GenerateOutputZipInputData) -> ProcessingRes
 
 
 @tracer.capture_lambda_handler
+@file_processing_result_to_db(StepName.GENERATE_OUTPUT_ZIP)
 def lambda_handler(event, _context):
     """
     Lambda handler for generating zip file from map state results
     """
-    configure_logging()
     input_data = GenerateOutputZipInputData(**event)
     result = process_map_results(input_data)
 

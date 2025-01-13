@@ -29,8 +29,13 @@ def generate_zip_file(
     zip_count = 0
     failed_count = 0
 
+    compression_level = 9
+    compression_type = zipfile.ZIP_DEFLATED
     with zipfile.ZipFile(
-        zip_buffer, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9
+        zip_buffer,
+        "w",
+        compression=compression_type,
+        compresslevel=compression_level,
     ) as zip_file:
         for file in successful_files:
             if file.parsed_input and file.parsed_input.Key:
@@ -43,8 +48,8 @@ def generate_zip_file(
                         log.info(
                             "Added File to Zip",
                             filename=filename,
-                            compression_type="deflated",
-                            compression_level=9,
+                            compression_type=compression_type,
+                            compression_level=compression_level,
                         )
                 except Exception:  # pylint: disable=broad-exception-caught
                     log.error(
