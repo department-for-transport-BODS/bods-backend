@@ -6,8 +6,9 @@ import zipfile
 from io import BytesIO
 
 from common_layer.s3 import S3
-from generate_output_zip.app.models import MapExecutionSucceeded
 from structlog.stdlib import get_logger
+
+from .models import MapExecutionSucceeded
 
 log = get_logger()
 
