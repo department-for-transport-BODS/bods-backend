@@ -1,6 +1,0 @@
-{
-  "include": ["src"],
-  "exclude": ["**/__pycache__"],
-  "typeCheckingMode": "strict",
-  "extraPaths": ["src/timetables_etl", "src/boilerplate"]
-}
