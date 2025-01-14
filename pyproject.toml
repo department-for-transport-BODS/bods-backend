@@ -88,6 +88,7 @@ disable = ["too-few-public-methods"]
 [tool.pyright]
 include = ["src"]
 exclude = ["**/__pycache__"]
+extraPaths = ["./src/timetables_etl"]
 reportMissingImports = "error"
 reportMissingTypeStubs = false
 
