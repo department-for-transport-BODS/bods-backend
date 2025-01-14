@@ -52,8 +52,15 @@ class PTITaskData(BaseModel):
     xml_file_object: BytesIO
 
 
+def get_xml_file(bucket: str, key: str) -> BytesIO:
+    s3_handler = S3(bucket_name=bucket)
+    s3_streaming_body = s3_handler.get_object(file_path=key)
+    xml_file_object = BytesIO(s3_streaming_body.read())
+    return xml_file_object
+
+
 def get_task_data(
-    event: PTIValidationEvent, db: SqlDB, dynamodb: DynamoDB
+    event: PTIValidationEvent, xml_file_object: BytesIO, db: SqlDB, dynamodb: DynamoDB
 ) -> PTITaskData:
     """
     Fetch Required Task Data
@@ -62,11 +69,6 @@ def get_task_data(
     revision = dataset_revision_repo.get_by_id(event.DatasetRevisionId)
     if not revision:
         raise PipelineException(f"No revision with id {event.DatasetRevisionId} found")
-
-    s3_handler = S3(bucket_name=event.Bucket)
-    filename = event.ObjectKey
-    s3_streaming_body = s3_handler.get_object(file_path=filename)
-    xml_file_object = BytesIO(s3_streaming_body.read())
 
     txc_file_attributes_repo = OrganisationTXCFileAttributesRepo(db)
     txc_file_attributes = txc_file_attributes_repo.get_by_id(event.TxcFileAttributesId)
@@ -111,7 +113,8 @@ def lambda_handler(event, _context: LambdaContext):
     parsed_event = PTIValidationEvent(**event)
     db = SqlDB()
     dynamodb = DynamoDB()
-    task_data = get_task_data(parsed_event, db, dynamodb)
+    xml_file_object = get_xml_file(parsed_event.Bucket, parsed_event.ObjectKey)
+    task_data = get_task_data(parsed_event, xml_file_object, db, dynamodb)
     run_validation(task_data, db, dynamodb)
 
     return {"statusCode": 200}
