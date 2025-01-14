@@ -1,6 +1,7 @@
 # pylint: skip-file
 import re
 from datetime import datetime
+from decimal import Decimal
 from typing import Union
 
 from common_layer.database.client import SqlDB
@@ -19,20 +20,23 @@ log = get_logger()
 
 ElementsOrStr = Union[list[etree.Element], list[str], str]
 PROHIBITED_CHARS = r",[]{}^=@:;#$£?%+<>«»\/|~_¬"
-ZERO_TIME_DURATION = TimeDuration(hours=0, minutes=0, seconds=0)
+ZERO_TIME_DURATION = TimeDuration(
+    hours=Decimal(0), minutes=Decimal(0), seconds=Decimal(0)
+)
 
 
-def _extract_text(elements, default=None):
+def _extract_text(elements, default=None) -> str | None:
+    text = ""
     if isinstance(elements, list) and len(elements) > 0:
         item = elements[0]
         if isinstance(item, str):
             text = item
         else:
-            text = item.text
+            text = getattr(item, "text")
     elif isinstance(elements, str):
         text = elements
     elif hasattr(elements, "text"):
-        text = elements.text
+        text = getattr(elements, "text")
     else:
         text = default
     return text
@@ -42,7 +46,7 @@ def cast_to_date(context, date):
     """
     Casts a lxml date element to an int.
     """
-    text = _extract_text(date)
+    text = _extract_text(date) or ""
     return parser.parse(text).timestamp()
 
 
@@ -60,7 +64,7 @@ def to_days(context, days, *args):
 
 
 def contains_date(context, text):
-    text = _extract_text(text, default="")
+    text = _extract_text(text) or ""
     for word in text.split():
         try:
             if word.isdigit():
@@ -372,7 +376,7 @@ def has_prohibited_chars(context, element):
     log.info(
         "Validation Start: Prohibited Characters",
     )
-    chars = _extract_text(element, "")
+    chars = _extract_text(element) or ""
     return len([c for c in chars if c in PROHIBITED_CHARS]) > 0
 
 
@@ -444,12 +448,12 @@ def is_member_of(context, element, *args):
 
 
 def regex(context, element, pattern):
-    chars = _extract_text(element, "")
+    chars = _extract_text(element) or ""
     return re.match(pattern, chars) is not None
 
 
 def strip(context, text):
-    text = _extract_text(text, default="")
+    text = _extract_text(text) or ""
     return text.strip()
 
 
@@ -523,8 +527,13 @@ def validate_licence_number(context, elements: list[etree._Element]) -> bool:
     )
     ns = {"x": elements[0].nsmap.get(None)}
     for element in elements:
-        primary_mode = element.xpath(".//x:PrimaryMode", namespaces=ns)
-        licence_number = element.xpath(".//x:LicenceNumber", namespaces=ns)
+        primary_mode = element.xpath(
+            ".//x:PrimaryMode", namespaces=ns  # pyright: ignore
+        )
+        licence_number = element.xpath(
+            ".//x:LicenceNumber", namespaces=ns  # pyright: ignore
+        )
+
         if primary_mode and primary_mode[0].text.lower() == "coach":
             continue
         elif not (licence_number and licence_number[0].text):
