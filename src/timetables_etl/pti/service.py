@@ -6,9 +6,10 @@ from common_layer.database.repos.repo_data_quality import DataQualityPTIObservat
 from common_layer.dynamodb.client import DynamoDB
 from common_layer.dynamodb.models import TXCFileAttributes
 from common_layer.utils import sha1sum
-from pti.validators.factory import get_xml_file_pti_validator
-from pti.validators.txc_revision import TXCRevisionValidator
 from structlog.stdlib import get_logger
+
+from .validators.factory import get_xml_file_pti_validator
+from .validators.txc_revision import TXCRevisionValidator
 
 log = get_logger()
 

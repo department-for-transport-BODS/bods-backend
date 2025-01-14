@@ -6,8 +6,9 @@ from botocore.response import StreamingBody
 from common_layer.database.client import SqlDB
 from common_layer.dynamodb.client import DynamoDB
 from common_layer.pti.models import Violation
-from pti.validators.pti import PTIValidator
 from structlog.stdlib import get_logger
+
+from .pti import PTIValidator
 
 log = get_logger()
 

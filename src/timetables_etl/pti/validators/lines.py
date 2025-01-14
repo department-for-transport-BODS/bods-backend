@@ -1,7 +1,7 @@
-from collections import defaultdict
 import itertools
+from collections import defaultdict
 
-from pti.validators.base import BaseValidator
+from .base import BaseValidator
 
 
 class LinesValidator(BaseValidator):

@@ -8,10 +8,11 @@ from dateutil import parser
 from isoduration import DurationParsingException, parse_duration
 from isoduration.types import TimeDuration
 from lxml import etree
-from pti.validators.destination_display import DestinationDisplayValidator
-from pti.validators.lines import LinesValidator
-from pti.validators.stop_point import StopPointValidator
 from structlog.stdlib import get_logger
+
+from .destination_display import DestinationDisplayValidator
+from .lines import LinesValidator
+from .stop_point import StopPointValidator
 
 log = get_logger()
 

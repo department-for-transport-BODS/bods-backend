@@ -9,7 +9,8 @@ from common_layer.pti.constants import (
     OTHER_PUBLIC_HOLIDAYS,
     SCOTTISH_BANK_HOLIDAYS,
 )
-from pti.utils import is_service_in_scotland
+
+from ..utils import is_service_in_scotland
 
 
 def get_service_ref_from_element(element, ns):
