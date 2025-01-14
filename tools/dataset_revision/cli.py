@@ -7,13 +7,19 @@ from datetime import UTC, datetime
 import typer
 from common_layer.database.client import SqlDB
 from common_layer.database.models import OrganisationDatasetRevision
+from common_layer.database.models.model_organisation import OrganisationDataset
 from common_layer.database.repos.repo_organisation import (
+    OrganisationDatasetRepo,
     OrganisationDatasetRevisionRepo,
 )
+from common_layer.db.repositories import dataset
 from common_layer.json_logging import configure_logging
 from structlog.stdlib import get_logger
 
-from tests.factories.database.organisation import OrganisationDatasetRevisionFactory
+from tests.factories.database.organisation import (
+    OrganisationDatasetFactory,
+    OrganisationDatasetRevisionFactory,
+)
 from tools.common.db_tools import create_db_config, setup_db_instance
 from tools.common.models import TestConfig
 
@@ -59,7 +65,24 @@ def create_revision(
     return revision
 
 
-@app.command()
+def create_dataset(
+    db: SqlDB,
+) -> int:
+    """
+    Create a new dataset
+    """
+    dataset_record = OrganisationDatasetFactory()
+
+    repo = OrganisationDatasetRepo(db)
+    dataset = repo.insert(dataset_record)
+    log.info(
+        "Created dataset",
+        dataset_id=dataset.id,
+    )
+    return dataset.id
+
+
+@app.command(name="create-revision")
 def main(
     name: str = typer.Option(
         ...,
@@ -72,9 +95,9 @@ def main(
         help="The filename for upload_file",
     ),
     dataset_id: int = typer.Option(
-        123,
+        None,
         "--dataset-id",
-        help="The Dataset ID to create revision for",
+        help="The Dataset ID to create revision for. If not provided, a new dataset will be created",
     ),
     description: str = typer.Option(
         "Test Revision Created by CLI",
@@ -160,6 +183,9 @@ def main(
     db = setup_db_instance(db_config)
 
     try:
+        if not dataset_id:
+            dataset_id = create_dataset(db)
+
         revision = create_revision(
             dataset_id=dataset_id,
             name=name,
