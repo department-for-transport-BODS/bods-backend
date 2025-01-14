@@ -1,3 +1,4 @@
+from io import BytesIO
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -81,5 +82,6 @@ def test_non_related_with_stop_areas(m_stop_point_repo):
     json_file = JSONFile(schema.model_dump_json())
     pti = PTIValidator(json_file, MagicMock(), MagicMock())
     txc_path = DATA_DIR / "nonrelatedlines.xml"
-    with txc_path.open("r") as txc:
+    with txc_path.open("r") as xml:
+        txc = BytesIO(xml.read().encode("UTF-8"))
         assert pti.is_valid(txc)

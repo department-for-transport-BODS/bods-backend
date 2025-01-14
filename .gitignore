@@ -66,3 +66,6 @@ venv.bak/
 
 # Ignore Generated CSVs from db_viewer
 data/
+# Do not ignore test fixture files
+!tests/**/data/
+!tests/**/data/**

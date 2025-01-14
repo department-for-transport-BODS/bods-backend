@@ -9,7 +9,7 @@ from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 from common_layer.database.create_tables import create_db_tables
-from common_layer.txc.parser.parser_txc import parse_txc_file
+from common_layer.txc.parser.parser_txc import TXCParserConfig, parse_txc_file
 from structlog.stdlib import get_logger
 
 from timetables_etl.etl.app.pipeline import transform_data
@@ -19,6 +19,7 @@ from tools.local_etl.make_task_data import create_task_data_from_inputs
 from tools.local_etl.timing import TimingStats, print_timing_report
 
 log = get_logger()
+PARSER_CONFIG = TXCParserConfig(file_hash=True, track_data=True)
 
 
 def process_single_file(config: TestConfig, file_path: Path) -> TimingStats:
@@ -32,7 +33,7 @@ def process_single_file(config: TestConfig, file_path: Path) -> TimingStats:
     try:
         # Time parsing
         parse_start = time.time()
-        txc = parse_txc_file(file_path, parse_track_data=True, parse_file_hash=True)
+        txc = parse_txc_file(file_path, PARSER_CONFIG)
         stats.parse_time = time.time() - parse_start
 
         # Time transformation

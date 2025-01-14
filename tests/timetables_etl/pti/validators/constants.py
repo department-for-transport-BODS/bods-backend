@@ -1,6 +1,10 @@
-TXC_START = (
-    """<?xml version="1.0" encoding="UTF-8"?>"""
-    """<TransXChange xmlns="http://www.transxchange.org.uk/" """
-    """xml:lang="en" SchemaVersion="2.4">"""
-)
+TXC_START = """
+    <TransXChange xmlns="http://www.transxchange.org.uk/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.transxchange.org.uk/ ../../TransXChange_general.xsd"
+    xmlns:apd="http://www.govtalk.gov.uk/people/AddressAndPersonalDetails" xml:lang="en"
+    CreationDateTime="2004-06-07T14:20:00-05:00" ModificationDateTime="2007-01-21T14:20:00-05:00"
+    Modification="revise" RevisionNumber="3" FileName="test-file.xml" SchemaVersion="2.4"
+    LocationSystem="WGS84" RegistrationDocument="false" DataSource="TxcHandcodedExamples">
+    """
 TXC_END = "</TransXChange>"
