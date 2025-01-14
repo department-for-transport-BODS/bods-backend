@@ -16,7 +16,7 @@ app = typer.Typer()
 log = get_logger()
 
 
-@app.command()
+@app.command(name="download-dataset")
 def main(
     db_host: str = typer.Option(
         "localhost",
