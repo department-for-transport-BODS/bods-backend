@@ -78,13 +78,11 @@ jobs:
       - name: Install Dependencies
         run: poetry install
       - name: Export Poetry venv path
-        id: poetry-venv
-        run: echo "path=$(poetry env info --path)" >> $GITHUB_OUTPUT
+        run: echo "$(poetry env info --path)/bin" >> $GITHUB_PATH
       - name: pyright
         uses: jakebailey/pyright-action@v2
         with:
           pylance-version: latest-release
-          venv-path: ${{ steps.poetry-venv.outputs.path }}
           extra-args: ${{ needs.changes.outputs.py_files }}
 
   pylint:
