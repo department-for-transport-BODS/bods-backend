@@ -80,7 +80,10 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pylint.MAIN]
+source-roots = ["./src/timetables_etl", "./src/boilerplate"]
 extension-pkg-allow-list = ["lxml", "pydantic", "pydantic_core"]
+
+
 [tool.pylint."MESSAGES CONTROL"]
 disable = ["too-few-public-methods"]
 
