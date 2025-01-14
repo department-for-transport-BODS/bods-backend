@@ -1,3 +1,7 @@
+"""
+PTI Service
+"""
+
 from io import BytesIO
 
 from common_layer.database.client import SqlDB
@@ -38,11 +42,9 @@ class PTIValidationService:
         Checks if the given file hash already exists in the live revision
         """
         return any(
-            [
-                live_attributes
-                for live_attributes in live_revision_attributes
-                if live_attributes.hash == file_hash
-            ]
+            live_attributes
+            for live_attributes in live_revision_attributes
+            if live_attributes.hash == file_hash
         )
 
     def validate(
@@ -51,6 +53,9 @@ class PTIValidationService:
         xml_file: BytesIO,
         txc_file_attributes: TXCFileAttributes,
     ):
+        """
+        Run PTI validation against the given revision and file
+        """
 
         log.info("Starting PTI Profile validation.")
 
@@ -76,4 +81,3 @@ class PTIValidationService:
             observation_repo.create_from_violations(revision.id, violations)
 
         log.info("Finished PTI Profile validation.")
-        return None

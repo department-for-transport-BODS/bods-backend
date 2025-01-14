@@ -1,3 +1,7 @@
+"""
+DynamoDB Client
+"""
+
 import os
 import time
 from typing import Any, Callable
@@ -13,6 +17,10 @@ log = get_logger()
 
 
 class DynamoDBSettings(BaseSettings):
+    """
+    Custom settings for DynamoDB
+    """
+
     DYNAMODB_ENDPOINT_URL: str = Field(
         default="http://host.docker.internal:4566",
         description="Endpoint URL for DynamoDB",
@@ -24,6 +32,9 @@ class DynamoDBSettings(BaseSettings):
 
 
 class DynamoDB:
+    """
+    Client for interacting with DynamoDB
+    """
 
     def __init__(self, settings: DynamoDBSettings | None = None):
         self._settings: DynamoDBSettings = settings if settings else DynamoDBSettings()
@@ -45,8 +56,7 @@ class DynamoDB:
                 region_name="eu-west-2",
             )
 
-        else:
-            return boto3.client("dynamodb")
+        return boto3.client("dynamodb")
 
     def get_or_compute(
         self, key: str, compute_fn: Callable[[], Any], ttl: int | None = None
