@@ -29,6 +29,10 @@ class DynamoDBSettings(BaseSettings):
         default="",
         description="Table Name for DynamoDB",
     )
+    AWS_REGION: str = Field(
+        default="eu-west-2",
+        description="AWS Region for DynamoDB Table",
+    )
 
 
 class DynamoDB:
@@ -53,7 +57,7 @@ class DynamoDB:
                 endpoint_url=self._settings.DYNAMODB_ENDPOINT_URL,
                 aws_access_key_id="dummy",
                 aws_secret_access_key="dummy",
-                region_name="eu-west-2",
+                region_name=self._settings.AWS_REGION,
             )
 
         return boto3.client("dynamodb")
