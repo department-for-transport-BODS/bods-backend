@@ -86,7 +86,7 @@ extension-pkg-allow-list = ["lxml", "pydantic", "pydantic_core"]
 disable = ["too-few-public-methods"]
 
 [tool.pyright]
-include = ["src"]
+include = ["src", "tests", "tools"]
 exclude = ["**/__pycache__"]
 extraPaths = ["./src/timetables_etl"]
 reportMissingImports = "error"
