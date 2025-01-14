@@ -87,7 +87,9 @@ class StopPointValidator(BaseValidator):
         Returns:
             bool: True if service mode matches
         """
-        mode = service.xpath("string(x:Mode)", namespaces=self.namespaces)
+        mode = service.xpath(
+            "string(x:Mode)", namespaces=self.namespaces  # pyright: ignore
+        )
         if mode is not None and mode.lower() == MODE_COACH.lower():
             return True
         return False

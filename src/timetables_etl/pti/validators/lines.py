@@ -41,7 +41,7 @@ class LinesValidator(BaseValidator):
             line1_refs = line_to_journey_pattern.get(line1)
             line2_refs = line_to_journey_pattern.get(line2)
 
-            if set(line1_refs).isdisjoint(line2_refs):
+            if set(line1_refs).isdisjoint(line2_refs):  # pyright: ignore
                 return False
         return True
 
