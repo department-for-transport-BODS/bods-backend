@@ -78,12 +78,12 @@ jobs:
       - name: Install Dependencies
         run: poetry install
       - name: Add poetry env to PATH to allow pyright to use it
-        run: echo "$(poetry env info --path)/bin" >> $GITHUB_OUTPUT
+        run: echo "$(poetry env info --path)/bin" >> $GITHUB_PATH
       - name: pyright
         uses: jakebailey/pyright-action@v2
         with:
           pylance-version: latest-release
-          create-stub: true
+          create-stubs: true
           venv-path: ${{ steps.poetry-venv.outputs.path }}
           extra-args: ${{ needs.changes.outputs.py_files }}
 
