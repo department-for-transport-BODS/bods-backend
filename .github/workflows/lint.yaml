@@ -83,6 +83,7 @@ jobs:
         uses: jakebailey/pyright-action@v2
         with:
           pylance-version: latest-release
+          venv-path: ${{ steps.poetry-venv.outputs.path }}
           extra-args: ${{ needs.changes.outputs.py_files }}
 
   pylint:
