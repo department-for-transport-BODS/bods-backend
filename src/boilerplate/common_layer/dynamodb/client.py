@@ -5,16 +5,28 @@ from typing import Any, Callable
 import boto3
 from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
 from common_layer.exceptions.pipeline_exceptions import PipelineException
+from pydantic import Field
+from pydantic_settings import BaseSettings
 from structlog.stdlib import get_logger
 
 log = get_logger()
 
-TABLE_NAME = os.getenv("DYNAMODB_TABLE_NAME")
+
+class DynamoDBSettings(BaseSettings):
+    DYNAMODB_ENDPOINT_URL: str = Field(
+        default="http://host.docker.internal:4566",
+        description="Endpoint URL for DynamoDB",
+    )
+    DYNAMODB_TABLE_NAME: str = Field(
+        default="",
+        description="Table Name for DynamoDB",
+    )
 
 
 class DynamoDB:
 
-    def __init__(self):
+    def __init__(self, settings: DynamoDBSettings | None = None):
+        self._settings: DynamoDBSettings = settings if settings else DynamoDBSettings()
         self._client = self._create_dynamodb_client()
         self._serializer = TypeSerializer()
         self._deserializer = TypeDeserializer()
@@ -27,10 +39,12 @@ class DynamoDB:
         if os.environ.get("PROJECT_ENV") == "local":
             return boto3.client(
                 "dynamodb",
-                endpoint_url="http://host.docker.internal:4566",
+                endpoint_url=self._settings.DYNAMODB_ENDPOINT_URL,
                 aws_access_key_id="dummy",
                 aws_secret_access_key="dummy",
+                region_name="eu-west-2",
             )
+
         else:
             return boto3.client("dynamodb")
 
@@ -59,7 +73,7 @@ class DynamoDB:
         """
         try:
             response = self._client.get_item(
-                TableName=TABLE_NAME, Key={"Key": {"S": key}}
+                TableName=self._settings.DYNAMODB_TABLE_NAME, Key={"Key": {"S": key}}
             )
             item = response.get("Item", {})
             item_value = item.get("Value", None)
@@ -84,7 +98,9 @@ class DynamoDB:
                 expiration_time = int(time.time()) + ttl
                 item["ttl"] = {"S": str(expiration_time)}
 
-            self._client.put_item(TableName=TABLE_NAME, Item=item)
+            self._client.put_item(
+                TableName=self._settings.DYNAMODB_TABLE_NAME, Item=item
+            )
         except Exception as e:
             message = f"Failed to set item with key '{key}': {str(e)}"
             log.error("Failed to set item", key=key, exc_info=True)
