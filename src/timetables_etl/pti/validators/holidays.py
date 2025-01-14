@@ -1,3 +1,7 @@
+"""
+Validators related to holidays
+"""
+
 from common_layer.database.client import SqlDB
 from common_layer.dynamodb.client import DynamoDB
 from common_layer.pti.constants import (
@@ -14,6 +18,9 @@ from ..utils import is_service_in_scotland
 
 
 def get_service_ref_from_element(element, ns):
+    """
+    Find and return the ServiceRef of the given element
+    """
     vj = element.xpath("ancestor::x:VehicleJourney", namespaces=ns)
     service_ref = None
     if vj:
@@ -27,14 +34,22 @@ def get_service_ref_from_element(element, ns):
 
 
 def get_validate_bank_holidays(dynamo: DynamoDB, db: SqlDB):
+    """
+    Setup and return validator function for bank holidays
+    """
 
+    # pylint: disable=W0613
     def validate_bank_holidays(context, bank_holidays):
+        """
+        Validate bank holidays
+        """
         bank_holiday = bank_holidays[0]
         ns = {"x": bank_holiday.nsmap.get(None)}
         children = bank_holiday.getchildren()
         local_name = "local-name()"
 
         holidays = []
+        element = None
         for element in children:
             if element.xpath(local_name, namespaces=ns) in OPERATION_DAYS:
                 days = [
@@ -43,8 +58,8 @@ def get_validate_bank_holidays(dynamo: DynamoDB, db: SqlDB):
                 holidays += days
 
         # .getchildren() will return comments: this filters out the comments.
-        # It also removes occurrences of OTHER_PUBLIC_HOLIDAYS and OLD_HOLIDAYS_ALREADY_REMOVED of which there may be many or
-        # none.
+        # It also removes occurrences of OTHER_PUBLIC_HOLIDAYS and OLD_HOLIDAYS_ALREADY_REMOVED
+        # of which there may be many or none.
         holidays = [
             h
             for h in holidays

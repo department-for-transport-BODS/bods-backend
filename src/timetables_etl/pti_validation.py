@@ -52,6 +52,9 @@ class PTITaskData(BaseModel):
 
 
 def get_xml_file(bucket: str, key: str) -> BytesIO:
+    """
+    Fetch and return BytesIO object for given S3 bucket/key
+    """
     s3_handler = S3(bucket_name=bucket)
     s3_streaming_body = s3_handler.get_object(file_path=key)
     xml_file_object = BytesIO(s3_streaming_body.read())
