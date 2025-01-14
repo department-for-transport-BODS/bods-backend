@@ -16,7 +16,7 @@ from structlog.stdlib import get_logger
 from typer import BadParameter, Option, Typer
 
 from tools.common.db_tools import create_db_config, setup_db_instance
-
+from etl_task import process_etl_entities_by_revision_id
 from .organisation import (
     extract_dataset,
     extract_dataset_revision,
