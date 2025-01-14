@@ -2,8 +2,7 @@ from gc import freeze
 from unittest.mock import MagicMock, patch
 
 import pytest
-from common_layer import dynamodb
-from common_layer.dynamodb.client import TABLE_NAME, DynamoDB
+from common_layer.dynamodb.client import DynamoDB, DynamoDBSettings
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 from freezegun import freeze_time
 
@@ -15,6 +14,7 @@ def m_boto_client():
 
 
 def test_put(m_boto_client):
+    settings = DynamoDBSettings()
     with freeze_time("2024-12-06 12:00:00"):
         ttl = 3600
         expected_dynamo_ttl = (
@@ -25,7 +25,7 @@ def test_put(m_boto_client):
         dynamo.put("test-key", {"key": "value"}, ttl=ttl)
 
         m_boto_client.put_item.assert_called_once_with(
-            TableName=TABLE_NAME,
+            TableName=settings.DYNAMODB_TABLE_NAME,
             Item={
                 "Key": {"S": "test-key"},
                 "Value": {"M": {"key": {"S": "value"}}},
