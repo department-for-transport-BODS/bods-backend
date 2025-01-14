@@ -77,7 +77,7 @@ jobs:
             ${{ runner.os }}-poetry-
       - name: Install Dependencies
         run: poetry install
-      - name: Export Poetry venv path
+      - name: Add poetry env to PATH to allow pyright to use it
         run: echo "$(poetry env info --path)/bin" >> $GITHUB_PATH
       - name: pyright
         uses: jakebailey/pyright-action@v2
