@@ -15,7 +15,7 @@ from timetables_etl.initialize_pipeline import (
     InitializePipelineEvent,
     initialize_pipeline,
 )
-from tools.common.db_tools import create_db_config, setup_db_instance
+from tools.common.db_tools import create_db_config, dotenv_loader, setup_db_instance
 
 app = typer.Typer()
 log = get_logger()
@@ -33,23 +33,27 @@ def main(
         "--log-json",
         help="Enable Structured logging output",
     ),
+    use_dotenv: bool = typer.Option(
+        False,
+        "--use-dotenv",
+        help="Load database and dynamodb configurations from .env file",
+    ),
 ):
     """Run PTI Validation on given TXC XML files for testing"""
     if log_json:
         configure_logging()
+
+    if use_dotenv:
+        dotenv_loader()
+
     try:
-        db_config = create_db_config(use_dotenv=True)
+        db_config = create_db_config(use_dotenv=use_dotenv)
     except ValueError as e:
         log.error("Database configuration error", exc_info=True)
         raise typer.Exit(1)
 
     db = setup_db_instance(db_config)
-    dynamodb = DynamoDB(
-        DynamoDBSettings(
-            DYNAMODB_ENDPOINT_URL="http://localhost:4566",
-            DYNAMODB_TABLE_NAME="bods-backend-local-tt-cache",
-        )
-    )
+    dynamodb = DynamoDB()
 
     event = InitializePipelineEvent(DatasetRevisionId=revision_id)
 
