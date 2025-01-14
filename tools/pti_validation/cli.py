@@ -2,6 +2,7 @@
 Runs PTI Validation against specified database
 """
 
+import sys
 from io import BytesIO
 from pathlib import Path
 
@@ -9,6 +10,12 @@ import typer
 from common_layer.dynamodb.client import DynamoDB, DynamoDBSettings
 from common_layer.json_logging import configure_logging
 from structlog.stdlib import get_logger
+
+# # Add the timetables_etl directory to sys.path
+# # TODO: This can be removed once we restructure PTI Validation Lambda into its own folder
+sys.path.insert(
+    0, str(Path(__file__).resolve().parent.parent.parent / "src/timetables_etl")
+)
 
 from timetables_etl.pti_validation import (
     PTIValidationEvent,
