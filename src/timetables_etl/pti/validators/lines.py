@@ -1,3 +1,7 @@
+"""
+Validations related to Lines
+"""
+
 import itertools
 from collections import defaultdict
 
@@ -5,11 +9,18 @@ from .base import BaseValidator
 
 
 class LinesValidator(BaseValidator):
+    """
+    Class for running Line validations
+    """
+
     def __init__(self, *args, stop_area_map=None, **kwargs):
         self._stop_area_map = stop_area_map or {}
         super().__init__(*args, **kwargs)
 
     def _flatten_stop_areas(self, stops: list[str]) -> set[str]:
+        """
+        Given list of stops, returns flattened set
+        """
         stop_areas = []
         for stop in stops:
             stop_areas += self._stop_area_map.get(stop, [])
@@ -35,6 +46,7 @@ class LinesValidator(BaseValidator):
         return True
 
     def check_for_common_stops_points(self) -> bool:
+        # pylint: disable=too-many-locals
         """
         Check if all lines share common stop points.
         """

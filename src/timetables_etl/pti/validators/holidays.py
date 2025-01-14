@@ -38,7 +38,7 @@ def get_validate_bank_holidays(dynamo: DynamoDB, db: SqlDB):
     Setup and return validator function for bank holidays
     """
 
-    # pylint: disable=W0613
+    # pylint: disable=unused-argument
     def validate_bank_holidays(context, bank_holidays):
         """
         Validate bank holidays

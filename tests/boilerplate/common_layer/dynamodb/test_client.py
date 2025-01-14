@@ -45,6 +45,7 @@ def test_put_exception(m_boto_client):
 
 
 def test_get(m_boto_client):
+    settings = DynamoDBSettings()
     m_boto_client.get_item = MagicMock(
         return_value={
             "Item": {"Key": {"S": "test-key"}, "Value": {"M": {"key": {"S": "value"}}}}
@@ -55,7 +56,7 @@ def test_get(m_boto_client):
     result = dynamodb.get("test-key")
 
     m_boto_client.get_item.assert_called_once_with(
-        TableName=TABLE_NAME, Key={"Key": {"S": "test-key"}}
+        TableName=settings.DYNAMODB_TABLE_NAME, Key={"Key": {"S": "test-key"}}
     )
     assert result == {"key": "value"}
 
