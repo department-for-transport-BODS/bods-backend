@@ -3,7 +3,6 @@ from logging import DEBUG
 import pytest
 from common_layer.database.client import DatabaseSettings, PostgresSettings, SqlDB
 from common_layer.database.create_tables import create_db_tables
-from common_layer.db.bods_db import BodsDB
 from sqlalchemy.orm import sessionmaker
 
 
