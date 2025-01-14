@@ -1,15 +1,26 @@
-from collections import defaultdict
-import itertools
+"""
+Validations related to Lines
+"""
 
-from pti.validators.base import BaseValidator
+import itertools
+from collections import defaultdict
+
+from .base import BaseValidator
 
 
 class LinesValidator(BaseValidator):
+    """
+    Class for running Line validations
+    """
+
     def __init__(self, *args, stop_area_map=None, **kwargs):
         self._stop_area_map = stop_area_map or {}
         super().__init__(*args, **kwargs)
 
     def _flatten_stop_areas(self, stops: list[str]) -> set[str]:
+        """
+        Given list of stops, returns flattened set
+        """
         stop_areas = []
         for stop in stops:
             stop_areas += self._stop_area_map.get(stop, [])
@@ -30,11 +41,12 @@ class LinesValidator(BaseValidator):
             line1_refs = line_to_journey_pattern.get(line1)
             line2_refs = line_to_journey_pattern.get(line2)
 
-            if set(line1_refs).isdisjoint(line2_refs):
+            if set(line1_refs).isdisjoint(line2_refs):  # pyright: ignore
                 return False
         return True
 
     def check_for_common_stops_points(self) -> bool:
+        # pylint: disable=too-many-locals
         """
         Check if all lines share common stop points.
         """

@@ -11,14 +11,17 @@ packages = [
 ]
 
 [tool.poetry.scripts]
-local-etl = "tools.local_etl.cli:app"
+profile = "tools.profiler.cli:app"
+initialize-pipeline = "tools.initialize_pipeline.cli:app"
+file-validation = "tools.file_validation.cli:app"
+schema-check = "tools.schema_check.cli:app"
+post-schema-check = "tools.post_schema_check.cli:app"
 file-attributes = "tools.file_attributes.cli:app"
+pti-validation = "tools.pti_validation.cli:app"
+local-etl = "tools.local_etl.cli:app"
 create-revision = "tools.dataset_revision.cli:app"
 db-viewer = "tools.db_viewer.cli:app"
 create-tables-dev = "src.boilerplate.common_layer.database.create_tables:create_db_tables"
-schema-check = "tools.schema_check.cli:app"
-post-schema-check = "tools.post_schema_check.cli:app"
-file-validation = "tools.file_validation.cli:app"
 download-dataset = "tools.download_dataset.cli:app"
 
 [tool.poetry.dependencies]
@@ -77,9 +80,17 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pylint.MAIN]
+source-roots = ["./src/timetables_etl", "./src/boilerplate"]
 extension-pkg-allow-list = ["lxml", "pydantic", "pydantic_core"]
 [tool.pylint."MESSAGES CONTROL"]
 disable = ["too-few-public-methods"]
+
+[tool.pyright]
+include = ["src", "tests", "tools"]
+exclude = ["**/__pycache__"]
+extraPaths = ["src", "src/boilerplate", "src/timetables_etl"]
+reportMissingImports = "error"
+reportMissingTypeStubs = false
 
 [tool.pytest.ini_options]
 pythonpath = ["./src", "./src/timetables_etl", "./tests", "./src/boilerplate"]

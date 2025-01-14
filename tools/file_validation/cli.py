@@ -28,7 +28,7 @@ def process_file_validation(xml_paths: List[Path]):
             log.info("File validation passed", file_name=xml_path)
 
 
-@app.command()
+@app.command(name="file-validation")
 def main(
     paths: list[Path] = typer.Argument(
         None,

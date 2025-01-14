@@ -16,7 +16,7 @@ app = typer.Typer()
 log = get_logger()
 
 
-@app.command()
+@app.command(name="local-etl")
 def main(
     paths: list[Path] = typer.Argument(
         None,

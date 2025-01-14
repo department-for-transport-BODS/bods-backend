@@ -1,18 +1,25 @@
-from ast import Bytes
+"""
+XML File PTI Validator
+"""
+
 from io import BytesIO
 from typing import IO, Any, List
 
-from botocore.response import StreamingBody
 from common_layer.database.client import SqlDB
 from common_layer.dynamodb.client import DynamoDB
 from common_layer.pti.models import Violation
-from pti.validators.pti import PTIValidator
 from structlog.stdlib import get_logger
+
+from .pti import PTIValidator
 
 log = get_logger()
 
 
 class XmlFilePTIValidator:
+    """
+    Run PTI validations against an XML File
+    """
+
     def __init__(self, schema: IO[Any], dynamodb: DynamoDB, db: SqlDB):
         self._validator = PTIValidator(schema, dynamodb, db)
 
