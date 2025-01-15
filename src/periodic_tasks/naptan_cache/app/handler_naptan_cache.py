@@ -3,7 +3,6 @@ Naptan Cache Lambda
 """
 
 import json
-import traceback
 from pathlib import Path
 from typing import Any
 

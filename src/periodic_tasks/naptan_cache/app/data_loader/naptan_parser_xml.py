@@ -164,7 +164,7 @@ def parse_stop_point(stop_point: etree._Element) -> dict[str, Any] | None:
                 continue
 
             if tag == f"{NAPTAN_NS_PREFIX}AtcoCode":
-                stop_data["ATCOCode"] = text
+                stop_data["AtcoCode"] = text
                 atco_found = True
             elif tag == f"{NAPTAN_NS_PREFIX}NaptanCode":
                 stop_data["NaptanCode"] = text

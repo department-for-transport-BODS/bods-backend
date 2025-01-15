@@ -284,10 +284,10 @@ Resources:
     Properties:
       TableName: !Sub '${ProjectName}-${Environment}-naptan-stop-points'
       AttributeDefinitions:
-        - AttributeName: ATCOCode
+        - AttributeName: AtcoCode
           AttributeType: S
       KeySchema:
-        - AttributeName: ATCOCode
+        - AttributeName: AtcoCode
           KeyType: HASH
       BillingMode: PAY_PER_REQUEST
       PointInTimeRecoverySpecification:
