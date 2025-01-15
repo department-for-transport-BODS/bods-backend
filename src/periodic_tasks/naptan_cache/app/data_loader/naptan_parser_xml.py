@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Iterator
 
 from boto3.dynamodb.types import TypeSerializer
+from common_layer.dynamodb.client_loader import DynamoDBLoader
 from lxml import etree
 from structlog.stdlib import get_logger
 
@@ -22,12 +23,6 @@ def get_element_text(
     if element is None:
         return ""
 
-    # For direct child elements, use find() instead of xpath
-    if "/" not in xpath:
-        result = element.find(xpath, namespace)
-        return result.text if result is not None and result.text else ""
-
-    # For nested elements, use xpath
     result = element.find(xpath, namespace)
     return result.text if result is not None and result.text else ""
 
@@ -48,18 +43,40 @@ def download_naptan_xml(url: str, data_dir: Path) -> Path:
         raise
 
 
+def parse_element_children(
+    element: etree._Element | None, fields: dict[str, str]
+) -> dict[str, str]:
+    """Extract specified fields from element's children."""
+    if element is None:
+        return {}
+
+    for child in element:
+        tag = etree.QName(child).localname
+        if tag in fields and child.text:
+            fields[tag] = child.text
+
+    return fields
+
+
 def parse_location(
     stop_point: etree._Element, namespace: dict[str, str]
-) -> dict[str, str]:
+) -> dict[str, str] | None:
     """Extract location data from stop point."""
     location_data = stop_point.find(".//naptan:Location/naptan:Translation", namespace)
     if location_data is None:
-        return {}
+        return None
 
-    return {
-        "Longitude": get_element_text(location_data, "naptan:Longitude", namespace),
-        "Latitude": get_element_text(location_data, "naptan:Latitude", namespace),
-    }
+    result = {"Longitude": "", "Latitude": "", "Easting": "", "Northing": ""}
+
+    for child in location_data:
+        tag = etree.QName(child).localname
+        if tag in result and child.text:
+            result[tag] = child.text
+
+    if result["Easting"] == "" or result["Northing"] == "":
+        return None
+
+    return result
 
 
 def parse_descriptor(
@@ -67,18 +84,16 @@ def parse_descriptor(
 ) -> dict[str, str]:
     """Extract descriptor data from stop point."""
     descriptor = stop_point.find("naptan:Descriptor", namespace)
-    if descriptor is None:
-        return {}
-
-    return {
-        "CommonName": get_element_text(descriptor, "naptan:CommonName", namespace),
-        "ShortCommonName": get_element_text(
-            descriptor, "naptan:ShortCommonName", namespace
-        ),
-        "Street": get_element_text(descriptor, "naptan:Street", namespace),
-        "Landmark": get_element_text(descriptor, "naptan:Landmark", namespace),
-        "Indicator": get_element_text(descriptor, "naptan:Indicator", namespace),
-    }
+    return parse_element_children(
+        descriptor,
+        {
+            "CommonName": "",
+            "ShortCommonName": "",
+            "Street": "",
+            "Landmark": "",
+            "Indicator": "",
+        },
+    )
 
 
 def parse_stop_areas(
@@ -99,10 +114,23 @@ def parse_stop_areas(
 def parse_stop_point(
     stop_point: etree._Element, namespace: dict[str, str]
 ) -> dict[str, Any] | None:
-    """Parse a single stop point into a dictionary."""
+    """
+    Parse a single StopPoint XML into a Dictionary
+    The Stop is skipped if:
+        - Status != active
+        - Modification = delete
+        - Easting or Northing missing
+    """
     try:
         # Early validation
-        if stop_point.get("Status") != "active":
+        if (
+            stop_point.get("Status") != "active"
+            or stop_point.get("Modification") == "delete"
+        ):
+            return None
+
+        location_data = parse_location(stop_point, namespace)
+        if location_data is None:
             return None
 
         atco_code = stop_point.find("naptan:AtcoCode", namespace)
@@ -118,24 +146,22 @@ def parse_stop_point(
             "RevisionNumber": stop_point.get("RevisionNumber", ""),
         }
 
-        # Add location and descriptor data
-        stop_data.update(parse_location(stop_point, namespace))
+        # Add already validated location data
+        stop_data.update(location_data)
+
+        # Add descriptor data
         stop_data.update(parse_descriptor(stop_point, namespace))
 
-        # Add optional fields
-        naptan_code = get_element_text(stop_point, "naptan:NaptanCode", namespace)
-        if naptan_code:
-            stop_data["NaptanCode"] = naptan_code
+        # Handle optional fields with single find() and check
+        optional_fields = {
+            "NaptanCode": "naptan:NaptanCode",
+            "LocalityName": ".//naptan:LocalityName",
+            "StopType": ".//naptan:StopType",
+        }
 
-        locality_name = get_element_text(
-            stop_point, ".//naptan:LocalityName", namespace
-        )
-        if locality_name:
-            stop_data["LocalityName"] = locality_name
-
-        stop_type = get_element_text(stop_point, ".//naptan:StopType", namespace)
-        if stop_type:
-            stop_data["StopType"] = stop_type
+        for field, xpath in optional_fields.items():
+            if value := get_element_text(stop_point, xpath, namespace):
+                stop_data[field] = value
 
         # Add stop areas if present
         stop_areas = parse_stop_areas(stop_point, namespace)
@@ -208,21 +234,30 @@ def prepare_dynamo_items(
             )
 
 
-def load_naptan_data_from_xml(
-    url: str, data_dir: Path, dynamo_loader: Any
+def prepare_naptan_data(url: str, data_dir: Path) -> Path:
+    """
+    Download and prepare NaPTAN data for processing.
+    Returns path to the downloaded XML file.
+    """
+    log.info("Preparing an Output Path", path=str(data_dir))
+    new_data_dir = create_data_dir(data_dir)
+    log.info("Output dir set", path=str(new_data_dir))
+    log.info("Downloading Naptan Data", url=url)
+    return download_naptan_xml(url, data_dir)
+
+
+def process_naptan_data(
+    xml_path: Path, dynamo_loader: DynamoDBLoader
 ) -> tuple[int, int]:
     """
-    Process NaPTAN XML data from URL and load into DynamoDB.
+    Process NaPTAN XML file and load into DynamoDB.
     Returns tuple of (processed_count, error_count).
     """
-    data_dir = create_data_dir(data_dir)
-    xml_path = download_naptan_xml(url, data_dir)
-
     processed_count = 0
     error_count = 0
     batch: list[dict[str, Any]] = []
 
-    # Flatten the batches from stream_stops into individual items
+    # Process stops in batches
     for stop_batch in stream_stops(xml_path):
         for item in prepare_dynamo_items(stop_batch, dynamo_loader.serializer):
             batch.append(item)
@@ -246,3 +281,14 @@ def load_naptan_data_from_xml(
     )
 
     return processed_count, error_count
+
+
+def load_naptan_data_from_xml(
+    url: str, data_dir: Path, dynamo_loader: Any
+) -> tuple[int, int]:
+    """
+    Process NaPTAN XML data from URL and load into DynamoDB.
+    Returns tuple of (processed_count, error_count).
+    """
+    xml_path = prepare_naptan_data(url, data_dir)
+    return process_naptan_data(xml_path, dynamo_loader)
