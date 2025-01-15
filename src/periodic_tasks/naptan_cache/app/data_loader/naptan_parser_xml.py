@@ -131,14 +131,12 @@ def parse_stop_point(stop_point: etree._Element) -> dict[str, Any] | None:
     Parse a single StopPoint XML into a Dictionary
     """
     try:
-        # Early validation
         if (
             stop_point.get("Status") != "active"
             or stop_point.get("Modification") == "delete"
         ):
             return None
 
-        # Initialize with attributes
         stop_data: dict[str, Any] = {
             "Status": "active",
             "CreationDateTime": stop_point.get("CreationDateTime") or None,
@@ -146,7 +144,6 @@ def parse_stop_point(stop_point: etree._Element) -> dict[str, Any] | None:
             "RevisionNumber": stop_point.get("RevisionNumber") or None,
         }
 
-        # Get location data first as it's a common rejection point
         location_data = parse_location(stop_point)
         if location_data is None:
             return None
@@ -154,7 +151,6 @@ def parse_stop_point(stop_point: etree._Element) -> dict[str, Any] | None:
         # Add validated location data
         stop_data.update(location_data)
 
-        # Single pass through direct children for required and optional fields
         atco_found = False
         for child in stop_point:
             tag = child.tag
@@ -188,7 +184,8 @@ def parse_stop_point(stop_point: etree._Element) -> dict[str, Any] | None:
         # Clean final data - convert any remaining empty strings to None
         return {k: (v if v not in ["", None] else None) for k, v in stop_data.items()}
 
-    except Exception:
+    # We need to Skip StopPoints with errors and process all stops
+    except Exception:  # pylint: disable=broad-exception-caught
         log.error("Failed to parse stop point", exc_info=True)
         return None
 
@@ -260,12 +257,13 @@ def process_naptan_data(
     """
     Process NaPTAN XML file and load into DynamoDB.
     Returns tuple of (processed_count, error_count).
+    DynamoDB's batch_write_tiems only supports 25 at a time
+    If more speed is required, then multithreading is required
     """
     processed_count = 0
     error_count = 0
     batch: list[dict[str, Any]] = []
 
-    # Process stops in batches
     for stop_batch in stream_stops(xml_path):
         for item in stop_batch:
             batch.append(item)
@@ -276,7 +274,6 @@ def process_naptan_data(
                 processed_count += len(batch) - len(unprocessed)
                 batch = []
 
-    # Process remaining items
     if batch:
         unprocessed = dynamo_loader.batch_write_items(batch, "put")
         error_count += len(unprocessed)
