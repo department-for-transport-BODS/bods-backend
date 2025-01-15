@@ -191,14 +191,7 @@ Resources:
       CodeUri: ./src/periodic_tasks
       Handler: iterator.lambda_handler
       MemorySize: 128
-      Policies:
-        - !Ref CommonLambdaExecutionRole
-        - LambdaInvokePolicy:
-            FunctionName: !Ref GenerateGtfsRtLambda
-        - LambdaInvokePolicy:
-            FunctionName: !Ref GenerateSiriVmLambda
-        - LambdaInvokePolicy:
-            FunctionName: !Ref GenerateSiriVmTflLambda
+      Role: !GetAtt IteratorLambdaExecutionRole.Arn
       LoggingConfig:
         LogGroup: !Ref IteratorLambdaLogGroup
 
@@ -208,8 +201,7 @@ Resources:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-generate-gtfsrt-lambda'
       CodeUri: ./src/periodic_tasks
       Handler: create_gtfsrt_zip.lambda_handler
-      Policies:
-        - !Ref CommonLambdaExecutionRole
+      Role: !GetAtt GenerateLambdaExecutionRole.Arn
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       Environment:
@@ -225,8 +217,7 @@ Resources:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-generate-sirivm-lambda'
       CodeUri: ./src/periodic_tasks
       Handler: create_sirivm_zip.lambda_handler
-      Policies:
-        - !Ref CommonLambdaExecutionRole
+      Role: !GetAtt GenerateLambdaExecutionRole.Arn
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       Environment:
@@ -241,8 +232,7 @@ Resources:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-generate-sirivm-tfl-lambda'
       CodeUri: ./src/periodic_tasks
       Handler: create_sirivm_tfl_zip.lambda_handler
-      Policies:
-        - !Ref CommonLambdaExecutionRole
+      Role: !GetAtt GenerateLambdaExecutionRole.Arn
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       Environment:
@@ -251,15 +241,14 @@ Resources:
       LoggingConfig:
         LogGroup: !Ref GenerateSiriVmTflLambdaLogGroup
 
-  PopulateDynamodbNaptanCache:
+  PopulateDynamodbNaptanCacheLambda:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-populate-dynamodb-naptan-cache-lambda'
       Description: Periodic Tasks - Populate the DynamoDB Naptan Cache
       CodeUri: ./src/periodic_tasks/naptan_cache
       Handler: app.handler_naptan_cache.lambda_handler
-      Policies:
-        - !Ref CommonLambdaExecutionRole
+      Role: !GetAtt NaptanCacheLambdaExecutionRole.Arn
       Layers:
         - !Ref BoilerplateLambdaLayerArn
 
@@ -267,10 +256,10 @@ Resources:
   #### IAM POLICIES ####
   #########################################
 
-  CommonLambdaExecutionRole:
+  GenerateLambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      Description: Common role for PT Lambda functions with S3, KMS, and RDS access
+      Description: Role for Generate Lambda functions with S3, KMS, and RDS access
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -290,30 +279,11 @@ Resources:
             - IsStandalone
             - !Ref AWS::NoValue
             - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess'
-        - !If
-          - IsUsingBodsInfra
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-ro-user-access-policy-arn}}'
-          - !If
-            - IsStandalone
-            - !Ref AWS::NoValue
-            - 'arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess'
       Policies:
-        - PolicyName: CommonLambdaPermissions
+        - PolicyName: S3AndKMSPermissions
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                Resource: '*'
-              - Effect: Allow
-                Action:
-                  - ec2:CreateNetworkInterface
-                  - ec2:DescribeNetworkInterfaces
-                  - ec2:DeleteNetworkInterface
-                Resource: '*'
               - Effect: Allow
                 Action:
                   - s3:PutObject
@@ -340,6 +310,52 @@ Resources:
                     - IsStandalone
                     - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
                     - '*'
+
+  IteratorLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: Role for Iterator Lambda with Lambda invoke permissions
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+        - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
+      Policies:
+        - PolicyName: InvokeLambdaPermissions
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource:
+                  - !GetAtt GenerateGtfsRtLambda.Arn
+                  - !GetAtt GenerateSiriVmLambda.Arn
+                  - !GetAtt GenerateSiriVmTflLambda.Arn
+
+  NaptanCacheLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: Role for Naptan Cache Lambda with basic permissions
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+        - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
   #########################################
   #### SECURITY GROUPS ####
   #########################################
