@@ -53,7 +53,9 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
         }
 
     dynamo_loader = DynamoDBLoader(
-        table_name=input_data.dynamo_table, region=input_data.aws_region
+        table_name=input_data.dynamo_table,
+        region=input_data.aws_region,
+        partition_key="AtcoCode",
     )
 
     processed_count, error_count = load_naptan_data_from_xml(

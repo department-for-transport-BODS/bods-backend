@@ -91,7 +91,12 @@ DynamoDBOperation = Literal["put", "delete"]
 class DynamoDBLoader:
     """Handles batch writing of items to DynamoDB with retry logic and error handling."""
 
-    def __init__(self, table_name: str, region: str = "eu-west-2"):
+    def __init__(
+        self,
+        table_name: str,
+        region: str = "eu-west-2",
+        partition_key: str = "AtcoCode",
+    ):
         """Initialize DynamoDB loader with table name and region."""
         self.dynamodb = boto3.resource("dynamodb", region_name=region)
         self.table_name = table_name
@@ -100,6 +105,7 @@ class DynamoDBLoader:
         self.serializer = TypeSerializer()
         self.deserializer = TypeDeserializer()
         self.log = get_logger().bind(table_name=table_name)
+        self.partition_key = partition_key
 
     def prepare_put_requests(
         self, items: list[dict[str, Any]]
@@ -108,6 +114,15 @@ class DynamoDBLoader:
         write_requests: list[WriteRequestTypeDef] = []
 
         for item in items:
+            # Validate item has the partition key
+            if self.partition_key not in item:
+                self.log.warning(
+                    "Skipping item missing partition key",
+                    partition_key=self.partition_key,
+                    item_keys=list(item.keys()),
+                )
+                continue
+
             dynamodb_item = {k: self.serializer.serialize(v) for k, v in item.items()}
             write_request: WriteRequestTypeDef = {"PutRequest": {"Item": dynamodb_item}}
             write_requests.append(write_request)
@@ -121,9 +136,20 @@ class DynamoDBLoader:
         write_requests: list[WriteRequestTypeDef] = []
 
         for item in items:
+            if self.partition_key not in item:
+                self.log.warning(
+                    "Skipping delete request missing partition key",
+                    partition_key=self.partition_key,
+                )
+                continue
+
             write_request: WriteRequestTypeDef = {
                 "DeleteRequest": {
-                    "Key": {"AtcoCode": self.serializer.serialize(item["AtcoCode"])}
+                    "Key": {
+                        self.partition_key: self.serializer.serialize(
+                            item[self.partition_key]
+                        )
+                    }
                 }
             }
             write_requests.append(write_request)
@@ -150,8 +176,8 @@ class DynamoDBLoader:
         if operation == "delete":
             return [
                 {
-                    "AtcoCode": self.deserializer.deserialize(
-                        item["DeleteRequest"]["Key"]["AtcoCode"]
+                    self.partition_key: self.deserializer.deserialize(
+                        item["DeleteRequest"]["Key"][self.partition_key]
                     )
                 }
                 for item in unprocessed_items

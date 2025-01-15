@@ -5,7 +5,6 @@ Naptan Parser for XMLs
 from pathlib import Path
 from typing import Any, Iterator
 
-from boto3.dynamodb.types import TypeSerializer
 from common_layer.dynamodb.client_loader import DynamoDBLoader
 from lxml import etree
 from structlog.stdlib import get_logger
@@ -58,16 +57,21 @@ def download_naptan_xml(url: str, data_dir: Path) -> Path:
         raise
 
 
-def parse_location(stop_point: etree._Element) -> dict[str, str] | None:
+def parse_location(stop_point: etree._Element) -> dict[str, str | None] | None:
     """Extract location data from stop point with minimal traversal."""
 
     # Direct traversal to Translation element
     for location in stop_point.iter(f"{NAPTAN_NS_PREFIX}Translation"):
-        result = {"Longitude": "", "Latitude": "", "Easting": "", "Northing": ""}
+        result: dict[str, str | None] = {
+            "Longitude": None,
+            "Latitude": None,
+            "Easting": None,
+            "Northing": None,
+        }
 
         for child in location:
             if child.tag in LOCATION_TAGS:
-                result[LOCATION_TAGS[child.tag]] = child.text or ""
+                result[LOCATION_TAGS[child.tag]] = child.text or None
 
         if result["Easting"] and result["Northing"]:
             return result
@@ -77,33 +81,33 @@ def parse_location(stop_point: etree._Element) -> dict[str, str] | None:
     return None
 
 
-def parse_descriptor(stop_point: etree._Element) -> dict[str, str]:
+def parse_descriptor(stop_point: etree._Element) -> dict[str, str | None]:
     """Extract descriptor data from stop point with minimal traversal."""
     descriptor_tag = f"{NAPTAN_NS_PREFIX}Descriptor"
 
     # Direct traversal to find Descriptor element
     for descriptor in stop_point:
         if descriptor.tag == descriptor_tag:
-            result = {
-                "CommonName": "",
-                "ShortCommonName": "",
-                "Street": "",
-                "Landmark": "",
-                "Indicator": "",
+            result: dict[str, str | None] = {
+                "CommonName": None,
+                "ShortCommonName": None,
+                "Street": None,
+                "Landmark": None,
+                "Indicator": None,
             }
 
             for child in descriptor:
                 if child.tag in DESCRIPTOR_TAGS:
-                    result[DESCRIPTOR_TAGS[child.tag]] = child.text or ""
+                    result[DESCRIPTOR_TAGS[child.tag]] = child.text or None
 
             return result
 
     return {
-        "CommonName": "",
-        "ShortCommonName": "",
-        "Street": "",
-        "Landmark": "",
-        "Indicator": "",
+        "CommonName": None,
+        "ShortCommonName": None,
+        "Street": None,
+        "Landmark": None,
+        "Indicator": None,
     }
 
 
@@ -125,10 +129,6 @@ def parse_stop_areas(stop_point: etree._Element) -> list[str]:
 def parse_stop_point(stop_point: etree._Element) -> dict[str, Any] | None:
     """
     Parse a single StopPoint XML into a Dictionary
-    The Stop is skipped if:
-        - Status != active
-        - Modification = delete
-        - Easting or Northing missing
     """
     try:
         # Early validation
@@ -139,11 +139,11 @@ def parse_stop_point(stop_point: etree._Element) -> dict[str, Any] | None:
             return None
 
         # Initialize with attributes
-        stop_data: dict[str, str | list[str]] = {
+        stop_data: dict[str, Any] = {
             "Status": "active",
-            "CreationDateTime": stop_point.get("CreationDateTime", ""),
-            "ModificationDateTime": stop_point.get("ModificationDateTime", ""),
-            "RevisionNumber": stop_point.get("RevisionNumber", ""),
+            "CreationDateTime": stop_point.get("CreationDateTime") or None,
+            "ModificationDateTime": stop_point.get("ModificationDateTime") or None,
+            "RevisionNumber": stop_point.get("RevisionNumber") or None,
         }
 
         # Get location data first as it's a common rejection point
@@ -185,10 +185,10 @@ def parse_stop_point(stop_point: etree._Element) -> dict[str, Any] | None:
         if stop_areas:
             stop_data["StopAreas"] = stop_areas
 
-        return stop_data
+        # Clean final data - convert any remaining empty strings to None
+        return {k: (v if v not in ["", None] else None) for k, v in stop_data.items()}
 
-    # Ensure that for any exception processing a StopPoint, we return None and continue
-    except Exception:  # pylint: disable=broad-exception-caught
+    except Exception:
         log.error("Failed to parse stop point", exc_info=True)
         return None
 
