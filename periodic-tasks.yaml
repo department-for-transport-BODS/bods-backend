@@ -394,71 +394,77 @@ Resources:
                     Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-app-username'
 
   CommonLambdaExecutionRole:
-    Type: AWS::IAM::ManagedPolicy
+    Type: AWS::IAM::Role
     Properties:
-      Description: Common policy for PT Lambda functions with S3, KMS, and RDS access
-      PolicyDocument:
+      Description: Common role for PT Lambda functions with S3, KMS, and RDS access
+      AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
           - Effect: Allow
-            Action:
-              - logs:CreateLogGroup
-              - logs:CreateLogStream
-              - logs:PutLogEvents
-            Resource: '*'
-          - Effect: Allow
-            Action:
-              - ec2:CreateNetworkInterface
-              - ec2:DescribeNetworkInterfaces
-              - ec2:DeleteNetworkInterface
-            Resource: '*'
-          - Effect: Allow
-            Action:
-              - s3:PutObject
-              - s3:GetObject
-            Resource: !Sub
-              - '${BucketArn}/*'
-              - BucketArn: !If
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !If
+          - IsUsingBodsInfra
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
+          - !If
+            - IsStandalone
+            - !Ref RDSProxyAccessPolicy
+            - !If
+              - IsNotLocal
+              - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-rw-user-access-policy-arn}}'
+              - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess'
+        - !If
+          - IsUsingBodsInfra
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
+          - !If
+            - IsStandalone
+            - !Ref AWS::NoValue
+            - !If
+              - IsNotLocal
+              - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-ro-user-access-policy-arn}}'
+              - 'arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess'
+      Policies:
+        - PolicyName: CommonLambdaPermissions
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - ec2:CreateNetworkInterface
+                  - ec2:DescribeNetworkInterfaces
+                  - ec2:DeleteNetworkInterface
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                Resource: !Sub
+                  - '${BucketArn}/*'
+                  - BucketArn: !If
+                      - IsUsingBodsInfra
+                      - !Sub 'arn:aws:s3:::{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
+                      - !If
+                        - IsStandalone
+                        - Fn::Join:
+                            - ''
+                            - - 'arn:aws:s3:::'
+                              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-s3-bucket-name'
+                        - !Ref AWS::NoValue
+              - Effect: Allow
+                Action:
+                  - kms:GenerateDataKey
+                Resource: !If
                   - IsUsingBodsInfra
-                  - !Sub 'arn:aws:s3:::{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
+                  - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
                   - !If
                     - IsStandalone
-                    - Fn::Join:
-                        - ''
-                        - - 'arn:aws:s3:::'
-                          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-s3-bucket-name'
-                    - !Ref AWS::NoValue
-          - Effect: Allow
-            Action:
-              - kms:GenerateDataKey
-            Resource: !If
-              - IsUsingBodsInfra
-              - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-              - !If
-                - IsStandalone
-                - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
-                - '*'
-          - Effect: Allow
-            Action:
-              - rds-db:connect
-            Resource: !If
-              - IsUsingBodsInfra
-              - !Sub
-                - '{{resolve:ssm:/bodds/${Environment}/rds-proxy-resource-id}}/${DbUsername}'
-                - DbUsername: !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
-              - !If
-                - IsStandalone
-                - !Sub
-                  - '${ProxyId}/${AppUsername}'
-                  - ProxyId:
-                      Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-resource-id'
-                    AppUsername:
-                      Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-app-username'
-                - !If
-                  - IsNotLocal
-                  - !Sub
-                    - '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-resource-id}}/${DbUsername}'
-                    - DbUsername: !Sub '{{resolve:ssm:/bodds/${Environment}/etl-pg-rw-user}}'
-                  - !Sub
-                    - 'arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:*/${DbUsername}'
-                    - DbUsername: !Ref RdsDbUsername
+                    - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+                    - '*'
