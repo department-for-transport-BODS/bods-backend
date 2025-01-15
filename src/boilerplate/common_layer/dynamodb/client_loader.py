@@ -7,7 +7,7 @@ import time
 from typing import Any, Literal, NotRequired, TypedDict
 
 import boto3
-from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
+from boto3.dynamodb.types import TypeDeserializer
 from botocore.exceptions import ClientError
 from structlog.stdlib import get_logger
 
@@ -102,7 +102,6 @@ class DynamoDBLoader:
         self.table_name = table_name
         self.table = self.dynamodb.Table(table_name)
         self.batch_size = 25
-        self.serializer = TypeSerializer()
         self.deserializer = TypeDeserializer()
         self.log = get_logger().bind(table_name=table_name)
         self.partition_key = partition_key

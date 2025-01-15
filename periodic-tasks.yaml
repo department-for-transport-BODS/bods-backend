@@ -258,9 +258,9 @@ Resources:
       Role: !GetAtt NaptanCacheLambdaExecutionRole.Arn
       Layers:
         - !Ref BoilerplateLambdaLayerArn
-      Timeout: 300
+      Timeout: 600
       EphemeralStorage:
-        Size: 1024
+        Size: 1280
       Events:
         DailySchedule:
           Type: Schedule
