@@ -242,22 +242,6 @@ def stream_stops(
         del context
 
 
-def prepare_dynamo_items(
-    stops: list[dict[str, Any]], serializer: TypeSerializer
-) -> Iterator[dict[str, Any]]:
-    """Convert stop data to DynamoDB format."""
-    for stop in stops:
-        try:
-            yield {k: serializer.serialize(v) for k, v in stop.items() if v is not None}
-        # Ensure that for any exception processing a StopPoint, we return None and continue
-        except Exception:  # pylint: disable=broad-exception-caught
-            log.error(
-                "Failed to serialize stop for DynamoDB",
-                stop_data=stop,
-                exc_info=True,
-            )
-
-
 def prepare_naptan_data(url: str, data_dir: Path) -> Path:
     """
     Download and prepare NaPTAN data for processing.
@@ -283,7 +267,7 @@ def process_naptan_data(
 
     # Process stops in batches
     for stop_batch in stream_stops(xml_path):
-        for item in prepare_dynamo_items(stop_batch, dynamo_loader.serializer):
+        for item in stop_batch:
             batch.append(item)
 
             if len(batch) >= dynamo_loader.batch_size:
