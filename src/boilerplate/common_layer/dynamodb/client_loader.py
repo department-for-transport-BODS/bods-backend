@@ -217,7 +217,11 @@ class DynamoDBLoader:
                     wait_time=wait_time,
                     operation=operation,
                 )
-
+            self.log.info(
+                "Sending batch write request",
+                request_items=unprocessed_items,
+                table_name=self.table_name,
+            )
             try:
                 response = self.dynamodb.meta.client.batch_write_item(
                     RequestItems=unprocessed_items
@@ -226,12 +230,14 @@ class DynamoDBLoader:
                 retry_count += 1
             except ClientError as e:
                 error_response: _ClientErrorResponseTypeDef = e.response
+                error_message = error_response.get("Error", {}).get("Message", "")
                 error_code = error_response.get("Error", {}).get("Code", "")
                 self.log.error(
                     "Failed to execute batch write operation",
                     error_code=error_code,
                     retry_count=retry_count,
                     operation=operation,
+                    error_message=error_message,
                 )
                 if error_code == "ProvisionedThroughputExceededException":
                     retry_count += 1
