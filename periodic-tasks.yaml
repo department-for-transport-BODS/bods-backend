@@ -271,7 +271,7 @@ Resources:
             Input: !Sub |
               {
                 "naptan_url": "https://naptan.api.dft.gov.uk/v1/access-nodes?dataFormat=xml",
-                "dynamo_table": "${ProjectName}-${Environment}-naptan-stop-points",
+                "dynamo_table": "${ProjectName}-${Environment}-naptan-stop-points-table",
                 "aws_region": "eu-west-2"
               }
   #########################################
@@ -282,7 +282,7 @@ Resources:
     ## checkov:skip=CKV_AWS_28:Ensure DynamoDB point in time recovery (backup) is enabled. Backup isn't Required, it's a cache
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub '${ProjectName}-${Environment}-naptan-stop-points'
+      TableName: !Sub '${ProjectName}-${Environment}-naptan-stop-points-table'
       AttributeDefinitions:
         - AttributeName: AtcoCode
           AttributeType: S
