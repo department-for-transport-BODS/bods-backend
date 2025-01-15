@@ -60,8 +60,6 @@ def handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any]:
             table_name=input_data.dynamo_table, region=input_data.aws_region
         )
 
-        dynamo_loader.create_table_if_not_exists()
-
         processed_count, error_count = load_naptan_data_from_xml(
             url=str(input_data.naptan_url),
             data_dir=Path("/tmp"),
