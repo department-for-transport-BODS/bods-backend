@@ -110,7 +110,9 @@ class DynamoDBLoader:
     def prepare_put_requests(
         self, items: list[dict[str, Any]]
     ) -> BatchWriteItemInputRequestItems:
-        """Convert items into DynamoDB put request format."""
+        """
+        Convert items into DynamoDB put request format.
+        """
         write_requests: list[WriteRequestTypeDef] = []
 
         for item in items:
@@ -125,6 +127,9 @@ class DynamoDBLoader:
 
             dynamodb_item = {k: self.serializer.serialize(v) for k, v in item.items()}
             write_request: WriteRequestTypeDef = {"PutRequest": {"Item": dynamodb_item}}
+            self.log.debug(
+                "Created Write Request", write_request=write_request, item=item
+            )
             write_requests.append(write_request)
 
         return {self.table_name: write_requests}
