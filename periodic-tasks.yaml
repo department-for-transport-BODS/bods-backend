@@ -251,6 +251,47 @@ Resources:
       Role: !GetAtt NaptanCacheLambdaExecutionRole.Arn
       Layers:
         - !Ref BoilerplateLambdaLayerArn
+      Events:
+        DailySchedule:
+          Type: Schedule
+          Properties:
+            Name: !Sub '${ProjectName}-${Environment}-${SubFunction}-naptan-stoppoint-cache-daily'
+            Description: 'Trigger Naptan cache update every 24 hours'
+            Schedule: 'rate(24 hours)'
+            Input: !Sub |
+              {
+                "naptan_url": "https://naptan.api.dft.gov.uk/v1/access-nodes?dataFormat=xml",
+                "dynamo_table": "${ProjectName}-${Environment}-naptan-stop-points",
+                "aws_region": "eu-west-2"
+              }
+  #########################################
+  #### DYNAMODB TABLES ####
+  #########################################
+
+  NaptanStopPointTable:
+    ## checkov:skip=CKV_AWS_28:Ensure DynamoDB point in time recovery (backup) is enabled. Backup isn't Required, it's a cache
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${ProjectName}-${Environment}-naptan-stop-points'
+      AttributeDefinitions:
+        - AttributeName: ATCOCode
+          AttributeType: S
+      KeySchema:
+        - AttributeName: ATCOCode
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: false
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: 'KMS'
+        KMSMasterKeyId: !If
+          - IsUsingBodsInfra
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+          - !If
+            - IsStandalone
+            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+            - !Ref AWS::NoValue
 
   #########################################
   #### IAM POLICIES ####
