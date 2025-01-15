@@ -206,11 +206,6 @@ class DynamoDBLoader:
                     wait_time=wait_time,
                     operation=operation,
                 )
-            self.log.info(
-                "Sending batch write request",
-                request_items=unprocessed_items,
-                table_name=self.table_name,
-            )
             try:
                 response = self.dynamodb.meta.client.batch_write_item(
                     RequestItems=unprocessed_items
