@@ -182,7 +182,7 @@ Resources:
             End: true
 
   #########################
-  #### ITERATOR LAMBDA ####
+  #### LAMBDA FUNCTIONS ####
   #########################
   IteratorLambda:
     Type: AWS::Serverless::Function
@@ -194,8 +194,6 @@ Resources:
       MemorySize: 128
       Policies:
         - !Ref CommonLambdaExecutionRole
-        - 'AWSLambdaBasicExecutionRole'
-        - 'AWSLambdaVPCAccessExecutionRole'
         - LambdaInvokePolicy:
             FunctionName: !Ref GenerateGtfsRtLambda
         - LambdaInvokePolicy:
@@ -205,22 +203,6 @@ Resources:
       LoggingConfig:
         LogGroup: !Ref IteratorLambdaLogGroup
 
-  IteratorLambdaLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-iterator-lambda'
-      KmsKeyId: !If
-        - IsUsingBodsInfra
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-        - !If
-          - IsStandalone
-          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
-          - !Ref AWS::NoValue
-      RetentionInDays: 30
-
-  ################################
-  #### GENERATE GTFSRT LAMBDA ####
-  ################################
   GenerateGtfsRtLambda:
     Type: AWS::Serverless::Function
     Properties:
@@ -229,8 +211,6 @@ Resources:
       Handler: create_gtfsrt_zip.lambda_handler
       Policies:
         - !Ref CommonLambdaExecutionRole
-        - 'AWSLambdaBasicExecutionRole'
-        - 'AWSLambdaVPCAccessExecutionRole'
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       Environment:
@@ -240,22 +220,6 @@ Resources:
       LoggingConfig:
         LogGroup: !Ref GenerateGtfsRtLambdaLogGroup
 
-  GenerateGtfsRtLambdaLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-generate-gtfsrt-lambda'
-      KmsKeyId: !If
-        - IsUsingBodsInfra
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-        - !If
-          - IsStandalone
-          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
-          - !Ref AWS::NoValue
-      RetentionInDays: 30
-
-  ################################
-  #### GENERATE SIRIVM LAMBDA ####
-  ################################
   GenerateSiriVmLambda:
     Type: AWS::Serverless::Function
     Properties:
@@ -264,8 +228,6 @@ Resources:
       Handler: create_sirivm_zip.lambda_handler
       Policies:
         - !Ref CommonLambdaExecutionRole
-        - 'AWSLambdaBasicExecutionRole'
-        - 'AWSLambdaVPCAccessExecutionRole'
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       Environment:
@@ -274,22 +236,6 @@ Resources:
       LoggingConfig:
         LogGroup: !Ref GenerateSiriVmLambdaLogGroup
 
-  GenerateSiriVmLambdaLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-generate-sirivm-lambda'
-      KmsKeyId: !If
-        - IsUsingBodsInfra
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-        - !If
-          - IsStandalone
-          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
-          - !Ref AWS::NoValue
-      RetentionInDays: 30
-
-  ####################################
-  #### GENERATE SIRIVM TFL LAMBDA ####
-  ####################################
   GenerateSiriVmTflLambda:
     Type: AWS::Serverless::Function
     Properties:
@@ -298,8 +244,6 @@ Resources:
       Handler: create_sirivm_tfl_zip.lambda_handler
       Policies:
         - !Ref CommonLambdaExecutionRole
-        - 'AWSLambdaBasicExecutionRole'
-        - 'AWSLambdaVPCAccessExecutionRole'
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       Environment:
@@ -308,30 +252,15 @@ Resources:
       LoggingConfig:
         LogGroup: !Ref GenerateSiriVmTflLambdaLogGroup
 
-  GenerateSiriVmTflLambdaLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-generate-sirivm-tfl-lambda'
-      KmsKeyId: !If
-        - IsUsingBodsInfra
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-        - !If
-          - IsStandalone
-          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
-          - !Ref AWS::NoValue
-      RetentionInDays: 30
-
   PopulateDynamodbNaptanCache:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-populate-dynamodb-naptan-cache'
+      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-populate-dynamodb-naptan-cache-lambda'
       Description: Periodic Tasks - Populate the DynamoDB Naptan Cache
       CodeUri: ./src/periodic_tasks/naptan_cache
       Handler: app.handler_naptan_cache.lambda_handler
       Policies:
         - !Ref CommonLambdaExecutionRole
-        - 'AWSLambdaBasicExecutionRole'
-        - 'AWSLambdaVPCAccessExecutionRole'
       Layers:
         - !Ref BoilerplateLambdaLayerArn
 
@@ -405,26 +334,22 @@ Resources:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
       ManagedPolicyArns:
+        - 'AWSLambdaBasicExecutionRole'
+        - 'AWSLambdaVPCAccessExecutionRole'
         - !If
           - IsUsingBodsInfra
           - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
           - !If
-            - IsStandalone
-            - !Ref RDSProxyAccessPolicy
-            - !If
-              - IsNotLocal
-              - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-rw-user-access-policy-arn}}'
-              - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess'
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-rw-user-access-policy-arn}}'
+            - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess'
         - !If
           - IsUsingBodsInfra
           - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
           - !If
-            - IsStandalone
-            - !Ref AWS::NoValue
-            - !If
-              - IsNotLocal
-              - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-ro-user-access-policy-arn}}'
-              - 'arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess'
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-ro-user-access-policy-arn}}'
+            - 'arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess'
       Policies:
         - PolicyName: CommonLambdaPermissions
           PolicyDocument:
@@ -468,3 +393,70 @@ Resources:
                     - IsStandalone
                     - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
                     - '*'
+
+  ####################################
+  #### Log Groups ####
+  ####################################
+  IteratorLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-iterator-lambda'
+      KmsKeyId: !If
+        - IsUsingBodsInfra
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - !Ref AWS::NoValue
+      RetentionInDays: 30
+
+  GenerateGtfsRtLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-generate-gtfsrt-lambda'
+      KmsKeyId: !If
+        - IsUsingBodsInfra
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - !Ref AWS::NoValue
+      RetentionInDays: 30
+  GenerateSiriVmLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-generate-sirivm-lambda'
+      KmsKeyId: !If
+        - IsUsingBodsInfra
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - !Ref AWS::NoValue
+      RetentionInDays: 30
+
+  GenerateSiriVmTflLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-generate-sirivm-tfl-lambda'
+      KmsKeyId: !If
+        - IsUsingBodsInfra
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - !Ref AWS::NoValue
+      RetentionInDays: 30
+
+  PopulateDynamodbNaptanCacheLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-populate-dynamodb-naptan-cache-lambda'
+      KmsKeyId: !If
+        - IsUsingBodsInfra
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - !Ref AWS::NoValue
+      RetentionInDays: 30
