@@ -54,7 +54,6 @@ Globals:
     Timeout: 60
     MemorySize: 1024
     ReservedConcurrentExecutions: 3
-
     Environment:
       Variables:
         PROJECT_ENV: !Ref Environment
@@ -265,45 +264,8 @@ Resources:
         - !Ref BoilerplateLambdaLayerArn
 
   #########################################
-  #### GENERAL CONFIGURATION RESOURCES ####
+  #### IAM POLICIES ####
   #########################################
-  CommonLambdaSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Condition: IsNotLocal
-    Properties:
-      GroupDescription: !Sub 'Security group for ${ProjectName}-${Environment}-${SubFunction} PT related lambda functions'
-      GroupName: !Sub '${ProjectName}-${Environment}-${SubFunction}-common-lambda'
-      SecurityGroupEgress:
-        - IpProtocol: '-1'
-          Description: 'Allow outbound connectivity to any'
-          CidrIp: '0.0.0.0/0'
-      VpcId: !If
-        - IsUsingBodsInfra
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/vpc-id}}'
-        - !If
-          - IsStandalone
-          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-vpc-id'
-          - !Ref AWS::NoValue
-      Tags:
-        - Key: Name
-          Value: !Sub '${ProjectName}-${Environment}-${SubFunction}-common-lambda'
-
-  CommonLambdaSecurityGroupIngress:
-    Type: AWS::EC2::SecurityGroupIngress
-    Condition: IsNotLocal
-    Properties:
-      GroupId: !If
-        - IsUsingBodsInfra
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-sg-id}}'
-        - !If
-          - IsStandalone
-          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-sg-id'
-          - !Ref AWS::NoValue
-      Description: !Sub 'Allow inbound connectivity from ${ProjectName}-${Environment}-${SubFunction}-common-lambda'
-      IpProtocol: tcp
-      FromPort: 5432
-      ToPort: 5432
-      SourceSecurityGroupId: !GetAtt CommonLambdaSecurityGroup.GroupId
 
   CommonLambdaExecutionRole:
     Type: AWS::IAM::Role
@@ -378,6 +340,46 @@ Resources:
                     - IsStandalone
                     - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
                     - '*'
+  #########################################
+  #### SECURITY GROUPS ####
+  #########################################
+  CommonLambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Condition: IsNotLocal
+    Properties:
+      GroupDescription: !Sub 'Security group for ${ProjectName}-${Environment}-${SubFunction} PT related lambda functions'
+      GroupName: !Sub '${ProjectName}-${Environment}-${SubFunction}-common-lambda'
+      SecurityGroupEgress:
+        - IpProtocol: '-1'
+          Description: 'Allow outbound connectivity to any'
+          CidrIp: '0.0.0.0/0'
+      VpcId: !If
+        - IsUsingBodsInfra
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/vpc-id}}'
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-vpc-id'
+          - !Ref AWS::NoValue
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-${SubFunction}-common-lambda'
+
+  CommonLambdaSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Condition: IsNotLocal
+    Properties:
+      GroupId: !If
+        - IsUsingBodsInfra
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-sg-id}}'
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-sg-id'
+          - !Ref AWS::NoValue
+      Description: !Sub 'Allow inbound connectivity from ${ProjectName}-${Environment}-${SubFunction}-common-lambda'
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432
+      SourceSecurityGroupId: !GetAtt CommonLambdaSecurityGroup.GroupId
 
   ####################################
   #### Log Groups ####
