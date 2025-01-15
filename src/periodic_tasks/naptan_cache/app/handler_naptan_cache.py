@@ -45,60 +45,40 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
     """
     configure_logging(context)
     try:
-        try:
-            input_data = NaptanProcessingInput.model_validate(event)
-        except ValidationError as e:
-            log.error("Invalid input data", error=str(e))
-            return {
-                "statusCode": 400,
-                "body": json.dumps(
-                    {"message": "Invalid input data", "errors": e.errors()}
-                ),
-            }
-
-        dynamo_loader = DynamoDBLoader(
-            table_name=input_data.dynamo_table, region=input_data.aws_region
-        )
-
-        processed_count, error_count = load_naptan_data_from_xml(
-            url=str(input_data.naptan_url),
-            data_dir=Path("/tmp"),
-            dynamo_loader=dynamo_loader,
-        )
-
-        response = {
-            "statusCode": 200,
-            "body": {
-                "message": "Successfully processed NaPTAN data",
-                "processed_count": processed_count,
-                "error_count": error_count,
-                "table": input_data.dynamo_table,
-                "region": input_data.aws_region,
-            },
-        }
-
-        log.info(
-            "Successfully completed NaPTAN processing",
-            processed_count=processed_count,
-            error_count=error_count,
-            table=input_data.dynamo_table,
-        )
-
-        return response
-
-    except Exception as e:
-        log.exception("Failed to process NaPTAN data")
-        error_details = {
-            "error": "DataProcessingError",
-            "cause": str(e),
-            "errorType": type(e).__name__,
-            "stackTrace": [
-                line
-                for line in traceback.format_exc().split("\n")
-                if line.strip() and 'File "<' not in line
-            ][:10],
-        }
+        input_data = NaptanProcessingInput.model_validate(event)
+    except ValidationError as e:
+        log.error("Invalid input data", error=str(e))
         return {
-            "statusCode": 500,
-            "error": error_details,
+            "statusCode": 400,
+            "body": json.dumps({"message": "Invalid input data", "errors": e.errors()}),
         }
+
+    dynamo_loader = DynamoDBLoader(
+        table_name=input_data.dynamo_table, region=input_data.aws_region
+    )
+
+    processed_count, error_count = load_naptan_data_from_xml(
+        url=str(input_data.naptan_url),
+        data_dir=Path("/tmp"),
+        dynamo_loader=dynamo_loader,
+    )
+
+    response = {
+        "statusCode": 200,
+        "body": {
+            "message": "Successfully processed NaPTAN data",
+            "processed_count": processed_count,
+            "error_count": error_count,
+            "table": input_data.dynamo_table,
+            "region": input_data.aws_region,
+        },
+    }
+
+    log.info(
+        "Successfully completed NaPTAN processing",
+        processed_count=processed_count,
+        error_count=error_count,
+        table=input_data.dynamo_table,
+    )
+
+    return response

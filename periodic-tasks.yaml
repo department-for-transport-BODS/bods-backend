@@ -259,6 +259,8 @@ Resources:
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       Timeout: 300
+      EphemeralStorage:
+        Size: 1024
       Events:
         DailySchedule:
           Type: Schedule
