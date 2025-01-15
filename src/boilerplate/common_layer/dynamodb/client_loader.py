@@ -116,7 +116,6 @@ class DynamoDBLoader:
         write_requests: list[WriteRequestTypeDef] = []
 
         for item in items:
-            # Validate item has the partition key
             if self.partition_key not in item:
                 self.log.warning(
                     "Skipping item missing partition key",
@@ -125,11 +124,7 @@ class DynamoDBLoader:
                 )
                 continue
 
-            dynamodb_item = {k: self.serializer.serialize(v) for k, v in item.items()}
-            write_request: WriteRequestTypeDef = {"PutRequest": {"Item": dynamodb_item}}
-            self.log.debug(
-                "Created Write Request", write_request=write_request, item=item
-            )
+            write_request: WriteRequestTypeDef = {"PutRequest": {"Item": item}}
             write_requests.append(write_request)
 
         return {self.table_name: write_requests}
@@ -149,13 +144,7 @@ class DynamoDBLoader:
                 continue
 
             write_request: WriteRequestTypeDef = {
-                "DeleteRequest": {
-                    "Key": {
-                        self.partition_key: self.serializer.serialize(
-                            item[self.partition_key]
-                        )
-                    }
-                }
+                "DeleteRequest": {"Key": {self.partition_key: item[self.partition_key]}}
             }
             write_requests.append(write_request)
 
