@@ -123,7 +123,7 @@ class DynamoDBLoader:
         for item in items:
             write_request: WriteRequestTypeDef = {
                 "DeleteRequest": {
-                    "Key": {"ATCOCode": self.serializer.serialize(item["ATCOCode"])}
+                    "Key": {"AtcoCode": self.serializer.serialize(item["AtcoCode"])}
                 }
             }
             write_requests.append(write_request)
@@ -150,8 +150,8 @@ class DynamoDBLoader:
         if operation == "delete":
             return [
                 {
-                    "ATCOCode": self.deserializer.deserialize(
-                        item["DeleteRequest"]["Key"]["ATCOCode"]
+                    "AtcoCode": self.deserializer.deserialize(
+                        item["DeleteRequest"]["Key"]["AtcoCode"]
                     )
                 }
                 for item in unprocessed_items
