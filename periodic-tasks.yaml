@@ -57,6 +57,10 @@ Globals:
     Layers:
       - !Sub arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV3-python311-x86_64:5
       - !Sub 'arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:53'
+    LoggingConfig:
+      LogFormat: JSON
+    Tracing: Active
+    PropagateTags: true
     Environment:
       Variables:
         PROJECT_ENV: !Ref Environment
@@ -254,6 +258,7 @@ Resources:
       Role: !GetAtt NaptanCacheLambdaExecutionRole.Arn
       Layers:
         - !Ref BoilerplateLambdaLayerArn
+      Timeout: 300
       Events:
         DailySchedule:
           Type: Schedule

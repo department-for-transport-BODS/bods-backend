@@ -3,6 +3,7 @@ Naptan Cache Lambda
 """
 
 import json
+import traceback
 from pathlib import Path
 from typing import Any
 
@@ -38,13 +39,12 @@ class NaptanProcessingInput(BaseModel):
 
 
 @tracer.capture_lambda_handler
-def handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any]:
+def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any]:
     """
     Lambda handler for loading Naptan Data in to DynamoDB
     """
     configure_logging(context)
     try:
-        # Parse and validate input
         try:
             input_data = NaptanProcessingInput.model_validate(event)
         except ValidationError as e:
@@ -68,15 +68,13 @@ def handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any]:
 
         response = {
             "statusCode": 200,
-            "body": json.dumps(
-                {
-                    "message": "Successfully processed NaPTAN data",
-                    "processed_count": processed_count,
-                    "error_count": error_count,
-                    "table": input_data.dynamo_table,
-                    "region": input_data.aws_region,
-                }
-            ),
+            "body": {
+                "message": "Successfully processed NaPTAN data",
+                "processed_count": processed_count,
+                "error_count": error_count,
+                "table": input_data.dynamo_table,
+                "region": input_data.aws_region,
+            },
         }
 
         log.info(
@@ -90,7 +88,17 @@ def handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any]:
 
     except Exception as e:
         log.exception("Failed to process NaPTAN data")
+        error_details = {
+            "error": "DataProcessingError",
+            "cause": str(e),
+            "errorType": type(e).__name__,
+            "stackTrace": [
+                line
+                for line in traceback.format_exc().split("\n")
+                if line.strip() and 'File "<' not in line
+            ][:10],
+        }
         return {
             "statusCode": 500,
-            "body": json.dumps({"message": f"Error processing NaPTAN data: {str(e)}"}),
+            "error": error_details,
         }
