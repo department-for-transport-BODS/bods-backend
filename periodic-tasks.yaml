@@ -420,6 +420,21 @@ Resources:
                   - dynamodb:DeleteItem
                   - dynamodb:BatchWriteItem
                 Resource: !GetAtt NaptanStopPointTable.Arn
+        - PolicyName: KMSAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:GenerateDataKey
+                Resource: !If
+                  - IsUsingBodsInfra
+                  - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+                  - !If
+                    - IsStandalone
+                    - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+                    - '*'
   #########################################
   #### SECURITY GROUPS ####
   #########################################
