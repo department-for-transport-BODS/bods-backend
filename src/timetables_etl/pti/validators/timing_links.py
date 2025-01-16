@@ -95,11 +95,6 @@ def validate_journey_pattern_timing_links(
             if time_duration and time_duration != ZERO_TIME_DURATION:
                 vj_link = vehicle_journey_map.get(link_id)
                 if vj_link and (vj_link.has_from or vj_link.has_to):
-                    log.info(
-                        "PTI Violation for JourneyPatternTimingLink:",
-                        "Corresponding VehicleJourneyTimingLink has To or From elements.",
-                        journey_timing_link_id=link_id,
-                    )
                     non_compliant_elements.append(link)
     return non_compliant_elements
 
