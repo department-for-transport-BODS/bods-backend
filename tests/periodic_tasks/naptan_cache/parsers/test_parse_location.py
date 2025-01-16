@@ -38,7 +38,7 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
                 "Easting": "359389",
                 "Northing": "172389",
             },
-            id="Complete Location Data",
+            id="Bristol City Centre - Complete Location Data",
         ),
         pytest.param(
             create_stop_point(
@@ -54,12 +54,75 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
             """
             ),
             {
-                "Longitude": None,
-                "Latitude": None,
+                "Longitude": "-2.58579",
+                "Latitude": "51.44902",
                 "Easting": "359389",
                 "Northing": "172389",
             },
-            id="Only Easting Northing",
+            id="Bristol City Centre - Only Easting Northing",
+        ),
+        pytest.param(
+            create_stop_point(
+                """
+                <Place>
+                    <Location>
+                        <Translation>
+                            <Easting>383187</Easting>
+                            <Northing>398952</Northing>
+                        </Translation>
+                    </Location>
+                </Place>
+            """
+            ),
+            {
+                "Longitude": "-2.25485",
+                "Latitude": "53.48701",
+                "Easting": "383187",
+                "Northing": "398952",
+            },
+            id="Manchester City Centre - Only Easting Northing",
+        ),
+        pytest.param(
+            create_stop_point(
+                """
+                <Place>
+                    <Location>
+                        <Translation>
+                            <Easting>325225</Easting>
+                            <Northing>672254</Northing>
+                        </Translation>
+                    </Location>
+                </Place>
+            """
+            ),
+            {
+                "Longitude": "-3.19858",
+                "Latitude": "55.93750",
+                "Easting": "325225",
+                "Northing": "672254",
+            },
+            id="Edinburgh City Centre - Only Easting Northing",
+        ),
+        pytest.param(
+            create_stop_point(
+                """
+                <Place>
+                    <Location>
+                        <Translation>
+                            <Easting>317929</Easting>
+                            <Northing>175958</Northing>
+                        </Translation>
+                    </Location>
+                </Place>
+            """
+            ),
+            {
+                "Longitude": "-3.18313",
+                "Latitude": "51.47661",
+                "Easting": "317929",
+                "Northing": "175958",
+            },
+            id="Cardiff City Centre - Only Easting Northing",
         ),
         pytest.param(
             create_stop_point(
