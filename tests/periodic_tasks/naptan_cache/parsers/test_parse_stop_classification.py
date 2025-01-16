@@ -10,6 +10,7 @@ from periodic_tasks.naptan_cache.app.data_loader.parsers.parser_stop_classificat
     parse_stop_classification,
 )
 from tests.periodic_tasks.naptan_cache.parsers.common import (
+    NAPTAN_PREFIX,
     create_stop_point,
     parse_xml_to_stop_point,
 )
@@ -19,63 +20,100 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
     ("xml_input", "expected"),
     [
         pytest.param(
+            create_stop_point(
+                """
+                <StopClassification>
+                    <OnStreet>
+                        <Bus>
+                            <BusStopType>MKD</BusStopType>
+                            <TimingStatus>OTH</TimingStatus>
+                            <MarkedPoint>
+                                <Bearing>
+                                    <CompassPoint>E</CompassPoint>
+                                </Bearing>
+                            </MarkedPoint>
+                        </Bus>
+                    </OnStreet>
+                </StopClassification>
             """
-            <OnStreet>
-                <Bus>
-                    <BusStopType>MKD</BusStopType>
-                </Bus>
-            </OnStreet>
-            """,
+            ),
             "MKD",
             id="SimpleBusStopType",
         ),
         pytest.param(
+            create_stop_point(
+                """
+                <StopClassification>
+                    <OnStreet>
+                        <Bus>
+                            <BusStopType>MKD</BusStopType>
+                            <TimingStatus>OTH</TimingStatus>
+                            <MarkedPoint>
+                                <Bearing>
+                                    <CompassPoint>NW</CompassPoint>
+                                </Bearing>
+                            </MarkedPoint>
+                        </Bus>
+                    </OnStreet>
+                </StopClassification>
             """
-            <OnStreet>
-                <Bus>
-                    <BusStopType>CUS</BusStopType>
-                    <TimingStatus>OTH</TimingStatus>
-                </Bus>
-            </OnStreet>
-            """,
-            "CUS",
+            ),
+            "MKD",
             id="BusStopTypeWithOtherData",
         ),
         pytest.param(
+            create_stop_point(
+                """
+                <StopClassification>
+                    <OnStreet>
+                        <Bus>
+                            <TimingStatus>OTH</TimingStatus>
+                        </Bus>
+                    </OnStreet>
+                </StopClassification>
             """
-            <OnStreet>
-                <Bus>
-                    <TimingStatus>OTH</TimingStatus>
-                </Bus>
-            </OnStreet>
-            """,
+            ),
             None,
             id="NoBusStopType",
         ),
         pytest.param(
+            create_stop_point(
+                """
+                <StopClassification>
+                    <OnStreet>
+                        <Bus>
+                            <BusStopType></BusStopType>
+                        </Bus>
+                    </OnStreet>
+                </StopClassification>
             """
-            <OnStreet>
-                <Bus>
-                    <BusStopType></BusStopType>
-                </Bus>
-            </OnStreet>
-            """,
+            ),
             None,
             id="EmptyBusStopType",
         ),
         pytest.param(
+            create_stop_point(
+                """
+                <StopClassification>
+                    <OnStreet>
+                        <OtherMode>
+                            <BusStopType>MKD</BusStopType>
+                        </OtherMode>
+                    </OnStreet>
+                </StopClassification>
             """
-            <OnStreet>
-                <OtherMode>
-                    <BusStopType>MKD</BusStopType>
-                </OtherMode>
-            </OnStreet>
-            """,
+            ),
             None,
             id="WrongContainer",
         ),
         pytest.param(
-            "<OnStreet></OnStreet>",
+            create_stop_point(
+                """
+                <StopClassification>
+                    <OnStreet></OnStreet>
+                </StopClassification>
+            """
+            ),
             None,
             id="EmptyOnStreet",
         ),
@@ -85,8 +123,11 @@ def test_extract_bus_stop_type(xml_input: str, expected: str | None) -> None:
     """
     Test extract_bus_stop_type function with various input scenarios.
     """
-    element: etree._Element = etree.fromstring(xml_input.encode())
-    result: str | None = extract_bus_stop_type(element)
+    stop_point: etree._Element = parse_xml_to_stop_point(xml_input)
+    onstreet_element = stop_point.find(f".//{NAPTAN_PREFIX}OnStreet")
+    if onstreet_element is None:
+        raise ValueError("OnStreet element not found")
+    result: str | None = extract_bus_stop_type(onstreet_element)
     assert result == expected
 
 
