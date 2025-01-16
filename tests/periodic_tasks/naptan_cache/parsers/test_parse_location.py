@@ -38,7 +38,7 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
                 "Easting": "359389",
                 "Northing": "172389",
             },
-            id="CompleteLocationData",
+            id="Complete Location Data",
         ),
         pytest.param(
             create_stop_point(
@@ -59,7 +59,7 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
                 "Easting": "359389",
                 "Northing": "172389",
             },
-            id="OnlyEastingNorthing",
+            id="Only Easting Northing",
         ),
         pytest.param(
             create_stop_point(
@@ -75,7 +75,7 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
             """
             ),
             None,
-            id="NoEastingNorthing",
+            id="No Easting Northing",
         ),
         pytest.param(create_stop_point("<Place></Place>"), None, id="NoLocationData"),
         pytest.param(create_stop_point(""), None, id="EmptyStopPoint"),

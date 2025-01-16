@@ -38,7 +38,7 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
             """
             ),
             "MKD",
-            id="SimpleBusStopType",
+            id="Simple BusStopType",
         ),
         pytest.param(
             create_stop_point(
@@ -59,7 +59,7 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
             """
             ),
             "MKD",
-            id="BusStopTypeWithOtherData",
+            id="BusStopType With Other Data",
         ),
         pytest.param(
             create_stop_point(
@@ -74,7 +74,7 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
             """
             ),
             None,
-            id="NoBusStopType",
+            id="No BusStopType",
         ),
         pytest.param(
             create_stop_point(
@@ -89,7 +89,7 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
             """
             ),
             None,
-            id="EmptyBusStopType",
+            id="Empty BusStopType",
         ),
         pytest.param(
             create_stop_point(
@@ -104,7 +104,7 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
             """
             ),
             None,
-            id="WrongContainer",
+            id="Wrong Container",
         ),
         pytest.param(
             create_stop_point(
@@ -115,7 +115,7 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
             """
             ),
             None,
-            id="EmptyOnStreet",
+            id="Empty OnStreet",
         ),
     ],
 )

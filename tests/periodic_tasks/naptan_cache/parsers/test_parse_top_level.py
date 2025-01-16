@@ -37,7 +37,7 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
                 "AdministrativeAreaRef": "009",
             },
             True,
-            id="CompleteTopLevelData",
+            id="Complete TopLevel Data",
         ),
         pytest.param(
             create_stop_point(
@@ -55,7 +55,7 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
                 "AdministrativeAreaRef": None,
             },
             True,
-            id="PartialTopLevelData",
+            id="Partial TopLevel Data",
         ),
         pytest.param(
             create_stop_point(
@@ -73,7 +73,7 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
                 "AdministrativeAreaRef": None,
             },
             False,
-            id="EmptyElements",
+            id="Empty Elements",
         ),
         pytest.param(
             create_stop_point(""),
@@ -86,7 +86,7 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
                 "AdministrativeAreaRef": None,
             },
             False,
-            id="NoTopLevelData",
+            id="No TopLevel Data",
         ),
         pytest.param(
             create_stop_point(
@@ -104,7 +104,7 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
                 "AdministrativeAreaRef": None,
             },
             False,
-            id="MissingAtcoCode",
+            id="Missing AtcoCode",
         ),
     ],
 )

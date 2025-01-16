@@ -26,7 +26,7 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
            """
             ),
             ["010G0002"],
-            id="SingleActiveStopArea",
+            id="Single Active Stop Area",
         ),
         pytest.param(
             create_stop_point(
@@ -39,7 +39,7 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
            """
             ),
             ["010G0002", "010G0003", "010G0004"],
-            id="MultipleActiveStopAreas",
+            id="Multiple Active StopAreas",
         ),
         pytest.param(
             create_stop_point(
@@ -52,7 +52,7 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
            """
             ),
             ["010G0002", "010G0004"],
-            id="MixedStatusStopAreas",
+            id="Mixed Status StopAreas",
         ),
         pytest.param(
             create_stop_point(
@@ -63,7 +63,7 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
            """
             ),
             [],
-            id="OnlyInactiveStopArea",
+            id="Only Inactive StopArea",
         ),
         pytest.param(
             create_stop_point(
@@ -74,17 +74,17 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
            """
             ),
             [],
-            id="EmptyStopAreaRef",
+            id="Empty StopAreaRef",
         ),
         pytest.param(
             create_stop_point("<StopAreas></StopAreas>"),
             [],
-            id="EmptyStopAreas",
+            id="Empty StopAreas",
         ),
         pytest.param(
             create_stop_point(""),
             [],
-            id="NoStopAreas",
+            id="No StopAreas",
         ),
     ],
 )

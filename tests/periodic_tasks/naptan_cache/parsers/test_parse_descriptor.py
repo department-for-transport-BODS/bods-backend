@@ -35,7 +35,7 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
                 "Landmark": None,
                 "Indicator": "T3",
             },
-            id="CompleteDescriptorData",
+            id="Complete Descriptor",
         ),
         pytest.param(
             create_stop_point(
@@ -53,7 +53,7 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
                 "Landmark": None,
                 "Indicator": None,
             },
-            id="PartialDescriptorData",
+            id="Partial Descriptor",
         ),
         pytest.param(
             create_stop_point(
@@ -71,7 +71,7 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
                 "Landmark": None,
                 "Indicator": None,
             },
-            id="EmptyDescriptorElements",
+            id="Empty Descriptor Elements",
         ),
         pytest.param(
             create_stop_point("<Descriptor></Descriptor>"),
@@ -82,7 +82,7 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
                 "Landmark": None,
                 "Indicator": None,
             },
-            id="EmptyDescriptor",
+            id="Empty Descriptor",
         ),
         pytest.param(
             create_stop_point(""),
@@ -93,7 +93,7 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
                 "Landmark": None,
                 "Indicator": None,
             },
-            id="NoDescriptor",
+            id="No Descriptor",
         ),
     ],
 )
