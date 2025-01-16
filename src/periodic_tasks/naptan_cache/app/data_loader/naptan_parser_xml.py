@@ -126,6 +126,27 @@ def parse_stop_areas(stop_point: etree._Element) -> list[str]:
     return result
 
 
+def parse_stop_classification(stop_point: etree._Element) -> dict[str, str | None]:
+    """Extract stop classification data from stop point with minimal traversal."""
+    result: dict[str, str | None] = {"StopType": None, "BusStopType": None}
+
+    classification = stop_point.find(f"{NAPTAN_NS_PREFIX}StopClassification")
+    if classification is None:
+        return result
+
+    # Get StopType
+    stop_type = classification.find(f"{NAPTAN_NS_PREFIX}StopType")
+    if stop_type is not None and stop_type.text:
+        result["StopType"] = stop_type.text
+
+    # Get BusStopType from OnStreet/Bus path
+    bus_stop_type = classification.find(f".//{NAPTAN_NS_PREFIX}BusStopType")
+    if bus_stop_type is not None and bus_stop_type.text:
+        result["BusStopType"] = bus_stop_type.text
+
+    return result
+
+
 def parse_stop_point(stop_point: etree._Element) -> dict[str, Any] | None:
     """
     Parse a single StopPoint XML into a Dictionary
@@ -168,6 +189,10 @@ def parse_stop_point(stop_point: etree._Element) -> dict[str, Any] | None:
                 stop_data["LocalityName"] = text
             elif tag == f"{NAPTAN_NS_PREFIX}StopType":
                 stop_data["StopType"] = text
+            elif tag == f"{NAPTAN_NS_PREFIX}NptgLocalityRef":
+                stop_data["NptgLocalityRef"] = text
+            elif tag == f"{NAPTAN_NS_PREFIX}AdministrativeAreaRef":
+                stop_data["AdministrativeAreaRef"] = text
 
         if not atco_found:
             return None
@@ -175,6 +200,10 @@ def parse_stop_point(stop_point: etree._Element) -> dict[str, Any] | None:
         # Add descriptor data
         descriptor_data = parse_descriptor(stop_point)
         stop_data.update(descriptor_data)
+
+        # Add stop classification data
+        classification_data = parse_stop_classification(stop_point)
+        stop_data.update(classification_data)
 
         # Add stop areas if present
         stop_areas = parse_stop_areas(stop_point)
