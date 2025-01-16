@@ -111,7 +111,7 @@ class DatasetETLTaskResult(TaskResult):
 
     task_name_failed: Mapped[str] = mapped_column(String(255), default="", kw_only=True)
 
-    error_code: Mapped[str] = mapped_column(String(50), default="", kw_only=True)
+    error_code: Mapped[str] = mapped_column(String(50), default="", kw_only=True, nullable=False)
 
     additional_info: Mapped[Optional[str]] = mapped_column(
         String(512), default=None, nullable=True, kw_only=True
