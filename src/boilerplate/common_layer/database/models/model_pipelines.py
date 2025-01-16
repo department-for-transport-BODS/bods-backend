@@ -116,7 +116,7 @@ class DatasetETLTaskResult(TaskResult):
         String(50),
         nullable=False,
         index=True,
-        default=ETLErrorCode.EMPTY,
+        default=ETLErrorCode.EMPTY.value,
         kw_only=True,
         doc="The error code returned for the failed task",
     )
