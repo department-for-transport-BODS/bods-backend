@@ -3,38 +3,21 @@ Stop Point Information
 """
 
 from common_layer.database import SqlDB
-from common_layer.database.models.model_naptan import NaptanStopPoint
-from common_layer.database.repos.repo_naptan import NaptanStopPointRepo
-from common_layer.txc.models.txc_stoppoint import (
+from common_layer.database.models import NaptanStopPoint
+from common_layer.database.repos import NaptanStopPointRepo
+from common_layer.txc.models import (
     AnnotatedStopPointRef,
     LocationStructure,
     TXCStopPoint,
 )
+from common_layer.utils_location import osgrid_to_lonlat
 from geoalchemy2.shape import from_shape
-from pyproj import Transformer
 from shapely.geometry import Point
 from structlog.stdlib import get_logger
 
 from ..helpers import StopsLookup
 
 log = get_logger()
-
-"""
-EPSG:27700 = OSGB36 (Easting / Northing)
-EPSG:4326 = WGS84 (Logitude / Latitude)
-Instantiate Transformer once
-"""
-osgrid_to_latlon_transformer = Transformer.from_crs(
-    "EPSG:27700", "EPSG:4326", always_xy=True
-)
-
-
-def osgrid_to_latlon(easting: float, northing: float) -> tuple[float, float]:
-    """
-    Convert OSGB36 coordinates to WGS84 lat/lon
-    """
-    lon, lat = osgrid_to_latlon_transformer.transform(easting, northing)
-    return lon, lat
 
 
 def convert_location_to_point(location: LocationStructure) -> Point:
@@ -47,7 +30,7 @@ def convert_location_to_point(location: LocationStructure) -> Point:
     if location.Longitude and location.Latitude:
         return Point(float(location.Longitude), float(location.Latitude))
     if location.Easting and location.Northing:
-        lon, lat = osgrid_to_latlon(float(location.Easting), float(location.Northing))
+        lon, lat = osgrid_to_lonlat(float(location.Easting), float(location.Northing))
         return Point(lon, lat)
     raise ValueError("Invalid location coordinates")
 
@@ -95,6 +78,7 @@ def get_naptan_stops_from_db(
 ) -> list[NaptanStopPoint]:
     """
     Filter the TXC Stop Points for AnnotatedStopPointRef and query the DB for them
+    TODO: Figure out how to handle when a referenced stop point ref is not in the DB
     """
     log.debug("Getting list of AnnotatedStopPointRef stops found in DB")
     stop_refs: list[str] = []
@@ -103,7 +87,6 @@ def get_naptan_stops_from_db(
             stop_refs.append(stop.StopPointRef)
     stops, missing_stops = NaptanStopPointRepo(db).get_by_atco_codes(stop_refs)
     if missing_stops:
-        # TODO: Figure out how to handle this scenario
         log.error("AnnotatedStopPointRef not found in DB", missing_stops=missing_stops)
     log.info("Fetched naptan stops", count=len(stops), missing_stops=len(missing_stops))
     return stops
