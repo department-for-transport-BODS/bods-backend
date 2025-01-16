@@ -147,8 +147,7 @@ def model_to_csv(
         writer.writerows(records)
         csv_content = output.getvalue()
     try:
-        with full_path.open(mode="a", encoding="utf-8") as csv_file:
-            csv_file.write(csv_content)
+        full_path.write_text(csv_content, encoding="utf-8")
     except OSError as e:
         raise OSError(f"Failed to write CSV to {full_path}: {e}") from e
 

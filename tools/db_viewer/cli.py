@@ -2,11 +2,9 @@
 Database View Tool to search by revision id or service ID
 """
 
-import shutil
 from pathlib import Path
 
 import typer
-from click.core import batch
 from common_layer.database.client import SqlDB
 from common_layer.database.models import NaptanStopPoint
 from common_layer.database.models.model_transmodel import (
@@ -46,8 +44,6 @@ from .utils import csv_extractor
 
 logger = get_logger()
 app = Typer()
-
-BATCH_SIZE = 500
 
 
 @csv_extractor()
@@ -101,23 +97,19 @@ def process_service_patterns(
     Items dependent on service patterns
     """
     service_pattern_ids = [result.id for result in tm_service_patterns]
-    for index in range(0, len(service_pattern_ids), BATCH_SIZE):
-        batch = service_pattern_ids[index : index + BATCH_SIZE]
-        service_pattern_stops = extract_servicepatternstop(
-            db, batch, output_path=output_path
-        )
-        extract_servicepattern_localities(db, batch, output_path=output_path)
-        extract_stoppoint(
-            db,
-            [result.atco_code for result in service_pattern_stops],
-            output_path=output_path,
-        )
-        stop_activity_ids = [
-            result.stop_activity_id for result in service_pattern_stops
-        ]
+    service_pattern_stops = extract_servicepatternstop(
+        db, service_pattern_ids, output_path=output_path
+    )
+    extract_servicepattern_localities(db, service_pattern_ids, output_path=output_path)
+    extract_stoppoint(
+        db,
+        [result.atco_code for result in service_pattern_stops],
+        output_path=output_path,
+    )
+    stop_activity_ids = [result.stop_activity_id for result in service_pattern_stops]
 
-        extract_stopactivity(db, stop_activity_ids, output_path=output_path)
-        process_vehicle_journeys(db, service_pattern_stops, output_path)
+    extract_stopactivity(db, stop_activity_ids, output_path=output_path)
+    process_vehicle_journeys(db, service_pattern_stops, output_path)
 
 
 def process_from_service_id(
@@ -209,14 +201,9 @@ def make_default_output_path(revision_id: int | None, service_id: int | None) ->
     else:
         final_path = base_path / "service_id" / str(service_id)
 
-    final_path = final_path.resolve()
-
-    if final_path.exists():
-        logger.info("Cleaning output directory", path=str(final_path))
-        shutil.rmtree(final_path)
-
-    logger.info("Creating output directory", path=str(final_path))
-    final_path.mkdir(parents=True, exist_ok=True)
+    if not final_path.exists():
+        logger.info("Creating output directory", path=str(final_path))
+        final_path.mkdir(parents=True, exist_ok=True)
 
     return final_path
 
