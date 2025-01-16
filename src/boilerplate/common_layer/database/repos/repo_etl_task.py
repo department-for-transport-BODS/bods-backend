@@ -53,7 +53,7 @@ class ETLTaskResultRepo(BaseRepository[DatasetETLTaskResult]):
             task.status = TaskState.SUCCESS
             task.completed = datetime.now(UTC)
             task.task_name_failed = ""
-            task.error_code = None
+            task.error_code = ""
 
         statement = self._build_query().where(self._model.id == task_id)
         self._update_one(statement, update_func)
