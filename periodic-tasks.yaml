@@ -65,48 +65,11 @@ Globals:
       Variables:
         PROJECT_ENV: !Ref Environment
         PROJECT_NAME: !Ref ProjectName
-        POSTGRES_HOST: !If
-          - IsUsingBodsInfra
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
-          - !If
-            - IsStandalone
-            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-endpoint'
-            - !If
-              - IsNotLocal
-              - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-endpoint}}'
-              - !Ref RdsDbHostAddr
-        POSTGRES_PORT: !If
-          - IsUsingBodsInfra
-          - !Ref RdsDbPort
-          - !If
-            - IsStandalone
-            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-port'
-            - !Ref RdsDbPort
-        POSTGRES_DB: !If
-          - IsUsingBodsInfra
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
-          - !If
-            - IsStandalone
-            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-db-name'
-            - !Ref RdsDbName
-        POSTGRES_USER: !If
-          - IsUsingBodsInfra
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
-          - !If
-            - IsStandalone
-            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-app-username'
-            - !Ref RdsDbUsername
         HTTPS_PROXY: !If
           - IsNotLocal
           - !Sub 'http://squid.bodds.${Environment}:3128'
           - !Ref AWS::NoValue
-        AWS_SIRIVM_STORAGE_BUCKET_NAME: !If
-          - IsUsingBodsInfra
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
-          - !If
-            - IsStandalone
-            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-s3-bucket-name'
-            - !Ref AWS::NoValue
+
     KmsKeyArn: !If
       - IsUsingBodsInfra
       - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
@@ -215,6 +178,46 @@ Resources:
         Variables:
           CAVL_CONSUMER_URL: !Ref CavlConsumerUrl
           GTFS_API_BASE_URL: !Ref GtfsApiBaseUrl
+          AWS_SIRIVM_STORAGE_BUCKET_NAME: !If
+            - IsUsingBodsInfra
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
+            - !If
+              - IsStandalone
+              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-s3-bucket-name'
+              - !Ref AWS::NoValue
+          # Database
+          POSTGRES_HOST: !If
+            - IsUsingBodsInfra
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
+            - !If
+              - IsStandalone
+              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-endpoint'
+              - !If
+                - IsNotLocal
+                - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-endpoint}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
+                - !Ref RdsDbHostAddr
+          POSTGRES_PORT: !If
+            - IsUsingBodsInfra
+            - !Ref RdsDbPort
+            - !If
+              - IsStandalone
+              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-port'
+              - !Ref RdsDbPort
+          POSTGRES_DB: !If
+            - IsUsingBodsInfra
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
+            - !If
+              - IsStandalone
+              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-db-name'
+              - !Ref RdsDbName
+          POSTGRES_USER: !If
+            - IsUsingBodsInfra
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
+            - !If
+              - IsStandalone
+              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-app-username'
+              - !Ref RdsDbUsername
+
       LoggingConfig:
         LogGroup: !Ref GenerateGtfsRtLambdaLogGroup
 
@@ -230,6 +233,45 @@ Resources:
       Environment:
         Variables:
           AVL_CONSUMER_API_BASE_URL: !Ref AvlConsumerApiBaseUrl
+          AWS_SIRIVM_STORAGE_BUCKET_NAME: !If
+            - IsUsingBodsInfra
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
+            - !If
+              - IsStandalone
+              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-s3-bucket-name'
+              - !Ref AWS::NoValue
+          # Database
+          POSTGRES_HOST: !If
+            - IsUsingBodsInfra
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
+            - !If
+              - IsStandalone
+              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-endpoint'
+              - !If
+                - IsNotLocal
+                - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-endpoint}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
+                - !Ref RdsDbHostAddr
+          POSTGRES_PORT: !If
+            - IsUsingBodsInfra
+            - !Ref RdsDbPort
+            - !If
+              - IsStandalone
+              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-port'
+              - !Ref RdsDbPort
+          POSTGRES_DB: !If
+            - IsUsingBodsInfra
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
+            - !If
+              - IsStandalone
+              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-db-name'
+              - !Ref RdsDbName
+          POSTGRES_USER: !If
+            - IsUsingBodsInfra
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
+            - !If
+              - IsStandalone
+              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-app-username'
+              - !Ref RdsDbUsername
       LoggingConfig:
         LogGroup: !Ref GenerateSiriVmLambdaLogGroup
 
@@ -245,6 +287,45 @@ Resources:
       Environment:
         Variables:
           AVL_CONSUMER_API_BASE_URL: !Ref AvlConsumerApiBaseUrl
+          AWS_SIRIVM_STORAGE_BUCKET_NAME: !If
+            - IsUsingBodsInfra
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
+            - !If
+              - IsStandalone
+              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-s3-bucket-name'
+              - !Ref AWS::NoValue
+          # Database
+          POSTGRES_HOST: !If
+            - IsUsingBodsInfra
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
+            - !If
+              - IsStandalone
+              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-endpoint'
+              - !If
+                - IsNotLocal
+                - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-endpoint}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
+                - !Ref RdsDbHostAddr
+          POSTGRES_PORT: !If
+            - IsUsingBodsInfra
+            - !Ref RdsDbPort
+            - !If
+              - IsStandalone
+              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-port'
+              - !Ref RdsDbPort
+          POSTGRES_DB: !If
+            - IsUsingBodsInfra
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
+            - !If
+              - IsStandalone
+              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-db-name'
+              - !Ref RdsDbName
+          POSTGRES_USER: !If
+            - IsUsingBodsInfra
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
+            - !If
+              - IsStandalone
+              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-app-username'
+              - !Ref RdsDbUsername
       LoggingConfig:
         LogGroup: !Ref GenerateSiriVmTflLambdaLogGroup
 
