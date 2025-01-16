@@ -36,15 +36,11 @@ class ETLTaskResultRepo(BaseRepository[DatasetETLTaskResult]):
         return task
 
     @handle_repository_errors
-    def get_by_revision_id(
-            self, revision_id: int
-    ) -> list[DatasetETLTaskResult] | None:
+    def get_by_revision_id(self, revision_id: int) -> list[DatasetETLTaskResult] | None:
         """
         Retrieve all DatasetETLTaskResult for a specific revision
         """
-        statement = self._build_query().where(
-            self._model.revision_id == revision_id
-        )
+        statement = self._build_query().where(self._model.revision_id == revision_id)
         return self._fetch_all(statement)
 
     @handle_repository_errors
