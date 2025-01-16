@@ -119,7 +119,7 @@ def validate_timing_link_stops(context, sections: list[etree._Element]) -> bool:
         sections=len(sections),
     )
     section = sections[0]
-    ns = {"x": section.nsmap.get(None)}
+    ns: dict = {"x": section.nsmap.get(None)}
     links = section.xpath("x:JourneyPatternTimingLink", namespaces=ns)
 
     prev_link = links[0]
