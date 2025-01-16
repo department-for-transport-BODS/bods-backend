@@ -340,7 +340,6 @@ Resources:
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       Timeout: 600
-      Runtime: python3.12
       MemorySize: 1280
       EphemeralStorage:
         Size: 1024
