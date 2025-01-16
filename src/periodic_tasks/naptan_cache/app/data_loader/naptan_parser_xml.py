@@ -11,23 +11,16 @@ from structlog.stdlib import get_logger
 
 from .download import download_file
 from .file_utils import create_data_dir
+from .parsers import (
+    NAPTAN_NS_PREFIX,
+    parse_descriptor,
+    parse_location,
+    parse_stop_areas,
+    parse_stop_classification,
+    parse_top_level,
+)
 
 log = get_logger()
-NAPTAN_NAMESPACE = {"naptan": "http://www.naptan.org.uk/"}
-NAPTAN_NS_PREFIX = "{" + NAPTAN_NAMESPACE["naptan"] + "}"
-LOCATION_TAGS = {
-    f"{NAPTAN_NS_PREFIX}Longitude": "Longitude",
-    f"{NAPTAN_NS_PREFIX}Latitude": "Latitude",
-    f"{NAPTAN_NS_PREFIX}Easting": "Easting",
-    f"{NAPTAN_NS_PREFIX}Northing": "Northing",
-}
-DESCRIPTOR_TAGS = {
-    f"{NAPTAN_NS_PREFIX}CommonName": "CommonName",
-    f"{NAPTAN_NS_PREFIX}ShortCommonName": "ShortCommonName",
-    f"{NAPTAN_NS_PREFIX}Street": "Street",
-    f"{NAPTAN_NS_PREFIX}Landmark": "Landmark",
-    f"{NAPTAN_NS_PREFIX}Indicator": "Indicator",
-}
 
 
 def get_element_text(
@@ -57,94 +50,34 @@ def download_naptan_xml(url: str, data_dir: Path) -> Path:
         raise
 
 
-def parse_location(stop_point: etree._Element) -> dict[str, str | None] | None:
-    """Extract location data from stop point with minimal traversal."""
-
-    # Direct traversal to Translation element
-    for location in stop_point.iter(f"{NAPTAN_NS_PREFIX}Translation"):
-        result: dict[str, str | None] = {
-            "Longitude": None,
-            "Latitude": None,
-            "Easting": None,
-            "Northing": None,
-        }
-
-        for child in location:
-            if child.tag in LOCATION_TAGS:
-                result[LOCATION_TAGS[child.tag]] = child.text or None
-
-        if result["Easting"] and result["Northing"]:
-            return result
-
-        return None
-
-    return None
+def validate_stop_point(stop_point: etree._Element) -> bool:
+    """
+    Validate if the stop point is active and not marked for deletion
+    """
+    return (
+        stop_point.get("Status") == "active"
+        and stop_point.get("Modification") != "delete"
+    )
 
 
-def parse_descriptor(stop_point: etree._Element) -> dict[str, str | None]:
-    """Extract descriptor data from stop point with minimal traversal."""
-    descriptor_tag = f"{NAPTAN_NS_PREFIX}Descriptor"
+def clean_stop_data(stop_data: dict[str, Any]) -> dict[str, Any]:
+    """
+    Clean the final stop data by converting empty strings to None
+    DynamoDB reject empty strings
+    """
+    return {k: (v if v not in ["", None] else None) for k, v in stop_data.items()}
 
-    # Direct traversal to find Descriptor element
-    for descriptor in stop_point:
-        if descriptor.tag == descriptor_tag:
-            result: dict[str, str | None] = {
-                "CommonName": None,
-                "ShortCommonName": None,
-                "Street": None,
-                "Landmark": None,
-                "Indicator": None,
-            }
 
-            for child in descriptor:
-                if child.tag in DESCRIPTOR_TAGS:
-                    result[DESCRIPTOR_TAGS[child.tag]] = child.text or None
-
-            return result
-
+def get_base_stop_data(stop_point: etree._Element) -> dict[str, Any]:
+    """
+    Extract base stop point data
+    """
     return {
-        "CommonName": None,
-        "ShortCommonName": None,
-        "Street": None,
-        "Landmark": None,
-        "Indicator": None,
+        "Status": "active",
+        "CreationDateTime": stop_point.get("CreationDateTime") or None,
+        "ModificationDateTime": stop_point.get("ModificationDateTime") or None,
+        "RevisionNumber": stop_point.get("RevisionNumber") or None,
     }
-
-
-def parse_stop_areas(stop_point: etree._Element) -> list[str]:
-    """Extract stop areas from stop point using direct traversal."""
-    stop_areas_tag = f"{NAPTAN_NS_PREFIX}StopAreas"
-    stop_area_ref_tag = f"{NAPTAN_NS_PREFIX}StopAreaRef"
-    result = []
-
-    # Direct traversal to find StopAreas
-    for stop_areas in stop_point.iter(stop_areas_tag):
-        for area_ref in stop_areas.iter(stop_area_ref_tag):
-            if area_ref.get("Status") == "active" and area_ref.text:
-                result.append(area_ref.text)
-
-    return result
-
-
-def parse_stop_classification(stop_point: etree._Element) -> dict[str, str | None]:
-    """Extract stop classification data from stop point with minimal traversal."""
-    result: dict[str, str | None] = {"StopType": None, "BusStopType": None}
-
-    classification = stop_point.find(f"{NAPTAN_NS_PREFIX}StopClassification")
-    if classification is None:
-        return result
-
-    # Get StopType
-    stop_type = classification.find(f"{NAPTAN_NS_PREFIX}StopType")
-    if stop_type is not None and stop_type.text:
-        result["StopType"] = stop_type.text
-
-    # Get BusStopType from OnStreet/Bus path
-    bus_stop_type = classification.find(f".//{NAPTAN_NS_PREFIX}BusStopType")
-    if bus_stop_type is not None and bus_stop_type.text:
-        result["BusStopType"] = bus_stop_type.text
-
-    return result
 
 
 def parse_stop_point(stop_point: etree._Element) -> dict[str, Any] | None:
@@ -152,66 +85,34 @@ def parse_stop_point(stop_point: etree._Element) -> dict[str, Any] | None:
     Parse a single StopPoint XML into a Dictionary
     """
     try:
-        if (
-            stop_point.get("Status") != "active"
-            or stop_point.get("Modification") == "delete"
-        ):
+        if not validate_stop_point(stop_point):
             return None
 
-        stop_data: dict[str, Any] = {
-            "Status": "active",
-            "CreationDateTime": stop_point.get("CreationDateTime") or None,
-            "ModificationDateTime": stop_point.get("ModificationDateTime") or None,
-            "RevisionNumber": stop_point.get("RevisionNumber") or None,
-        }
+        stop_data = get_base_stop_data(stop_point)
 
         location_data = parse_location(stop_point)
         if location_data is None:
             return None
-
-        # Add validated location data
         stop_data.update(location_data)
 
-        atco_found = False
-        for child in stop_point:
-            tag = child.tag
-            text = child.text
-
-            if not text:
-                continue
-
-            if tag == f"{NAPTAN_NS_PREFIX}AtcoCode":
-                stop_data["AtcoCode"] = text
-                atco_found = True
-            elif tag == f"{NAPTAN_NS_PREFIX}NaptanCode":
-                stop_data["NaptanCode"] = text
-            elif tag == f"{NAPTAN_NS_PREFIX}LocalityName":
-                stop_data["LocalityName"] = text
-            elif tag == f"{NAPTAN_NS_PREFIX}StopType":
-                stop_data["StopType"] = text
-            elif tag == f"{NAPTAN_NS_PREFIX}NptgLocalityRef":
-                stop_data["NptgLocalityRef"] = text
-            elif tag == f"{NAPTAN_NS_PREFIX}AdministrativeAreaRef":
-                stop_data["AdministrativeAreaRef"] = text
-
+        field_data, atco_found = parse_top_level(stop_point)
         if not atco_found:
             return None
+        stop_data.update(field_data)
 
-        # Add descriptor data
-        descriptor_data = parse_descriptor(stop_point)
-        stop_data.update(descriptor_data)
+        for parser, key in [
+            (parse_descriptor, None),
+            (parse_stop_classification, None),
+            (parse_stop_areas, "StopAreas"),
+        ]:
+            parsed_data = parser(stop_point)
+            if parsed_data:
+                if key:
+                    stop_data[key] = parsed_data
+                else:
+                    stop_data.update(parsed_data)
 
-        # Add stop classification data
-        classification_data = parse_stop_classification(stop_point)
-        stop_data.update(classification_data)
-
-        # Add stop areas if present
-        stop_areas = parse_stop_areas(stop_point)
-        if stop_areas:
-            stop_data["StopAreas"] = stop_areas
-
-        # Clean final data - convert any remaining empty strings to None
-        return {k: (v if v not in ["", None] else None) for k, v in stop_data.items()}
+        return clean_stop_data(stop_data)
 
     # We need to Skip StopPoints with errors and process all stops
     except Exception:  # pylint: disable=broad-exception-caught
