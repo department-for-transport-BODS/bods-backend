@@ -1,4 +1,6 @@
-from pathlib import Path
+"""
+XMLFilePTIValidator Factory
+"""
 
 from common_layer.database.client import SqlDB
 from common_layer.dynamodb.client import DynamoDB

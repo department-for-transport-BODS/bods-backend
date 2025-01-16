@@ -33,7 +33,7 @@ def parse_xml_from_file(file_path: Path) -> etree._Element:
         raise
 
 
-@app.command()
+@app.command(name="post-schema-check")
 def validate(
     xml_file: Path = typer.Argument(
         ...,

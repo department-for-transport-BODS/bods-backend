@@ -1,3 +1,7 @@
+"""
+PTI Service
+"""
+
 from io import BytesIO
 
 from common_layer.database.client import SqlDB
@@ -6,9 +10,10 @@ from common_layer.database.repos.repo_data_quality import DataQualityPTIObservat
 from common_layer.dynamodb.client import DynamoDB
 from common_layer.dynamodb.models import TXCFileAttributes
 from common_layer.utils import sha1sum
-from pti.validators.factory import get_xml_file_pti_validator
-from pti.validators.txc_revision import TXCRevisionValidator
 from structlog.stdlib import get_logger
+
+from .validators.factory import get_xml_file_pti_validator
+from .validators.txc_revision import TXCRevisionValidator
 
 log = get_logger()
 
@@ -37,11 +42,9 @@ class PTIValidationService:
         Checks if the given file hash already exists in the live revision
         """
         return any(
-            [
-                live_attributes
-                for live_attributes in live_revision_attributes
-                if live_attributes.hash == file_hash
-            ]
+            live_attributes
+            for live_attributes in live_revision_attributes
+            if live_attributes.hash == file_hash
         )
 
     def validate(
@@ -50,6 +53,9 @@ class PTIValidationService:
         xml_file: BytesIO,
         txc_file_attributes: TXCFileAttributes,
     ):
+        """
+        Run PTI validation against the given revision and file
+        """
 
         log.info("Starting PTI Profile validation.")
 
@@ -75,4 +81,3 @@ class PTIValidationService:
             observation_repo.create_from_violations(revision.id, violations)
 
         log.info("Finished PTI Profile validation.")
-        return None

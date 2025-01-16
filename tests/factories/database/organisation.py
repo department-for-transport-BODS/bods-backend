@@ -2,15 +2,39 @@
 Organisation Database Model Factories
 """
 
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 
 import factory
 from common_layer.database.models import (
+    OrganisationDataset,
     OrganisationDatasetRevision,
     OrganisationTXCFileAttributes,
 )
+from common_layer.database.models.db_enums import AVLFeedStatus
 from factory import LazyFunction
 from factory.fuzzy import FuzzyChoice, FuzzyInteger
+
+
+class OrganisationDatasetFactory(factory.Factory):
+    """
+    Factory for OrganisationDataset
+    """
+
+    class Meta:  # type: ignore[misc]
+        """Factory configuration."""
+
+        model = OrganisationDataset
+
+    live_revision_id = FuzzyInteger(1000, 5000)
+    organisation_id = FuzzyInteger(1000, 5000)
+    contact_id = FuzzyInteger(1000, 5000)
+    dataset_type = FuzzyChoice([0, 1])
+
+    avl_feed_status = AVLFeedStatus.LIVE.value
+    avl_feed_last_checked = LazyFunction(
+        lambda: datetime.now(tz=UTC) - timedelta(minutes=10)
+    )
+    is_dummy = False
 
 
 class OrganisationDatasetRevisionFactory(factory.Factory):

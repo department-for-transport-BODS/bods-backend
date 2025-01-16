@@ -6,6 +6,9 @@ from pathlib import Path
 
 import typer
 from common_layer.database.client import SqlDB
+from common_layer.database.models.model_organisation import (
+    OrganisationTXCFileAttributes,
+)
 from common_layer.json_logging import configure_logging
 from common_layer.txc.parser.parser_txc import TXCParserConfig, parse_txc_file
 from structlog.stdlib import get_logger
@@ -24,7 +27,7 @@ log = get_logger()
 PARSER_CONFIG = TXCParserConfig(file_hash=True)
 
 
-def process_txc(xml_paths: list[Path], revision_id: int, db: SqlDB):
+def process_txc(xml_paths: list[Path], revision_id: int, db: SqlDB) -> int | None:
     """
     Process file attributes
     """
@@ -36,12 +39,13 @@ def process_txc(xml_paths: list[Path], revision_id: int, db: SqlDB):
         log.info("Processing XML File", path=xml_path)
         txc_data = parse_txc_file(xml_path, PARSER_CONFIG)
         try:
-            process_file_attributes(input_data, txc_data, db)
+            txc_file_attributes = process_file_attributes(input_data, txc_data, db)
+            return txc_file_attributes.id
         except ValueError as e:
             log.error("Revision ID Not found, can't add File Attributes", error=str(e))
 
 
-@app.command()
+@app.command(name="file-attributes")
 def main(
     paths: list[Path] = typer.Argument(
         None,
@@ -101,7 +105,11 @@ def main(
         log.error("Database configuration error", error=str(e))
         raise typer.Exit(1)
     db = setup_db_instance(db_config)
-    process_txc(xml_paths, revision_id, db)
+    txc_file_attributes_id = process_txc(xml_paths, revision_id, db)
+    log.info(
+        "Created TXCFileAttributes",
+        txc_file_attributes_id=txc_file_attributes_id,
+    )
 
 
 if __name__ == "__main__":
