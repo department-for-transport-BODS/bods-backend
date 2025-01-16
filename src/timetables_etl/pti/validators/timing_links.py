@@ -58,7 +58,7 @@ def build_vehicle_journey_map(
 def validate_journey_pattern_timing_links(
     root_element: etree._Element,
     namespaces: dict,
-    vehicle_journey_map: dict,
+    vehicle_journey_map: dict[str, VehicleJourneyRunTimeInfo],
 ) -> list[etree._Element]:
     """
     Validate JourneyPatternTimingLinks against the associated VehicleJourneyTimingLink data.
@@ -86,7 +86,7 @@ def validate_journey_pattern_timing_links(
             # If JourneyPatternTimingLink has non-zero RunTime, VehicleJourneyTimingLink should have no To/From elements
             if time_duration and time_duration != ZERO_TIME_DURATION:
                 vj_link = vehicle_journey_map.get(link_id)
-                if vj_link and (vj_link["has_from"] or vj_link["has_to"]):
+                if vj_link and (vj_link.has_from or vj_link.has_to):
                     log.info(
                         f"PTI Violation for JourneyPatternTimingLink '{link_id}': Associated VehicleJourneyTimingLink has 'To' or 'From' elements."
                     )
