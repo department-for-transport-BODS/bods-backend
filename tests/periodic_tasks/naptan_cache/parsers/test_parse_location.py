@@ -2,7 +2,6 @@
 Test Parsing Location XML
 """
 
-import numpy as np
 import pytest
 from lxml import etree
 
