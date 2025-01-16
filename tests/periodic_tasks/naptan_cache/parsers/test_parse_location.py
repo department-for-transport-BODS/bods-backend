@@ -15,42 +15,6 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
 )
 
 
-def assert_location_data_approx_equal(
-    result: dict[str, str | None] | None, expected: dict[str, str | None] | None
-) -> None:
-    """
-    Compare location data with special handling for latitude and longitude.
-    """
-    # If both are None, that's fine
-    if result is None and expected is None:
-        return
-
-    # If expected is None but result is not, that's a failure
-    assert result is not None, "Result is not None when expected is None"
-    assert expected is not None, "Result is not None when expected is None"
-    # Check non-float keys exactly
-    non_float_keys = [
-        key for key in result.keys() if key not in ["Longitude", "Latitude"]
-    ]
-    for key in non_float_keys:
-        assert result[key] == expected[key], f"Mismatch in {key}"
-
-    # Handle float comparison with None check
-    for key in ["Longitude", "Latitude"]:
-        result_value = result.get(key)
-        expected_value = expected.get(key)
-
-        # If either value is None, they must both be None
-        if result_value is None or expected_value is None:
-            assert result_value == expected_value, f"Mismatch in {key}"
-            continue
-
-        # Convert to floats and compare
-        np.testing.assert_almost_equal(
-            float(result_value), float(expected_value), decimal=10
-        )
-
-
 @pytest.mark.parametrize(
     ("xml_input", "expected"),
     [
@@ -60,8 +24,8 @@ def assert_location_data_approx_equal(
                 <Place>
                     <Location>
                         <Translation>
-                            <Longitude>-2.585789031283037</Longitude>
-                            <Latitude>51.449021016827182</Latitude>
+                            <Longitude>-2.58578</Longitude>
+                            <Latitude>51.44902</Latitude>
                             <Easting>359389</Easting>
                             <Northing>172389</Northing>
                         </Translation>
@@ -70,8 +34,8 @@ def assert_location_data_approx_equal(
             """
             ),
             {
-                "Longitude": "-2.585789031283037",
-                "Latitude": "51.449021016827182",
+                "Longitude": "-2.58578",
+                "Latitude": "51.44902",
                 "Easting": "359389",
                 "Northing": "172389",
             },
@@ -91,8 +55,8 @@ def assert_location_data_approx_equal(
             """
             ),
             {
-                "Longitude": "-2.585789031283037",
-                "Latitude": "51.449021016827182",
+                "Longitude": "-2.58579",
+                "Latitude": "51.44902",
                 "Easting": "359389",
                 "Northing": "172389",
             },
@@ -112,8 +76,8 @@ def assert_location_data_approx_equal(
             """
             ),
             {
-                "Longitude": "-2.254849141174204",
-                "Latitude": "53.487009628400806",
+                "Longitude": "-2.25485",
+                "Latitude": "53.48701",
                 "Easting": "383187",
                 "Northing": "398952",
             },
@@ -133,8 +97,8 @@ def assert_location_data_approx_equal(
             """
             ),
             {
-                "Longitude": "-3.198577617802602",
-                "Latitude": "55.937500981811695",
+                "Longitude": "-3.19858",
+                "Latitude": "55.93750",
                 "Easting": "325225",
                 "Northing": "672254",
             },
@@ -154,8 +118,8 @@ def assert_location_data_approx_equal(
             """
             ),
             {
-                "Longitude": "-3.183132532733615",
-                "Latitude": "51.476605537318832",
+                "Longitude": "-3.18313",
+                "Latitude": "51.47661",
                 "Easting": "317929",
                 "Northing": "175958",
             },
@@ -192,4 +156,4 @@ def test_parse_location(xml_input: str, expected: dict[str, str | None] | None) 
     """
     stop_point: etree._Element = parse_xml_to_stop_point(xml_input)
     result: dict[str, str | None] | None = parse_location(stop_point)
-    assert_location_data_approx_equal(result, expected)
+    assert result == expected
