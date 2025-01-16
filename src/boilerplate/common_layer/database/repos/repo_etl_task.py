@@ -36,6 +36,14 @@ class ETLTaskResultRepo(BaseRepository[DatasetETLTaskResult]):
         return task
 
     @handle_repository_errors
+    def get_by_revision_id(self, revision_id: int) -> list[DatasetETLTaskResult] | None:
+        """
+        Retrieve all DatasetETLTaskResult for a specific revision
+        """
+        statement = self._build_query().where(self._model.revision_id == revision_id)
+        return self._fetch_all(statement)
+
+    @handle_repository_errors
     def mark_success(self, task_id: int) -> None:
         """
         Mark task as successful and clear error fields
@@ -45,7 +53,7 @@ class ETLTaskResultRepo(BaseRepository[DatasetETLTaskResult]):
             task.status = TaskState.SUCCESS
             task.completed = datetime.now(UTC)
             task.task_name_failed = ""
-            task.error_code = None
+            task.error_code = ETLErrorCode.EMPTY
 
         statement = self._build_query().where(self._model.id == task_id)
         self._update_one(statement, update_func)

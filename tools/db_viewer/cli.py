@@ -17,6 +17,7 @@ from typer import BadParameter, Option, Typer
 
 from tools.common.db_tools import create_db_config, setup_db_instance
 
+from .etl_task import process_etl_entities_by_revision_id
 from .organisation import (
     extract_dataset,
     extract_dataset_revision,
@@ -249,6 +250,11 @@ def main(
         "--service-id",
         help="Service id",
     ),
+    etl_result: bool = Option(
+        False,
+        "--etl-result",
+        help="Extract the data from ETL pipelines tables",
+    ),
     use_dotenv: bool = Option(
         False,
         "--use-dotenv",
@@ -276,6 +282,10 @@ def main(
         )
     if service_id:
         process_from_service_id(db, service_id, output_path)
+
+    if etl_result and revision_id:
+        process_etl_entities_by_revision_id(db, revision_id, output_path=output_path)
+
     logger.info("Completed Processing", output_path=output_path)
 
 

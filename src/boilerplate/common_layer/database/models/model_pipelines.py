@@ -113,10 +113,10 @@ class DatasetETLTaskResult(TaskResult):
     task_name_failed: Mapped[str] = mapped_column(String(255), default="", kw_only=True)
 
     error_code: Mapped[ETLErrorCode] = mapped_column(
-        SQLEnum(ETLErrorCode),
+        String(50),
         nullable=False,
         index=True,
-        default=ETLErrorCode.EMPTY,
+        default=ETLErrorCode.EMPTY.value,
         kw_only=True,
         doc="The error code returned for the failed task",
     )
