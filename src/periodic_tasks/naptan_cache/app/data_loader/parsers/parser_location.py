@@ -19,70 +19,78 @@ LOCATION_TAGS: Final[dict[str, str]] = {
 }
 
 
+def convert_osgrid_to_lonlat(
+    easting: str | None, northing: str | None
+) -> tuple[str, str] | None:
+    """
+    Convert OS Grid coordinates to longitude/latitude if possible.
+    Returns (longitude, latitude) as strings with 5 decimal places,
+    or
+    None if conversion fails.
+    """
+    if easting is None or northing is None:
+        return None
+
+    try:
+        east = float(easting)
+        north = float(northing)
+        lon, lat = osgrid_to_lonlat(east, north)
+        return f"{lon:.5f}", f"{lat:.5f}"
+    except (ValueError, TypeError):
+        return None
+
+
+def convert_lonlat_to_osgrid(
+    longitude: str | None, latitude: str | None
+) -> tuple[str, str] | None:
+    """
+    Convert longitude/latitude to OS Grid coordinates if possible.
+    Returns (easting, northing) as strings, or None if conversion fails.
+    """
+    if longitude is None or latitude is None:
+        return None
+
+    try:
+        lon = float(longitude)
+        lat = float(latitude)
+        east, north = lonlat_to_osgrid(lon, lat)
+        return str(east), str(north)
+    except (ValueError, TypeError):
+        return None
+
+
 def augment_location_data(
     location_data: dict[str, str | None]
 ) -> dict[str, str | None]:
     """
     Augment location data by converting between coordinate systems.
     """
-    # Exit Early if all locations are there
+    # Exit early if all locations are present
     if all(
         location_data.get(key)
         for key in ["Longitude", "Latitude", "Easting", "Northing"]
     ):
         return location_data
 
-    # Define coordinate conversion strategies
-    conversions = [
-        {
-            "missing_keys": ["Longitude", "Latitude"],
-            "existing_keys": ["Easting", "Northing"],
-            "converter": osgrid_to_lonlat,
-            "format_fn": lambda x: f"{x:.15f}",
-            "result_keys": ["Longitude", "Latitude"],
-        },
-        {
-            "missing_keys": ["Easting", "Northing"],
-            "existing_keys": ["Longitude", "Latitude"],
-            "converter": lonlat_to_osgrid,
-            "format_fn": str,
-            "result_keys": ["Easting", "Northing"],
-        },
-    ]
-
-    for conversion in conversions:
-        # Skip if the coordinates we want are already present
-        if all(location_data.get(key) for key in conversion["missing_keys"]):
-            continue
-
-        # Check if we have the existing coordinates to convert from
-        if not all(location_data.get(key) for key in conversion["existing_keys"]):
-            continue
-
-        # Convert existing coordinates to floats, handling potential None
-        coords = []
-        for key in conversion["existing_keys"]:
-            value = location_data.get(key)
-            if value is None:
-                break
-            coords.append(float(value))
-
-        # If we couldn't convert all coordinates, skip this conversion
-        if len(coords) != len(conversion["existing_keys"]):
-            continue
-
-        # Perform coordinate conversion
-        converted_coords = conversion["converter"](*coords)
-
-        # Update location data with converted coordinates
-        location_data.update(
-            dict(
-                zip(
-                    conversion["result_keys"],
-                    [conversion["format_fn"](coord) for coord in converted_coords],
-                )
-            )
+    # Try converting from OS Grid to Lon/Lat
+    if not all(location_data.get(key) for key in ["Longitude", "Latitude"]):
+        result = convert_osgrid_to_lonlat(
+            location_data.get("Easting"), location_data.get("Northing")
         )
+        if result:
+            longitude, latitude = result
+            location_data["Longitude"] = longitude
+            location_data["Latitude"] = latitude
+
+    # Try converting from Lon/Lat to OS Grid
+    if not all(location_data.get(key) for key in ["Easting", "Northing"]):
+        result = convert_lonlat_to_osgrid(
+            location_data.get("Longitude"), location_data.get("Latitude")
+        )
+        if result:
+            easting, northing = result
+            location_data["Easting"] = easting
+            location_data["Northing"] = northing
 
     return location_data
 
