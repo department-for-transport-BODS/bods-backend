@@ -1,3 +1,4 @@
+# pylint: disable=unused-argument
 """
 Validator functions for JourneyTimingLinks and VehicleJourneyTimingLinks
 """
@@ -20,6 +21,10 @@ ZERO_TIME_DURATION = TimeDuration(
 
 @dataclass
 class VehicleJourneyRunTimeInfo:
+    """
+    RuntTime info for a VehicleJourneyTimingLink
+    """
+
     run_time: TimeDuration | None
     has_from: bool
     has_to: bool
@@ -29,7 +34,8 @@ def build_vehicle_journey_map(
     root_element: etree._Element, namespaces: dict
 ) -> dict[str, VehicleJourneyRunTimeInfo]:
     """
-    Build a map of VehicleJourneyRunTimeInfo information by JourneyPatternTimingLinkRef.
+    Build a map of { <JourneyPatternTimingLinkRef> : VehicleJourneyRunTimeInfo }
+    for all VehicleJourneyTimingLinks
     """
     vehicle_journeys = root_element.xpath("//x:VehicleJourney", namespaces=namespaces)
     vehicle_journey_map = {}
@@ -62,6 +68,9 @@ def validate_journey_pattern_timing_links(
 ) -> list[etree._Element]:
     """
     Validate JourneyPatternTimingLinks against the associated VehicleJourneyTimingLink data.
+
+    If a JourneyPatternTimingLink has non-zero RunTime,
+    any related VehicleJourneyTimingLink should not have To/From elements
     """
     non_compliant_elements = []
     journey_pattern_sections = root_element.xpath(
@@ -83,12 +92,13 @@ def validate_journey_pattern_timing_links(
             except DurationParsingException:
                 time_duration = None
 
-            # If JourneyPatternTimingLink has non-zero RunTime, VehicleJourneyTimingLink should have no To/From elements
             if time_duration and time_duration != ZERO_TIME_DURATION:
                 vj_link = vehicle_journey_map.get(link_id)
                 if vj_link and (vj_link.has_from or vj_link.has_to):
                     log.info(
-                        f"PTI Violation for JourneyPatternTimingLink '{link_id}': Associated VehicleJourneyTimingLink has 'To' or 'From' elements."
+                        "PTI Violation for JourneyPatternTimingLink:",
+                        "Corresponding VehicleJourneyTimingLink has To or From elements.",
+                        journey_timing_link_id=link_id,
                     )
                     non_compliant_elements.append(link)
     return non_compliant_elements
