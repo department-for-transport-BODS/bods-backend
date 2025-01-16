@@ -42,10 +42,9 @@ from .functions import (
     validate_line_id,
     validate_modification_date_time,
     validate_non_naptan_stop_points,
-    validate_run_time,
-    validate_timing_link_stops,
 )
 from .holidays import get_validate_bank_holidays
+from .timing_links import validate_run_time, validate_timing_link_stops
 
 logger = logging.getLogger(__name__)
 
@@ -137,11 +136,23 @@ class PTIValidator:
         """
         self.fns[key] = function
 
-    def add_violation(self, violation: Violation) -> None:
+    def add_violation(
+        self, element: etree._Element, observation: Observation, filename: str
+    ) -> None:
         """
-        Record PTI violation
+        Create and add a Violation for the given element and observation
         """
-        self.violations.append(violation)
+        name = element.xpath("local-name(.)", namespaces=self.namespaces)
+        line = element.sourceline or 0
+        self.violations.append(
+            Violation(
+                line=line,
+                name=name,
+                filename=filename,
+                observation=observation,
+                element_text=element.text or "",
+            )
+        )
 
     def check_observation(
         self, observation: Observation, element: etree._Element, filename: str
@@ -151,17 +162,13 @@ class PTIValidator:
         """
         for rule in observation.rules:
             result = element.xpath(rule.test, namespaces=self.namespaces)
-            if not result:
-                name = element.xpath("local-name(.)", namespaces=self.namespaces)
-                line = element.sourceline or 0
-                violation = Violation(
-                    line=line,
-                    name=name,
-                    filename=filename,
-                    observation=observation,
-                    element_text=element.text,
-                )
-                self.add_violation(violation)
+            # Validator function will return a boolean or a list of non-compliant elements.
+            if isinstance(result, bool) and result is False:
+                self.add_violation(element, observation, filename)
+                break
+            if isinstance(result, list) and len(result) > 0:
+                for element_with_violation in result:
+                    self.add_violation(element_with_violation, observation, filename)
                 break
 
     def check_service_type(self, document):
@@ -207,5 +214,6 @@ class PTIValidator:
             elements = document.xpath(observation.context, namespaces=self.namespaces)
             for element in elements:
                 self.check_observation(observation, element, metadata.FileName)
+
         logger.info("Completed observations for the XML file")
         return len(self.violations) == 0
