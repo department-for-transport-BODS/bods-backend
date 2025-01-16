@@ -34,9 +34,7 @@
       "reference": "3.2",
       "context": "//x:ServicedOrganisations/x:ServicedOrganisation",
       "number": 11,
-      "rules": [
-        { "test": "has_servicedorganisation_working_days(.)" }
-      ]
+      "rules": [{ "test": "has_servicedorganisation_working_days(.)" }]
     },
     {
       "details": " Serviced Organisations are optional. But if you are including it then it is required to be in the correct structure. Here, you have an incorrect structure in 'WorkingDays' field. Since your 'StartDate' value equals your 'CurrentDate' value, the 'Provisional' field cannot be set to 'true'. Please remove the values from the Provisional or set it to 'false'.",
@@ -361,7 +359,7 @@
       "service_type": "All",
       "reference": "8.1",
       "number": 34,
-      "context": "//x:JourneyPatternTimingLink",
+      "context": "/*",
       "rules": [
         {
           "test": "validate_run_time(.)"
