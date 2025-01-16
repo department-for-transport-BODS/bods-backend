@@ -4,7 +4,7 @@ StopPoint Location Tag Parsing
 
 from typing import Final
 
-from common_layer.utils_location import osgrid_to_latlon
+from common_layer.utils_location import lonlat_to_osgrid, osgrid_to_lonlat
 from lxml import etree
 
 from .xml_constants import NAPTAN_NS_PREFIX
@@ -23,29 +23,66 @@ def augment_location_data(
     location_data: dict[str, str | None]
 ) -> dict[str, str | None]:
     """
-    Augment location data by converting Easting/Northing to Longitude/Latitude
-    if Longitude/Latitude are not present.
-
+    Augment location data by converting between coordinate systems.
     """
-    if location_data.get("Longitude") and location_data.get("Latitude"):
-        return location_data
-    if not (location_data["Easting"] and location_data["Northing"]):
-        return location_data
-
-    try:
-        easting = float(location_data["Easting"])
-        northing = float(location_data["Northing"])
-    except (TypeError, ValueError):
+    # Exit Early if all locations are there
+    if all(
+        location_data.get(key)
+        for key in ["Longitude", "Latitude", "Easting", "Northing"]
+    ):
         return location_data
 
-    try:
-        longitude, latitude = osgrid_to_latlon(easting, northing)
+    # Define coordinate conversion strategies
+    conversions = [
+        {
+            "missing_keys": ["Longitude", "Latitude"],
+            "existing_keys": ["Easting", "Northing"],
+            "converter": osgrid_to_lonlat,
+            "format_fn": lambda x: f"{x:.15f}",
+            "result_keys": ["Longitude", "Latitude"],
+        },
+        {
+            "missing_keys": ["Easting", "Northing"],
+            "existing_keys": ["Longitude", "Latitude"],
+            "converter": lonlat_to_osgrid,
+            "format_fn": str,
+            "result_keys": ["Easting", "Northing"],
+        },
+    ]
+
+    for conversion in conversions:
+        # Skip if the coordinates we want are already present
+        if all(location_data.get(key) for key in conversion["missing_keys"]):
+            continue
+
+        # Check if we have the existing coordinates to convert from
+        if not all(location_data.get(key) for key in conversion["existing_keys"]):
+            continue
+
+        # Convert existing coordinates to floats, handling potential None
+        coords = []
+        for key in conversion["existing_keys"]:
+            value = location_data.get(key)
+            if value is None:
+                break
+            coords.append(float(value))
+
+        # If we couldn't convert all coordinates, skip this conversion
+        if len(coords) != len(conversion["existing_keys"]):
+            continue
+
+        # Perform coordinate conversion
+        converted_coords = conversion["converter"](*coords)
+
+        # Update location data with converted coordinates
         location_data.update(
-            {"Longitude": str(round(longitude, 7)), "Latitude": str(round(latitude, 7))}
+            dict(
+                zip(
+                    conversion["result_keys"],
+                    [conversion["format_fn"](coord) for coord in converted_coords],
+                )
+            )
         )
-    # We need to Skip StopPoints with errors and process all stops
-    except Exception:  # pylint: disable=broad-exception-caught
-        return location_data
 
     return location_data
 

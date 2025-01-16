@@ -23,8 +23,8 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
                 <Place>
                     <Location>
                         <Translation>
-                            <Longitude>-2.58579</Longitude>
-                            <Latitude>51.44902</Latitude>
+                            <Longitude>-2.585789031283037</Longitude>
+                            <Latitude>51.449021016827182</Latitude>
                             <Easting>359389</Easting>
                             <Northing>172389</Northing>
                         </Translation>
@@ -33,8 +33,8 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
             """
             ),
             {
-                "Longitude": "-2.58579",
-                "Latitude": "51.44902",
+                "Longitude": "-2.585789031283037",
+                "Latitude": "51.449021016827182",
                 "Easting": "359389",
                 "Northing": "172389",
             },
@@ -54,8 +54,8 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
             """
             ),
             {
-                "Longitude": "-2.58579",
-                "Latitude": "51.44902",
+                "Longitude": "-2.585789031283037",
+                "Latitude": "51.449021016827182",
                 "Easting": "359389",
                 "Northing": "172389",
             },
@@ -75,8 +75,8 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
             """
             ),
             {
-                "Longitude": "-2.25485",
-                "Latitude": "53.48701",
+                "Longitude": "-2.254849141174204",
+                "Latitude": "53.487009628400806",
                 "Easting": "383187",
                 "Northing": "398952",
             },
@@ -96,8 +96,8 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
             """
             ),
             {
-                "Longitude": "-3.19858",
-                "Latitude": "55.93750",
+                "Longitude": "-3.198577617802602",
+                "Latitude": "55.937500981811695",
                 "Easting": "325225",
                 "Northing": "672254",
             },
@@ -117,8 +117,8 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
             """
             ),
             {
-                "Longitude": "-3.18313",
-                "Latitude": "51.47661",
+                "Longitude": "-3.183132532733615",
+                "Latitude": "51.476605537318832",
                 "Easting": "317929",
                 "Northing": "175958",
             },
@@ -137,7 +137,12 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
                 </Place>
             """
             ),
-            None,
+            {
+                "Easting": "359389",
+                "Latitude": "51.44902",
+                "Longitude": "-2.58579",
+                "Northing": "172389",
+            },
             id="No Easting Northing",
         ),
         pytest.param(create_stop_point("<Place></Place>"), None, id="NoLocationData"),
@@ -147,7 +152,6 @@ from tests.periodic_tasks.naptan_cache.parsers.common import (
 def test_parse_location(xml_input: str, expected: dict[str, str | None] | None) -> None:
     """
     Test parse_location function with various input scenarios.
-
     """
     stop_point: etree._Element = parse_xml_to_stop_point(xml_input)
     result: dict[str, str | None] | None = parse_location(stop_point)

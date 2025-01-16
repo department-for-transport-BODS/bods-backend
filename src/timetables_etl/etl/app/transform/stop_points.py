@@ -10,7 +10,7 @@ from common_layer.txc.models import (
     LocationStructure,
     TXCStopPoint,
 )
-from common_layer.utils_location import osgrid_to_latlon
+from common_layer.utils_location import osgrid_to_lonlat
 from geoalchemy2.shape import from_shape
 from shapely.geometry import Point
 from structlog.stdlib import get_logger
@@ -30,7 +30,7 @@ def convert_location_to_point(location: LocationStructure) -> Point:
     if location.Longitude and location.Latitude:
         return Point(float(location.Longitude), float(location.Latitude))
     if location.Easting and location.Northing:
-        lon, lat = osgrid_to_latlon(float(location.Easting), float(location.Northing))
+        lon, lat = osgrid_to_lonlat(float(location.Easting), float(location.Northing))
         return Point(lon, lat)
     raise ValueError("Invalid location coordinates")
 
