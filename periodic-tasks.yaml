@@ -392,7 +392,8 @@ Resources:
   GenerateLambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      Description: Role for Generate Lambda functions with S3, KMS, and RDS access
+      RoleName: !Sub ${ProjectName}-${Environment}-${SubFunction}-generate-siri-gtfs-lambda-execution-role
+      Description: Role for Generate Lambda functions for SIRIVM and GTFS with S3, KMS, and RDS access
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -407,11 +408,18 @@ Resources:
         - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
         - !If
           - IsUsingBodsInfra
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-rw-user-access-policy-arn}}'
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-rw-user-access-policy-arn}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
           - !If
             - IsStandalone
             - !Ref AWS::NoValue
-            - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess'
+            - arn:aws:iam::aws:policy/AmazonRDSFullAccess
+        - !If
+          - IsUsingBodsInfra
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-ro-user-access-policy-arn}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
+          - !If
+            - IsStandalone
+            - !Ref AWS::NoValue
+            - arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess
       Policies:
         - PolicyName: S3AndKMSPermissions
           PolicyDocument:
@@ -447,6 +455,7 @@ Resources:
   IteratorLambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: !Sub ${ProjectName}-${Environment}-${SubFunction}-iterator-lambda-execution-role
       Description: Role for Iterator Lambda with Lambda invoke permissions
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -476,6 +485,7 @@ Resources:
   NaptanCacheLambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: !Sub ${ProjectName}-${Environment}-${SubFunction}-naptan-cache-lambda-execution-role
       Description: Role for Naptan Cache Lambda with basic permissions
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
