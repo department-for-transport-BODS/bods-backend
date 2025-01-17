@@ -162,7 +162,8 @@ class PTIValidator:
         """
         for rule in observation.rules:
             result = element.xpath(rule.test, namespaces=self.namespaces)
-            # Validator function will return a boolean or a list containing the first non-compliant element found.
+            # Xpath query will return a boolean or a list containing
+            # the first non-compliant element found.
             if isinstance(result, bool) and result is False:
                 self.add_violation(element, observation, filename)
                 break
