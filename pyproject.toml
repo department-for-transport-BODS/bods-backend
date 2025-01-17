@@ -23,6 +23,7 @@ create-revision = "tools.dataset_revision.cli:app"
 db-viewer = "tools.db_viewer.cli:app"
 create-tables-dev = "src.boilerplate.common_layer.database.create_tables:create_db_tables"
 download-dataset = "tools.download_dataset.cli:app"
+txc-tools = "tools.txc_tools.cli:cli"
 
 [tool.poetry.dependencies]
 python = "^3.11"
