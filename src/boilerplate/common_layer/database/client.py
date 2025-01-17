@@ -5,7 +5,7 @@ SQL Alchemy BODs Database Client
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Callable, Generator
+from typing import Callable, Generator
 from urllib.parse import quote_plus
 
 import boto3
@@ -61,6 +61,11 @@ class PostgresSettings(BaseSettings):
     AWS_REGION: str | None = Field(
         default=None, description="AWS region for IAM authentication"
     )
+    POSTGRES_APPLICATION_NAME: str | None = Field(
+        default=None,
+        description="Application name for database connections",
+        validation_alias="AWS_LAMBDA_FUNCTION_NAME",
+    )
 
     @property
     def use_iam_auth(self) -> bool:
@@ -75,11 +80,19 @@ class PostgresSettings(BaseSettings):
     def get_connection_url(self, iam_token: str | None = None) -> str:
         """
         Generate PostgreSQL connection URL.
-
         """
         if self.use_iam_auth and not iam_token:
             raise ValueError("IAM token required for non-local environment")
         password = iam_token if self.use_iam_auth else self.POSTGRES_PASSWORD
+
+        query_params: list[str] = []
+        if self.ssl_mode:
+            query_params.append(f"sslmode={self.ssl_mode}")
+        if self.POSTGRES_APPLICATION_NAME:
+            query_params.append(f"application_name={self.POSTGRES_APPLICATION_NAME}")
+
+        query_string = "&".join(query_params) if query_params else None
+
         logger.info(
             "Constructing Connection URL",
             username=self.POSTGRES_USER,
@@ -87,7 +100,9 @@ class PostgresSettings(BaseSettings):
             port=self.POSTGRES_PORT,
             database=self.POSTGRES_DB,
             ssl_mode=self.ssl_mode,
+            application_name=self.POSTGRES_APPLICATION_NAME,
         )
+
         url = MultiHostUrl.build(
             scheme="postgresql+psycopg2",
             username=self.POSTGRES_USER,
@@ -95,7 +110,7 @@ class PostgresSettings(BaseSettings):
             host=self.POSTGRES_HOST,
             port=self.POSTGRES_PORT,
             path=self.POSTGRES_DB,
-            query=f"sslmode={self.ssl_mode}" if self.ssl_mode else None,
+            query=query_string,
         )
 
         return str(url)
@@ -123,7 +138,6 @@ class SqlDB:
         )
         self._engine: Engine | None = None
         self._session_factory: Callable[[], Session] | None = None
-        self._classes: Any | None = None
         self._token_expiration: datetime | None = None
         self._refresh_token_threshold = timedelta(seconds=30)
         self._token_lifetime = timedelta(minutes=15)
