@@ -20,7 +20,7 @@ class CreatedTimeStampMixin(MappedAsDataclass):
 
     @declared_attr.directive
     @classmethod
-    def created(cls) -> Mapped[datetime]:
+    def created(cls) -> Mapped[datetime] | None:
         """
         Generate the created timestamp when inserting
         """
@@ -45,7 +45,7 @@ class TimeStampedMixin(CreatedTimeStampMixin):
 
     @declared_attr.directive
     @classmethod
-    def last_updated(cls) -> Mapped[datetime]:
+    def last_updated(cls) -> Mapped[datetime] | None:
         """
         Generates the modified field when model is being updated
         """
@@ -61,7 +61,7 @@ class TimeStampedMixin(CreatedTimeStampMixin):
 
     @declared_attr.directive
     @classmethod
-    def modified(cls) -> Mapped[datetime]:
+    def modified(cls) -> Mapped[datetime] | None:
         """
         Generates the modified field when model is being updated
         """
