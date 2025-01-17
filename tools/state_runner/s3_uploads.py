@@ -2,7 +2,6 @@
 Module to define the functionality to upload the file for state runner
 """
 
-from sys import exc_info
 from typing import Optional
 
 import boto3
@@ -93,10 +92,10 @@ def upload_to_s3(s3_client, file_name, bucket_name, object_name=None):
         logger.error(msg, exc_info=True)
         raise FileUploadError(msg) from e
     except BotoCoreError as e:
-        msg = f"BotoCoreError occurred while uploading the file"
+        msg = "BotoCoreError occurred while uploading the file"
         logger.error(msg, exc_info=True)
         raise FileUploadError(msg) from e
     except Exception as e:
-        msg = f"Unexpected error while uploading the file"
+        msg = "Unexpected error while uploading the file"
         logger.error(msg, exc_info=True)
         raise FileUploadError(msg) from e

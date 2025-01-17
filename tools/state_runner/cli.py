@@ -1,5 +1,7 @@
 """
-Database View Tool to search by revision id or service ID
+Tool allows to start an AWS Step Functions state machine execution with specified parameters. 
+It supports uploading a file to S3 before starting the state machine and provides logging for 
+the execution process.
 """
 
 from typing import Optional
