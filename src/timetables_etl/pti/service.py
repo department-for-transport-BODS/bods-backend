@@ -7,6 +7,9 @@ from io import BytesIO
 from common_layer.database.client import SqlDB
 from common_layer.database.models.model_organisation import OrganisationDatasetRevision
 from common_layer.database.repos.repo_data_quality import DataQualityPTIObservationRepo
+from common_layer.database.repos.repo_organisation import (
+    OrganisationTXCFileAttributesRepo,
+)
 from common_layer.dynamodb.client import DynamoDB
 from common_layer.dynamodb.models import TXCFileAttributes
 from common_layer.utils import sha1sum
@@ -77,7 +80,11 @@ class PTIValidationService:
             violations += revision_validator.get_violations()
             log.info(f"{len(violations)} violations found.")
 
-            observation_repo = DataQualityPTIObservationRepo(self._db)
-            observation_repo.create_from_violations(revision.id, violations)
+            if len(violations) != 0:
+                observation_repo = DataQualityPTIObservationRepo(self._db)
+                observation_repo.create_from_violations(revision.id, violations)
+
+                txc_file_attribute_repo = OrganisationTXCFileAttributesRepo(self._db)
+                txc_file_attribute_repo.delete_by_id(txc_file_attributes.id)
 
         log.info("Finished PTI Profile validation.")
