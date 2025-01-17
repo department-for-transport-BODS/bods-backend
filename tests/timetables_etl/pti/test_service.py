@@ -1,21 +1,41 @@
+from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
+from common_layer.dynamodb.models import TXCFileAttributes
 from common_layer.pti.models import Violation
 from pti.service import PTIValidationService
 
+from tests.factories.database.organisation import OrganisationDatasetRevisionFactory
 
+
+@pytest.fixture
+def txc_file_attributes():
+    return TXCFileAttributes(
+        id=456,
+        revision_number=1,
+        service_code="Service1",
+        line_names=[],
+        modification_datetime=datetime(2025, 1, 1),
+        hash="filehash",
+        filename="filename.xml",
+    )
+
+
+@patch("pti.service.OrganisationTXCFileAttributesRepo")
 @patch("pti.service.DataQualityPTIObservationRepo")
 @patch("pti.service.TXCRevisionValidator")
 @patch("pti.service.get_xml_file_pti_validator")
 def test_validate(
-    m_get_xml_file_pti_validator, m_txc_revision_validator, m_observation_repo
+    m_get_xml_file_pti_validator,
+    m_txc_revision_validator,
+    m_observation_repo,
+    m_file_attributes_repo,
+    txc_file_attributes,
 ):
-    revision = MagicMock(id=123)
+    revision = OrganisationDatasetRevisionFactory.create_with_id(id_number=123)
     xml_file = MagicMock()
     xml_file.read.return_value = b"dummycontent"
-    txc_file_attributes = MagicMock()
-
     violations = [
         Violation.model_construct(),
         Violation.model_construct(),
@@ -36,6 +56,9 @@ def test_validate(
     m_observation_repo.return_value.create_from_violations.assert_called_once_with(
         revision.id, violations
     )
+    m_file_attributes_repo.return_value.delete_by_id.assert_called_once_with(
+        txc_file_attributes.id
+    )
 
 
 @patch("pti.service.DataQualityPTIObservationRepo")
@@ -47,19 +70,29 @@ def test_validate_unchanged_file(
     m_txc_revision_validator,
     m_sha1_sum,
     m_observation_repo,
+    txc_file_attributes,
 ):
     """
     Validation should be skipped for unchanged files
     """
-    revision = MagicMock(id=123)
+    revision = OrganisationDatasetRevisionFactory.create_with_id(id_number=123)
     xml_file = MagicMock()
     xml_file.read.return_value = b"dummycontent"
 
-    existing_file_hash = "file-hash"
+    existing_file_hash = txc_file_attributes.hash
     m_sha1_sum.return_value = existing_file_hash
 
-    txc_file_attributes = MagicMock()
-    live_file_attributes = [MagicMock(hash=existing_file_hash)]
+    live_file_attributes = [
+        TXCFileAttributes(
+            id=457,
+            revision_number=2,
+            service_code="Service1",
+            line_names=[],
+            modification_datetime=datetime(2025, 1, 10),
+            hash=existing_file_hash,
+            filename="filename.xml",
+        )
+    ]
 
     service = PTIValidationService(
         db=MagicMock(),
