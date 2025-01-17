@@ -32,7 +32,8 @@ def start_state_machine(
     object_key: str = typer.Option(
         "coach-data/FLIX-FlixBus-N1710-Paris-London.xml",
         "--object-key",
-        help="Key of the object in S3, when upload file option used file uploaded to the key given here",
+        help="Key of the object in S3, when upload file option \
+        used file uploaded to the key given here",
     ),
     upload_file: str = typer.Option(
         None,
@@ -105,7 +106,7 @@ def start_state_machine(
             state_machine_name=state_machine_name,
         )
     except Exception as e:
-        logger.error(f"An unexpected error occurred: {e}")
+        logger.error(f"An unexpected error occurred: {e}", exc_info=True)
         raise typer.Exit(1)
 
 

@@ -2,6 +2,7 @@
 Module to define the functionality to upload the file for state runner
 """
 
+from sys import exc_info
 from typing import Optional
 
 import boto3
@@ -51,30 +52,21 @@ def create_aws_session(profile: Optional[str], region: str) -> boto3.Session:
         )
 
     except ProfileNotFound as e:
-        logger.error(
-            "Profile not found. Ensure it is configured in your AWS CLI.",
-            profile=profile,
-            error=str(e),
-        )
-        raise SessionCreationError(
+        message = (
             f"Profile '{profile}' not found. Ensure it is configured in your AWS CLI."
-        ) from e
+        )
+        logger.error(message, exc_info=True)
+        raise SessionCreationError(message) from e
     except NoCredentialsError as e:
-        logger.error(
-            "No AWS credentials found. Please configure them with 'aws configure'.",
-            error=str(e),
-        )
-        raise SessionCreationError(
+        message = (
             "No AWS credentials found. Please configure them with 'aws configure'."
-        ) from e
-    except Exception as e:
-        logger.error(
-            "An unexpected error occurred while creating the AWS session.",
-            error=str(e),
         )
-        raise SessionCreationError(
-            f"An unexpected error occurred while creating the AWS session: {e}"
-        ) from e
+        logger.error(message, exc_info=True)
+        raise SessionCreationError(message) from e
+    except Exception as e:
+        message = "An unexpected error occurred while creating the AWS session."
+        logger.error(message, exc_info=True)
+        raise SessionCreationError(message) from e
 
 
 def upload_to_s3(s3_client, file_name, bucket_name, object_name=None):
@@ -93,36 +85,18 @@ def upload_to_s3(s3_client, file_name, bucket_name, object_name=None):
         logger.info("File uploaded successfully!", bucket=bucket_name, key=object_name)
         return True
     except ClientError as e:
-        logger.error(
-            "Failed to upload file to bucket.",
-            bucket=bucket_name,
-            key=object_name,
-            error=str(e),
-        )
-        raise FileUploadError(
-            f"Failed to upload file '{file_name}' to bucket '{bucket_name}/{object_name}': {e}"
-        ) from e
+        msg = f"Failed to upload file '{file_name}' to bucket '{bucket_name}/{object_name}'"
+        logger.error(msg, exc_info=True)
+        raise FileUploadError(msg) from e
     except FileNotFoundError as e:
-        logger.error(
-            "File not found",
-            file_name=file_name,
-            error=str(e),
-        )
-        raise FileUploadError(f"File '{file_name}' not found: {e}") from e
+        msg = f"File '{file_name}' not found"
+        logger.error(msg, exc_info=True)
+        raise FileUploadError(msg) from e
     except BotoCoreError as e:
-        logger.error(
-            "An error occurred while uploading the file",
-            bucket=bucket_name,
-            key=object_name,
-            error=str(e),
-        )
-        raise FileUploadError(f"An error occurred while uploading the file: {e}") from e
+        msg = f"BotoCoreError occurred while uploading the file"
+        logger.error(msg, exc_info=True)
+        raise FileUploadError(msg) from e
     except Exception as e:
-        logger.error(
-            "An error occurred while uploading the file",
-            file_name=file_name,
-            bucket=bucket_name,
-            key=object_name,
-            error=str(e),
-        )
-        raise FileUploadError(f"Unexpected error: {e}") from e
+        msg = f"Unexpected error while uploading the file"
+        logger.error(msg, exc_info=True)
+        raise FileUploadError(msg) from e

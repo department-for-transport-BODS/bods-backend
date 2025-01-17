@@ -23,7 +23,7 @@ create-revision = "tools.dataset_revision.cli:app"
 db-viewer = "tools.db_viewer.cli:app"
 create-tables-dev = "src.boilerplate.common_layer.database.create_tables:create_db_tables"
 download-dataset = "tools.download_dataset.cli:app"
-state-runner = "tools.state_runner.cli:app"
+etl-state-machine = "tools.state_runner.cli:app"
 
 [tool.poetry.dependencies]
 python = "^3.11"

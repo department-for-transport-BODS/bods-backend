@@ -5,7 +5,7 @@ Model definition for state runner
 from pydantic import BaseModel
 
 
-class Bucket(BaseModel):
+class StateMachineInputS3Bucket(BaseModel):
     """
     Class to hold information about S3 bucket.
     """
@@ -13,7 +13,7 @@ class Bucket(BaseModel):
     name: str
 
 
-class Object(BaseModel):
+class StateMachineInputS3ObjectKey(BaseModel):
     """
     Class to hold information about S3 object key.
     """
@@ -21,20 +21,20 @@ class Object(BaseModel):
     key: str
 
 
-class Detail(BaseModel):
+class StateMachineInputS3Details(BaseModel):
     """
     Class to hold information about state machine payload details.
     """
 
-    bucket: Bucket
-    object: Object
+    bucket: StateMachineInputS3Bucket
+    object: StateMachineInputS3ObjectKey
     datasetRevisionId: str
     datasetType: str
 
 
-class Event(BaseModel):
+class StateMachineInputPayload(BaseModel):
     """
     Class to hold information about state machine payload events.
     """
 
-    detail: Detail
+    detail: StateMachineInputS3Details
