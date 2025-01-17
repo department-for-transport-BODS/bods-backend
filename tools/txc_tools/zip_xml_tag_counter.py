@@ -140,11 +140,9 @@ def process_single_xml(
                 info = process_xml_file(xml_buffer, file_info.filename, tag_name)
                 if info.tag_count > 0:
                     xml_queue.put(info)
-    except Exception as e:  # pylint: disable=broad-except
+    except Exception:  # pylint: disable=broad-except
         log.error(
-            "Error processing XML file",
-            filename=file_info.filename,
-            error=str(e),
+            "Error processing XML file", filename=file_info.filename, exc_info=True
         )
 
 
@@ -167,11 +165,9 @@ def process_single_nested_zip(
                 tag_name,
             )
             future_queue.put(future)
-    except Exception as e:  # pylint: disable=broad-except
+    except Exception:  # pylint: disable=broad-except
         log.error(
-            "Error processing nested zip",
-            filename=file_info.filename,
-            error=str(e),
+            "Error processing nested zip", filename=file_info.filename, exc_info=True
         )
 
 
@@ -228,8 +224,8 @@ def handle_futures_and_queues(
                 try:
                     results = future.result()
                     yield from results
-                except Exception as e:  # pylint: disable=broad-except
-                    log.error("Error processing sub-zip", error=str(e))
+                except Exception:  # pylint: disable=broad-except
+                    log.error("Error processing sub-zip", exc_info=True)
 
         if processing_thread.is_alive():
             threading.Event().wait(0.1)
@@ -272,8 +268,8 @@ def process_zip_contents(
 
     except zipfile.BadZipFile:
         log.error("Error processing zip file BadZipFile", zip_path=zip_path)
-    except Exception as e:  # pylint: disable=broad-except
-        log.error("Error processing zip file", zip_path=zip_path, error=str(e))
+    except Exception:  # pylint: disable=broad-except
+        log.error("Error processing zip file", zip_path=zip_path, exc_info=True)
 
 
 def write_detailed_report(
@@ -411,7 +407,7 @@ def analyze_tags(
             try:
                 future.result()
             except Exception as e:  # pylint: disable=broad-except
-                log.error("Error processing zip file", error=str(e))
+                log.error("Error processing zip file", exc_info=True)
 
 
 if __name__ == "__main__":
