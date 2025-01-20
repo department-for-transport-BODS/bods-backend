@@ -304,14 +304,20 @@ def unzip_and_upload_files(
     if file_path.suffix.lower() == ".zip":
         metrics.add_metric(name="ZipInputCount", unit=MetricUnit.Count, value=1)
         log.info("Input File is a Zip. Processing...", file_path=str(file_path))
-        return process_zip_to_s3(
+        prefix, processing_stats = process_zip_to_s3(
             s3_client=s3_handler,
             zip_path=file_path,
             destination_prefix=s3_output_folder,
         )
+        metrics.add_metric(
+            name="XMLsExtractedForMap",
+            unit=MetricUnit.Count,
+            value=processing_stats.success_count,
+        )
+        return prefix
 
     log.info("Input file is a single file", path=str(file_path))
-    metrics.add_metric(name="XMLInputCount", unit=MetricUnit.Count, value=1)
+    metrics.add_metric(name="XMLsExtractedForMap", unit=MetricUnit.Count, value=1)
     return process_file_to_s3(
         s3_client=s3_handler, file_path=file_path, destination_prefix=s3_output_folder
     )
@@ -367,7 +373,6 @@ def lambda_handler(event, context):
 
         log.info("Sucessfully processed input file", generated_prefix=generated_prefix)
 
-        metrics.add_metric(name="PipelineStarts", unit=MetricUnit.Count, value=1)
         return {
             "statusCode": 200,
             "body": {
