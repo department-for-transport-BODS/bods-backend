@@ -65,15 +65,14 @@ def validate_journey_pattern_timing_links(
     root_element: etree._Element,
     namespaces: dict,
     vehicle_journey_map: dict[str, VehicleJourneyRunTimeInfo],
-) -> etree._Element | None:
+) -> list[etree._Element]:
     """
-    Validate JourneyPatternTimingLinks against the associated VehicleJourneyTimingLink datai.
+    Validate JourneyPatternTimingLinks against the associated VehicleJourneyTimingLink data.
 
     If a JourneyPatternTimingLink has non-zero RunTime,
     any related VehicleJourneyTimingLink should not have To/From elements
-
-    Returns the first non-compliant element found
     """
+    non_compliant_elements = []
     journey_pattern_sections = root_element.xpath(
         "//x:JourneyPatternSection", namespaces=namespaces
     )
@@ -96,11 +95,11 @@ def validate_journey_pattern_timing_links(
             if time_duration and time_duration != ZERO_TIME_DURATION:
                 vj_link = vehicle_journey_map.get(link_id)
                 if vj_link and (vj_link.has_from or vj_link.has_to):
-                    return link
-    return None
+                    non_compliant_elements.append(link)
+    return non_compliant_elements
 
 
-def validate_run_time(context, elements: list[etree._Element]) -> etree._Element | None:
+def validate_run_time(context, elements: list[etree._Element]) -> list[etree._Element]:
     """
     Validate run times between JourneyPatternTimingLinks and VehicleJourneyTimingLinks.
     """
