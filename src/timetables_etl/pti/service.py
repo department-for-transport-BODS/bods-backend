@@ -12,7 +12,6 @@ from common_layer.database.repos.repo_organisation import (
 )
 from common_layer.dynamodb.client import DynamoDB
 from common_layer.dynamodb.models import TXCFileAttributes
-from common_layer.exceptions.pipeline_exceptions import PipelineException
 from common_layer.utils import sha1sum
 from structlog.stdlib import get_logger
 
