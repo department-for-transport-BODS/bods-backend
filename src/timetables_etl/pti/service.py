@@ -78,9 +78,9 @@ class PTIValidationService:
                 txc_file_attributes, self._live_revision_attributes
             )
             violations += revision_validator.get_violations()
-            log.info(f"{len(violations)} violations found.")
 
             if violations:
+                log.info(f"Violations found", count=len(violations))
                 observation_repo = DataQualityPTIObservationRepo(self._db)
                 observation_repo.create_from_violations(revision.id, violations)
 
