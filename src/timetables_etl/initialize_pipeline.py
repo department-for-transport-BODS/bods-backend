@@ -2,9 +2,11 @@
 Lambda: InitializePipeline
 """
 
+import os
 from uuid import uuid4
 
-from aws_lambda_powertools import Tracer
+from aws_lambda_powertools import Metrics, Tracer
+from aws_lambda_powertools.metrics import MetricUnit
 from common_layer.database.client import SqlDB
 from common_layer.database.models.model_pipelines import DatasetETLTaskResult, TaskState
 from common_layer.database.repos.repo_etl_task import ETLTaskResultRepo
@@ -19,6 +21,7 @@ from common_layer.json_logging import configure_logging
 from pydantic import BaseModel
 from structlog.stdlib import get_logger
 
+metrics = Metrics()
 tracer = Tracer()
 logger = get_logger()
 
@@ -75,6 +78,7 @@ def initialize_pipeline(db: SqlDB, dynamodb: DynamoDB, event: InitializePipeline
     return created_task_result.id
 
 
+@metrics.log_metrics
 @tracer.capture_lambda_handler
 def lambda_handler(event, context):
     """
@@ -86,7 +90,8 @@ def lambda_handler(event, context):
     db = SqlDB()
     dynamodb = DynamoDB()
     created_task_result_id = initialize_pipeline(db, dynamodb, parsed_event)
-
+    metrics.add_dimension(name="environment", value=os.getenv("PROJECT_ENV", "unknown"))
+    metrics.add_metric(name="PipelineStarts", unit=MetricUnit.Count, value=1)
     return {
         "status_code": 200,
         "message": "Pipeline Initialized",
