@@ -14,7 +14,6 @@ def assert_attributes(expected_attributes: dict, record: BaseSQLModel):
         assert getattr(record, attr_name) == expected_value
 
 
-@pytest.mark.skip()
 def test_insert(test_db):
     model = NaptanAdminArea
     repo = BaseRepositoryWithId(test_db, model=model)
@@ -22,7 +21,7 @@ def test_insert(test_db):
     expected_attributes = {
         "name": "AdminArea1",
         "traveline_region_id": "NE",
-        "atco_code": "ATC001",
+        "atco_code": "ATCO999",
         "ui_lta_id": None,
     }
     record = NaptanAdminArea(**expected_attributes)
@@ -45,7 +44,7 @@ def test_delete_by_id(test_db):
     model = NaptanAdminArea
     repo = BaseRepositoryWithId(test_db, model=model)
 
-    record = NaptanAdminAreaFactory()
+    record = NaptanAdminAreaFactory(atco_code="ATCO9876")
     inserted_record = repo.insert(record)
 
     with test_db.session_scope() as session:
