@@ -1,6 +1,6 @@
 from common_layer.database.models import NaptanAdminArea
 from common_layer.database.models.common import BaseSQLModel
-from common_layer.database.repos.repo_common import BaseRepository, BaseRepositoryWithId
+from common_layer.database.repos.repo_common import BaseRepositoryWithId
 
 from tests.factories.database.naptan import NaptanAdminAreaFactory
 
@@ -36,6 +36,7 @@ def test_insert(test_db):
         )
         assert fetched_record is not None
         assert_attributes(expected_attributes, fetched_record)
+        repo.delete_by_id(fetched_record.id)
 
 
 def test_delete_by_id(test_db):
