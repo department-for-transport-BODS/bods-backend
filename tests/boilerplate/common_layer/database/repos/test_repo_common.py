@@ -1,9 +1,6 @@
-import pytest
 from common_layer.database.models import NaptanAdminArea
 from common_layer.database.models.common import BaseSQLModel
 from common_layer.database.repos.repo_common import BaseRepositoryWithId
-
-from tests.factories.database.naptan import NaptanAdminAreaFactory
 
 
 def assert_attributes(expected_attributes: dict, record: BaseSQLModel):
@@ -44,7 +41,12 @@ def test_delete_by_id(test_db):
     model = NaptanAdminArea
     repo = BaseRepositoryWithId(test_db, model=model)
 
-    record = NaptanAdminAreaFactory(atco_code="ATCO9876")
+    record = NaptanAdminArea(
+        name="AdminArea2",
+        traveline_region_id="NE",
+        atco_code="ATCO9876",
+        ui_lta_id=None,
+    )
     inserted_record = repo.insert(record)
 
     with test_db.session_scope() as session:
