@@ -78,7 +78,8 @@ Globals:
         - !Ref AWS::NoValue
     Environment:
       Variables:
-        POWERTOOLS_SERVICE_NAME: !Sub '${ProjectName}-${Environment}-timetables-etl'
+        POWERTOOLS_METRICS_NAMESPACE: timetables-etl
+        POWERTOOLS_SERVICE_NAME: !Sub '${ProjectName}-timetables-etl-${Environment}'
         HTTPS_PROXY: !If
           - IsUsingBodsInfra
           - !Sub 'http://squid.bodds.${Environment}:3128'
