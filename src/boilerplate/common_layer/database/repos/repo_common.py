@@ -9,10 +9,11 @@ from typing import (
     Sequence,
     Type,
     TypeVar,
+    cast,
     runtime_checkable,
 )
 
-from sqlalchemy import Column, Select, select
+from sqlalchemy import Column, Select, Table, delete, select
 from structlog.stdlib import get_logger
 
 from ..client import SqlDB
@@ -164,3 +165,22 @@ class BaseRepositoryWithId(BaseRepository[DBModelT]):
             return []
         statement = self._build_query().where(self._model.id.in_(ids))
         return self._fetch_all(statement)
+
+    @handle_repository_errors
+    def delete_by_id(self, id_column_id: int) -> bool:
+        """
+        Delete a single record by the given ID.
+
+        Returns:
+            bool: True if the record was deleted, False otherwise.
+        """
+        if not isinstance(self._model, HasId):
+            raise TypeError(
+                f"Model {self._model.__name__} must have an 'id' field to delete by id"
+            )
+
+        with self._db.session_scope() as session:
+            table = cast(Table, self._model.__table__)
+            statement = delete(table).where(self._model.id == id_column_id)
+            result = session.execute(statement)
+            return result.rowcount > 0

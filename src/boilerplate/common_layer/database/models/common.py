@@ -15,18 +15,17 @@ class BaseSQLModel(MappedAsDataclass, DeclarativeBase):
     """
 
 
-class TimeStampedMixin(MappedAsDataclass):
+class CreatedTimeStampMixin(MappedAsDataclass):
     """
-    A mixin that adds self-managed created and modified fields.
-    All timestamps are stored in UTC.
+    A mixin that adds a self-managed created field.
+    Timestamp is stored in UTC.
     """
+
     include_created = True
-    include_last_updated = False
-    include_modified = True
 
     @declared_attr.directive
     @classmethod
-    def created(cls) -> Mapped[datetime]:
+    def created(cls) -> Mapped[datetime] | None:
         """
         Generate the created timestamp when inserting
         """
@@ -38,10 +37,21 @@ class TimeStampedMixin(MappedAsDataclass):
                 nullable=False,
                 kw_only=True,
             )
+        return None
+
+
+class TimeStampedMixin(CreatedTimeStampMixin):
+    """
+    A mixin that adds self-managed created and modified fields.
+    All timestamps are stored in UTC.
+    """
+
+    include_last_updated = False
+    include_modified = True
 
     @declared_attr.directive
     @classmethod
-    def last_updated(cls) -> Mapped[datetime]:
+    def last_updated(cls) -> Mapped[datetime] | None:
         """
         Generates the modified field when model is being updated
         """
@@ -54,10 +64,11 @@ class TimeStampedMixin(MappedAsDataclass):
                 nullable=False,
                 kw_only=True,
             )
+        return None
 
     @declared_attr.directive
     @classmethod
-    def modified(cls) -> Mapped[datetime]:
+    def modified(cls) -> Mapped[datetime] | None:
         """
         Generates the modified field when model is being updated
         """
@@ -70,3 +81,4 @@ class TimeStampedMixin(MappedAsDataclass):
                 nullable=False,
                 kw_only=True,
             )
+        return None
