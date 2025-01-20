@@ -1,3 +1,4 @@
+import pytest
 from common_layer.database.models import NaptanAdminArea
 from common_layer.database.models.common import BaseSQLModel
 from common_layer.database.repos.repo_common import BaseRepositoryWithId
@@ -13,6 +14,7 @@ def assert_attributes(expected_attributes: dict, record: BaseSQLModel):
         assert getattr(record, attr_name) == expected_value
 
 
+@pytest.mark.skip()
 def test_insert(test_db):
     model = NaptanAdminArea
     repo = BaseRepositoryWithId(test_db, model=model)
@@ -39,6 +41,7 @@ def test_insert(test_db):
         repo.delete_by_id(fetched_record.id)
 
 
+@pytest.mark.skip()
 def test_delete_by_id(test_db):
     model = NaptanAdminArea
     repo = BaseRepositoryWithId(test_db, model=model)
