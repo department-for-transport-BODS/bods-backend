@@ -9,10 +9,11 @@ from typing import (
     Sequence,
     Type,
     TypeVar,
+    cast,
     runtime_checkable,
 )
 
-from sqlalchemy import Column, Select, delete, select
+from sqlalchemy import Column, Select, Table, delete, select
 from structlog.stdlib import get_logger
 
 from ..client import SqlDB
@@ -179,8 +180,7 @@ class BaseRepositoryWithId(BaseRepository[DBModelT]):
             )
 
         with self._db.session_scope() as session:
-            statement = delete(self._model).where(  # pyright: ignore
-                self._model.id == id_column_id
-            )
+            table = cast(Table, self._model.__table__)
+            statement = delete(table).where(self._model.id == id_column_id)
             result = session.execute(statement)
             return result.rowcount > 0
