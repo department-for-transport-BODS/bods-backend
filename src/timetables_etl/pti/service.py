@@ -80,7 +80,7 @@ class PTIValidationService:
             violations += revision_validator.get_violations()
 
             if violations:
-                log.info(f"Violations found", count=len(violations))
+                log.info("Violations found", count=len(violations))
                 observation_repo = DataQualityPTIObservationRepo(self._db)
                 observation_repo.create_from_violations(revision.id, violations)
 
