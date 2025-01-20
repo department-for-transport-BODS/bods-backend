@@ -41,7 +41,6 @@ def test_insert(test_db):
         repo.delete_by_id(fetched_record.id)
 
 
-@pytest.mark.skip()
 def test_delete_by_id(test_db):
     model = NaptanAdminArea
     repo = BaseRepositoryWithId(test_db, model=model)

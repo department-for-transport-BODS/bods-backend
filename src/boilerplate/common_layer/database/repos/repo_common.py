@@ -179,7 +179,7 @@ class BaseRepositoryWithId(BaseRepository[DBModelT]):
             )
 
         with self._db.session_scope() as session:
-            statement = delete(self._model.__table__).where(  # pyright: ignore
+            statement = delete(self._model).where(  # pyright: ignore
                 self._model.id == id_column_id
             )
             result = session.execute(statement)
