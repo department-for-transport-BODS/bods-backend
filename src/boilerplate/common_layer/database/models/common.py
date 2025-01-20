@@ -16,13 +16,18 @@ class BaseSQLModel(MappedAsDataclass, DeclarativeBase):
 
 
 class CreatedTimeStampMixin(MappedAsDataclass):
+    """
+    Base Class for SQL Models enabling Declarative declaration and usage as python dataclass
+    """
+
     include_created = True
 
     @declared_attr.directive
     @classmethod
     def created(cls) -> Mapped[datetime] | None:
         """
-        Generate the created timestamp when inserting
+        A mixin that adds a self-managed created field.
+        Timestamp is stored in UTC.
         """
         if cls.include_created:
             return mapped_column(
@@ -32,6 +37,7 @@ class CreatedTimeStampMixin(MappedAsDataclass):
                 nullable=False,
                 kw_only=True,
             )
+        return None
 
 
 class TimeStampedMixin(CreatedTimeStampMixin):
@@ -58,6 +64,7 @@ class TimeStampedMixin(CreatedTimeStampMixin):
                 nullable=False,
                 kw_only=True,
             )
+        return None
 
     @declared_attr.directive
     @classmethod
@@ -74,3 +81,4 @@ class TimeStampedMixin(CreatedTimeStampMixin):
                 nullable=False,
                 kw_only=True,
             )
+        return None
