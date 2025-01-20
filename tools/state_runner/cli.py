@@ -108,7 +108,7 @@ def start_state_machine(
             state_machine_name=state_machine_name,
         )
     except Exception as e:
-        logger.error(f"An unexpected error occurred: {e}", exc_info=True)
+        logger.error("An unexpected error occurred", error=str(e))
         raise typer.Exit(1)
 
 

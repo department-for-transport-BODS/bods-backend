@@ -2,8 +2,6 @@
 Module to define the functionality to upload the file for state runner
 """
 
-from typing import Optional
-
 import boto3
 import structlog
 from botocore.exceptions import (
@@ -12,6 +10,7 @@ from botocore.exceptions import (
     NoCredentialsError,
     ProfileNotFound,
 )
+from mypy_boto3_s3 import S3Client
 from structlog.stdlib import get_logger
 
 structlog.configure(
@@ -30,16 +29,12 @@ class SessionCreationError(Exception):
     Custom exception for session creation failures.
     """
 
-    pass
-
 
 class FileUploadError(Exception):
     """Custom exception for S3 file upload failures."""
 
-    pass
 
-
-def create_aws_session(profile: Optional[str], region: str) -> boto3.Session:
+def create_aws_session(profile: str | None, region: str) -> boto3.Session:
     """
     Creates AWS session with optional profile
     """
@@ -68,7 +63,9 @@ def create_aws_session(profile: Optional[str], region: str) -> boto3.Session:
         raise SessionCreationError(message) from e
 
 
-def upload_to_s3(s3_client, file_name, bucket_name, object_name=None):
+def upload_to_s3(
+    s3_client: S3Client, file_name: str, bucket_name: str, object_name: str
+):
     """
     Upload a file to an S3 bucket.
     """
