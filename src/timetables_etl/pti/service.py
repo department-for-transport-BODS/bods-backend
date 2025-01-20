@@ -84,7 +84,12 @@ class PTIValidationService:
                 observation_repo = DataQualityPTIObservationRepo(self._db)
                 observation_repo.create_from_violations(revision.id, violations)
 
+                log.info(
+                    "PTI Violation Found, Deleting TXC File Attribute Entry",
+                    txc_file_attributes_id=txc_file_attributes.id,
+                )
                 txc_file_attribute_repo = OrganisationTXCFileAttributesRepo(self._db)
+
                 txc_file_attribute_repo.delete_by_id(txc_file_attributes.id)
 
         log.info("Finished PTI Profile validation.")
