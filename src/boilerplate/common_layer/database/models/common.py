@@ -15,14 +15,13 @@ class BaseSQLModel(MappedAsDataclass, DeclarativeBase):
     """
 
 
-class TimeStampedMixin(MappedAsDataclass):
+class CreatedTimeStampMixin(MappedAsDataclass):
     """
-    A mixin that adds self-managed created and modified fields.
-    All timestamps are stored in UTC.
+    A mixin that adds a self-managed created field.
+    Timestamp is stored in UTC.
     """
+
     include_created = True
-    include_last_updated = False
-    include_modified = True
 
     @declared_attr.directive
     @classmethod
@@ -39,6 +38,16 @@ class TimeStampedMixin(MappedAsDataclass):
                 kw_only=True,
             )
         return None
+
+
+class TimeStampedMixin(CreatedTimeStampMixin):
+    """
+    A mixin that adds self-managed created and modified fields.
+    All timestamps are stored in UTC.
+    """
+
+    include_last_updated = False
+    include_modified = True
 
     @declared_attr.directive
     @classmethod
