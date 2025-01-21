@@ -36,11 +36,6 @@ from file_validation.app.xml_checks import dangerous_xml_check
 def test_valid_xml_parsing(create_xml_file, xml_content: bytes) -> None:
     """
     Test parsing of valid XML documents.
-
-    Args:
-        create_xml_file: Fixture to create XML file objects
-        xml_content: Valid XML content to test
-        test_name: Name of the test case
     """
     xml_file = create_xml_file(xml_content)
     result = dangerous_xml_check(xml_file, "test.xml")
