@@ -7,12 +7,9 @@ from datetime import datetime
 import pytest
 from common_layer.txc.models.txc_data import TXCData
 from common_layer.txc.models.txc_metadata import TXCMetadata
-
-from timetables_etl.post_schema_check import (
-    ValidationResult,
-    check_filename_for_filepath_pii,
-    process_txc_data_check,
-)
+from post_schema_check.app.models import ValidationResult
+from post_schema_check.app.post_schema_check import process_txc_data_check
+from post_schema_check.app.validators import check_filename_for_filepath_pii
 
 
 @pytest.mark.parametrize(

@@ -539,8 +539,8 @@ Resources:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-post-schema-check-lambda'
       Description: Timetables ETL - FileProcessing - Extra Checks such as for PII
       Role: !GetAtt CommonLambdaExecutionRole.Arn
-      CodeUri: ./src/timetables_etl
-      Handler: post_schema_check.lambda_handler
+      CodeUri: ./src/timetables_etl/post_schema_check
+      Handler: app.post_schema_check.lambda_handler
       MemorySize: 768
       Layers:
         - !Ref BoilerplateLambdaLayerArn
