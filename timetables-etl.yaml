@@ -407,8 +407,8 @@ Resources:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-clamav-scanner-lambda'
       Description: Timetables ETL - Antivirus and Extract Files to S3 for Individual File Processing
       Role: !GetAtt CommonLambdaExecutionRole.Arn
-      CodeUri: ./src/timetables_etl
-      Handler: clamav_scanner.lambda_handler
+      CodeUri: ./src/timetables_etl/clamav_scanner
+      Handler: app.clamav_scanner.lambda_handler
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       MemorySize: 512
