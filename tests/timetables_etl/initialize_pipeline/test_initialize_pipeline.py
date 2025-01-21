@@ -2,17 +2,14 @@
 Tests for InitialisePipeline Lambda
 """
 
-from unittest.mock import Mock, patch
-from uuid import UUID
+from datetime import UTC, datetime
+from unittest.mock import Mock, create_autospec, patch
+from uuid import UUID, uuid4
 
 import pytest
 from common_layer.database.client import SqlDB
-from common_layer.database.models.model_pipelines import TaskState
+from common_layer.database.models.model_pipelines import DatasetETLTaskResult, TaskState
 from common_layer.database.repos.repo_etl_task import ETLTaskResultRepo
-from common_layer.database.repos.repo_organisation import (
-    OrganisationDatasetRevisionRepo,
-)
-from common_layer.dynamodb.client import DynamoDB
 from common_layer.enums import FeedStatus
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 from initialize_pipeline.app.initialize_pipeline import (
@@ -26,46 +23,46 @@ from initialize_pipeline.app.initialize_pipeline import (
 from tests.factories.database.organisation import OrganisationDatasetRevisionFactory
 
 
-@pytest.mark.parametrize(
-    "revision_id",
-    [
-        pytest.param(42, id="Returns When Revision Exists"),
-    ],
-)
-def test_get_and_validate_revision_success(test_db: SqlDB, revision_id: int):
+def test_get_and_validate_revision_success(mock_revision_repo):
     """
-    Test that we are raising an exception when it's not found
+    Test successful retrieval of revision
     """
-    revision = OrganisationDatasetRevisionFactory.create_with_id(
-        id_number=revision_id,
-        name="Test Revision",
+    revision_id = 42
+    revision = OrganisationDatasetRevisionFactory.build(
+        id=revision_id,
+        name="Dev Org_Test Upload_1",
+        upload_file="FLIX-FlixBus-UK045-London-Plymouth.xml",
         status="success",
     )
+    mock_revision_repo.get_by_id.return_value = revision
 
-    with test_db.session_scope() as session:
-        session.add(revision)
-        session.commit()
+    with patch(
+        "initialize_pipeline.app.initialize_pipeline.OrganisationDatasetRevisionRepo",
+        return_value=mock_revision_repo,
+    ):
+        result = get_and_validate_revision(Mock(), revision_id)
 
-    result = get_and_validate_revision(test_db, revision_id)
+        assert result is revision
+        assert result.id == revision_id
+        assert result.upload_file == "FLIX-FlixBus-UK045-London-Plymouth.xml"
+        mock_revision_repo.get_by_id.assert_called_once_with(revision_id)
 
-    assert result is not None
-    assert result.id == revision_id
 
-
-@pytest.mark.parametrize(
-    "revision_id",
-    [
-        pytest.param(99999, id="Raises Exception When Revision Does Not Exist"),
-    ],
-)
-def test_get_and_validate_revision_not_found(test_db: SqlDB, revision_id: int):
+def test_get_and_validate_revision_not_found(mock_revision_repo):
     """
-    Raising an Exception when it's not found
+    Test exception when revision not found
     """
-    with pytest.raises(PipelineException) as exc_info:
-        get_and_validate_revision(test_db, revision_id)
+    mock_revision_repo.get_by_id.return_value = None
 
-    assert str(exc_info.value) == f"DatasetRevision with id {revision_id} not found."
+    with patch(
+        "initialize_pipeline.app.initialize_pipeline.OrganisationDatasetRevisionRepo",
+        return_value=mock_revision_repo,
+    ):
+        with pytest.raises(PipelineException) as exc_info:
+            get_and_validate_revision(Mock(), 99999)
+
+        assert str(exc_info.value) == "DatasetRevision with id 99999 not found."
+        mock_revision_repo.get_by_id.assert_called_once_with(99999)
 
 
 @pytest.mark.parametrize(
@@ -75,59 +72,47 @@ def test_get_and_validate_revision_not_found(test_db: SqlDB, revision_id: int):
         pytest.param("error", id="Updates Status From Error To Indexing"),
     ],
 )
-def test_update_revision_status(test_db: SqlDB, initial_status: str):
+def test_update_revision_status(mock_revision_repo, initial_status: str):
     """
-    Check that a revision's status can be updated
+    Test revision status update
     """
-    # Arrange
-    revision = OrganisationDatasetRevisionFactory(status=initial_status)
+    current_time = datetime(2024, 1, 1, tzinfo=UTC)
+    revision = OrganisationDatasetRevisionFactory.build(
+        status=initial_status, modified=current_time, created=current_time
+    )
 
-    with test_db.session_scope() as session:
-        session.add(revision)
-        session.commit()
+    with patch(
+        "initialize_pipeline.app.initialize_pipeline.OrganisationDatasetRevisionRepo",
+        return_value=mock_revision_repo,
+    ):
+        update_revision_status(Mock(), revision)
 
-    # Act
-    update_revision_status(test_db, revision)
-
-    # Assert
-    revision_repo = OrganisationDatasetRevisionRepo(test_db)
-    updated_revision = revision_repo.get_by_id(revision.id)
-    assert updated_revision is not None
-    assert updated_revision.status == FeedStatus.indexing.value
+        assert revision.status == FeedStatus.indexing.value
+        mock_revision_repo.update.assert_called_once_with(revision)
 
 
-@pytest.mark.parametrize(
-    "revision_id",
-    [
-        pytest.param(42, id="Creates Task Result For Existing Revision"),
-    ],
-)
-def test_create_task_result(test_db: SqlDB, revision_id: int):
+def test_create_task_result():
     """
     Test the creation of a task result
     """
-    # Arrange
-    revision = OrganisationDatasetRevisionFactory.create_with_id(id_number=revision_id)
-    with test_db.session_scope() as session:
-        session.add(revision)
-        session.commit()
+    revision_id = 42
+    mock_task_repo = create_autospec(ETLTaskResultRepo, instance=True)
+    task_result = DatasetETLTaskResult(
+        revision_id=revision_id, status=TaskState.STARTED, task_id=str(uuid4())
+    )
+    mock_task_repo.insert.return_value = task_result
 
-    # Act
-    task_result = create_task_result(test_db, revision_id)
+    with patch(
+        "initialize_pipeline.app.initialize_pipeline.ETLTaskResultRepo",
+        return_value=mock_task_repo,
+    ):
+        result = create_task_result(Mock(), revision_id)
 
-    # Assert
-    assert task_result is not None
-    assert task_result.revision_id == revision_id
-    assert task_result.status == TaskState.STARTED
-    # Verify task_id is a valid UUID
-    assert UUID(task_result.task_id, version=4)
-
-    # Verify it's in the database
-    task_repo = ETLTaskResultRepo(test_db)
-    saved_result = task_repo.get_by_id(task_result.id)
-    assert saved_result is not None
-    assert saved_result.revision_id == revision_id
-    assert saved_result.status == TaskState.STARTED
+        assert result is task_result
+        assert result.revision_id == revision_id
+        assert result.status == TaskState.STARTED
+        assert UUID(result.task_id, version=4)
+        mock_task_repo.insert.assert_called_once()
 
 
 @pytest.mark.parametrize(
@@ -136,36 +121,47 @@ def test_create_task_result(test_db: SqlDB, revision_id: int):
         pytest.param(42, id="Initializes Pipeline For Existing Revision"),
     ],
 )
-def test_initialize_pipeline(test_db: SqlDB, revision_id: int):
+def test_initialize_pipeline(mock_revision_repo):
     """
-    Test Initing the pipeline
+    Test initializing the pipeline
     """
-    # Arrange
-    revision = OrganisationDatasetRevisionFactory.create_with_id(
-        id_number=revision_id,
+    revision_id = 42
+    revision = OrganisationDatasetRevisionFactory.build(
+        id=revision_id,
         status="success",
+        num_of_bus_stops=7,
+        num_of_timing_points=40,
+        transxchange_version="2.4",
     )
-    with test_db.session_scope() as session:
-        session.add(revision)
-        session.commit()
+    mock_revision_repo.get_by_id.return_value = revision
+
+    mock_task_repo = create_autospec(ETLTaskResultRepo, instance=True)
+    task_result = DatasetETLTaskResult(
+        revision_id=revision_id, status=TaskState.STARTED, task_id=str(uuid4())
+    )
+    mock_task_repo.insert.return_value = task_result
+
+    mock_dynamodb = create_autospec(
+        "common_layer.dynamodb.client.DynamoDB", instance=True
+    )
+    mock_data_manager = create_autospec(
+        "common_layer.dynamodb.data_manager.FileProcessingDataManager", instance=True
+    )
 
     event = InitializePipelineEvent(DatasetRevisionId=revision_id)
-    dynamodb = Mock(spec=DynamoDB)
 
-    with patch(
-        "timetables_etl.initialize_pipeline.app.initialize_pipeline.FileProcessingDataManager"
-    ) as mock_manager:
-        # Setup mock for DataManager
-        mock_instance = Mock()
-        mock_manager.return_value = mock_instance
+    with patch.multiple(
+        "initialize_pipeline.app.initialize_pipeline",
+        OrganisationDatasetRevisionRepo=lambda db: mock_revision_repo,
+        ETLTaskResultRepo=lambda db: mock_task_repo,
+        FileProcessingDataManager=lambda db, dynamodb: mock_data_manager,
+    ):
+        result = initialize_pipeline(mock_revision_repo._db, mock_dynamodb, event)
 
-        # Act
-        task_result = initialize_pipeline(test_db, dynamodb, event)
-
-        # Assert
-        assert task_result is not None
-        assert task_result.revision_id == revision_id
-
-        # Verify data manager was called correctly
-        mock_manager.assert_called_once_with(test_db, dynamodb)
-        mock_instance.prefetch_and_cache_data.assert_called_once_with(revision)
+        assert result == task_result
+        assert revision.status == FeedStatus.indexing.value
+        mock_revision_repo.update.assert_called_once_with(revision)
+        mock_data_manager.prefetch_and_cache_data.assert_called_once_with(revision)
+        assert revision.num_of_bus_stops == 7
+        assert revision.num_of_timing_points == 40
+        assert revision.transxchange_version == "2.4"
