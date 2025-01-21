@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Any, Iterator
 
 from common_layer.dynamodb.client_loader import DynamoDBLoader
+from common_layer.txc.parser.parser_txc import strip_namespace
+from common_layer.txc.parser.stop_points import parse_txc_stop_point
 from lxml import etree
 from structlog.stdlib import get_logger
 
@@ -145,8 +147,10 @@ def stream_stops(
 
     try:
         for _, stop_point in context:
-            if stop_data := parse_stop_point(stop_point):
-                current_batch.append(stop_data)
+            stop_point_without_ns = strip_namespace(stop_point)
+            if stop_data := parse_txc_stop_point(stop_point_without_ns):
+                stop_point_dict = stop_data.model_dump()
+                current_batch.append(stop_point_dict)
 
                 if len(current_batch) >= batch_size:
                     yield current_batch
