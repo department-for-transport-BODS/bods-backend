@@ -89,7 +89,8 @@ class PTIValidationService:
                     txc_file_attributes_id=txc_file_attributes.id,
                 )
                 txc_file_attribute_repo = OrganisationTXCFileAttributesRepo(self._db)
-
                 txc_file_attribute_repo.delete_by_id(txc_file_attributes.id)
+
+                raise ValueError("PTI validation failed due to violations")
 
         log.info("Finished PTI Profile validation.")

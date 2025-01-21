@@ -48,7 +48,9 @@ def test_validate(
     service = PTIValidationService(
         db=MagicMock(), dynamodb=MagicMock(), live_revision_attributes=[]
     )
-    service.validate(revision, xml_file, txc_file_attributes)
+
+    with pytest.raises(ValueError, match="PTI validation failed due to violations"):
+        service.validate(revision, xml_file, txc_file_attributes)
 
     m_get_xml_file_pti_validator.return_value.get_violations.assert_called_once_with(
         revision, xml_file
