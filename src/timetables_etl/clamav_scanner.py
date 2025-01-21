@@ -9,8 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import BinaryIO
 
-from aws_lambda_powertools import Metrics, Tracer
-from aws_lambda_powertools.metrics import MetricUnit
+from aws_lambda_powertools import Tracer
 from clamd import BufferTooLongError, ClamdNetworkSocket
 from clamd import ConnectionError as ClamdConnectionError
 from common_layer.database.client import SqlDB
@@ -30,7 +29,6 @@ from common_layer.zip import process_zip_to_s3
 from pydantic import BaseModel, Field, ValidationError
 from structlog.stdlib import get_logger
 
-metrics = Metrics()
 tracer = Tracer()
 log = get_logger()
 
@@ -106,15 +104,9 @@ class FileScanner:
 
             if result.status == "ERROR":
                 log.error("Antivirus scan: FAILED", result=result)
-                metrics.add_metric(
-                    name="AntivirusSystemErrors", unit=MetricUnit.Count, value=1
-                )
                 raise AntiVirusError(filename=str(file_path))
             if result.status == "FOUND":
                 log.warning("Antivirus scan: FOUND", reason=result.reason)
-                metrics.add_metric(
-                    name="AntivirusVirusesFound", unit=MetricUnit.Count, value=1
-                )
                 if result.reason:
                     raise SuspiciousFile(
                         filename=str(file_path), message=f"Virus found: {result.reason}"
@@ -122,9 +114,7 @@ class FileScanner:
                 raise SuspiciousFile(filename=str(file_path))
 
             log.info("Antivirus scan: OK", file_path=str(file_path))
-            metrics.add_metric(
-                name="AntivirusVirusesFound", unit=MetricUnit.Count, value=1
-            )
+
         except (OSError, IOError) as e:
             msg = f"Failed to read file for virus scan: {e}"
             log.exception(msg)
@@ -302,22 +292,14 @@ def unzip_and_upload_files(
     Otherwise, copy the single file to a new folder and return that folder path.
     """
     if file_path.suffix.lower() == ".zip":
-        metrics.add_metric(name="ZipInputCount", unit=MetricUnit.Count, value=1)
         log.info("Input File is a Zip. Processing...", file_path=str(file_path))
-        prefix, processing_stats = process_zip_to_s3(
+        return process_zip_to_s3(
             s3_client=s3_handler,
             zip_path=file_path,
             destination_prefix=s3_output_folder,
         )
-        metrics.add_metric(
-            name="XMLsExtractedForMap",
-            unit=MetricUnit.Count,
-            value=processing_stats.success_count,
-        )
-        return prefix
 
     log.info("Input file is a single file", path=str(file_path))
-    metrics.add_metric(name="XMLsExtractedForMap", unit=MetricUnit.Count, value=1)
     return process_file_to_s3(
         s3_client=s3_handler, file_path=file_path, destination_prefix=s3_output_folder
     )
@@ -337,14 +319,12 @@ def make_output_folder_name(
     return f"{file_stem}/{request_id}/"
 
 
-@metrics.log_metrics
 @tracer.capture_lambda_handler
 @file_processing_result_to_db(step_name=StepName.CLAM_AV_SCANNER)
 def lambda_handler(event, context):
     """
     Main lambda handler
     """
-    metrics.add_dimension(name="environment", value=os.getenv("PROJECT_ENV", "unknown"))
     input_data = ClamAVScannerInputData(**event)
     s3_handler = S3(bucket_name=input_data.s3_bucket_name)
     clam_av_config = get_clamav_config()

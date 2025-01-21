@@ -102,9 +102,7 @@ def is_xml_file(file_path: str) -> bool:
     return Path(file_path).suffix.lower() == ".xml"
 
 
-def process_zip_to_s3(
-    s3_client: "S3", zip_path: Path, destination_prefix: str
-) -> tuple[str, ProcessingStats]:
+def process_zip_to_s3(s3_client: "S3", zip_path: Path, destination_prefix: str) -> str:
     """Process a zip file and upload its contents to S3."""
     stats = ProcessingStats()
 
@@ -148,7 +146,7 @@ def process_zip_to_s3(
             files_skipped=stats.skip_count,
         )
 
-        return destination_prefix, stats
+        return destination_prefix
 
     except (OSError, BadZipFile):
         log.error(

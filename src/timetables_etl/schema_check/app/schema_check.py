@@ -2,13 +2,11 @@
 SchemaCheckLambda
 """
 
-import os
 from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
 
-from aws_lambda_powertools import Metrics, Tracer
-from aws_lambda_powertools.metrics import MetricUnit
+from aws_lambda_powertools import Tracer
 from botocore.exceptions import BotoCoreError, ClientError
 from common_layer.database.client import SqlDB
 from common_layer.database.models.model_data_quality import DataQualitySchemaViolation
@@ -21,7 +19,6 @@ from lxml import etree
 from pydantic import BaseModel, Field
 from structlog.stdlib import get_logger
 
-metrics = Metrics()
 tracer = Tracer()
 log = get_logger()
 
@@ -174,14 +171,12 @@ def add_violations_to_db(
     return result
 
 
-@metrics.log_metrics
 @tracer.capture_lambda_handler
 @file_processing_result_to_db(step_name=StepName.TIMETABLE_SCHEMA_CHECK)
 def lambda_handler(event, _context):
     """
     Main lambda handler
     """
-    metrics.add_dimension(name="environment", value=os.getenv("PROJECT_ENV", "unknown"))
     configure_logging()
     input_data = SchemaCheckInputData(**event)
     db = SqlDB()
@@ -190,11 +185,6 @@ def lambda_handler(event, _context):
         violations = process_schema_check(input_data)
 
         if violations:
-            metrics.add_metric(
-                name="SchemaViolationsFound",
-                unit=MetricUnit.Count,
-                value=len(violations),
-            )
             add_violations_to_db(db, violations)
     except Exception as e:
         log.error(
