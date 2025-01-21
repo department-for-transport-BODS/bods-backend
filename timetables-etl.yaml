@@ -380,8 +380,8 @@ Resources:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-initialize-pipeline-lambda'
       Description: Timetables ETL - Initial Environment Setup
       Role: !GetAtt CommonLambdaExecutionRole.Arn
-      CodeUri: ./src/timetables_etl
-      Handler: initialize_pipeline.lambda_handler
+      CodeUri: ./src/timetables_etl/initialize_pipeline
+      Handler: app.initialize_pipeline.lambda_handler
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
