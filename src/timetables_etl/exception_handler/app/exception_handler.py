@@ -42,7 +42,7 @@ def fetch_revision(db: SqlDB, revision_id: int) -> OrganisationDatasetRevision:
     revision_repo = OrganisationDatasetRevisionRepo(db)
     revision = revision_repo.get_by_id(revision_id)
     if revision is None:
-        raise ValueError("Cannot find Revision")
+        raise ValueError("Cannot find OrganisationDatasetRevision")
     return revision
 
 
