@@ -191,10 +191,17 @@
           "ExceptionHandler": {
             "Type": "Task",
             "Resource": "${ExceptionHandlerLambdaArn}",
-            "Parameters": {
-              "Bucket.$": "$.Bucket",
-              "ObjectKey.$": "$.Key",
-              "ErrorInfo.$": "$"
+            "QueryLanguage": "JSONata",
+            "Arguments": {
+              "Error": "{% $Error %}",
+              "ErrorDetails": {
+                "ErrorMessage": "{% $parse($Cause).errorMessage %}",
+                "ErrorType": "{% $parse($Cause).errorType %}",
+                "RequestId": "{% $parse($Cause).requestId %}",
+                "StackTrace": "{% $parse($Cause).stackTrace %}"
+              },
+              "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}",
+              "ExecutionContext": "{% $$ %}"
             },
             "Next": "Fail"
           },
@@ -231,9 +238,17 @@
     "ParentExceptionHandler": {
       "Type": "Task",
       "Resource": "${ExceptionHandlerLambdaArn}",
-      "Parameters": {
-        "DatasetEtlTaskResultId.$": "$.detail.datasetEtlTaskResultId",
-        "ErrorInfo.$": "States.StringToJson($.parsed_error.ParsedCause.errorMessage)"
+      "QueryLanguage": "JSONata",
+      "Arguments": {
+        "Error": "{% $Error %}",
+        "ErrorDetails": {
+          "ErrorMessage": "{% $parse($Cause).errorMessage %}",
+          "ErrorType": "{% $parse($Cause).errorType %}",
+          "RequestId": "{% $parse($Cause).requestId %}",
+          "StackTrace": "{% $parse($Cause).stackTrace %}"
+        },
+        "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}",
+        "ExecutionContext": "{% $$ %}"
       },
       "End": true
     }

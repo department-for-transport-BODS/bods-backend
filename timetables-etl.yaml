@@ -696,8 +696,8 @@ Resources:
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-exception-handler-lambda'
       Role: !GetAtt CommonLambdaExecutionRole.Arn
-      CodeUri: ./src/timetables_etl
-      Handler: exception_handler.lambda_handler
+      CodeUri: ./src/timetables_etl/exception_handler
+      Handler: app.exception_handler.lambda_handler
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
