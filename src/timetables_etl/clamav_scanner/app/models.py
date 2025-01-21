@@ -4,7 +4,7 @@ Pydantic Models / Dataclasses for ClamAV Scanner Lambda
 
 from dataclasses import dataclass
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ClamAVScannerInputData(BaseModel):
@@ -12,12 +12,7 @@ class ClamAVScannerInputData(BaseModel):
     Lambda Input Data
     """
 
-    class Config:
-        """
-        Allow us to map Bucket / Object Key
-        """
-
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
     s3_bucket_name: str = Field(alias="Bucket")
     s3_file_key: str = Field(alias="ObjectKey")
