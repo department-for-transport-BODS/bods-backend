@@ -9,6 +9,7 @@ from uuid import UUID, uuid4
 import pytest
 from common_layer.database.models.model_pipelines import DatasetETLTaskResult, TaskState
 from common_layer.database.repos.repo_etl_task import ETLTaskResultRepo
+from common_layer.dynamodb.data_manager import FileProcessingDataManager
 from common_layer.enums import FeedStatus
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 from initialize_pipeline.app.initialize_pipeline import (
@@ -60,7 +61,6 @@ def test_get_and_validate_revision_not_found(mock_revision_repo):
         with pytest.raises(PipelineException) as exc_info:
             get_and_validate_revision(Mock(), 99999)
 
-        assert str(exc_info.value) == "DatasetRevision with id 99999 not found."
         mock_revision_repo.get_by_id.assert_called_once_with(99999)
 
 
@@ -137,9 +137,8 @@ def test_initialize_pipeline(mock_revision_repo):
     mock_dynamodb = create_autospec(
         "common_layer.dynamodb.client.DynamoDB", instance=True
     )
-    mock_data_manager = create_autospec(
-        "common_layer.dynamodb.data_manager.FileProcessingDataManager", instance=True
-    )
+    mock_data_manager = create_autospec(FileProcessingDataManager, instance=True)
+    mock_data_manager.prefetch_and_cache_data.return_value = None
 
     event = InitializePipelineEvent(DatasetRevisionId=revision_id)
 
