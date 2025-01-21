@@ -7,7 +7,6 @@ from unittest.mock import Mock, create_autospec, patch
 from uuid import UUID, uuid4
 
 import pytest
-from common_layer.database.client import SqlDB
 from common_layer.database.models.model_pipelines import DatasetETLTaskResult, TaskState
 from common_layer.database.repos.repo_etl_task import ETLTaskResultRepo
 from common_layer.enums import FeedStatus
@@ -115,12 +114,6 @@ def test_create_task_result():
         mock_task_repo.insert.assert_called_once()
 
 
-@pytest.mark.parametrize(
-    "revision_id",
-    [
-        pytest.param(42, id="Initializes Pipeline For Existing Revision"),
-    ],
-)
 def test_initialize_pipeline(mock_revision_repo):
     """
     Test initializing the pipeline
@@ -156,7 +149,7 @@ def test_initialize_pipeline(mock_revision_repo):
         ETLTaskResultRepo=lambda db: mock_task_repo,
         FileProcessingDataManager=lambda db, dynamodb: mock_data_manager,
     ):
-        result = initialize_pipeline(mock_revision_repo._db, mock_dynamodb, event)
+        result = initialize_pipeline(Mock(), mock_dynamodb, event)
 
         assert result == task_result
         assert revision.status == FeedStatus.indexing.value
