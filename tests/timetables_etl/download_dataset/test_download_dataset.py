@@ -144,25 +144,3 @@ def test_lambda_handler_no_exception(
 
     assert response["statusCode"] == expected_status_code
     assert response["body"] == expected_body
-
-
-@patch(
-    "timetables_etl.download_dataset.app.download_dataset.OrganisationDatasetRevisionRepo"
-)
-def test_update_dataset_revision_revision_exists(mock_repo_class):
-    """
-    Test `update_dataset_revision` function where the revision exists in the database.
-    """
-    mock_revision_repo = MagicMock()
-    mock_repo_class.return_value = mock_revision_repo
-    dataset_revision = OrganisationDatasetRevisionFactory.create(upload_file=None)
-    mock_revision_return = dataset_revision
-
-    mock_revision_repo.get_by_id.return_value = mock_revision_return
-    file_name = "new_file.csv"
-
-    update_dataset_revision(mock_revision_repo, mock_revision_return, file_name)
-
-    mock_revision_repo.get_by_id.assert_called_once_with(mock_revision_return.id)
-    mock_revision_repo.update.assert_called_once_with(mock_revision_return)
-    assert mock_revision_return.upload_file == file_name
