@@ -38,7 +38,8 @@ def zip_size_report(
     ] = 4,
 ) -> None:
     """
-    Process multiple ZIP files in parallel, analyzing their XML contents and generating CSV reports.
+    Process multiple ZIP files in parallel, analyzing their XML contents and
+    generating CSV reports.
     """
     analyze_zips(zip_files, sub_zip_workers)
 
@@ -72,8 +73,8 @@ def zip_tag_counter(
     ] = 4,
 ) -> None:
     """
-    Process multiple ZIP files in parallel, counting occurrences of specified XML tags
-    and generating CSV reports.
+    Process multiple ZIP files in parallel, counting occurrences of specified
+    XML tags and generating CSV reports.
     """
     analyze_tags(zip_files, tag_name, sub_zip_workers)
 
