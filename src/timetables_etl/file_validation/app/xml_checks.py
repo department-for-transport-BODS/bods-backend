@@ -3,7 +3,7 @@ XML Checks
 """
 
 from io import BytesIO
-from xml.etree.ElementTree import ElementTree
+from xml.etree.ElementTree import ElementTree, ParseError
 
 from common_layer.exceptions.xml_file_exceptions import (
     DangerousXML,
@@ -34,8 +34,9 @@ def dangerous_xml_check(file_object: BytesIO, file_name: str) -> ElementTree:
             "XML successfully validated with no dangerous content",
         )
         return parsed_xml
-    except detree.ParseError as err:
-        log.error("XML syntax error", exc_info=True)
+    except (detree.ParseError, ParseError) as err:
+        error_message = str(err)
+        log.error("XML syntax error", error_message=error_message)
         raise XMLSyntaxError(file_name, message=err.msg) from err
     except DefusedXmlException as err:
         log.error("Dangerous XML", exc_info=True)
