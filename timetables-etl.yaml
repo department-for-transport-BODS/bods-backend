@@ -78,7 +78,8 @@ Globals:
         - !Ref AWS::NoValue
     Environment:
       Variables:
-        POWERTOOLS_SERVICE_NAME: !Sub '${ProjectName}-${Environment}-timetables-etl'
+        POWERTOOLS_METRICS_NAMESPACE: bods
+        POWERTOOLS_SERVICE_NAME: timetables-etl
         HTTPS_PROXY: !If
           - IsUsingBodsInfra
           - !Sub 'http://squid.bodds.${Environment}:3128'
@@ -379,8 +380,8 @@ Resources:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-initialize-pipeline-lambda'
       Description: Timetables ETL - Initial Environment Setup
       Role: !GetAtt CommonLambdaExecutionRole.Arn
-      CodeUri: ./src/timetables_etl
-      Handler: initialize_pipeline.lambda_handler
+      CodeUri: ./src/timetables_etl/initialize_pipeline
+      Handler: app.initialize_pipeline.lambda_handler
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
