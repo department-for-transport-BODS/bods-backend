@@ -24,6 +24,8 @@ db-viewer = "tools.db_viewer.cli:app"
 create-tables-dev = "src.boilerplate.common_layer.database.create_tables:create_db_tables"
 download-dataset = "tools.download_dataset.cli:app"
 txc-tools = "tools.txc_tools.cli:cli"
+etl-state-machine = "tools.state_runner.cli:app"
+
 
 [tool.poetry.dependencies]
 python = "^3.11"
