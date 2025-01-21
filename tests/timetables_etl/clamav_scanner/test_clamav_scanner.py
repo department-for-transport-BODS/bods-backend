@@ -5,13 +5,9 @@ Clam AV Scanner Lambda Tests
 from unittest.mock import MagicMock, patch
 
 import pytest
-from clamav_scanner import (
-    ClamAVConfig,
-    FileScanner,
-    get_clamav_config,
-    lambda_handler,
-    process_file_to_s3,
-)
+from clamav_scanner.app.av_scan import FileScanner, get_clamav_config
+from clamav_scanner.app.models import ClamAVConfig
+from clamav_scanner.app.s3_upload import process_file_to_s3
 from common_layer.exceptions.file_exceptions import SuspiciousFile
 
 
