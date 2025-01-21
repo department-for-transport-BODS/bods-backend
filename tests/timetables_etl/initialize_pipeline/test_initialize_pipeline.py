@@ -27,8 +27,8 @@ def test_get_and_validate_revision_success(mock_revision_repo):
     Test successful retrieval of revision
     """
     revision_id = 42
-    revision = OrganisationDatasetRevisionFactory.build(
-        id=revision_id,
+    revision = OrganisationDatasetRevisionFactory.create_with_id(
+        id_number=revision_id,
         name="Dev Org_Test Upload_1",
         upload_file="FLIX-FlixBus-UK045-London-Plymouth.xml",
         status="success",
@@ -119,8 +119,8 @@ def test_initialize_pipeline(mock_revision_repo):
     Test initializing the pipeline
     """
     revision_id = 42
-    revision = OrganisationDatasetRevisionFactory.build(
-        id=revision_id,
+    revision = OrganisationDatasetRevisionFactory.create_with_id(
+        id_number=revision_id,
         status="success",
         num_of_bus_stops=7,
         num_of_timing_points=40,
