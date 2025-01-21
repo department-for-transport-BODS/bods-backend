@@ -472,8 +472,8 @@ Resources:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-file-validation-lambda'
       Description: Timetables ETL - FileProcessing - Check if file is XML
       Role: !GetAtt CommonLambdaExecutionRole.Arn
-      CodeUri: ./src/timetables_etl
-      Handler: file_validation.lambda_handler
+      CodeUri: ./src/timetables_etl/file_validation
+      Handler: app.file_validation.lambda_handler
       MemorySize: 768
       Timeout: 300
       Layers:
