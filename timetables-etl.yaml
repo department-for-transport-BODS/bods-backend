@@ -570,8 +570,8 @@ Resources:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-file-attributes-etl-lambda'
       Description: Timetables ETL - FileProcessing - Creation of TXC File Attributes DB Record
       Role: !GetAtt CommonLambdaExecutionRole.Arn
-      CodeUri: ./src/timetables_etl
-      Handler: file_attributes_etl.lambda_handler
+      CodeUri: ./src/timetables_etl/file_attributes_etl
+      Handler: app.file_attributes_etl.lambda_handler
       MemorySize: 768
       Timeout: 300
       Layers:
