@@ -1,13 +1,16 @@
-# pylint: skip-file
+"""
+Validator Helper functions
+"""
+
 import re
-from datetime import datetime
-from decimal import Decimal
+from datetime import UTC, datetime
 from typing import Union
 
 from common_layer.database.client import SqlDB
 from common_layer.database.repos import NaptanStopPointRepo
 from dateutil import parser
 from lxml import etree
+from lxml.etree import _Element
 from structlog.stdlib import get_logger
 
 from .destination_display import DestinationDisplayValidator
@@ -37,7 +40,7 @@ def _extract_text(elements, default=None) -> str | None:
     return text
 
 
-def cast_to_date(context, date):
+def cast_to_date(_context, date) -> float:
     """
     Casts a lxml date element to an int.
     """
@@ -45,7 +48,7 @@ def cast_to_date(context, date):
     return parser.parse(text).timestamp()
 
 
-def cast_to_bool(context, elements: ElementsOrStr):
+def cast_to_bool(_context, elements: ElementsOrStr) -> bool:
     """
     Casts either a list of str, list of Elements or a str to a boolean
     """
@@ -53,12 +56,15 @@ def cast_to_bool(context, elements: ElementsOrStr):
     return text == "true"
 
 
-def to_days(context, days, *args):
+def to_days(_context, days, *_args) -> float:
     """Returns number of days as number of seconds."""
     return days * 24 * 60 * 60.0
 
 
-def contains_date(context, text):
+def contains_date(_context, text) -> bool:
+    """
+    Determines if the input text contains any date-like strings.
+    """
     text = _extract_text(text) or ""
     for word in text.split():
         try:
@@ -72,7 +78,12 @@ def contains_date(context, text):
     return False
 
 
-def check_flexible_service_timing_status(context, flexiblejourneypatterns):
+def check_flexible_service_timing_status(_context, flexiblejourneypatterns) -> bool:
+    """
+    Examines XML journey pattern data and verifies that in cases where
+    both fixed and flexible stops are present in the same sequence, all fixed stops
+    have a timing status of "otherPoint".
+    """
     log.info(
         "Validation Start: Flexible Service Timing Status",
     )
@@ -105,7 +116,10 @@ def check_flexible_service_timing_status(context, flexiblejourneypatterns):
     return result
 
 
-def validate_non_naptan_stop_points(context, points):
+def validate_non_naptan_stop_points(_context, points: list[_Element]) -> bool:
+    """
+    Runs the StopPointValidator
+    """
     log.info(
         "Validation Start: Non Naptan Stop Points",
     )
@@ -114,25 +128,39 @@ def validate_non_naptan_stop_points(context, points):
     return validator.validate()
 
 
-def get_stop_point_ref_list(stop_points, ns):
-    stop_point_ref_list = []
+def get_stop_point_ref_list(stop_points, ns) -> list[str]:
+    """
+    For each stop point in the input, the function looks for FlexibleStopUsage elements
+    and extracts their StopPointRef values.
+    """
+    stop_point_ref_list: list[str] = []
     for flex_stop_point in stop_points:
         flexible_stop_usage_list = flex_stop_point.xpath(
             "x:FlexibleStopUsage", namespaces=ns
         )
         if len(flexible_stop_usage_list) > 0:
             for flexible_stop_usage in flexible_stop_usage_list:
-                stop_point_ref_list.append(
-                    _extract_text(
-                        flexible_stop_usage.xpath("x:StopPointRef", namespaces=ns), ""
-                    )
+                ref = _extract_text(
+                    flexible_stop_usage.xpath("x:StopPointRef", namespaces=ns), None
                 )
+                if ref is not None:
+                    stop_point_ref_list.append(ref)
+                else:
+                    log.warning(
+                        "Missing StopPointRef in FlexibleStopUsage",
+                        flexible_stop_usage=flexible_stop_usage,
+                    )
 
     return stop_point_ref_list
 
 
 def get_flexible_service_stop_point_ref_validator(db: SqlDB):
-    def check_flexible_service_stop_point_ref(context, flexiblejourneypatterns):
+    """
+    Creates a validator function that checks if all flexible service stop points are
+    properly registered in the NAPTAN database as flexible bus stops.
+    """
+
+    def check_flexible_service_stop_point_ref(_context, flexiblejourneypatterns):
         log.info(
             "Validation Start: Check Flexible Service Stop Point Ref",
         )
@@ -161,7 +189,7 @@ def get_flexible_service_stop_point_ref_validator(db: SqlDB):
     return check_flexible_service_stop_point_ref
 
 
-def check_inbound_outbound_description(context, services):
+def check_inbound_outbound_description(_context, services):
     """
     Check when file has detected a standard service (includes StandardService):
         - If both InboundDescription and OutboundDescription are not present, return False.
@@ -191,9 +219,9 @@ def check_inbound_outbound_description(context, services):
         return True
 
 
-def check_description_for_inbound_description(context, services):
+def check_description_for_inbound_description(_context, services: list) -> bool:
     """
-    Check if a standard service (includes StandardService) has description present for InboundDescription.
+    Check if a StandardService has description present for InboundDescription.
 
     Args:
         context: The context for the check.
@@ -219,11 +247,12 @@ def check_description_for_inbound_description(context, services):
             if len(inbound_description_tag.xpath("x:Description", namespaces=ns)) == 0:
                 return False
         return True
+    return False
 
 
-def check_description_for_outbound_description(context, services):
+def check_description_for_outbound_description(_context, services: list):
     """
-    Check if a standard service (includes StandardService) has description present for OutboundDescription.
+    Check if a StandardService has description present for OutboundDescription.
 
     Args:
         context: The context for the check.
@@ -254,7 +283,7 @@ def check_description_for_outbound_description(context, services):
         return True
 
 
-def check_flexible_service_times(context, vehiclejourneys):
+def check_flexible_service_times(_context, vehiclejourneys) -> bool:
     """
     Check when FlexibleVehicleJourney is present, that FlexibleServiceTimes
     is also present at least once. If not present at all, then return False.
@@ -275,9 +304,10 @@ def check_flexible_service_times(context, vehiclejourneys):
                 return False
 
             return True
+    return False
 
 
-def has_destination_display(context, patterns):
+def has_destination_display(_context, patterns):
     """
     First check if DestinationDisplay in JourneyPattern is provided.
 
@@ -295,7 +325,7 @@ def has_destination_display(context, patterns):
     return validator.validate()
 
 
-def has_name(context, elements, *args):
+def has_name(_context, elements, *args) -> bool:
     """
     Checks if elements are in the list of names.
     """
@@ -310,7 +340,7 @@ def has_name(context, elements, *args):
     return True
 
 
-def has_flexible_or_standard_service(context, services):
+def has_flexible_or_standard_service(_context, services) -> bool:
     """
     If it is a non-flexible service (flexible service is not defined),
     then it should have a StandardService defined. If validation fails,
@@ -330,15 +360,13 @@ def has_flexible_or_standard_service(context, services):
             if flexible_service_list:
                 return True
             return False
-        else:
-            standard_service_list = service.xpath("x:StandardService", namespaces=ns)
-            if standard_service_list:
-                return True
-            else:
-                return False
+        standard_service_list = service.xpath("x:StandardService", namespaces=ns)
+        return bool(standard_service_list)
+
+    return False
 
 
-def has_flexible_service_classification(context, services):
+def has_flexible_service_classification(_context, services: list) -> bool:
     """
     Check when file has detected a flexible service (includes
     FlexibleService), it has ServiceClassification and Flexible elements.
@@ -365,9 +393,13 @@ def has_flexible_service_classification(context, services):
                 return True
 
         return False
+    return False
 
 
-def has_prohibited_chars(context, element):
+def has_prohibited_chars(_context, element: _Element) -> bool:
+    """
+    Check if Element has disallowed XML characters
+    """
     log.info(
         "Validation Start: Prohibited Characters",
     )
@@ -375,7 +407,19 @@ def has_prohibited_chars(context, element):
     return len([c for c in chars if c in PROHIBITED_CHARS]) > 0
 
 
-def check_service_group_validations(context, services):
+def check_service_group_validations(_context, services):
+    """
+    Enforces the following rules:
+    1. A service group can contain exactly one service of any type, OR
+    2. A service group can contain multiple services ONLY IF:
+       - It contains exactly one registered flexible service
+       - It contains NO registered standard services
+
+    The function categorizes services into:
+    - Registered StandardService (ServiceCode format: XX9999999:*)
+    - Unregistered StandardService (ServiceCode format: UZ[A-Z0-9]{7}:*)
+    - Registered FlexibleService (ServiceCode matches registered format + has Flexible)
+    """
     log.info(
         "Validation Start: Service Group Validations",
         count=len(services),
@@ -437,28 +481,40 @@ def check_service_group_validations(context, services):
     return False
 
 
-def is_member_of(context, element, *args):
+def is_member_of(_context, element, *args) -> bool:
+    """
+    Checks if the text content of an element is a member of the provided arguments
+    """
     text = _extract_text(element, default="")
     return text in args
 
 
-def regex(context, element, pattern):
+def regex(_context, element, pattern) -> bool:
+    """
+    Checks if element's text content matches the provided regular expression pattern
+    """
     chars = _extract_text(element) or ""
     return re.match(pattern, chars) is not None
 
 
-def strip(context, text):
+def strip(_context, text) -> str:
+    """
+    Removes leading and trailing whitespace from element's text content
+    """
     text = _extract_text(text) or ""
     return text.strip()
 
 
-def today(context):
-    now = datetime.now().date().isoformat()
+def today(_context) -> float:
+    """
+    Gets current UTC date as a Unix timestamp
+    """
+    now = datetime.now(UTC).date().isoformat()
     date = parser.parse(now)
     return date.timestamp()
 
 
-def validate_line_id(context, lines):
+def validate_line_id(_context, lines):
     """
     Validates that Line@id has the correct format.
     """
@@ -486,7 +542,7 @@ def validate_line_id(context, lines):
     return line_id.startswith(expected_line_id)
 
 
-def validate_modification_date_time(context, roots):
+def validate_modification_date_time(_context, roots):
     log.info(
         "Validation Start: Modification Datetime",
         count=len(roots),
@@ -502,7 +558,7 @@ def validate_modification_date_time(context, roots):
         return creation_date < modification_date
 
 
-def validate_licence_number(context, elements: list[etree._Element]) -> bool:
+def validate_licence_number(_context, elements: list[etree._Element]) -> bool:
     """
     Validate the license number within a list of XML elements if Primary Mode is not coach.
 
@@ -536,7 +592,7 @@ def validate_licence_number(context, elements: list[etree._Element]) -> bool:
     return True
 
 
-def has_servicedorganisation_working_days(context, service_organisations):
+def has_servicedorganisation_working_days(_context, service_organisations):
     """
     Checks if all service organisations have defined working days.
 
@@ -571,7 +627,7 @@ def has_servicedorganisation_working_days(context, service_organisations):
 
 
 def get_lines_validator(db: SqlDB):
-    def validate_lines(context, lines_list: list[etree._Element]) -> bool:
+    def validate_lines(_context, lines_list: list[etree._Element]) -> bool:
         log.info(
             "Validation Start: Lines",
             lines_count=len(lines_list),
