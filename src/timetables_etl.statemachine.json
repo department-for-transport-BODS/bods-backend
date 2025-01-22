@@ -200,8 +200,7 @@
                 "RequestId": "{% $parse($Cause).requestId %}",
                 "StackTrace": "{% $parse($Cause).stackTrace %}"
               },
-              "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}",
-              "ExecutionContext": "{% $$ %}"
+              "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}"
             },
             "Next": "Fail"
           },
@@ -247,8 +246,7 @@
           "RequestId": "{% $parse($Cause).requestId %}",
           "StackTrace": "{% $parse($Cause).stackTrace %}"
         },
-        "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}",
-        "ExecutionContext": "{% $$ %}"
+        "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}"
       },
       "End": true
     }

@@ -28,4 +28,3 @@ class ExceptionHandlerInputData(BaseModel):
     error: str = Field(alias="Error")
     error_details: Annotated[ErrorDetails, Field(alias="ErrorDetails")]
     dataset_etl_task_result_id: int = Field(alias="DatasetEtlTaskResultId")
-    execution_context: dict = Field(alias="ExecutionContext")
