@@ -193,14 +193,14 @@
             "Resource": "${ExceptionHandlerLambdaArn}",
             "QueryLanguage": "JSONata",
             "Arguments": {
-              "Error": "{% $Error %}",
+              "Error": "{% $.error_info.Error %}",
               "ErrorDetails": {
-                "ErrorMessage": "{% $parse($Cause).errorMessage %}",
-                "ErrorType": "{% $parse($Cause).errorType %}",
-                "RequestId": "{% $parse($Cause).requestId %}",
-                "StackTrace": "{% $parse($Cause).stackTrace %}"
+                "ErrorMessage": "{% States.StringToJson($.error_info.Cause).errorMessage %}",
+                "ErrorType": "{% States.StringToJson($.error_info.Cause).errorType %}",
+                "RequestId": "{% States.StringToJson($.error_info.Cause).requestId %}",
+                "StackTrace": "{% States.StringToJson($.error_info.Cause).stackTrace %}"
               },
-              "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}"
+              "DatasetEtlTaskResultId": "{% $.DatasetEtlTaskResultId %}"
             },
             "Next": "Fail"
           },
@@ -239,14 +239,14 @@
       "Resource": "${ExceptionHandlerLambdaArn}",
       "QueryLanguage": "JSONata",
       "Arguments": {
-        "Error": "{% $Error %}",
+        "Error": "{% $.error_info.Error %}",
         "ErrorDetails": {
-          "ErrorMessage": "{% $parse($Cause).errorMessage %}",
-          "ErrorType": "{% $parse($Cause).errorType %}",
-          "RequestId": "{% $parse($Cause).requestId %}",
-          "StackTrace": "{% $parse($Cause).stackTrace %}"
+          "ErrorMessage": "{% States.StringToJson($.error_info.Cause).errorMessage %}",
+          "ErrorType": "{% States.StringToJson($.error_info.Cause).errorType %}",
+          "RequestId": "{% States.StringToJson($.error_info.Cause).requestId %}",
+          "StackTrace": "{% States.StringToJson($.error_info.Cause).stackTrace %}"
         },
-        "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}"
+        "DatasetEtlTaskResultId": "{% $.DatasetEtlTaskResultId %}"
       },
       "End": true
     }
