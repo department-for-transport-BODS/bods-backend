@@ -634,3 +634,14 @@ Resources:
           - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
           - !Ref AWS::NoValue
       RetentionInDays: 30
+
+Outputs:
+  NaptanStopPointTableName:
+    Value: !GetAtt NaptanStopPointTable.TableName
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-naptan-stop-points-table-name'
+
+  NaptanStopPointTableArn:
+    Value: !GetAtt NaptanStopPointTable.Arn
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-naptan-stop-points-table-arn'
