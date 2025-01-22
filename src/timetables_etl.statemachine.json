@@ -198,9 +198,9 @@
             "Type": "Task",
             "Resource": "${ExceptionHandlerLambdaArn}",
             "Parameters": {
-              "Error.$": "$.Error",
-              "Cause.$": "States.StringToJson($.Cause)",
-              "DatasetEtlTaskResultId.$": "$.initializePipeline.DatasetEtlTaskResultId"
+              "Error.$": "$.errorInfo.Error",
+              "Cause.$": "States.StringToJson($.errorInfo.Cause)",
+              "DatasetEtlTaskResultId.$": "$.DatasetEtlTaskResultId"
             },
             "Next": "Fail"
           },
@@ -231,8 +231,8 @@
       "Type": "Task",
       "Resource": "${ExceptionHandlerLambdaArn}",
       "Parameters": {
-        "Error.$": "$.Error",
-        "Cause.$": "States.StringToJson($.Cause)",
+        "Error.$": "$.errorInfo.Error",
+        "Cause.$": "States.StringToJson($.errorInfo.Cause)",
         "DatasetEtlTaskResultId.$": "$.initializePipeline.DatasetEtlTaskResultId"
       },
       "End": true
