@@ -78,7 +78,8 @@ Globals:
         - !Ref AWS::NoValue
     Environment:
       Variables:
-        POWERTOOLS_SERVICE_NAME: !Sub '${ProjectName}-${Environment}-timetables-etl'
+        POWERTOOLS_METRICS_NAMESPACE: bods
+        POWERTOOLS_SERVICE_NAME: timetables-etl
         HTTPS_PROXY: !If
           - IsUsingBodsInfra
           - !Sub 'http://squid.bodds.${Environment}:3128'
@@ -379,8 +380,8 @@ Resources:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-initialize-pipeline-lambda'
       Description: Timetables ETL - Initial Environment Setup
       Role: !GetAtt CommonLambdaExecutionRole.Arn
-      CodeUri: ./src/timetables_etl
-      Handler: initialize_pipeline.lambda_handler
+      CodeUri: ./src/timetables_etl/initialize_pipeline
+      Handler: app.initialize_pipeline.lambda_handler
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
@@ -406,8 +407,8 @@ Resources:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-clamav-scanner-lambda'
       Description: Timetables ETL - Antivirus and Extract Files to S3 for Individual File Processing
       Role: !GetAtt CommonLambdaExecutionRole.Arn
-      CodeUri: ./src/timetables_etl
-      Handler: clamav_scanner.lambda_handler
+      CodeUri: ./src/timetables_etl/clamav_scanner
+      Handler: app.clamav_scanner.lambda_handler
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       MemorySize: 512
@@ -471,8 +472,8 @@ Resources:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-file-validation-lambda'
       Description: Timetables ETL - FileProcessing - Check if file is XML
       Role: !GetAtt CommonLambdaExecutionRole.Arn
-      CodeUri: ./src/timetables_etl
-      Handler: file_validation.lambda_handler
+      CodeUri: ./src/timetables_etl/file_validation
+      Handler: app.file_validation.lambda_handler
       MemorySize: 768
       Timeout: 300
       Layers:
@@ -538,8 +539,8 @@ Resources:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-post-schema-check-lambda'
       Description: Timetables ETL - FileProcessing - Extra Checks such as for PII
       Role: !GetAtt CommonLambdaExecutionRole.Arn
-      CodeUri: ./src/timetables_etl
-      Handler: post_schema_check.lambda_handler
+      CodeUri: ./src/timetables_etl/post_schema_check
+      Handler: app.post_schema_check.lambda_handler
       MemorySize: 768
       Layers:
         - !Ref BoilerplateLambdaLayerArn
@@ -569,8 +570,8 @@ Resources:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-file-attributes-etl-lambda'
       Description: Timetables ETL - FileProcessing - Creation of TXC File Attributes DB Record
       Role: !GetAtt CommonLambdaExecutionRole.Arn
-      CodeUri: ./src/timetables_etl
-      Handler: file_attributes_etl.lambda_handler
+      CodeUri: ./src/timetables_etl/file_attributes_etl
+      Handler: app.file_attributes_etl.lambda_handler
       MemorySize: 768
       Timeout: 300
       Layers:
@@ -695,8 +696,8 @@ Resources:
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-exception-handler-lambda'
       Role: !GetAtt CommonLambdaExecutionRole.Arn
-      CodeUri: ./src/timetables_etl
-      Handler: exception_handler.lambda_handler
+      CodeUri: ./src/timetables_etl/exception_handler
+      Handler: app.exception_handler.lambda_handler
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:

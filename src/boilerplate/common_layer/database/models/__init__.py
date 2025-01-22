@@ -33,6 +33,7 @@ from .model_pipelines import (
     FileProcessingResult,
     PipelineErrorCode,
     PipelineProcessingStep,
+    TaskState,
 )
 from .model_transmodel import (
     TransmodelBankHolidays,
@@ -65,6 +66,7 @@ __all__ = [
     # Enums
     "TMDayOfWeek",
     "ETLErrorCode",
+    "TaskState",
     # Database Models
     "AvlCavlDataArchive",
     "NaptanAdminArea",

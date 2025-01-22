@@ -26,7 +26,6 @@ download-dataset = "tools.download_dataset.cli:app"
 txc-tools = "tools.txc_tools.cli:cli"
 etl-state-machine = "tools.state_runner.cli:app"
 
-
 [tool.poetry.dependencies]
 python = "^3.11"
 lxml = "^5.3.0"
@@ -103,7 +102,7 @@ addopts = [
   "--continue-on-collection-errors",
   "--cov=./src/",
   "--cov-report=term-missing",
-  "--cov-fail-under=80",
+  "--cov-fail-under=77",
 ]
 testpaths = ["./tests"]
 python_files = ["test_*.py"]
@@ -111,9 +110,7 @@ python_functions = ["test_*"]
 
 [tool.coverage.run]
 omit = [
-  "src/boilerplate/db/models.py",
-  "src/boilerplate/common_layer/database/**/*", # Ignoring for now whilst mock scheme is devised
-  "src/standalone/**/*",                        # Standalone Deployment Scripts
+  "src/standalone/**/*", # Standalone Deployment Scripts
 ]
 
 [tool.black]

@@ -7,7 +7,7 @@ from datetime import datetime
 from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .common import BaseSQLModel, TimeStampedMixin
+from .common import BaseSQLModel, CreatedTimeStampMixin
 
 
 class DataQualitySchemaViolation(BaseSQLModel):
@@ -47,7 +47,7 @@ class DataQualityPostSchemaViolation(BaseSQLModel):
     )
 
 
-class DataQualityPTIObservation(TimeStampedMixin, BaseSQLModel):
+class DataQualityPTIObservation(CreatedTimeStampMixin, BaseSQLModel):
     """Data Quality PTI Observation Table"""
 
     __tablename__ = "data_quality_ptiobservation"

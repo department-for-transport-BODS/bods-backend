@@ -5,6 +5,7 @@ Tests for the FileAttributesEtlLambda
 import pytest
 from common_layer.database.models.model_organisation import OrganisationDatasetRevision
 from common_layer.txc.models.txc_data import TXCData
+from file_attributes_etl.app.process_txc import make_txc_file_attributes
 
 from tests.factories.database.organisation import OrganisationDatasetRevisionFactory
 from tests.timetables_etl.factories.txc.factory_txc_data import (
@@ -13,7 +14,6 @@ from tests.timetables_etl.factories.txc.factory_txc_data import (
 )
 from tests.timetables_etl.factories.txc.factory_txc_operator import TXCOperatorFactory
 from tests.timetables_etl.factories.txc.factory_txc_service import TXCServiceFactory
-from timetables_etl.file_attributes_etl import make_txc_file_attributes
 
 
 @pytest.mark.parametrize(
