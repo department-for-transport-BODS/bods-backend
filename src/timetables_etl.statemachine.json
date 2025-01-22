@@ -230,7 +230,6 @@
     "ParentExceptionHandler": {
       "Type": "Task",
       "Resource": "${ExceptionHandlerLambdaArn}",
-      "QueryLanguage": "JSONata",
       "Parameters": {
         "Error.$": "$.Error",
         "Cause.$": "States.StringToJson($.Cause)",
