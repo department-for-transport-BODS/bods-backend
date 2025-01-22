@@ -114,7 +114,9 @@ Globals:
             - IsStandalone
             - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-app-username'
             - !Ref RdsDbUsername
-        DYNAMODB_TABLE_NAME: !Ref TimetablesCache
+        DYNAMODB_CACHE_TABLE_NAME: !Ref TimetablesCache
+        DYNAMODB_NAPTAN_STOP_POINT_TABLE_NAME:
+          Fn::ImportValue: !Sub '${ProjectName}-${Environment}-naptan-stop-points-table-name'
 
 Resources:
   ##################################
@@ -872,6 +874,14 @@ Resources:
                   - dynamodb:UpdateItem
                   - dynamodb:DeleteItem
                 Resource: !GetAtt TimetablesCache.Arn
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                Resource:
+                  Fn::ImportValue: !Sub '${ProjectName}-${Environment}-naptan-stop-points-table-arn'
         - !If
           - IsStandalone
           - PolicyName: RDSProxyAccessPolicy
