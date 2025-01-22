@@ -22,8 +22,8 @@
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
-          "Next": "ParseError",
-          "ResultPath": "$.error_info"
+          "Next": "ParentExceptionHandler",
+          "ResultPath": "$.errorInfo"
         }
       ]
     },
@@ -41,8 +41,8 @@
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
-          "Next": "ParseError",
-          "ResultPath": "$.error_info"
+          "Next": "ParentExceptionHandler",
+          "ResultPath": "$.errorInfo"
         }
       ]
     },
@@ -89,7 +89,8 @@
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
-                "Next": "ExceptionHandler"
+                "Next": "ExceptionHandler",
+                "ResultPath": "$.errorInfo"
               }
             ]
           },
@@ -107,7 +108,8 @@
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
-                "Next": "ExceptionHandler"
+                "Next": "ExceptionHandler",
+                "ResultPath": "$.errorInfo"
               }
             ]
           },
@@ -125,7 +127,8 @@
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
-                "Next": "ExceptionHandler"
+                "Next": "ExceptionHandler",
+                "ResultPath": "$.errorInfo"
               }
             ]
           },
@@ -143,7 +146,8 @@
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
-                "Next": "ExceptionHandler"
+                "Next": "ExceptionHandler",
+                "ResultPath": "$.errorInfo"
               }
             ]
           },
@@ -161,7 +165,8 @@
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
-                "Next": "ExceptionHandler"
+                "Next": "ExceptionHandler",
+                "ResultPath": "$.errorInfo"
               }
             ]
           },
@@ -181,7 +186,8 @@
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
-                "Next": "ExceptionHandler"
+                "Next": "ExceptionHandler",
+                "ResultPath": "$.errorInfo"
               }
             ]
           },
@@ -191,16 +197,10 @@
           "ExceptionHandler": {
             "Type": "Task",
             "Resource": "${ExceptionHandlerLambdaArn}",
-            "QueryLanguage": "JSONata",
-            "Arguments": {
-              "Error": "{% $.error_info.Error %}",
-              "ErrorDetails": {
-                "ErrorMessage": "{% States.StringToJson($.error_info.Cause).errorMessage %}",
-                "ErrorType": "{% States.StringToJson($.error_info.Cause).errorType %}",
-                "RequestId": "{% States.StringToJson($.error_info.Cause).requestId %}",
-                "StackTrace": "{% States.StringToJson($.error_info.Cause).stackTrace %}"
-              },
-              "DatasetEtlTaskResultId": "{% $.DatasetEtlTaskResultId %}"
+            "Parameters": {
+              "Error.$": "$.Error",
+              "Cause.$": "States.StringToJson($.Cause)",
+              "DatasetEtlTaskResultId.$": "$.initializePipeline.DatasetEtlTaskResultId"
             },
             "Next": "Fail"
           },
@@ -226,27 +226,15 @@
       },
       "End": true
     },
-    "ParseError": {
-      "Type": "Pass",
-      "Parameters": {
-        "ParsedCause.$": "States.StringToJson($.error_info.Cause)"
-      },
-      "ResultPath": "$.parsed_error",
-      "Next": "ParentExceptionHandler"
-    },
+
     "ParentExceptionHandler": {
       "Type": "Task",
       "Resource": "${ExceptionHandlerLambdaArn}",
       "QueryLanguage": "JSONata",
-      "Arguments": {
-        "Error": "{% $.error_info.Error %}",
-        "ErrorDetails": {
-          "ErrorMessage": "{% States.StringToJson($.error_info.Cause).errorMessage %}",
-          "ErrorType": "{% States.StringToJson($.error_info.Cause).errorType %}",
-          "RequestId": "{% States.StringToJson($.error_info.Cause).requestId %}",
-          "StackTrace": "{% States.StringToJson($.error_info.Cause).stackTrace %}"
-        },
-        "DatasetEtlTaskResultId": "{% $.DatasetEtlTaskResultId %}"
+      "Parameters": {
+        "Error.$": "$.Error",
+        "Cause.$": "States.StringToJson($.Cause)",
+        "DatasetEtlTaskResultId.$": "$.initializePipeline.DatasetEtlTaskResultId"
       },
       "End": true
     }
