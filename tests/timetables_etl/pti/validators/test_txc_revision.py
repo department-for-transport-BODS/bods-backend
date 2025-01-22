@@ -1,9 +1,13 @@
+"""
+Test PTI Revision
+"""
+
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from freezegun import freeze_time
-from pti.validators.txc_revision import TXCRevisionValidator
+from pti.app.validators.txc_revision import TXCRevisionValidator
 
 
 def test_revision_get_by_service_code_and_lines():

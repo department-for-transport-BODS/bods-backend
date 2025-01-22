@@ -1,5 +1,10 @@
-from lxml import etree
+"""
+Test Model Parsing
+"""
+
 from common_layer.pti.models import VehicleJourney
+from lxml import etree
+
 
 def test_vehicle_journey_from_xml():
     """
@@ -15,7 +20,7 @@ def test_vehicle_journey_from_xml():
         <ServiceRef>Service345</ServiceRef>
     </VehicleJourney>
     """
-    
+
     # Parse the XML string into an lxml element
     root = etree.fromstring(xml_string)
 

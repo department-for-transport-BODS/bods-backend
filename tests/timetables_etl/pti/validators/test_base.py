@@ -1,12 +1,17 @@
-from lxml import etree
-import pytest
+"""
+PTI Base Validator Tests
+"""
+
 from unittest.mock import MagicMock, patch
+
+import pytest
 from common_layer.pti.models import VehicleJourney
-from pti.validators.base import BaseValidator
+from lxml import etree
+from pti.app.validators.base import BaseValidator
 
 
-@pytest.fixture
-def m_root():
+@pytest.fixture(name="m_root")
+def mocked_root():
     """
     Mock an XML root element with namespaces and xpath methods.
     """
@@ -44,12 +49,18 @@ def test_vehicle_journeys_property(m_root):
         vehicle_journey_ref="",
         service_ref="Service1",
     )
-    with patch("common_layer.pti.models.VehicleJourney.from_xml", return_value=vehicle_journey):
+    with patch(
+        "common_layer.pti.models.VehicleJourney.from_xml", return_value=vehicle_journey
+    ):
         validator = BaseValidator(m_root)
         vehicle_journeys = validator.vehicle_journeys
 
-    assert vehicle_journeys == [vehicle_journey], "property returns the correct parsed objects"
-    m_root.xpath.assert_called_once_with("//x:VehicleJourneys/x:VehicleJourney", namespaces=validator.namespaces)
+    assert vehicle_journeys == [
+        vehicle_journey
+    ], "property returns the correct parsed objects"
+    m_root.xpath.assert_called_once_with(
+        "//x:VehicleJourneys/x:VehicleJourney", namespaces=validator.namespaces
+    )
 
 
 def test_journey_patterns_property():
@@ -68,8 +79,12 @@ def test_journey_patterns_property():
     journey_patterns = validator.journey_patterns
 
     assert len(journey_patterns) == 2, "Expected two journey patterns"
-    assert journey_patterns[0].attrib["id"] == "Pattern1", "First journey pattern ID mismatch"
-    assert journey_patterns[1].attrib["id"] == "Pattern2", "Second journey pattern ID mismatch"
+    assert (
+        journey_patterns[0].attrib["id"] == "Pattern1"
+    ), "First journey pattern ID mismatch"
+    assert (
+        journey_patterns[1].attrib["id"] == "Pattern2"
+    ), "Second journey pattern ID mismatch"
 
 
 def test_get_journey_pattern_ref_by_vehicle_journey_code(m_root):
@@ -80,10 +95,17 @@ def test_get_journey_pattern_ref_by_vehicle_journey_code(m_root):
     vehicle_journies_from_xpath = [MagicMock(), MagicMock()]
     m_root.xpath.return_value = vehicle_journies_from_xpath
 
-    vehicle_journey_1 = MagicMock(journey_pattern_ref=expected_pattern, vehicle_journey_ref="", code=code)
-    vehicle_journey_2 = MagicMock(journey_pattern_ref="Pattern2", vehicle_journey_ref="", code="Code2")
+    vehicle_journey_1 = MagicMock(
+        journey_pattern_ref=expected_pattern, vehicle_journey_ref="", code=code
+    )
+    vehicle_journey_2 = MagicMock(
+        journey_pattern_ref="Pattern2", vehicle_journey_ref="", code="Code2"
+    )
 
-    with patch("common_layer.pti.models.VehicleJourney.from_xml", side_effect=[vehicle_journey_1, vehicle_journey_2]):
+    with patch(
+        "common_layer.pti.models.VehicleJourney.from_xml",
+        side_effect=[vehicle_journey_1, vehicle_journey_2],
+    ):
         pattern_ref = validator.get_journey_pattern_ref_by_vehicle_journey_code(code)
 
     assert pattern_ref == expected_pattern
@@ -93,9 +115,15 @@ def test_get_journey_pattern_refs_by_line_ref(m_root):
     validator = BaseValidator(m_root)
     m_root.xpath.return_value = [MagicMock(), MagicMock(), MagicMock()]
 
-    m_vehicle_journey_1 = MagicMock(line_ref="Line1", code="Code1", journey_pattern_ref="Pattern1")
-    m_vehicle_journey_2 = MagicMock(line_ref="Line1", code="Code2", journey_pattern_ref="Pattern2")
-    m_vehicle_journey_3 = MagicMock(line_ref="Line2", code="Code3", journey_pattern_ref="Pattern3")
+    m_vehicle_journey_1 = MagicMock(
+        line_ref="Line1", code="Code1", journey_pattern_ref="Pattern1"
+    )
+    m_vehicle_journey_2 = MagicMock(
+        line_ref="Line1", code="Code2", journey_pattern_ref="Pattern2"
+    )
+    m_vehicle_journey_3 = MagicMock(
+        line_ref="Line2", code="Code3", journey_pattern_ref="Pattern3"
+    )
 
     line = "Line1"
     expected_pattern_refs = ["Pattern1", "Pattern2"]
@@ -143,7 +171,12 @@ def test_get_stop_point_ref_from_journey_pattern_ref(m_root):
     ]
 
     pattern_ref = "Pattern1"
-    expected_stop_refs = ["StopPointRef1", "StopPointRef2", "StopPointRef3", "StopPointRef4"]
+    expected_stop_refs = [
+        "StopPointRef1",
+        "StopPointRef2",
+        "StopPointRef3",
+        "StopPointRef4",
+    ]
 
     stop_refs = validator.get_stop_point_ref_from_journey_pattern_ref(pattern_ref)
 
@@ -249,7 +282,9 @@ def test_get_locality_name_from_annotated_stop_point_ref(ref, expected_locality_
         ),
     ],
 )
-def test_get_journey_pattern_section_refs_by_route_link_ref(ref, xml_content, expected_section_refs):
+def test_get_journey_pattern_section_refs_by_route_link_ref(
+    ref, xml_content, expected_section_refs
+):
     """
     Test the `get_journey_pattern_section_refs_by_route_link_ref` method with various cases.
     """

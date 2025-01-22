@@ -1,5 +1,6 @@
 """
-StopPoint PTI Checks
+Test Stop Points Observation 28
+Mandatory elements incorrect in 'StopPoint' field.
 """
 
 from pathlib import Path
@@ -8,23 +9,28 @@ import pytest
 from lxml import etree
 from pti.app.validators.functions import validate_non_naptan_stop_points
 
-from tests.timetables_etl.pti.validators.conftest import run_validation
+from .conftest import run_validation
 
 DATA_DIR = Path(__file__).parent / "data" / "stop_points"
-NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
-
 OBSERVATION_ID = 28
+NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
 
 
 @pytest.mark.parametrize(
     "filename, expected",
     [
-        pytest.param("bodp3615stoppoints.xml", True, id="Valid Stop Points"),
         pytest.param(
-            "bodp3615stoppointsfail2month.xml", False, id="Invalid Two Months Duration"
+            "bodp3615stoppoints.xml", True, id="Valid Stop Points Within Duration"
         ),
         pytest.param(
-            "bodp3615stoppointsfailnodate.xml", False, id="Invalid Missing Date"
+            "bodp3615stoppointsfail2month.xml",
+            False,
+            id="Invalid Stop Points Over Two Months",
+        ),
+        pytest.param(
+            "bodp3615stoppointsfailnodate.xml",
+            False,
+            id="Invalid Stop Points Missing Date",
         ),
         pytest.param(
             "stoppointsinheritfromservice2months.xml",
@@ -49,7 +55,7 @@ OBSERVATION_ID = 28
     ],
 )
 def test_non_naptan_stop_points(filename: str, expected: bool):
-    """Test validation of non-NaPTAN stop points in TXC files"""
+    """Test validation of non-NaPTAN stop points and their validity durations"""
     is_valid = run_validation(filename, DATA_DIR, OBSERVATION_ID)
     assert is_valid == expected
 

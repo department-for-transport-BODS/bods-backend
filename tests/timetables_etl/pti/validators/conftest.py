@@ -2,6 +2,7 @@ from io import BytesIO, StringIO
 from pathlib import Path
 from unittest.mock import MagicMock
 
+import pytest
 from common_layer.pti.models import Schema
 from pti.app.constants import PTI_SCHEMA_PATH
 from pti.app.validators.pti import PTIValidator
@@ -56,3 +57,20 @@ def run_validation(filename: str, data_dir: Path, observation_id: int) -> bool:
     with txc_path.open("rb") as f:
         content = BytesIO(f.read())
         return pti.is_valid(content)
+
+
+def run_validation_with_exception(
+    filename: str,
+    data_dir: Path,
+    observation_id: int,
+    expected_exception: type[Exception],
+    match: str,
+) -> None:
+    """
+    Run PTI validation on a file, expecting an exception
+    """
+    pti, txc_path = create_validator(filename, data_dir, observation_id)
+    with txc_path.open("rb") as f:
+        content = BytesIO(f.read())
+        with pytest.raises(expected_exception, match=match):
+            pti.is_valid(content)

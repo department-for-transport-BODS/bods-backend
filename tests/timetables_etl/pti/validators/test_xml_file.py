@@ -1,9 +1,12 @@
+"""
+Test XML File
+"""
+
 from io import BytesIO
 from unittest.mock import MagicMock, patch
 
-import pytest
 from botocore.response import StreamingBody
-from pti.validators.xml_file import XmlFilePTIValidator
+from pti.app.validators.xml_file import XmlFilePTIValidator
 
 
 @patch("pti.validators.xml_file.PTIValidator")
