@@ -80,8 +80,8 @@ def stream_stops(
 
     try:
         for _, stop_point in context:
-            stop_point_without_ns = strip_namespace(stop_point)
-            if stop_data := parse_txc_stop_point(stop_point_without_ns):
+            stop_point = strip_namespace(stop_point)
+            if stop_data := parse_txc_stop_point(stop_point):
                 stop_point_dict = stop_data.model_dump()
                 current_batch.append(stop_point_dict)
 
