@@ -25,7 +25,7 @@ class DynamoDBSettings(BaseSettings):
         default="http://host.docker.internal:4566",
         description="Endpoint URL for DynamoDB",
     )
-    DYNAMODB_TABLE_NAME: str = Field(
+    DYNAMODB_CACHE_TABLE_NAME: str = Field(
         default="",
         description="Table Name for DynamoDB",
     )
@@ -87,7 +87,8 @@ class DynamoDB:
         """
         try:
             response = self._client.get_item(
-                TableName=self._settings.DYNAMODB_TABLE_NAME, Key={"Key": {"S": key}}
+                TableName=self._settings.DYNAMODB_CACHE_TABLE_NAME,
+                Key={"Key": {"S": key}},
             )
             item = response.get("Item", {})
             item_value = item.get("Value", None)
@@ -113,7 +114,7 @@ class DynamoDB:
                 item["ttl"] = {"S": str(expiration_time)}
 
             self._client.put_item(
-                TableName=self._settings.DYNAMODB_TABLE_NAME, Item=item
+                TableName=self._settings.DYNAMODB_CACHE_TABLE_NAME, Item=item
             )
         except Exception as e:
             message = f"Failed to set item with key '{key}': {str(e)}"
