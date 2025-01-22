@@ -13,10 +13,11 @@ from decimal import Decimal
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
-from typing import IO, Iterator, Optional, Union
+from typing import cast, IO, Iterator, Optional, Type, Union
 
 import structlog
 from lxml import etree
+from pydantic import BaseModel
 
 from .models import XMLFileInfo, XMLTagInfo, ZipStats, ZipTagStats
 
@@ -99,64 +100,37 @@ def process_xml_file(
 
 
 def write_stats_report(
-    sorted_stats: list[ZipStats | ZipTagStats],
+    sorted_stats: list[ZipStats] | list[ZipTagStats],
     stats_path: Path,
-    header: list[str],
 ) -> None:
     """Write zip statistics report to CSV"""
+    model_class = type(sorted_stats[0])
+    headers = get_csv_headers(model_class)
+    fields = get_fields(model_class)
     with open(stats_path, "w", newline="", encoding="utf-8") as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(header)
+        writer.writerow(headers)
         for stat in sorted_stats:
-            if isinstance(stat, ZipStats):
-                writer.writerow(
-                    [
-                        stat.zip_name,
-                        stat.file_count,
-                        str(stat.total_size_mb),
-                        str(stat.avg_file_size_mb),
-                    ]
-                )
-            elif isinstance(stat, ZipTagStats):
-                writer.writerow(
-                    [
-                        stat.zip_name,
-                        stat.file_count,
-                        stat.total_tags,
-                    ]
-                )
+            writer.writerow([str(getattr(stat, column, "")) for column in fields])
 
 
 def write_detailed_report(
-    sorted_xml_files: list[XMLFileInfo | XMLTagInfo],
+    sorted_xml_files: list[XMLFileInfo] | list[XMLTagInfo],
     detailed_path: Path,
-    header: list[str],
 ) -> None:
     """Write detailed XML report to CSV"""
+    model_class = type(sorted_xml_files[0])
+    headers = get_csv_headers(model_class)
+    fields = get_fields(model_class)
     with open(detailed_path, "w", newline="", encoding="utf-8") as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(header)
+        writer.writerow(headers)
         for xml_file in sorted_xml_files:
-            if isinstance(xml_file, XMLFileInfo):
-                writer.writerow(
-                    [
-                        xml_file.parent_zip or "",
-                        xml_file.file_path,
-                        str(xml_file.size_mb),
-                    ]
-                )
-            elif isinstance(xml_file, XMLTagInfo):
-                writer.writerow(
-                    [
-                        xml_file.parent_zip or "",
-                        xml_file.file_path,
-                        xml_file.tag_count,
-                    ]
-                )
+            writer.writerow([str(getattr(xml_file, column, "")) for column in fields])
 
 
 def calculate_zip_stats(
-    xml_files: list[XMLFileInfo | XMLTagInfo], mode: AnalysisMode
+    xml_files: list[XMLFileInfo] | list[XMLTagInfo], mode: AnalysisMode
 ) -> dict[str, ZipStats | ZipTagStats]:
     """Calculate statistics for each zip file"""
     stats: dict[str, dict] = defaultdict(
@@ -382,8 +356,30 @@ def process_zip_contents(
         log.error("Error processing zip file", zip_path=zip_path, exc_info=True)
 
 
+def get_csv_headers(model_cls: Type[BaseModel]) -> list[str]:
+    """Extract CSV headers from field titles"""
+    headers: list[str] = []
+    all_fields = {**model_cls.model_fields, **model_cls.model_computed_fields}
+    for field_name, field in all_fields.items():
+        if field.title:
+            headers.append(field.title)
+        elif field.description:
+            headers.append(field.description)
+        else:
+            headers.append(field_name)
+    return headers
+
+
+def get_fields(model_cls: Type[BaseModel]) -> list[str]:
+    """
+    Extract fields from data model
+    """
+    all_fields = {**model_cls.model_fields, **model_cls.model_computed_fields}
+    return list(all_fields.keys())
+
+
 def write_csv_reports(
-    xml_files: list[XMLFileInfo | XMLTagInfo],
+    xml_files: list[XMLFileInfo] | list[XMLTagInfo],
     base_path: Path,
     mode: AnalysisMode,
     tag_name: str | None = None,
@@ -391,53 +387,51 @@ def write_csv_reports(
     """
     Write both detailed and summary CSV reports based on the report type (size or tag).
     """
-    if mode == AnalysisMode.SIZE:
-        # Sort XML files by size
-        sorted_xml_files = sorted(xml_files, key=lambda x: x.size_mb, reverse=True)  # type: ignore
-        detailed_path = base_path.with_name(f"{base_path.stem}_detailed.csv")
-        header = ["Parent Zip", "File Path", "Size (MB)"]
+    if not xml_files:
+        raise ValueError("No XML files provided")
 
-        stats = calculate_zip_stats(xml_files, mode)
+    if mode == AnalysisMode.SIZE:
+        # Make pyright happy
+        size_files = cast(list[XMLFileInfo], xml_files)
+        # Sort XML files by size
+        sorted_xml_files = sorted(size_files, key=lambda x: x.size_mb, reverse=True)
+        detailed_path = base_path.with_name(f"{base_path.stem}_detailed.csv")
+
+        stats = cast(dict[str, ZipStats], calculate_zip_stats(size_files, mode))
         sorted_stats = sorted(
-            stats.values(), key=lambda x: x.total_size_mb, reverse=True  # type: ignore
+            stats.values(), key=lambda x: x.total_size_mb, reverse=True
         )
         stats_path = base_path.with_name(f"{base_path.stem}_stats.csv")
-        stats_header = [
-            "Zip Names",
-            "Number of Files in Zip",
-            "Total Size of XMLs in Zip (MB)",
-            "Average File Size (MB)",
-        ]
-    elif mode == AnalysisMode.TAG:
-        # Sort XML files by tag count
-        sorted_xml_files = sorted(
-            xml_files, key=lambda x: x.tag_count, reverse=True  # type: ignore
-        )
-        detailed_path = base_path.with_name(f"{base_path.stem}_{tag_name}_detailed.csv")
-        header = ["Parent Zip", "File Path", "Tag Count"]
 
-        stats = calculate_zip_stats(xml_files, mode)
-        sorted_stats = sorted(
-            stats.values(), key=lambda x: x.total_tags, reverse=True  # type: ignore
+        # Write detailed report
+        write_detailed_report(
+            sorted_xml_files=sorted_xml_files,
+            detailed_path=detailed_path,
         )
+        # Write statistics report
+        write_stats_report(sorted_stats=sorted_stats, stats_path=stats_path)
+
+    elif mode == AnalysisMode.TAG:
+        # Make pyright happy
+        tag_files = cast(list[XMLTagInfo], xml_files)
+        # Sort XML files by tag count
+        sorted_xml_files = sorted(tag_files, key=lambda x: x.tag_count, reverse=True)
+        detailed_path = base_path.with_name(f"{base_path.stem}_{tag_name}_detailed.csv")
+
+        stats = cast(dict[str, ZipTagStats], calculate_zip_stats(tag_files, mode))
+        sorted_stats = sorted(stats.values(), key=lambda x: x.total_tags, reverse=True)
         stats_path = base_path.with_name(f"{base_path.stem}_{tag_name}_stats.csv")
-        stats_header = [
-            "Zip Names",
-            "Number of Files with Tag",
-            "Total Tag Occurrences",
-        ]
+
+        # Write detailed report
+        write_detailed_report(
+            sorted_xml_files=sorted_xml_files,
+            detailed_path=detailed_path,
+        )
+
+        # Write statistics report
+        write_stats_report(sorted_stats=sorted_stats, stats_path=stats_path)
     else:
         raise ValueError("Invalid Analysis Mode")
-
-    # Write detailed report
-    write_detailed_report(
-        sorted_xml_files=sorted_xml_files, detailed_path=detailed_path, header=header
-    )
-
-    # Write statistics report
-    write_stats_report(
-        sorted_stats=sorted_stats, stats_path=stats_path, header=stats_header
-    )
 
     log.info(
         "CSV reports generated", detailed_path=detailed_path, stats_path=stats_path

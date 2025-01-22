@@ -11,13 +11,33 @@ class XMLFileInfo(BaseModel):
     """Pydantic model for XML file information"""
 
     model_config = ConfigDict(frozen=True)
-
-    file_path: str = Field(..., description="Path to the XML file within the zip")
+    file_path: str = Field(
+        ..., title="File Path", description="Path to the XML file within the zip"
+    )
     size_mb: Decimal = Field(
-        ..., description="Size of the XML file in megabytes", decimal_places=2
+        ...,
+        title="Size (MB)",
+        description="Size of the XML file in megabytes",
+        decimal_places=2,
     )
     parent_zip: str | None = Field(
-        None, description="Name of the parent zip file if nested"
+        None, title="Parent Zip", description="Name of the parent zip file if nested"
+    )
+
+
+class XMLTagInfo(BaseModel):
+    """Pydantic model for XML tag count information"""
+
+    model_config = ConfigDict(frozen=True)
+
+    file_path: str = Field(
+        ..., title="File Path", description="Path to the XML file within the zip"
+    )
+    tag_count: int = Field(
+        ..., title="Tag Count", description="Number of occurrences of the specified tag"
+    )
+    parent_zip: str | None = Field(
+        None, title="Parent Zip", description="Name of the parent zip file if nested"
     )
 
 
@@ -26,13 +46,23 @@ class ZipStats(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    zip_name: str = Field(..., description="Name of the zip file")
-    file_count: int = Field(..., ge=0, description="Number of XML files in the zip")
+    zip_name: str = Field(..., title="Zip Names", description="Name of the zip file")
+    file_count: int = Field(
+        ...,
+        title="Number of Files in Zip",
+        ge=0,
+        description="Number of XML files in the zip",
+    )
     total_size_mb: Decimal = Field(
-        ..., description="Total size of all XMLs in megabytes", decimal_places=2
+        ...,
+        title="Total Size of XMLs in Zip (MB)",
+        description="Total size of all XMLs in megabytes",
+        decimal_places=2,
     )
 
-    @computed_field
+    @computed_field(
+        return_type=Decimal, alias="avg_file_size_mb", title="Average File Size (MB)"
+    )
     def avg_file_size_mb(self) -> Decimal:
         """Average size of XML files in the zip"""
         if self.file_count == 0:
@@ -40,25 +70,20 @@ class ZipStats(BaseModel):
         return (self.total_size_mb / self.file_count).quantize(Decimal("0.01"))
 
 
-class XMLTagInfo(BaseModel):
-    """Pydantic model for XML tag count information"""
-
-    model_config = ConfigDict(frozen=True)
-
-    file_path: str = Field(..., description="Path to the XML file within the zip")
-    tag_count: int = Field(
-        ..., description="Number of occurrences of the specified tag"
-    )
-    parent_zip: str | None = Field(
-        None, description="Name of the parent zip file if nested"
-    )
-
-
 class ZipTagStats(BaseModel):
     """Pydantic model for zip file tag statistics"""
 
     model_config = ConfigDict(frozen=True)
 
-    zip_name: str = Field(..., description="Name of the zip file")
-    file_count: int = Field(..., ge=0, description="Number of files containing the tag")
-    total_tags: int = Field(..., description="Total number of tag occurrences")
+    zip_name: str = Field(..., title="Zip Names", description="Name of the zip file")
+    file_count: int = Field(
+        ...,
+        ge=0,
+        title="Number of Files with Tag",
+        description="Number of files containing the tag",
+    )
+    total_tags: int = Field(
+        ...,
+        title="Total Tag Occurrences",
+        description="Total number of tag occurrences",
+    )
