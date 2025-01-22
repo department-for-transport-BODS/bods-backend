@@ -9,7 +9,7 @@ from botocore.response import StreamingBody
 from pti.app.validators.xml_file import XmlFilePTIValidator
 
 
-@patch("pti.validators.xml_file.PTIValidator")
+@patch("pti.app.validators.xml_file.PTIValidator")
 def test_get_violations_validates_file(m_pti_validator):
     revision = MagicMock(dataset_id=123)
     xml_file = MagicMock(spec=StreamingBody)
