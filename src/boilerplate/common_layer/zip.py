@@ -8,17 +8,10 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Generator
-from zipfile import BadZipFile, ZipFile, is_zipfile
+from zipfile import BadZipFile, ZipFile
 
 from botocore.exceptions import ClientError
-from common_layer.exceptions.zip_file_exceptions import (
-    NestedZipForbidden,
-    NoDataFound,
-    ZipTooLarge,
-    ZipValidationException,
-)
 from common_layer.s3 import S3
-from common_layer.utils import get_file_size
 from structlog.stdlib import get_logger
 
 log = get_logger()
