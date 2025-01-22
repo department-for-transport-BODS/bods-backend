@@ -13,14 +13,7 @@ from structlog.stdlib import get_logger
 
 from .download import download_file
 from .file_utils import create_data_dir
-from .parsers import (
-    NAPTAN_NS_PREFIX,
-    parse_descriptor,
-    parse_location,
-    parse_stop_areas,
-    parse_stop_classification,
-    parse_top_level,
-)
+from .xml_constants import NAPTAN_NS_PREFIX
 
 log = get_logger()
 
@@ -60,66 +53,6 @@ def validate_stop_point(stop_point: etree._Element) -> bool:
         stop_point.get("Status") == "active"
         and stop_point.get("Modification") != "delete"
     )
-
-
-def clean_stop_data(stop_data: dict[str, Any]) -> dict[str, Any]:
-    """
-    Clean the final stop data by converting empty strings to None
-    DynamoDB reject empty strings
-    """
-    return {k: (v if v not in ["", None] else None) for k, v in stop_data.items()}
-
-
-def get_base_stop_data(stop_point: etree._Element) -> dict[str, Any]:
-    """
-    Extract base stop point data
-    """
-    return {
-        "Status": "active",
-        "CreationDateTime": stop_point.get("CreationDateTime") or None,
-        "ModificationDateTime": stop_point.get("ModificationDateTime") or None,
-        "RevisionNumber": stop_point.get("RevisionNumber") or None,
-    }
-
-
-def parse_stop_point(stop_point: etree._Element) -> dict[str, Any] | None:
-    """
-    Parse a single StopPoint XML into a Dictionary
-    """
-    try:
-        if not validate_stop_point(stop_point):
-            return None
-
-        stop_data = get_base_stop_data(stop_point)
-
-        location_data = parse_location(stop_point)
-        if location_data is None:
-            return None
-        stop_data.update(location_data)
-
-        field_data, atco_found = parse_top_level(stop_point)
-        if not atco_found:
-            return None
-        stop_data.update(field_data)
-
-        for parser, key in [
-            (parse_descriptor, None),
-            (parse_stop_classification, None),
-            (parse_stop_areas, "StopAreas"),
-        ]:
-            parsed_data = parser(stop_point)
-            if parsed_data:
-                if key:
-                    stop_data[key] = parsed_data
-                else:
-                    stop_data.update(parsed_data)
-
-        return clean_stop_data(stop_data)
-
-    # We need to Skip StopPoints with errors and process all stops
-    except Exception:  # pylint: disable=broad-exception-caught
-        log.error("Failed to parse stop point", exc_info=True)
-        return None
 
 
 def stream_stops(
