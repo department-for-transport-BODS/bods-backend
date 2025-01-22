@@ -42,7 +42,7 @@ def fetch_revision(db: SqlDB, revision_id: int) -> OrganisationDatasetRevision:
     revision_repo = OrganisationDatasetRevisionRepo(db)
     revision = revision_repo.get_by_id(revision_id)
     if revision is None:
-        raise ValueError("Cannot find Revision")
+        raise ValueError("Cannot find OrganisationDatasetRevision")
     return revision
 
 
@@ -87,9 +87,7 @@ def handle_error(
     task_result = fetch_task_result(db, event_data.dataset_etl_task_result_id)
     revision = fetch_revision(db, task_result.revision_id)
 
-    updated_task = update_failure_state(
-        task_result, event_data.error_details.error_message
-    )
+    updated_task = update_failure_state(task_result, event_data.cause.error_message)
 
     if updated_task.status == TaskState.FAILURE:
         revision.status = FeedStatus.error
@@ -107,8 +105,8 @@ def lambda_handler(event: dict, context) -> dict:
 
     parsed_event = ExceptionHandlerInputData(**event)
     log.error(
-        parsed_event.error_details.error_message,
-        error_details=parsed_event.error_details,
+        parsed_event.cause.error_message,
+        error_details=parsed_event.cause,
     )
 
     db = SqlDB()
