@@ -3,21 +3,18 @@ Module defines helper functions for TxC tools
 """
 
 import concurrent.futures
-import csv
 import queue
 import threading
 import zipfile
 from collections import defaultdict
-from dataclasses import dataclass
 from decimal import Decimal
-from enum import Enum
 from io import BytesIO
-from pathlib import Path
-from typing import cast, IO, Iterator, Optional, Type, Union
+from typing import IO, Iterator, Union
 
 import structlog
-from lxml import etree
-from pydantic import BaseModel
+
+from tools.txc_tools.models import AnalysisMode, WorkerConfig
+from tools.txc_tools.utils import count_tags_in_xml, get_size_mb
 
 from .models import XMLFileInfo, XMLTagInfo, ZipStats, ZipTagStats
 
@@ -32,50 +29,6 @@ structlog.configure(
 log = structlog.stdlib.get_logger()
 
 
-class AnalysisMode(str, Enum):
-    """Type of file processing"""
-
-    SIZE = "size"
-    TAG = "tag"
-
-
-@dataclass
-class WorkerConfig:
-    """
-    Worker configuration
-    """
-
-    zip_ref: zipfile.ZipFile
-    file_list: list[zipfile.ZipInfo]
-    xml_queue: queue.Queue
-    future_queue: queue.Queue
-    executor: concurrent.futures.ThreadPoolExecutor
-    mode: AnalysisMode
-    tag_name: Optional[str] = None
-
-
-def count_tags_in_xml(xml_data: bytes, tag_name: str) -> int:
-    """Count occurrences of a specific tag in XML content"""
-    try:
-        root = etree.fromstring(xml_data)
-        return len(root.findall(f".//{tag_name}", namespaces=root.nsmap))
-    except Exception as e:  # pylint: disable=broad-except
-        log.error("Error parsing XML", error=str(e))
-        return 0
-
-
-def get_size_mb(file_obj: IO[bytes]) -> Decimal:
-    """Calculate file size in megabytes using constant memory"""
-    chunk_size = 8192  # 8KB chunks
-    total_size = 0
-
-    while chunk := file_obj.read(chunk_size):
-        total_size += len(chunk)
-
-    file_obj.seek(0)  # Reset file pointer
-    return Decimal(str(total_size / (1024 * 1024))).quantize(Decimal("0.01"))
-
-
 def process_xml_file(
     xml_file: Union[IO[bytes], BytesIO],
     filename: str,
@@ -88,45 +41,14 @@ def process_xml_file(
     """
     xml_data = xml_file.read()
     xml_file.seek(0)
-    if tag_name:  # pylint: disable=R1705
+    if tag_name:
         log.debug(
             "Parsing and searching XML File", filename=filename, parent_zip=parent_zip
         )
         count = count_tags_in_xml(xml_data, tag_name)
         return XMLTagInfo(file_path=filename, tag_count=count, parent_zip=parent_zip)
-    else:  # pylint: disable=R1705
-        size_mb = get_size_mb(xml_file)
-        return XMLFileInfo(file_path=filename, size_mb=size_mb, parent_zip=parent_zip)
-
-
-def write_stats_report(
-    sorted_stats: list[ZipStats] | list[ZipTagStats],
-    stats_path: Path,
-) -> None:
-    """Write zip statistics report to CSV"""
-    model_class = type(sorted_stats[0])
-    headers = get_csv_headers(model_class)
-    fields = get_fields(model_class)
-    with open(stats_path, "w", newline="", encoding="utf-8") as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(headers)
-        for stat in sorted_stats:
-            writer.writerow([str(getattr(stat, column, "")) for column in fields])
-
-
-def write_detailed_report(
-    sorted_xml_files: list[XMLFileInfo] | list[XMLTagInfo],
-    detailed_path: Path,
-) -> None:
-    """Write detailed XML report to CSV"""
-    model_class = type(sorted_xml_files[0])
-    headers = get_csv_headers(model_class)
-    fields = get_fields(model_class)
-    with open(detailed_path, "w", newline="", encoding="utf-8") as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(headers)
-        for xml_file in sorted_xml_files:
-            writer.writerow([str(getattr(xml_file, column, "")) for column in fields])
+    size_mb = get_size_mb(xml_file)
+    return XMLFileInfo(file_path=filename, size_mb=size_mb, parent_zip=parent_zip)
 
 
 def calculate_zip_stats(
@@ -354,85 +276,3 @@ def process_zip_contents(
         log.error("Error processing zip file BadZipFile", zip_path=zip_path)
     except Exception:  # pylint: disable=broad-except
         log.error("Error processing zip file", zip_path=zip_path, exc_info=True)
-
-
-def get_csv_headers(model_cls: Type[BaseModel]) -> list[str]:
-    """Extract CSV headers from field titles"""
-    headers: list[str] = []
-    all_fields = {**model_cls.model_fields, **model_cls.model_computed_fields}
-    for field_name, field in all_fields.items():
-        if field.title:
-            headers.append(field.title)
-        elif field.description:
-            headers.append(field.description)
-        else:
-            headers.append(field_name)
-    return headers
-
-
-def get_fields(model_cls: Type[BaseModel]) -> list[str]:
-    """
-    Extract fields from data model
-    """
-    all_fields = {**model_cls.model_fields, **model_cls.model_computed_fields}
-    return list(all_fields.keys())
-
-
-def write_csv_reports(
-    xml_files: list[XMLFileInfo] | list[XMLTagInfo],
-    base_path: Path,
-    mode: AnalysisMode,
-    tag_name: str | None = None,
-) -> None:
-    """
-    Write both detailed and summary CSV reports based on the report type (size or tag).
-    """
-    if not xml_files:
-        raise ValueError("No XML files provided")
-
-    if mode == AnalysisMode.SIZE:
-        # Make pyright happy
-        size_files = cast(list[XMLFileInfo], xml_files)
-        # Sort XML files by size
-        sorted_xml_files = sorted(size_files, key=lambda x: x.size_mb, reverse=True)
-        detailed_path = base_path.with_name(f"{base_path.stem}_detailed.csv")
-
-        stats = cast(dict[str, ZipStats], calculate_zip_stats(size_files, mode))
-        sorted_stats = sorted(
-            stats.values(), key=lambda x: x.total_size_mb, reverse=True
-        )
-        stats_path = base_path.with_name(f"{base_path.stem}_stats.csv")
-
-        # Write detailed report
-        write_detailed_report(
-            sorted_xml_files=sorted_xml_files,
-            detailed_path=detailed_path,
-        )
-        # Write statistics report
-        write_stats_report(sorted_stats=sorted_stats, stats_path=stats_path)
-
-    elif mode == AnalysisMode.TAG:
-        # Make pyright happy
-        tag_files = cast(list[XMLTagInfo], xml_files)
-        # Sort XML files by tag count
-        sorted_xml_files = sorted(tag_files, key=lambda x: x.tag_count, reverse=True)
-        detailed_path = base_path.with_name(f"{base_path.stem}_{tag_name}_detailed.csv")
-
-        stats = cast(dict[str, ZipTagStats], calculate_zip_stats(tag_files, mode))
-        sorted_stats = sorted(stats.values(), key=lambda x: x.total_tags, reverse=True)
-        stats_path = base_path.with_name(f"{base_path.stem}_{tag_name}_stats.csv")
-
-        # Write detailed report
-        write_detailed_report(
-            sorted_xml_files=sorted_xml_files,
-            detailed_path=detailed_path,
-        )
-
-        # Write statistics report
-        write_stats_report(sorted_stats=sorted_stats, stats_path=stats_path)
-    else:
-        raise ValueError("Invalid Analysis Mode")
-
-    log.info(
-        "CSV reports generated", detailed_path=detailed_path, stats_path=stats_path
-    )
