@@ -1,5 +1,9 @@
+from lxml.etree import _Element
+
+
 class DestinationDisplayValidator:
-    def __init__(self, journey_pattern):
+    def __init__(self, journey_pattern: _Element):
+
         self.namespaces = {"x": journey_pattern.nsmap.get(None)}
         self.journey_pattern = journey_pattern
         self.journey_pattern_ref = self.journey_pattern.get("id")
@@ -7,7 +11,10 @@ class DestinationDisplayValidator:
     @property
     def vehicle_journeys(self):
         root = self.journey_pattern.getroottree()
-        xpath = "//x:VehicleJourney[contains(x:JourneyPatternRef, " f"'{self.journey_pattern_ref}')]"
+        xpath = (
+            "//x:VehicleJourney[contains(x:JourneyPatternRef, "
+            f"'{self.journey_pattern_ref}')]"
+        )
         return root.xpath(xpath, namespaces=self.namespaces)
 
     @property
@@ -22,15 +29,23 @@ class DestinationDisplayValidator:
         return sections
 
     def journey_pattern_has_display(self):
-        displays = self.journey_pattern.xpath("x:DestinationDisplay", namespaces=self.namespaces)
+        displays = self.journey_pattern.xpath(
+            "x:DestinationDisplay", namespaces=self.namespaces
+        )
         return len(displays) > 0
 
     def links_have_dynamic_displays(self):
         for section in self.journey_pattern_sections:
-            links = section.xpath("x:JourneyPatternTimingLink", namespaces=self.namespaces)
+            links = section.xpath(
+                "x:JourneyPatternTimingLink", namespaces=self.namespaces
+            )
             for link in links:
-                from_display = link.xpath("x:From/x:DynamicDestinationDisplay", namespaces=self.namespaces)
-                to_display = link.xpath("x:To/x:DynamicDestinationDisplay", namespaces=self.namespaces)
+                from_display = link.xpath(
+                    "x:From/x:DynamicDestinationDisplay", namespaces=self.namespaces
+                )
+                to_display = link.xpath(
+                    "x:To/x:DynamicDestinationDisplay", namespaces=self.namespaces
+                )
                 if not all([to_display, from_display]):
                     return False
         return True

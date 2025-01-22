@@ -26,7 +26,7 @@ with patch(
 
     m_file_processing_result_to_db.side_effect = decorator_mock
 
-    import pti_validation
+    import pti.app.pti_validation as pti_validation
 
 
 @pytest.fixture(autouse=True, scope="module")

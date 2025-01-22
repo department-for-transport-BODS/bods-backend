@@ -5,8 +5,8 @@ from unittest.mock import MagicMock
 
 import pytest
 from common_layer.pti.models import Schema
-from pti.constants import PTI_SCHEMA_PATH
-from pti.validators.pti import PTIValidator
+from pti.app.constants import PTI_SCHEMA_PATH
+from pti.app.validators.pti import PTIValidator
 
 from tests.timetables_etl.pti.validators.conftest import JSONFile, TXCFile
 from tests.timetables_etl.pti.validators.factories import SchemaFactory

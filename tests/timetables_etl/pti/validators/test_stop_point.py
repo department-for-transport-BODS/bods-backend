@@ -4,9 +4,9 @@ from unittest.mock import MagicMock
 import pytest
 from common_layer.pti.models import Schema
 from lxml import etree
-from pti.constants import PTI_SCHEMA_PATH
+from pti.app.constants import PTI_SCHEMA_PATH
+from pti.app.validators.pti import PTIValidator
 from pti.validators.functions import validate_non_naptan_stop_points
-from pti.validators.pti import PTIValidator
 
 from tests.timetables_etl.pti.validators.conftest import JSONFile
 from tests.timetables_etl.pti.validators.factories import SchemaFactory
