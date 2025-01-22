@@ -7,15 +7,17 @@ from typing import Annotated
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class ErrorDetails(BaseModel):
+class ErrorCause(BaseModel):
     """
     Structured error details from parsed Cause
     """
 
-    error_message: str = Field(alias="ErrorMessage")
-    error_type: str = Field(alias="ErrorType")
-    request_id: str = Field(alias="RequestId")
-    stack_trace: list[str] = Field(alias="StackTrace")
+    model_config = ConfigDict(populate_by_name=True)
+
+    error_message: str = Field(alias="errorMessage")
+    error_type: str = Field(alias="errorType")
+    request_id: str = Field(alias="requestId")
+    stack_trace: list[str] = Field(alias="stackTrace")
 
 
 class ExceptionHandlerInputData(BaseModel):
@@ -26,5 +28,5 @@ class ExceptionHandlerInputData(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     error: str = Field(alias="Error")
-    error_details: Annotated[ErrorDetails, Field(alias="ErrorDetails")]
+    cause: Annotated[ErrorCause, Field(alias="Cause")]
     dataset_etl_task_result_id: int = Field(alias="DatasetEtlTaskResultId")
