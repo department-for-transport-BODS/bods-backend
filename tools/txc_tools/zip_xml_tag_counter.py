@@ -5,21 +5,12 @@ Search a Zip of XMLs for a Tag
 import concurrent.futures
 import os
 from pathlib import Path
+from typing import List
 
-<<<<<<< HEAD
-from structlog.stdlib import get_logger
-
-from .common import process_zip_contents
-from .csv_output import write_csv_reports
-from .models import AnalysisMode, XMLTagInfo
-
-log = get_logger()
-=======
 from .common import log, AnalysisMode
 from .models import XMLTagInfo
 from .report import write_csv_reports
 from .xml_processor import process_zip_contents
->>>>>>> 7b7d62c (refactored to module)
 
 
 def process_zip_file_parallel(
@@ -36,7 +27,7 @@ def process_zip_file_parallel(
         tag_name=tag_name,
         sub_zip_workers=sub_zip_workers,
     )
-    xml_files: list[XMLTagInfo] = list(  # type: ignore
+    xml_files: List[XMLTagInfo] = list(  # type: ignore
         process_zip_contents(
             zip_path,
             max_workers=sub_zip_workers,

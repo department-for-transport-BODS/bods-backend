@@ -7,15 +7,9 @@ import os
 from pathlib import Path
 from typing import List
 
-<<<<<<< HEAD
-from .common import log, process_zip_contents
-from .csv_output import write_csv_reports
-from .models import AnalysisMode, XMLFileInfo
-=======
 from .report import write_csv_reports
 from .xml_processor import AnalysisMode, log, process_zip_contents
 from .models import XMLFileInfo
->>>>>>> 7b7d62c (refactored to module)
 
 
 def process_zip_file_parallel(zip_path: str, sub_zip_workers: int = 4) -> None:

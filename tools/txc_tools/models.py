@@ -2,12 +2,7 @@
 Model definitions for txc tools
 """
 
-import queue
-import zipfile
-from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
 from decimal import Decimal
-from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
@@ -92,25 +87,3 @@ class ZipTagStats(BaseModel):
         title="Total Tag Occurrences",
         description="Total number of tag occurrences",
     )
-
-
-class AnalysisMode(str, Enum):
-    """Type of file processing"""
-
-    SIZE = "size"
-    TAG = "tag"
-
-
-@dataclass
-class WorkerConfig:
-    """
-    Worker configuration
-    """
-
-    zip_ref: zipfile.ZipFile
-    file_list: list[zipfile.ZipInfo]
-    xml_queue: queue.Queue
-    future_queue: queue.Queue
-    executor: ThreadPoolExecutor
-    mode: AnalysisMode
-    tag_name: str | None = None
