@@ -6,12 +6,9 @@ import concurrent.futures
 import os
 from pathlib import Path
 from typing import List
-import typer
 
 from .common import AnalysisMode, log, process_zip_contents, write_csv_reports
 from .models import XMLFileInfo
-
-app = typer.Typer()
 
 
 def process_zip_file_parallel(zip_path: str, sub_zip_workers: int = 4) -> None:
