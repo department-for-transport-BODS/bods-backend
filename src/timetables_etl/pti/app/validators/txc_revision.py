@@ -1,8 +1,7 @@
-from typing import List
+"""
+PTI TXC Revision Validator
+"""
 
-from common_layer.database.models.model_organisation import (
-    OrganisationTXCFileAttributes,
-)
 from common_layer.dynamodb.models import TXCFileAttributes
 from common_layer.pti.models import Observation, Violation
 
@@ -22,18 +21,30 @@ REVISION_NUMBER_OBSERVATION = Observation(
 
 
 class TXCRevisionValidator:
+    """
+    Validates revision numbers in TransXChange (TXC) files against existing revisions.
+
+    Ensures that when a TXC file is updated:
+    - Files with different modification dates have incrementing revision numbers
+    - Files with the same modification date maintain consistent revision numbers
+
+    The validator compares draft TXC files against live files that share the same
+    service code and line names to enforce versioning.
+    """
+
     def __init__(
         self,
         txc_file_attributes: TXCFileAttributes,
         live_txc_file_attributes: list[TXCFileAttributes],
     ):
+
         self._txc_file_attributes = txc_file_attributes
         self._live_attributes = live_txc_file_attributes
-        self.violations = []
+        self.violations: list[Violation] = []
 
     def get_live_attributes_by_service_code_and_lines(
-        self, code, lines
-    ) -> List[TXCFileAttributes]:
+        self, code: str, lines: list[str]
+    ) -> list[TXCFileAttributes]:
         """
         Returns TXCFileAttributes with source_code equal to code and lines_names equal
         to lines.
@@ -101,7 +112,7 @@ class TXCRevisionValidator:
                 )
                 break
 
-    def get_violations(self) -> List[Violation]:
+    def get_violations(self) -> list[Violation]:
         """
         Returns any revision violations.
         """

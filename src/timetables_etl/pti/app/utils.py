@@ -1,16 +1,23 @@
-import logging
+"""
+PTI Helper Utils
+"""
+
 from functools import lru_cache
 
 from common_layer.database.client import SqlDB
 from common_layer.database.repos import OtcServiceRepo
 from common_layer.dynamodb.client import DynamoDB
 from common_layer.pti.constants import SCOTLAND_TRAVELINE_REGIONS
+from structlog.stdlib import get_logger
 
-logger = logging.getLogger(__name__)
+log = get_logger()
 
 
 @lru_cache()
 def is_service_in_scotland(service_ref: str, dynamo: DynamoDB, db: SqlDB) -> bool:
+    """
+    Checks if a Service Ref is in Scotland
+    """
     cache_key = f"{service_ref.replace(':', '-')}-is-scottish-region"
     return dynamo.get_or_compute(
         key=cache_key,
@@ -31,7 +38,10 @@ def get_service_in_scotland_from_db(service_ref: str, db: SqlDB) -> bool:
     Returns:
         bool: True/False if service is in scotland
     """
-    logger.info(f"{service_ref} PTI validation For region checking in database")
+    log.info(
+        "Checking if Service is in Scotland",
+        service_ref=service_ref,
+    )
     repo = OtcServiceRepo(db)
     service_with_region = repo.get_service_with_traveline_region(service_ref)
 
