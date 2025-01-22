@@ -90,7 +90,7 @@ def handle_error(
     updated_task = update_failure_state(task_result, event_data.cause.error_message)
 
     if updated_task.status == TaskState.FAILURE:
-        revision.status = FeedStatus.error
+        revision.status = FeedStatus.ERROR
         save_changes(db, updated_task, revision)
 
     return updated_task, revision

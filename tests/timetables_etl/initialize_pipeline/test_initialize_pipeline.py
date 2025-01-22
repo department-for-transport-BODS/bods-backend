@@ -86,7 +86,7 @@ def test_update_revision_status(mock_revision_repo, initial_status: str):
     ):
         update_revision_status(Mock(), revision)
 
-        assert revision.status == FeedStatus.indexing.value
+        assert revision.status == FeedStatus.INDEXING.value
         mock_revision_repo.update.assert_called_once_with(revision)
 
 
@@ -151,7 +151,7 @@ def test_initialize_pipeline(mock_revision_repo):
         result = initialize_pipeline(Mock(), mock_dynamodb, event)
 
         assert result == task_result
-        assert revision.status == FeedStatus.indexing.value
+        assert revision.status == FeedStatus.INDEXING.value
         mock_revision_repo.update.assert_called_once_with(revision)
         mock_data_manager.prefetch_and_cache_data.assert_called_once_with(revision)
         assert revision.num_of_bus_stops == 7

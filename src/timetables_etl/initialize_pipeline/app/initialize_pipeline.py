@@ -60,7 +60,7 @@ def update_revision_status(db: SqlDB, revision: OrganisationDatasetRevision) -> 
         dataset_revision_id=revision.id,
     )
     revision_repo = OrganisationDatasetRevisionRepo(db)
-    revision.status = FeedStatus.indexing.value
+    revision.status = FeedStatus.INDEXING.value
     revision_repo.update(revision)
 
 
