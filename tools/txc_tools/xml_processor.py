@@ -1,39 +1,35 @@
 """
-Module to provide common functionality for TxC tools
+Module defines helper functions for TxC tools
 """
 
-<<<<<<< HEAD
 import concurrent.futures
 import queue
 import threading
 import zipfile
-from collections import defaultdict
-from decimal import Decimal
+from dataclasses import dataclass
 from io import BytesIO
-from typing import IO, Iterator, Union
+from typing import IO, Iterator, Optional, Union
 
-import structlog
-
-from tools.txc_tools.models import AnalysisMode, WorkerConfig
-from tools.txc_tools.utils import count_tags_in_xml, get_size_mb
-=======
-from enum import Enum
-import structlog
->>>>>>> 7b7d62c (refactored to module)
+from .calculation import count_tags_in_xml, get_size_mb
+from .common import log, AnalysisMode
+from .models import XMLFileInfo, XMLTagInfo
 
 
-structlog.configure(
-    processors=[
-        structlog.processors.add_log_level,
-        structlog.processors.StackInfoRenderer(),
-        structlog.dev.ConsoleRenderer(),
-    ]
-)
+@dataclass
+class WorkerConfig:
+    """
+    Worker configuration
+    """
 
-log = structlog.stdlib.get_logger()
+    zip_ref: zipfile.ZipFile
+    file_list: list[zipfile.ZipInfo]
+    xml_queue: queue.Queue
+    future_queue: queue.Queue
+    executor: concurrent.futures.ThreadPoolExecutor
+    mode: AnalysisMode
+    tag_name: Optional[str] = None
 
 
-<<<<<<< HEAD
 def process_xml_file(
     xml_file: Union[IO[bytes], BytesIO],
     filename: str,
@@ -46,53 +42,15 @@ def process_xml_file(
     """
     xml_data = xml_file.read()
     xml_file.seek(0)
-    if tag_name:
+    if tag_name:  # pylint: disable=R1705
         log.debug(
             "Parsing and searching XML File", filename=filename, parent_zip=parent_zip
         )
         count = count_tags_in_xml(xml_data, tag_name)
         return XMLTagInfo(file_path=filename, tag_count=count, parent_zip=parent_zip)
-    size_mb = get_size_mb(xml_file)
-    return XMLFileInfo(file_path=filename, size_mb=size_mb, parent_zip=parent_zip)
-
-
-def calculate_zip_stats(
-    xml_files: list[XMLFileInfo] | list[XMLTagInfo], mode: AnalysisMode
-) -> dict[str, ZipStats | ZipTagStats]:
-    """Calculate statistics for each zip file"""
-    stats: dict[str, dict] = defaultdict(
-        lambda: {"file_count": 0, "total_size": Decimal("0"), "total_tags": 0}
-    )
-
-    for xml_file in xml_files:
-        zip_name = xml_file.parent_zip if xml_file.parent_zip else "root"
-        stats[zip_name]["file_count"] += 1
-        if mode == AnalysisMode.SIZE and isinstance(xml_file, XMLFileInfo):
-            stats[zip_name]["total_size"] += xml_file.size_mb
-        elif mode == AnalysisMode.TAG and isinstance(xml_file, XMLTagInfo):
-            stats[zip_name]["total_tags"] += xml_file.tag_count
-
-    if mode == AnalysisMode.SIZE:
-        return {
-            zip_name: ZipStats(
-                zip_name=zip_name,
-                file_count=data["file_count"],
-                total_size_mb=data["total_size"].quantize(Decimal("0.01")),
-            )
-            for zip_name, data in stats.items()
-        }
-    if mode == AnalysisMode.TAG:
-        return {
-            zip_name: ZipTagStats(
-                zip_name=zip_name,
-                file_count=data["file_count"],
-                total_tags=data["total_tags"],
-            )
-            for zip_name, data in stats.items()
-        }
-
-    log.error("Unsupported analysis mode", mode=mode)
-    raise ValueError("Invalid Analysis Mode")
+    else:  # pylint: disable=R1705
+        size_mb = get_size_mb(xml_file)
+        return XMLFileInfo(file_path=filename, size_mb=size_mb, parent_zip=parent_zip)
 
 
 def process_single_xml(file_info: zipfile.ZipInfo, config: WorkerConfig) -> None:
@@ -281,10 +239,3 @@ def process_zip_contents(
         log.error("Error processing zip file BadZipFile", zip_path=zip_path)
     except Exception:  # pylint: disable=broad-except
         log.error("Error processing zip file", zip_path=zip_path, exc_info=True)
-=======
-class AnalysisMode(str, Enum):
-    """Type of file processing"""
-
-    SIZE = "size"
-    TAG = "tag"
->>>>>>> 7b7d62c (refactored to module)

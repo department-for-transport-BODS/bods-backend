@@ -6,6 +6,7 @@ import concurrent.futures
 import os
 from pathlib import Path
 
+<<<<<<< HEAD
 from structlog.stdlib import get_logger
 
 from .common import process_zip_contents
@@ -13,6 +14,12 @@ from .csv_output import write_csv_reports
 from .models import AnalysisMode, XMLTagInfo
 
 log = get_logger()
+=======
+from .common import log, AnalysisMode
+from .models import XMLTagInfo
+from .report import write_csv_reports
+from .xml_processor import process_zip_contents
+>>>>>>> 7b7d62c (refactored to module)
 
 
 def process_zip_file_parallel(
