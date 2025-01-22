@@ -1,43 +1,56 @@
+"""
+StopPoint PTI Checks
+"""
+
 from pathlib import Path
-from unittest.mock import MagicMock
 
 import pytest
-from common_layer.pti.models import Schema
 from lxml import etree
-from pti.app.constants import PTI_SCHEMA_PATH
-from pti.app.validators.pti import PTIValidator
-from pti.validators.functions import validate_non_naptan_stop_points
+from pti.app.validators.functions import validate_non_naptan_stop_points
 
-from tests.timetables_etl.pti.validators.conftest import JSONFile
-from tests.timetables_etl.pti.validators.factories import SchemaFactory
+from tests.timetables_etl.pti.validators.conftest import run_validation
 
 DATA_DIR = Path(__file__).parent / "data" / "stop_points"
+NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
+
+OBSERVATION_ID = 28
 
 
 @pytest.mark.parametrize(
-    ("filename", "expected"),
+    "filename, expected",
     [
-        ("bodp3615stoppoints.xml", True),
-        ("bodp3615stoppointsfail2month.xml", False),
-        ("bodp3615stoppointsfailnodate.xml", False),
-        ("stoppointsinheritfromservice2months.xml", True),
-        ("stoppointsinheritfromservice2monthsplus.xml", False),
-        ("stoppointsinheritstartdatefromservice.xml", True),
-        ("stoppointsinheritenddatefromservice.xml", True),
+        pytest.param("bodp3615stoppoints.xml", True, id="Valid Stop Points"),
+        pytest.param(
+            "bodp3615stoppointsfail2month.xml", False, id="Invalid Two Months Duration"
+        ),
+        pytest.param(
+            "bodp3615stoppointsfailnodate.xml", False, id="Invalid Missing Date"
+        ),
+        pytest.param(
+            "stoppointsinheritfromservice2months.xml",
+            True,
+            id="Valid Service Inherited Two Months",
+        ),
+        pytest.param(
+            "stoppointsinheritfromservice2monthsplus.xml",
+            False,
+            id="Invalid Service Inherited Over Two Months",
+        ),
+        pytest.param(
+            "stoppointsinheritstartdatefromservice.xml",
+            True,
+            id="Valid Service Inherited Start Date",
+        ),
+        pytest.param(
+            "stoppointsinheritenddatefromservice.xml",
+            True,
+            id="Valid Service Inherited End Date",
+        ),
     ],
 )
-def test_non_naptan_stop_points(filename, expected):
-    OBSERVATION_ID = 28
-    schema = Schema.from_path(PTI_SCHEMA_PATH)
-    observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
-
-    schema = SchemaFactory(observations=observations)
-    json_file = JSONFile(schema.model_dump_json())
-    pti = PTIValidator(json_file, MagicMock(), MagicMock())
-
-    txc_path = DATA_DIR / filename
-    with txc_path.open("r") as txc:
-        is_valid = pti.is_valid(txc)
+def test_non_naptan_stop_points(filename: str, expected: bool):
+    """Test validation of non-NaPTAN stop points in TXC files"""
+    is_valid = run_validation(filename, DATA_DIR, OBSERVATION_ID)
     assert is_valid == expected
 
 
@@ -53,7 +66,7 @@ def test_non_naptan_stop_points(filename, expected):
     ],
 )
 def test_check_stop_point_two_months(filename, expected):
-    NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
+
     string_xml = DATA_DIR / filename
     with string_xml.open("r") as txc_xml:
         doc = etree.parse(txc_xml)
