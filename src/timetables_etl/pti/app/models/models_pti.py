@@ -13,7 +13,7 @@ from ..constants import NO_REF, REF_URL
 GENERAL_REF = NO_REF + REF_URL
 
 
-class Rule(BaseModel):
+class PtiRule(BaseModel):
     """
     Observation Rules
     """
@@ -21,7 +21,7 @@ class Rule(BaseModel):
     test: str
 
 
-class Observation(BaseModel):
+class PtiObservation(BaseModel):
     """
     PTI Observations
     """
@@ -32,7 +32,7 @@ class Observation(BaseModel):
     reference: str
     context: str
     number: int
-    rules: list[Rule]
+    rules: list[PtiRule]
 
 
 class Header(BaseModel):
@@ -46,12 +46,12 @@ class Header(BaseModel):
     guidance_document: str
 
 
-class Schema(BaseModel):
+class PtiJsonSchema(BaseModel):
     """
     PTI Schema Loaded from Json
     """
 
-    observations: list[Observation]
+    observations: list[PtiObservation]
     header: Header
 
     @classmethod
@@ -73,7 +73,7 @@ class PtiViolation(BaseModel):
     filename: str
     name: str
     element_text: str | None = None
-    observation: Observation
+    observation: PtiObservation
 
     @classmethod
     def make_observation(

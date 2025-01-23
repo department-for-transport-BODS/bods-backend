@@ -13,7 +13,7 @@ from common_layer.txc.parser.metadata import parse_metadata
 from common_layer.txc.parser.parser_txc import load_xml_tree
 from lxml import etree
 from pti.app.constants import FLEXIBLE_SERVICE, STANDARD_SERVICE
-from pti.app.models.models_pti import Observation, PtiViolation, Schema
+from pti.app.models.models_pti import PtiJsonSchema, PtiObservation, PtiViolation
 
 from ..utils.utils_time import to_days, today
 from ..utils.utils_xml import (
@@ -60,7 +60,7 @@ class PTIValidator:
 
     def __init__(self, source: IO[Any], dynamo: DynamoDB, db: SqlDB):
         json_ = json.load(source)
-        self.schema = Schema(**json_)
+        self.schema = PtiJsonSchema(**json_)
         self.namespaces = self.schema.header.namespaces
         self.violations = []
 
@@ -141,7 +141,7 @@ class PTIValidator:
         self.fns[key] = function
 
     def add_violation(
-        self, element: etree._Element, observation: Observation, filename: str
+        self, element: etree._Element, observation: PtiObservation, filename: str
     ) -> None:
         """
         Create and add a Violation for the given element and observation
@@ -159,7 +159,7 @@ class PTIValidator:
         )
 
     def check_observation(
-        self, observation: Observation, element: etree._Element, filename: str
+        self, observation: PtiObservation, element: etree._Element, filename: str
     ) -> None:
         """
         Check for violations of the given observation

@@ -4,9 +4,9 @@ PTI TXC Revision Validator
 
 from common_layer.dynamodb.models import TXCFileAttributes
 
-from ..models.models_pti import Observation, PtiViolation
+from ..models.models_pti import PtiObservation, PtiViolation
 
-REVISION_NUMBER_OBSERVATION = Observation(
+REVISION_NUMBER_OBSERVATION = PtiObservation(
     details=(
         "Mandatory element incorrect in 'RevisionNumber' field. The "
         "RevisionNumber value should be greater than the previous "

@@ -2,47 +2,42 @@
 Tests for Service Organisation PTI
 """
 
+from pathlib import Path
+
 from lxml import etree
 from pti.app.validators.serviced_organisation import (
     has_servicedorganisation_working_days,
 )
 
-from tests.timetables_etl.pti.validators.test_functions import DATA_DIR
+DATA_DIR = Path(__file__).parent / "data/servicedorganisations"
+
+NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
 
 
 def test_has_servicedorganisation_working_days_not_present():
     """
     This test case validates working days tag is present for ServicedOrganisation
     """
-    NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
-    string_xml = (
-        DATA_DIR
-        / "servicedorganisations"
-        / "servicedorganisation_working_days_not_present.xml"
-    )
+
+    string_xml = DATA_DIR / "servicedorganisation_working_days_not_present.xml"
     with string_xml.open("r") as txc_xml:
         doc = etree.parse(txc_xml)
         elements = doc.xpath(
             "//x:ServicedOrganisations/x:ServicedOrganisation", namespaces=NAMESPACE
         )
         actual = has_servicedorganisation_working_days("", elements)
-        assert actual == False
+        assert actual is False
 
 
 def test_has_servicedorganisation_working_days_present():
     """
     This test case validates working days tag is present for ServicedOrganisation
     """
-    NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
-    string_xml = (
-        DATA_DIR
-        / "servicedorganisations"
-        / "servicedorganisation_working_days_present.xml"
-    )
+    string_xml = DATA_DIR / "servicedorganisation_working_days_present.xml"
     with string_xml.open("r") as txc_xml:
         doc = etree.parse(txc_xml)
         elements = doc.xpath(
             "//x:ServicedOrganisations/x:ServicedOrganisation", namespaces=NAMESPACE
         )
         actual = has_servicedorganisation_working_days("", elements)
-        assert actual == True
+        assert actual is True
