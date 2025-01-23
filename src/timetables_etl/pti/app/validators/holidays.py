@@ -6,18 +6,43 @@ from common_layer.database.client import SqlDB
 from common_layer.dynamodb.client import DynamoDB
 from structlog.stdlib import get_logger
 
-from ..constants import (
-    BANK_HOLIDAYS,
-    BANK_HOLIDAYS_ONLY_ENGLISH,
-    BANK_HOLIDAYS_ONLY_SCOTTISH,
-    OLD_HOLIDAYS_ALREADY_REMOVED,
-    OPERATION_DAYS,
-    OTHER_PUBLIC_HOLIDAYS,
-    SCOTTISH_BANK_HOLIDAYS,
-)
 from ..utils.utils_scotland import is_service_in_scotland
 
 log = get_logger()
+
+
+BANK_HOLIDAYS_COMMON = [
+    "ChristmasEve",
+    "ChristmasDay",
+    "ChristmasDayHoliday",
+    "BoxingDay",
+    "BoxingDayHoliday",
+    "NewYearsDay",
+    "NewYearsDayHoliday",
+    "GoodFriday",
+    "EasterMonday",
+    "SpringBank",
+    "MayDay",
+]
+
+BANK_HOLIDAYS_ONLY_ENGLISH = [
+    "NewYearsEve",
+    "LateSummerBankHolidayNotScotland",
+]
+BANK_HOLIDAYS_ONLY_SCOTTISH = [
+    "StAndrewsDayHoliday",
+    "Jan2ndScotland",
+    "Jan2ndScotlandHoliday",
+]
+OLD_HOLIDAYS_ALREADY_REMOVED = [
+    "StAndrewsDay",
+    "AugustBankHolidayScotland",
+]
+OTHER_PUBLIC_HOLIDAYS = ["OtherPublicHoliday"]
+OPERATION_DAYS = ("DaysOfOperation", "DaysOfNonOperation")
+
+BANK_HOLIDAYS = BANK_HOLIDAYS_COMMON + BANK_HOLIDAYS_ONLY_ENGLISH
+SCOTTISH_BANK_HOLIDAYS = BANK_HOLIDAYS_COMMON + BANK_HOLIDAYS_ONLY_SCOTTISH
 
 
 def get_service_ref_from_element(element, ns):

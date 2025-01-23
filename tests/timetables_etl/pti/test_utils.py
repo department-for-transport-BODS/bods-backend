@@ -6,8 +6,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from common_layer.database.repos.repo_otc import ServiceWithRegion
-from pti.app.constants import SCOTLAND_TRAVELINE_REGIONS
 from pti.app.utils import get_service_in_scotland_from_db, is_service_in_scotland
+from pti.app.utils.utils_scotland import SCOTLAND_TRAVELINE_REGIONS
 
 
 def test_is_service_in_scotland():
@@ -22,7 +22,7 @@ def test_is_service_in_scotland():
 
     assert result is True
 
-    args, kwargs = cache.get_or_compute.call_args
+    _args, kwargs = cache.get_or_compute.call_args
     compute_fn = kwargs["compute_fn"]
 
     assert kwargs["key"] == "PH0006633-01010001-is-scottish-region"

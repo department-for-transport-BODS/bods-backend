@@ -13,7 +13,6 @@ from common_layer.txc.parser.parser_txc import load_xml_tree
 from lxml import etree
 from structlog.stdlib import get_logger
 
-from ..constants import FLEXIBLE_SERVICE, STANDARD_SERVICE
 from ..models.models_pti import PtiJsonSchema, PtiObservation, PtiViolation
 from ..utils.utils_time import to_days, today
 from ..utils.utils_xml import (
@@ -51,6 +50,9 @@ from .stop_point import validate_non_naptan_stop_points
 from .timing_links import validate_run_time, validate_timing_link_stops
 
 log = get_logger()
+
+FLEXIBLE_SERVICE = "FlexibleService"
+STANDARD_SERVICE = "StandardService"
 
 
 class PTIValidator:

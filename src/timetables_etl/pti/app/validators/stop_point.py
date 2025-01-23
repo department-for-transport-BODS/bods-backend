@@ -8,7 +8,6 @@ from dateutil.relativedelta import relativedelta
 from lxml.etree import _Element
 from structlog.stdlib import get_logger
 
-from ..constants import MODE_COACH
 from ..utils.utils_xml import extract_text
 from .base import BaseValidator
 
@@ -95,7 +94,7 @@ class StopPointValidator(BaseValidator):
         mode = service.xpath(
             "string(x:Mode)", namespaces=self.namespaces  # pyright: ignore
         )
-        if mode is not None and mode.lower() == MODE_COACH.lower():
+        if mode is not None and mode.lower() == "coach".lower():
             return True
         return False
 

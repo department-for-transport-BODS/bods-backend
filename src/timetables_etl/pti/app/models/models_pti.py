@@ -8,10 +8,6 @@ from pathlib import Path
 from common_layer.database.models import DataQualityPTIObservation
 from pydantic import BaseModel
 
-from ..constants import NO_REF, REF_URL
-
-GENERAL_REF = NO_REF + REF_URL
-
 
 class PtiRule(BaseModel):
     """

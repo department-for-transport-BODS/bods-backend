@@ -9,9 +9,9 @@ from common_layer.database.repos import OtcServiceRepo
 from common_layer.dynamodb.client import DynamoDB
 from structlog.stdlib import get_logger
 
-from ..constants import SCOTLAND_TRAVELINE_REGIONS
-
 log = get_logger()
+
+SCOTLAND_TRAVELINE_REGIONS = ["S"]
 
 
 @lru_cache()
