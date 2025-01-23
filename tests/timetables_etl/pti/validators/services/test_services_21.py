@@ -3,13 +3,12 @@ Test Services Observation 21
 Mandatory element incorrect in 'StandardService' field.
 """
 
-from pathlib import Path
-
 import pytest
 
 from tests.timetables_etl.pti.validators.conftest import TXCFile, create_validator
 
-DATA_DIR = Path(__file__).parent / "data/services"
+from .conftest import DATA_DIR
+
 OBSERVATION_ID = 21
 
 

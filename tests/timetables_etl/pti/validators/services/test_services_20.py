@@ -4,14 +4,14 @@ Mandatory element incorrect in 'OperatingPeriod'.
 """
 
 from datetime import timedelta
-from pathlib import Path
 
 import pytest
 from dateutil import parser
 
 from tests.timetables_etl.pti.validators.conftest import TXCFile, create_validator
 
-DATA_DIR = Path(__file__).parent / "data/services"
+from .conftest import DATA_DIR
+
 OBSERVATION_ID = 20
 
 

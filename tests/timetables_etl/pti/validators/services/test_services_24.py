@@ -3,13 +3,12 @@ Test Services Observation 24
 Mandatory elements incorrect for Line ID.
 """
 
-from pathlib import Path
-
 import pytest
 
 from tests.timetables_etl.pti.validators.conftest import run_validation
 
-DATA_DIR = Path(__file__).parent / "data/lines"
+from .conftest import DATA_DIR
+
 OBSERVATION_ID = 24
 
 
