@@ -27,7 +27,7 @@ def test_is_service_in_scotland():
 
     # Test that compute_fn calls the correct function
     with patch(
-        "pti.utils.get_service_in_scotland_from_db"
+        "pti.app.utils.get_service_in_scotland_from_db"
     ) as m_get_service_in_scotland_from_db:
         m_get_service_in_scotland_from_db.return_value = True
         result = compute_fn()
