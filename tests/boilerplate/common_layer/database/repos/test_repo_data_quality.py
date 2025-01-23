@@ -108,7 +108,7 @@ def test_pti_observation_repo_create_from_violations_handles_empty_violations(
         PtiViolation.make_observation(revision_id, violation) for violation in []
     ]
     result = repo.bulk_insert(observations)
-    assert result is []
+    assert result == []
     with test_db.session_scope() as session:
         records = (
             session.query(DataQualityPTIObservation)
