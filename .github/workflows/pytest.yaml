@@ -49,7 +49,7 @@ jobs:
         run: poetry run pip install pytest-github-actions-annotate-failures
 
       - name: Run Pytest
-        run: poetry run pytest --junitxml=junit/test-results.xml --cov-report term --color=yes
+        run: poetry run pytest --junitxml=junit/test-results.xml --cov-report term --color=yes -ra
 
       - name: Generate Test Summary
         id: test-summary

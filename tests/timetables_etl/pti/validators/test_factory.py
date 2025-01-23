@@ -1,14 +1,17 @@
+"""
+Test PTI Factory Validator
+"""
+
 from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch
 
-import pytest
-from pti.validators.factory import get_xml_file_pti_validator
-from pti.validators.xml_file import XmlFilePTIValidator
+from pti.app.validators.factory import get_xml_file_pti_validator
+from pti.app.validators.xml_file import XmlFilePTIValidator
 
 
-@patch("pti.validators.factory.PTI_SCHEMA_PATH", new_callable=MagicMock)
+@patch("pti.app.validators.factory.PTI_SCHEMA_PATH", new_callable=MagicMock)
 @patch("builtins.open", new_callable=mock_open, read_data='{"key": "value"}')
-@patch("pti.validators.factory.XmlFilePTIValidator")
+@patch("pti.app.validators.factory.XmlFilePTIValidator")
 def test_get_xml_file_pti_validator(
     mock_validator_class, mock_open_fn, mock_schema_path
 ):

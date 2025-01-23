@@ -1,4 +1,8 @@
-from logging import DEBUG
+"""
+SqlDB Test DB
+"""
+
+from typing import Generator
 
 import pytest
 from common_layer.database.client import DatabaseSettings, PostgresSettings, SqlDB
@@ -6,10 +10,10 @@ from common_layer.database.create_tables import create_db_tables
 from sqlalchemy.orm import sessionmaker
 
 
-@pytest.fixture(scope="session")
-def setup_db():
+@pytest.fixture(scope="session", name="setup_db")
+def setup_db_fixture() -> SqlDB:
     """
-    Session-scoped fixture to set up the database schema
+    Session-scoped fixture that configures and initializes the test database schema once
     """
     postgres_settings = PostgresSettings(
         POSTGRES_HOST="localhost",
@@ -22,14 +26,12 @@ def setup_db():
     db_settings = DatabaseSettings(postgres=postgres_settings)
     db = SqlDB(settings=db_settings)
 
-    # Create tables once for the test session (existing tables will be skipped)
     create_db_tables(db)
-
-    yield db
+    return db
 
 
 @pytest.fixture()
-def test_db(setup_db):
+def test_db(setup_db: SqlDB) -> Generator[SqlDB, None, None]:
     """
     Function-scoped fixture for isolated db transactions in tests
     """
@@ -40,7 +42,9 @@ def test_db(setup_db):
     transaction = connection.begin()
 
     # Override the session factory to bind it to the test transaction
-    db._session_factory = sessionmaker(bind=connection)
+    db._session_factory = sessionmaker(  # pylint: disable=protected-access
+        bind=connection
+    )
 
     yield db
 

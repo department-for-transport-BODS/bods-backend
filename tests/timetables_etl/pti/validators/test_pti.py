@@ -1,31 +1,22 @@
-from io import BytesIO
-from multiprocessing import Value
+"""
+Test PTI
+"""
+
 from pathlib import Path
-from unittest.mock import MagicMock
 
-import pytest
-from common_layer.pti.models import Schema
-from pti.constants import PTI_SCHEMA_PATH
-from pti.validators.pti import PTIValidator
-
-from tests.timetables_etl.pti.validators.conftest import JSONFile, TXCFile
-from tests.timetables_etl.pti.validators.factories import SchemaFactory
+from .conftest import run_validation_with_exception
 
 DATA_DIR = Path(__file__).parent / "data"
 
+OBSERVATION_ID = 2
+
 
 def test_is_valid_missing_metadata():
-    filename = "missing_filename_metadata.xml"
-    OBSERVATION_ID = 2
-    schema = Schema.from_path(PTI_SCHEMA_PATH)
-    observations = [o for o in schema.observations if o.number == OBSERVATION_ID]
-    schema = SchemaFactory(observations=observations)
-    json_file = JSONFile(schema.model_dump_json())
-    pti = PTIValidator(json_file, MagicMock(), MagicMock())
-    txc_path = DATA_DIR / filename
-    with txc_path.open("r") as xml:
-        txc = BytesIO(xml.read().encode("UTF-8"))
-        with pytest.raises(
-            ValueError, match="Missing metadata in XML file root element"
-        ):
-            pti.is_valid(txc)
+    """Test validation fails when metadata is missing from XML file"""
+    run_validation_with_exception(
+        filename="missing_filename_metadata.xml",
+        data_dir=DATA_DIR,
+        observation_id=2,
+        expected_exception=ValueError,
+        match="Missing metadata in XML file root element",
+    )
