@@ -1103,7 +1103,7 @@ def test_has_servicedorganisation_working_days_present():
 
 @pytest.fixture
 def m_stop_point_repo():
-    with patch("pti.validators.functions.NaptanStopPointRepo") as m_repo:
+    with patch("pti.app.validators.functions.NaptanStopPointRepo") as m_repo:
         yield m_repo
 
 

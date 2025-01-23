@@ -4,7 +4,7 @@ Validator Helper functions
 
 import re
 from datetime import UTC, datetime
-from typing import Union
+from typing import Callable, Union
 
 from common_layer.database.client import SqlDB
 from common_layer.database.repos import NaptanStopPointRepo
@@ -154,13 +154,15 @@ def get_stop_point_ref_list(stop_points, ns) -> list[str]:
     return stop_point_ref_list
 
 
-def get_flexible_service_stop_point_ref_validator(db: SqlDB):
+def get_flexible_service_stop_point_ref_validator(db: SqlDB) -> Callable:
     """
     Creates a validator function that checks if all flexible service stop points are
     properly registered in the NAPTAN database as flexible bus stops.
     """
 
-    def check_flexible_service_stop_point_ref(_context, flexiblejourneypatterns):
+    def check_flexible_service_stop_point_ref(
+        _context, flexiblejourneypatterns
+    ) -> bool:
         log.info(
             "Validation Start: Check Flexible Service Stop Point Ref",
         )
@@ -189,7 +191,7 @@ def get_flexible_service_stop_point_ref_validator(db: SqlDB):
     return check_flexible_service_stop_point_ref
 
 
-def check_inbound_outbound_description(_context, services):
+def check_inbound_outbound_description(_context, services) -> bool:
     """
     Check when file has detected a standard service (includes StandardService):
         - If both InboundDescription and OutboundDescription are not present, return False.
@@ -217,6 +219,7 @@ def check_inbound_outbound_description(_context, services):
                 return False
 
         return True
+    return False
 
 
 def check_description_for_inbound_description(_context, services: list) -> bool:
@@ -250,7 +253,7 @@ def check_description_for_inbound_description(_context, services: list) -> bool:
     return False
 
 
-def check_description_for_outbound_description(_context, services: list):
+def check_description_for_outbound_description(_context, services: list) -> bool:
     """
     Check if a StandardService has description present for OutboundDescription.
 
@@ -281,6 +284,7 @@ def check_description_for_outbound_description(_context, services: list):
                 ):
                     return False
         return True
+    return False
 
 
 def check_flexible_service_times(_context, vehiclejourneys) -> bool:
@@ -307,7 +311,7 @@ def check_flexible_service_times(_context, vehiclejourneys) -> bool:
     return False
 
 
-def has_destination_display(_context, patterns):
+def has_destination_display(_context, patterns) -> bool:
     """
     First check if DestinationDisplay in JourneyPattern is provided.
 
@@ -514,7 +518,7 @@ def today(_context) -> float:
     return date.timestamp()
 
 
-def validate_line_id(_context, lines):
+def validate_line_id(_context, lines) -> bool:
     """
     Validates that Line@id has the correct format.
     """
@@ -542,7 +546,10 @@ def validate_line_id(_context, lines):
     return line_id.startswith(expected_line_id)
 
 
-def validate_modification_date_time(_context, roots):
+def validate_modification_date_time(_context, roots) -> bool:
+    """
+    Validates modification datetime against creation datetime
+    """
     log.info(
         "Validation Start: Modification Datetime",
         count=len(roots),
@@ -554,15 +561,14 @@ def validate_modification_date_time(_context, roots):
 
     if revision_number == "0":
         return modification_date == creation_date
-    else:
-        return creation_date < modification_date
+    return creation_date < modification_date
 
 
 def validate_licence_number(_context, elements: list[etree._Element]) -> bool:
     """
     Validate the license number within a list of XML elements if Primary Mode is not coach.
 
-    This function checks if the PrimaryMode is not "coach", then LicenceNumber is mandatory and should be non-empty.
+    If PrimaryMode is not "coach", then LicenceNumber is mandatory and should be non-empty.
 
     Args:
         context: The context in which the function is called.
@@ -587,7 +593,7 @@ def validate_licence_number(_context, elements: list[etree._Element]) -> bool:
 
         if primary_mode and primary_mode[0].text.lower() == "coach":
             continue
-        elif not (licence_number and licence_number[0].text):
+        if not (licence_number and licence_number[0].text):
             return False
     return True
 
@@ -627,7 +633,14 @@ def has_servicedorganisation_working_days(_context, service_organisations):
 
 
 def get_lines_validator(db: SqlDB):
+    """
+    Creates and returns a validator function for NAPTAN lines XML elements.
+    """
+
     def validate_lines(_context, lines_list: list[etree._Element]) -> bool:
+        """
+        Validates NAPTAN lines XML elements against stop area data.
+        """
         log.info(
             "Validation Start: Lines",
             lines_count=len(lines_list),
