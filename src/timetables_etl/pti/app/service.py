@@ -5,9 +5,9 @@ PTI Service
 from io import BytesIO
 
 from common_layer.database.client import SqlDB
-from common_layer.database.models.model_organisation import OrganisationDatasetRevision
-from common_layer.database.repos.repo_data_quality import DataQualityPTIObservationRepo
-from common_layer.database.repos.repo_organisation import (
+from common_layer.database.models import OrganisationDatasetRevision
+from common_layer.database.repos import (
+    DataQualityPTIObservationRepo,
     OrganisationTXCFileAttributesRepo,
 )
 from common_layer.dynamodb.client import DynamoDB

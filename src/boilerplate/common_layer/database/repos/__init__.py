@@ -4,6 +4,7 @@ Exported repos
 
 from .repo_data_quality import (
     DataQualityPostSchemaViolationRepo,
+    DataQualityPTIObservationRepo,
     DataQualitySchemaViolationRepo,
 )
 from .repo_etl_task import (
@@ -85,4 +86,5 @@ __all__ = [
     # Data Quality
     "DataQualitySchemaViolationRepo",
     "DataQualityPostSchemaViolationRepo",
+    "DataQualityPTIObservationRepo",
 ]

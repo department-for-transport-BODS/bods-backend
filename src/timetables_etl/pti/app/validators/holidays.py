@@ -4,6 +4,7 @@ Validators related to holidays
 
 from common_layer.database.client import SqlDB
 from common_layer.dynamodb.client import DynamoDB
+from structlog.stdlib import get_logger
 
 from ..constants import (
     BANK_HOLIDAYS,
@@ -15,6 +16,8 @@ from ..constants import (
     SCOTTISH_BANK_HOLIDAYS,
 )
 from ..utils.utils_scotland import is_service_in_scotland
+
+log = get_logger()
 
 
 def get_service_ref_from_element(element, ns):
@@ -38,8 +41,7 @@ def get_validate_bank_holidays(dynamo: DynamoDB, db: SqlDB):
     Setup and return validator function for bank holidays
     """
 
-    # pylint: disable=unused-argument
-    def validate_bank_holidays(context, bank_holidays):
+    def validate_bank_holidays(_context, bank_holidays):
         """
         Validate bank holidays
         """
@@ -68,15 +70,40 @@ def get_validate_bank_holidays(dynamo: DynamoDB, db: SqlDB):
 
         # duplicate check
         if sorted(list(set(holidays))) != sorted(holidays):
+            log.info(
+                "Duplicate Bank Holidays Found",
+                observation_id=43,
+                holidays=holidays,
+            )
             return False
 
         service_ref = get_service_ref_from_element(element, ns)
         if service_ref and is_service_in_scotland(service_ref, dynamo, db):
             english_removed = list(set(holidays) - set(BANK_HOLIDAYS_ONLY_ENGLISH))
-            return sorted(SCOTTISH_BANK_HOLIDAYS) == sorted(english_removed)
+            if sorted(SCOTTISH_BANK_HOLIDAYS) != sorted(english_removed):
+                log.info(
+                    "Invalid Scottish Bank Holidays",
+                    observation_id=43,
+                    service_ref=service_ref,
+                    holidays=holidays,
+                    expected=SCOTTISH_BANK_HOLIDAYS,
+                    actual=english_removed,
+                )
+                return False
+            return True
 
         # optional Scottish holiday check
         scottish_removed = list(set(holidays) - set(BANK_HOLIDAYS_ONLY_SCOTTISH))
-        return sorted(BANK_HOLIDAYS) == sorted(scottish_removed)
+        if sorted(BANK_HOLIDAYS) != sorted(scottish_removed):
+            log.info(
+                "Invalid English Bank Holidays",
+                observation_id=43,
+                service_ref=service_ref,
+                holidays=holidays,
+                expected=BANK_HOLIDAYS,
+                actual=scottish_removed,
+            )
+            return False
+        return True
 
     return validate_bank_holidays

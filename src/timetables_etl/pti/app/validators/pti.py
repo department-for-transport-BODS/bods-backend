@@ -3,7 +3,6 @@ PTI Validator class
 """
 
 import json
-import logging
 from io import BytesIO
 from typing import IO, Any, Callable
 
