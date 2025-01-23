@@ -6,10 +6,10 @@ from common_layer.timetables.transxchange import TransXChangeElement
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
 from lxml.etree import _Element
-from pti.app.constants import MODE_COACH
-from pti.app.utils.utils_xml import extract_text
 from structlog.stdlib import get_logger
 
+from ..constants import MODE_COACH
+from ..utils.utils_xml import extract_text
 from .base import BaseValidator
 
 log = get_logger()

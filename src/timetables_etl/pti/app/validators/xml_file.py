@@ -7,9 +7,9 @@ from typing import IO, Any
 
 from common_layer.database.client import SqlDB
 from common_layer.dynamodb.client import DynamoDB
-from pti.app.models.models_pti import PtiViolation
 from structlog.stdlib import get_logger
 
+from ..models.models_pti import PtiViolation
 from .pti import PTIValidator
 
 log = get_logger()

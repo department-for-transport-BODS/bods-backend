@@ -13,9 +13,9 @@ from common_layer.database.repos.repo_organisation import (
 from common_layer.dynamodb.client import DynamoDB
 from common_layer.dynamodb.models import TXCFileAttributes
 from common_layer.utils import sha1sum
-from pti.app.models.models_pti import PtiViolation
 from structlog.stdlib import get_logger
 
+from .models.models_pti import PtiViolation
 from .validators.factory import get_xml_file_pti_validator
 from .validators.txc_revision import TXCRevisionValidator
 

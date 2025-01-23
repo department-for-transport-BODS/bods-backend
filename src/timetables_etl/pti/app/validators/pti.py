@@ -12,9 +12,9 @@ from common_layer.dynamodb.client import DynamoDB
 from common_layer.txc.parser.metadata import parse_metadata
 from common_layer.txc.parser.parser_txc import load_xml_tree
 from lxml import etree
-from pti.app.constants import FLEXIBLE_SERVICE, STANDARD_SERVICE
-from pti.app.models.models_pti import PtiJsonSchema, PtiObservation, PtiViolation
 
+from ..constants import FLEXIBLE_SERVICE, STANDARD_SERVICE
+from ..models.models_pti import PtiJsonSchema, PtiObservation, PtiViolation
 from ..utils.utils_time import to_days, today
 from ..utils.utils_xml import (
     cast_to_bool,
