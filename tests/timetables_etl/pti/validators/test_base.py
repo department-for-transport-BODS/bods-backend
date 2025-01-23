@@ -27,7 +27,7 @@ def test_lines_property(m_root):
     m_root.xpath.return_value = [mock_line]
 
     mock_line_obj = MagicMock()
-    with patch("common_layer.pti.models.Line.from_xml", return_value=mock_line_obj):
+    with patch("pti.app.models.models_pti.Line.from_xml", return_value=mock_line_obj):
         lines = validator.lines
 
     assert len(lines) == 1
@@ -50,7 +50,8 @@ def test_vehicle_journeys_property(m_root):
         service_ref="Service1",
     )
     with patch(
-        "common_layer.pti.models.VehicleJourney.from_xml", return_value=vehicle_journey
+        "pti.app.models.models_pti.VehicleJourney.from_xml",
+        return_value=vehicle_journey,
     ):
         validator = BaseValidator(m_root)
         vehicle_journeys = validator.vehicle_journeys
@@ -103,7 +104,7 @@ def test_get_journey_pattern_ref_by_vehicle_journey_code(m_root):
     )
 
     with patch(
-        "common_layer.pti.models.VehicleJourney.from_xml",
+        "pti.app.models.models_pti.VehicleJourney.from_xml",
         side_effect=[vehicle_journey_1, vehicle_journey_2],
     ):
         pattern_ref = validator.get_journey_pattern_ref_by_vehicle_journey_code(code)
@@ -129,7 +130,7 @@ def test_get_journey_pattern_refs_by_line_ref(m_root):
     expected_pattern_refs = ["Pattern1", "Pattern2"]
 
     with patch(
-        "common_layer.pti.models.VehicleJourney.from_xml",
+        "pti.app.models.models_pti.VehicleJourney.from_xml",
         side_effect=[m_vehicle_journey_1, m_vehicle_journey_2, m_vehicle_journey_3],
     ):
         pattern_refs = validator.get_journey_pattern_refs_by_line_ref(line)
