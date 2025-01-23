@@ -602,8 +602,8 @@ Resources:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-pti-validation-lambda'
       Description: Timetables ETL - FileProcessing - Validate TXC File against PTI requirements
       Role: !GetAtt CommonLambdaExecutionRole.Arn
-      CodeUri: ./src/timetables_etl
-      Handler: pti_validation.lambda_handler
+      CodeUri: ./src/timetables_etl/pti
+      Handler: app.pti_validation.lambda_handler
       MemorySize: 1024
       Timeout: 900
       Layers:
