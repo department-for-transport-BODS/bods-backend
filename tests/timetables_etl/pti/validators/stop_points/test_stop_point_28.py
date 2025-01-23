@@ -3,17 +3,17 @@ Test Stop Points Observation 28
 Mandatory elements incorrect in 'StopPoint' field.
 """
 
-from pathlib import Path
-
 import pytest
 from lxml import etree
 from pti.app.validators.functions import validate_non_naptan_stop_points
 
-from .conftest import run_validation
+from tests.timetables_etl.pti.validators.conftest import run_validation
 
-DATA_DIR = Path(__file__).parent / "data" / "stop_points"
-OBSERVATION_ID = 28
+from .conftest import DATA_DIR
+
 NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
+
+OBSERVATION_ID = 28
 
 
 @pytest.mark.parametrize(
@@ -63,16 +63,25 @@ def test_non_naptan_stop_points(filename: str, expected: bool):
 @pytest.mark.parametrize(
     ("filename", "expected"),
     [
-        ("stop_point_missing_mode.xml", False),
-        ("stop_point_w_bus_mode.xml", False),
-        ("stop_point_w_coach_mode.xml", True),
-        ("stop_point_w_bus_mode_success.xml", True),
-        ("stop_point_w_bus_mode_blank_enddate.xml", True),
-        ("stop_point_w_bus_mode_wo_operating_profile.xml", True),
+        pytest.param("stop_point_missing_mode.xml", False, id="Missing Mode"),
+        pytest.param("stop_point_w_bus_mode.xml", False, id="Invalid Bus Mode"),
+        pytest.param("stop_point_w_coach_mode.xml", True, id="Valid Coach Mode"),
+        pytest.param("stop_point_w_bus_mode_success.xml", True, id="Valid Bus Mode"),
+        pytest.param(
+            "stop_point_w_bus_mode_blank_enddate.xml", True, id="Valid Blank End Date"
+        ),
+        pytest.param(
+            "stop_point_w_bus_mode_wo_operating_profile.xml",
+            True,
+            id="Valid Without Operating Profile",
+        ),
     ],
 )
 def test_check_stop_point_two_months(filename, expected):
-
+    """
+    Test stop points with different modes and operating profiles
+    Within two month duration
+    """
     string_xml = DATA_DIR / filename
     with string_xml.open("r") as txc_xml:
         doc = etree.parse(txc_xml)

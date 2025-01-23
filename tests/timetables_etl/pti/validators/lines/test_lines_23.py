@@ -2,16 +2,15 @@
 Lines PTI Tests
 """
 
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
 from tests.timetables_etl.pti.validators.conftest import TXCFile
 
-from .conftest import create_validator, run_validation
+from ..conftest import create_validator, run_validation
+from .conftest import DATA_DIR
 
-DATA_DIR = Path(__file__).parent / "data" / "lines"
 OBSERVATION_ID = 23
 
 
