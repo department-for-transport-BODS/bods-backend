@@ -40,7 +40,7 @@ class CreatedTimeStampMixin(MappedAsDataclass):
         return None
 
 
-class TimeStampedMixin(CreatedTimeStampMixin):
+class TimeStampedMixin(MappedAsDataclass):
     """
     A mixin that adds self-managed created and modified fields.
     All timestamps are stored in UTC.

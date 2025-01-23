@@ -22,6 +22,13 @@ from .validators.txc_revision import TXCRevisionValidator
 log = get_logger()
 
 
+def get_unique_violation_names(violations: list[PtiViolation]) -> list[str]:
+    """
+    Create a list of unique violations for logging
+    """
+    return list(set(v.name for v in violations))
+
+
 class PTIValidationService:
     """
     Class containing logic for PTI validation step
@@ -89,16 +96,16 @@ class PTIValidationService:
                 ]
                 observation_repo = DataQualityPTIObservationRepo(self._db)
                 observation_repo.bulk_insert(observations)
-                violations_list = [violation.name for violation in violations]
+                unique_names = get_unique_violation_names(violations)
                 log.info(
                     "PTI Violation Found, Deleting TXC File Attribute Entry",
                     txc_file_attributes_id=txc_file_attributes.id,
-                    violations=violations_list,
+                    violations=unique_names,
                 )
                 txc_file_attribute_repo = OrganisationTXCFileAttributesRepo(self._db)
                 txc_file_attribute_repo.delete_by_id(txc_file_attributes.id)
 
                 raise ValueError(
-                    f"PTI validation failed due to violations. {','.join(violations_list)}"
+                    f"PTI validation failed due to violations. {','.join(unique_names)}"
                 )
         log.info("Finished PTI Profile validation.")
