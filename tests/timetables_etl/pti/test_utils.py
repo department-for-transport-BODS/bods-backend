@@ -36,7 +36,7 @@ def test_is_service_in_scotland():
         )
 
 
-@patch("pti.utils.OtcServiceRepo")
+@patch("pti.app.utils.OtcServiceRepo")
 @pytest.mark.parametrize(
     "traveline_region, expected_result",
     [(SCOTLAND_TRAVELINE_REGIONS[0], True), ("NotScottishRegion", False)],
