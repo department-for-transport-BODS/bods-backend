@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from common_layer.dynamodb.models import TXCFileAttributes
-from common_layer.pti.models import Violation
+from pti.app.models.models_pti import PtiViolation
 from pti.app.service import PTIValidationService
 
 from tests.factories.database.organisation import OrganisationDatasetRevisionFactory
@@ -41,8 +41,8 @@ def test_validate(
     xml_file = MagicMock()
     xml_file.read.return_value = b"dummycontent"
     violations = [
-        Violation.model_construct(),
-        Violation.model_construct(),
+        PtiViolation.model_construct(),
+        PtiViolation.model_construct(),
     ]
     m_get_xml_file_pti_validator.return_value.get_violations.return_value = violations
     m_txc_revision_validator.return_value.get_violations.return_value = [
