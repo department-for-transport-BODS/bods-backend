@@ -2,15 +2,8 @@
 Instead of having try/except blocks for each repo call, define a decorator to handle it
 """
 
-from typing import (
-    Callable,
-    Generic,
-    Protocol,
-    Sequence,
-    Type,
-    TypeVar,
-    runtime_checkable,
-)
+from typing import (Callable, Generic, Protocol, Sequence, Type, TypeVar,
+                    runtime_checkable)
 
 from sqlalchemy import Column, Select, select
 from structlog.stdlib import get_logger
@@ -139,7 +132,16 @@ class BaseRepository(Generic[DBModelT]):
                 session.expunge(result)
             self._log.debug("Bulk inserting completed", inserted_count=len(results))
             return results
-
+        
+    @handle_repository_errors
+    def _delete_and_commit(self, statement) -> bool:
+        """
+        Executes a delete statement and commits the transaction.
+        """
+        with self._db.session_scope() as session:
+            result = session.execute(statement.delete())
+            session.commit()
+        return result.rowcount > 0
 
 class BaseRepositoryWithId(BaseRepository[DBModelT]):
     """
