@@ -1,10 +1,14 @@
+"""
+Test PTI Service Validation
+"""
+
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
 from common_layer.dynamodb.models import TXCFileAttributes
 from common_layer.pti.models import Violation
-from pti.service import PTIValidationService
+from pti.app.service import PTIValidationService
 
 from tests.factories.database.organisation import OrganisationDatasetRevisionFactory
 
@@ -22,10 +26,10 @@ def txc_file_attributes():
     )
 
 
-@patch("pti.service.OrganisationTXCFileAttributesRepo")
-@patch("pti.service.DataQualityPTIObservationRepo")
-@patch("pti.service.TXCRevisionValidator")
-@patch("pti.service.get_xml_file_pti_validator")
+@patch("pti.app.service.OrganisationTXCFileAttributesRepo")
+@patch("pti.app.service.DataQualityPTIObservationRepo")
+@patch("pti.app.service.TXCRevisionValidator")
+@patch("pti.app.service.get_xml_file_pti_validator")
 def test_validate(
     m_get_xml_file_pti_validator,
     m_txc_revision_validator,
@@ -63,10 +67,10 @@ def test_validate(
     )
 
 
-@patch("pti.service.DataQualityPTIObservationRepo")
-@patch("pti.service.sha1sum")
-@patch("pti.service.TXCRevisionValidator")
-@patch("pti.service.get_xml_file_pti_validator")
+@patch("pti.app.service.DataQualityPTIObservationRepo")
+@patch("pti.app.service.sha1sum")
+@patch("pti.app.service.TXCRevisionValidator")
+@patch("pti.app.service.get_xml_file_pti_validator")
 def test_validate_unchanged_file(
     m_get_xml_file_pti_validator,
     m_txc_revision_validator,
