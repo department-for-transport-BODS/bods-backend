@@ -76,8 +76,7 @@ def test_pti_observation_repo_create_from_violations(
         for violation in pti_violations
     ]
     result = repo.bulk_insert(observations)
-
-    assert result is True
+    assert len(result) == len(pti_violations)
     with test_db.session_scope() as session:
         observations = (
             session.query(DataQualityPTIObservation)
@@ -109,7 +108,7 @@ def test_pti_observation_repo_create_from_violations_handles_empty_violations(
         PtiViolation.make_observation(revision_id, violation) for violation in []
     ]
     result = repo.bulk_insert(observations)
-    assert result is True
+    assert result is []
     with test_db.session_scope() as session:
         records = (
             session.query(DataQualityPTIObservation)
@@ -120,7 +119,7 @@ def test_pti_observation_repo_create_from_violations_handles_empty_violations(
 
 
 def test_create_observations_handles_error(
-    violations: list[PtiViolation], test_db: SqlDB
+    pti_violations: list[PtiViolation], test_db: SqlDB
 ):
     """Tests error handling during PTI observation creation."""
     repo = DataQualityPTIObservationRepo(test_db)
@@ -134,7 +133,8 @@ def test_create_observations_handles_error(
         pytest.raises(RepositoryError),
     ):
         observations = [
-            PtiViolation.make_observation(789, violation) for violation in violations
+            PtiViolation.make_observation(789, violation)
+            for violation in pti_violations
         ]
         repo.bulk_insert(observations)
 
