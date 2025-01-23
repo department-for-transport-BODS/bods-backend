@@ -5,8 +5,8 @@ PTI Base Validator Tests
 from unittest.mock import MagicMock, patch
 
 import pytest
-from common_layer.pti.models import VehicleJourney
 from lxml import etree
+from pti.app.models.models_pti import VehicleJourney
 from pti.app.validators.base import BaseValidator
 
 

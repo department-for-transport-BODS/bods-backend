@@ -3,8 +3,8 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-from common_layer.pti.models import Schema
 from pti.app.constants import PTI_SCHEMA_PATH
+from pti.app.models.models_pti import PtiJsonSchema
 from pti.app.validators.pti import PTIValidator
 
 from tests.timetables_etl.pti.validators.constants import TXC_END, TXC_START
@@ -39,7 +39,7 @@ def create_validator(
     """
     Helper function to create PTIValidator instance and file path
     """
-    schema = Schema.from_path(PTI_SCHEMA_PATH)
+    schema = PtiJsonSchema.from_path(PTI_SCHEMA_PATH)
     observations = [o for o in schema.observations if o.number == observation_id]
     schema.observations = observations
     json_file = JSONFile(schema.model_dump_json())

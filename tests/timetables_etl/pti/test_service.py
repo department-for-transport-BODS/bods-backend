@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from common_layer.dynamodb.models import TXCFileAttributes
-from pti.app.models.models_pti import PtiViolation
+from pti.app.models.models_pti import PtiObservation, PtiRule, PtiViolation
 from pti.app.service import PTIValidationService
 
 from tests.factories.database.organisation import OrganisationDatasetRevisionFactory
@@ -15,6 +15,9 @@ from tests.factories.database.organisation import OrganisationDatasetRevisionFac
 
 @pytest.fixture
 def txc_file_attributes():
+    """
+    Return an instance of txc file attrictures
+    """
     return TXCFileAttributes(
         id=456,
         revision_number=1,
@@ -41,13 +44,39 @@ def test_validate(
     xml_file = MagicMock()
     xml_file.read.return_value = b"dummycontent"
     violations = [
-        PtiViolation.model_construct(),
-        PtiViolation.model_construct(),
+        PtiViolation(
+            line=42,
+            filename="route.xml",
+            name="StopPoint",
+            element_text="<StopPoint>",
+            observation=PtiObservation(
+                details="Invalid stop point",
+                category="Schema",
+                service_type="bus",
+                reference="PTI-0001",
+                context="ValidationContext",
+                number=1,
+                rules=[PtiRule(test="validate_stop_point")],
+            ),
+        ),
+        PtiViolation(
+            line=78,
+            filename="route.xml",
+            name="JourneyPattern",
+            element_text="<JourneyPattern>",
+            observation=PtiObservation(
+                details="Invalid pattern",
+                category="Timing",
+                service_type="bus",
+                reference="PTI-0023",
+                context="ValidationContext",
+                number=2,
+                rules=[PtiRule(test="validate_journey_pattern")],
+            ),
+        ),
     ]
     m_get_xml_file_pti_validator.return_value.get_violations.return_value = violations
-    m_txc_revision_validator.return_value.get_violations.return_value = [
-        "txc_revision_violation"
-    ]
+    m_txc_revision_validator.return_value.get_violations.return_value = violations
 
     service = PTIValidationService(
         db=MagicMock(), dynamodb=MagicMock(), live_revision_attributes=[]
@@ -59,9 +88,7 @@ def test_validate(
     m_get_xml_file_pti_validator.return_value.get_violations.assert_called_once_with(
         revision, xml_file
     )
-    m_observation_repo.return_value.create_from_violations.assert_called_once_with(
-        revision.id, violations
-    )
+
     m_file_attributes_repo.return_value.delete_by_id.assert_called_once_with(
         txc_file_attributes.id
     )

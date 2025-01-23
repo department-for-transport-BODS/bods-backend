@@ -2,8 +2,8 @@
 Test Model Parsing
 """
 
-from common_layer.pti.models import VehicleJourney
 from lxml import etree
+from pti.app.models.models_pti import VehicleJourney
 
 
 def test_vehicle_journey_from_xml():

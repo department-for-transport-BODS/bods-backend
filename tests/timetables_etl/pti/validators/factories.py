@@ -3,8 +3,8 @@ Factoryboy Factories for PTI Models
 """
 
 import factory
-from common_layer.pti.models import Header, Schema
 from factory import Factory, SubFactory
+from pti.app.models.models_pti import Header, PtiJsonSchema
 
 
 class HeaderFactory(Factory):
@@ -22,7 +22,7 @@ class HeaderFactory(Factory):
 
 class SchemaFactory(factory.DictFactory):
     class Meta:  # type: ignore[misc]
-        model = Schema
+        model = PtiJsonSchema
 
     header = SubFactory(HeaderFactory)
     observations = []
