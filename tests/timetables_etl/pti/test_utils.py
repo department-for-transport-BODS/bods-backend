@@ -11,6 +11,9 @@ from pti.app.utils import get_service_in_scotland_from_db, is_service_in_scotlan
 
 
 def test_is_service_in_scotland():
+    """
+    Test if a service is in Scotland
+    """
     cache = MagicMock()
     db = MagicMock()
     cache.get_or_compute.return_value = True
@@ -27,7 +30,7 @@ def test_is_service_in_scotland():
 
     # Test that compute_fn calls the correct function
     with patch(
-        "pti.app.utils.get_service_in_scotland_from_db"
+        "pti.app.utils.utils_scotland.get_service_in_scotland_from_db"
     ) as m_get_service_in_scotland_from_db:
         m_get_service_in_scotland_from_db.return_value = True
         result = compute_fn()
@@ -36,14 +39,24 @@ def test_is_service_in_scotland():
         )
 
 
-@patch("pti.app.utils.OtcServiceRepo")
+@patch("pti.app.utils.utils_scotland.OtcServiceRepo")
 @pytest.mark.parametrize(
-    "traveline_region, expected_result",
-    [(SCOTLAND_TRAVELINE_REGIONS[0], True), ("NotScottishRegion", False)],
+    ("traveline_region", "expected_result"),
+    [
+        pytest.param(
+            SCOTLAND_TRAVELINE_REGIONS[0], True, id="Scottish Region Returns True"
+        ),
+        pytest.param(
+            "NotScottishRegion", False, id="Non Scottish Region Returns False"
+        ),
+    ],
 )
 def test_get_service_in_scotland_from_db(
     m_service_repo, traveline_region, expected_result
 ):
+    """
+    Test Getting Service in scotland from DB
+    """
     m_service_repo.return_value.get_service_with_traveline_region.return_value = (
         ServiceWithRegion(service=MagicMock(), traveline_region=traveline_region)
     )

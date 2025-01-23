@@ -15,35 +15,39 @@ from common_layer.txc.parser.metadata import parse_metadata
 from common_layer.txc.parser.parser_txc import load_xml_tree
 from lxml import etree
 
-from .functions import (
+from ..utils.utils_time import to_days, today
+from ..utils.utils_xml import (
     cast_to_bool,
     cast_to_date,
-    check_description_for_inbound_description,
-    check_description_for_outbound_description,
-    check_flexible_service_times,
-    check_flexible_service_timing_status,
-    check_inbound_outbound_description,
-    check_service_group_validations,
     contains_date,
-    get_flexible_service_stop_point_ref_validator,
-    get_lines_validator,
-    has_destination_display,
-    has_flexible_or_standard_service,
-    has_flexible_service_classification,
     has_name,
     has_prohibited_chars,
-    has_servicedorganisation_working_days,
     is_member_of,
     regex,
     strip,
-    to_days,
-    today,
-    validate_licence_number,
-    validate_line_id,
-    validate_modification_date_time,
-    validate_non_naptan_stop_points,
 )
+from .destination_display import has_destination_display
 from .holidays import get_validate_bank_holidays
+from .lines import get_lines_validator, validate_line_id
+from .metadata import validate_modification_date_time
+from .operator import validate_licence_number
+from .service.descriptions import (
+    check_description_for_inbound_description,
+    check_description_for_outbound_description,
+    check_inbound_outbound_description,
+)
+from .service.flexible_service import (
+    check_flexible_service_times,
+    check_flexible_service_timing_status,
+    get_flexible_service_stop_point_ref_validator,
+    has_flexible_service_classification,
+)
+from .service.service import (
+    check_service_group_validations,
+    has_flexible_or_standard_service,
+)
+from .serviced_organisation import has_servicedorganisation_working_days
+from .stop_point import validate_non_naptan_stop_points
 from .timing_links import validate_run_time, validate_timing_link_stops
 
 logger = logging.getLogger(__name__)

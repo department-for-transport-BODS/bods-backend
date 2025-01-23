@@ -6,8 +6,13 @@ from common_layer.pti.constants import MODE_COACH
 from common_layer.timetables.transxchange import TransXChangeElement
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
+from lxml.etree import _Element
+from pti.app.utils.utils_xml import extract_text
+from structlog.stdlib import get_logger
 
 from .base import BaseValidator
+
+log = get_logger()
 
 
 class StopPointValidator(BaseValidator):
@@ -132,3 +137,41 @@ class StopPointValidator(BaseValidator):
                 return False
 
         return True
+
+
+def get_stop_point_ref_list(stop_points, ns) -> list[str]:
+    """
+    For each stop point in the input, the function looks for FlexibleStopUsage elements
+    and extracts their StopPointRef values.
+    """
+    stop_point_ref_list: list[str] = []
+    for flex_stop_point in stop_points:
+        flexible_stop_usage_list = flex_stop_point.xpath(
+            "x:FlexibleStopUsage", namespaces=ns
+        )
+        if len(flexible_stop_usage_list) > 0:
+            for flexible_stop_usage in flexible_stop_usage_list:
+                ref = extract_text(
+                    flexible_stop_usage.xpath("x:StopPointRef", namespaces=ns), None
+                )
+                if ref is not None:
+                    stop_point_ref_list.append(ref)
+                else:
+                    log.warning(
+                        "Missing StopPointRef in FlexibleStopUsage",
+                        flexible_stop_usage=flexible_stop_usage,
+                    )
+
+    return stop_point_ref_list
+
+
+def validate_non_naptan_stop_points(_context, points: list[_Element]) -> bool:
+    """
+    Runs the StopPointValidator
+    """
+    log.info(
+        "Validation Start: Non Naptan Stop Points",
+    )
+    point = points[0]
+    validator = StopPointValidator(point)
+    return validator.validate()

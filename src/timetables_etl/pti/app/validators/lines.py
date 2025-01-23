@@ -5,7 +5,14 @@ Validations related to Lines
 import itertools
 from collections import defaultdict
 
+from common_layer.database.client import SqlDB
+from common_layer.database.repos import NaptanStopPointRepo
+from lxml import etree
+from structlog.stdlib import get_logger
+
 from .base import BaseValidator
+
+log = get_logger()
 
 
 class LinesValidator(BaseValidator):
@@ -99,3 +106,53 @@ class LinesValidator(BaseValidator):
             return True
 
         return False
+
+
+def get_lines_validator(db: SqlDB):
+    """
+    Creates and returns a validator function for NAPTAN lines XML elements.
+    """
+
+    def validate_lines(_context, lines_list: list[etree._Element]) -> bool:
+        """
+        Validates NAPTAN lines XML elements against stop area data.
+        """
+        log.info(
+            "Validation Start: Lines",
+            lines_count=len(lines_list),
+        )
+        lines = lines_list[0]
+        repo = NaptanStopPointRepo(db)
+        stop_area_map = repo.get_stop_area_map()
+        validator = LinesValidator(lines, stop_area_map=stop_area_map)
+        return validator.validate()
+
+    return validate_lines
+
+
+def validate_line_id(_context, lines) -> bool:
+    """
+    Validates that Line@id has the correct format.
+    """
+    log.info(
+        "Validation Start: Line ID",
+        count=len(lines),
+    )
+    line = lines[0]
+    ns = {"x": line.nsmap.get(None)}
+
+    xpath = "string(@id)"
+    line_id = line.xpath(xpath, namespaces=ns)
+
+    xpath = "string(//x:Operators/x:Operator/x:NationalOperatorCode)"
+    noc = line.xpath(xpath, namespaces=ns)
+
+    xpath = "string(../../x:ServiceCode)"
+    service_code = line.xpath(xpath, namespaces=ns)
+
+    xpath = "string(x:LineName)"
+    line_name = line.xpath(xpath, namespaces=ns)
+    line_name = line_name.replace(" ", "")
+
+    expected_line_id = f"{noc}:{service_code}:{line_name}"
+    return line_id.startswith(expected_line_id)

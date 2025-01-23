@@ -1,15 +1,14 @@
 """
-PTI Holiday Tests
+Test Holidays Observation 43
+Mandatory elements incorrect in 'BankHolidayOperation'.
 """
 
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
-from .conftest import run_validation
-
-DATA_DIR = Path(__file__).parent / "data" / "holidays"
+from ..conftest import run_validation
+from .conftest import DATA_DIR
 
 OBSERVATION_ID = 43
 

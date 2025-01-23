@@ -1,4 +1,3 @@
-# pylint: disable=unused-argument
 """
 Validator functions for JourneyTimingLinks and VehicleJourneyTimingLinks
 """

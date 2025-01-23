@@ -14,7 +14,7 @@ from common_layer.pti.constants import (
     SCOTTISH_BANK_HOLIDAYS,
 )
 
-from ..utils import is_service_in_scotland
+from ..utils.utils_scotland import is_service_in_scotland
 
 
 def get_service_ref_from_element(element, ns):

@@ -19,7 +19,7 @@ def m_stop_point_repo():
     """
     Patched Stop Point Repo
     """
-    with patch("pti.app.validators.functions.NaptanStopPointRepo") as m_repo:
+    with patch("pti.app.validators.lines.NaptanStopPointRepo") as m_repo:
         yield m_repo
 
 

@@ -3,6 +3,9 @@ DestinationDisplay PTI Validator
 """
 
 from lxml.etree import _Element
+from structlog.stdlib import get_logger
+
+log = get_logger()
 
 
 class DestinationDisplayValidator:
@@ -101,3 +104,21 @@ class DestinationDisplayValidator:
             return True
 
         return False
+
+
+def has_destination_display(_context, patterns) -> bool:
+    """
+    First check if DestinationDisplay in JourneyPattern is provided.
+
+    If not, we need to check in if DynamicDestinationDisplay is provided for
+    each stop inside a JourneyPatternTimingLink.
+
+    If both conditions above fail, then DestinationDisplay should
+    mandatory nside VehicleJourney.
+    """
+    log.info(
+        "Validation Start: Has Destination Display",
+    )
+    pattern = patterns[0]
+    validator = DestinationDisplayValidator(pattern)
+    return validator.validate()
