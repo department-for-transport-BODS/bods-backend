@@ -12,6 +12,7 @@ from common_layer.dynamodb.client import DynamoDB
 from common_layer.txc.parser.metadata import parse_metadata
 from common_layer.txc.parser.parser_txc import load_xml_tree
 from lxml import etree
+from structlog.stdlib import get_logger
 
 from ..constants import FLEXIBLE_SERVICE, STANDARD_SERVICE
 from ..models.models_pti import PtiJsonSchema, PtiObservation, PtiViolation
@@ -50,7 +51,7 @@ from .serviced_organisation import has_servicedorganisation_working_days
 from .stop_point import validate_non_naptan_stop_points
 from .timing_links import validate_run_time, validate_timing_link_stops
 
-logger = logging.getLogger(__name__)
+log = get_logger()
 
 
 class PTIValidator:
@@ -62,7 +63,7 @@ class PTIValidator:
         json_ = json.load(source)
         self.schema = PtiJsonSchema(**json_)
         self.namespaces = self.schema.header.namespaces
-        self.violations = []
+        self.violations: list[PtiViolation] = []
 
         self.fns = etree.FunctionNamespace(None)
         self.register_function("bool", cast_to_bool)
@@ -213,11 +214,15 @@ class PTIValidator:
             for x in self.schema.observations
             if x.service_type in [txc_service_type, "All"]
         ]
-        logger.info("Checking observations for XML file")
+        log.info("Checking observations for XML file")
         for observation in service_observations:
             elements = document.xpath(observation.context, namespaces=self.namespaces)
             for element in elements:
                 self.check_observation(observation, element, metadata.FileName)
 
-        logger.info("Completed observations for the XML file")
+        log.info(
+            "Completed observations for the XML file",
+            violations=len(self.violations),
+            observations=len(service_observations),
+        )
         return len(self.violations) == 0

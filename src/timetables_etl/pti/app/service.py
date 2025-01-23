@@ -69,7 +69,8 @@ class PTIValidationService:
 
         if self.is_file_unchanged(file_hash, self._live_revision_attributes):
             log.info(
-                f"File for revision {revision.dataset_id} unchanged, skipping PTI validation."
+                "File for revision unchanged, skipping PTI validation.",
+                revision_id=revision.dataset_id,
             )
         else:
             validator = get_xml_file_pti_validator(self._dynamodb, self._db)
@@ -88,14 +89,16 @@ class PTIValidationService:
                 ]
                 observation_repo = DataQualityPTIObservationRepo(self._db)
                 observation_repo.bulk_insert(observations)
-
+                violations_list = [violation.name for violation in violations]
                 log.info(
                     "PTI Violation Found, Deleting TXC File Attribute Entry",
                     txc_file_attributes_id=txc_file_attributes.id,
+                    violations=violations_list,
                 )
                 txc_file_attribute_repo = OrganisationTXCFileAttributesRepo(self._db)
                 txc_file_attribute_repo.delete_by_id(txc_file_attributes.id)
 
-                raise ValueError("PTI validation failed due to violations")
-
+                raise ValueError(
+                    f"PTI validation failed due to violations. {','.join(violations_list)}"
+                )
         log.info("Finished PTI Profile validation.")
