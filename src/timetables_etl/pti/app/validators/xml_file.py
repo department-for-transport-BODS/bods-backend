@@ -3,11 +3,11 @@ XML File PTI Validator
 """
 
 from io import BytesIO
-from typing import IO, Any, List
+from typing import IO, Any
 
 from common_layer.database.client import SqlDB
 from common_layer.dynamodb.client import DynamoDB
-from common_layer.pti.models import Violation
+from pti.app.models.models_pti import PtiViolation
 from structlog.stdlib import get_logger
 
 from .pti import PTIValidator
@@ -23,7 +23,7 @@ class XmlFilePTIValidator:
     def __init__(self, schema: IO[Any], dynamodb: DynamoDB, db: SqlDB):
         self._validator = PTIValidator(schema, dynamodb, db)
 
-    def get_violations(self, revision, xml_file_content: BytesIO) -> List[Violation]:
+    def get_violations(self, revision, xml_file_content: BytesIO) -> list[PtiViolation]:
         """
         Get any PTI violations for the given XML File.
         Will skip validation if the file exists in the live revision and is unchanged.

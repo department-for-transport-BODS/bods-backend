@@ -2,8 +2,9 @@
 BaseValidator
 """
 
-from common_layer.pti.models import Line, VehicleJourney
 from common_layer.timetables.transxchange import TransXChangeElement
+
+from ..models.models_pti import Line, VehicleJourney
 
 
 class BaseValidator:

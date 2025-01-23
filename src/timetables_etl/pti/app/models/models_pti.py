@@ -1,73 +1,101 @@
+"""
+PTI Pydantic Models
+"""
+
 import json
 from pathlib import Path
-from typing import Dict, List, Optional
 
+from common_layer.database.models import DataQualityPTIObservation
 from pydantic import BaseModel
 
-from .constants import NO_REF, REF_PREFIX, REF_SUFFIX, REF_URL
+from ..constants import NO_REF, REF_URL
 
 GENERAL_REF = NO_REF + REF_URL
 
 
 class Rule(BaseModel):
+    """
+    Observation Rules
+    """
+
     test: str
 
 
 class Observation(BaseModel):
+    """
+    PTI Observations
+    """
+
     details: str
     category: str
     service_type: str
     reference: str
     context: str
     number: int
-    rules: List[Rule]
+    rules: list[Rule]
 
 
 class Header(BaseModel):
-    namespaces: Dict[str, str]
+    """
+    Header
+    """
+
+    namespaces: dict[str, str]
     version: str
     notes: str
     guidance_document: str
 
 
 class Schema(BaseModel):
-    observations: List[Observation]
+    """
+    PTI Schema Loaded from Json
+    """
+
+    observations: list[Observation]
     header: Header
 
     @classmethod
     def from_path(cls, path: Path):
+        """
+        Loader for pti_schema.json
+        """
         with path.open("r") as f:
             d = json.load(f)
             return cls(**d)
 
 
-class Violation(BaseModel):
+class PtiViolation(BaseModel):
+    """
+    PTI Violation Model
+    """
+
     line: int
     filename: str
     name: str
-    element_text: Optional[str] = None
+    element_text: str | None = None
     observation: Observation
 
-    def to_pandas_dict(self):
-        if self.observation.reference != "0":
-            ref = REF_PREFIX + self.observation.reference + REF_SUFFIX + REF_URL
-        else:
-            ref = GENERAL_REF
-
-        return {
-            "observation_number": self.observation.number,
-            "filename": self.filename,
-            "line": self.line,
-            "name": self.name,
-            "observation_category": self.observation.category,
-            "observation_details": self.observation.details.format(
-                element_text=self.element_text
-            ),
-            "reference": ref,
-        }
+    @classmethod
+    def make_observation(
+        cls, revision_id: int, violation: "PtiViolation"
+    ) -> DataQualityPTIObservation:
+        """Creates a DataQualityPTIObservation from a violation instance."""
+        return DataQualityPTIObservation(
+            revision_id=revision_id,
+            line=violation.line,
+            filename=violation.filename,
+            element=violation.name,
+            details=violation.observation.details,
+            category=violation.observation.category,
+            reference=violation.observation.reference,
+        )
 
 
 class VehicleJourney(BaseModel):
+    """
+    Vehicle Journey Model
+    """
+
     code: str
     line_ref: str
     journey_pattern_ref: str
@@ -76,6 +104,9 @@ class VehicleJourney(BaseModel):
 
     @classmethod
     def from_xml(cls, xml):
+        """
+        Vehicle Journey XML Parser
+        """
         namespaces = {"x": xml.nsmap.get(None)}
         code = xml.xpath("string(x:VehicleJourneyCode)", namespaces=namespaces)
         line_ref = xml.xpath("string(x:LineRef)", namespaces=namespaces)
@@ -96,11 +127,18 @@ class VehicleJourney(BaseModel):
 
 
 class Line(BaseModel):
+    """
+    Line Model
+    """
+
     ref: str
     line_name: str
 
     @classmethod
     def from_xml(cls, xml):
+        """
+        Line XML Parser
+        """
         namespaces = {"x": xml.nsmap.get(None)}
         ref = xml.xpath("string(@id)", namespaces=namespaces)
         line_name = xml.xpath("string(x:LineName)", namespaces=namespaces)

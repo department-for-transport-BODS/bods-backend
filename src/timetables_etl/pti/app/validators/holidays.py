@@ -4,7 +4,7 @@ Validators related to holidays
 
 from common_layer.database.client import SqlDB
 from common_layer.dynamodb.client import DynamoDB
-from common_layer.pti.constants import (
+from pti.app.constants import (
     BANK_HOLIDAYS,
     BANK_HOLIDAYS_ONLY_ENGLISH,
     BANK_HOLIDAYS_ONLY_SCOTTISH,

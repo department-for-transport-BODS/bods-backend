@@ -7,8 +7,8 @@ from io import BytesIO
 from aws_lambda_powertools import Tracer
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.database.client import SqlDB
-from common_layer.database.models.model_organisation import OrganisationDatasetRevision
-from common_layer.database.repos.repo_organisation import (
+from common_layer.database.models import OrganisationDatasetRevision
+from common_layer.database.repos import (
     OrganisationDatasetRevisionRepo,
     OrganisationTXCFileAttributesRepo,
 )

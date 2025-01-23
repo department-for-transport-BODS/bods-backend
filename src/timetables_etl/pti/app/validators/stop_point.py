@@ -2,11 +2,11 @@
 Validators related to stop points
 """
 
-from common_layer.pti.constants import MODE_COACH
 from common_layer.timetables.transxchange import TransXChangeElement
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
 from lxml.etree import _Element
+from pti.app.constants import MODE_COACH
 from pti.app.utils.utils_xml import extract_text
 from structlog.stdlib import get_logger
 

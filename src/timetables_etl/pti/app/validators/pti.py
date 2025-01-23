@@ -9,11 +9,11 @@ from typing import IO, Any, Callable
 
 from common_layer.database.client import SqlDB
 from common_layer.dynamodb.client import DynamoDB
-from common_layer.pti.constants import FLEXIBLE_SERVICE, STANDARD_SERVICE
-from common_layer.pti.models import Observation, Schema, Violation
 from common_layer.txc.parser.metadata import parse_metadata
 from common_layer.txc.parser.parser_txc import load_xml_tree
 from lxml import etree
+from pti.app.constants import FLEXIBLE_SERVICE, STANDARD_SERVICE
+from pti.app.models.models_pti import Observation, PtiViolation, Schema
 
 from ..utils.utils_time import to_days, today
 from ..utils.utils_xml import (
@@ -149,7 +149,7 @@ class PTIValidator:
         name = element.xpath("local-name(.)", namespaces=self.namespaces)
         line = element.sourceline or 0
         self.violations.append(
-            Violation(
+            PtiViolation(
                 line=line,
                 name=name,
                 filename=filename,

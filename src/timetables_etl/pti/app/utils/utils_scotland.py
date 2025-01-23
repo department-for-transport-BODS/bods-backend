@@ -7,7 +7,7 @@ from functools import lru_cache
 from common_layer.database.client import SqlDB
 from common_layer.database.repos import OtcServiceRepo
 from common_layer.dynamodb.client import DynamoDB
-from common_layer.pti.constants import SCOTLAND_TRAVELINE_REGIONS
+from pti.app.constants import SCOTLAND_TRAVELINE_REGIONS
 from structlog.stdlib import get_logger
 
 log = get_logger()

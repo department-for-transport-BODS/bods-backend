@@ -3,7 +3,8 @@ PTI TXC Revision Validator
 """
 
 from common_layer.dynamodb.models import TXCFileAttributes
-from common_layer.pti.models import Observation, Violation
+
+from ..models.models_pti import Observation, PtiViolation
 
 REVISION_NUMBER_OBSERVATION = Observation(
     details=(
@@ -40,7 +41,7 @@ class TXCRevisionValidator:
 
         self._txc_file_attributes = txc_file_attributes
         self._live_attributes = live_txc_file_attributes
-        self.violations: list[Violation] = []
+        self.violations: list[PtiViolation] = []
 
     def get_live_attributes_by_service_code_and_lines(
         self, code: str, lines: list[str]
@@ -89,7 +90,7 @@ class TXCRevisionValidator:
                     != self._txc_file_attributes.revision_number
                 ):
                     self.violations.append(
-                        Violation(
+                        PtiViolation(
                             line=2,
                             filename=self._txc_file_attributes.filename,
                             name="RevisionNumber",
@@ -103,7 +104,7 @@ class TXCRevisionValidator:
                 >= self._txc_file_attributes.revision_number
             ):
                 self.violations.append(
-                    Violation(
+                    PtiViolation(
                         line=2,
                         filename=self._txc_file_attributes.filename,
                         name="RevisionNumber",
@@ -112,7 +113,7 @@ class TXCRevisionValidator:
                 )
                 break
 
-    def get_violations(self) -> list[Violation]:
+    def get_violations(self) -> list[PtiViolation]:
         """
         Returns any revision violations.
         """

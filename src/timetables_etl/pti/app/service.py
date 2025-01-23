@@ -13,6 +13,7 @@ from common_layer.database.repos.repo_organisation import (
 from common_layer.dynamodb.client import DynamoDB
 from common_layer.dynamodb.models import TXCFileAttributes
 from common_layer.utils import sha1sum
+from pti.app.models.models_pti import PtiViolation
 from structlog.stdlib import get_logger
 
 from .validators.factory import get_xml_file_pti_validator
@@ -81,8 +82,12 @@ class PTIValidationService:
 
             if violations:
                 log.info("Violations found", count=len(violations))
+                observations = [
+                    PtiViolation.make_observation(revision.id, violation)
+                    for violation in violations
+                ]
                 observation_repo = DataQualityPTIObservationRepo(self._db)
-                observation_repo.create_from_violations(revision.id, violations)
+                observation_repo.bulk_insert(observations)
 
                 log.info(
                     "PTI Violation Found, Deleting TXC File Attribute Entry",

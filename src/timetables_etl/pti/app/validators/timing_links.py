@@ -98,7 +98,7 @@ def validate_journey_pattern_timing_links(
     return non_compliant_elements
 
 
-def validate_run_time(context, elements: list[etree._Element]) -> list[etree._Element]:
+def validate_run_time(_context, elements: list[etree._Element]) -> list[etree._Element]:
     """
     Validate run times between JourneyPatternTimingLinks and VehicleJourneyTimingLinks.
     """
@@ -113,7 +113,7 @@ def validate_run_time(context, elements: list[etree._Element]) -> list[etree._El
     )
 
 
-def validate_timing_link_stops(context, sections: list[etree._Element]) -> bool:
+def validate_timing_link_stops(_context, sections: list[etree._Element]) -> bool:
     """
     Validates that all links in a section are ordered coherently by
     stop point ref.

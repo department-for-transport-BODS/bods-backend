@@ -6,9 +6,10 @@ from typing import Callable
 
 from common_layer.database.client import SqlDB
 from common_layer.database.repos import NaptanStopPointRepo
-from pti.app.utils.utils_xml import extract_text
-from pti.app.validators.stop_point import get_stop_point_ref_list
 from structlog.stdlib import get_logger
+
+from ...utils.utils_xml import extract_text
+from ..stop_point import get_stop_point_ref_list
 
 log = get_logger()
 
