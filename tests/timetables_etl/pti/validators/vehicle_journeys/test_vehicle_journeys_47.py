@@ -5,9 +5,8 @@ Mandatory elements incorrect in Destination Display
 
 import pytest
 
-from tests.timetables_etl.pti.validators.test_vehicle_journeys_39 import DATA_DIR
-
-from .conftest import run_validation
+from ..conftest import run_validation
+from .conftest import DATA_DIR
 
 OBSERVATION_ID = 47
 

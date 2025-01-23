@@ -3,13 +3,11 @@ Test Vehicle Journeys Observation 39
 Mandatory elements incorrect in VehicleJourney field
 """
 
-from pathlib import Path
-
 import pytest
 
-from .conftest import TXCFile, create_validator
+from ..conftest import TXCFile, create_validator
+from .conftest import DATA_DIR
 
-DATA_DIR = Path(__file__).parent / "data/vehicle_journeys"
 OBSERVATION_ID = 39
 
 

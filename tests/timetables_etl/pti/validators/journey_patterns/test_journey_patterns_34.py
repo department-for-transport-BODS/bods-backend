@@ -3,13 +3,12 @@ Test Timings Observation 34
 Mandatory elements incorrect in 'JourneyPatternSection' field.
 """
 
-from pathlib import Path
-
 import pytest
 
 from tests.timetables_etl.pti.validators.conftest import TXCFile, create_validator
 
-DATA_DIR = Path(__file__).parent / "data/journey_patterns"
+from .conftest import DATA_DIR
+
 OBSERVATION_ID = 34
 
 
