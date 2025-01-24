@@ -5,8 +5,9 @@ Validations related to Lines
 import itertools
 from collections import defaultdict
 
-from common_layer.database.client import SqlDB
-from common_layer.database.repos import NaptanStopPointRepo
+from common_layer.dynamodb.client import NaptanStopPointDynamoDBClient
+from common_layer.txc.models.txc_data import TXCData
+from common_layer.txc.models.txc_stoppoint import TXCStopPoint
 from lxml import etree
 from structlog.stdlib import get_logger
 
@@ -108,10 +109,21 @@ class LinesValidator(BaseValidator):
         return False
 
 
-def get_lines_validator(db: SqlDB):
+def get_lines_validator(
+    naptan_client: NaptanStopPointDynamoDBClient, txc_data: TXCData
+):
     """
     Creates and returns a validator function for NAPTAN lines XML elements.
     """
+    atco_codes = [
+        (
+            stop_point.AtcoCode
+            if isinstance(stop_point, TXCStopPoint)
+            else stop_point.StopPointRef
+        )
+        for stop_point in txc_data.StopPoints
+    ]
+    stop_area_map = naptan_client.get_stop_area_map(atco_codes)
 
     def validate_lines(_context, lines_list: list[etree._Element]) -> bool:
         """
@@ -122,8 +134,6 @@ def get_lines_validator(db: SqlDB):
             lines_count=len(lines_list),
         )
         lines = lines_list[0]
-        repo = NaptanStopPointRepo(db)
-        stop_area_map = repo.get_stop_area_map()
         validator = LinesValidator(lines, stop_area_map=stop_area_map)
         return validator.validate()
 

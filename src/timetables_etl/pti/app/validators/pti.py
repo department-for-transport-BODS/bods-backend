@@ -7,7 +7,9 @@ from io import BytesIO
 from typing import IO, Any, Callable
 
 from common_layer.database.client import SqlDB
-from common_layer.dynamodb.client import DynamoDB
+from common_layer.dynamodb.client import DynamoDB, NaptanStopPointDynamoDBClient
+from common_layer.dynamodb.client.cache import DynamoDBCache
+from common_layer.txc.models.txc_data import TXCData
 from common_layer.txc.parser.metadata import parse_metadata
 from common_layer.txc.parser.parser_txc import load_xml_tree
 from lxml import etree
@@ -60,7 +62,14 @@ class PTIValidator:
     Class for running PTI validator funtions
     """
 
-    def __init__(self, source: IO[Any], dynamo: DynamoDB, db: SqlDB):
+    def __init__(
+        self,
+        source: IO[Any],
+        dynamo: DynamoDBCache,
+        stop_point_client: NaptanStopPointDynamoDBClient,
+        db: SqlDB,
+        txc_data: TXCData,
+    ):
         json_ = json.load(source)
         self.schema = PtiJsonSchema(**json_)
         self.namespaces = self.schema.header.namespaces
@@ -114,7 +123,9 @@ class PTIValidator:
         self.register_function("today", today)
 
         self.register_function("validate_line_id", validate_line_id)
-        self.register_function("validate_lines", get_lines_validator(db))
+        self.register_function(
+            "validate_lines", get_lines_validator(stop_point_client, txc_data)
+        )
 
         self.register_function(
             "validate_modification_date_time", validate_modification_date_time

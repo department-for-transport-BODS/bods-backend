@@ -3,7 +3,7 @@ Validators related to holidays
 """
 
 from common_layer.database.client import SqlDB
-from common_layer.dynamodb.client import DynamoDB
+from common_layer.dynamodb.client import DynamoDBCache
 from structlog.stdlib import get_logger
 
 from ..utils.utils_scotland import is_service_in_scotland
@@ -61,7 +61,7 @@ def get_service_ref_from_element(element, ns):
     return service_ref
 
 
-def get_validate_bank_holidays(dynamo: DynamoDB, db: SqlDB):
+def get_validate_bank_holidays(dynamo: DynamoDBCache, db: SqlDB):
     """
     Setup and return validator function for bank holidays
     """

@@ -25,7 +25,7 @@ class NaptanDynamoDbSettings(DynamoBaseSettings):
     )
 
 
-class NaptanStopPointDynamoDbClient(DynamoDB):
+class NaptanStopPointDynamoDBClient(DynamoDB):
     """
     DynamoDB client specialized for fetching Naptan StopPoints.
     """

@@ -6,7 +6,9 @@ from io import BytesIO
 from typing import IO, Any
 
 from common_layer.database.client import SqlDB
-from common_layer.dynamodb.client import DynamoDB
+from common_layer.dynamodb.client import NaptanStopPointDynamoDBClient
+from common_layer.dynamodb.client.cache import DynamoDBCache
+from common_layer.txc.models.txc_data import TXCData
 from structlog.stdlib import get_logger
 
 from ..models.models_pti import PtiViolation
@@ -20,8 +22,17 @@ class XmlFilePTIValidator:
     Run PTI validations against an XML File
     """
 
-    def __init__(self, schema: IO[Any], dynamodb: DynamoDB, db: SqlDB):
-        self._validator = PTIValidator(schema, dynamodb, db)
+    def __init__(
+        self,
+        schema: IO[Any],
+        dynamodb: DynamoDBCache,
+        stop_point_client: NaptanStopPointDynamoDBClient,
+        db: SqlDB,
+        txc_data: TXCData,
+    ):
+        self._validator = PTIValidator(
+            schema, dynamodb, stop_point_client, db, txc_data
+        )
 
     def get_violations(self, revision, xml_file_content: BytesIO) -> list[PtiViolation]:
         """
