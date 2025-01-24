@@ -15,12 +15,7 @@ class ETLInputData(BaseModel):
     Input data for the ETL Function
     """
 
-    class Config:
-        """
-        Allow us to map Bucket / Object Key
-        """
-
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
     task_id: int = Field(alias="DatasetEtlTaskResultId")
     file_attributes_id: int = Field(alias="fileAttributesId")
