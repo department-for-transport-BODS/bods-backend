@@ -119,8 +119,8 @@ def get_processors(lambda_context: LambdaContext | None = None) -> tuple:
 
 
 def configure_logging(
-    lambda_context: LambdaContext | None = None,
     event_dict: dict[str, Any] | None = None,
+    lambda_context: LambdaContext | None = None,
 ):
     """
     Configure Structured JSON logging for the application
