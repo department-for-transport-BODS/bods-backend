@@ -5,15 +5,16 @@ SchemaCheckLambda
 from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
+from typing import Any
 
 from aws_lambda_powertools import Tracer
+from aws_lambda_powertools.utilities.typing import LambdaContext
 from botocore.exceptions import BotoCoreError, ClientError
 from common_layer.database.client import SqlDB
 from common_layer.database.models.model_data_quality import DataQualitySchemaViolation
 from common_layer.database.repos.repo_data_quality import DataQualitySchemaViolationRepo
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
-from common_layer.json_logging import configure_logging
 from common_layer.s3 import S3
 from lxml import etree
 from pydantic import BaseModel, ConfigDict, Field
@@ -168,11 +169,10 @@ def add_violations_to_db(
 
 @tracer.capture_lambda_handler
 @file_processing_result_to_db(step_name=StepName.TIMETABLE_SCHEMA_CHECK)
-def lambda_handler(event, _context):
+def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, Any]:
     """
     Main lambda handler
     """
-    configure_logging()
     input_data = SchemaCheckInputData(**event)
     db = SqlDB()
 

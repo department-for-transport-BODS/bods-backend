@@ -2,7 +2,10 @@
 File Attributes Lambda
 """
 
+from typing import Any
+
 from aws_lambda_powertools import Tracer
+from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.database.client import SqlDB
 from common_layer.database.models import OrganisationTXCFileAttributes
 from common_layer.database.repos import (
@@ -12,7 +15,6 @@ from common_layer.database.repos import (
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.download import download_and_parse_txc
-from common_layer.json_logging import configure_logging
 from common_layer.txc.models import TXCData
 from common_layer.txc.parser.parser_txc import TXCParserConfig
 from structlog.stdlib import get_logger
@@ -58,11 +60,10 @@ def process_file_attributes(
 
 @tracer.capture_lambda_handler
 @file_processing_result_to_db(StepName.TXC_ATTRIBUTE_EXTRACTION)
-def lambda_handler(event, _context) -> dict[str, int]:
+def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, int]:
     """
     Main lambda handler
     """
-    configure_logging()
     input_data = FileAttributesInputData(**event)
     txc_data = download_and_parse_txc(
         input_data.s3_bucket_name, input_data.s3_file_key, PARSER_CONFIG

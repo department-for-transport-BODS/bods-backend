@@ -3,8 +3,8 @@ PtiValidation Lambda
 """
 
 from io import BytesIO
+from typing import Any
 
-import structlog
 from aws_lambda_powertools import Tracer
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.database.client import SqlDB
@@ -110,17 +110,11 @@ def run_validation(task_data: PTITaskData, db: SqlDB, dynamodb: DynamoDB):
 
 @tracer.capture_lambda_handler
 @file_processing_result_to_db(step_name=StepName.PTI_VALIDATION)
-def lambda_handler(event, _context: LambdaContext):
+def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, Any]:
     """
     PTI Validation Lambda Entrypoint
     """
     parsed_event = PTIValidationEvent(**event)
-    structlog.contextvars.bind_contextvars(
-        dataset_revision_id=parsed_event.DatasetRevisionId,
-        bucket=parsed_event.Bucket,
-        object_key=parsed_event.ObjectKey,
-        txc_file_attributes_id=parsed_event.TxcFileAttributesId,
-    )
     db = SqlDB()
     dynamodb = DynamoDB()
     xml_file_object = get_xml_file(parsed_event.Bucket, parsed_event.ObjectKey)

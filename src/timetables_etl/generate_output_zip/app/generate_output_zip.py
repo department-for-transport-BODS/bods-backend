@@ -6,8 +6,10 @@ Runs after the End of the FileProcessingMap to Zip the successful files
 from datetime import UTC, datetime
 from io import BytesIO
 from pathlib import Path
+from typing import Any
 
 from aws_lambda_powertools import Tracer
+from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.database.client import SqlDB
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
@@ -148,7 +150,7 @@ def process_map_results(input_data: GenerateOutputZipInputData) -> ProcessingRes
 
 @tracer.capture_lambda_handler
 @file_processing_result_to_db(StepName.GENERATE_OUTPUT_ZIP)
-def lambda_handler(event, _context):
+def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, Any]:
     """
     Lambda handler for generating zip file from map state results
     """

@@ -2,7 +2,10 @@
 PostSchemaCheck Lambda
 """
 
+from typing import Any
+
 from aws_lambda_powertools import Tracer
+from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.database.client import SqlDB
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
@@ -66,7 +69,7 @@ def process_post_schema_check(
 
 @tracer.capture_lambda_handler
 @file_processing_result_to_db(step_name=StepName.TIMETABLE_POST_SCHEMA_CHECK)
-def lambda_handler(event, _context):
+def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, Any]:
     """
     PostSchemaCheck Currently only checks for file paths in FileName
     """

@@ -3,7 +3,9 @@ Timetables ETL Statemachine Exception Handler
 """
 
 from datetime import UTC, datetime
+from typing import Any
 
+from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.database.client import SqlDB
 from common_layer.database.models import (
     DatasetETLTaskResult,
@@ -96,12 +98,12 @@ def handle_error(
     return updated_task, revision
 
 
-def lambda_handler(event: dict, context) -> dict:
+def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any]:
     """
     Timetables ETL Statemachine Exception Handler
     """
     log.info("Exception Event", data=event)
-    configure_logging(context)
+    configure_logging(event, context)
 
     parsed_event = ExceptionHandlerInputData(**event)
     log.error(

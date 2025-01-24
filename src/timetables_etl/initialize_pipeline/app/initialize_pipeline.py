@@ -2,10 +2,12 @@
 Lambda: InitializePipeline
 """
 
+from typing import Any
 from uuid import uuid4
 
 from aws_lambda_powertools import Tracer
 from aws_lambda_powertools.metrics import MetricUnit
+from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.aws import configure_metrics
 from common_layer.database.client import SqlDB
 from common_layer.database.models import (
@@ -112,11 +114,11 @@ def initialize_pipeline(
 
 @metrics.log_metrics
 @tracer.capture_lambda_handler
-def lambda_handler(event, context):
+def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any]:
     """
     Handler for InitializePipeline
     """
-    configure_logging(context)
+    configure_logging(event, context)
     parsed_event = InitializePipelineEvent(**event)
 
     db = SqlDB()

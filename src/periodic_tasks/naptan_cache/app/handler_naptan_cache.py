@@ -42,7 +42,7 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
     """
     Lambda handler for loading Naptan Data in to DynamoDB
     """
-    configure_logging(context)
+    configure_logging(event, context)
     try:
         input_data = NaptanProcessingInput.model_validate(event)
     except ValidationError as e:
