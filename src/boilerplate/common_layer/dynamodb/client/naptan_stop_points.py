@@ -75,7 +75,7 @@ class NaptanStopPointDynamoDBClient(DynamoDB):
         ]
 
         log.info(
-            "Completed fetching and parsing StopPoints",
+            "Completed fetching and parsing TxcStopPoints from DynamoDB",
             total_fetched=len(stop_points),
             total_missing=len(missing_atco_codes),
         )
