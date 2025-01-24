@@ -6,9 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from common_layer.exceptions.file_exceptions import UnknownFileType
-from download_dataset.app.db_operations import update_dataset_revision
 
-from tests.factories.database.organisation import OrganisationDatasetRevisionFactory
 from timetables_etl.download_dataset.app.download_dataset import (
     lambda_handler,
     upload_file_to_s3,

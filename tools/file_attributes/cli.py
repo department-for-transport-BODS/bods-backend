@@ -6,17 +6,12 @@ from pathlib import Path
 
 import typer
 from common_layer.database.client import SqlDB
-from common_layer.database.models.model_organisation import (
-    OrganisationTXCFileAttributes,
-)
 from common_layer.json_logging import configure_logging
 from common_layer.txc.parser.parser_txc import TXCParserConfig, parse_txc_file
+from file_attributes_etl.app.file_attributes_etl import process_file_attributes
+from file_attributes_etl.app.models import FileAttributesInputData
 from structlog.stdlib import get_logger
 
-from timetables_etl.file_attributes_etl import (
-    FileAttributesInputData,
-    process_file_attributes,
-)
 from tools.common.db_tools import create_db_config, setup_db_instance
 from tools.common.xml_tools import get_xml_paths
 

@@ -4,27 +4,26 @@ Runs the File Attributes ETL Process against specified database
 
 from io import BytesIO
 from pathlib import Path
-from typing import List
 
 import typer
 from common_layer.json_logging import configure_logging
+from file_validation.app.xml_checks import dangerous_xml_check
 from structlog.stdlib import get_logger
 
-from timetables_etl.file_validation import dangerous_xml_check
 from tools.common.xml_tools import get_xml_paths
 
 app = typer.Typer()
 log = get_logger()
 
 
-def process_file_validation(xml_paths: List[Path]):
+def process_file_validation(xml_paths: list[Path]):
     """
     Process file validation
     """
     for xml_path in xml_paths:
         log.info("Processing XML File", path=xml_path)
         with open(xml_path, "rb") as file:
-            dangerous_xml_check(BytesIO(file.read()))
+            dangerous_xml_check(BytesIO(file.read()), xml_path.name)
             log.info("File validation passed", file_name=xml_path)
 
 
