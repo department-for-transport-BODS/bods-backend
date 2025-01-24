@@ -4,12 +4,10 @@ Runs the File Attributes ETL Process against specified database
 
 import typer
 from common_layer.json_logging import configure_logging
+from download_dataset.app.download_dataset import download_and_upload_dataset
+from download_dataset.app.models import DownloadDatasetInputData
 from structlog.stdlib import get_logger
 
-from timetables_etl.download_dataset import (
-    DownloadDatasetInputData,
-    download_and_upload_dataset,
-)
 from tools.common.db_tools import create_db_config, setup_db_instance
 
 app = typer.Typer()
@@ -78,7 +76,7 @@ def main(
         )
     except ValueError as e:
         log.error("Database configuration error", exc_info=True)
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
     db = setup_db_instance(db_config)
     event_data = DownloadDatasetInputData(
         **{
@@ -94,7 +92,6 @@ def main(
         event_data.s3_bucket_name,
         event_data.revision_id,
         event_data.remote_dataset_url_link,
-        True,
     )
 
 

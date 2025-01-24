@@ -4,14 +4,8 @@ Serverless ETL task related data fetching from tables
 
 from pathlib import Path
 
-from common_layer.database.models import (
-    DatasetETLTaskResult,
-    FileProcessingResult
-)
-from common_layer.database.repos import (
-    ETLTaskResultRepo,
-    FileProcessingResultRepo
-)
+from common_layer.database.models import DatasetETLTaskResult, FileProcessingResult
+from common_layer.database.repos import ETLTaskResultRepo, FileProcessingResultRepo
 from structlog.stdlib import get_logger
 
 from .utils import SqlDB, csv_extractor
@@ -22,7 +16,7 @@ logger = get_logger()
 @csv_extractor()
 def extract_pipelines_datasetetltaskresult(
     db: SqlDB, revision_id: int
-) -> list[DatasetETLTaskResult]:
+) -> list[DatasetETLTaskResult] | None:
     """
     Get the list of pipelines_datasetetltaskresult associated to a revision_id
     And output to csv
