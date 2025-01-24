@@ -1,5 +1,20 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Transform: AWS::Serverless-2016-10-31
+Transform:
+  - AWS::Serverless-2016-10-31
+  - Name: DatadogServerless
+    Parameters:
+      stackName: !Ref 'AWS::StackName'
+      apiKeySecretArn: arn:aws:secretsmanager:eu-west-2:228266753808:secret:DD_API_KEY_ALL_ENV-WDa721
+      pythonLayerVersion: 104
+      extensionLayerVersion: 68
+      site: datadoghq.eu
+      service: !Sub '${ProjectName}-timetables-etl'
+      env: !Ref Environment
+      version: !Ref Version
+      gitData: !Ref DDGitData
+      enableDDTracing: true
+      captureLambdaPayload: true
+      enableProfiling: true
 Description: Supporting services for the execution of the timetables ETL process
 
 Parameters:
@@ -28,6 +43,14 @@ Parameters:
     Default: 'bodds_rw'
   BoilerplateLambdaLayerArn:
     Type: String
+  DDGitData:
+    Type: String
+    Default: ''
+    Description: 'The output of $(git rev-parse HEAD),$(git config --get remote.origin.url). Used for Datadog Source Code Integration tagging'
+  Version:
+    Type: String
+    Default: 'unknown'
+    Description: 'Version to pass to Datadog APM'
 Conditions:
   IsNotLocal: !Not [!Equals [!Ref Environment, 'local']]
   IsNotProd: !Not [!Equals [!Ref Environment, 'prod']]
@@ -116,6 +139,8 @@ Globals:
             - !Ref RdsDbUsername
         DYNAMODB_CACHE_TABLE_NAME: !Ref TimetablesCache
         DYNAMODB_NAPTAN_STOP_POINT_TABLE_NAME: !Sub '${ProjectName}-${Environment}-naptan-stop-points-table'
+        DD_MERGE_XRAY_TRACES: true
+        DD_PROFILING_ENABLED: true
 
 Resources:
   ##################################
