@@ -87,6 +87,7 @@ _NOISY_LOG_SOURCES = (
     "urllib3",
     "s3transfer",
     "aws_xray_sdk",
+    "ddtrace",
 )
 
 
