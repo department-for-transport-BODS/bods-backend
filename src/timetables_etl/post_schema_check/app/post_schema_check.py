@@ -4,7 +4,6 @@ PostSchemaCheck Lambda
 
 from typing import Any
 
-from aws_lambda_powertools import Tracer
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.database.client import SqlDB
 from common_layer.db.constants import StepName
@@ -18,7 +17,6 @@ from .db_output import add_violations_to_db, create_schema_violations_objects
 from .models import PostSchemaCheckInputData
 from .post_schema_validation import run_post_schema_validations
 
-tracer = Tracer()
 log = get_logger()
 
 PARSER_CONFIG = TXCParserConfig(
@@ -67,7 +65,6 @@ def process_post_schema_check(
     add_violations_to_db(db, db_violations)
 
 
-@tracer.capture_lambda_handler
 @file_processing_result_to_db(step_name=StepName.TIMETABLE_POST_SCHEMA_CHECK)
 def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, Any]:
     """

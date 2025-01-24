@@ -140,7 +140,6 @@ Globals:
         DYNAMODB_CACHE_TABLE_NAME: !Ref TimetablesCache
         DYNAMODB_NAPTAN_STOP_POINT_TABLE_NAME: !Sub '${ProjectName}-${Environment}-naptan-stop-points-table'
         DD_MERGE_XRAY_TRACES: true
-        DD_PROFILING_ENABLED: true
 
 Resources:
   ##################################
@@ -903,6 +902,13 @@ Resources:
                   - dynamodb:GetItem
                   - dynamodb:PutItem
                 Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ProjectName}-${Environment}-naptan-stop-points-table'
+        - PolicyName: DataDogAPIAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: arn:aws:secretsmanager:eu-west-2:228266753808:secret:DD_API_KEY_ALL_ENV-WDa721
         - !If
           - IsStandalone
           - PolicyName: RDSProxyAccessPolicy

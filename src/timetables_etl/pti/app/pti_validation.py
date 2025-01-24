@@ -5,7 +5,6 @@ PtiValidation Lambda
 from io import BytesIO
 from typing import Any
 
-from aws_lambda_powertools import Tracer
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.database.client import SqlDB
 from common_layer.database.models import OrganisationDatasetRevision
@@ -25,7 +24,6 @@ from structlog.stdlib import get_logger
 
 from .service import PTIValidationService
 
-tracer = Tracer()
 logger = get_logger()
 
 
@@ -108,7 +106,6 @@ def run_validation(task_data: PTITaskData, db: SqlDB, dynamodb: DynamoDB):
     )
 
 
-@tracer.capture_lambda_handler
 @file_processing_result_to_db(step_name=StepName.PTI_VALIDATION)
 def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, Any]:
     """

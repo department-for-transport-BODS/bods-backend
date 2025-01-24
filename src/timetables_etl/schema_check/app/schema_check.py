@@ -20,7 +20,6 @@ from lxml import etree
 from pydantic import BaseModel, ConfigDict, Field
 from structlog.stdlib import get_logger
 
-tracer = Tracer()
 log = get_logger()
 
 
@@ -167,7 +166,6 @@ def add_violations_to_db(
     return result
 
 
-@tracer.capture_lambda_handler
 @file_processing_result_to_db(step_name=StepName.TIMETABLE_SCHEMA_CHECK)
 def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, Any]:
     """
