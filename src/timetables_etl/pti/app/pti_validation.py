@@ -73,6 +73,9 @@ def get_xml_file(bucket: str, key: str) -> BytesIO:
 
 
 def get_txc_data(xml_file_object: BytesIO) -> TXCData:
+    """
+    Parse given xml_file_object to TXCData
+    """
     parsed_xml = load_xml_data(xml_file_object)
     config = TXCParserConfig.parse_stops_only()
     txc_data = parse_txc_from_element(parsed_xml, config)

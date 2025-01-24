@@ -2,8 +2,6 @@
 Tables prefixed with naptan_
 """
 
-from typing import Any, Iterable
-
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 from sqlalchemy import Select, select
 from structlog import get_logger
@@ -94,6 +92,9 @@ class NaptanStopPointRepo(BaseRepository[NaptanStopPoint]):
         return self._fetch_all(statement)
 
     def get_count(self, atco_codes: list[str], **filter_kwargs) -> int:
+        """
+        Get number of Stop Points in the DB by atco_code
+        """
         try:
             with self._db.session_scope() as session:
                 query = session.query(NaptanStopPoint).filter(
@@ -103,11 +104,14 @@ class NaptanStopPointRepo(BaseRepository[NaptanStopPoint]):
                     query = query.filter_by(**filter_kwargs)
                 result = query.count()
         except Exception as exc:
-            message = f"Exception counting StopPoints with atco_code in {atco_codes} and fields {filter_kwargs}"
+            message = (
+                f"Exception counting StopPoints with atco_code in {atco_codes} "
+                f"and fields {filter_kwargs}"
+            )
             logger.exception(message, exc_info=True)
             raise PipelineException(message) from exc
-        else:
-            return result
+
+        return result
 
 
 class NaptanLocalityRepo(BaseRepository[NaptanLocality]):

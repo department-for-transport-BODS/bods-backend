@@ -84,7 +84,9 @@ class TXCParserConfig(BaseModel):
     def parse_stops_only(cls) -> "TXCParserConfig":
         """Create a config where only stop_points are parsed."""
         # Use dict comprehension to set all fields to False except stop_points
-        return cls(**{field: field == "stop_points" for field in cls.model_fields})
+        return cls(
+            **{field: field == "stop_points" for field in cls.model_fields.keys()}
+        )
 
     def should_parse(self, section_name: str) -> bool:
         """Check if a section should be parsed based on config."""

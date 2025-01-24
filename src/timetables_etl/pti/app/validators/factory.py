@@ -3,7 +3,7 @@ XMLFilePTIValidator Factory
 """
 
 from common_layer.database.client import SqlDB
-from common_layer.dynamodb.client import DynamoDB, NaptanStopPointDynamoDBClient
+from common_layer.dynamodb.client import NaptanStopPointDynamoDBClient
 from common_layer.dynamodb.client.cache import DynamoDBCache
 from common_layer.txc.models.txc_data import TXCData
 

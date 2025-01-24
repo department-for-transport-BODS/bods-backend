@@ -59,8 +59,8 @@ class NaptanStopPointDynamoDBClient(DynamoDB):
         found_atco_codes = set()
 
         # Limit for BatchGetItem is 100
-        BATCH_SIZE = 100
-        for batch in self._batch_queries(atco_codes, batch_size=BATCH_SIZE):
+        batch_size = 100
+        for batch in self._batch_queries(atco_codes, batch_size=batch_size):
             raw_items = self._batch_get_items(batch)
             for item in raw_items:
                 try:

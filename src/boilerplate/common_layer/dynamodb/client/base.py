@@ -4,7 +4,7 @@ DynamoDB Client
 
 import os
 import time
-from typing import Any, Callable
+from typing import Any
 
 import boto3
 from boto3.dynamodb.types import TypeDeserializer, TypeSerializer

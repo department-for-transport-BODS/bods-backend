@@ -1,3 +1,7 @@
+"""
+Base Settings Models for DynamoDB client
+"""
+
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
