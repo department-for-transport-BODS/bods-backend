@@ -5,6 +5,7 @@ Test JSON Log Setup
 import json
 import logging
 import sys
+from typing import Any
 
 import pytest
 import structlog
@@ -96,3 +97,36 @@ def test_noisy_loggers_level():
     configure_logging()
     for source in _NOISY_LOG_SOURCES:
         assert logging.getLogger(source).level == logging.WARNING
+
+
+def test_cloudwatch_logs_callouts_none():
+    """Tests AWSCloudWatchLogs handles None callouts"""
+    renderer = AWSCloudWatchLogs(callouts=None)
+    result = renderer(None, "INFO", {"event": "test"})
+    expected_prefix = '[INFO] "none" "none"'
+    assert result[: len(expected_prefix)] == expected_prefix
+
+
+def test_cloudwatch_logs_bytes_serializer():
+    """Tests handling of bytes serializer output"""
+
+    def bytes_serializer(*args: Any, **kwargs: Any) -> bytes:
+        return json.dumps(*args, **kwargs).encode()
+
+    renderer = AWSCloudWatchLogs(serializer=bytes_serializer)
+    result = renderer(None, "INFO", {"event": "test"})
+    assert isinstance(result, bytes)
+
+
+def test_cloudwatch_logs_invalid_serializer():
+    """
+    Tests error on invalid serializer output type
+    Ignoring the type as it's intentionally incorrect
+    """
+
+    def bad_serializer(*_args, **_kwargs):
+        return 123
+
+    renderer = AWSCloudWatchLogs(serializer=bad_serializer)  # type: ignore
+    with pytest.raises(TypeError, match="Unexpected type from serializer"):
+        renderer(None, "INFO", {"event": "test"})
