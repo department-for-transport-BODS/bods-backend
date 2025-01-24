@@ -10,8 +10,12 @@ from common_layer.database.repos import (
     DataQualityPTIObservationRepo,
     OrganisationTXCFileAttributesRepo,
 )
-from common_layer.dynamodb.client import DynamoDB
+from common_layer.dynamodb.client.cache import DynamoDBCache
+from common_layer.dynamodb.client.naptan_stop_points import (
+    NaptanStopPointDynamoDBClient,
+)
 from common_layer.dynamodb.models import TXCFileAttributes
+from common_layer.txc.models.txc_data import TXCData
 from common_layer.utils import sha1sum
 from structlog.stdlib import get_logger
 
@@ -37,11 +41,13 @@ class PTIValidationService:
     def __init__(
         self,
         db: SqlDB,
-        dynamodb: DynamoDB,
+        dynamodb: DynamoDBCache,
+        stop_point_client: NaptanStopPointDynamoDBClient,
         live_revision_attributes: list[TXCFileAttributes],
     ):
         self._db = db
         self._dynamodb = dynamodb
+        self._stop_point_client = stop_point_client
         self._live_revision_attributes = live_revision_attributes
 
     def is_file_unchanged(
@@ -63,6 +69,7 @@ class PTIValidationService:
         revision: OrganisationDatasetRevision,
         xml_file: BytesIO,
         txc_file_attributes: TXCFileAttributes,
+        txc_data: TXCData,
     ):
         """
         Run PTI validation against the given revision and file
@@ -80,7 +87,9 @@ class PTIValidationService:
                 revision_id=revision.dataset_id,
             )
         else:
-            validator = get_xml_file_pti_validator(self._dynamodb, self._db)
+            validator = get_xml_file_pti_validator(
+                self._dynamodb, self._stop_point_client, self._db, txc_data
+            )
             violations = validator.get_violations(revision, xml_file)
 
             revision_validator = TXCRevisionValidator(
