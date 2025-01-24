@@ -5,8 +5,10 @@ Lambda handle is triggered by S3 event
 
 import shutil
 from pathlib import Path
+from typing import Any
 
 from aws_lambda_powertools import Tracer
+from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.database.client import SqlDB
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
@@ -38,7 +40,7 @@ def make_output_folder_name(
 
 @tracer.capture_lambda_handler
 @file_processing_result_to_db(step_name=StepName.CLAM_AV_SCANNER)
-def lambda_handler(event, context):
+def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any]:
     """
     Main lambda handler
     """

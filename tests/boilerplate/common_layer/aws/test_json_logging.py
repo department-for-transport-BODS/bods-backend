@@ -130,3 +130,28 @@ def test_cloudwatch_logs_invalid_serializer():
     renderer = AWSCloudWatchLogs(serializer=bad_serializer)  # type: ignore
     with pytest.raises(TypeError, match="Unexpected type from serializer"):
         renderer(None, "INFO", {"event": "test"})
+
+
+def test_configure_logging_with_event_dict(capsys):
+    """
+    Tests event dictionary values are added to context vars and appear in logs
+    """
+    event_dict = {
+        "dataset_id": "test-123",
+        "bucket": "test-bucket",
+        "object_key": "test.xml",
+    }
+
+    configure_logging(event_dict=event_dict)
+    logger = structlog.getLogger()
+    logger.info("test")
+
+    captured = capsys.readouterr()
+    output = json.loads(
+        captured.out.split('"test_configure_logging_with_event_dict" ')[1]
+    )
+
+    # Check event dict values appear in logs
+    assert all(
+        key in output and output[key] == value for key, value in event_dict.items()
+    )

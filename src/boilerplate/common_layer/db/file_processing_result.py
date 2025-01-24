@@ -216,7 +216,7 @@ def file_processing_result_to_db(step_name: StepName):
         func: Callable[[dict, LambdaContext], T]
     ) -> Callable[[dict, LambdaContext], T]:
         def wrapper(event: dict, context: LambdaContext) -> T:
-            configure_logging(context)
+            configure_logging(event, context)
             processing_context = initialize_processing(event, step_name)
 
             try:

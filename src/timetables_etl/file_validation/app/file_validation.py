@@ -3,8 +3,10 @@ FileValidation Lambda
 """
 
 from io import BytesIO
+from typing import Any
 
 from aws_lambda_powertools import Tracer
+from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.s3 import S3
@@ -46,7 +48,9 @@ def process_file_validation(input_data: FileValidationInputData) -> None:
 
 @tracer.capture_lambda_handler
 @file_processing_result_to_db(step_name=StepName.TXC_FILE_VALIDATOR)
-def lambda_handler(event, _context) -> dict[str, str | int]:
+def lambda_handler(
+    event: dict[str, Any], _context: LambdaContext
+) -> dict[str, str | int]:
     """
     Lambda handler for file validation
     """

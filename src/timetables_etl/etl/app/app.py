@@ -3,7 +3,10 @@ Lambda function for the Timetable ETL Job
 Each invocation handles a single file
 """
 
+from typing import Any
+
 from aws_lambda_powertools import Tracer
+from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.database import SqlDB
 from common_layer.database.repos import (
     ETLTaskResultRepo,
@@ -12,7 +15,6 @@ from common_layer.database.repos import (
 )
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
-from common_layer.json_logging import configure_logging
 from common_layer.s3 import S3
 from common_layer.txc.models import TXCData
 from common_layer.txc.parser.parser_txc import load_xml_data, parse_txc_from_element
@@ -84,11 +86,10 @@ def extract_txc_data(s3_bucket: str, s3_key: str) -> TXCData:
 
 @tracer.capture_lambda_handler
 @file_processing_result_to_db(step_name=StepName.ETL_PROCESS)
-def lambda_handler(event, _):
+def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, Any]:
     """
     Timetable ETL
     """
-    configure_logging()
     log.debug("Input Data", data=event)
     input_data = ETLInputData(**event)
     db = SqlDB()

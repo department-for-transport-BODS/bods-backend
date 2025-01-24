@@ -3,12 +3,13 @@ DownloadDatasetLambda lambda function
 """
 
 from pathlib import Path
+from typing import Any
 
+from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.database import SqlDB
 from common_layer.database.repos import OrganisationDatasetRevisionRepo
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
-from common_layer.json_logging import configure_logging
 from common_layer.s3 import S3
 from pydantic import AnyUrl
 from structlog.stdlib import get_logger
@@ -54,12 +55,11 @@ def download_and_upload_dataset(
 
 
 @file_processing_result_to_db(step_name=StepName.DOWNLOAD_DATASET)
-def lambda_handler(event, _context) -> dict:
+def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, Any]:
     """
     Lambda Handler for DownloadDatasetLambda
     Downloads a Zip or TransXchange file from a specified URL
     """
-    configure_logging()
     log.debug("Input Data", data=event)
     input_data = DownloadDatasetInputData(**event)
     db = SqlDB()
