@@ -14,7 +14,7 @@ from .settings import DynamoBaseSettings, DynamoDBSettings
 log = get_logger()
 
 
-class NaptanDynamoDbSettings(DynamoBaseSettings):
+class NaptanDynamoDBSettings(DynamoBaseSettings):
     """
     Settings for DynamoDBCache client
     """
@@ -30,8 +30,8 @@ class NaptanStopPointDynamoDBClient(DynamoDB):
     DynamoDB client specialized for fetching Naptan StopPoints.
     """
 
-    def __init__(self, settings: NaptanDynamoDbSettings | None = None):
-        naptan_settings = settings if settings else NaptanDynamoDbSettings()
+    def __init__(self, settings: NaptanDynamoDBSettings | None = None):
+        naptan_settings = settings if settings else NaptanDynamoDBSettings()
         super().__init__(
             DynamoDBSettings(
                 DYNAMODB_ENDPOINT_URL=naptan_settings.DYNAMODB_ENDPOINT_URL,
