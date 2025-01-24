@@ -6,7 +6,13 @@ from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
+from common_layer.database.client import SqlDB
+from common_layer.dynamodb.client.cache import DynamoDBCache
+from common_layer.dynamodb.client.naptan_stop_points import (
+    NaptanStopPointDynamoDBClient,
+)
 from common_layer.dynamodb.models import TXCFileAttributes
+from common_layer.txc.models.txc_data import TXCData
 from pti.app.models.models_pti import PtiObservation, PtiRule, PtiViolation
 from pti.app.service import PTIValidationService
 
@@ -79,11 +85,16 @@ def test_validate(
     m_txc_revision_validator.return_value.get_violations.return_value = violations
 
     service = PTIValidationService(
-        db=MagicMock(), dynamodb=MagicMock(), live_revision_attributes=[]
+        db=MagicMock(spec=SqlDB),
+        dynamodb=MagicMock(spec=DynamoDBCache),
+        stop_point_client=MagicMock(spec=NaptanStopPointDynamoDBClient),
+        live_revision_attributes=[],
     )
 
     with pytest.raises(ValueError, match="PTI validation failed due to violations"):
-        service.validate(revision, xml_file, txc_file_attributes)
+        service.validate(
+            revision, xml_file, txc_file_attributes, TXCData.model_construct()
+        )
 
     m_get_xml_file_pti_validator.return_value.get_violations.assert_called_once_with(
         revision, xml_file
@@ -128,11 +139,12 @@ def test_validate_unchanged_file(
     ]
 
     service = PTIValidationService(
-        db=MagicMock(),
-        dynamodb=MagicMock(),
+        db=MagicMock(spec=SqlDB),
+        dynamodb=MagicMock(spec=DynamoDBCache),
+        stop_point_client=MagicMock(spec=NaptanStopPointDynamoDBClient),
         live_revision_attributes=live_file_attributes,
     )
-    service.validate(revision, xml_file, txc_file_attributes)
+    service.validate(revision, xml_file, txc_file_attributes, TXCData.model_construct())
 
     m_sha1_sum.assert_called_once_with(xml_file.read.return_value)
 

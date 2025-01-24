@@ -14,13 +14,13 @@ from .conftest import DATA_DIR
 OBSERVATION_ID = 23
 
 
-@pytest.fixture(autouse=True, scope="module", name="mocked_stop_point_repo")
-def m_stop_point_repo():
+@pytest.fixture(autouse=True, scope="module")
+def m_stop_point_client():
     """
-    Patched Stop Point Repo
+    Patched Naptan Stop Point DynamoDB client
     """
-    with patch("pti.app.validators.lines.NaptanStopPointRepo") as m_repo:
-        yield m_repo
+    with patch("pti.app.validators.lines.NaptanStopPointDynamoDBClient") as m_client:
+        yield m_client
 
 
 def test_validate_less_than_two_lines():
@@ -61,7 +61,7 @@ def test_related_lines(filename: str, expected: bool):
     assert is_valid == expected
 
 
-def test_non_related_with_stop_areas(mocked_stop_point_repo):
+def test_non_related_with_stop_areas(m_stop_point_client):
     """
     Test validation of non-related lines with matching stop areas
     The following atco codes come from nonrelatedlines.xml one stop in each line
@@ -69,10 +69,12 @@ def test_non_related_with_stop_areas(mocked_stop_point_repo):
     l1stop = "9990000001"
     l1_n_stop = "9990000026"
     stop_areas_in_common = ["match"]
-    mocked_stop_point_repo.return_value.get_stop_area_map.return_value = {
+    m_stop_point_client.get_stop_area_map.return_value = {
         l1stop: stop_areas_in_common,
         l1_n_stop: stop_areas_in_common,
     }
 
-    is_valid = run_validation("nonrelatedlines.xml", DATA_DIR, OBSERVATION_ID)
+    is_valid = run_validation(
+        "nonrelatedlines.xml", DATA_DIR, OBSERVATION_ID, m_stop_point_client
+    )
     assert is_valid

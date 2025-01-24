@@ -3,6 +3,9 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
+from common_layer.database.client import SqlDB
+from common_layer.dynamodb.client import DynamoDB, NaptanStopPointDynamoDBClient
+from common_layer.txc.models.txc_data import TXCData
 from pti.app.constants import PTI_SCHEMA_PATH
 from pti.app.models.models_pti import PtiJsonSchema
 from pti.app.validators.pti import PTIValidator
@@ -34,7 +37,10 @@ class JSONFile(StringIO):
 
 
 def create_validator(
-    filename: str, data_dir: Path, observation_id: int
+    filename: str,
+    data_dir: Path,
+    observation_id: int,
+    naptan_stop_point_client: NaptanStopPointDynamoDBClient | None = None,
 ) -> tuple[PTIValidator, Path]:
     """
     Helper function to create PTIValidator instance and file path
@@ -43,17 +49,33 @@ def create_validator(
     observations = [o for o in schema.observations if o.number == observation_id]
     schema.observations = observations
     json_file = JSONFile(schema.model_dump_json())
-    pti = PTIValidator(json_file, MagicMock(), MagicMock())
+    stop_point_client = naptan_stop_point_client or MagicMock(
+        spec=NaptanStopPointDynamoDBClient
+    )
+    pti = PTIValidator(
+        json_file,
+        MagicMock(spec=DynamoDB),
+        stop_point_client,
+        MagicMock(spec=SqlDB),
+        TXCData.model_construct(),
+    )
     return pti, data_dir / filename
 
 
-def run_validation(filename: str, data_dir: Path, observation_id: int) -> bool:
+def run_validation(
+    filename: str,
+    data_dir: Path,
+    observation_id: int,
+    naptan_stop_point_client: NaptanStopPointDynamoDBClient | None = None,
+) -> bool:
     """
     Run PTI validation on a file
 
     Returns whether it was successful
     """
-    pti, txc_path = create_validator(filename, data_dir, observation_id)
+    pti, txc_path = create_validator(
+        filename, data_dir, observation_id, naptan_stop_point_client
+    )
     with txc_path.open("rb") as f:
         content = BytesIO(f.read())
         return pti.is_valid(content)
