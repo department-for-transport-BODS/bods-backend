@@ -107,7 +107,6 @@ jobs:
             sam package \
               --s3-bucket $RC_DST \
               --s3-prefix $rc_path \
-              --parameter-overrides ParameterKey=DDGitData,ParameterValue="${GIT_COMMIT},${GIT_REPO_URL}" ParameterKey=Version,ParameterValue=${VERSION} \
               --output-template-file packaged.yaml
 
           aws s3 cp packaged.yaml s3://$RC_DST/$rc_path/
