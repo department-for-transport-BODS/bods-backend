@@ -16,7 +16,7 @@ from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.json_logging import configure_logging
 from common_layer.s3 import S3
 from lxml import etree
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from structlog.stdlib import get_logger
 
 tracer = Tracer()
@@ -28,12 +28,7 @@ class SchemaCheckInputData(BaseModel):
     Input data for the ETL Function
     """
 
-    class Config:
-        """
-        Allow us to map Bucket / Object Key
-        """
-
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
     revision_id: int = Field(alias="DatasetRevisionId")
     s3_bucket_name: str = Field(alias="Bucket")
