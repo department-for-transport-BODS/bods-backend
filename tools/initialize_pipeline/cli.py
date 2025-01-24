@@ -5,12 +5,12 @@ Runs PTI Validation against specified database
 import typer
 from common_layer.dynamodb.client import DynamoDB
 from common_layer.json_logging import configure_logging
-from initialize_pipeline.app.initialize_pipeline import (
+from structlog.stdlib import get_logger
+
+from src.timetables_etl.initialize_pipeline.app.initialize_pipeline import (
     InitializePipelineEvent,
     initialize_pipeline,
 )
-from structlog.stdlib import get_logger
-
 from tools.common.db_tools import create_db_config, dotenv_loader, setup_db_instance
 
 app = typer.Typer()
