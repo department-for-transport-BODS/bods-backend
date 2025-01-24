@@ -181,10 +181,25 @@
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
-                "Next": "ExceptionHandler"
+                "Next": "DQSTrigger"
               }
             ]
           },
+          "DQSTrigger": {
+            "Type": "Task",
+            "Resource": "${DQSTriggerLambdaArn}",
+            "Parameters": {
+              "DatasetRevisionId.$": "$.DatasetRevisionId",
+            },
+            "ResultPath": "$.dqsTrigger",
+            "Next": "Success",
+            "Catch": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "Next": "ExceptionHandler"
+              }
+            ]
+          }
           "Success": {
             "Type": "Succeed"
           },

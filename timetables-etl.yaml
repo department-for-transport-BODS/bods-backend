@@ -143,9 +143,9 @@ Resources:
         PostSchemaCheckLambdaArn: !GetAtt PostSchemaCheckLambda.Arn
         FileAttributesEtlLambdaArn: !GetAtt FileAttributesEtlLambda.Arn
         PtiValidationLambdaArn: !GetAtt PtiValidationLambda.Arn
+        ETLProcessLambdaArn: !GetAtt ETLProcessLambda.Arn
         DQSTriggerLambdaArn: !GetAtt DQSTriggerLambda.Arn
         ExceptionHandlerLambdaArn: !GetAtt ExceptionHandlerLambda.Arn
-        ETLProcessLambdaArn: !GetAtt ETLProcessLambda.Arn
         GenerateOutputZipLambdaArn: !GetAtt GenerateOutputZipLambda.Arn
   StepFunctionsLogGroup:
     Type: AWS::Logs::LogGroup
@@ -196,8 +196,8 @@ Resources:
                   - !GetAtt PostSchemaCheckLambda.Arn
                   - !GetAtt FileAttributesEtlLambda.Arn
                   - !GetAtt PtiValidationLambda.Arn
-                  - !GetAtt DQSTriggerLambda.Arn
                   - !GetAtt ETLProcessLambda.Arn
+                  - !GetAtt DQSTriggerLambda.Arn
                   - !GetAtt ExceptionHandlerLambda.Arn
                   - !GetAtt GenerateOutputZipLambda.Arn
         - PolicyName: S3BucketAccessPolicy
@@ -626,38 +626,6 @@ Resources:
       RetentionInDays: 30
 
   ###############################
-  #### DQS TRIGGER LAMBDA ####
-  ###############################
-  DQSTriggerLambda:
-    Type: AWS::Serverless::Function
-    ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
-    Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-dqs-trigger-lambda'
-      Description: Timetables ETL - FileProcessing - Trigger Data Quality Service
-      Role: !GetAtt CommonLambdaExecutionRole.Arn
-      CodeUri: ./src/timetables_etl
-      Handler: dqs_trigger.lambda_handler
-      MemorySize: 1024
-      Timeout: 900
-      Layers:
-        - !Ref BoilerplateLambdaLayerArn
-      LoggingConfig:
-        LogGroup: !Ref DQSTriggerLambdaLogGroup
-
-  DQSTriggerLambdaLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-dqs-trigger-lambda'
-      KmsKeyId: !If
-        - IsUsingBodsInfra
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-        - !If
-          - IsStandalone
-          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
-          - !Ref AWS::NoValue
-      RetentionInDays: 30
-
-  ###############################
   #### ETL PROCESS LAMBDA    ####
   ###############################
   ETLProcessLambda:
@@ -680,6 +648,38 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-etl-process-lambda'
+      KmsKeyId: !If
+        - IsUsingBodsInfra
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !If
+          - IsStandalone
+          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
+          - !Ref AWS::NoValue
+      RetentionInDays: 30
+
+  ###############################
+  #### DQS TRIGGER LAMBDA ####
+  ###############################
+  DQSTriggerLambda:
+    Type: AWS::Serverless::Function
+    ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-dqs-trigger-lambda'
+      Description: Timetables ETL - FileProcessing - Trigger Data Quality Service
+      Role: !GetAtt CommonLambdaExecutionRole.Arn
+      CodeUri: ./src/timetables_etl
+      Handler: dqs_trigger.lambda_handler
+      MemorySize: 1024
+      Timeout: 900
+      Layers:
+        - !Ref BoilerplateLambdaLayerArn
+      LoggingConfig:
+        LogGroup: !Ref DQSTriggerLambdaLogGroup
+
+  DQSTriggerLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-dqs-trigger-lambda'
       KmsKeyId: !If
         - IsUsingBodsInfra
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'

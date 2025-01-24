@@ -39,7 +39,7 @@ class DQSReportRepo(BaseRepositoryWithId[DQSReport]):
         """
         Create a report object for a revision_id
         """
-        new_report = DQSReport(file_name="", revision=revision, status=DQSTaskState.PENDING.value)
+        new_report = DQSReport(file_name="", status=DQSTaskState.PENDING.value, revision=revision)
         return self.insert(new_report)
 
 class DQSChecksRepo(

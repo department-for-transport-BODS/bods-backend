@@ -1,22 +1,21 @@
 import json
-import logging
+from os import environ
 
 import boto3
-from django.conf import settings
+from structlog.stdlib import get_logger
 
-logger = logging.getLogger(__name__)
-
+logger = get_logger()
 
 class StepFunctionsClientWrapper:
     def __init__(self):
         try:
-            if settings.AWS_ENVIRONMENT == "LOCAL":
+            if environ.get("PROJECT_ENV") == "LOCAL":
                 self.sm_client = boto3.client(
                     "stepfunctions",
-                    region_name=settings.AWS_REGION_NAME,
-                    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-                    aws_session_token=settings.AWS_SESSION_TOKEN,
+                    region_name=environ.get("AWS_REGION_NAME", default=""),
+                    aws_access_key_id=environ.get("AWS_ACCESS_KEY_ID", default=""),
+                    aws_secret_access_key=environ.get("AWS_SECRET_ACCESS_KEY", default=""),
+                    aws_session_token=environ.get("AWS_SESSION_TOKEN", default=""),
                 )
             else:
                 self.sm_client = boto3.client("stepfunctions")
