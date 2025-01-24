@@ -109,26 +109,6 @@ class NaptanStopPointRepo(BaseRepository[NaptanStopPoint]):
         else:
             return result
 
-    def get_stop_area_map(self) -> Iterable[dict[str, Any]]:
-        """
-        Return a map of { <atco_code>: <stop_areas> } for all stops, excluding those with no stop areas.
-        """
-        try:
-            with self._db.session_scope() as session:
-                stops = (
-                    session.query(
-                        NaptanStopPoint.atco_code,
-                        NaptanStopPoint.stop_areas,
-                    )
-                    .filter(NaptanStopPoint.stop_areas != [])
-                    .all()
-                )
-                return {stop.atco_code: stop.stop_areas for stop in stops}
-        except Exception as exc:
-            message = "Error retrieving stops excluding empty stop areas."
-            logger.exception(message, exc_info=True)
-            raise PipelineException(message) from exc
-
 
 class NaptanLocalityRepo(BaseRepository[NaptanLocality]):
     """Repository for managing Naptan Locality entities"""
