@@ -108,7 +108,7 @@ def get_processors(lambda_context: LambdaContext | None = None) -> tuple:
                 structlog.processors.CallsiteParameter.FUNC_NAME,
             }
         ),
-        structlog.threadlocal.merge_threadlocal,
+        structlog.contextvars.merge_contextvars,
     ]
 
     if lambda_context:
