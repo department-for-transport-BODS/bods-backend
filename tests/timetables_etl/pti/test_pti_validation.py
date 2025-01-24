@@ -9,6 +9,7 @@ import pytest
 from botocore.response import StreamingBody
 from common_layer.dynamodb.models import TXCFileAttributes
 from common_layer.exceptions.pipeline_exceptions import PipelineException
+from common_layer.txc.models.txc_data import TXCData
 
 from tests.factories.database.organisation import (
     OrganisationDatasetRevisionFactory,
@@ -37,7 +38,10 @@ def mock_sqldb():
 def mock_imports():
     patches = {
         "S3": patch("pti.app.pti_validation.S3"),
-        "DynamoDB": patch("pti.app.pti_validation.DynamoDB"),
+        "DynamoDBCache": patch("pti.app.pti_validation.DynamoDBCache"),
+        "NaptanStopPointDynamoDBClient": patch(
+            "pti.app.pti_validation.NaptanStopPointDynamoDBClient"
+        ),
         "FileProcessingDataManager": patch(
             "pti.app.pti_validation.FileProcessingDataManager"
         ),
@@ -51,6 +55,7 @@ def mock_imports():
         "file_processing": patch(
             "common_layer.db.file_processing_result.file_processing_result_to_db"
         ),
+        "parse_txc_file": patch("pti.app.pti_validation.parse_txc_from_element"),
     }
 
     mocks = {}
@@ -68,7 +73,7 @@ def mock_imports():
 
 @pytest.fixture
 def s3_content():
-    return b"<xml-content>"
+    return b"<xml></xml>"
 
 
 @pytest.fixture
@@ -99,6 +104,7 @@ def test_lambda_handler(mock_imports, mock_sqldb, s3_file, s3_content, test_para
         "DatasetRevisionId": 123,
         "TxcFileAttributesId": 123,
     }
+    txc_data = TXCData.model_construct()
 
     revision = OrganisationDatasetRevisionFactory.create_with_id(id_number=123)
     mock_imports.OrganisationDatasetRevisionRepo.return_value.get_by_id.return_value = (
@@ -117,6 +123,7 @@ def test_lambda_handler(mock_imports, mock_sqldb, s3_file, s3_content, test_para
         )
 
     mock_imports.S3.return_value.get_object.return_value = s3_file
+    mock_imports.parse_txc_file.return_value = txc_data
 
     if test_params["should_raise"]:
         with pytest.raises(PipelineException):
@@ -131,3 +138,4 @@ def test_lambda_handler(mock_imports, mock_sqldb, s3_file, s3_content, test_para
         assert validate_call[0] == revision
         assert validate_call[1].read() == s3_content
         assert validate_call[2] == expected_attrs
+        assert validate_call[3] == txc_data
