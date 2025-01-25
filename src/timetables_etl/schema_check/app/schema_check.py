@@ -7,7 +7,6 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from aws_lambda_powertools import Tracer
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from botocore.exceptions import BotoCoreError, ClientError
 from common_layer.database.client import SqlDB
