@@ -107,7 +107,6 @@ Globals:
           - IsUsingBodsInfra
           - !Sub 'http://squid.bodds.${Environment}:3128'
           - !Ref AWS::NoValue
-        NO_PROXY: 169.254.169.254,*.amazonaws.com,*.s3.amazonaws.com,s3.*.amazonaws.com,*.s3-*.amazonaws.com
         PROJECT_ENV: !Ref Environment
         PROJECT_NAME: !Ref ProjectName
         POSTGRES_HOST: !If
@@ -141,7 +140,9 @@ Globals:
         DYNAMODB_CACHE_TABLE_NAME: !Ref TimetablesCache
         DYNAMODB_NAPTAN_STOP_POINT_TABLE_NAME: !Sub '${ProjectName}-${Environment}-naptan-stop-points-table'
         DD_MERGE_XRAY_TRACES: true
-
+        DD_RUNTIME_METRICS_ENABLED: true
+        DD_DBM_PROPAGATION_MODE: true
+        DD_PROFILING_STACK_V2_ENABLED: true
 Resources:
   ##################################
   #### TIMETABLES STATE MACHINE ####
