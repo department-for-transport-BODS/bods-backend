@@ -107,6 +107,7 @@ Globals:
           - IsUsingBodsInfra
           - !Sub 'http://squid.bodds.${Environment}:3128'
           - !Ref AWS::NoValue
+        NO_PROXY: 169.254.169.254,*.amazonaws.com,*.s3.amazonaws.com
         PROJECT_ENV: !Ref Environment
         PROJECT_NAME: !Ref ProjectName
         POSTGRES_HOST: !If
