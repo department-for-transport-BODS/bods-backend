@@ -3,7 +3,7 @@ Model definitions for txc tools
 """
 
 from decimal import Decimal
-
+from datetime import date
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 
@@ -86,4 +86,52 @@ class ZipTagStats(BaseModel):
         ...,
         title="Total Tag Occurrences",
         description="Total number of tag occurrences",
+    )
+
+
+class XMLTxCInventory(BaseModel):
+    """Pydantic model for txc inventory"""
+
+    model_config = ConfigDict(frozen=True)
+    national_operator_code: str = Field(
+        ..., title="National Operator Code", description="National Operator Code"
+    )
+    operator_short_name: str = Field(
+        ..., title="Operator Short Name", description="Operator Short Name"
+    )
+    line_name: str = Field(..., title="Line Name", description="Line Name")
+    service_code: str = Field(..., title="Service Code", description="Service Code")
+    out_bound_description: str = Field(
+        ..., title="Outbound Description", description="Outbound Description"
+    )
+    in_bound_description: str = Field(
+        ..., title="Inbound Description", description="Inbound Description"
+    )
+    total_stop_points: int = Field(
+        ..., title="Total Stop Points", description="Total Stop Points"
+    )
+    custom_stop_points: int = Field(
+        ..., title="Custom Stop Points", description="Number of custom stop points"
+    )
+    route_sections: int = Field(
+        ..., title="Route Sections", description="Number of route sections"
+    )
+    routes: int = Field(..., title="Routes", description="Routes")
+    journey_pattern_sections: int = Field(
+        ..., title="Journey Pattern Sections", description="Journey Pattern Sections"
+    )
+    vehicle_journeys: int = Field(
+        ..., title="Vehicle Journeys", description="Vehicle Journeys"
+    )
+    file_path: str = Field(
+        ..., title="File Path", description="Path to the XML file within the zip"
+    )
+    service_start_date: date | None = Field(
+        ..., title="Service Start Date", description="Service Start Date"
+    )
+    service_end_date: date | None = Field(
+        ..., title="Service End Date", description="Service End Date"
+    )
+    event_service: int | str = Field(
+        ..., title="Event Service", description="Event Service"
     )

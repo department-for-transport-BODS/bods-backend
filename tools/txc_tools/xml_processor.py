@@ -3,16 +3,22 @@ Module defines helper functions for TxC tools
 """
 
 import concurrent.futures
+import os
 import queue
 import threading
 import zipfile
 from dataclasses import dataclass
 from io import BytesIO
-from typing import IO, Iterator, Optional, Union
+from pathlib import Path
+from typing import Any, Callable, Iterator, List, Optional, Union
+
+from pydantic import BaseModel
 
 from .calculation import count_tags_in_xml, get_size_mb
-from .common import log, AnalysisMode
-from .models import XMLFileInfo, XMLTagInfo
+from .common import ReportMode, log
+from .models import XMLFileInfo, XMLTagInfo, XMLTxCInventory
+from .report import write_csv_reports
+from .xml_txc_processor import get_txc_object
 
 
 @dataclass
@@ -26,31 +32,57 @@ class WorkerConfig:
     xml_queue: queue.Queue
     future_queue: queue.Queue
     executor: concurrent.futures.ThreadPoolExecutor
-    mode: AnalysisMode
+    mode: ReportMode
     tag_name: Optional[str] = None
 
 
-def process_xml_file(
-    xml_file: Union[IO[bytes], BytesIO],
-    filename: str,
-    parent_zip: str | None = None,
-    *,
-    tag_name: str | None = None,
-) -> Union[XMLFileInfo, XMLTagInfo]:
+def get_tag_size_object(**kwargs: dict[str, Any]) -> Union[XMLFileInfo, XMLTagInfo]:
+    """
+    Parse the xml, returns XMLTagInfo/XMLSizeInfo object
+    """
+    parent_zip = kwargs.get("parent_zip")
+    filename = kwargs.get("filename")
+    xml_file = kwargs.get("xml_file")
+    tag_name = str(kwargs.get("tag_name", ""))
+    assert isinstance(xml_file, BytesIO)
+
+    parent_zip = str(parent_zip) if parent_zip else None
+
+    log.debug(
+        "Parsing and searching XML File", filename=filename, parent_zip=parent_zip
+    )
+    if kwargs.get("mode") == ReportMode.TAG:
+        count = count_tags_in_xml(xml_file.read(), tag_name)
+        return XMLTagInfo(
+            file_path=str(filename), tag_count=count, parent_zip=parent_zip
+        )
+
+    size_mb = get_size_mb(xml_file)
+    return XMLFileInfo(file_path=str(filename), size_mb=size_mb, parent_zip=parent_zip)
+
+
+XML_OBJECTS: dict[
+    ReportMode, Callable[..., Union[XMLFileInfo, XMLTagInfo, XMLTxCInventory]]
+] = {
+    ReportMode.SIZE: get_tag_size_object,
+    ReportMode.TAG: get_tag_size_object,
+    ReportMode.TXC: get_txc_object,
+}
+
+
+def process_xml_file(**kwargs) -> Union[XMLFileInfo, XMLTagInfo, XMLTxCInventory]:
     """
     Process a single XML file and return its information (size or tag count).
     """
-    xml_data = xml_file.read()
-    xml_file.seek(0)
-    if tag_name:  # pylint: disable=R1705
-        log.debug(
-            "Parsing and searching XML File", filename=filename, parent_zip=parent_zip
-        )
-        count = count_tags_in_xml(xml_data, tag_name)
-        return XMLTagInfo(file_path=filename, tag_count=count, parent_zip=parent_zip)
-    else:  # pylint: disable=R1705
-        size_mb = get_size_mb(xml_file)
-        return XMLFileInfo(file_path=filename, size_mb=size_mb, parent_zip=parent_zip)
+    mode = kwargs.get("mode")
+
+    if not isinstance(mode, ReportMode):
+        raise ValueError("mode must be an instance of ReportMode")
+
+    xml_file = kwargs.get("xml_file")
+    if not hasattr(xml_file, "read"):
+        raise ValueError("xml_file must be a file-like object with a 'read' method")
+    return XML_OBJECTS[mode](**kwargs)
 
 
 def process_single_xml(file_info: zipfile.ZipInfo, config: WorkerConfig) -> None:
@@ -60,19 +92,13 @@ def process_single_xml(file_info: zipfile.ZipInfo, config: WorkerConfig) -> None
             xml_data = xml_file.read()
             with BytesIO(xml_data) as xml_buffer:
                 info = process_xml_file(
-                    xml_buffer,
-                    file_info.filename,
-                    tag_name=config.tag_name,
+                    xml_file=xml_buffer,
+                    filename=file_info.filename,
                     parent_zip=None,
+                    tag_name=config.tag_name,
+                    mode=config.mode,
                 )
-                if (
-                    config.mode == AnalysisMode.SIZE and isinstance(info, XMLFileInfo)
-                ) or (
-                    config.mode == AnalysisMode.TAG
-                    and isinstance(info, XMLTagInfo)
-                    and info.tag_count > 0
-                ):
-                    config.xml_queue.put(info)
+                config.xml_queue.put(info)
     except Exception:  # pylint: disable=broad-except
         log.error(
             "Error processing XML file", filename=file_info.filename, exc_info=True
@@ -102,11 +128,11 @@ def process_single_nested_zip(file_info: zipfile.ZipInfo, config: WorkerConfig) 
 def process_nested_zip(
     nested_zip_data: bytes,
     parent_zip_name: str,
-    mode: AnalysisMode,
+    mode: ReportMode,
     tag_name: str | None = None,
-) -> list[XMLFileInfo | XMLTagInfo]:
+) -> List[BaseModel]:
     """Process a nested zip file, returning XML file information"""
-    results: list[XMLFileInfo | XMLTagInfo] = []
+    results: List[BaseModel] = []
     with BytesIO(nested_zip_data) as zip_buffer:
         with zipfile.ZipFile(zip_buffer) as nested_zip_ref:
             for nested_file in nested_zip_ref.filelist:
@@ -120,16 +146,9 @@ def process_nested_zip(
                                     filename=nested_file.filename,
                                     parent_zip=parent_zip_name,
                                     tag_name=tag_name,
+                                    mode=mode,
                                 )
-                                if (
-                                    mode == AnalysisMode.SIZE
-                                    and isinstance(info, XMLFileInfo)
-                                ) or (
-                                    mode == AnalysisMode.TAG
-                                    and isinstance(info, XMLTagInfo)
-                                    and info.tag_count > 0
-                                ):
-                                    results.append(info)
+                                results.append(info)
                     except Exception as e:  # pylint: disable=broad-except
                         log.error(
                             "Error processing XML in nested zip",
@@ -161,7 +180,7 @@ def handle_futures_and_queues(
     processing_thread: threading.Thread,
     future_queue: queue.Queue,
     xml_queue: queue.Queue,
-) -> Iterator[XMLFileInfo | XMLTagInfo]:
+) -> Iterator[BaseModel]:
     """Handle futures and queues to yield XML file information"""
     while (
         processing_thread.is_alive()
@@ -197,9 +216,9 @@ def handle_futures_and_queues(
 def process_zip_contents(
     zip_path: str,
     max_workers: int,
-    mode: AnalysisMode,
+    mode: ReportMode,
     tag_name: str | None = None,
-) -> Iterator[XMLFileInfo | XMLTagInfo]:
+) -> Iterator[BaseModel]:
     """Process contents of a zip file with parallel sub-zip processing"""
     try:
         with zipfile.ZipFile(zip_path, "r") as zip_ref:
@@ -239,3 +258,75 @@ def process_zip_contents(
         log.error("Error processing zip file BadZipFile", zip_path=zip_path)
     except Exception:  # pylint: disable=broad-except
         log.error("Error processing zip file", zip_path=zip_path, exc_info=True)
+
+
+def process_zip_file_parallel(
+    zip_path: str,
+    mode: ReportMode,
+    tag_name: str | None = None,
+    sub_zip_workers: int = 4,
+) -> None:
+    """Process a zip file and generate both detailed and summary reports"""
+    if not os.path.exists(zip_path):
+        log.error("Input file not found", zip_path=zip_path)
+        raise FileNotFoundError(zip_path)
+
+    log.info(
+        "Processing ZIP File",
+        zip_path=zip_path,
+        mode=mode,
+        tag_name=tag_name,
+        sub_zip_workers=sub_zip_workers,
+    )
+    xml_files: List[BaseModel] = list(  # type: ignore
+        process_zip_contents(
+            zip_path,
+            max_workers=sub_zip_workers,
+            mode=mode,
+            tag_name=tag_name,
+        )
+    )
+    # Generate reports
+    report_args = {
+        "xml_files": xml_files,
+        "base_path": Path(zip_path).with_suffix(".csv"),
+        "mode": mode,
+        "tag_name": tag_name,
+    }
+    write_csv_reports(**report_args)
+
+
+def execute_process(
+    zip_files: list[Path],
+    mode: ReportMode,
+    tag_name: str | None = None,
+    sub_zip_workers: int = 4,
+) -> None:
+    """
+    Launch process for xml file parsing and extracting datas
+    """
+    log.info(
+        "Starting Processing",
+        zip_files=zip_files,
+        mode=mode,
+        tag_name=tag_name,
+        sub_zip_workers=sub_zip_workers,
+    )
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        # Create futures and wait for them to complete
+        futures = [
+            executor.submit(
+                process_zip_file_parallel,
+                str(zip_path),
+                mode,
+                tag_name,
+                sub_zip_workers,
+            )
+            for zip_path in zip_files
+        ]
+        # Wait for all futures to complete and handle any exceptions
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                future.result()
+            except Exception:  # pylint: disable=broad-except
+                log.error("Error processing zip file", exc_info=True)

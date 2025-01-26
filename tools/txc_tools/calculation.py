@@ -9,12 +9,12 @@ from typing import IO
 
 from lxml import etree
 
-from .common import log, AnalysisMode
+from .common import log, ReportMode
 from .models import XMLTagInfo, XMLFileInfo, ZipStats, ZipTagStats
 
 
 def calculate_zip_stats(
-    xml_files: list[XMLFileInfo] | list[XMLTagInfo], mode: AnalysisMode
+    xml_files: list[XMLFileInfo] | list[XMLTagInfo], mode: ReportMode
 ) -> dict[str, ZipStats | ZipTagStats]:
     """Calculate statistics for each zip file"""
     stats: dict[str, dict] = defaultdict(
@@ -24,12 +24,12 @@ def calculate_zip_stats(
     for xml_file in xml_files:
         zip_name = xml_file.parent_zip if xml_file.parent_zip else "root"
         stats[zip_name]["file_count"] += 1
-        if mode == AnalysisMode.SIZE and isinstance(xml_file, XMLFileInfo):
+        if mode == ReportMode.SIZE and isinstance(xml_file, XMLFileInfo):
             stats[zip_name]["total_size"] += xml_file.size_mb
-        elif mode == AnalysisMode.TAG and isinstance(xml_file, XMLTagInfo):
+        elif mode == ReportMode.TAG and isinstance(xml_file, XMLTagInfo):
             stats[zip_name]["total_tags"] += xml_file.tag_count
 
-    if mode == AnalysisMode.SIZE:
+    if mode == ReportMode.SIZE:
         return {
             zip_name: ZipStats(
                 zip_name=zip_name,
@@ -38,7 +38,7 @@ def calculate_zip_stats(
             )
             for zip_name, data in stats.items()
         }
-    if mode == AnalysisMode.TAG:
+    if mode == ReportMode.TAG:
         return {
             zip_name: ZipTagStats(
                 zip_name=zip_name,
