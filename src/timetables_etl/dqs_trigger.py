@@ -1,5 +1,5 @@
 """
-PtiValidation Lambda
+DQS Trigger Lambda
 """
 
 from io import BytesIO
