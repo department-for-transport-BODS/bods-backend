@@ -17,6 +17,7 @@ from common_layer.dynamodb.client.naptan_stop_points import (
 from common_layer.dynamodb.models import TXCFileAttributes
 from common_layer.txc.models.txc_data import TXCData
 from common_layer.utils import sha1sum
+from pti.app.pti_validation import DbClients
 from structlog.stdlib import get_logger
 
 from .models.models_pti import PtiViolation
@@ -40,14 +41,10 @@ class PTIValidationService:
 
     def __init__(
         self,
-        db: SqlDB,
-        dynamodb: DynamoDBCache,
-        stop_point_client: NaptanStopPointDynamoDBClient,
+        db_clients: DbClients,
         live_revision_attributes: list[TXCFileAttributes],
     ):
-        self._db = db
-        self._dynamodb = dynamodb
-        self._stop_point_client = stop_point_client
+        self._db_clients = db_clients
         self._live_revision_attributes = live_revision_attributes
 
     def is_file_unchanged(

@@ -5,7 +5,10 @@ PtiValidation Lambda
 from io import BytesIO
 from typing import Any
 
+from attr import dataclass
+from aws_lambda_powertools import Tracer
 from aws_lambda_powertools.utilities.typing import LambdaContext
+from common_layer import dynamodb
 from common_layer.database.client import SqlDB
 from common_layer.database.models import OrganisationDatasetRevision
 from common_layer.database.repos import (
@@ -62,6 +65,13 @@ class PTITaskData(BaseModel):
     txc_data: TXCData
 
 
+@dataclass
+class DbClients:
+    sql_db: SqlDB
+    dynamodb: DynamoDBCache
+    stop_point_client: NaptanStopPointDynamoDBClient
+
+
 def get_xml_file(bucket: str, key: str) -> BytesIO:
     """
     Fetch and return BytesIO object for given S3 bucket/key
@@ -83,17 +93,17 @@ def get_txc_data(xml_file_object: BytesIO) -> TXCData:
 
 
 def get_task_data(
-    event: PTIValidationEvent, xml_file_object: BytesIO, db: SqlDB, dynamodb: DynamoDB
+    event: PTIValidationEvent, xml_file_object: BytesIO, clients: DbClients
 ) -> PTITaskData:
     """
     Fetch Required Task Data
     """
-    dataset_revision_repo = OrganisationDatasetRevisionRepo(db)
+    dataset_revision_repo = OrganisationDatasetRevisionRepo(clients.sql_db)
     revision = dataset_revision_repo.get_by_id(event.DatasetRevisionId)
     if not revision:
         raise PipelineException(f"No revision with id {event.DatasetRevisionId} found")
 
-    txc_file_attributes_repo = OrganisationTXCFileAttributesRepo(db)
+    txc_file_attributes_repo = OrganisationTXCFileAttributesRepo(clients.sql_db)
     txc_file_attributes = txc_file_attributes_repo.get_by_id(event.TxcFileAttributesId)
     if not txc_file_attributes:
         message = (
@@ -102,7 +112,7 @@ def get_task_data(
         logger.exception(message)
         raise PipelineException(message)
 
-    data_manager = FileProcessingDataManager(db, dynamodb)
+    data_manager = FileProcessingDataManager(clients.sql_db, clients.dynamodb)
     cached_live_txc_file_attributes = (
         data_manager.get_cached_live_txc_file_attributes(revision.id) or []
     )
@@ -117,17 +127,12 @@ def get_task_data(
     )
 
 
-def run_validation(
-    task_data: PTITaskData,
-    db: SqlDB,
-    dynamodb: DynamoDBCache,
-    stop_point_client: NaptanStopPointDynamoDBClient,
-):
+def run_validation(task_data: PTITaskData, db_clients: DbClients):
     """
     Run PTI Validation
     """
     validation_service = PTIValidationService(
-        db, dynamodb, stop_point_client, task_data.live_txc_file_attributes
+        db_clients, task_data.live_txc_file_attributes
     )
     validation_service.validate(
         task_data.revision,
@@ -143,11 +148,13 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, 
     PTI Validation Lambda Entrypoint
     """
     parsed_event = PTIValidationEvent(**event)
-    db = SqlDB()
-    dynamodb = DynamoDBCache()
-    stop_point_client = NaptanStopPointDynamoDBClient()
     xml_file_object = get_xml_file(parsed_event.Bucket, parsed_event.ObjectKey)
-    task_data = get_task_data(parsed_event, xml_file_object, db, dynamodb)
-    run_validation(task_data, db, dynamodb, stop_point_client)
+    db_clients = DbClients(
+        sql_db=SqlDB(),
+        dynamodb=DynamoDBCache(),
+        stop_point_client=NaptanStopPointDynamoDBClient(),
+    )
+    task_data = get_task_data(parsed_event, xml_file_object, db_clients)
+    run_validation(task_data, db_clients)
 
     return {"statusCode": 200}

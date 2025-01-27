@@ -13,6 +13,7 @@ from common_layer.txc.models.txc_data import TXCData
 from common_layer.txc.parser.metadata import parse_metadata
 from common_layer.txc.parser.parser_txc import load_xml_tree
 from lxml import etree
+from pti.app.pti_validation import DbClients
 from structlog.stdlib import get_logger
 
 from ..models.models_pti import PtiJsonSchema, PtiObservation, PtiViolation
@@ -65,9 +66,7 @@ class PTIValidator:
     def __init__(
         self,
         source: IO[Any],
-        dynamo: DynamoDBCache,
-        stop_point_client: NaptanStopPointDynamoDBClient,
-        db: SqlDB,
+        db_clients: DbClients,
         txc_data: TXCData,
     ):
         json_ = json.load(source)
@@ -84,7 +83,7 @@ class PTIValidator:
 
         self.register_function(
             "check_flexible_service_stop_point_ref",
-            get_flexible_service_stop_point_ref_validator(db),
+            get_flexible_service_stop_point_ref_validator(db_clients.sql_db),
         )
 
         self.register_function(
@@ -124,7 +123,8 @@ class PTIValidator:
 
         self.register_function("validate_line_id", validate_line_id)
         self.register_function(
-            "validate_lines", get_lines_validator(stop_point_client, txc_data)
+            "validate_lines",
+            get_lines_validator(db_clients.stop_point_client, txc_data),
         )
 
         self.register_function(
@@ -137,7 +137,8 @@ class PTIValidator:
         self.register_function("validate_timing_link_stops", validate_timing_link_stops)
 
         self.register_function(
-            "validate_bank_holidays", get_validate_bank_holidays(dynamo, db)
+            "validate_bank_holidays",
+            get_validate_bank_holidays(db_clients.dynamodb, db_clients.sql_db),
         )
 
         self.register_function("validate_licence_number", validate_licence_number)
