@@ -7,6 +7,7 @@ import time
 from typing import Any
 
 import boto3
+import botocore.config
 from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 from structlog.stdlib import get_logger
@@ -41,7 +42,8 @@ class DynamoDB:
                 region_name=self._settings.AWS_REGION,
             )
 
-        return boto3.client("dynamodb")
+        config = botocore.config.Config(proxies={})
+        return boto3.client("dynamodb", config=config)
 
     def get(self, key: str) -> dict[str, Any] | None:
         """
