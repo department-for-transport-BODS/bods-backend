@@ -6,7 +6,7 @@ import zipfile
 from datetime import date
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Callable, Union
+from typing import Any, Callable
 
 import structlog
 from common_layer.txc.models.txc_data import TXCData
@@ -46,7 +46,7 @@ def get_txc_object(**kwargs: dict[str, Any]) -> XmlTxcInventory:
     return generate_txc_row_data(txc_object, filename)
 
 
-def get_tag_size_object(**kwargs: dict[str, Any]) -> Union[XMLFileInfo, XMLTagInfo]:
+def get_tag_size_object(**kwargs: dict[str, Any]) -> XMLFileInfo | XMLTagInfo:
     """
     Parse the xml, returns XMLTagInfo/XMLSizeInfo object
     """
@@ -72,7 +72,7 @@ def get_tag_size_object(**kwargs: dict[str, Any]) -> Union[XMLFileInfo, XMLTagIn
 
 
 XML_OBJECTS: dict[
-    AnalysisMode, Callable[..., Union[XMLFileInfo, XMLTagInfo, XmlTxcInventory]]
+    AnalysisMode, Callable[..., XMLFileInfo | XMLTagInfo | XmlTxcInventory]
 ] = {
     AnalysisMode.SIZE: get_tag_size_object,
     AnalysisMode.TAG: get_tag_size_object,
@@ -80,7 +80,7 @@ XML_OBJECTS: dict[
 }
 
 
-def process_xml_file(**kwargs) -> Union[XMLFileInfo, XMLTagInfo, XmlTxcInventory]:
+def process_xml_file(**kwargs) -> XMLFileInfo | XMLTagInfo | XmlTxcInventory:
     """
     Process a single XML file and return its information (size or tag count).
     """
@@ -95,9 +95,7 @@ def process_xml_file(**kwargs) -> Union[XMLFileInfo, XMLTagInfo, XmlTxcInventory
     return XML_OBJECTS[mode](**kwargs)
 
 
-def generate_txc_row_data(
-    txc: TXCData, file_path: Union[Path, BytesIO]
-) -> XmlTxcInventory:
+def generate_txc_row_data(txc: TXCData, file_path: Path | BytesIO) -> XmlTxcInventory:
     """
     Generate Row Data
     """
