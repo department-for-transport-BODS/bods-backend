@@ -97,8 +97,8 @@ class MapExecutionFailed(MapExecutionBase):
     """Model for failed execution results"""
 
     Status: Literal[MapRunExecutionStatus.FAILED]
-    Cause: str = Field(min_length=1)
-    Error: str = Field(min_length=1)
+    Cause: str | None = None
+    Error: str | None = None
 
 
 class MapResultSucceeded(RootModel[list[MapExecutionSucceeded]]):

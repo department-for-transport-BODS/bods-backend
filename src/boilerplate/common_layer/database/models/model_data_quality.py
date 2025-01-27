@@ -50,6 +50,8 @@ class DataQualityPostSchemaViolation(BaseSQLModel):
 class DataQualityPTIObservation(TimeStampedMixin, BaseSQLModel):
     """Data Quality PTI Observation Table"""
 
+    include_modified = False
+
     __tablename__ = "data_quality_ptiobservation"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)

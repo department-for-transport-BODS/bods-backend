@@ -22,8 +22,8 @@
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
-          "Next": "ParseError",
-          "ResultPath": "$.error_info"
+          "Next": "ParentExceptionHandler",
+          "ResultPath": "$.errorInfo"
         }
       ]
     },
@@ -41,8 +41,8 @@
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
-          "Next": "ParseError",
-          "ResultPath": "$.error_info"
+          "Next": "ParentExceptionHandler",
+          "ResultPath": "$.errorInfo"
         }
       ]
     },
@@ -89,7 +89,8 @@
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
-                "Next": "ExceptionHandler"
+                "Next": "ExceptionHandler",
+                "ResultPath": "$.errorInfo"
               }
             ]
           },
@@ -107,7 +108,8 @@
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
-                "Next": "ExceptionHandler"
+                "Next": "ExceptionHandler",
+                "ResultPath": "$.errorInfo"
               }
             ]
           },
@@ -125,7 +127,8 @@
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
-                "Next": "ExceptionHandler"
+                "Next": "ExceptionHandler",
+                "ResultPath": "$.errorInfo"
               }
             ]
           },
@@ -143,7 +146,8 @@
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
-                "Next": "ExceptionHandler"
+                "Next": "ExceptionHandler",
+                "ResultPath": "$.errorInfo"
               }
             ]
           },
@@ -161,7 +165,8 @@
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
-                "Next": "ExceptionHandler"
+                "Next": "ETLProcess",
+                "ResultPath": "$.errorInfo"
               }
             ]
           },
@@ -207,9 +212,9 @@
             "Type": "Task",
             "Resource": "${ExceptionHandlerLambdaArn}",
             "Parameters": {
-              "Bucket.$": "$.Bucket",
-              "ObjectKey.$": "$.Key",
-              "ErrorInfo.$": "$"
+              "Error.$": "$.errorInfo.Error",
+              "Cause.$": "States.StringToJson($.errorInfo.Cause)",
+              "DatasetEtlTaskResultId.$": "$.DatasetEtlTaskResultId"
             },
             "Next": "Fail"
           },
@@ -235,20 +240,14 @@
       },
       "End": true
     },
-    "ParseError": {
-      "Type": "Pass",
-      "Parameters": {
-        "ParsedCause.$": "States.StringToJson($.error_info.Cause)"
-      },
-      "ResultPath": "$.parsed_error",
-      "Next": "ParentExceptionHandler"
-    },
+
     "ParentExceptionHandler": {
       "Type": "Task",
       "Resource": "${ExceptionHandlerLambdaArn}",
       "Parameters": {
-        "DatasetEtlTaskResultId.$": "$.detail.datasetEtlTaskResultId",
-        "ErrorInfo.$": "States.StringToJson($.parsed_error.ParsedCause.errorMessage)"
+        "Error.$": "$.errorInfo.Error",
+        "Cause.$": "States.StringToJson($.errorInfo.Cause)",
+        "DatasetEtlTaskResultId.$": "$.initializePipeline.DatasetEtlTaskResultId"
       },
       "End": true
     }

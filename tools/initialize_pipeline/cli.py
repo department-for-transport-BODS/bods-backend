@@ -2,19 +2,15 @@
 Runs PTI Validation against specified database
 """
 
-from io import BytesIO
-from pathlib import Path
-
 import typer
-from common_layer import dynamodb
-from common_layer.dynamodb.client import DynamoDB, DynamoDBSettings
+from common_layer.dynamodb.client import DynamoDB
 from common_layer.json_logging import configure_logging
-from structlog.stdlib import get_logger
-
-from timetables_etl.initialize_pipeline import (
+from initialize_pipeline.app.initialize_pipeline import (
     InitializePipelineEvent,
     initialize_pipeline,
 )
+from structlog.stdlib import get_logger
+
 from tools.common.db_tools import create_db_config, dotenv_loader, setup_db_instance
 
 app = typer.Typer()
@@ -50,7 +46,7 @@ def main(
         db_config = create_db_config(use_dotenv=use_dotenv)
     except ValueError as e:
         log.error("Database configuration error", exc_info=True)
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
     db = setup_db_instance(db_config)
     dynamodb = DynamoDB()

@@ -108,7 +108,7 @@ def get_processors(lambda_context: LambdaContext | None = None) -> tuple:
                 structlog.processors.CallsiteParameter.FUNC_NAME,
             }
         ),
-        structlog.threadlocal.merge_threadlocal,
+        structlog.contextvars.merge_contextvars,
     ]
 
     if lambda_context:
@@ -118,7 +118,10 @@ def get_processors(lambda_context: LambdaContext | None = None) -> tuple:
     return tuple(base_processors)
 
 
-def configure_logging(lambda_context: LambdaContext | None = None):
+def configure_logging(
+    event_dict: dict[str, Any] | None = None,
+    lambda_context: LambdaContext | None = None,
+):
     """
     Configure Structured JSON logging for the application
     Import and run this as the first thing in a lambda function
@@ -132,6 +135,9 @@ def configure_logging(lambda_context: LambdaContext | None = None):
         logger_factory=structlog.stdlib.LoggerFactory(),
         cache_logger_on_first_use=True,
     )
+
+    if event_dict:
+        structlog.contextvars.bind_contextvars(**event_dict)
 
     # reset the AWS-Lambda-supplied log handlers.
     logging.basicConfig(

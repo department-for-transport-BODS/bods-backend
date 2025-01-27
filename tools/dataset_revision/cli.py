@@ -7,12 +7,10 @@ from datetime import UTC, datetime
 import typer
 from common_layer.database.client import SqlDB
 from common_layer.database.models import OrganisationDatasetRevision
-from common_layer.database.models.model_organisation import OrganisationDataset
 from common_layer.database.repos.repo_organisation import (
     OrganisationDatasetRepo,
     OrganisationDatasetRevisionRepo,
 )
-from common_layer.db.repositories import dataset
 from common_layer.json_logging import configure_logging
 from structlog.stdlib import get_logger
 
@@ -21,7 +19,6 @@ from tests.factories.database.organisation import (
     OrganisationDatasetRevisionFactory,
 )
 from tools.common.db_tools import create_db_config, setup_db_instance
-from tools.common.models import TestConfig
 
 app = typer.Typer()
 log = get_logger()
@@ -97,7 +94,10 @@ def main(
     dataset_id: int = typer.Option(
         None,
         "--dataset-id",
-        help="The Dataset ID to create revision for. If not provided, a new dataset will be created",
+        help=(
+            "The Dataset ID to create revision for. "
+            "If not provided, a new dataset will be created"
+        ),
     ),
     description: str = typer.Option(
         "Test Revision Created by CLI",

@@ -25,7 +25,7 @@ def test_put(m_boto_client):
         dynamo.put("test-key", {"key": "value"}, ttl=ttl)
 
         m_boto_client.put_item.assert_called_once_with(
-            TableName=settings.DYNAMODB_TABLE_NAME,
+            TableName=settings.DYNAMODB_CACHE_TABLE_NAME,
             Item={
                 "Key": {"S": "test-key"},
                 "Value": {"M": {"key": {"S": "value"}}},
@@ -56,7 +56,7 @@ def test_get(m_boto_client):
     result = dynamodb.get("test-key")
 
     m_boto_client.get_item.assert_called_once_with(
-        TableName=settings.DYNAMODB_TABLE_NAME, Key={"Key": {"S": "test-key"}}
+        TableName=settings.DYNAMODB_CACHE_TABLE_NAME, Key={"Key": {"S": "test-key"}}
     )
     assert result == {"key": "value"}
 

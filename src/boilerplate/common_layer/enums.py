@@ -1,30 +1,34 @@
+"""
+Common Enums
+"""
+
 from enum import Enum, unique
 
 
 @unique
 class CAVLDataFormat(Enum):
+    """
+    CAVL Data Format Types
+    """
+
     SIRIVM = "VM"
     GTFSRT = "RT"
     SIRIVM_TFL = "TL"
 
-class DatasetETLResultStatus(str, Enum):
-    SYSTEM_ERROR = "SYSTEM_ERROR"
-    PENDING = "PENDING"
-    RECEIVED = "RECEIVED"
-    STARTED = "STARTED"
-    SUCCESS = "SUCCESS"
-    FAILURE = "FAILURE"
-    READY = "READY"
 
 class FeedStatus(str, Enum):
-    pending = "pending"
-    draft = "draft"
-    indexing = "indexing"
-    live = "live"
-    success = "success"
-    expiring = "expiring"
-    warning = "warning"
-    error = "error"
-    expired = "expired"
-    deleted = "deleted"
-    inactive = "inactive"
+    """
+    Revision Status Field Enum
+    """
+
+    PENDING = "pending"
+    DRAFT = "draft"
+    INDEXING = "indexing"
+    LIVE = "live"
+    SUCCESS = "success"
+    EXPIRING = "expiring"
+    WARNING = "warning"
+    ERROR = "error"
+    EXPIRED = "expired"
+    DELETED = "deleted"
+    INACTIVE = "inactive"

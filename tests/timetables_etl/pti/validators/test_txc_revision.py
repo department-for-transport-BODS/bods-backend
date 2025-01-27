@@ -1,9 +1,13 @@
+"""
+Test PTI Revision
+"""
+
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from freezegun import freeze_time
-from pti.validators.txc_revision import TXCRevisionValidator
+from pti.app.validators.txc_revision import TXCRevisionValidator
 
 
 def test_revision_get_by_service_code_and_lines():
@@ -93,21 +97,36 @@ def test_filter_by_service_code_and_lines_matches_lines_in_any_order():
 
 
 @pytest.mark.parametrize(
-    ("live_number", "draft_number", "modification_datetime_changed", "violation_count"),
+    (
+        "live_number",
+        "draft_number",
+        "modification_datetime_changed",
+        "expected_violations",
+    ),
     [
-        (0, 1, True, 0),
-        (2, 2, True, 1),
-        (2, 3, True, 0),
-        (2, 3, False, 1),
-        (2, 1, False, 1),
-        (2, 1, True, 1),
+        pytest.param(0, 1, True, 0, id="Initial Revision To First Draft Is Valid"),
+        pytest.param(
+            2, 2, True, 1, id="Same Revision Number With Modified Time Is Invalid"
+        ),
+        pytest.param(
+            2, 3, True, 0, id="Incremented Revision With Modified Time Is Valid"
+        ),
+        pytest.param(
+            2, 3, False, 1, id="Incremented Revision Without Modified Time Is Invalid"
+        ),
+        pytest.param(
+            2, 1, False, 1, id="Decremented Revision Without Modified Time Is Invalid"
+        ),
+        pytest.param(
+            2, 1, True, 1, id="Decremented Revision With Modified Time Is Invalid"
+        ),
     ],
 )
 def test_revision_number_violation(
-    live_number,
-    draft_number,
-    modification_datetime_changed,
-    violation_count,
+    live_number: int,
+    draft_number: int,
+    modification_datetime_changed: bool,
+    expected_violations: int,
 ):
     """
     Given a Dataset with live revision and a draft revision
@@ -124,7 +143,6 @@ def test_revision_number_violation(
     """
     live_revision_id = 123
     dataset = MagicMock(id=234, live_revision_id=live_revision_id)
-
     live_revision = MagicMock(id=live_revision_id, upload_file=None, is_published=True)
     draft_revision = MagicMock(
         dataset_id=dataset.id, upload_file=None, is_published=False
@@ -132,23 +150,20 @@ def test_revision_number_violation(
 
     with freeze_time("2024-01-05 10:30:00"):
         now = datetime.now()
-        if modification_datetime_changed:
-            live_modification_datetime = now - timedelta(days=1)
-            draft_modification_datetime = now
-        else:
-            live_modification_datetime = now
-            draft_modification_datetime = now
+        live_modification_datetime = (
+            now - timedelta(days=1) if modification_datetime_changed else now
+        )
+        draft_modification_datetime = now
 
         service_code = "ABC"
-
-        live_revision_file_attributes = MagicMock(
+        live_revision_file = MagicMock(
             filename="filename1.xml",
             revision_id=live_revision.id,
             service_code=service_code,
             revision_number=live_number,
             modification_datetime=live_modification_datetime,
         )
-        draft_file_attributes = MagicMock(
+        draft_revision_file = MagicMock(
             filename="filename2.xml",
             revision=draft_revision,
             service_code=service_code,
@@ -157,37 +172,74 @@ def test_revision_number_violation(
         )
 
         validator = TXCRevisionValidator(
-            txc_file_attributes=draft_file_attributes,
-            live_txc_file_attributes=[live_revision_file_attributes],
+            txc_file_attributes=draft_revision_file,
+            live_txc_file_attributes=[live_revision_file],
         )
         violations = validator.get_violations()
-        assert len(violations) == violation_count
+        assert len(violations) == expected_violations
 
 
 @pytest.mark.parametrize(
     (
-        "live_number",
-        "draft_number",
+        "live_revision",
+        "draft_revision",
         "live_lines",
         "draft_lines",
-        "violation_count",
+        "expected_violations",
     ),
     [
-        (0, 1, ["line1", "line2"], ["line1", "line2"], 0),
-        (2, 2, ["line1", "line2"], ["line1", "line2"], 1),
-        (2, 3, ["line1", "line2"], ["line2", "line1"], 0),
-        (2, 1, ["line1", "line2"], ["line1", "line2"], 1),
-        (2, 1, ["line1", "line2"], ["line2", "line1"], 1),
-        (1, 2, ["34"], ["34"], 0),
-        (1, 1, ["33"], ["34"], 0),
+        pytest.param(
+            0,
+            1,
+            ["line1", "line2"],
+            ["line1", "line2"],
+            0,
+            id="Initial Revision With Matching Lines",
+        ),
+        pytest.param(
+            2,
+            2,
+            ["line1", "line2"],
+            ["line1", "line2"],
+            1,
+            id="Same Revision With Matching Lines",
+        ),
+        pytest.param(
+            2,
+            3,
+            ["line1", "line2"],
+            ["line2", "line1"],
+            0,
+            id="Incremented Revision With Reordered Lines",
+        ),
+        pytest.param(
+            2,
+            1,
+            ["line1", "line2"],
+            ["line1", "line2"],
+            1,
+            id="Decremented Revision With Matching Lines",
+        ),
+        pytest.param(
+            2,
+            1,
+            ["line1", "line2"],
+            ["line2", "line1"],
+            1,
+            id="Decremented Revision With Reordered Lines",
+        ),
+        pytest.param(
+            1, 2, ["34"], ["34"], 0, id="Incremented Revision With Single Line"
+        ),
+        pytest.param(1, 1, ["33"], ["34"], 0, id="Same Revision With Different Lines"),
     ],
 )
 def test_revision_number_service_and_line_violation(
-    live_number,
-    draft_number,
-    live_lines,
-    draft_lines,
-    violation_count,
+    live_revision: int,
+    draft_revision: int,
+    live_lines: list[str],
+    draft_lines: list[str],
+    expected_violations: int,
 ):
     """
     Given a Dataset with live revision and a draft revision
@@ -203,36 +255,33 @@ def test_revision_number_service_and_line_violation(
 
     """
     dataset = MagicMock(id=234, live_revision_id=123)
-
-    live_revision = MagicMock(id=123, upload_file=None, is_published=True)
-    draft_revision = MagicMock(dataset_id=dataset, upload_file=None, is_published=False)
+    live_rev = MagicMock(id=123, upload_file=None, is_published=True)
+    draft_rev = MagicMock(dataset_id=dataset, upload_file=None, is_published=False)
 
     with freeze_time("2024-01-05 10:30:00"):
         now = datetime.now()
-        live_modification_datetime = now - timedelta(days=1)
-        draft_modification_datetime = now
-
         service_code = "ABC"
-        live_revision_file_attributes = MagicMock(
+
+        live_file = MagicMock(
             filename="filename1.xml",
-            revision=live_revision,
+            revision=live_rev,
             service_code=service_code,
-            revision_number=live_number,
+            revision_number=live_revision,
             line_names=live_lines,
-            modification_datetime=live_modification_datetime,
+            modification_datetime=now - timedelta(days=1),
         )
-        draft_file_attributes = MagicMock(
+
+        draft_file = MagicMock(
             filename="filename2.xml",
-            revision=draft_revision,
+            revision=draft_rev,
             service_code=service_code,
-            revision_number=draft_number,
-            modification_datetime=draft_modification_datetime,
+            revision_number=draft_revision,
             line_names=draft_lines,
+            modification_datetime=now,
         )
 
         validator = TXCRevisionValidator(
-            draft_file_attributes,
-            live_txc_file_attributes=[live_revision_file_attributes],
+            draft_file, live_txc_file_attributes=[live_file]
         )
         violations = validator.get_violations()
-        assert len(violations) == violation_count
+        assert len(violations) == expected_violations
