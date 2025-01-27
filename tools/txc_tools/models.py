@@ -2,8 +2,14 @@
 Model definitions for txc tools
 """
 
-from decimal import Decimal
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from datetime import date
+from decimal import Decimal
+from enum import Enum
+import queue
+import zipfile
+
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 
@@ -89,7 +95,30 @@ class ZipTagStats(BaseModel):
     )
 
 
-class XMLTxCInventory(BaseModel):
+class AnalysisMode(str, Enum):
+    """Type of file processing"""
+
+    SIZE = "size"
+    TAG = "tag"
+    TXC = "txc"
+
+
+@dataclass
+class WorkerConfig:
+    """
+    Worker configuration
+    """
+
+    zip_ref: zipfile.ZipFile
+    file_list: list[zipfile.ZipInfo]
+    xml_queue: queue.Queue
+    future_queue: queue.Queue
+    executor: ThreadPoolExecutor
+    mode: AnalysisMode
+    tag_name: str | None = None
+
+
+class XmlTxcInventory(BaseModel):
     """Pydantic model for txc inventory"""
 
     model_config = ConfigDict(frozen=True)
