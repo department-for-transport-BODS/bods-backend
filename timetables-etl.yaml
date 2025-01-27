@@ -142,7 +142,8 @@ Globals:
         DD_MERGE_XRAY_TRACES: true
         DD_RUNTIME_METRICS_ENABLED: true
         DD_DBM_PROPAGATION_MODE: true
-        DD_PROFILING_STACK_V2_ENABLED: false # Nww Tracer causes segmentation faults need to wait until newer python layer version than 104
+        # New Profiler causes random segmentation faults need to wait until newer python layer version than 104 to enable
+        DD_PROFILING_STACK_V2_ENABLED: false
 Resources:
   ##################################
   #### TIMETABLES STATE MACHINE ####
