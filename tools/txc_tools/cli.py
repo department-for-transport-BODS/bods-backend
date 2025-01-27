@@ -7,8 +7,8 @@ from typing import Annotated
 
 import typer
 
-from .common import execute_process
 from .models import AnalysisMode
+from .parallel_processor import execute_process
 
 app = typer.Typer()
 
