@@ -8,10 +8,12 @@ import typer
 from common_layer.database.client import SqlDB
 from common_layer.json_logging import configure_logging
 from common_layer.txc.parser.parser_txc import TXCParserConfig, parse_txc_file
-from file_attributes_etl.app.file_attributes_etl import process_file_attributes
-from file_attributes_etl.app.models import FileAttributesInputData
 from structlog.stdlib import get_logger
 
+from src.timetables_etl.file_attributes_etl.app.file_attributes_etl import (
+    process_file_attributes,
+)
+from src.timetables_etl.file_attributes_etl.app.models import FileAttributesInputData
 from tools.common.db_tools import create_db_config, setup_db_instance
 from tools.common.xml_tools import get_xml_paths
 
@@ -38,6 +40,7 @@ def process_txc(xml_paths: list[Path], revision_id: int, db: SqlDB) -> int | Non
             return txc_file_attributes.id
         except ValueError as e:
             log.error("Revision ID Not found, can't add File Attributes", error=str(e))
+    return None
 
 
 @app.command(name="file-attributes")

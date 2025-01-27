@@ -33,6 +33,21 @@ def validate_schema_version(schema_version: str | None) -> str:
     raise ValueError("SCHEMA_VERSION_NOT_SUPPORTED")
 
 
+def validate_filename(filename: str) -> str:
+    """
+    Validate that the filename ends with .xml extension.
+    If not, log a warning and append .xml to the filename.
+    """
+    if not filename.endswith(".xml"):
+        log.warning(
+            "Filename does not end with .xml extension, adding .xml",
+            filename=filename,
+        )
+        filename = f"{filename}.xml"
+
+    return filename
+
+
 def make_txc_file_attributes(
     txc: TXCData, revision: OrganisationDatasetRevision
 ) -> OrganisationTXCFileAttributes:
@@ -72,7 +87,7 @@ def make_txc_file_attributes(
         destination=next(iter(get_service_destinations(txc.Services)), ""),
         service_code=txc.Services[0].ServiceCode,
         public_use=txc.Services[0].PublicUse,
-        filename=metadata.FileName,
+        filename=validate_filename(metadata.FileName),
         hash=metadata.FileHash or "",
         revision_id=revision.id,
         service_mode=modes[0] if modes else "bus",
