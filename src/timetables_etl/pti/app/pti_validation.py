@@ -5,19 +5,14 @@ PtiValidation Lambda
 from io import BytesIO
 from typing import Any
 
-from attr import dataclass
-from aws_lambda_powertools import Tracer
 from aws_lambda_powertools.utilities.typing import LambdaContext
-from common_layer import dynamodb
 from common_layer.database.client import SqlDB
-from common_layer.database.models import OrganisationDatasetRevision
 from common_layer.database.repos import (
     OrganisationDatasetRevisionRepo,
     OrganisationTXCFileAttributesRepo,
 )
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
-from common_layer.dynamodb.client import DynamoDB
 from common_layer.dynamodb.client.cache import DynamoDBCache
 from common_layer.dynamodb.client.naptan_stop_points import (
     NaptanStopPointDynamoDBClient,

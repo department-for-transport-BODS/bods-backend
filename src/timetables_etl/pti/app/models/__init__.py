@@ -1,3 +1,7 @@
+"""
+Module for PTI related models
+"""
+
 from .models_pti import (
     Header,
     Line,
