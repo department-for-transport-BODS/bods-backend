@@ -5,14 +5,10 @@ XML File PTI Validator
 from io import BytesIO
 from typing import IO, Any
 
-from common_layer.database.client import SqlDB
-from common_layer.dynamodb.client import NaptanStopPointDynamoDBClient
-from common_layer.dynamodb.client.cache import DynamoDBCache
 from common_layer.txc.models.txc_data import TXCData
-from pti.app.pti_validation import DbClients
 from structlog.stdlib import get_logger
 
-from ..models.models_pti import PtiViolation
+from ..models import DbClients, PtiViolation
 from .pti import PTIValidator
 
 log = get_logger()

@@ -6,17 +6,13 @@ import json
 from io import BytesIO
 from typing import IO, Any, Callable
 
-from common_layer.database.client import SqlDB
-from common_layer.dynamodb.client import DynamoDB, NaptanStopPointDynamoDBClient
-from common_layer.dynamodb.client.cache import DynamoDBCache
 from common_layer.txc.models.txc_data import TXCData
 from common_layer.txc.parser.metadata import parse_metadata
 from common_layer.txc.parser.parser_txc import load_xml_tree
 from lxml import etree
-from pti.app.pti_validation import DbClients
 from structlog.stdlib import get_logger
 
-from ..models.models_pti import PtiJsonSchema, PtiObservation, PtiViolation
+from ..models import DbClients, PtiJsonSchema, PtiObservation, PtiViolation
 from ..utils.utils_time import to_days, today
 from ..utils.utils_xml import (
     cast_to_bool,

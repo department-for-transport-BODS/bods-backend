@@ -4,23 +4,18 @@ PTI Service
 
 from io import BytesIO
 
-from common_layer.database.client import SqlDB
 from common_layer.database.models import OrganisationDatasetRevision
 from common_layer.database.repos import (
     DataQualityPTIObservationRepo,
     OrganisationTXCFileAttributesRepo,
 )
-from common_layer.dynamodb.client.cache import DynamoDBCache
-from common_layer.dynamodb.client.naptan_stop_points import (
-    NaptanStopPointDynamoDBClient,
-)
 from common_layer.dynamodb.models import TXCFileAttributes
 from common_layer.txc.models.txc_data import TXCData
 from common_layer.utils import sha1sum
-from pti.app.pti_validation import DbClients
 from structlog.stdlib import get_logger
 
 from .models.models_pti import PtiViolation
+from .models.models_pti_task import DbClients
 from .validators.factory import get_xml_file_pti_validator
 from .validators.txc_revision import TXCRevisionValidator
 
@@ -84,9 +79,7 @@ class PTIValidationService:
                 revision_id=revision.dataset_id,
             )
         else:
-            validator = get_xml_file_pti_validator(
-                self._dynamodb, self._stop_point_client, self._db, txc_data
-            )
+            validator = get_xml_file_pti_validator(self._db_clients, txc_data)
             violations = validator.get_violations(revision, xml_file)
 
             revision_validator = TXCRevisionValidator(

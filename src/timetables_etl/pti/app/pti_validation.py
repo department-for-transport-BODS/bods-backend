@@ -32,9 +32,10 @@ from common_layer.txc.parser.parser_txc import (
     load_xml_data,
     parse_txc_from_element,
 )
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 from structlog.stdlib import get_logger
 
+from .models import DbClients, PTITaskData
 from .service import PTIValidationService
 
 logger = get_logger()
@@ -49,27 +50,6 @@ class PTIValidationEvent(BaseModel):
     Bucket: str
     ObjectKey: str
     TxcFileAttributesId: int
-
-
-class PTITaskData(BaseModel):
-    """
-    Task Data Container
-    """
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    revision: OrganisationDatasetRevision
-    txc_file_attributes: TXCFileAttributes
-    live_txc_file_attributes: list[TXCFileAttributes]
-    xml_file_object: BytesIO
-    txc_data: TXCData
-
-
-@dataclass
-class DbClients:
-    sql_db: SqlDB
-    dynamodb: DynamoDBCache
-    stop_point_client: NaptanStopPointDynamoDBClient
 
 
 def get_xml_file(bucket: str, key: str) -> BytesIO:
