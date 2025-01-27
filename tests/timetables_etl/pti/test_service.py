@@ -14,6 +14,7 @@ from common_layer.dynamodb.client.naptan_stop_points import (
 from common_layer.dynamodb.models import TXCFileAttributes
 from common_layer.txc.models.txc_data import TXCData
 from pti.app.models.models_pti import PtiObservation, PtiRule, PtiViolation
+from pti.app.models.models_pti_task import DbClients
 from pti.app.service import PTIValidationService
 
 from tests.factories.database.organisation import OrganisationDatasetRevisionFactory
@@ -35,6 +36,18 @@ def txc_file_attributes():
     )
 
 
+@pytest.fixture
+def m_db_clients() -> DbClients:
+    """
+    Return instance of DbClients containing mocked clients
+    """
+    return DbClients(
+        sql_db=MagicMock(spec=SqlDB),
+        dynamodb=MagicMock(spec=DynamoDBCache),
+        stop_point_client=MagicMock(spec=NaptanStopPointDynamoDBClient),
+    )
+
+
 @patch("pti.app.service.OrganisationTXCFileAttributesRepo")
 @patch("pti.app.service.DataQualityPTIObservationRepo")
 @patch("pti.app.service.TXCRevisionValidator")
@@ -45,6 +58,7 @@ def test_validate(
     m_observation_repo,
     m_file_attributes_repo,
     txc_file_attributes,
+    m_db_clients,
 ):
     revision = OrganisationDatasetRevisionFactory.create_with_id(id_number=123)
     xml_file = MagicMock()
@@ -85,9 +99,7 @@ def test_validate(
     m_txc_revision_validator.return_value.get_violations.return_value = violations
 
     service = PTIValidationService(
-        db=MagicMock(spec=SqlDB),
-        dynamodb=MagicMock(spec=DynamoDBCache),
-        stop_point_client=MagicMock(spec=NaptanStopPointDynamoDBClient),
+        db_clients=m_db_clients,
         live_revision_attributes=[],
     )
 
@@ -115,6 +127,7 @@ def test_validate_unchanged_file(
     m_sha1_sum,
     m_observation_repo,
     txc_file_attributes,
+    m_db_clients,
 ):
     """
     Validation should be skipped for unchanged files
@@ -139,9 +152,7 @@ def test_validate_unchanged_file(
     ]
 
     service = PTIValidationService(
-        db=MagicMock(spec=SqlDB),
-        dynamodb=MagicMock(spec=DynamoDBCache),
-        stop_point_client=MagicMock(spec=NaptanStopPointDynamoDBClient),
+        db_clients=m_db_clients,
         live_revision_attributes=live_file_attributes,
     )
     service.validate(revision, xml_file, txc_file_attributes, TXCData.model_construct())

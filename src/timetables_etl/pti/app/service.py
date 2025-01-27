@@ -93,7 +93,9 @@ class PTIValidationService:
                     PtiViolation.make_observation(revision.id, violation)
                     for violation in violations
                 ]
-                observation_repo = DataQualityPTIObservationRepo(self._db)
+                observation_repo = DataQualityPTIObservationRepo(
+                    self._db_clients.sql_db
+                )
                 observation_repo.bulk_insert(observations)
                 unique_names = get_unique_violation_names(violations)
                 log.info(
@@ -101,7 +103,9 @@ class PTIValidationService:
                     txc_file_attributes_id=txc_file_attributes.id,
                     violations=unique_names,
                 )
-                txc_file_attribute_repo = OrganisationTXCFileAttributesRepo(self._db)
+                txc_file_attribute_repo = OrganisationTXCFileAttributesRepo(
+                    self._db_clients.sql_db
+                )
                 txc_file_attribute_repo.delete_by_id(txc_file_attributes.id)
 
                 raise ValueError(

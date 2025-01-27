@@ -5,9 +5,11 @@ from unittest.mock import MagicMock
 import pytest
 from common_layer.database.client import SqlDB
 from common_layer.dynamodb.client import DynamoDB, NaptanStopPointDynamoDBClient
+from common_layer.dynamodb.client.cache import DynamoDBCache, DynamoDbCacheSettings
 from common_layer.txc.models.txc_data import TXCData
 from pti.app.constants import PTI_SCHEMA_PATH
 from pti.app.models.models_pti import PtiJsonSchema
+from pti.app.models.models_pti_task import DbClients
 from pti.app.validators.pti import PTIValidator
 
 from tests.timetables_etl.pti.validators.constants import TXC_END, TXC_START
@@ -52,11 +54,14 @@ def create_validator(
     stop_point_client = naptan_stop_point_client or MagicMock(
         spec=NaptanStopPointDynamoDBClient
     )
+    db_clients = DbClients(
+        sql_db=MagicMock(spec=SqlDB),
+        dynamodb=MagicMock(spec=DynamoDBCache),
+        stop_point_client=stop_point_client,
+    )
     pti = PTIValidator(
         json_file,
-        MagicMock(spec=DynamoDB),
-        stop_point_client,
-        MagicMock(spec=SqlDB),
+        db_clients,
         TXCData.model_construct(),
     )
     return pti, data_dir / filename
