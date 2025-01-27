@@ -5,7 +5,6 @@ Lambda: InitializePipeline
 from typing import Any
 from uuid import uuid4
 
-from aws_lambda_powertools import Tracer
 from aws_lambda_powertools.metrics import MetricUnit
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.aws import configure_metrics
@@ -28,7 +27,6 @@ from pydantic import BaseModel
 from structlog.stdlib import get_logger
 
 metrics = configure_metrics()
-tracer = Tracer()
 logger = get_logger()
 
 
@@ -113,7 +111,6 @@ def initialize_pipeline(
 
 
 @metrics.log_metrics
-@tracer.capture_lambda_handler
 def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any]:
     """
     Handler for InitializePipeline

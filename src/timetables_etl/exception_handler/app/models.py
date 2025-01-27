@@ -17,7 +17,7 @@ class ErrorCause(BaseModel):
     error_message: str = Field(alias="errorMessage")
     error_type: str = Field(alias="errorType")
     request_id: str = Field(alias="requestId")
-    stack_trace: list[str] = Field(alias="stackTrace")
+    stack_trace: Annotated[list[str] | None, Field(alias="stackTrace", default=None)]
 
 
 class ExceptionHandlerInputData(BaseModel):

@@ -8,7 +8,6 @@ from io import BytesIO
 from pathlib import Path
 from typing import Any
 
-from aws_lambda_powertools import Tracer
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.database.client import SqlDB
 from common_layer.db.constants import StepName
@@ -27,7 +26,6 @@ from .models import (
 )
 from .output_processing import process_files
 
-tracer = Tracer()
 log = get_logger()
 
 
@@ -148,7 +146,6 @@ def process_map_results(input_data: GenerateOutputZipInputData) -> ProcessingRes
     return processing_result
 
 
-@tracer.capture_lambda_handler
 @file_processing_result_to_db(StepName.GENERATE_OUTPUT_ZIP)
 def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, Any]:
     """

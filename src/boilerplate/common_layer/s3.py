@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Iterator, cast
 
 import boto3
+import botocore.config
 from botocore.exceptions import BotoCoreError, ClientError
 from botocore.response import StreamingBody
 from structlog.stdlib import get_logger
@@ -49,7 +50,8 @@ class S3:
                 aws_secret_access_key="dummy",
             )
         logger.info("Using AWS S3 (production or non-local environment)")
-        return boto3.client("s3")
+        config = botocore.config.Config(proxies={})
+        return boto3.client("s3", config=config)
 
     def _get_content_type(self, file_path: str) -> str:
         """

@@ -4,7 +4,6 @@ File Attributes Lambda
 
 from typing import Any
 
-from aws_lambda_powertools import Tracer
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.database.client import SqlDB
 from common_layer.database.models import OrganisationTXCFileAttributes
@@ -22,7 +21,6 @@ from structlog.stdlib import get_logger
 from .models import FileAttributesInputData
 from .process_txc import make_txc_file_attributes
 
-tracer = Tracer()
 log = get_logger()
 
 PARSER_CONFIG = TXCParserConfig(
@@ -58,7 +56,6 @@ def process_file_attributes(
     return OrganisationTXCFileAttributesRepo(db).insert(file_attributes_data)
 
 
-@tracer.capture_lambda_handler
 @file_processing_result_to_db(StepName.TXC_ATTRIBUTE_EXTRACTION)
 def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, int]:
     """

@@ -7,7 +7,6 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from aws_lambda_powertools import Tracer
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from botocore.exceptions import BotoCoreError, ClientError
 from common_layer.database.client import SqlDB
@@ -20,7 +19,6 @@ from lxml import etree
 from pydantic import BaseModel, ConfigDict, Field
 from structlog.stdlib import get_logger
 
-tracer = Tracer()
 log = get_logger()
 
 
@@ -167,7 +165,6 @@ def add_violations_to_db(
     return result
 
 
-@tracer.capture_lambda_handler
 @file_processing_result_to_db(step_name=StepName.TIMETABLE_SCHEMA_CHECK)
 def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, Any]:
     """

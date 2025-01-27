@@ -5,7 +5,6 @@ Each invocation handles a single file
 
 from typing import Any
 
-from aws_lambda_powertools import Tracer
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.database import SqlDB
 from common_layer.database.repos import (
@@ -24,7 +23,6 @@ from structlog.stdlib import get_logger
 from .models import ETLInputData, TaskData
 from .pipeline import transform_data
 
-tracer = Tracer()
 log = get_logger()
 
 
@@ -84,7 +82,6 @@ def extract_txc_data(s3_bucket: str, s3_key: str) -> TXCData:
     return txc_data
 
 
-@tracer.capture_lambda_handler
 @file_processing_result_to_db(step_name=StepName.ETL_PROCESS)
 def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, Any]:
     """

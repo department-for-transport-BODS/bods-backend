@@ -24,6 +24,14 @@ Parameters:
   RdsDbPort:
     Type: Number
     Default: 5432
+  DDGitData:
+    Type: String
+    Default: ''
+    Description: 'The output of $(git rev-parse HEAD),$(git config --get remote.origin.url). Used for Datadog Source Code Integration tagging'
+  Version:
+    Type: String
+    Default: 'unknown'
+    Description: 'Version to pass to Datadog APM'
 Conditions:
   IsStandalone: !Equals [!Ref Environment, 'standalone']
   IsNotStandalone: !Not [!Equals [!Ref Environment, 'standalone']]
@@ -52,7 +60,7 @@ Resources:
         BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
       Tags:
         env: !Ref Environment
-        service: !Sub '${ProjectName}-${Environment}-periodic-tasks'
+        service: !Sub '${ProjectName}-periodic-tasks'
   PeriodicTasksStandalone:
     Type: AWS::Serverless::Application
     Condition: IsStandalone
@@ -70,7 +78,7 @@ Resources:
         BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
       Tags:
         env: !Ref Environment
-        service: !Sub '${ProjectName}-${Environment}-periodic-tasks'
+        service: !Sub '${ProjectName}-periodic-tasks'
   TimetablesEtl:
     Type: AWS::Serverless::Application
     Condition: IsNotStandalone
@@ -82,9 +90,11 @@ Resources:
         RdsDbHostAddr: !Ref RdsDbHostAddr
         RdsDbPort: !Ref RdsDbPort
         BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
+        DDGitData: !Ref DDGitData
+        Version: !Ref Version
       Tags:
         env: !Ref Environment
-        service: !Sub '${ProjectName}-${Environment}-timetables-etl'
+        service: !Sub '${ProjectName}-timetables-etl'
   TimetablesEtlStandalone:
     Type: AWS::Serverless::Application
     Condition: IsStandalone
@@ -98,7 +108,7 @@ Resources:
         BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
       Tags:
         env: !Ref Environment
-        service: !Sub '${ProjectName}-${Environment}-timetables-etl'
+        service: !Sub '${ProjectName}-timetables-etl'
   BoilerplateLambdaLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:

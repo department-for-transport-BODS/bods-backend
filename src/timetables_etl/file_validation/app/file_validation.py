@@ -5,7 +5,6 @@ FileValidation Lambda
 from io import BytesIO
 from typing import Any
 
-from aws_lambda_powertools import Tracer
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
@@ -15,7 +14,6 @@ from structlog.stdlib import get_logger
 from .models import FileValidationInputData
 from .xml_checks import dangerous_xml_check, is_xml_file
 
-tracer = Tracer()
 log = get_logger()
 
 
@@ -46,7 +44,6 @@ def process_file_validation(input_data: FileValidationInputData) -> None:
     log.info("File validation passed", file_name=input_data.s3_file_key)
 
 
-@tracer.capture_lambda_handler
 @file_processing_result_to_db(step_name=StepName.TXC_FILE_VALIDATOR)
 def lambda_handler(
     event: dict[str, Any], _context: LambdaContext

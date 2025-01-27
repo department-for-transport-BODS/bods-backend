@@ -7,6 +7,7 @@ import time
 from typing import Any, Callable
 
 import boto3
+import botocore.config
 from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 from pydantic import Field
@@ -59,8 +60,8 @@ class DynamoDB:
                 aws_secret_access_key="dummy",
                 region_name=self._settings.AWS_REGION,
             )
-
-        return boto3.client("dynamodb")
+        config = botocore.config.Config(proxies={})
+        return boto3.client("dynamodb", config=config)
 
     def get_or_compute(
         self, key: str, compute_fn: Callable[[], Any], ttl: int | None = None
