@@ -107,6 +107,6 @@ class TXCService(BaseModel):
     FlexibleService: TXCFlexibleService | None = Field(default=None)
     Lines: list[TXCLine] = Field(default=[])
     Mode: TransportModeT = Field(
-        default="coach",
+        default="bus",
         description=("The mode of the service"),
     )

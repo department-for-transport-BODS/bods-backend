@@ -2,6 +2,7 @@
 Parse XML Services Section
 """
 
+from datetime import date
 from typing import cast, get_args
 
 from lxml.etree import _Element
@@ -14,6 +15,7 @@ from ..models.txc_service import (
     TXCService,
     TXCStandardService,
 )
+from ..models.txc_service_flexible import TXCFlexibleService
 from ..models.txc_types import TransportModeT
 from .services_flexible import parse_flexible_service
 from .utils import find_section
@@ -161,22 +163,22 @@ def parse_standard_service(standard_service_xml: _Element) -> TXCStandardService
     )
 
 
-def parse_service(service_xml: _Element) -> TXCService | None:
+def parse_operating_period(service_xml: _Element) -> tuple[date | None, date | None]:
     """
-    Parse a single service
+    Parse the operating period from OperatingPeriod in a TXC Service
     """
-
     operating_period_xml = service_xml.find("OperatingPeriod")
     if operating_period_xml is not None:
         start_date = get_element_date(operating_period_xml, "StartDate")
         end_date = get_element_date(operating_period_xml, "EndDate")
-    else:
-        start_date = None
-        end_date = None
-    service_code = get_element_text(service_xml, "ServiceCode")
-    registered_operator_ref = get_element_text(service_xml, "RegisteredOperatorRef")
-    public_use = get_elem_bool_default(service_xml, "PublicUse", True)
+        return start_date, end_date
+    return None, None
 
+
+def parse_service_type(
+    service_xml: _Element,
+) -> tuple[TXCStandardService | None, TXCFlexibleService | None]:
+    """Parse standard or flexible service from service XML."""
     standard_service_xml = service_xml.find("StandardService")
     standard_service = (
         parse_standard_service(standard_service_xml)
@@ -184,21 +186,48 @@ def parse_service(service_xml: _Element) -> TXCService | None:
         else None
     )
 
-    mode: TransportModeT = (
-        cast(TransportModeT, text)
-        if (text := get_element_text(service_xml, "Mode")) in get_args(TransportModeT)
-        else "coach"
-    )
     flexible_service_xml = service_xml.find("FlexibleService")
     flexible_service = (
         parse_flexible_service(flexible_service_xml)
         if flexible_service_xml is not None
         else None
     )
+
+    return standard_service, flexible_service
+
+
+def parse_transport_mode(service_xml: _Element) -> TransportModeT:
+    """Parse transport mode from service XML."""
+    text = get_element_text(service_xml, "Mode")
+    return cast(TransportModeT, text) if text in get_args(TransportModeT) else "bus"
+
+
+def parse_lines_list(service_xml: _Element) -> list[TXCLine]:
+    """Parse lines from service XML."""
+    lines: list[TXCLine] = []
+    for line_xml in service_xml.findall("Lines/Line"):
+        line = parse_line(line_xml)
+        if line:
+            lines.append(line)
+    return lines
+
+
+def parse_service(service_xml: _Element) -> TXCService | None:
+    """
+    Parse a single TXC Service inside a Services block
+    """
+    start_date, end_date = parse_operating_period(service_xml)
+    service_code = get_element_text(service_xml, "ServiceCode")
+    registered_operator_ref = get_element_text(service_xml, "RegisteredOperatorRef")
+    public_use = get_elem_bool_default(service_xml, "PublicUse", True)
+
+    standard_service, flexible_service = parse_service_type(service_xml)
+    mode = parse_transport_mode(service_xml)
+
     if (
-        not service_code
-        or not registered_operator_ref
-        or not start_date
+        not isinstance(service_code, str)
+        or not isinstance(registered_operator_ref, str)
+        or not isinstance(start_date, date)
         or (not standard_service and not flexible_service)
     ):
         log.error(
@@ -211,11 +240,7 @@ def parse_service(service_xml: _Element) -> TXCService | None:
         )
         return None
 
-    lines = []
-    for line_xml in service_xml.findall("Lines/Line"):
-        line = parse_line(line_xml)
-        if line:
-            lines.append(line)
+    lines = parse_lines_list(service_xml)
 
     return TXCService(
         RevisionNumber=parse_xml_int(service_xml, "RevisionNumber") or 0,
