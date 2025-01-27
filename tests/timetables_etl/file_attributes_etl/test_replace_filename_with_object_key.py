@@ -60,7 +60,7 @@ def test_replace_filename_with_object_key_updates_filename(
 
 
 @pytest.mark.parametrize(
-    "s3_key,expected_error",
+    "s3_key",
     [
         pytest.param(
             None,
