@@ -18,11 +18,12 @@ log = get_logger()
 def parse_transport_mode(operator_xml: _Element) -> TransportModeT:
     """
     Return transport mode
+    Defaults to bus
     """
     primary_mode = get_element_text(operator_xml, "PrimaryMode")
     if primary_mode in get_args(TransportModeT):
         return cast(TransportModeT, primary_mode)
-    return "coach"
+    return "bus"
 
 
 def parse_licence_classification(

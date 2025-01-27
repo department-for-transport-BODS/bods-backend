@@ -45,7 +45,7 @@ class TXCOperator(BaseModel):
         description="Shall be provided, where this is different from the name given in NOC. ",
     )
     PrimaryMode: TransportModeT = Field(
-        default="coach",
+        default="bus",
         description=("The main mode the operator provides"),
     )
     Note: str | None = Field(
