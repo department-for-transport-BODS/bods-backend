@@ -1,5 +1,5 @@
 """
-SQLAlchemy Organisation Repos
+SQLAlchemy DQS Repos
 """
 
 from ..client import SqlDB

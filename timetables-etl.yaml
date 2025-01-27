@@ -662,7 +662,6 @@ Resources:
   ###############################
   DQSTriggerLambda:
     Type: AWS::Serverless::Function
-    ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-dqs-trigger-lambda'
       Description: Timetables ETL - FileProcessing - Trigger Data Quality Service
