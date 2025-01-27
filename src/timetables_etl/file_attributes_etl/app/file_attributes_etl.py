@@ -38,6 +38,52 @@ PARSER_CONFIG = TXCParserConfig(
 )
 
 
+def replace_filename_with_object_key(
+    file_attributes: OrganisationTXCFileAttributes, s3_file_key: str
+) -> OrganisationTXCFileAttributes:
+    """
+    The current BODs uses the file name of the XML on disk
+    However ideally it would be the filename from the Metadata
+    In the future we could have a check for this to ensure both are the same
+    However there are files with different FileName metadata to the disk name
+    So we this function matches the original bods implementation
+    """
+
+    try:
+        parts = s3_file_key.split("/")
+        if parts and s3_file_key.strip():
+            filename = parts[-1]
+            if filename:
+                file_attributes.filename = filename
+                log.info(
+                    "File Name Updated",
+                    original_filename=file_attributes.filename,
+                    new_filename=filename,
+                    s3_key=s3_file_key,
+                )
+            else:
+                log.warning(
+                    "Unable To Extract Filename From S3 Key",
+                    s3_key=s3_file_key,
+                    current_filename=file_attributes.filename,
+                )
+        else:
+            log.warning(
+                "Unable To Extract Filename From S3 Key",
+                s3_key=s3_file_key,
+                current_filename=file_attributes.filename,
+            )
+    except AttributeError:
+        log.error(
+            "Error Processing Filename",
+            s3_key=s3_file_key,
+            current_filename=file_attributes.filename,
+            exc_info=True,
+        )
+
+    return file_attributes
+
+
 def process_file_attributes(
     input_data: FileAttributesInputData, txc_data: TXCData, db: SqlDB
 ) -> OrganisationTXCFileAttributes:
@@ -50,6 +96,9 @@ def process_file_attributes(
         raise ValueError("Revision ID Not Found")
 
     file_attributes_data = make_txc_file_attributes(txc_data, revision)
+    file_attributes_data = replace_filename_with_object_key(
+        file_attributes_data, input_data.s3_file_key
+    )
     log.debug(
         "TXC File Attributes Processed", file_attributes_data=file_attributes_data
     )
