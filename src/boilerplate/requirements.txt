@@ -1,6 +1,6 @@
 boto3==1.35.92
 psycopg2-binary==2.9.10
-pydantic==2.10.4
+pydantic==2.10.6
 requests==2.32.3 
 SQLAlchemy==2.0.36
 urllib3==2.3.0
