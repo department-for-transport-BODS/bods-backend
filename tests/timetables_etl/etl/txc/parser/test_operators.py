@@ -17,16 +17,21 @@ from lxml import etree
     "xml_string, expected",
     [
         pytest.param(
-            "<Operator><PrimaryMode>bus</PrimaryMode></Operator>",
-            "bus",
-            id="Valid Transport Mode",
+            "<Operator><PrimaryMode>coach</PrimaryMode></Operator>",
+            "coach",
+            id="Bus Transport Mode",
+        ),
+        pytest.param(
+            "<Operator><PrimaryMode>rail</PrimaryMode></Operator>",
+            "rail",
+            id="Rail Transport Mode",
         ),
         pytest.param(
             "<Operator><PrimaryMode>ABCDEFG</PrimaryMode></Operator>",
-            "coach",
-            id="Incorrect Transport Mode Default to coach",
+            "bus",
+            id="Incorrect Transport Mode Default to bus",
         ),
-        pytest.param("<Operator></Operator>", "coach", id="Missing Transport Mode"),
+        pytest.param("<Operator></Operator>", "bus", id="Missing Transport Mode"),
     ],
 )
 def test_parse_transport_mode(xml_string: str, expected: TransportModeT):
@@ -105,7 +110,7 @@ def test_parse_licence_classification(
                 OperatorShortName="ABC Operator",
                 TradingName=None,
                 LicenceNumber=None,
-                PrimaryMode="coach",
+                PrimaryMode="bus",
                 OperatorNameOnLicence=None,
                 LicenceClassification=None,
             ),
@@ -259,7 +264,7 @@ def test_parse_operator(xml_string: str, expected: TXCOperator | None):
                     OperatorShortName="ABC Operator",
                     TradingName=None,
                     LicenceNumber=None,
-                    PrimaryMode="coach",
+                    PrimaryMode="bus",
                     OperatorNameOnLicence=None,
                     LicenceClassification=None,
                 ),
