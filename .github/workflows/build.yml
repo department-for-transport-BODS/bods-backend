@@ -98,8 +98,6 @@ jobs:
       - name: package and push code
         env:
           VERSION: ${{ needs.validation.outputs.VERSION }}
-          GIT_COMMIT: ${{ github.sha }}
-          GIT_REPO_URL: ${{ github.server_url }}/${{ github.repository }}.git
         run: |
           [[ $VERSION =~ ^v[0-9]+(\.[0-9]+){2}$ ]] && rc_path="bods-backend/releases/$VERSION" || rc_path="bods-backend/releases-dev/$VERSION"
 
