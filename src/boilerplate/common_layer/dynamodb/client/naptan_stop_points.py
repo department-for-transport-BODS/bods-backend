@@ -114,7 +114,6 @@ class NaptanStopPointDynamoDBClient(DynamoDB):
                 self._settings.DYNAMODB_TABLE_NAME, []
             )
 
-            # Deserialize each item correctly
             deserialized_items = []
             for raw_item in raw_items:
                 deserialized_item = {
