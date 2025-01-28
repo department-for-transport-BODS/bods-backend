@@ -34,8 +34,8 @@
         "DatasetRevisionId": "{% $datasetRevisionId %}"
       },
       "Assign": {
-        "s3Bucket": "{% $states.output.s3.bucket %}",
-        "s3Object": "{% $states.output.s3.object %}"
+        "s3Bucket": "{% $states.result.s3.bucket %}",
+        "s3Object": "{% $states.result.s3.object %}"
       },
       "Next": "InitializePipeline",
       "Catch": [
@@ -54,7 +54,7 @@
         "DatasetRevisionId": "{% $datasetRevisionId %}"
       },
       "Assign": {
-        "DatasetEtlTaskResultId": "{% $states.output.DatasetEtlTaskResultId %}"
+        "DatasetEtlTaskResultId": "{% $states.result.DatasetEtlTaskResultId %}"
       },
       "Output": {
         "initializePipeline": "{% $states.result %}",
@@ -84,7 +84,7 @@
         "DatasetType": "{% $datasetType %}"
       },
       "Assign": {
-        "ExtractedSubFolder": "{% $states.output.generatedPrefix %}"
+        "ExtractedSubFolder": "{% $states.result.generatedPrefix %}"
       },
       "Output": {
         "scanner": "{% $states.result %}",
@@ -208,8 +208,7 @@
               "DatasetRevisionId": "{% $datasetRevisionId %}"
             },
             "Assign": {
-              "fileAttributesEtl": "{% $states.output.s3.bucket %}",
-              "s3Object": "{% $states.output.s3.object %}"
+              "fileAttributesEtl": "{% $states.result.s3.bucket %}"
             },
             "Output": {
               "fileAttributesEtl": "{% $states.result.id %}"
@@ -315,7 +314,7 @@
         "MapRunArn": "{% $states.input.mapResults.MapRunArn %}",
         "DestinationBucket": "{% $states.input.detail.bucket.name %}",
         "OutputPrefix": "{% $states.input.scanner.body.generatedPrefix %}",
-        "DatasetRevisionId": "{% $states.input.detail.datasetRevisionId %}",
+        "DatasetRevisionId": "{% $datasetRevisionId %}",
         "OriginalObjectKey": "{% $states.input.detail.object.key %}"
       },
       "End": true,
