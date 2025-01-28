@@ -1,23 +1,76 @@
 {
   "StartAt": "ProcessInput",
+  "QueryLanguage": "JSONata",
   "States": {
     "ProcessInput": {
       "Type": "Pass",
-      "ResultPath": "$",
       "Parameters": {
-        "detail.$": "$[0].detail"
+        "detail": {
+          "inputDataSource": "{% $.inputDataSource %}",
+          "datasetRevisionId": "{% $.datasetRevisionId %}",
+          "datasetType": "{% $.datasetType %}",
+          "url": "{% $.url %}",
+          "bucket": {
+            "name": "{% $.bucket ? $.bucket : $S3Bucket %}"
+          },
+          "s3": "{% $.s3 %}"
+        }
       },
-      "Next": "InitializePipeline"
+      "Next": "RouteByInputType"
+    },
+    "RouteByInputType": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Condition": "{% $states.input.detail.inputDataSource = 'URL_DOWNLOAD' %}",
+          "Next": "DownloadDataset"
+        }
+      ],
+      "Default": "InitializePipeline"
+    },
+    "DownloadDataset": {
+      "Type": "Task",
+      "Resource": "${DownloadDatasetLambdaArn}",
+      "Arguments": {
+        "Url": "{% $states.input.detail.url %}",
+        "Bucket": "{% $states.input.detail.bucket.name %}",
+        "DatasetType": "{% $states.input.detail.datasetType %}",
+        "DatasetRevisionId": "{% $states.input.detail.datasetRevisionId %}"
+      },
+      "Output": {
+        "detail": {
+          "inputDataSource": "S3_FILE",
+          "datasetRevisionId": "{% $states.input.detail.datasetRevisionId %}",
+          "datasetType": "{% $states.input.detail.datasetType %}",
+          "bucket": {
+            "name": "{% $states.input.detail.bucket.name %}"
+          },
+          "object": {
+            "key": "{% $states.result.objectKey %}"
+          }
+        }
+      },
+      "Next": "InitializePipeline",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "ParentExceptionHandler",
+          "ResultPath": "$.errorInfo"
+        }
+      ]
     },
     "InitializePipeline": {
       "Type": "Task",
       "Resource": "${InitializePipelineLambdaArn}",
-      "Parameters": {
-        "Bucket.$": "$.detail.bucket.name",
-        "ObjectKey.$": "$.detail.object.key",
-        "DatasetRevisionId.$": "$.detail.datasetRevisionId"
+      "Arguments": {
+        "Bucket": "{% $states.input.detail.bucket.name %}",
+        "ObjectKey": "{% $states.input.detail.object.key %}",
+        "DatasetRevisionId": "{% $states.input.detail.datasetRevisionId %}"
       },
-      "ResultPath": "$.initializePipeline",
+      "Output": {
+        "initializePipeline": "{% $states.result %}",
+        "detail": "{% $states.input.detail %}"
+      },
       "Next": "ClamAvScanner",
       "Catch": [
         {
@@ -30,13 +83,16 @@
     "ClamAvScanner": {
       "Type": "Task",
       "Resource": "${ClamAvScannerLambdaArn}",
-      "Parameters": {
-        "Bucket.$": "$.detail.bucket.name",
-        "ObjectKey.$": "$.detail.object.key",
-        "DatasetRevisionId.$": "$.detail.datasetRevisionId",
-        "DatasetType.$": "$.detail.datasetType"
+      "Arguments": {
+        "Bucket": "{% $states.input.detail.bucket.name %}",
+        "ObjectKey": "{% $states.input.detail.object.key %}",
+        "DatasetRevisionId": "{% $states.input.detail.datasetRevisionId %}",
+        "DatasetType": "{% $states.input.detail.datasetType %}"
       },
-      "ResultPath": "$.scanner",
+      "Output": {
+        "scanner": "{% $states.result %}",
+        "detail": "{% $states.input.detail %}"
+      },
       "Next": "FileLevelProcessing",
       "Catch": [
         {
@@ -79,12 +135,17 @@
           "FileValidation": {
             "Type": "Task",
             "Resource": "${FileValidationLambdaArn}",
-            "Parameters": {
-              "Bucket.$": "$.Bucket",
-              "ObjectKey.$": "$.Key",
-              "DatasetRevisionId.$": "$.DatasetRevisionId"
+            "Arguments": {
+              "Bucket": "{% $.Bucket %}",
+              "ObjectKey": "{% $.Key %}",
+              "DatasetRevisionId": "{% $.DatasetRevisionId %}"
             },
-            "ResultPath": "$.fileValidation",
+            "Output": {
+              "fileValidation": "{% $states.result %}",
+              "Bucket": "{% $.Bucket %}",
+              "Key": "{% $.Key %}",
+              "DatasetRevisionId": "{% $.DatasetRevisionId %}"
+            },
             "Next": "SchemaCheck",
             "Catch": [
               {
@@ -97,13 +158,19 @@
           "SchemaCheck": {
             "Type": "Task",
             "Resource": "${SchemaCheckLambdaArn}",
-            "Parameters": {
-              "Bucket.$": "$.Bucket",
-              "ObjectKey.$": "$.Key",
-              "DatasetRevisionId.$": "$.DatasetRevisionId",
-              "ValidationResult.$": "$.fileValidation"
+            "Arguments": {
+              "Bucket": "{% $.Bucket %}",
+              "ObjectKey": "{% $.Key %}",
+              "DatasetRevisionId": "{% $.DatasetRevisionId %}",
+              "ValidationResult": "{% $.fileValidation %}"
             },
-            "ResultPath": "$.schemaCheck",
+            "Output": {
+              "schemaCheck": "{% $states.result %}",
+              "fileValidation": "{% $.fileValidation %}",
+              "Bucket": "{% $.Bucket %}",
+              "Key": "{% $.Key %}",
+              "DatasetRevisionId": "{% $.DatasetRevisionId %}"
+            },
             "Next": "PostSchemaCheck",
             "Catch": [
               {
@@ -116,13 +183,19 @@
           "PostSchemaCheck": {
             "Type": "Task",
             "Resource": "${PostSchemaCheckLambdaArn}",
-            "Parameters": {
-              "Bucket.$": "$.Bucket",
-              "ObjectKey.$": "$.Key",
-              "DatasetRevisionId.$": "$.DatasetRevisionId",
-              "SchemaCheckResult.$": "$.schemaCheck"
+            "Arguments": {
+              "Bucket": "{% $.Bucket %}",
+              "ObjectKey": "{% $.Key %}",
+              "DatasetRevisionId": "{% $.DatasetRevisionId %}",
+              "SchemaCheckResult": "{% $.schemaCheck %}"
             },
-            "ResultPath": "$.postSchemaCheck",
+            "Output": {
+              "postSchemaCheck": "{% $states.result %}",
+              "schemaCheck": "{% $.schemaCheck %}",
+              "Bucket": "{% $.Bucket %}",
+              "Key": "{% $.Key %}",
+              "DatasetRevisionId": "{% $.DatasetRevisionId %}"
+            },
             "Next": "FileAttributesEtl",
             "Catch": [
               {
@@ -154,13 +227,19 @@
           "PtiValidation": {
             "Type": "Task",
             "Resource": "${PtiValidationLambdaArn}",
-            "Parameters": {
-              "Bucket.$": "$.Bucket",
-              "ObjectKey.$": "$.Key",
-              "DatasetRevisionId.$": "$.DatasetRevisionId",
-              "TxcFileAttributesId.$": "$.fileAttributesEtl.id"
+            "Arguments": {
+              "Bucket": "{% $.Bucket %}",
+              "ObjectKey": "{% $.Key %}",
+              "DatasetRevisionId": "{% $.DatasetRevisionId %}",
+              "TxcFileAttributesId": "{% $.fileAttributesEtl.id %}"
             },
-            "ResultPath": "$.ptiValidation",
+            "Output": {
+              "ptiValidation": "{% $states.result %}",
+              "fileAttributesEtl": "{% $.fileAttributesEtl %}",
+              "Bucket": "{% $.Bucket %}",
+              "Key": "{% $.Key %}",
+              "DatasetRevisionId": "{% $.DatasetRevisionId %}"
+            },
             "Next": "ETLProcess",
             "Catch": [
               {
@@ -173,15 +252,19 @@
           "ETLProcess": {
             "Type": "Task",
             "Resource": "${ETLProcessLambdaArn}",
-            "Parameters": {
-              "Bucket.$": "$.Bucket",
-              "ObjectKey.$": "$.Key",
-              "DatasetRevisionId.$": "$.DatasetRevisionId",
-              "fileAttributesId.$": "$.fileAttributesEtl.id",
-              "DatasetEtlTaskResultId.$": "$.DatasetEtlTaskResultId",
-              "ValidationResult.$": "$.ptiValidation"
+            "Arguments": {
+              "Bucket": "{% $.Bucket %}",
+              "ObjectKey": "{% $.Key %}",
+              "DatasetRevisionId": "{% $.DatasetRevisionId %}",
+              "fileAttributesId": "{% $.fileAttributesEtl.id %}",
+              "DatasetEtlTaskResultId": "{% $.DatasetEtlTaskResultId %}",
+              "ValidationResult": "{% $.ptiValidation %}"
             },
-            "ResultPath": "$.etlProcess",
+            "Output": {
+              "etlProcess": "{% $states.result %}",
+              "fileAttributesEtl": "{% $.fileAttributesEtl %}",
+              "ptiValidation": "{% $.ptiValidation %}"
+            },
             "Next": "Success",
             "Catch": [
               {
@@ -197,10 +280,10 @@
           "ExceptionHandler": {
             "Type": "Task",
             "Resource": "${ExceptionHandlerLambdaArn}",
-            "Parameters": {
-              "Error.$": "$.errorInfo.Error",
-              "Cause.$": "States.StringToJson($.errorInfo.Cause)",
-              "DatasetEtlTaskResultId.$": "$.DatasetEtlTaskResultId"
+            "Arguments": {
+              "Error": "{% $.errorInfo.Error %}",
+              "Cause": "{% $parse($.errorInfo.Cause) %}",
+              "DatasetEtlTaskResultId": "{% $.DatasetEtlTaskResultId %}"
             },
             "Next": "Fail"
           },
@@ -217,23 +300,29 @@
     "GenerateOutputZip": {
       "Type": "Task",
       "Resource": "${GenerateOutputZipLambdaArn}",
-      "Parameters": {
-        "MapRunArn.$": "$.mapResults.MapRunArn",
-        "DestinationBucket.$": "$.detail.bucket.name",
-        "OutputPrefix.$": "$.scanner.body.generatedPrefix",
-        "DatasetRevisionId.$": "$.detail.datasetRevisionId",
-        "OriginalObjectKey.$": "$.detail.object.key"
+      "Arguments": {
+        "MapRunArn": "{% $states.input.mapResults.MapRunArn %}",
+        "DestinationBucket": "{% $states.input.detail.bucket.name %}",
+        "OutputPrefix": "{% $states.input.scanner.body.generatedPrefix %}",
+        "DatasetRevisionId": "{% $states.input.detail.datasetRevisionId %}",
+        "OriginalObjectKey": "{% $states.input.detail.object.key %}"
       },
-      "End": true
+      "End": true,
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "ParentExceptionHandler",
+          "ResultPath": "$.errorInfo"
+        }
+      ]
     },
-
     "ParentExceptionHandler": {
       "Type": "Task",
       "Resource": "${ExceptionHandlerLambdaArn}",
-      "Parameters": {
-        "Error.$": "$.errorInfo.Error",
-        "Cause.$": "States.StringToJson($.errorInfo.Cause)",
-        "DatasetEtlTaskResultId.$": "$.initializePipeline.DatasetEtlTaskResultId"
+      "Arguments": {
+        "Error": "{% $.errorInfo.Error %}",
+        "Cause": "{% $parse($.errorInfo.Cause) %}",
+        "DatasetEtlTaskResultId": "{% $.initializePipeline.DatasetEtlTaskResultId %}"
       },
       "End": true
     }
