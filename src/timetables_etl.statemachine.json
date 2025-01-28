@@ -10,7 +10,7 @@
         "datasetRevisionId": "{% $states.input.datasetRevisionId %}",
         "datasetType": "{% $states.input.datasetType %}",
         "url": "{% $exists($states.input.url) ? $states.input.url : null %}",
-        "s3Bucket": "{% $exists($states.input.s3.bucket) ? $states.input.s3.bucket : null %}",
+        "s3Bucket": "{% $exists($states.input.s3.bucket) ? $states.input.s3.bucket : $DefaultS3BucketName %}",
         "s3Object": "{% $exists($states.input.s3.object) ? $states.input.s3.object : null %}"
       }
     },
@@ -46,7 +46,10 @@
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
-          "Next": "ParentExceptionHandler"
+          "Next": "ParentExceptionHandler",
+          "Output": {
+            "errorInfo": "{% $states.errorOutput %}"
+          }
         }
       ]
     },

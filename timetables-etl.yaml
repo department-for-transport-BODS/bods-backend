@@ -175,7 +175,7 @@ Resources:
         ExceptionHandlerLambdaArn: !GetAtt ExceptionHandlerLambda.Arn
         ETLProcessLambdaArn: !GetAtt ETLProcessLambda.Arn
         GenerateOutputZipLambdaArn: !GetAtt GenerateOutputZipLambda.Arn
-        S3Bucket: !Sub 'bodds-${Environment}'
+        DefaultS3BucketName: !Sub 'bodds-${Environment}'
 
   ##########################################
   #### TIMETABLES STATE MACHINE TRIGGER ####

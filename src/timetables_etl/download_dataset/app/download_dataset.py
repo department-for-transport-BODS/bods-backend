@@ -13,10 +13,9 @@ from common_layer.database.models import OrganisationDatasetRevision
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.s3 import S3
-from download_dataset.app.db_operations import DT_FORMAT
 from structlog.stdlib import get_logger
 
-from .db_operations import get_and_validate_revision, update_dataset_revision
+from .db_operations import DT_FORMAT, get_and_validate_revision, update_dataset_revision
 from .file_download import download_file
 from .models import DownloadDatasetInputData, FileType
 

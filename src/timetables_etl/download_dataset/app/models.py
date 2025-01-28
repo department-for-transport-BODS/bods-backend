@@ -28,7 +28,7 @@ class DownloadDatasetInputData(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     s3_bucket_name: str = Field(alias="Bucket")
-    remote_dataset_url_link: AnyUrl = Field(alias="url")
+    remote_dataset_url_link: AnyUrl = Field(alias="Url")
     revision_id: int = Field(alias="DatasetRevisionId")
 
 
