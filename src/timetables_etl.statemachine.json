@@ -264,7 +264,7 @@
               "Bucket": "{% $Bucket %}",
               "ObjectKey": "{% $ObjectKey %}",
               "DatasetRevisionId": "{% $DatasetRevisionId %}",
-              "TxcFileAttributesId": "{% $fileAttributesEtl %}",
+              "fileAttributesId": "{% $fileAttributesEtl %}",
               "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}"
             },
             "Output": {
@@ -290,7 +290,7 @@
             "Arguments": {
               "Error": "{% $states.input.errorInfo.Error %}",
               "Cause": "{% $states.input.errorInfo.Cause %}",
-              "DatasetEtlTaskResultId": "$DatasetEtlTaskResultId"
+              "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}"
             }
           },
           "Fail": {
