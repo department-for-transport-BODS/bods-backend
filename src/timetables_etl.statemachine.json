@@ -160,8 +160,7 @@
             "Arguments": {
               "Bucket": "{% $states.input.Bucket %}",
               "ObjectKey": "{% $states.input.Key %}",
-              "DatasetRevisionId": "{% $states.input.DatasetRevisionId %}",
-              "ValidationResult": "{% $.fileValidation %}"
+              "DatasetRevisionId": "{% $states.input.DatasetRevisionId %}"
             },
             "Output": {
               "schemaCheck": "{% $states.result %}"
@@ -265,9 +264,8 @@
               "Bucket": "{% $states.input.Bucket %}",
               "ObjectKey": "{% $states.input.Key %}",
               "DatasetRevisionId": "{% $states.input.DatasetRevisionId %}",
-              "fileAttributesId": "{% $.fileAttributesEtl.id %}",
-              "DatasetEtlTaskResultId": "{% $.DatasetEtlTaskResultId %}",
-              "ValidationResult": "{% $.ptiValidation %}"
+              "TxcFileAttributesId": "{% $states.input.fileAttributesEtl.id %}",
+              "DatasetEtlTaskResultId": "{% $states.input.DatasetEtlTaskResultId %}"
             },
             "Output": {
               "etlProcess": "{% $states.result %}"
