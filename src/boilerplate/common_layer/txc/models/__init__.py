@@ -38,16 +38,25 @@ from .txc_serviced_organisation import (
     TXCServicedOrganisationDatePattern,
 )
 from .txc_stoppoint import (
+    AirStopClassificationStructure,
     AnnotatedStopPointRef,
+    BayStructure,
     BearingStructure,
+    BusAndCoachStationStructure,
     BusStopStructure,
     DescriptorStructure,
+    FerryStopClassificationStructure,
     LocationStructure,
     MarkedPointStructure,
+    MetroStopClassificationStructure,
+    OffStreetStructure,
     OnStreetStructure,
     PlaceStructure,
+    RailStopClassificationStructure,
     StopClassificationStructure,
+    TaxiStopClassificationStructure,
     TXCStopPoint,
+    UnmarkedPointStructure,
 )
 from .txc_types import ActivityT, LicenceClassificationT, TimingStatusT, TransportModeT
 from .txc_vehicle_journey import (

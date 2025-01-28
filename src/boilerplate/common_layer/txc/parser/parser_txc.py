@@ -6,7 +6,7 @@ from io import BytesIO
 from pathlib import Path
 
 from lxml import etree
-from lxml.etree import QName, _Element, _ElementTree, parse
+from lxml.etree import QName, _Element, _ElementTree, parse  # type: ignore
 from pydantic import BaseModel, Field
 from structlog.stdlib import get_logger
 
