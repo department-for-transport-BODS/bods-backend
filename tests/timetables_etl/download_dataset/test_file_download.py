@@ -2,17 +2,24 @@
 Test File Download Functions
 """
 
+from io import BytesIO
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
-from common_layer.exceptions.file_exceptions import DownloadException, DownloadTimeout
-from download_dataset.app.file_download import (
-    DataDownloader,
-    bytes_are_zip_file,
-    download_url_to_tempfile,
-    get_filetype_from_response,
+from common_layer.exceptions.file_exceptions import (
+    DownloadException,
+    DownloadTimeout,
+    UnknownFileType,
 )
+from download_dataset.app.file_download import (
+    FileDownloader,
+    download_file,
+    get_content_type,
+    is_zip_file,
+)
+from pydantic import AnyUrl
 
 from .conftest import create_valid_zip
 
@@ -27,14 +34,15 @@ from .conftest import create_valid_zip
     ],
     ids=["Valid ZIP file", "Invalid ZIP file", "Empty content", "XML content"],
 )
-def test_bytes_are_zip_file(test_input: bytes, expected: bool):
+def test_is_zip_file(test_input: bytes, expected: bool):
     """
-    Test the `bytes_are_zip_file` function with various input types.
+    Test the `is_zip_file` function with various input types.
     """
     if callable(test_input):
         test_input = test_input()
 
-    assert bytes_are_zip_file(test_input) is expected
+    file_obj = BytesIO(test_input)
+    assert is_zip_file(file_obj) is expected
 
 
 @pytest.mark.parametrize(
@@ -68,6 +76,7 @@ def test_bytes_are_zip_file(test_input: bytes, expected: bool):
             "application/json",
             b"{}",
             None,
+            marks=pytest.mark.xfail(raises=UnknownFileType),
             id="Unknown filetype",
         ),
         pytest.param(
@@ -80,6 +89,7 @@ def test_bytes_are_zip_file(test_input: bytes, expected: bool):
             "text/plain",
             b"regular content",
             None,
+            marks=pytest.mark.xfail(raises=UnknownFileType),
             id="Unsupported Content-Type",
         ),
         pytest.param(
@@ -90,25 +100,26 @@ def test_bytes_are_zip_file(test_input: bytes, expected: bool):
         ),
     ],
 )
-def test_get_filetype_from_response(
+def test_get_content_type(
     content_type: str,
     file_content: bytes,
     expected_filetype: str | None,
 ) -> None:
     """
-    Test filetype detection from HTTP responses using both Content-Type headers
-    and file content analysis. Verifies correct identification of:
-    - ZIP files (via header or content)
-    - XML files (via various content types)
-    - Unknown/unsupported file types
+    Test content type detection from HTTP responses using both Content-Type headers
+    and file content analysis.
     """
     mock_response = MagicMock()
     mock_response.headers = {"Content-Type": content_type}
-    mock_response.content = file_content
 
-    detected_filetype = get_filetype_from_response(mock_response)
+    file_obj = BytesIO(file_content)
 
-    assert detected_filetype == expected_filetype
+    if expected_filetype is None:
+        with pytest.raises(UnknownFileType):
+            get_content_type(mock_response, file_obj)
+    else:
+        detected_filetype = get_content_type(mock_response, file_obj)
+        assert detected_filetype == expected_filetype
 
 
 @pytest.mark.parametrize(
@@ -132,12 +143,26 @@ def test_get_filetype_from_response(
         ),
     ],
 )
-def test_downloader_get_failures(exception: requests.RequestException) -> None:
+def test_file_downloader_failures(exception: requests.RequestException) -> None:
     """
-    Test that DataDownloader.get() properly handles various request exceptions.
-    Tests timeout, connection, HTTP, and generic request errors.
+    Test that FileDownloader properly handles various request exceptions.
     """
-    downloader = DataDownloader("https://test.com")
-    with patch("requests.request", side_effect=exception):
+    downloader = FileDownloader()
+    with patch("requests.get", side_effect=exception):
         with pytest.raises((DownloadTimeout, DownloadException)):
-            downloader.get()
+            downloader.download_to_temp("https://test.com")
+
+
+def test_download_file_success():
+    """Test successful file download"""
+    mock_response = MagicMock()
+    mock_response.headers = {"Content-Type": "application/zip"}
+    mock_response.iter_content.return_value = [create_valid_zip()]
+
+    with patch("requests.get", return_value=mock_response) as mock_get:
+        mock_get.return_value.__enter__.return_value = mock_response
+        result = download_file(AnyUrl("https://test.com"))
+
+        assert isinstance(result.path, Path)
+        assert result.filetype == "zip"
+        assert result.size > 0
