@@ -11,9 +11,6 @@ from common_layer.txc.models import (
     LocationStructure,
     TXCStopPoint,
 )
-from common_layer.txc.models.txc_stoppoint.stoppoint_classification import (
-    StopClassificationStructure,
-)
 from common_layer.utils_location import osgrid_to_lonlat
 from geoalchemy2.shape import from_shape
 from shapely.geometry import Point
