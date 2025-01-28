@@ -9,18 +9,22 @@
         "inputDataSource": "{% $states.input.inputDataSource %}",
         "datasetRevisionId": "{% $states.input.datasetRevisionId %}",
         "datasetType": "{% $states.input.datasetType %}",
-        "url": "{% $states.input.url %}",
-        "s3Bucket": "{% $states.input.s3.bucket %}",
-        "s3Object": "{% $states.input.s3.object %}"
+        "url": "{% $exists($states.input.url) ? $states.input.url : null %}",
+        "s3Bucket": "{% $exists($states.input.s3.bucket) ? $states.input.s3.bucket : null %}",
+        "s3Object": "{% $exists($states.input.s3.object) ? $states.input.s3.object : null %}"
       }
     },
     "RouteByInputType": {
       "Type": "Choice",
-      "Default": "InitializePipeline",
+      "Default": "ParentFail",
       "Choices": [
         {
-          "Condition": "{% $inputDataSource= 'URL_DOWNLOAD' %}",
+          "Condition": "{% $inputDataSource = 'URL_DOWNLOAD' and $url != null %}",
           "Next": "DownloadDataset"
+        },
+        {
+          "Condition": "{% $inputDataSource = 'S3_FILE' and $s3Bucket != null and $s3Object != null %}",
+          "Next": "InitializePipeline"
         }
       ]
     },
@@ -294,14 +298,15 @@
             }
           },
           "Fail": {
-            "Type": "Fail"
+            "Type": "Fail",
+            "Comment": "Processing Single File in ETL Failed"
           }
         }
       }
     },
     "GenerateOutputZip": {
       "Type": "Task",
-      "End": true,
+      "Next": "Completed",
       "Resource": "${GenerateOutputZipLambdaArn}",
       "Arguments": {
         "MapRunArn": "{% $states.input.mapResults.MapRunArn %}",
@@ -322,13 +327,21 @@
     },
     "ParentExceptionHandler": {
       "Type": "Task",
-      "End": true,
+      "Next": "ParentFail",
       "Resource": "${ExceptionHandlerLambdaArn}",
       "Arguments": {
         "Error": "{% $states.input.errorInfo.Error %}",
         "Cause": "{% $parse($states.input.errorInfo.Cause) %}",
         "DatasetRevisionId": "{% $datasetRevisionId %}"
       }
+    },
+    "ParentFail": {
+      "Type": "Fail",
+      "Comment": "Entire ETL Pipeline Failed"
+    },
+    "Completed": {
+      "Type": "Succeed",
+      "Comment": "ETL Process Successully Completed"
     }
   }
 }
