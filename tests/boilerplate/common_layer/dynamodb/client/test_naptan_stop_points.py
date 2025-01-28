@@ -135,3 +135,24 @@ def test_get_stop_area_map(m_boto3_client):
         }
 
         m_get_by_atco_codes.assert_called_once_with(atco_codes)
+
+
+def test_get_stop_area_map_with_no_stop_areas(m_boto3_client):
+    """
+    Regression: test that get_stop_area_map handles the case that StopAreas is None
+    """
+    client = NaptanStopPointDynamoDBClient()
+
+    with patch.object(client, "get_by_atco_codes") as m_get_by_atco_codes:
+
+        stop_point_1 = TXCStopPoint.model_construct(AtcoCode="ATCO001", StopAreas=None)
+        m_get_by_atco_codes.return_value = ([stop_point_1], [])
+
+        atco_codes = ["ATCO001"]
+        stop_area_map = client.get_stop_area_map(atco_codes)
+
+        assert stop_area_map == {
+            "ATCO001": [],
+        }
+
+        m_get_by_atco_codes.assert_called_once_with(atco_codes)
