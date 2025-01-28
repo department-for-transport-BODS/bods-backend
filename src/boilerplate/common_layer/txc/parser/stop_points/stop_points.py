@@ -5,12 +5,7 @@ TXC StopPoints to Pydantic models
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
-from ...models import (
-    DescriptorStructure,
-    LocationStructure,
-    PlaceStructure,
-    TXCStopPoint,
-)
+from ...models import DescriptorStructure, TXCStopPoint
 from ...models.txc_data import AnnotatedStopPointRef
 from ..utils import find_section
 from ..utils_tags import (
@@ -21,6 +16,7 @@ from ..utils_tags import (
     get_element_texts,
 )
 from .parse_stop_point_classification import parse_stop_classification_structure
+from .parse_stop_point_location import parse_place_structure
 
 log = get_logger()
 
@@ -45,50 +41,6 @@ def parse_annotated_stop_point_ref(stop_xml: _Element) -> AnnotatedStopPointRef:
         Indicator=get_element_text(stop_xml, "Indicator"),
         LocalityName=get_element_text(stop_xml, "LocalityName"),
         LocalityQualifier=get_element_text(stop_xml, "LocalityQualifier"),
-    )
-
-
-def parse_location_structure(location_xml: _Element) -> LocationStructure | None:
-    """
-    StopPoints -> StopPoint -> Place -> Location
-    """
-    translation_xml = location_xml.find("Translation")
-    if translation_xml is not None:
-        return LocationStructure(
-            Longitude=get_element_text(translation_xml, "Longitude"),
-            Latitude=get_element_text(translation_xml, "Latitude"),
-            Easting=get_element_text(translation_xml, "Easting"),
-            Northing=get_element_text(translation_xml, "Northing"),
-        )
-    else:
-        return LocationStructure(
-            Longitude=get_element_text(location_xml, "Longitude"),
-            Latitude=get_element_text(location_xml, "Latitude"),
-            Easting=get_element_text(location_xml, "Easting"),
-            Northing=get_element_text(location_xml, "Northing"),
-        )
-
-
-def parse_place_structure(place_xml: _Element) -> PlaceStructure | None:
-    """
-    StopPoints -> StopPoint -> Place
-    """
-    location_xml = place_xml.find("Location")
-    location = (
-        parse_location_structure(location_xml) if location_xml is not None else None
-    )
-    locality_ref = get_element_text(place_xml, "NptgLocalityRef")
-    if not locality_ref or not location:
-        log.warning(
-            "Missing Place Structure Required Field",
-            locality_ref=locality_ref,
-            location=location,
-        )
-        return None
-    return PlaceStructure(
-        NptgLocalityRef=locality_ref,
-        LocalityName=get_element_text(place_xml, "LocalityName"),
-        Location=location,
     )
 
 

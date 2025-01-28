@@ -4,17 +4,16 @@ Parse OnStreet XML
 
 from typing import cast, get_args
 
-from common_layer.txc.models import (
+from lxml.etree import _Element  # type: ignore
+from structlog.stdlib import get_logger
+
+from ...models import (
     BusStopStructure,
     OnStreetStructure,
     TaxiStopClassificationStructure,
 )
-from common_layer.txc.models.txc_types import TIMING_STATUS_MAPPING
-from common_layer.txc.parser.utils_tags import get_element_text
-from lxml.etree import _Element  # type: ignore
-from structlog.stdlib import get_logger
-
-from ...models.txc_types import BusStopTypeT, TimingStatusT
+from ...models.txc_types import TIMING_STATUS_MAPPING, BusStopTypeT, TimingStatusT
+from ..utils_tags import get_element_text
 from .parse_stop_point_marked import (
     parse_marked_point_structure,
     parse_unmarked_point_structure,

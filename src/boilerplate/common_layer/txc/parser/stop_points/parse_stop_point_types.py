@@ -4,7 +4,6 @@ Stop Point Types
 
 from typing import cast, get_args
 
-from common_layer.txc.parser.utils_tags import get_element_text
 from lxml.etree import _Element  # type: ignore
 
 from ...models import (
@@ -16,6 +15,7 @@ from ...models import (
     RailStopClassificationStructure,
 )
 from ...models.txc_types import TIMING_STATUS_MAPPING, TimingStatusT
+from ..utils_tags import get_element_text
 
 
 def parse_bay_structure(bay_xml: _Element) -> BayStructure:
