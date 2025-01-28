@@ -4,7 +4,7 @@
   "States": {
     "ProcessInput": {
       "Type": "Pass",
-      "Parameters": {
+      "Assign": {
         "detail": {
           "inputDataSource": "{% $.inputDataSource %}",
           "datasetRevisionId": "{% $.datasetRevisionId %}",
@@ -104,24 +104,17 @@
     },
     "FileLevelProcessing": {
       "Type": "Map",
-      "Parameters": {
-        "DatasetRevisionId.$": "$.detail.datasetRevisionId",
-        "Bucket.$": "$.detail.bucket.name",
-        "Key.$": "$$.Map.Item.Value.Key",
-        "DatasetEtlTaskResultId.$": "$.initializePipeline.DatasetEtlTaskResultId",
-        "detail.$": "$.detail"
-      },
       "ItemReader": {
         "Resource": "arn:aws:states:::s3:listObjectsV2",
-        "Parameters": {
-          "Bucket.$": "$.detail.bucket.name",
-          "Prefix.$": "$.scanner.body.generatedPrefix"
+        "Arguments": {
+          "Bucket": "{% $states.input.detail.bucket.name %}",
+          "Prefix": "{% $states.input.scanner.body.generatedPrefix %}"
         }
       },
       "ResultWriter": {
         "Resource": "arn:aws:states:::s3:putObject",
-        "Parameters": {
-          "Bucket.$": "$.detail.bucket.name",
+        "Arguments": {
+          "Bucket": "{% $states.input.detail.bucket.name %}",
           "Prefix": "tt-etl-map-results"
         }
       },
@@ -151,7 +144,12 @@
               {
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
-                "ResultPath": "$.errorInfo"
+                "Output": {
+                  "errorInfo": {
+                    "Error": "{% $states.errorOutput.Error %}",
+                    "Cause": "{% $states.errorOutput.Cause %}"
+                  }
+                }
               }
             ]
           },
@@ -176,7 +174,12 @@
               {
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
-                "ResultPath": "$.errorInfo"
+                "Output": {
+                  "errorInfo": {
+                    "Error": "{% $states.errorOutput.Error %}",
+                    "Cause": "{% $states.errorOutput.Cause %}"
+                  }
+                }
               }
             ]
           },
@@ -201,26 +204,38 @@
               {
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
-                "ResultPath": "$.errorInfo"
+                "Output": {
+                  "errorInfo": {
+                    "Error": "{% $states.errorOutput.Error %}",
+                    "Cause": "{% $states.errorOutput.Cause %}"
+                  }
+                }
               }
             ]
           },
           "FileAttributesEtl": {
             "Type": "Task",
             "Resource": "${FileAttributesEtlLambdaArn}",
-            "Parameters": {
-              "Bucket.$": "$.Bucket",
-              "ObjectKey.$": "$.Key",
-              "DatasetRevisionId.$": "$.DatasetRevisionId",
-              "PostSchemaCheckResult.$": "$.postSchemaCheck"
+            "Arguments": {
+              "Bucket": "{% $.Bucket %}",
+              "ObjectKey": "{% $.Key %}",
+              "DatasetRevisionId": "{% $.DatasetRevisionId %}",
+              "PostSchemaCheckResult": "{% $.postSchemaCheck %}"
             },
-            "ResultPath": "$.fileAttributesEtl",
+            "Output": {
+              "fileAttributesEtl": "{% $states.result %}"
+            },
             "Next": "PtiValidation",
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
-                "ResultPath": "$.errorInfo"
+                "Output": {
+                  "errorInfo": {
+                    "Error": "{% $states.errorOutput.Error %}",
+                    "Cause": "{% $states.errorOutput.Cause %}"
+                  }
+                }
               }
             ]
           },
@@ -245,7 +260,12 @@
               {
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
-                "ResultPath": "$.errorInfo"
+                "Output": {
+                  "errorInfo": {
+                    "Error": "{% $states.errorOutput.Error %}",
+                    "Cause": "{% $states.errorOutput.Cause %}"
+                  }
+                }
               }
             ]
           },
@@ -270,7 +290,12 @@
               {
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
-                "ResultPath": "$.errorInfo"
+                "Output": {
+                  "errorInfo": {
+                    "Error": "{% $states.errorOutput.Error %}",
+                    "Cause": "{% $states.errorOutput.Cause %}"
+                  }
+                }
               }
             ]
           },
@@ -295,7 +320,11 @@
       "MaxConcurrency": 1000,
       "ToleratedFailurePercentage": 100,
       "Next": "GenerateOutputZip",
-      "ResultPath": "$.mapResults"
+      "Output": {
+        "mapResults": "{% $states.result %}",
+        "detail": "{% $states.input.detail %}",
+        "scanner": "{% $states.input.scanner %}"
+      }
     },
     "GenerateOutputZip": {
       "Type": "Task",
@@ -312,7 +341,12 @@
         {
           "ErrorEquals": ["States.ALL"],
           "Next": "ParentExceptionHandler",
-          "ResultPath": "$.errorInfo"
+          "Output": {
+            "errorInfo": {
+              "Error": "{% $states.errorOutput.Error %}",
+              "Cause": "{% $states.errorOutput.Cause %}"
+            }
+          }
         }
       ]
     },
@@ -320,9 +354,9 @@
       "Type": "Task",
       "Resource": "${ExceptionHandlerLambdaArn}",
       "Arguments": {
-        "Error": "{% $.errorInfo.Error %}",
-        "Cause": "{% $parse($.errorInfo.Cause) %}",
-        "DatasetEtlTaskResultId": "{% $.initializePipeline.DatasetEtlTaskResultId %}"
+        "Error": "{% $states.input.errorInfo.Error %}",
+        "Cause": "{% $states.input.errorInfo.Cause %}",
+        "DatasetEtlTaskResultId": "{% $states.input.initializePipeline.DatasetEtlTaskResultId %}"
       },
       "End": true
     }
