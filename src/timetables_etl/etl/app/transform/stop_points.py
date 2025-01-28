@@ -2,9 +2,7 @@
 Stop Point Information
 """
 
-from common_layer.database import SqlDB
 from common_layer.database.models import NaptanStopPoint
-from common_layer.database.repos import NaptanStopPointRepo
 from common_layer.dynamodb.client.naptan_stop_points import (
     NaptanStopPointDynamoDBClient,
 )

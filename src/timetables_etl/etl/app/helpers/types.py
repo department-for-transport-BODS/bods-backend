@@ -9,7 +9,6 @@ from common_layer.database.models import (
     TransmodelServicedOrganisations,
     TransmodelTracks,
 )
-from common_layer.txc.models.txc_stoppoint import TXCStopPoint
 
 TrackLookup: TypeAlias = dict[tuple[str, str], TransmodelTracks]
 ServicedOrgLookup: TypeAlias = dict[str, TransmodelServicedOrganisations]
