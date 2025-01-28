@@ -4,6 +4,7 @@
   "States": {
     "ProcessInput": {
       "Type": "Pass",
+      "Next": "RouteByInputType",
       "Assign": {
         "inputDataSource": "{% $states.input.inputDataSource %}",
         "datasetRevisionId": "{% $states.input.datasetRevisionId %}",
@@ -11,21 +12,21 @@
         "url": "{% $states.input.url %}",
         "s3Bucket": "{% $states.input.s3.bucket %}",
         "s3Object": "{% $states.input.s3.object %}"
-      },
-      "Next": "RouteByInputType"
+      }
     },
     "RouteByInputType": {
       "Type": "Choice",
+      "Default": "InitializePipeline",
       "Choices": [
         {
           "Condition": "{% $inputDataSource= 'URL_DOWNLOAD' %}",
           "Next": "DownloadDataset"
         }
-      ],
-      "Default": "InitializePipeline"
+      ]
     },
     "DownloadDataset": {
       "Type": "Task",
+      "Next": "InitializePipeline",
       "Resource": "${DownloadDatasetLambdaArn}",
       "Arguments": {
         "Url": "{% $url %}",
@@ -37,7 +38,7 @@
         "s3Bucket": "{% $states.result.s3.bucket %}",
         "s3Object": "{% $states.result.s3.object %}"
       },
-      "Next": "InitializePipeline",
+
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
@@ -47,6 +48,7 @@
     },
     "InitializePipeline": {
       "Type": "Task",
+      "Next": "ClamAvScanner",
       "Resource": "${InitializePipelineLambdaArn}",
       "Arguments": {
         "Bucket": "{% $s3Bucket %}",
@@ -56,7 +58,6 @@
       "Assign": {
         "DatasetEtlTaskResultId": "{% $states.result.DatasetEtlTaskResultId %}"
       },
-      "Next": "ClamAvScanner",
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
@@ -72,6 +73,7 @@
     },
     "ClamAvScanner": {
       "Type": "Task",
+      "Next": "FileLevelProcessing",
       "Resource": "${ClamAvScannerLambdaArn}",
       "Arguments": {
         "Bucket": "{% $s3Bucket %}",
@@ -80,9 +82,9 @@
         "DatasetType": "{% $datasetType %}"
       },
       "Assign": {
-        "ExtractedSubFolder": "{% $states.result.generatedPrefix %}"
+        "ExtractedSubFolder": "{% $states.result.body.generatedPrefix %}"
       },
-      "Next": "FileLevelProcessing",
+
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
@@ -92,6 +94,12 @@
     },
     "FileLevelProcessing": {
       "Type": "Map",
+      "Next": "GenerateOutputZip",
+      "MaxConcurrency": 1000,
+      "ToleratedFailurePercentage": 100,
+      "Output": {
+        "mapResults": "{% $states.result %}"
+      },
       "ItemSelector": {
         "mapS3Object": "{% $states.context.Map.Item.Value.Key %}",
         "mapDatasetRevisionId": "{% $datasetRevisionId %}",
@@ -108,7 +116,7 @@
       "ResultWriter": {
         "Resource": "arn:aws:states:::s3:putObject",
         "Arguments": {
-          "Bucket": "{% $states.input.detail.bucket.name %}",
+          "Bucket": "{% $s3Bucket %}",
           "Prefix": "tt-etl-map-results"
         }
       },
@@ -123,7 +131,7 @@
             "Type": "Pass",
             "Next": "FileValidation",
             "Assign": {
-              "Bucket": "{% $$states.input.mapS3Bucket %}",
+              "Bucket": "{% $states.input.mapS3Bucket %}",
               "ObjectKey": "{% $states.input.mapS3Object %}",
               "DatasetRevisionId": "{% $states.input.mapDatasetRevisionId %}",
               "datasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}"
@@ -291,18 +299,11 @@
             "Type": "Fail"
           }
         }
-      },
-      "MaxConcurrency": 1000,
-      "ToleratedFailurePercentage": 100,
-      "Next": "GenerateOutputZip",
-      "Output": {
-        "mapResults": "{% $states.result %}",
-        "detail": "{% $states.input.detail %}",
-        "scanner": "{% $states.input.scanner %}"
       }
     },
     "GenerateOutputZip": {
       "Type": "Task",
+      "End": true,
       "Resource": "${GenerateOutputZipLambdaArn}",
       "Arguments": {
         "MapRunArn": "{% $states.input.mapResults.MapRunArn %}",
@@ -311,7 +312,6 @@
         "DatasetRevisionId": "{% $datasetRevisionId %}",
         "OriginalObjectKey": "{% $states.input.detail.object.key %}"
       },
-      "End": true,
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
@@ -325,13 +325,13 @@
     },
     "ParentExceptionHandler": {
       "Type": "Task",
+      "End": true,
       "Resource": "${ExceptionHandlerLambdaArn}",
       "Arguments": {
         "Error": "{% $states.input.Error %}",
         "Cause": "{% $states.input.Cause %}",
         "DatasetRevisionId": "{% $datasetRevisionId %}"
-      },
-      "End": true
+      }
     }
   }
 }
