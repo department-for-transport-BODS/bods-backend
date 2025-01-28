@@ -289,7 +289,7 @@
             "Resource": "${ExceptionHandlerLambdaArn}",
             "Arguments": {
               "Error": "{% $states.input.errorInfo.Error %}",
-              "Cause": "{% $states.input.errorInfo.Cause %}",
+              "Cause": "{% $parse($states.input.errorInfo.Cause) %}",
               "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}"
             }
           },
@@ -326,7 +326,7 @@
       "Resource": "${ExceptionHandlerLambdaArn}",
       "Arguments": {
         "Error": "{% $states.input.errorInfo.Error %}",
-        "Cause": "{% $states.input.errorInfo.Cause %}",
+        "Cause": "{% $parse($states.input.errorInfo.Cause) %}",
         "DatasetRevisionId": "{% $datasetRevisionId %}"
       }
     }
