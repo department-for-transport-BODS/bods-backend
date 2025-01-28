@@ -8,14 +8,14 @@ from common_layer.txc.parser.utils_tags import get_element_text
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
-from ...models.txc_stoppoint import (
+from ...models import (
     BearingStructure,
     BusStopStructure,
     MarkedPointStructure,
     OnStreetStructure,
     StopClassificationStructure,
-    UnmarkedPointStructure,
 )
+from ...models.txc_stoppoint import UnmarkedPointStructure
 from ...models.txc_types import BusStopTypeT, CompassPointT, TimingStatusT, TXCStopTypeT
 
 log = get_logger()

@@ -5,13 +5,13 @@ TXC StopPoints to Pydantic models
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
-from ...models.txc_data import AnnotatedStopPointRef
-from ...models.txc_stoppoint import (
+from ...models import (
     DescriptorStructure,
     LocationStructure,
     PlaceStructure,
     TXCStopPoint,
 )
+from ...models.txc_data import AnnotatedStopPointRef
 from ..utils import find_section
 from ..utils_tags import (
     get_element_bool,

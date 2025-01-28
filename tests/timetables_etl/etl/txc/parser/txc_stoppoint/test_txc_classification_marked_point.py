@@ -3,8 +3,11 @@ Test MarkedPoint
 """
 
 import pytest
-from common_layer.txc.models import BearingStructure, MarkedPointStructure
 from common_layer.txc.models.txc_stoppoint import UnmarkedPointStructure
+from common_layer.txc.models.txc_stoppoint.stop_point_marked import (
+    BearingStructure,
+    MarkedPointStructure,
+)
 from common_layer.txc.parser.stop_points import (
     parse_bearing_structure,
     parse_marked_point_structure,

@@ -3,13 +3,15 @@ Parse Bus type StopClassification
 """
 
 import pytest
-from common_layer.txc.models import (
+from common_layer.txc.models.txc_stoppoint import UnmarkedPointStructure
+from common_layer.txc.models.txc_stoppoint.stop_point_marked import (
     BearingStructure,
-    BusStopStructure,
     MarkedPointStructure,
+)
+from common_layer.txc.models.txc_stoppoint.stop_point_types_bus import BusStopStructure
+from common_layer.txc.models.txc_stoppoint.stoppoint_classification import (
     OnStreetStructure,
 )
-from common_layer.txc.models.txc_stoppoint import UnmarkedPointStructure
 from common_layer.txc.parser.stop_points import (
     parse_bus_stop_structure,
     parse_on_street_structure,

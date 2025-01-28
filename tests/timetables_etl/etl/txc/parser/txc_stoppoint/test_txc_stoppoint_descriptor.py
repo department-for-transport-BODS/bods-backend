@@ -3,7 +3,9 @@ Test Parsing TXC StopPoint Descriptor
 """
 
 import pytest
-from common_layer.txc.models import DescriptorStructure
+from common_layer.txc.models.txc_stoppoint.stop_point_descriptor import (
+    DescriptorStructure,
+)
 from common_layer.txc.parser.stop_points import parse_descriptor_structure
 from lxml.etree import fromstring
 

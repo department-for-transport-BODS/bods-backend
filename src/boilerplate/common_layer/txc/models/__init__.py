@@ -37,17 +37,14 @@ from .txc_serviced_organisation import (
     TXCServicedOrganisationAnnotatedNptgLocalityRef,
     TXCServicedOrganisationDatePattern,
 )
-from .txc_stoppoint import (
-    AnnotatedStopPointRef,
-    BearingStructure,
-    BusStopStructure,
-    DescriptorStructure,
-    LocationStructure,
-    MarkedPointStructure,
+from .txc_stoppoint import AnnotatedStopPointRef, TXCStopPoint
+from .txc_stoppoint.stop_point_descriptor import DescriptorStructure
+from .txc_stoppoint.stop_point_location import LocationStructure, PlaceStructure
+from .txc_stoppoint.stop_point_marked import BearingStructure, MarkedPointStructure
+from .txc_stoppoint.stop_point_types_bus import BusStopStructure
+from .txc_stoppoint.stoppoint_classification import (
     OnStreetStructure,
-    PlaceStructure,
     StopClassificationStructure,
-    TXCStopPoint,
 )
 from .txc_types import ActivityT, LicenceClassificationT, TimingStatusT, TransportModeT
 from .txc_vehicle_journey import (

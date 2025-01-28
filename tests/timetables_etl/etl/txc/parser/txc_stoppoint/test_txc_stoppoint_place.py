@@ -3,7 +3,10 @@ Test Parsing Place
 """
 
 import pytest
-from common_layer.txc.models import LocationStructure, PlaceStructure
+from common_layer.txc.models.txc_stoppoint.stop_point_location import (
+    LocationStructure,
+    PlaceStructure,
+)
 from common_layer.txc.parser.stop_points import (
     parse_location_structure,
     parse_place_structure,

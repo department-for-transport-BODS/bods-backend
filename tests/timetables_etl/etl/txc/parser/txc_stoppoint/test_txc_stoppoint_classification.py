@@ -3,10 +3,12 @@ Test Parsing StopClassification
 """
 
 import pytest
-from common_layer.txc.models import (
+from common_layer.txc.models.txc_stoppoint.stop_point_marked import (
     BearingStructure,
-    BusStopStructure,
     MarkedPointStructure,
+)
+from common_layer.txc.models.txc_stoppoint.stop_point_types_bus import BusStopStructure
+from common_layer.txc.models.txc_stoppoint.stoppoint_classification import (
     OnStreetStructure,
     StopClassificationStructure,
 )

@@ -3,16 +3,22 @@ TXC Stoppoint XML to Pydantic Test
 """
 
 import pytest
-from common_layer.txc.models import (
-    BearingStructure,
-    BusStopStructure,
+from common_layer.txc.models import TXCStopPoint
+from common_layer.txc.models.txc_stoppoint.stop_point_descriptor import (
     DescriptorStructure,
+)
+from common_layer.txc.models.txc_stoppoint.stop_point_location import (
     LocationStructure,
-    MarkedPointStructure,
-    OnStreetStructure,
     PlaceStructure,
+)
+from common_layer.txc.models.txc_stoppoint.stop_point_marked import (
+    BearingStructure,
+    MarkedPointStructure,
+)
+from common_layer.txc.models.txc_stoppoint.stop_point_types_bus import BusStopStructure
+from common_layer.txc.models.txc_stoppoint.stoppoint_classification import (
+    OnStreetStructure,
     StopClassificationStructure,
-    TXCStopPoint,
 )
 from common_layer.txc.parser.stop_points import parse_txc_stop_point
 from lxml.etree import fromstring
