@@ -63,8 +63,8 @@
           "ErrorEquals": ["States.ALL"],
           "Next": "ParentExceptionHandler",
           "Output": {
-            "Error": "{% $states.errorOutput.Error %}",
-            "Cause": "{% $states.errorOutput.Cause %}"
+            "Error": "{% $states.errorOutput %}",
+            "Cause": "{% $states.errorOutput %}"
           }
         }
       ]
@@ -153,8 +153,8 @@
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
                 "Output": {
-                  "Error": "{% $states.errorOutput.Error %}",
-                  "Cause": "{% $states.errorOutput.Cause %}"
+                  "Error": "{% $states.errorOutput %}",
+                  "Cause": "{% $states.errorOutput %}"
                 }
               }
             ]
@@ -177,8 +177,8 @@
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
                 "Output": {
-                  "Error": "{% $states.errorOutput.Error %}",
-                  "Cause": "{% $states.errorOutput.Cause %}"
+                  "Error": "{% $states.errorOutput %}",
+                  "Cause": "{% $states.errorOutput %}"
                 }
               }
             ]
@@ -200,8 +200,8 @@
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
                 "Output": {
-                  "Error": "{% $states.errorOutput.Error %}",
-                  "Cause": "{% $states.errorOutput.Cause %}"
+                  "Error": "{% $states.errorOutput %}",
+                  "Cause": "{% $states.errorOutput %}"
                 }
               }
             ]
@@ -227,8 +227,8 @@
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
                 "Output": {
-                  "Error": "{% $states.errorOutput.Error %}",
-                  "Cause": "{% $states.errorOutput.Cause %}"
+                  "Error": "{% $states.errorOutput %}",
+                  "Cause": "{% $states.errorOutput %}"
                 }
               }
             ]
@@ -252,8 +252,8 @@
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
                 "Output": {
-                  "Error": "{% $states.errorOutput.Error %}",
-                  "Cause": "{% $states.errorOutput.Cause %}"
+                  "Error": "{% $states.errorOutput %}",
+                  "Cause": "{% $states.errorOutput %}"
                 }
               }
             ]
@@ -277,8 +277,8 @@
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
                 "Output": {
-                  "Error": "{% $states.errorOutput.Error %}",
-                  "Cause": "{% $states.errorOutput.Cause %}"
+                  "Error": "{% $states.errorOutput %}",
+                  "Cause": "{% $states.errorOutput %}"
                 }
               }
             ]
@@ -318,8 +318,8 @@
           "ErrorEquals": ["States.ALL"],
           "Next": "ParentExceptionHandler",
           "Output": {
-            "Error": "{% $states.errorOutput.Error %}",
-            "Cause": "{% $states.errorOutput.Cause %}"
+            "Error": "{% $states.errorOutput %}",
+            "Cause": "{% $states.errorOutput %}"
           }
         }
       ]
