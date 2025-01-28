@@ -56,10 +56,6 @@
       "Assign": {
         "DatasetEtlTaskResultId": "{% $states.result.DatasetEtlTaskResultId %}"
       },
-      "Output": {
-        "initializePipeline": "{% $states.result %}",
-        "detail": "{% $states.input.detail %}"
-      },
       "Next": "ClamAvScanner",
       "Catch": [
         {
@@ -67,8 +63,8 @@
           "Next": "ParentExceptionHandler",
           "Output": {
             "errorInfo": {
-              "Error": "{% $error %}",
-              "Cause": "{% $cause %}"
+              "Error": "$states.errorOutput.Error",
+              "Cause": "$states.errorOutput.Cause"
             }
           }
         }
@@ -85,10 +81,6 @@
       },
       "Assign": {
         "ExtractedSubFolder": "{% $states.result.generatedPrefix %}"
-      },
-      "Output": {
-        "scanner": "{% $states.result %}",
-        "detail": "{% $states.input.detail %}"
       },
       "Next": "FileLevelProcessing",
       "Catch": [
@@ -155,10 +147,8 @@
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
                 "Output": {
-                  "errorInfo": {
-                    "Error": "$states.errorOutput.Error",
-                    "Cause": "$states.errorOutput.Cause"
-                  }
+                  "Error": "$states.errorOutput.Error",
+                  "Cause": "$states.errorOutput.Cause"
                 }
               }
             ]
@@ -180,10 +170,8 @@
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
                 "Output": {
-                  "errorInfo": {
-                    "Error": "$states.errorOutput.Error",
-                    "Cause": "$states.errorOutput.Cause"
-                  }
+                  "Error": "$states.errorOutput.Error",
+                  "Cause": "$states.errorOutput.Cause"
                 }
               }
             ]
@@ -205,10 +193,8 @@
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
                 "Output": {
-                  "errorInfo": {
-                    "Error": "$states.errorOutput.Error",
-                    "Cause": "$states.errorOutput.Cause"
-                  }
+                  "Error": "$states.errorOutput.Error",
+                  "Cause": "$states.errorOutput.Cause"
                 }
               }
             ]
@@ -233,10 +219,8 @@
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
                 "Output": {
-                  "errorInfo": {
-                    "Error": "$states.errorOutput.Error",
-                    "Cause": "$states.errorOutput.Cause"
-                  }
+                  "Error": "$states.errorOutput.Error",
+                  "Cause": "$states.errorOutput.Cause"
                 }
               }
             ]
@@ -259,10 +243,8 @@
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
                 "Output": {
-                  "errorInfo": {
-                    "Error": "$states.errorOutput.Error",
-                    "Cause": "$states.errorOutput.Cause"
-                  }
+                  "Error": "$states.errorOutput.Error",
+                  "Cause": "$states.errorOutput.Cause"
                 }
               }
             ]
@@ -275,7 +257,7 @@
               "ObjectKey": "{% $ObjectKey %}",
               "DatasetRevisionId": "{% $DatasetRevisionId %}",
               "TxcFileAttributesId": "{% $fileAttributesEtl %}",
-              "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultIdd %}"
+              "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}"
             },
             "Output": {
               "etlProcess": "{% $states.result %}"
@@ -286,10 +268,8 @@
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
                 "Output": {
-                  "errorInfo": {
-                    "Error": "$states.errorOutput.Error",
-                    "Cause": "$states.errorOutput.Cause"
-                  }
+                  "Error": "$states.errorOutput.Error",
+                  "Cause": "$states.errorOutput.Cause"
                 }
               }
             ]
@@ -337,10 +317,8 @@
           "ErrorEquals": ["States.ALL"],
           "Next": "ParentExceptionHandler",
           "Output": {
-            "errorInfo": {
-              "Error": "{% $error %}",
-              "Cause": "{% $cause %}"
-            }
+            "Error": "$states.errorOutput.Error",
+            "Cause": "$states.errorOutput.Cause"
           }
         }
       ]
@@ -349,8 +327,8 @@
       "Type": "Task",
       "Resource": "${ExceptionHandlerLambdaArn}",
       "Arguments": {
-        "Error": "{% $states.input.errorInfo.Error %}",
-        "Cause": "{% $states.input.errorInfo.Cause %}",
+        "Error": "{% $states.input.Error %}",
+        "Cause": "{% $states.input.Cause %}",
         "DatasetRevisionId": "{% $datasetRevisionId %}"
       },
       "End": true
