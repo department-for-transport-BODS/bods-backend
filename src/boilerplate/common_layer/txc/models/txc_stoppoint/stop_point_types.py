@@ -128,3 +128,21 @@ class TaxiStopClassificationStructure(BaseModel):
             description="[STR] The head of a shared taxi rank.",
         ),
     ] = False
+
+
+class AirStopClassificationStructure(BaseModel):
+    """
+    Air Stops
+    """
+
+    Entrance: Annotated[
+        bool,
+        Field(default=False, description="[AIR] Airport entrance."),
+    ] = False
+    AccessArea: Annotated[
+        bool,
+        Field(
+            default=False,
+            description="[GAT] Airport interchange area",
+        ),
+    ] = False

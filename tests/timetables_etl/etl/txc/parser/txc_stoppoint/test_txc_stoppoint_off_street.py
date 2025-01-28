@@ -4,6 +4,7 @@ Test Parsing OffStreet
 
 import pytest
 from common_layer.txc.models.txc_stoppoint import (
+    AirStopClassificationStructure,
     BayStructure,
     BusAndCoachStationStructure,
     FerryStopClassificationStructure,
@@ -116,6 +117,28 @@ from lxml.etree import fromstring
                 Metro=MetroStopClassificationStructure(Entrance=True, AccessArea=True)
             ),
             id="Metro Station with Multiple Elements",
+        ),
+        pytest.param(
+            """
+            <OffStreet>
+                <Air>
+                    <Entrance />
+                </Air>
+            </OffStreet>
+            """,
+            OffStreetStructure(Air=AirStopClassificationStructure(Entrance=True)),
+            id="Airport Entrance",
+        ),
+        pytest.param(
+            """
+            <OffStreet>
+                <Air>
+                    <AccessArea />
+                </Air>
+            </OffStreet>
+            """,
+            OffStreetStructure(Air=AirStopClassificationStructure(AccessArea=True)),
+            id="Airport AccessArea",
         ),
         pytest.param(
             """

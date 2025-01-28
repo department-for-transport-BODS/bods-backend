@@ -7,6 +7,7 @@ from structlog.stdlib import get_logger
 
 from ...models.txc_stoppoint import OffStreetStructure
 from .parse_stop_point_types import (
+    parse_air_structure,
     parse_bus_and_coach_structure,
     parse_ferry_structure,
     parse_metro_structure,
@@ -41,6 +42,12 @@ def parse_off_street_structure(off_street_xml: _Element) -> OffStreetStructure |
         metro = parse_metro_structure(metro_xml)
         if metro:
             return OffStreetStructure(Metro=metro)
+
+    air_xml = off_street_xml.find("Air")
+    if air_xml is not None:
+        air = parse_air_structure(air_xml)
+        if air:
+            return OffStreetStructure(Air=air)
 
     log.warning("No supported OffStreet structure found", off_street_xml=off_street_xml)
     return None

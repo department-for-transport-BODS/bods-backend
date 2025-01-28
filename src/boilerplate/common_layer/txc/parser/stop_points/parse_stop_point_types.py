@@ -8,6 +8,7 @@ from common_layer.txc.parser.utils_tags import get_element_text
 from lxml.etree import _Element  # type: ignore
 
 from ...models import (
+    AirStopClassificationStructure,
     BayStructure,
     BusAndCoachStationStructure,
     FerryStopClassificationStructure,
@@ -88,3 +89,19 @@ def parse_metro_structure(
     return MetroStopClassificationStructure(
         Entrance=entrance, Platform=platform, AccessArea=access_area
     )
+
+
+def parse_air_structure(
+    metro_xml: _Element,
+) -> AirStopClassificationStructure | None:
+    """Parse the Air structure within the OffStreet section."""
+    entrance_xml = metro_xml.find("Entrance")
+    access_area_xml = metro_xml.find("AccessArea")
+
+    entrance = entrance_xml is not None
+    access_area = access_area_xml is not None
+
+    if not (entrance or access_area):
+        return None
+
+    return AirStopClassificationStructure(Entrance=entrance, AccessArea=access_area)

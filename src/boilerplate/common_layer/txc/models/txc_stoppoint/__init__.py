@@ -10,6 +10,7 @@ from .stop_point_marked import (
     UnmarkedPointStructure,
 )
 from .stop_point_types import (
+    AirStopClassificationStructure,
     BayStructure,
     BusAndCoachStationStructure,
     FerryStopClassificationStructure,
@@ -45,5 +46,6 @@ __all__ = [
     "FerryStopClassificationStructure",
     "RailStopClassificationStructure",
     "MetroStopClassificationStructure",
+    "AirStopClassificationStructure",
     "TaxiStopClassificationStructure",
 ]

@@ -38,6 +38,7 @@ from .txc_serviced_organisation import (
     TXCServicedOrganisationDatePattern,
 )
 from .txc_stoppoint import (
+    AirStopClassificationStructure,
     AnnotatedStopPointRef,
     BayStructure,
     BearingStructure,

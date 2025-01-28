@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from ..txc_types import STOP_CLASSIFICATION_STOP_TYPE_MAPPING, TXCStopTypeT
 from .stop_point_types import (
+    AirStopClassificationStructure,
     BusAndCoachStationStructure,
     FerryStopClassificationStructure,
     MetroStopClassificationStructure,
@@ -50,6 +51,10 @@ class OffStreetStructure(BaseModel):
     Metro: Annotated[
         MetroStopClassificationStructure | None,
         Field(default=None, description="A Metro Stop"),
+    ] = None
+    Air: Annotated[
+        AirStopClassificationStructure | None,
+        Field(default=None, description="An Airport Stop"),
     ] = None
 
 
