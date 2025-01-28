@@ -134,7 +134,7 @@
               "Bucket": "{% $$states.input.mapS3Bucket %}",
               "ObjectKey": "{% $states.input.mapS3Object %}",
               "DatasetRevisionId": "{% $states.input.mapDatasetRevisionId %}",
-              "DatasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}"
+              "datasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}"
             }
           },
 
@@ -275,7 +275,7 @@
               "ObjectKey": "{% $ObjectKey %}",
               "DatasetRevisionId": "{% $DatasetRevisionId %}",
               "TxcFileAttributesId": "{% $fileAttributesEtl %}",
-              "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultIdd %}"
+              "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultIdd %}"
             },
             "Output": {
               "etlProcess": "{% $states.result %}"
