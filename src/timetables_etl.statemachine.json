@@ -63,8 +63,7 @@
           "ErrorEquals": ["States.ALL"],
           "Next": "ParentExceptionHandler",
           "Output": {
-            "Error": "{% $states.errorOutput %}",
-            "Cause": "{% $states.errorOutput %}"
+            "errorInfo": "{% $states.errorOutput %}"
           }
         }
       ]
@@ -86,7 +85,10 @@
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
-          "Next": "ParentExceptionHandler"
+          "Next": "ParentExceptionHandler",
+          "Output": {
+            "errorInfo": "{% $states.errorOutput %}"
+          }
         }
       ]
     },
@@ -153,8 +155,7 @@
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
                 "Output": {
-                  "Error": "{% $states.errorOutput %}",
-                  "Cause": "{% $states.errorOutput %}"
+                  "errorInfo": "{% $states.errorOutput %}"
                 }
               }
             ]
@@ -200,8 +201,7 @@
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
                 "Output": {
-                  "Error": "{% $states.errorOutput %}",
-                  "Cause": "{% $states.errorOutput %}"
+                  "errorInfo": "{% $states.errorOutput %}"
                 }
               }
             ]
@@ -216,7 +216,7 @@
               "DatasetRevisionId": "{% $DatasetRevisionId %}"
             },
             "Assign": {
-              "fileAttributesEtl": "{% $states.result.s3.bucket %}"
+              "fileAttributesEtl": "{% $states.result.id %}"
             },
             "Output": {
               "fileAttributesEtl": "{% $states.result.id %}"
@@ -227,8 +227,7 @@
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
                 "Output": {
-                  "Error": "{% $states.errorOutput %}",
-                  "Cause": "{% $states.errorOutput %}"
+                  "errorInfo": "{% $states.errorOutput %}"
                 }
               }
             ]
@@ -252,8 +251,7 @@
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
                 "Output": {
-                  "Error": "{% $states.errorOutput %}",
-                  "Cause": "{% $states.errorOutput %}"
+                  "errorInfo": "{% $states.errorOutput %}"
                 }
               }
             ]
@@ -277,8 +275,7 @@
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
                 "Output": {
-                  "Error": "{% $states.errorOutput %}",
-                  "Cause": "{% $states.errorOutput %}"
+                  "errorInfo": "{% $states.errorOutput %}"
                 }
               }
             ]
@@ -291,8 +288,8 @@
             "Next": "Fail",
             "Resource": "${ExceptionHandlerLambdaArn}",
             "Arguments": {
-              "Error": "$states.input.Error",
-              "Cause": "$states.input.Cause",
+              "Error": "$states.input.errorInfo.Error",
+              "Cause": "$states.input.errorInfo.Cause",
               "DatasetEtlTaskResultId": "$DatasetEtlTaskResultId"
             }
           },
@@ -318,8 +315,7 @@
           "ErrorEquals": ["States.ALL"],
           "Next": "ParentExceptionHandler",
           "Output": {
-            "Error": "{% $states.errorOutput %}",
-            "Cause": "{% $states.errorOutput %}"
+            "errorInfo": "{% $states.errorOutput %}"
           }
         }
       ]
@@ -329,8 +325,8 @@
       "End": true,
       "Resource": "${ExceptionHandlerLambdaArn}",
       "Arguments": {
-        "Error": "{% $states.input.Error %}",
-        "Cause": "{% $states.input.Cause %}",
+        "Error": "{% $states.input.errorInfo.Error %}",
+        "Cause": "{% $states.input.errorInfo.Cause %}",
         "DatasetRevisionId": "{% $datasetRevisionId %}"
       }
     }
