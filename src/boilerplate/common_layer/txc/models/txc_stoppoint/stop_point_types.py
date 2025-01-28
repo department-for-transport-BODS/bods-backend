@@ -10,7 +10,9 @@ from ..txc_types import TimingStatusT
 
 
 class BayStructure(BaseModel):
-    """[BCS] Bay, stand or stance within a bus or coach station."""
+    """
+    Timing Statuses For Bays
+    """
 
     TimingStatus: Annotated[
         TimingStatusT | None,
@@ -30,7 +32,14 @@ class BusAndCoachStationStructure(BaseModel):
             default=None,
             description="[BCS] Bay, stand or stance within a bus or coach station",
         ),
-    ]
+    ] = None
+    VariableBay: Annotated[
+        BayStructure | None,
+        Field(
+            default=None,
+            description="[BCS] Bay, stand or stance within a bus or coach station",
+        ),
+    ] = None
     Entrance: Annotated[
         bool, Field(default=False, description="If it's an Entrance")
     ] = False

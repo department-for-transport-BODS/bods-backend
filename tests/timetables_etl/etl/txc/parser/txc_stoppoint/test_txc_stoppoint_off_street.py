@@ -31,7 +31,9 @@ from lxml.etree import fromstring
             """,
             OffStreetStructure(
                 BusAndCoach=BusAndCoachStationStructure(
-                    Bay=BayStructure(TimingStatus="principalTimingPoint")
+                    Bay=BayStructure(TimingStatus="principalTimingPoint"),
+                    Entrance=False,
+                    VariableBay=None,
                 )
             ),
             id="Bus and Coach Station Bay",
@@ -45,9 +47,30 @@ from lxml.etree import fromstring
             </OffStreet>
             """,
             OffStreetStructure(
-                BusAndCoach=BusAndCoachStationStructure(Entrance=True, Bay=None)
+                BusAndCoach=BusAndCoachStationStructure(
+                    Entrance=True, Bay=None, VariableBay=None
+                )
             ),
-            id="Bus and Coach Station Bay",
+            id="Bus and Coach Station Entrance",
+        ),
+        pytest.param(
+            """
+            <OffStreet>
+                <BusAndCoach>
+                    <VariableBay>
+                        <TimingStatus>PTP</TimingStatus>
+                    </VariableBay>
+                </BusAndCoach>
+            </OffStreet>
+            """,
+            OffStreetStructure(
+                BusAndCoach=BusAndCoachStationStructure(
+                    VariableBay=BayStructure(TimingStatus="principalTimingPoint"),
+                    Entrance=False,
+                    Bay=None,
+                )
+            ),
+            id="Bus and Coach Station Variable Bay",
         ),
         pytest.param(
             """
