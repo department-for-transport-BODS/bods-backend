@@ -6,14 +6,14 @@
       "Type": "Pass",
       "Assign": {
         "detail": {
-          "inputDataSource": "{% $.inputDataSource %}",
-          "datasetRevisionId": "{% $.datasetRevisionId %}",
-          "datasetType": "{% $.datasetType %}",
-          "url": "{% $.url %}",
+          "inputDataSource": "{% $$.inputDataSource %}",
+          "datasetRevisionId": "{% $$.datasetRevisionId %}",
+          "datasetType": "{% $$.datasetType %}",
+          "url": "{% $$.url %}",
           "bucket": {
-            "name": "{% $.bucket ? $.bucket : $S3Bucket %}"
+            "name": "{% $$.bucket ? $$.bucket : $$.S3Bucket %}"
           },
-          "s3": "{% $.s3 %}"
+          "s3": "{% $$.s3 %}"
         }
       },
       "Next": "RouteByInputType"
@@ -22,7 +22,7 @@
       "Type": "Choice",
       "Choices": [
         {
-          "Condition": "{% $states.input.detail.inputDataSource = 'URL_DOWNLOAD' %}",
+          "Condition": "{% $$.detail.inputDataSource = 'URL_DOWNLOAD' %}",
           "Next": "DownloadDataset"
         }
       ],
@@ -32,18 +32,18 @@
       "Type": "Task",
       "Resource": "${DownloadDatasetLambdaArn}",
       "Arguments": {
-        "Url": "{% $states.input.detail.url %}",
-        "Bucket": "{% $states.input.detail.bucket.name %}",
-        "DatasetType": "{% $states.input.detail.datasetType %}",
-        "DatasetRevisionId": "{% $states.input.detail.datasetRevisionId %}"
+        "Url": "{% $$.detail.url %}",
+        "Bucket": "{% $$.detail.bucket.name %}",
+        "DatasetType": "{% $$.detail.datasetType %}",
+        "DatasetRevisionId": "{% $$.detail.datasetRevisionId %}"
       },
       "Output": {
         "detail": {
           "inputDataSource": "S3_FILE",
-          "datasetRevisionId": "{% $states.input.detail.datasetRevisionId %}",
-          "datasetType": "{% $states.input.detail.datasetType %}",
+          "datasetRevisionId": "{% $$.detail.datasetRevisionId %}",
+          "datasetType": "{% $$.detail.datasetType %}",
           "bucket": {
-            "name": "{% $states.input.detail.bucket.name %}"
+            "name": "{% $$.detail.bucket.name %}"
           },
           "object": {
             "key": "{% $states.result.objectKey %}"
@@ -54,8 +54,7 @@
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
-          "Next": "ParentExceptionHandler",
-          "ResultPath": "$.errorInfo"
+          "Next": "ParentExceptionHandler"
         }
       ]
     },
@@ -63,20 +62,25 @@
       "Type": "Task",
       "Resource": "${InitializePipelineLambdaArn}",
       "Arguments": {
-        "Bucket": "{% $states.input.detail.bucket.name %}",
-        "ObjectKey": "{% $states.input.detail.object.key %}",
-        "DatasetRevisionId": "{% $states.input.detail.datasetRevisionId %}"
+        "Bucket": "{% $$.detail.bucket.name %}",
+        "ObjectKey": "{% $$.detail.object.key %}",
+        "DatasetRevisionId": "{% $$.detail.datasetRevisionId %}"
       },
       "Output": {
         "initializePipeline": "{% $states.result %}",
-        "detail": "{% $states.input.detail %}"
+        "detail": "{% $$.detail %}"
       },
       "Next": "ClamAvScanner",
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
           "Next": "ParentExceptionHandler",
-          "ResultPath": "$.errorInfo"
+          "Output": {
+            "errorInfo": {
+              "Error": "{% $error %}",
+              "Cause": "{% $cause %}"
+            }
+          }
         }
       ]
     },
@@ -84,21 +88,20 @@
       "Type": "Task",
       "Resource": "${ClamAvScannerLambdaArn}",
       "Arguments": {
-        "Bucket": "{% $states.input.detail.bucket.name %}",
-        "ObjectKey": "{% $states.input.detail.object.key %}",
-        "DatasetRevisionId": "{% $states.input.detail.datasetRevisionId %}",
-        "DatasetType": "{% $states.input.detail.datasetType %}"
+        "Bucket": "{% $$.detail.bucket.name %}",
+        "ObjectKey": "{% $$.detail.object.key %}",
+        "DatasetRevisionId": "{% $$.detail.datasetRevisionId %}",
+        "DatasetType": "{% $$.detail.datasetType %}"
       },
       "Output": {
         "scanner": "{% $states.result %}",
-        "detail": "{% $states.input.detail %}"
+        "detail": "{% $$.detail %}"
       },
       "Next": "FileLevelProcessing",
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
-          "Next": "ParentExceptionHandler",
-          "ResultPath": "$.errorInfo"
+          "Next": "ParentExceptionHandler"
         }
       ]
     },
@@ -107,14 +110,14 @@
       "ItemReader": {
         "Resource": "arn:aws:states:::s3:listObjectsV2",
         "Arguments": {
-          "Bucket": "{% $states.input.detail.bucket.name %}",
-          "Prefix": "{% $states.input.scanner.body.generatedPrefix %}"
+          "Bucket": "{% $$.detail.bucket.name %}",
+          "Prefix": "{% $$.scanner.body.generatedPrefix %}"
         }
       },
       "ResultWriter": {
         "Resource": "arn:aws:states:::s3:putObject",
         "Arguments": {
-          "Bucket": "{% $states.input.detail.bucket.name %}",
+          "Bucket": "{% $$.detail.bucket.name %}",
           "Prefix": "tt-etl-map-results"
         }
       },
@@ -146,8 +149,8 @@
                 "Next": "ExceptionHandler",
                 "Output": {
                   "errorInfo": {
-                    "Error": "{% $states.errorOutput.Error %}",
-                    "Cause": "{% $states.errorOutput.Cause %}"
+                    "Error": "{% $error %}",
+                    "Cause": "{% $cause %}"
                   }
                 }
               }
@@ -176,8 +179,8 @@
                 "Next": "ExceptionHandler",
                 "Output": {
                   "errorInfo": {
-                    "Error": "{% $states.errorOutput.Error %}",
-                    "Cause": "{% $states.errorOutput.Cause %}"
+                    "Error": "{% $error %}",
+                    "Cause": "{% $cause %}"
                   }
                 }
               }
@@ -206,8 +209,8 @@
                 "Next": "ExceptionHandler",
                 "Output": {
                   "errorInfo": {
-                    "Error": "{% $states.errorOutput.Error %}",
-                    "Cause": "{% $states.errorOutput.Cause %}"
+                    "Error": "{% $error %}",
+                    "Cause": "{% $cause %}"
                   }
                 }
               }
@@ -232,8 +235,8 @@
                 "Next": "ExceptionHandler",
                 "Output": {
                   "errorInfo": {
-                    "Error": "{% $states.errorOutput.Error %}",
-                    "Cause": "{% $states.errorOutput.Cause %}"
+                    "Error": "{% $error %}",
+                    "Cause": "{% $cause %}"
                   }
                 }
               }
@@ -262,8 +265,8 @@
                 "Next": "ExceptionHandler",
                 "Output": {
                   "errorInfo": {
-                    "Error": "{% $states.errorOutput.Error %}",
-                    "Cause": "{% $states.errorOutput.Cause %}"
+                    "Error": "{% $error %}",
+                    "Cause": "{% $cause %}"
                   }
                 }
               }
@@ -292,8 +295,8 @@
                 "Next": "ExceptionHandler",
                 "Output": {
                   "errorInfo": {
-                    "Error": "{% $states.errorOutput.Error %}",
-                    "Cause": "{% $states.errorOutput.Cause %}"
+                    "Error": "{% $error %}",
+                    "Cause": "{% $cause %}"
                   }
                 }
               }
@@ -343,8 +346,8 @@
           "Next": "ParentExceptionHandler",
           "Output": {
             "errorInfo": {
-              "Error": "{% $states.errorOutput.Error %}",
-              "Cause": "{% $states.errorOutput.Cause %}"
+              "Error": "{% $error %}",
+              "Cause": "{% $cause %}"
             }
           }
         }
