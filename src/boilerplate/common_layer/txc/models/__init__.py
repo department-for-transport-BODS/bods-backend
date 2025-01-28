@@ -53,7 +53,9 @@ from .txc_stoppoint import (
     PlaceStructure,
     RailStopClassificationStructure,
     StopClassificationStructure,
+    TaxiStopClassificationStructure,
     TXCStopPoint,
+    UnmarkedPointStructure,
 )
 from .txc_types import ActivityT, LicenceClassificationT, TimingStatusT, TransportModeT
 from .txc_vehicle_journey import (

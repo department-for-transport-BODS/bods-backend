@@ -12,6 +12,7 @@ from .stop_point_types import (
     FerryStopClassificationStructure,
     MetroStopClassificationStructure,
     RailStopClassificationStructure,
+    TaxiStopClassificationStructure,
 )
 from .stop_point_types_bus import BusStopStructure
 
@@ -21,7 +22,14 @@ class OnStreetStructure(BaseModel):
     On Street Stop Information
     """
 
-    Bus: BusStopStructure = Field(..., description="A bus, coach or tram stop.")
+    Bus: Annotated[
+        BusStopStructure | None,
+        Field(default=None, description="A bus, coach or tram stop."),
+    ] = None
+    Taxi: Annotated[
+        TaxiStopClassificationStructure | None,
+        Field(default=None, description=" Taxi Stop"),
+    ] = None
 
 
 class OffStreetStructure(BaseModel):

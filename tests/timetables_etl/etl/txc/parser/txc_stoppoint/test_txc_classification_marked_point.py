@@ -8,11 +8,9 @@ from common_layer.txc.models.txc_stoppoint.stop_point_marked import (
     BearingStructure,
     MarkedPointStructure,
 )
-from common_layer.txc.parser.stop_points import (
+from common_layer.txc.parser.stop_points.parse_stop_point_marked import (
     parse_bearing_structure,
     parse_marked_point_structure,
-)
-from common_layer.txc.parser.stop_points.parse_stop_point_classification import (
     parse_unmarked_point_structure,
 )
 from lxml.etree import fromstring

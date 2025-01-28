@@ -2,10 +2,12 @@
 Stop Point Parser Module Exports
 """
 
-from .parse_stop_point_classification import (
+from .parse_stop_point_marked import (
     parse_bearing_structure,
-    parse_bus_stop_structure,
     parse_marked_point_structure,
+)
+from .parse_stop_point_on_street import (
+    parse_bus_stop_structure,
     parse_on_street_structure,
 )
 from .stop_points import (

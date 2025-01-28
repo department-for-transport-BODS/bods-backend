@@ -21,6 +21,7 @@ from .stoppoint_classification import (
     OffStreetStructure,
     OnStreetStructure,
     StopClassificationStructure,
+    TaxiStopClassificationStructure,
 )
 from .txc_stoppoint import AnnotatedStopPointRef, TXCStopPoint
 
@@ -44,4 +45,5 @@ __all__ = [
     "FerryStopClassificationStructure",
     "RailStopClassificationStructure",
     "MetroStopClassificationStructure",
+    "TaxiStopClassificationStructure",
 ]

@@ -107,3 +107,21 @@ class MetroStopClassificationStructure(BaseModel):
         AnnotatedMetroRefStructure | None,
         Field(default=False, description="[RPL] Specific platform"),
     ] = None
+
+
+class TaxiStopClassificationStructure(BaseModel):
+    """
+    Structure for  Taxi OnStreet
+    """
+
+    TaxiRank: Annotated[
+        bool,
+        Field(default=False, description="[TXR] The head of a taxi rank."),
+    ] = False
+    SharedTaxiRank: Annotated[
+        bool,
+        Field(
+            default=False,
+            description="[STR] The head of a shared taxi rank.",
+        ),
+    ] = False
