@@ -63,10 +63,8 @@
           "ErrorEquals": ["States.ALL"],
           "Next": "ParentExceptionHandler",
           "Output": {
-            "errorInfo": {
-              "Error": "$states.errorOutput.Error",
-              "Cause": "$states.errorOutput.Cause"
-            }
+            "Error": "{% $states.errorOutput.Error %}",
+            "Cause": "{% $states.errorOutput.Cause %}"
           }
         }
       ]
@@ -140,6 +138,7 @@
 
           "FileValidation": {
             "Type": "Task",
+            "Next": "SchemaCheck",
             "Resource": "${FileValidationLambdaArn}",
             "Arguments": {
               "Bucket": "{% $Bucket %}",
@@ -149,20 +148,20 @@
             "Output": {
               "fileValidation": "{% $states.result %}"
             },
-            "Next": "SchemaCheck",
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
                 "Output": {
-                  "Error": "$states.errorOutput.Error",
-                  "Cause": "$states.errorOutput.Cause"
+                  "Error": "{% $states.errorOutput.Error %}",
+                  "Cause": "{% $states.errorOutput.Cause %}"
                 }
               }
             ]
           },
           "SchemaCheck": {
             "Type": "Task",
+            "Next": "PostSchemaCheck",
             "Resource": "${SchemaCheckLambdaArn}",
             "Arguments": {
               "Bucket": "{% $Bucket %}",
@@ -172,20 +171,21 @@
             "Output": {
               "schemaCheck": "{% $states.result %}"
             },
-            "Next": "PostSchemaCheck",
+
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
                 "Output": {
-                  "Error": "$states.errorOutput.Error",
-                  "Cause": "$states.errorOutput.Cause"
+                  "Error": "{% $states.errorOutput.Error %}",
+                  "Cause": "{% $states.errorOutput.Cause %}"
                 }
               }
             ]
           },
           "PostSchemaCheck": {
             "Type": "Task",
+            "Next": "FileAttributesEtl",
             "Resource": "${PostSchemaCheckLambdaArn}",
             "Arguments": {
               "Bucket": "{% $Bucket %}",
@@ -195,20 +195,20 @@
             "Output": {
               "postSchemaCheck": "{% $states.result %}"
             },
-            "Next": "FileAttributesEtl",
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
                 "Output": {
-                  "Error": "$states.errorOutput.Error",
-                  "Cause": "$states.errorOutput.Cause"
+                  "Error": "{% $states.errorOutput.Error %}",
+                  "Cause": "{% $states.errorOutput.Cause %}"
                 }
               }
             ]
           },
           "FileAttributesEtl": {
             "Type": "Task",
+            "Next": "PtiValidation",
             "Resource": "${FileAttributesEtlLambdaArn}",
             "Arguments": {
               "Bucket": "{% $Bucket %}",
@@ -221,20 +221,21 @@
             "Output": {
               "fileAttributesEtl": "{% $states.result.id %}"
             },
-            "Next": "PtiValidation",
+
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
                 "Output": {
-                  "Error": "$states.errorOutput.Error",
-                  "Cause": "$states.errorOutput.Cause"
+                  "Error": "{% $states.errorOutput.Error %}",
+                  "Cause": "{% $states.errorOutput.Cause %}"
                 }
               }
             ]
           },
           "PtiValidation": {
             "Type": "Task",
+            "Next": "ETLProcess",
             "Resource": "${PtiValidationLambdaArn}",
             "Arguments": {
               "Bucket": "{% $Bucket %}",
@@ -245,20 +246,21 @@
             "Output": {
               "ptiValidation": "{% $states.result %}"
             },
-            "Next": "ETLProcess",
+
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
                 "Output": {
-                  "Error": "$states.errorOutput.Error",
-                  "Cause": "$states.errorOutput.Cause"
+                  "Error": "{% $states.errorOutput.Error %}",
+                  "Cause": "{% $states.errorOutput.Cause %}"
                 }
               }
             ]
           },
           "ETLProcess": {
             "Type": "Task",
+            "Next": "Success",
             "Resource": "${ETLProcessLambdaArn}",
             "Arguments": {
               "Bucket": "{% $Bucket %}",
@@ -270,14 +272,13 @@
             "Output": {
               "etlProcess": "{% $states.result %}"
             },
-            "Next": "Success",
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
                 "Output": {
-                  "Error": "$states.errorOutput.Error",
-                  "Cause": "$states.errorOutput.Cause"
+                  "Error": "{% $states.errorOutput.Error %}",
+                  "Cause": "{% $states.errorOutput.Cause %}"
                 }
               }
             ]
@@ -287,13 +288,13 @@
           },
           "ExceptionHandler": {
             "Type": "Task",
+            "Next": "Fail",
             "Resource": "${ExceptionHandlerLambdaArn}",
             "Arguments": {
-              "Error": "$states.input.errorInfo.Error",
-              "Cause": "$states.input.errorInfo.Cause",
+              "Error": "$states.input.Error",
+              "Cause": "$states.input.Cause",
               "DatasetEtlTaskResultId": "$DatasetEtlTaskResultId"
-            },
-            "Next": "Fail"
+            }
           },
           "Fail": {
             "Type": "Fail"
@@ -307,18 +308,18 @@
       "Resource": "${GenerateOutputZipLambdaArn}",
       "Arguments": {
         "MapRunArn": "{% $states.input.mapResults.MapRunArn %}",
-        "DestinationBucket": "{% $states.input.detail.bucket.name %}",
+        "DestinationBucket": "{% $s3Bucket %}",
         "OutputPrefix": "{% $ExtractedSubFolder %}",
         "DatasetRevisionId": "{% $datasetRevisionId %}",
-        "OriginalObjectKey": "{% $states.input.detail.object.key %}"
+        "OriginalObjectKey": "{% $s3Object %}"
       },
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
           "Next": "ParentExceptionHandler",
           "Output": {
-            "Error": "$states.errorOutput.Error",
-            "Cause": "$states.errorOutput.Cause"
+            "Error": "{% $states.errorOutput.Error %}",
+            "Cause": "{% $states.errorOutput.Cause %}"
           }
         }
       ]
