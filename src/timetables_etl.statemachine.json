@@ -138,10 +138,7 @@
               "DatasetRevisionId": "{% $states.input.DatasetRevisionId %}"
             },
             "Output": {
-              "fileValidation": "{% $states.result %}",
-              "Bucket": "{% $.Bucket %}",
-              "Key": "{% $.Key %}",
-              "DatasetRevisionId": "{% $states.input.DatasetRevisionId %}"
+              "fileValidation": "{% $states.result %}"
             },
             "Next": "SchemaCheck",
             "Catch": [
@@ -167,11 +164,7 @@
               "ValidationResult": "{% $.fileValidation %}"
             },
             "Output": {
-              "schemaCheck": "{% $states.result %}",
-              "fileValidation": "{% $.fileValidation %}",
-              "Bucket": "{% $.Bucket %}",
-              "Key": "{% $.Key %}",
-              "DatasetRevisionId": "{% $states.input.DatasetRevisionId %}"
+              "schemaCheck": "{% $states.result %}"
             },
             "Next": "PostSchemaCheck",
             "Catch": [
@@ -197,11 +190,7 @@
               "SchemaCheckResult": "{% $states.input.schemaCheck %}"
             },
             "Output": {
-              "postSchemaCheck": "{% $states.result %}",
-              "schemaCheck": "{% $states.input.schemaCheck %}",
-              "Bucket": "{% $states.input.Bucket %}",
-              "Key": "{% $states.input.Key %}",
-              "DatasetRevisionId": "{% $states.input.DatasetRevisionId %}"
+              "postSchemaCheck": "{% $states.result %}"
             },
             "Next": "FileAttributesEtl",
             "Catch": [
@@ -253,11 +242,7 @@
               "TxcFileAttributesId": "{% $states.input.fileAttributesEtl.id %}"
             },
             "Output": {
-              "ptiValidation": "{% $states.result %}",
-              "fileAttributesEtl": "{% $.fileAttributesEtl %}",
-              "Bucket": "{% $.Bucket %}",
-              "Key": "{% $.Key %}",
-              "DatasetRevisionId": "{% $states.input.DatasetRevisionId %}"
+              "ptiValidation": "{% $states.result %}"
             },
             "Next": "ETLProcess",
             "Catch": [
@@ -285,9 +270,7 @@
               "ValidationResult": "{% $.ptiValidation %}"
             },
             "Output": {
-              "etlProcess": "{% $states.result %}",
-              "fileAttributesEtl": "{% $.fileAttributesEtl %}",
-              "ptiValidation": "{% $.ptiValidation %}"
+              "etlProcess": "{% $states.result %}"
             },
             "Next": "Success",
             "Catch": [
