@@ -75,6 +75,24 @@ from lxml.etree import fromstring
         pytest.param(
             """
             <OffStreet>
+                <BusAndCoach>
+                    <AccessArea />
+                </BusAndCoach>
+            </OffStreet>
+            """,
+            OffStreetStructure(
+                BusAndCoach=BusAndCoachStationStructure(
+                    AccessArea=True,
+                    VariableBay=None,
+                    Entrance=False,
+                    Bay=None,
+                )
+            ),
+            id="Bus and Coach Station Access Area",
+        ),
+        pytest.param(
+            """
+            <OffStreet>
                 <Ferry>
                     <Entrance />
                 </Ferry>

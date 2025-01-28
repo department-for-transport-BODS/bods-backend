@@ -43,6 +43,9 @@ class BusAndCoachStationStructure(BaseModel):
     Entrance: Annotated[
         bool, Field(default=False, description="If it's an Entrance")
     ] = False
+    AccessArea: Annotated[
+        bool, Field(default=False, description="Access Area for Bus and Coach")
+    ] = False
 
 
 class FerryStopClassificationStructure(BaseModel):

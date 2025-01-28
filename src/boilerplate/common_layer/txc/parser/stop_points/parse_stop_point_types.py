@@ -39,19 +39,25 @@ def parse_bus_and_coach_structure(
     Parse the BusAndCoach structure within the OffStreet section.
     StopPoints -> StopPoint -> StopClassification -> OffStreet -> BusAndCoach
     """
-    bay_xml: _Element | None = bus_and_coach_xml.find("Bay")
-    vari_bay_xml: _Element | None = bus_and_coach_xml.find("VariableBay")
-    entrance_xml: _Element | None = bus_and_coach_xml.find("Entrance")
-    entrance: bool = entrance_xml is not None
     bay: BayStructure | None = None
-    varibay: BayStructure | None = None
+    bay_xml = bus_and_coach_xml.find("Bay")
     if bay_xml is not None:
         bay = parse_bay_structure(bay_xml)
-    if vari_bay_xml is not None:
-        varibay = parse_bay_structure(vari_bay_xml)
-    if not (bay or entrance or varibay):
+
+    varibay: BayStructure | None = None
+    varibay_xml = bus_and_coach_xml.find("VariableBay")
+    if varibay_xml is not None:
+        varibay = parse_bay_structure(varibay_xml)
+
+    entrance: bool = bus_and_coach_xml.find("Entrance") is not None
+    access_area: bool = bus_and_coach_xml.find("AccessArea") is not None
+
+    if not any([bay, varibay, entrance, access_area]):
         return None
-    return BusAndCoachStationStructure(Bay=bay, Entrance=entrance, VariableBay=varibay)
+
+    return BusAndCoachStationStructure(
+        Bay=bay, VariableBay=varibay, Entrance=entrance, AccessArea=access_area
+    )
 
 
 def parse_ferry_structure(

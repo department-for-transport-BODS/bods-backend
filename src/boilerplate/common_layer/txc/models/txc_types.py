@@ -45,6 +45,7 @@ TXCStopTypeT = Literal[
     "busCoachTrolleyStationBay",
     "busCoachTrolleyStationEntrance",
     "busCoachTrolleyStationVariableBay",
+    "busCoachStationAccessArea",
     "carSetDownPickUpArea",
     "ferryBerth",
     "ferryDockAccessArea",
