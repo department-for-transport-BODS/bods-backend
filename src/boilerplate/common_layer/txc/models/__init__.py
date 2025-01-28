@@ -44,6 +44,7 @@ from .txc_stoppoint import (
     BusAndCoachStationStructure,
     BusStopStructure,
     DescriptorStructure,
+    FerryStopClassificationStructure,
     LocationStructure,
     MarkedPointStructure,
     OffStreetStructure,

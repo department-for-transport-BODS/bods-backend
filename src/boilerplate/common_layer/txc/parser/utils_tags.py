@@ -4,7 +4,7 @@ Functions to extract info from XML tags
 
 from datetime import date, datetime
 
-from lxml.etree import QName, _Element
+from lxml.etree import QName, _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 log = get_logger()

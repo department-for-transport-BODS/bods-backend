@@ -10,6 +10,7 @@ from common_layer.txc.models.txc_stoppoint.stop_point_marked import (
 from common_layer.txc.models.txc_stoppoint.stop_point_types import (
     BayStructure,
     BusAndCoachStationStructure,
+    FerryStopClassificationStructure,
 )
 from common_layer.txc.models.txc_stoppoint.stop_point_types_bus import BusStopStructure
 from common_layer.txc.models.txc_stoppoint.stoppoint_classification import (
@@ -75,6 +76,25 @@ from lxml.etree import fromstring
                 ),
             ),
             id="Valid Bus Coach Station Bay Structure",
+        ),
+        pytest.param(
+            """
+            <StopClassification>
+                <StopType>FTD</StopType>
+                <OffStreet>
+                    <Ferry>
+                        <Entrance />
+                    </Ferry>
+                </OffStreet>
+            </StopClassification>
+            """,
+            StopClassificationStructure(
+                StopType="ferryTerminalDockEntrance",
+                OffStreet=OffStreetStructure(
+                    Ferry=FerryStopClassificationStructure(Entrance=True)
+                ),
+            ),
+            id="Valid Ferry Terminal Structure",
         ),
         pytest.param(
             """

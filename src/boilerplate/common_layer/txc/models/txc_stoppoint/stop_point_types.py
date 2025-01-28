@@ -31,3 +31,17 @@ class BusAndCoachStationStructure(BaseModel):
             description="[BCS] Bay, stand or stance within a bus or coach station",
         ),
     ]
+
+
+class FerryStopClassificationStructure(BaseModel):
+    """Structure for ferry terminal or dock."""
+
+    Entrance: Annotated[
+        bool, Field(default=False, description="[FTD] Ferry terminal or dock entrance")
+    ] = False
+    AccessArea: Annotated[
+        bool, Field(default=False, description="[FER] Ferry or port interchange area")
+    ] = False
+    Berth: Annotated[bool, Field(default=False, description="[FBT] Ferry berth")] = (
+        False
+    )
