@@ -101,7 +101,9 @@
     "FileLevelProcessing": {
       "Type": "Map",
       "ItemSelector": {
-        "MapS3Object": "{% $states.context.Map.Item.Value.Key %}"
+        "MapS3Object": "{% $states.context.Map.Item.Value.Key %}",
+        "datasetRevisionId": "{% $datasetRevisionId %}",
+        "s3Bucket": "{% $s3Bucket %}"
       },
       "ItemReader": {
         "Resource": "arn:aws:states:::s3:listObjectsV2",
@@ -313,7 +315,7 @@
       "Arguments": {
         "MapRunArn": "{% $states.input.mapResults.MapRunArn %}",
         "DestinationBucket": "{% $states.input.detail.bucket.name %}",
-        "OutputPrefix": "{% $states.input.scanner.body.generatedPrefix %}",
+        "OutputPrefix": "{% $ExtractedSubFolder %}",
         "DatasetRevisionId": "{% $datasetRevisionId %}",
         "OriginalObjectKey": "{% $states.input.detail.object.key %}"
       },
@@ -337,7 +339,7 @@
       "Arguments": {
         "Error": "{% $states.input.errorInfo.Error %}",
         "Cause": "{% $states.input.errorInfo.Cause %}",
-        "DatasetEtlTaskResultId": "{% $states.input.initializePipeline.DatasetEtlTaskResultId %}"
+        "DatasetRevisionId": "{% $datasetRevisionId %}"
       },
       "End": true
     }
