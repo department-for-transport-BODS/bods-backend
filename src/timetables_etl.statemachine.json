@@ -147,8 +147,8 @@
                 "Next": "ExceptionHandler",
                 "Output": {
                   "errorInfo": {
-                    "Error": "{% $error %}",
-                    "Cause": "{% $cause %}"
+                    "Error": "$states.errorOutput.Error",
+                    "Cause": "$states.errorOutput.Cause"
                   }
                 }
               }
@@ -173,8 +173,8 @@
                 "Next": "ExceptionHandler",
                 "Output": {
                   "errorInfo": {
-                    "Error": "{% $error %}",
-                    "Cause": "{% $cause %}"
+                    "Error": "$states.errorOutput.Error",
+                    "Cause": "$states.errorOutput.Cause"
                   }
                 }
               }
@@ -199,8 +199,8 @@
                 "Next": "ExceptionHandler",
                 "Output": {
                   "errorInfo": {
-                    "Error": "{% $error %}",
-                    "Cause": "{% $cause %}"
+                    "Error": "$states.errorOutput.Error",
+                    "Cause": "$states.errorOutput.Cause"
                   }
                 }
               }
@@ -225,8 +225,8 @@
                 "Next": "ExceptionHandler",
                 "Output": {
                   "errorInfo": {
-                    "Error": "{% $error %}",
-                    "Cause": "{% $cause %}"
+                    "Error": "$states.errorOutput.Error",
+                    "Cause": "$states.errorOutput.Cause"
                   }
                 }
               }
@@ -251,8 +251,8 @@
                 "Next": "ExceptionHandler",
                 "Output": {
                   "errorInfo": {
-                    "Error": "{% $error %}",
-                    "Cause": "{% $cause %}"
+                    "Error": "$states.errorOutput.Error",
+                    "Cause": "$states.errorOutput.Cause"
                   }
                 }
               }
@@ -279,8 +279,8 @@
                 "Next": "ExceptionHandler",
                 "Output": {
                   "errorInfo": {
-                    "Error": "{% $error %}",
-                    "Cause": "{% $cause %}"
+                    "Error": "$states.errorOutput.Error",
+                    "Cause": "$states.errorOutput.Cause"
                   }
                 }
               }
@@ -293,9 +293,9 @@
             "Type": "Task",
             "Resource": "${ExceptionHandlerLambdaArn}",
             "Arguments": {
-              "Error": "{% $.errorInfo.Error %}",
-              "Cause": "{% $parse($.errorInfo.Cause) %}",
-              "DatasetEtlTaskResultId": "{% $.DatasetEtlTaskResultId %}"
+              "Error": "$states.input.errorInfo.Error",
+              "Cause": "$states.input.errorInfo.Cause",
+              "DatasetEtlTaskResultId": "$states.input.DatasetEtlTaskResultId"
             },
             "Next": "Fail"
           },
