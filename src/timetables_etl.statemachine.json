@@ -288,8 +288,8 @@
             "Next": "Fail",
             "Resource": "${ExceptionHandlerLambdaArn}",
             "Arguments": {
-              "Error": "$states.input.errorInfo.Error",
-              "Cause": "$states.input.errorInfo.Cause",
+              "Error": "{% $states.input.errorInfo.Error %}",
+              "Cause": "{% $states.input.errorInfo.Cause %}",
               "DatasetEtlTaskResultId": "$DatasetEtlTaskResultId"
             }
           },
