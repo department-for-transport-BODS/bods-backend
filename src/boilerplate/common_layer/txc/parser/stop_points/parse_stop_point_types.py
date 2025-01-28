@@ -67,18 +67,35 @@ def parse_ferry_structure(
     Parse the Ferry structure within the OffStreet section.
     StopPoints -> StopPoint -> StopClassification -> OffStreet -> Ferry
     """
-    entrance_xml = ferry_xml.find("Entrance")
-    if entrance_xml is not None:
-        return FerryStopClassificationStructure(Entrance=True)
-    return None
+    entrance: bool = ferry_xml.find("Entrance") is not None
+    access_area: bool = ferry_xml.find("AccessArea") is not None
+    berth: bool = ferry_xml.find("Berth") is not None
+
+    if not any([entrance, access_area, berth]):
+        return None
+
+    return FerryStopClassificationStructure(
+        Entrance=entrance, AccessArea=access_area, Berth=berth
+    )
 
 
-def parse_rail_structure(rail_xml: _Element) -> RailStopClassificationStructure | None:
-    """Parse the Rail structure within the OffStreet section."""
-    entrance_xml = rail_xml.find("Entrance")
-    if entrance_xml is not None:
-        return RailStopClassificationStructure(Entrance=True)
-    return None
+def parse_rail_structure(
+    rail_xml: _Element,
+) -> RailStopClassificationStructure | None:
+    """
+    Parse the Rail structure within the OffStreet section.
+    StopPoints -> StopPoint -> StopClassification -> OffStreet -> Rail
+    """
+    entrance: bool = rail_xml.find("Entrance") is not None
+    access_area: bool = rail_xml.find("AccessArea") is not None
+    platform: bool = rail_xml.find("Platform") is not None
+
+    if not any([entrance, access_area, platform]):
+        return None
+
+    return RailStopClassificationStructure(
+        Entrance=entrance, AccessArea=access_area, Platform=platform
+    )
 
 
 def parse_metro_structure(
