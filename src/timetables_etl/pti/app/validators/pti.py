@@ -6,14 +6,13 @@ import json
 from io import BytesIO
 from typing import IO, Any, Callable
 
-from common_layer.database.client import SqlDB
-from common_layer.dynamodb.client import DynamoDB
+from common_layer.txc.models.txc_data import TXCData
 from common_layer.txc.parser.metadata import parse_metadata
 from common_layer.txc.parser.parser_txc import load_xml_tree
 from lxml import etree
 from structlog.stdlib import get_logger
 
-from ..models.models_pti import PtiJsonSchema, PtiObservation, PtiViolation
+from ..models import DbClients, PtiJsonSchema, PtiObservation, PtiViolation
 from ..utils.utils_time import to_days, today
 from ..utils.utils_xml import (
     cast_to_bool,
@@ -60,7 +59,12 @@ class PTIValidator:
     Class for running PTI validator funtions
     """
 
-    def __init__(self, source: IO[Any], dynamo: DynamoDB, db: SqlDB):
+    def __init__(
+        self,
+        source: IO[Any],
+        db_clients: DbClients,
+        txc_data: TXCData,
+    ):
         json_ = json.load(source)
         self.schema = PtiJsonSchema(**json_)
         self.namespaces = self.schema.header.namespaces
@@ -75,7 +79,7 @@ class PTIValidator:
 
         self.register_function(
             "check_flexible_service_stop_point_ref",
-            get_flexible_service_stop_point_ref_validator(db),
+            get_flexible_service_stop_point_ref_validator(db_clients.sql_db),
         )
 
         self.register_function(
@@ -114,7 +118,10 @@ class PTIValidator:
         self.register_function("today", today)
 
         self.register_function("validate_line_id", validate_line_id)
-        self.register_function("validate_lines", get_lines_validator(db))
+        self.register_function(
+            "validate_lines",
+            get_lines_validator(db_clients.stop_point_client, txc_data),
+        )
 
         self.register_function(
             "validate_modification_date_time", validate_modification_date_time
@@ -126,7 +133,8 @@ class PTIValidator:
         self.register_function("validate_timing_link_stops", validate_timing_link_stops)
 
         self.register_function(
-            "validate_bank_holidays", get_validate_bank_holidays(dynamo, db)
+            "validate_bank_holidays",
+            get_validate_bank_holidays(db_clients.dynamodb, db_clients.sql_db),
         )
 
         self.register_function("validate_licence_number", validate_licence_number)

@@ -6,6 +6,10 @@ from io import BytesIO
 
 import typer
 from common_layer.dynamodb.client import DynamoDB
+from common_layer.dynamodb.client.cache import DynamoDBCache
+from common_layer.dynamodb.client.naptan_stop_points import (
+    NaptanStopPointDynamoDBClient,
+)
 from common_layer.json_logging import configure_logging
 from structlog.stdlib import get_logger
 
@@ -62,7 +66,8 @@ def main(
         raise typer.Exit(1) from e
 
     db = setup_db_instance(db_config)
-    dynamodb = DynamoDB()
+    dynamodb = DynamoDBCache()
+    stop_point_client = NaptanStopPointDynamoDBClient()
 
     with open(xml_file_name, "rb") as xml_file:
         event = PTIValidationEvent(
@@ -74,7 +79,7 @@ def main(
         file = BytesIO(xml_file.read())
 
         task_data = get_task_data(event, file, db, dynamodb)
-        run_validation(task_data, db, dynamodb)
+        run_validation(task_data, db, dynamodb, stop_point_client)
 
 
 if __name__ == "__main__":

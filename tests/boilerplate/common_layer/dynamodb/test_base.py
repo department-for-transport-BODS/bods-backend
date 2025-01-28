@@ -9,7 +9,7 @@ from freezegun import freeze_time
 
 @pytest.fixture
 def m_boto_client():
-    with patch("common_layer.dynamodb.client.boto3.client") as m_boto:
+    with patch("common_layer.dynamodb.client.base.boto3.client") as m_boto:
         yield m_boto.return_value
 
 
@@ -25,7 +25,7 @@ def test_put(m_boto_client):
         dynamo.put("test-key", {"key": "value"}, ttl=ttl)
 
         m_boto_client.put_item.assert_called_once_with(
-            TableName=settings.DYNAMODB_CACHE_TABLE_NAME,
+            TableName=settings.DYNAMODB_TABLE_NAME,
             Item={
                 "Key": {"S": "test-key"},
                 "Value": {"M": {"key": {"S": "value"}}},
@@ -56,7 +56,7 @@ def test_get(m_boto_client):
     result = dynamodb.get("test-key")
 
     m_boto_client.get_item.assert_called_once_with(
-        TableName=settings.DYNAMODB_CACHE_TABLE_NAME, Key={"Key": {"S": "test-key"}}
+        TableName=settings.DYNAMODB_TABLE_NAME, Key={"Key": {"S": "test-key"}}
     )
     assert result == {"key": "value"}
 
@@ -69,41 +69,3 @@ def test_get_exception(m_boto_client):
         match="Failed to get item with key 'test-key': Client exception",
     ):
         dynamodb.get("test-key")
-
-
-def test_get_or_compute_cache_hit(m_boto_client):
-    m_boto_client.get_item = MagicMock(
-        return_value={
-            "Item": {"Key": {"S": "test-key"}, "Value": {"M": {"key": {"S": "value"}}}}
-        }
-    )
-
-    func_to_cache = MagicMock()
-
-    dynamodb = DynamoDB()
-    result = dynamodb.get_or_compute(
-        key="test-key", compute_fn=lambda: func_to_cache(), ttl=7200
-    )
-
-    assert result == {"key": "value"}
-    func_to_cache.assert_not_called()
-    m_boto_client.put.assert_not_called()
-
-
-def test_get_or_compute_cache_miss(m_boto_client):
-    m_boto_client.get_item.return_value = {}
-
-    func_to_cache = MagicMock(return_value={"key": "computed-value"})
-
-    dynamodb = DynamoDB()
-    dynamodb.put = MagicMock()
-
-    result = dynamodb.get_or_compute(
-        key="test-key", compute_fn=lambda: func_to_cache(), ttl=7200
-    )
-
-    assert result == {"key": "computed-value"}
-    func_to_cache.assert_called_once()
-    dynamodb.put.assert_called_once_with(
-        "test-key", {"key": "computed-value"}, ttl=7200
-    )

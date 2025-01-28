@@ -4,18 +4,18 @@ PTI Service
 
 from io import BytesIO
 
-from common_layer.database.client import SqlDB
 from common_layer.database.models import OrganisationDatasetRevision
 from common_layer.database.repos import (
     DataQualityPTIObservationRepo,
     OrganisationTXCFileAttributesRepo,
 )
-from common_layer.dynamodb.client import DynamoDB
 from common_layer.dynamodb.models import TXCFileAttributes
+from common_layer.txc.models.txc_data import TXCData
 from common_layer.utils import sha1sum
 from structlog.stdlib import get_logger
 
 from .models.models_pti import PtiViolation
+from .models.models_pti_task import DbClients
 from .validators.factory import get_xml_file_pti_validator
 from .validators.txc_revision import TXCRevisionValidator
 
@@ -36,12 +36,10 @@ class PTIValidationService:
 
     def __init__(
         self,
-        db: SqlDB,
-        dynamodb: DynamoDB,
+        db_clients: DbClients,
         live_revision_attributes: list[TXCFileAttributes],
     ):
-        self._db = db
-        self._dynamodb = dynamodb
+        self._db_clients = db_clients
         self._live_revision_attributes = live_revision_attributes
 
     def is_file_unchanged(
@@ -63,6 +61,7 @@ class PTIValidationService:
         revision: OrganisationDatasetRevision,
         xml_file: BytesIO,
         txc_file_attributes: TXCFileAttributes,
+        txc_data: TXCData,
     ):
         """
         Run PTI validation against the given revision and file
@@ -80,7 +79,7 @@ class PTIValidationService:
                 revision_id=revision.dataset_id,
             )
         else:
-            validator = get_xml_file_pti_validator(self._dynamodb, self._db)
+            validator = get_xml_file_pti_validator(self._db_clients, txc_data)
             violations = validator.get_violations(revision, xml_file)
 
             revision_validator = TXCRevisionValidator(
@@ -94,7 +93,9 @@ class PTIValidationService:
                     PtiViolation.make_observation(revision.id, violation)
                     for violation in violations
                 ]
-                observation_repo = DataQualityPTIObservationRepo(self._db)
+                observation_repo = DataQualityPTIObservationRepo(
+                    self._db_clients.sql_db
+                )
                 observation_repo.bulk_insert(observations)
                 unique_names = get_unique_violation_names(violations)
                 log.info(
@@ -102,7 +103,9 @@ class PTIValidationService:
                     txc_file_attributes_id=txc_file_attributes.id,
                     violations=unique_names,
                 )
-                txc_file_attribute_repo = OrganisationTXCFileAttributesRepo(self._db)
+                txc_file_attribute_repo = OrganisationTXCFileAttributesRepo(
+                    self._db_clients.sql_db
+                )
                 txc_file_attribute_repo.delete_by_id(txc_file_attributes.id)
 
                 raise ValueError(

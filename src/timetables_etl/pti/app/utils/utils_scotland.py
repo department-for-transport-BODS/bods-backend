@@ -6,7 +6,7 @@ from functools import lru_cache
 
 from common_layer.database.client import SqlDB
 from common_layer.database.repos import OtcServiceRepo
-from common_layer.dynamodb.client import DynamoDB
+from common_layer.dynamodb.client.cache import DynamoDBCache
 from structlog.stdlib import get_logger
 
 log = get_logger()
@@ -15,7 +15,7 @@ SCOTLAND_TRAVELINE_REGIONS = ["S"]
 
 
 @lru_cache()
-def is_service_in_scotland(service_ref: str, dynamo: DynamoDB, db: SqlDB) -> bool:
+def is_service_in_scotland(service_ref: str, dynamo: DynamoDBCache, db: SqlDB) -> bool:
     """
     Checks if a Service Ref is in Scotland
     """

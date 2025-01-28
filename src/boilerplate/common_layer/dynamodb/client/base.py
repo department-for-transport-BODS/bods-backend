@@ -4,36 +4,17 @@ DynamoDB Client
 
 import os
 import time
-from typing import Any, Callable
+from typing import Any
 
 import boto3
 import botocore.config
 from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
 from common_layer.exceptions.pipeline_exceptions import PipelineException
-from pydantic import Field
-from pydantic_settings import BaseSettings
 from structlog.stdlib import get_logger
 
+from .settings import DynamoDBSettings
+
 log = get_logger()
-
-
-class DynamoDBSettings(BaseSettings):
-    """
-    Custom settings for DynamoDB
-    """
-
-    DYNAMODB_ENDPOINT_URL: str = Field(
-        default="http://host.docker.internal:4566",
-        description="Endpoint URL for DynamoDB",
-    )
-    DYNAMODB_CACHE_TABLE_NAME: str = Field(
-        default="",
-        description="Table Name for DynamoDB",
-    )
-    AWS_REGION: str = Field(
-        default="eu-west-2",
-        description="AWS Region for DynamoDB Table",
-    )
 
 
 class DynamoDB:
@@ -60,27 +41,9 @@ class DynamoDB:
                 aws_secret_access_key="dummy",
                 region_name=self._settings.AWS_REGION,
             )
+
         config = botocore.config.Config(proxies={})
         return boto3.client("dynamodb", config=config)
-
-    def get_or_compute(
-        self, key: str, compute_fn: Callable[[], Any], ttl: int | None = None
-    ) -> Any:
-        """
-        Get a value from cache or compute it and cache it if not found.
-        """
-        cached_value = self.get(key)
-
-        if cached_value is not None:
-            log.info("DynamoDB: Cache hit", key=key)
-            return cached_value
-
-        log.info("DynamoDB: Cache miss, computing value", key=key)
-        computed_value = compute_fn()
-
-        self.put(key, computed_value, ttl=ttl)
-
-        return computed_value
 
     def get(self, key: str) -> dict[str, Any] | None:
         """
@@ -88,7 +51,7 @@ class DynamoDB:
         """
         try:
             response = self._client.get_item(
-                TableName=self._settings.DYNAMODB_CACHE_TABLE_NAME,
+                TableName=self._settings.DYNAMODB_TABLE_NAME,
                 Key={"Key": {"S": key}},
             )
             item = response.get("Item", {})
@@ -115,7 +78,7 @@ class DynamoDB:
                 item["ttl"] = {"S": str(expiration_time)}
 
             self._client.put_item(
-                TableName=self._settings.DYNAMODB_CACHE_TABLE_NAME, Item=item
+                TableName=self._settings.DYNAMODB_TABLE_NAME, Item=item
             )
         except Exception as e:
             message = f"Failed to set item with key '{key}': {str(e)}"

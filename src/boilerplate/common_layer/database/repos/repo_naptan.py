@@ -2,8 +2,6 @@
 Tables prefixed with naptan_
 """
 
-from typing import Any, Iterable
-
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 from sqlalchemy import Select, select
 from structlog import get_logger
@@ -94,6 +92,9 @@ class NaptanStopPointRepo(BaseRepository[NaptanStopPoint]):
         return self._fetch_all(statement)
 
     def get_count(self, atco_codes: list[str], **filter_kwargs) -> int:
+        """
+        Get number of Stop Points in the DB by atco_code
+        """
         try:
             with self._db.session_scope() as session:
                 query = session.query(NaptanStopPoint).filter(
@@ -103,31 +104,14 @@ class NaptanStopPointRepo(BaseRepository[NaptanStopPoint]):
                     query = query.filter_by(**filter_kwargs)
                 result = query.count()
         except Exception as exc:
-            message = f"Exception counting StopPoints with atco_code in {atco_codes} and fields {filter_kwargs}"
+            message = (
+                f"Exception counting StopPoints with atco_code in {atco_codes} "
+                f"and fields {filter_kwargs}"
+            )
             logger.exception(message, exc_info=True)
             raise PipelineException(message) from exc
-        else:
-            return result
 
-    def get_stop_area_map(self) -> Iterable[dict[str, Any]]:
-        """
-        Return a map of { <atco_code>: <stop_areas> } for all stops, excluding those with no stop areas.
-        """
-        try:
-            with self._db.session_scope() as session:
-                stops = (
-                    session.query(
-                        NaptanStopPoint.atco_code,
-                        NaptanStopPoint.stop_areas,
-                    )
-                    .filter(NaptanStopPoint.stop_areas != [])
-                    .all()
-                )
-                return {stop.atco_code: stop.stop_areas for stop in stops}
-        except Exception as exc:
-            message = "Error retrieving stops excluding empty stop areas."
-            logger.exception(message, exc_info=True)
-            raise PipelineException(message) from exc
+        return result
 
 
 class NaptanLocalityRepo(BaseRepository[NaptanLocality]):
