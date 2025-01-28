@@ -16,7 +16,8 @@ from common_layer.txc.parser.stop_points.parse_stop_point_off_street import (
 )
 from lxml.etree import fromstring
 
-pytest.mark.parametrize(
+
+@pytest.mark.parametrize(
     "off_street_xml_str, expected_result",
     [
         pytest.param(
@@ -31,6 +32,19 @@ pytest.mark.parametrize(
                 BusAndCoach=BusAndCoachStationStructure(
                     Bay=BayStructure(TimingStatus="principalTimingPoint")
                 )
+            ),
+            id="Bus and Coach Station Bay",
+        ),
+        pytest.param(
+            """
+            <OffStreet>
+                <BusAndCoach>
+                    <Entrance />
+                </BusAndCoach>
+            </OffStreet>
+            """,
+            OffStreetStructure(
+                BusAndCoach=BusAndCoachStationStructure(Entrance=True, Bay=None)
             ),
             id="Bus and Coach Station Bay",
         ),
@@ -123,8 +137,6 @@ pytest.mark.parametrize(
         ),
     ],
 )
-
-
 def test_parse_off_street_structure(
     off_street_xml_str: str, expected_result: OffStreetStructure | None
 ):

@@ -39,10 +39,14 @@ def parse_bus_and_coach_structure(
     StopPoints -> StopPoint -> StopClassification -> OffStreet -> BusAndCoach
     """
     bay_xml = bus_and_coach_xml.find("Bay")
+    entrance_xml = bus_and_coach_xml.find("Entrance")
+    entrance = entrance_xml is not None
+    bay = None
     if bay_xml is not None:
         bay = parse_bay_structure(bay_xml)
-        return BusAndCoachStationStructure(Bay=bay)
-    return None
+    if not (bay or entrance):
+        return None
+    return BusAndCoachStationStructure(Bay=bay, Entrance=entrance)
 
 
 def parse_ferry_structure(

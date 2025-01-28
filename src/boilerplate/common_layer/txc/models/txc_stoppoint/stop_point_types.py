@@ -31,6 +31,9 @@ class BusAndCoachStationStructure(BaseModel):
             description="[BCS] Bay, stand or stance within a bus or coach station",
         ),
     ]
+    Entrance: Annotated[
+        bool, Field(default=False, description="If it's an Entrance")
+    ] = False
 
 
 class FerryStopClassificationStructure(BaseModel):
