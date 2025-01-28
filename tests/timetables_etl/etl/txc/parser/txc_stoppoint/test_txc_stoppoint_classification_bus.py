@@ -9,6 +9,7 @@ from common_layer.txc.models import (
     MarkedPointStructure,
     OnStreetStructure,
 )
+from common_layer.txc.models.txc_stoppoint import UnmarkedPointStructure
 from common_layer.txc.parser.stop_points import (
     parse_bus_stop_structure,
     parse_on_street_structure,
@@ -114,6 +115,31 @@ def test_parse_bus_stop_structure(
             "<OnStreet></OnStreet>",
             None,
             id="Missing Bus XML",
+        ),
+        pytest.param(
+            """
+            <OnStreet>
+                <Bus>
+                    <BusStopType>CUS</BusStopType>
+                    <TimingStatus>OTH</TimingStatus>
+                    <UnmarkedPoint>
+                        <Bearing>
+                            <CompassPoint>NE</CompassPoint>
+                        </Bearing>
+                    </UnmarkedPoint>
+                </Bus>
+            </OnStreet>
+            """,
+            OnStreetStructure(
+                Bus=BusStopStructure(
+                    BusStopType="custom",
+                    TimingStatus="otherPoint",
+                    UnmarkedPoint=UnmarkedPointStructure(
+                        Bearing=BearingStructure(CompassPoint="NE")
+                    ),
+                )
+            ),
+            id="Valid OnStreet Structure with UnmarkedPoint",
         ),
         pytest.param(
             """
