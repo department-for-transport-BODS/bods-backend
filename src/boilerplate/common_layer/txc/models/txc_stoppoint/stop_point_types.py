@@ -63,3 +63,47 @@ class RailStopClassificationStructure(BaseModel):
     Platform: Annotated[
         bool, Field(default=False, description="[RPL] Specific platform")
     ] = False
+
+
+class AnnotatedMetroRefStructure(BaseModel):
+    """
+    Collation with other industry reference systems.
+    """
+
+    MetroRef: Annotated[
+        str, Field(default=False, description="[RSE] Railway station entrance")
+    ]
+    Name: Annotated[
+        str,
+        Field(
+            default=False,
+            description="[RLY] Railway interchange area away from entrance",
+        ),
+    ]
+    Location: Annotated[
+        bool, Field(default=False, description="[RPL] Specific platform")
+    ]
+
+
+class MetroStopClassificationStructure(BaseModel):
+    """Structure for  Metro stop"""
+
+    Entrance: Annotated[
+        bool,
+        Field(default=False, description="[TMU] Metro, tram or underground entrance."),
+    ] = False
+    AccessArea: Annotated[
+        bool,
+        Field(
+            default=False,
+            description="[MET] Metro, tram or underground interchange area",
+        ),
+    ] = False
+    Platform: Annotated[
+        bool,
+        Field(default=False, description="[PLT] Metro, tram or underground platform"),
+    ] = False
+    AnnotatedMetroRef: Annotated[
+        AnnotatedMetroRefStructure | None,
+        Field(default=False, description="[RPL] Specific platform"),
+    ] = None

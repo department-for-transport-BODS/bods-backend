@@ -11,6 +11,7 @@ from ...models import (
     BayStructure,
     BusAndCoachStationStructure,
     FerryStopClassificationStructure,
+    MetroStopClassificationStructure,
     RailStopClassificationStructure,
 )
 from ...models.txc_types import TIMING_STATUS_MAPPING, TimingStatusT
@@ -63,3 +64,23 @@ def parse_rail_structure(rail_xml: _Element) -> RailStopClassificationStructure 
     if entrance_xml is not None:
         return RailStopClassificationStructure(Entrance=True)
     return None
+
+
+def parse_metro_structure(
+    metro_xml: _Element,
+) -> MetroStopClassificationStructure | None:
+    """Parse the Metro structure within the OffStreet section."""
+    entrance_xml = metro_xml.find("Entrance")
+    access_area_xml = metro_xml.find("AccessArea")
+    platform_xml = metro_xml.find("Platform")
+
+    entrance = entrance_xml is not None
+    access_area = access_area_xml is not None
+    platform = platform_xml is not None
+
+    if not (entrance or access_area or platform):
+        return None
+
+    return MetroStopClassificationStructure(
+        Entrance=entrance, Platform=platform, AccessArea=access_area
+    )

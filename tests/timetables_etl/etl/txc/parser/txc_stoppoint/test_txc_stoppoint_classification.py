@@ -15,6 +15,9 @@ from common_layer.txc.models.txc_stoppoint import (
     RailStopClassificationStructure,
     StopClassificationStructure,
 )
+from common_layer.txc.models.txc_stoppoint.stop_point_types import (
+    MetroStopClassificationStructure,
+)
 from common_layer.txc.parser.stop_points import parse_stop_classification_structure
 from lxml.etree import fromstring
 
@@ -139,6 +142,44 @@ from lxml.etree import fromstring
             """,
             None,
             id="Missing Stop Type",
+        ),
+        pytest.param(
+            """
+            <StopClassification>
+                <StopType>MET</StopType>
+                <OffStreet>
+                    <Metro>
+                        <AccessArea />
+                    </Metro>
+                </OffStreet>
+            </StopClassification>
+            """,
+            StopClassificationStructure(
+                StopType="tramMetroUndergroundAccessArea",
+                OffStreet=OffStreetStructure(
+                    Metro=MetroStopClassificationStructure(AccessArea=True)
+                ),
+            ),
+            id="Valid Metro Station Access Area Structure",
+        ),
+        pytest.param(
+            """
+            <StopClassification>
+                <StopType>PLT</StopType>
+                <OffStreet>
+                    <Metro>
+                        <Platform />
+                    </Metro>
+                </OffStreet>
+            </StopClassification>
+            """,
+            StopClassificationStructure(
+                StopType="tramMetroUndergroundPlatform",
+                OffStreet=OffStreetStructure(
+                    Metro=MetroStopClassificationStructure(Platform=True)
+                ),
+            ),
+            id="Valid Metro Station Platform Structure",
         ),
     ],
 )

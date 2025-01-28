@@ -47,6 +47,7 @@ from .txc_stoppoint import (
     FerryStopClassificationStructure,
     LocationStructure,
     MarkedPointStructure,
+    MetroStopClassificationStructure,
     OffStreetStructure,
     OnStreetStructure,
     PlaceStructure,
