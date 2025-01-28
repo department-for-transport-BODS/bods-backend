@@ -52,7 +52,9 @@ from lxml.etree import fromstring
         ),
     ],
 )
-def test_parse_location_structure(location_xml_str, expected_result):
+def test_parse_location_structure(
+    location_xml_str: str, expected_result: LocationStructure | None
+):
     """
     Testing location structure parsing
     """
@@ -119,7 +121,9 @@ def test_parse_location_structure(location_xml_str, expected_result):
         ),
     ],
 )
-def test_parse_place_structure(place_xml_str, expected_result):
+def test_parse_place_structure(
+    place_xml_str: str, expected_result: PlaceStructure | None
+):
     """
     Parsing entire place structure
     """

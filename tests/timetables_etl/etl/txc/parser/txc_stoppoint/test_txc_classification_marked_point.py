@@ -31,7 +31,9 @@ from lxml.etree import fromstring
         ),
     ],
 )
-def test_parse_bearing_structure(bearing_xml_str, expected_result):
+def test_parse_bearing_structure(
+    bearing_xml_str: str, expected_result: BearingStructure | None
+):
     """
     Parsing of Bus Stop Structure
     """
@@ -71,7 +73,9 @@ def test_parse_bearing_structure(bearing_xml_str, expected_result):
         ),
     ],
 )
-def test_parse_marked_point_structure(marked_point_xml_str, expected_result):
+def test_parse_marked_point_structure(
+    marked_point_xml_str: str, expected_result: MarkedPointStructure | None
+):
     """
     Test Parsing a Marked Point Structure
     """

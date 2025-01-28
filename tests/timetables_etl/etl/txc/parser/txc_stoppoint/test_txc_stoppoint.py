@@ -188,7 +188,7 @@ from lxml.etree import fromstring
         ),
     ],
 )
-def test_parse_txc_stop_point(stop_xml_str, expected_result):
+def test_parse_txc_stop_point(stop_xml_str: str, expected_result: TXCStopPoint | None):
     """
     Test Parsing a Stop Point
     """

@@ -79,7 +79,7 @@ from lxml.etree import fromstring
     ],
 )
 def test_parse_stop_classification_structure(
-    stop_classification_xml_str, expected_result
+    stop_classification_xml_str: str, expected_result: StopClassificationStructure
 ):
     """
     Stop Classification Parsing test

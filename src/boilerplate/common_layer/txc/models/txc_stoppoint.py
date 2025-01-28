@@ -164,7 +164,20 @@ class BearingStructure(BaseModel):
 
 class MarkedPointStructure(BaseModel):
     """
-    Bearing is required for a stop
+    [BCT - MKD] Marked stop - for example a pole or a shelter. Point footprint.
+    """
+
+    Bearing: BearingStructure = Field(
+        ...,
+        description=(
+            "Direction along street in which vehicle is pointing when stopped at stopping point."
+        ),
+    )
+
+
+class UnmarkedPointStructure(BaseModel):
+    """
+    [BCT - CUS] Unmarked stop (or only marked on the road). Point footprint.
     """
 
     Bearing: BearingStructure = Field(
@@ -188,14 +201,19 @@ class BusStopStructure(BaseModel):
         ...,
         description=("Status of the registration of the bus stop as a timing point"),
     )
-    MarkedPoint: MarkedPointStructure = Field(
-        None,
+    MarkedPoint: MarkedPointStructure | None = Field(
+        default=None,
         description="[BCT - MKD] Marked stop - for example a pole or a shelter. Point footprint.",
+    )
+
+    UnmarkedPoint: UnmarkedPointStructure | None = Field(
+        default=None,
+        description="Unmarked stop (or only marked on the road).",
     )
 
     @field_validator("BusStopType", mode="before")
     @classmethod
-    def map_stop_type(cls, v):
+    def map_stop_type(cls, v: str):
         """
         Map BusStopType Codes
         Cases are:
@@ -240,7 +258,7 @@ class StopClassificationStructure(BaseModel):
 
     @field_validator("StopType", mode="before")
     @classmethod
-    def map_stop_type(cls, v):
+    def map_stop_type(cls, v: str):
         """
         Map Stop Type Codes
         Cases are:
@@ -248,7 +266,7 @@ class StopClassificationStructure(BaseModel):
           - Deprecated values to new values
         http/www.transxchange.org.uk/schema/2.4/napt/NaPT_stop-v2-4.xsd
         """
-        stop_type_mapping = {
+        stop_type_mapping: dict[str, str] = {
             "BCT": "busCoachTrolleyOnStreetPoint",
             "BCS": "busCoachTrolleyStationBay",
             "BCQ": "busCoachTrolleyStationVariableBay",

@@ -34,6 +34,23 @@ from lxml.etree import fromstring
         ),
         pytest.param(
             """
+			<Descriptor>
+				<CommonName xml:lang="en">Westleigh House</CommonName>
+				<Indicator xml:lang="en">DRT</Indicator>
+			</Descriptor>
+            """,
+            DescriptorStructure(
+                CommonName="Westleigh House",
+                ShortCommonName=None,
+                Landmark=None,
+                Street=None,
+                Crossing=None,
+                Indicator="DRT",
+            ),
+            id="Only CommonName and Indicator",
+        ),
+        pytest.param(
+            """
             <Descriptor>
                 <ShortCommonName>Dublin Stop</ShortCommonName>
                 <Landmark>George's Quay</Landmark>
@@ -47,7 +64,9 @@ from lxml.etree import fromstring
         ),
     ],
 )
-def test_parse_descriptor_structure(descriptor_xml_str, expected_result):
+def test_parse_descriptor_structure(
+    descriptor_xml_str: str, expected_result: DescriptorStructure | None
+):
     """
     Parse Descriptor
     """

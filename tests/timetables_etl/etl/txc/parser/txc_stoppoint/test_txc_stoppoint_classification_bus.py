@@ -1,3 +1,7 @@
+"""
+Parse Bus type StopClassification
+"""
+
 import pytest
 from common_layer.txc.models import (
     BearingStructure,
@@ -68,7 +72,9 @@ from lxml.etree import fromstring
         ),
     ],
 )
-def test_parse_bus_stop_structure(bus_xml_str, expected_result):
+def test_parse_bus_stop_structure(
+    bus_xml_str: str, expected_result: BusStopStructure | None
+):
     """
     Parsing of Bus Stop Structure
     """
@@ -128,7 +134,9 @@ def test_parse_bus_stop_structure(bus_xml_str, expected_result):
         ),
     ],
 )
-def test_parse_on_street_structure(on_street_xml_str, expected_result):
+def test_parse_on_street_structure(
+    on_street_xml_str: str, expected_result: OnStreetStructure | None
+):
     """
     Test Parsing On Street Structure
     """
