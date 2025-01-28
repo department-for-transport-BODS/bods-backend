@@ -23,7 +23,7 @@
       "Type": "Choice",
       "Choices": [
         {
-          "Condition": "{% $$.detail.inputDataSource = 'URL_DOWNLOAD' %}",
+          "Condition": "{% $states.input.detail.inputDataSource = 'URL_DOWNLOAD' %}",
           "Next": "DownloadDataset"
         }
       ],
@@ -133,15 +133,15 @@
             "Type": "Task",
             "Resource": "${FileValidationLambdaArn}",
             "Arguments": {
-              "Bucket": "{% $.Bucket %}",
-              "ObjectKey": "{% $.Key %}",
-              "DatasetRevisionId": "{% $.DatasetRevisionId %}"
+              "Bucket": "{% $states.input.Bucket %}",
+              "ObjectKey": "{% $states.input.Key %}",
+              "DatasetRevisionId": "{% $states.input.DatasetRevisionId %}"
             },
             "Output": {
               "fileValidation": "{% $states.result %}",
               "Bucket": "{% $.Bucket %}",
               "Key": "{% $.Key %}",
-              "DatasetRevisionId": "{% $.DatasetRevisionId %}"
+              "DatasetRevisionId": "{% $states.input.DatasetRevisionId %}"
             },
             "Next": "SchemaCheck",
             "Catch": [
@@ -161,9 +161,9 @@
             "Type": "Task",
             "Resource": "${SchemaCheckLambdaArn}",
             "Arguments": {
-              "Bucket": "{% $.Bucket %}",
-              "ObjectKey": "{% $.Key %}",
-              "DatasetRevisionId": "{% $.DatasetRevisionId %}",
+              "Bucket": "{% $states.input.Bucket %}",
+              "ObjectKey": "{% $states.input.Key %}",
+              "DatasetRevisionId": "{% $states.input.DatasetRevisionId %}",
               "ValidationResult": "{% $.fileValidation %}"
             },
             "Output": {
@@ -171,7 +171,7 @@
               "fileValidation": "{% $.fileValidation %}",
               "Bucket": "{% $.Bucket %}",
               "Key": "{% $.Key %}",
-              "DatasetRevisionId": "{% $.DatasetRevisionId %}"
+              "DatasetRevisionId": "{% $states.input.DatasetRevisionId %}"
             },
             "Next": "PostSchemaCheck",
             "Catch": [
@@ -221,10 +221,10 @@
             "Type": "Task",
             "Resource": "${FileAttributesEtlLambdaArn}",
             "Arguments": {
-              "Bucket": "{% $.Bucket %}",
-              "ObjectKey": "{% $.Key %}",
-              "DatasetRevisionId": "{% $.DatasetRevisionId %}",
-              "PostSchemaCheckResult": "{% $.postSchemaCheck %}"
+              "Bucket": "{% $states.input.Bucket %}",
+              "ObjectKey": "{% $states.input.Key %}",
+              "DatasetRevisionId": "{% $states.input.DatasetRevisionId %}",
+              "PostSchemaCheckResult": "{% $states.input.schemaCheck %}"
             },
             "Output": {
               "fileAttributesEtl": "{% $states.result %}"
@@ -247,17 +247,17 @@
             "Type": "Task",
             "Resource": "${PtiValidationLambdaArn}",
             "Arguments": {
-              "Bucket": "{% $.Bucket %}",
-              "ObjectKey": "{% $.Key %}",
-              "DatasetRevisionId": "{% $.DatasetRevisionId %}",
-              "TxcFileAttributesId": "{% $.fileAttributesEtl.id %}"
+              "Bucket": "{% $states.input.Bucket %}",
+              "ObjectKey": "{% $states.input.Key %}",
+              "DatasetRevisionId": "{% $states.input.DatasetRevisionId %}",
+              "TxcFileAttributesId": "{% $states.input.fileAttributesEtl.id %}"
             },
             "Output": {
               "ptiValidation": "{% $states.result %}",
               "fileAttributesEtl": "{% $.fileAttributesEtl %}",
               "Bucket": "{% $.Bucket %}",
               "Key": "{% $.Key %}",
-              "DatasetRevisionId": "{% $.DatasetRevisionId %}"
+              "DatasetRevisionId": "{% $states.input.DatasetRevisionId %}"
             },
             "Next": "ETLProcess",
             "Catch": [
@@ -277,9 +277,9 @@
             "Type": "Task",
             "Resource": "${ETLProcessLambdaArn}",
             "Arguments": {
-              "Bucket": "{% $.Bucket %}",
-              "ObjectKey": "{% $.Key %}",
-              "DatasetRevisionId": "{% $.DatasetRevisionId %}",
+              "Bucket": "{% $states.input.Bucket %}",
+              "ObjectKey": "{% $states.input.Key %}",
+              "DatasetRevisionId": "{% $states.input.DatasetRevisionId %}",
               "fileAttributesId": "{% $.fileAttributesEtl.id %}",
               "DatasetEtlTaskResultId": "{% $.DatasetEtlTaskResultId %}",
               "ValidationResult": "{% $.ptiValidation %}"
