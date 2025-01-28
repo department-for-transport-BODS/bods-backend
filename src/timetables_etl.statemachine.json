@@ -83,6 +83,9 @@
         "DatasetRevisionId": "{% $datasetRevisionId %}",
         "DatasetType": "{% $datasetType %}"
       },
+      "Assign": {
+        "ExtractedSubFolder": "{% $states.output.generatedPrefix %}"
+      },
       "Output": {
         "scanner": "{% $states.result %}",
         "detail": "{% $states.input.detail %}"
@@ -97,11 +100,14 @@
     },
     "FileLevelProcessing": {
       "Type": "Map",
+      "ItemSelector": {
+        "MapS3Object": "{% $states.context.Map.Item.Value.Key %}"
+      },
       "ItemReader": {
         "Resource": "arn:aws:states:::s3:listObjectsV2",
         "Arguments": {
-          "Bucket": "{% $states.input.detail.bucket.name %}",
-          "Prefix": "{% $states.input.scanner.body.generatedPrefix %}"
+          "Bucket": "{% $s3Bucket %}",
+          "Prefix": "{% $ExtractedSubFolder %}"
         }
       },
       "ResultWriter": {
@@ -123,7 +129,7 @@
             "Resource": "${FileValidationLambdaArn}",
             "Arguments": {
               "Bucket": "{% $s3Bucket %}",
-              "ObjectKey": "{% $s3Object %}",
+              "ObjectKey": "{% $MapS3Object %}",
               "DatasetRevisionId": "{% $datasetRevisionId %}"
             },
             "Output": {
@@ -148,7 +154,7 @@
             "Resource": "${SchemaCheckLambdaArn}",
             "Arguments": {
               "Bucket": "{% $s3Bucket %}",
-              "ObjectKey": "{% $s3Object %}",
+              "ObjectKey": "{% $MapS3Object %}",
               "DatasetRevisionId": "{% $datasetRevisionId %}"
             },
             "Output": {
@@ -173,7 +179,7 @@
             "Resource": "${PostSchemaCheckLambdaArn}",
             "Arguments": {
               "Bucket": "{% $s3Bucket %}",
-              "ObjectKey": "{% $s3Object %}",
+              "ObjectKey": "{% $MapS3Object %}",
               "DatasetRevisionId": "{% $datasetRevisionId %}"
             },
             "Output": {
@@ -198,7 +204,7 @@
             "Resource": "${FileAttributesEtlLambdaArn}",
             "Arguments": {
               "Bucket": "{% $s3Bucket %}",
-              "ObjectKey": "{% $s3Object %}",
+              "ObjectKey": "{% $MapS3Object %}",
               "DatasetRevisionId": "{% $datasetRevisionId %}"
             },
             "Assign": {
@@ -227,7 +233,7 @@
             "Resource": "${PtiValidationLambdaArn}",
             "Arguments": {
               "Bucket": "{% $s3Bucket %}",
-              "ObjectKey": "{% $s3Object %}",
+              "ObjectKey": "{% $MapS3Object %}",
               "DatasetRevisionId": "{% $datasetRevisionId %}",
               "TxcFileAttributesId": "{% $fileAttributesEtl %}"
             },
@@ -253,7 +259,7 @@
             "Resource": "${ETLProcessLambdaArn}",
             "Arguments": {
               "Bucket": "{% $s3Bucket %}",
-              "ObjectKey": "{% $s3Object %}",
+              "ObjectKey": "{% $MapS3Object %}",
               "DatasetRevisionId": "{% $datasetRevisionId %}",
               "TxcFileAttributesId": "{% $fileAttributesEtl %}",
               "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultIdd %}"
