@@ -11,6 +11,9 @@ from common_layer.txc.models import (
     LocationStructure,
     TXCStopPoint,
 )
+from common_layer.txc.models.txc_stoppoint.stoppoint_classification import (
+    StopClassificationStructure,
+)
 from common_layer.utils_location import osgrid_to_lonlat
 from geoalchemy2.shape import from_shape
 from shapely.geometry import Point
@@ -42,6 +45,12 @@ def create_custom_stop_point_data(stop: TXCStopPoint) -> NaptanStopPoint:
     it may be easier to work with if we create a NaptanStopPoint based on the TXC data
     TODO: Investigate how they use custom stop points
     """
+    bus_stop_type = (
+        stop.StopClassification.OnStreet.Bus.BusStopType
+        if (stop.StopClassification.OnStreet and stop.StopClassification.OnStreet.Bus)
+        else None
+    )
+
     return NaptanStopPoint(
         atco_code=stop.AtcoCode,
         naptan_code=stop.NaptanCode,
@@ -52,7 +61,7 @@ def create_custom_stop_point_data(stop: TXCStopPoint) -> NaptanStopPoint:
         admin_area_id=int(stop.AdministrativeAreaRef),
         stop_areas=stop.StopAreas if stop.StopAreas else [],
         stop_type=stop.StopClassification.StopType,
-        bus_stop_type=stop.StopClassification.OnStreet.Bus.BusStopType,
+        bus_stop_type=bus_stop_type,
         locality_id=stop.Place.NptgLocalityRef,
     )
 
