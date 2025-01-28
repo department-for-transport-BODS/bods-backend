@@ -101,9 +101,10 @@
     "FileLevelProcessing": {
       "Type": "Map",
       "ItemSelector": {
-        "MapS3Object": "{% $states.context.Map.Item.Value.Key %}",
-        "datasetRevisionId": "{% $datasetRevisionId %}",
-        "s3Bucket": "{% $s3Bucket %}"
+        "mapS3Object": "{% $states.context.Map.Item.Value.Key %}",
+        "mapDatasetRevisionId": "{% $datasetRevisionId %}",
+        "mapS3Bucket": "{% $s3Bucket %}",
+        "mapDatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}"
       },
       "ItemReader": {
         "Resource": "arn:aws:states:::s3:listObjectsV2",
@@ -124,15 +125,26 @@
           "Mode": "DISTRIBUTED",
           "ExecutionType": "STANDARD"
         },
-        "StartAt": "FileValidation",
+        "StartAt": "ProcessMapInput",
         "States": {
+          "ProcessMapInput": {
+            "Type": "Pass",
+            "Next": "FileValidation",
+            "Assign": {
+              "Bucket": "{% $$states.input.mapS3Bucket %}",
+              "ObjectKey": "{% $states.input.mapS3Object %}",
+              "DatasetRevisionId": "{% $states.input.mapDatasetRevisionId %}",
+              "DatasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}"
+            }
+          },
+
           "FileValidation": {
             "Type": "Task",
             "Resource": "${FileValidationLambdaArn}",
             "Arguments": {
-              "Bucket": "{% $s3Bucket %}",
-              "ObjectKey": "{% $MapS3Object %}",
-              "DatasetRevisionId": "{% $datasetRevisionId %}"
+              "Bucket": "{% $Bucket %}",
+              "ObjectKey": "{% $ObjectKey %}",
+              "DatasetRevisionId": "{% $DatasetRevisionId %}"
             },
             "Output": {
               "fileValidation": "{% $states.result %}"
@@ -155,9 +167,9 @@
             "Type": "Task",
             "Resource": "${SchemaCheckLambdaArn}",
             "Arguments": {
-              "Bucket": "{% $s3Bucket %}",
-              "ObjectKey": "{% $MapS3Object %}",
-              "DatasetRevisionId": "{% $datasetRevisionId %}"
+              "Bucket": "{% $Bucket %}",
+              "ObjectKey": "{% $ObjectKey %}",
+              "DatasetRevisionId": "{% $DatasetRevisionId %}"
             },
             "Output": {
               "schemaCheck": "{% $states.result %}"
@@ -180,9 +192,9 @@
             "Type": "Task",
             "Resource": "${PostSchemaCheckLambdaArn}",
             "Arguments": {
-              "Bucket": "{% $s3Bucket %}",
-              "ObjectKey": "{% $MapS3Object %}",
-              "DatasetRevisionId": "{% $datasetRevisionId %}"
+              "Bucket": "{% $Bucket %}",
+              "ObjectKey": "{% $ObjectKey %}",
+              "DatasetRevisionId": "{% $DatasetRevisionId %}"
             },
             "Output": {
               "postSchemaCheck": "{% $states.result %}"
@@ -205,9 +217,9 @@
             "Type": "Task",
             "Resource": "${FileAttributesEtlLambdaArn}",
             "Arguments": {
-              "Bucket": "{% $s3Bucket %}",
-              "ObjectKey": "{% $MapS3Object %}",
-              "DatasetRevisionId": "{% $datasetRevisionId %}"
+              "Bucket": "{% $Bucket %}",
+              "ObjectKey": "{% $ObjectKey %}",
+              "DatasetRevisionId": "{% $DatasetRevisionId %}"
             },
             "Assign": {
               "fileAttributesEtl": "{% $states.result.s3.bucket %}"
@@ -233,9 +245,9 @@
             "Type": "Task",
             "Resource": "${PtiValidationLambdaArn}",
             "Arguments": {
-              "Bucket": "{% $s3Bucket %}",
-              "ObjectKey": "{% $MapS3Object %}",
-              "DatasetRevisionId": "{% $datasetRevisionId %}",
+              "Bucket": "{% $Bucket %}",
+              "ObjectKey": "{% $ObjectKey %}",
+              "DatasetRevisionId": "{% $DatasetRevisionId %}",
               "TxcFileAttributesId": "{% $fileAttributesEtl %}"
             },
             "Output": {
@@ -259,9 +271,9 @@
             "Type": "Task",
             "Resource": "${ETLProcessLambdaArn}",
             "Arguments": {
-              "Bucket": "{% $s3Bucket %}",
-              "ObjectKey": "{% $MapS3Object %}",
-              "DatasetRevisionId": "{% $datasetRevisionId %}",
+              "Bucket": "{% $Bucket %}",
+              "ObjectKey": "{% $ObjectKey %}",
+              "DatasetRevisionId": "{% $DatasetRevisionId %}",
               "TxcFileAttributesId": "{% $fileAttributesEtl %}",
               "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultIdd %}"
             },
