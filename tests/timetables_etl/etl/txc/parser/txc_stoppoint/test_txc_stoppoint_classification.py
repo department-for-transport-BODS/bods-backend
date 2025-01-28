@@ -7,8 +7,13 @@ from common_layer.txc.models.txc_stoppoint.stop_point_marked import (
     BearingStructure,
     MarkedPointStructure,
 )
+from common_layer.txc.models.txc_stoppoint.stop_point_types import (
+    BayStructure,
+    BusAndCoachStationStructure,
+)
 from common_layer.txc.models.txc_stoppoint.stop_point_types_bus import BusStopStructure
 from common_layer.txc.models.txc_stoppoint.stoppoint_classification import (
+    OffStreetStructure,
     OnStreetStructure,
     StopClassificationStructure,
 )
@@ -49,6 +54,27 @@ from lxml.etree import fromstring
                 ),
             ),
             id="Valid Stop Classification Structure",
+        ),
+        pytest.param(
+            """
+            <StopClassification>
+                <StopType>BCS</StopType>
+                <OffStreet>
+                    <BusAndCoach>
+                        <Bay />
+                    </BusAndCoach>
+                </OffStreet>
+            </StopClassification>
+            """,
+            StopClassificationStructure(
+                StopType="busCoachTrolleyStationBay",
+                OffStreet=OffStreetStructure(
+                    BusAndCoach=BusAndCoachStationStructure(
+                        Bay=BayStructure(TimingStatus="principalTimingPoint")
+                    )
+                ),
+            ),
+            id="Valid Bus Coach Station Bay Structure",
         ),
         pytest.param(
             """

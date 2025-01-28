@@ -4,7 +4,6 @@ Parse TXC Stop Point Classification
 
 from typing import cast, get_args
 
-from common_layer.txc.parser.utils_tags import get_element_text
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
@@ -15,26 +14,19 @@ from ...models import (
     OnStreetStructure,
     StopClassificationStructure,
 )
-from ...models.txc_stoppoint import UnmarkedPointStructure
-from ...models.txc_types import BusStopTypeT, CompassPointT, TimingStatusT, TXCStopTypeT
+from ...models.txc_stoppoint import OffStreetStructure, UnmarkedPointStructure
+from ...models.txc_types import (
+    STOP_CLASSIFICATION_STOP_TYPE_MAPPING,
+    TIMING_STATUS_MAPPING,
+    BusStopTypeT,
+    CompassPointT,
+    TimingStatusT,
+    TXCStopTypeT,
+)
+from ..utils_tags import get_element_text
+from .parse_stop_point_types import parse_bus_and_coach_structure
 
 log = get_logger()
-
-
-TIMING_STATUS_MAPPING = {
-    # Map 3 letters to the new full names
-    # TXC has had versions with spelling mistakes that map onto new names
-    "PPT": "principalPoint",
-    "principalPoint": "principalPoint",
-    "principlePoint": "principalPoint",  # Deprecated spelling mistake
-    "TIP": "timeInfoPoint",
-    "timeInfoPoint": "timeInfoPoint",
-    "PTP": "principalTimingPoint",
-    "principalTimingPoint": "principalTimingPoint",
-    "principleTimingPoint": "principalTimingPoint",  # Deprecated spelling mistake
-    "OTH": "otherPoint",
-    "otherPoint": "otherPoint",
-}
 
 
 def parse_bearing_structure(bearing_xml: _Element) -> BearingStructure | None:
@@ -157,25 +149,70 @@ def parse_on_street_structure(on_street_xml: _Element) -> OnStreetStructure | No
     return None
 
 
+def parse_off_street_structure(off_street_xml: _Element) -> OffStreetStructure | None:
+    """
+    Parse the OffStreet structure within the StopClassification section.
+    StopPoints -> StopPoint -> StopClassification -> OffStreet
+    """
+    bus_and_coach_xml = off_street_xml.find("BusAndCoach")
+    if bus_and_coach_xml is None:
+        log.warning(
+            "BusAndCoach XML Missing. Perhaps other implemented data",
+            off_street_xml=off_street_xml,
+        )
+        return None
+
+    bus_and_coach = parse_bus_and_coach_structure(bus_and_coach_xml)
+    if bus_and_coach:
+        return OffStreetStructure(BusAndCoach=bus_and_coach)
+    return None
+
+
 def parse_stop_classification_structure(
     stop_classification_xml: _Element,
 ) -> StopClassificationStructure | None:
     """
     StopPoints -> StopPoint -> StopClassification
     """
-    on_street_xml = stop_classification_xml.find("OnStreet")
-    if on_street_xml is None:
+    stop_type = get_element_text(stop_classification_xml, "StopType")
+    if not stop_type:
+        log.warning("Missing StopType")
+        return None
+
+    # Map the stop type if it's in our mapping
+    mapped_stop_type = STOP_CLASSIFICATION_STOP_TYPE_MAPPING.get(stop_type, stop_type)
+
+    # Now validate against TXCStopTypeT
+    if mapped_stop_type not in get_args(TXCStopTypeT):
         log.warning(
-            "Missing OnStreet Section, OffStreet Not implemented",
-            stop_classification_xml=stop_classification_xml,
+            "Invalid StopType", stop_type=stop_type, mapped_stop_type=mapped_stop_type
         )
         return None
-    on_street = parse_on_street_structure(on_street_xml)
-    stop_type = get_element_text(stop_classification_xml, "StopType")
-    if on_street and stop_type:
-        return StopClassificationStructure(
-            StopType=cast(TXCStopTypeT, stop_type),
-            OnStreet=on_street,
-        )
 
+    # Try parsing OnStreet first
+    on_street_xml = stop_classification_xml.find("OnStreet")
+    if on_street_xml is not None:
+        on_street = parse_on_street_structure(on_street_xml)
+        if on_street:
+            return StopClassificationStructure(
+                StopType=cast(TXCStopTypeT, mapped_stop_type),
+                OnStreet=on_street,
+                OffStreet=None,
+            )
+
+    # If no OnStreet, try OffStreet
+    off_street_xml = stop_classification_xml.find("OffStreet")
+    if off_street_xml is not None:
+        off_street = parse_off_street_structure(off_street_xml)
+        if off_street:
+            return StopClassificationStructure(
+                StopType=cast(TXCStopTypeT, mapped_stop_type),
+                OffStreet=off_street,
+                OnStreet=None,
+            )
+
+    log.warning(
+        "Missing both OnStreet and OffStreet sections",
+        stop_classification_xml=stop_classification_xml,
+    )
     return None

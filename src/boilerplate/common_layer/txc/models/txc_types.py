@@ -85,3 +85,62 @@ LicenceClassificationT = Literal[
 ]
 
 DirectionT = Literal["inbound", "outbound", "clockwise", "anticlockwise"]
+
+# Mappings
+
+# Use TXC Recommended values instead of codes
+STOP_CLASSIFICATION_STOP_TYPE_MAPPING: dict[str, str] = {
+    # Bus/Coach stops
+    "BCT": "busCoachTrolleyOnStreetPoint",
+    "BCS": "busCoachTrolleyStationBay",
+    "BCQ": "busCoachTrolleyStationVariableBay",
+    "BST": "busCoachStationAccessArea",
+    "BCE": "busCoachTrolleyStationEntrance",
+    # Rail stops
+    "RPL": "railPlatform",
+    "RLY": "railAccessArea",
+    "RSE": "railStationEntrance",
+    # Tram/Metro/Underground stops
+    "PLT": "tramMetroUndergroundPlatform",
+    "MET": "tramMetroUndergroundAccessArea",
+    "TMU": "tramMetroUndergroundStationEntrance",
+    # Ferry stops
+    "FBT": "ferryBerth",
+    "FER": "ferryDockAccessArea",
+    "FTD": "ferryTerminalDockEntrance",
+    # Taxi ranks
+    "TXR": "taxiRank",
+    "STR": "sharedTaxiRank",
+    # Airport
+    "AIR": "airportEntrance",
+    "GAT": "airAccessArea",
+    # Other transport modes
+    "SDA": "carSetDownPickUpArea",
+    "LSE": "liftOrCableCarStationEntrance",
+    "LCB": "liftOrCableCarAccessArea",
+    "LPL": "liftOrCableCarPlatform",
+    # Deprecated mappings
+    "busCoachTramStationEntrance": "busCoachTrolleyStationEntrance",
+    "busCoachTramStationBay": "busCoachTrolleyStationBay",
+    "busCoachTramStationVariableBay": "busCoachTrolleyStationBay",
+    "busCoachTramOnStreetPoint": "busCoachTrolleyOnStreetPoint",
+    "FerryBerth": "ferryBerth",
+}
+
+
+# Correct Spelling Mistakes in Timing Status from older TXC Standards
+# Also conver to full names
+TIMING_STATUS_MAPPING = {
+    # Map 3 letters to the new full names
+    # TXC has had versions with spelling mistakes that map onto new names
+    "PPT": "principalPoint",
+    "principalPoint": "principalPoint",
+    "principlePoint": "principalPoint",  # Deprecated spelling mistake
+    "TIP": "timeInfoPoint",
+    "timeInfoPoint": "timeInfoPoint",
+    "PTP": "principalTimingPoint",
+    "principalTimingPoint": "principalTimingPoint",
+    "principleTimingPoint": "principalTimingPoint",  # Deprecated spelling mistake
+    "OTH": "otherPoint",
+    "otherPoint": "otherPoint",
+}

@@ -15,10 +15,10 @@ class BayStructure(BaseModel):
     TimingStatus: Annotated[
         TimingStatusT | None,
         Field(
-            default=None,
+            default="principalTimingPoint",
             description="Status of the registration of the bus stop as a timing point",
         ),
-    ]
+    ] = "principalTimingPoint"
 
 
 class BusAndCoachStationStructure(BaseModel):

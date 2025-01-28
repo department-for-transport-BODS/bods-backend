@@ -9,8 +9,13 @@ from .stop_point_marked import (
     MarkedPointStructure,
     UnmarkedPointStructure,
 )
+from .stop_point_types import BayStructure, BusAndCoachStationStructure
 from .stop_point_types_bus import BusStopStructure
-from .stoppoint_classification import OnStreetStructure, StopClassificationStructure
+from .stoppoint_classification import (
+    OffStreetStructure,
+    OnStreetStructure,
+    StopClassificationStructure,
+)
 from .txc_stoppoint import AnnotatedStopPointRef, TXCStopPoint
 
 __all__ = [
@@ -25,4 +30,9 @@ __all__ = [
     "StopClassificationStructure",
     "TXCStopPoint",
     "UnmarkedPointStructure",
+    # Classification
+    "OffStreetStructure",
+    # Types of Structure
+    "BusAndCoachStationStructure",
+    "BayStructure",
 ]
