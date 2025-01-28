@@ -50,6 +50,7 @@ from .txc_stoppoint import (
     OffStreetStructure,
     OnStreetStructure,
     PlaceStructure,
+    RailStopClassificationStructure,
     StopClassificationStructure,
     TXCStopPoint,
 )

@@ -13,6 +13,7 @@ from .stop_point_types import (
     BayStructure,
     BusAndCoachStationStructure,
     FerryStopClassificationStructure,
+    RailStopClassificationStructure,
 )
 from .stop_point_types_bus import BusStopStructure
 from .stoppoint_classification import (
@@ -36,8 +37,9 @@ __all__ = [
     "UnmarkedPointStructure",
     # Classification
     "OffStreetStructure",
-    # Types of Structure
+    # Types of Off StreetStructure
     "BusAndCoachStationStructure",
     "BayStructure",
     "FerryStopClassificationStructure",
+    "RailStopClassificationStructure",
 ]

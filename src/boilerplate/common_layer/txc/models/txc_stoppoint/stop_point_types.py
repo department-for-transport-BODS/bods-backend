@@ -45,3 +45,21 @@ class FerryStopClassificationStructure(BaseModel):
     Berth: Annotated[bool, Field(default=False, description="[FBT] Ferry berth")] = (
         False
     )
+
+
+class RailStopClassificationStructure(BaseModel):
+    """Structure for railway station."""
+
+    Entrance: Annotated[
+        bool, Field(default=False, description="[RSE] Railway station entrance")
+    ] = False
+    AccessArea: Annotated[
+        bool,
+        Field(
+            default=False,
+            description="[RLY] Railway interchange area away from entrance",
+        ),
+    ] = False
+    Platform: Annotated[
+        bool, Field(default=False, description="[RPL] Specific platform")
+    ] = False

@@ -10,6 +10,7 @@ from ..txc_types import STOP_CLASSIFICATION_STOP_TYPE_MAPPING, TXCStopTypeT
 from .stop_point_types import (
     BusAndCoachStationStructure,
     FerryStopClassificationStructure,
+    RailStopClassificationStructure,
 )
 from .stop_point_types_bus import BusStopStructure
 
@@ -32,6 +33,10 @@ class OffStreetStructure(BaseModel):
     Ferry: Annotated[
         FerryStopClassificationStructure | None,
         Field(default=None, description="A ferry terminal or dock PTAN"),
+    ] = None
+    Rail: Annotated[
+        RailStopClassificationStructure | None,
+        Field(default=None, description="A railway station PTAN"),
     ] = None
 
 

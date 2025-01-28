@@ -3,19 +3,16 @@ Test Parsing StopClassification
 """
 
 import pytest
-from common_layer.txc.models.txc_stoppoint.stop_point_marked import (
-    BearingStructure,
-    MarkedPointStructure,
-)
-from common_layer.txc.models.txc_stoppoint.stop_point_types import (
+from common_layer.txc.models.txc_stoppoint import (
     BayStructure,
+    BearingStructure,
     BusAndCoachStationStructure,
+    BusStopStructure,
     FerryStopClassificationStructure,
-)
-from common_layer.txc.models.txc_stoppoint.stop_point_types_bus import BusStopStructure
-from common_layer.txc.models.txc_stoppoint.stoppoint_classification import (
+    MarkedPointStructure,
     OffStreetStructure,
     OnStreetStructure,
+    RailStopClassificationStructure,
     StopClassificationStructure,
 )
 from common_layer.txc.parser.stop_points import parse_stop_classification_structure
@@ -95,6 +92,25 @@ from lxml.etree import fromstring
                 ),
             ),
             id="Valid Ferry Terminal Structure",
+        ),
+        pytest.param(
+            """
+            <StopClassification>
+                <StopType>RSE</StopType>
+                <OffStreet>
+                    <Rail>
+                        <Entrance />
+                    </Rail>
+                </OffStreet>
+            </StopClassification>
+            """,
+            StopClassificationStructure(
+                StopType="railStationEntrance",
+                OffStreet=OffStreetStructure(
+                    Rail=RailStopClassificationStructure(Entrance=True)
+                ),
+            ),
+            id="Valid Rail Station Structure",
         ),
         pytest.param(
             """
