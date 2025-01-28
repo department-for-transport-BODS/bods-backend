@@ -3,8 +3,21 @@ DownloadData Pydantic Models and Dataclasses
 """
 
 from dataclasses import dataclass
+from enum import Enum, auto
+from pathlib import Path
+from typing import Literal, TypeAlias
 
 from pydantic import AnyUrl, BaseModel, ConfigDict, Field
+
+FileType: TypeAlias = Literal["zip", "xml"]
+
+
+class ContentType(Enum):
+    """Supported content types for downloads."""
+
+    ZIP = auto()
+    XML = auto()
+    UNKNOWN = auto()
 
 
 class DownloadDatasetInputData(BaseModel):
@@ -14,21 +27,15 @@ class DownloadDatasetInputData(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    task_id: int = Field(alias="DatasetEtlTaskResultId")
     s3_bucket_name: str = Field(alias="Bucket")
-    s3_file_key: str = Field(alias="ObjectKey")
-    remote_dataset_url_link: AnyUrl = Field(alias="URLLink")
+    remote_dataset_url_link: AnyUrl = Field(alias="url")
     revision_id: int = Field(alias="DatasetRevisionId")
 
 
 @dataclass
-class DownloaderResponse:
-    """
-    Pydantic model that represents the response from a file download operation.
+class DownloadResult:
+    """Result of a file download operation."""
 
-    This model is used to capture the file type (e.g., MIME type or file extension)
-    and the binary content of the downloaded file.
-    """
-
-    filetype: str
-    content: bytes
+    path: Path
+    filetype: FileType
+    size: int

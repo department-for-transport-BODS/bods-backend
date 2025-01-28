@@ -2,10 +2,10 @@
 File Download Functions
 """
 
-import io
 import tempfile
-import zipfile
 from pathlib import Path
+from typing import BinaryIO
+from zipfile import is_zipfile
 
 import requests
 from common_layer.database.models import OrganisationDatasetRevision
@@ -14,134 +14,108 @@ from common_layer.exceptions.file_exceptions import (
     DownloadTimeout,
     UnknownFileType,
 )
-from common_layer.exceptions.pipeline_exceptions import PipelineException
 from pydantic import AnyUrl
 from requests.exceptions import RequestException
 from structlog.stdlib import get_logger
 
-from .models import DownloaderResponse
+from .models import DownloadResult, FileType
 
 log = get_logger()
 
 
-def bytes_are_zip_file(content: bytes) -> bool:
-    """Returns true if bytes are a zipfile."""
-    return zipfile.is_zipfile(io.BytesIO(content))
+def is_zip_file(file: BinaryIO) -> bool:
+    """Check if the given file is a valid ZIP file."""
+    return is_zipfile(file)
 
 
-def get_filetype_from_response(response) -> str | None:
+def get_content_type(response: requests.Response, file: BinaryIO) -> FileType:
     """
-    Extract the file type from the HTTP response headers or content.
+    Determine content type from headers and file content.
+    Returns the FileType ("zip" or "xml") directly.
     """
-    content_type = response.headers.get("Content-Type", "")
-    if "zip" in content_type or bytes_are_zip_file(response.content):
+    content_type = response.headers.get("Content-Type", "").lower()
+
+    if "zip" in content_type or is_zip_file(file):
         return "zip"
-
     if "xml" in content_type:
         return "xml"
+    raise UnknownFileType(str(response.url))
 
-    return None
+
+def validate_filetype(content_type: FileType) -> bool:
+    """Validate that the content type is supported."""
+    return content_type in {"zip", "xml"}
 
 
-class DataDownloader:
-    """Class to download data files from a url.
+class FileDownloader:
+    """Handles file downloads with error handling and validation."""
 
-    Args:
-        url (str): the url hosting the file to download.
-        username (str | None): optional username if url requires authentication.
-        password (str | None): optional password if url requires authentication.
+    def __init__(self, chunk_size: int = 8192, timeout: int = 60):
+        self.chunk_size = chunk_size
+        self.timeout = timeout
 
-    Examples:
-        # Use download the contents of the url and get the file format.
-        >>> downloader = DataDownloader("https://fakeurl.com")
-        >>> response = downloader.get()
-        >>> response.filetype
-            "xml"
-        >>> response.content
-            b"<Root><Child>hello,world</Child></Root>"
-    """
-
-    def __init__(self, url, username=None, password=None):
-        self.url = url
-        self.password = password
-        self.username = username
-
-    def _make_request(self, method, **kwargs):
-
-        if self.username is None or self.password is None:
-            auth = None
-        else:
-            auth = (self.username, self.password)
+    def download_to_temp(self, url: str | AnyUrl) -> DownloadResult:
+        """Download file to temporary location with validation."""
+        url_str = str(url)
+        temp_file = Path(tempfile.mktemp())
 
         try:
-            response = requests.request(
-                method, self.url, auth=auth, timeout=30, **kwargs
-            )
-            response.raise_for_status()
-            return response
-        except requests.Timeout as exc:
-            raise DownloadTimeout(self.url) from exc
-        except requests.RequestException as exc:
-            raise DownloadException(self.url) from exc
+            log.info("Starting file download", url=url_str, temp_path=temp_file)
 
-    def get(self, **kwargs) -> DownloaderResponse:
-        """Get the response content.
-
-        Args:
-            kwargs (dict): Keyword arguments that are passed to requests.request.
-
-        Raises:
-            UnknownFileType: if filetype is not xml or zip.
-        """
-        response = self._make_request("GET", **kwargs)
-        if (filetype := get_filetype_from_response(response)) is None:
-            raise UnknownFileType(self.url)
-
-        return DownloaderResponse(content=response.content, filetype=filetype)
-
-
-def download_url_to_tempfile(url: AnyUrl | str) -> Path | None:
-    """
-    Download file from a URL to a temporary file.
-    """
-    try:
-        with tempfile.NamedTemporaryFile(delete=False, mode="wb") as temp_file:
-            log.info("Starting file download", url=url, temp_path=temp_file.name)
-            with requests.get(str(url), stream=True, timeout=60) as response:
+            with requests.get(url_str, stream=True, timeout=self.timeout) as response:
                 response.raise_for_status()
-                log.info("Response received", url=url, status_code=response.status_code)
-                downloaded_size = 0
-                for chunk in response.iter_content(chunk_size=8192):
-                    if chunk:
-                        temp_file.write(chunk)
-                        downloaded_size += len(chunk)
-                temp_file.flush()
+                downloaded_size = self._save_to_file(response, temp_file)
+
+                with open(temp_file, "rb") as f:
+                    filetype = get_content_type(response, f)
+
                 log.info(
                     "Download completed successfully",
-                    url=url,
-                    temp_path=temp_file.name,
+                    url=url_str,
+                    temp_path=temp_file,
                     size_bytes=downloaded_size,
+                    filetype=filetype,
                 )
-                return Path(temp_file.name)
-    except RequestException as exc:
-        log.error(
-            "Download failed",
-            url=url,
-            exc_info=True,
-        )
-        raise PipelineException(f"Exception {exc}") from exc
+
+                return DownloadResult(
+                    path=temp_file, filetype=filetype, size=downloaded_size
+                )
+
+        except requests.Timeout as exc:
+            self._cleanup_on_error(temp_file, url_str)
+            raise DownloadTimeout(url_str) from exc
+        except RequestException as exc:
+            self._cleanup_on_error(temp_file, url_str)
+            raise DownloadException(url_str) from exc
+
+    def _save_to_file(self, response: requests.Response, path: Path) -> int:
+        """Save response content to file and return size."""
+        downloaded_size = 0
+        with open(path, "wb") as f:
+            for chunk in response.iter_content(chunk_size=self.chunk_size):
+                if chunk:
+                    f.write(chunk)
+                    downloaded_size += len(chunk)
+        return downloaded_size
+
+    def _cleanup_on_error(self, path: Path, url: str):
+        """Clean up temporary file on error."""
+        log.error("Download failed", url=url, exc_info=True)
+        if path.exists():
+            path.unlink()
+
+
+def download_file(url: AnyUrl) -> DownloadResult:
+    """
+    Downloads a file to a temp location
+    """
+    downloader = FileDownloader()
+    return downloader.download_to_temp(url)
 
 
 def download_revision_linked_file(
     revision: OrganisationDatasetRevision,
-) -> DownloaderResponse:
-    """
-    Get the response from the given url and return the pydantic model DownloaderResponse
-    """
-    try:
-        downloader = DataDownloader(revision.url_link)
-        response = downloader.get()
-        return response
-    except DownloadException as exc:
-        log.error(exc.message, exc_info=True)
-        raise PipelineException(exc.message) from exc
+) -> DownloadResult:
+    """Download file from revision URL to a temporary file."""
+    downloader = FileDownloader()
+    return downloader.download_to_temp(revision.url_link)
