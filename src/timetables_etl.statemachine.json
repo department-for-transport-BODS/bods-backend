@@ -5,16 +5,17 @@
     "ProcessInput": {
       "Type": "Pass",
       "Assign": {
-        "detail": {
-          "inputDataSource": "{% $$.inputDataSource %}",
-          "datasetRevisionId": "{% $$.datasetRevisionId %}",
-          "datasetType": "{% $$.datasetType %}",
-          "url": "{% $$.url %}",
-          "bucket": {
-            "name": "{% $$.bucket ? $$.bucket : $$.S3Bucket %}"
-          },
-          "s3": "{% $$.s3 %}"
-        }
+        "inputDataSource": "{% $states.input.inputDataSource %}",
+        "datasetRevisionId": "{% $states.input.datasetRevisionId %}",
+        "datasetType": "{% $states.input.datasetType %}",
+        "url": null,
+        "bucket": {
+          "name": "{% $states.input.s3.bucket %}"
+        },
+        "object": {
+          "key": "{% $states.input.s3.object %}"
+        },
+        "s3": "{% $states.input %}"
       },
       "Next": "RouteByInputType"
     },
@@ -32,18 +33,18 @@
       "Type": "Task",
       "Resource": "${DownloadDatasetLambdaArn}",
       "Arguments": {
-        "Url": "{% $$.detail.url %}",
-        "Bucket": "{% $$.detail.bucket.name %}",
-        "DatasetType": "{% $$.detail.datasetType %}",
-        "DatasetRevisionId": "{% $$.detail.datasetRevisionId %}"
+        "Url": "{% $states.input.detail.url %}",
+        "Bucket": "{% $states.input.detail.bucket.name %}",
+        "DatasetType": "{% $states.input.detail.datasetType %}",
+        "DatasetRevisionId": "{% $states.input.detail.datasetRevisionId %}"
       },
       "Output": {
         "detail": {
           "inputDataSource": "S3_FILE",
-          "datasetRevisionId": "{% $$.detail.datasetRevisionId %}",
-          "datasetType": "{% $$.detail.datasetType %}",
+          "datasetRevisionId": "{% $states.input.detail.datasetRevisionId %}",
+          "datasetType": "{% $states.input.detail.datasetType %}",
           "bucket": {
-            "name": "{% $$.detail.bucket.name %}"
+            "name": "{% $states.input.detail.bucket.name %}"
           },
           "object": {
             "key": "{% $states.result.objectKey %}"
@@ -62,13 +63,13 @@
       "Type": "Task",
       "Resource": "${InitializePipelineLambdaArn}",
       "Arguments": {
-        "Bucket": "{% $$.detail.bucket.name %}",
-        "ObjectKey": "{% $$.detail.object.key %}",
-        "DatasetRevisionId": "{% $$.detail.datasetRevisionId %}"
+        "Bucket": "{% $states.input.detail.bucket.name %}",
+        "ObjectKey": "{% $states.input.detail.object.key %}",
+        "DatasetRevisionId": "{% $states.input.detail.datasetRevisionId %}"
       },
       "Output": {
         "initializePipeline": "{% $states.result %}",
-        "detail": "{% $$.detail %}"
+        "detail": "{% $states.input.detail %}"
       },
       "Next": "ClamAvScanner",
       "Catch": [
@@ -88,14 +89,14 @@
       "Type": "Task",
       "Resource": "${ClamAvScannerLambdaArn}",
       "Arguments": {
-        "Bucket": "{% $$.detail.bucket.name %}",
-        "ObjectKey": "{% $$.detail.object.key %}",
-        "DatasetRevisionId": "{% $$.detail.datasetRevisionId %}",
-        "DatasetType": "{% $$.detail.datasetType %}"
+        "Bucket": "{% $states.input.detail.bucket.name %}",
+        "ObjectKey": "{% $states.input.detail.object.key %}",
+        "DatasetRevisionId": "{% $states.input.detail.datasetRevisionId %}",
+        "DatasetType": "{% $states.input.detail.datasetType %}"
       },
       "Output": {
         "scanner": "{% $states.result %}",
-        "detail": "{% $$.detail %}"
+        "detail": "{% $states.input.detail %}"
       },
       "Next": "FileLevelProcessing",
       "Catch": [
@@ -110,14 +111,14 @@
       "ItemReader": {
         "Resource": "arn:aws:states:::s3:listObjectsV2",
         "Arguments": {
-          "Bucket": "{% $$.detail.bucket.name %}",
-          "Prefix": "{% $$.scanner.body.generatedPrefix %}"
+          "Bucket": "{% $states.input.detail.bucket.name %}",
+          "Prefix": "{% $states.input.scanner.body.generatedPrefix %}"
         }
       },
       "ResultWriter": {
         "Resource": "arn:aws:states:::s3:putObject",
         "Arguments": {
-          "Bucket": "{% $$.detail.bucket.name %}",
+          "Bucket": "{% $states.input.detail.bucket.name %}",
           "Prefix": "tt-etl-map-results"
         }
       },
@@ -190,17 +191,17 @@
             "Type": "Task",
             "Resource": "${PostSchemaCheckLambdaArn}",
             "Arguments": {
-              "Bucket": "{% $.Bucket %}",
-              "ObjectKey": "{% $.Key %}",
-              "DatasetRevisionId": "{% $.DatasetRevisionId %}",
-              "SchemaCheckResult": "{% $.schemaCheck %}"
+              "Bucket": "{% $states.input.Bucket %}",
+              "ObjectKey": "{% $states.input.Key %}",
+              "DatasetRevisionId": "{% $states.input.DatasetRevisionId %}",
+              "SchemaCheckResult": "{% $states.input.schemaCheck %}"
             },
             "Output": {
               "postSchemaCheck": "{% $states.result %}",
-              "schemaCheck": "{% $.schemaCheck %}",
-              "Bucket": "{% $.Bucket %}",
-              "Key": "{% $.Key %}",
-              "DatasetRevisionId": "{% $.DatasetRevisionId %}"
+              "schemaCheck": "{% $states.input.schemaCheck %}",
+              "Bucket": "{% $states.input.Bucket %}",
+              "Key": "{% $states.input.Key %}",
+              "DatasetRevisionId": "{% $states.input.DatasetRevisionId %}"
             },
             "Next": "FileAttributesEtl",
             "Catch": [
