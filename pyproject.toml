@@ -49,7 +49,7 @@ defusedxml = "^0.7.1"
 pytz = "^2024.2"
 pandas = "^2.2.3"
 
-# Timetables ETL Lambda Dependences
+# Timetables ETL Lambda Dependencies
 [tool.poetry.group.etl.dependencies]
 pydantic-settings = "^2.6.1"
 shapely = "^2.0.6"
