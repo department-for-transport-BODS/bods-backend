@@ -82,7 +82,7 @@ def export_requirements(dependency_group: str, out_path: Path):
     """
     print(f"Generating requirements.txt for {dependency_group} in {out_path})...")
     requirements_out_file = out_path / "requirements.txt"
-    cmd = f"poetry export -f requirements.txt --without-hashes --without dev --with {dependency_group} -o {requirements_out_file}"
+    cmd = f"poetry export -f requirements.txt --without-hashes --only {dependency_group} -o {requirements_out_file}"
     subprocess.run(cmd, shell=True, check=True)
 
 
