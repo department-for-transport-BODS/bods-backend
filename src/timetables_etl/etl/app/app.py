@@ -14,6 +14,9 @@ from common_layer.database.repos import (
 )
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
+from common_layer.dynamodb.client.naptan_stop_points import (
+    NaptanStopPointDynamoDBClient,
+)
 from common_layer.s3 import S3
 from common_layer.txc.models import TXCData
 from common_layer.txc.parser.parser_txc import load_xml_data, parse_txc_from_element
@@ -90,8 +93,9 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, 
     log.debug("Input Data", data=event)
     input_data = ETLInputData(**event)
     db = SqlDB()
+    stop_point_client = NaptanStopPointDynamoDBClient()
     txc_data = extract_txc_data(input_data.s3_bucket_name, input_data.s3_file_key)
 
     task_data = get_task_data(input_data, db)
-    transform_data(txc_data, task_data, db)
+    transform_data(txc_data, task_data, db, stop_point_client)
     return {"status_code": 200, "message": "ETL Completed"}

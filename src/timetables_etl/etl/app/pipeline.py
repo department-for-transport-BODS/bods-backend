@@ -3,6 +3,9 @@ ETL Pipeline
 """
 
 from common_layer.database import SqlDB
+from common_layer.dynamodb.client.naptan_stop_points import (
+    NaptanStopPointDynamoDBClient,
+)
 from common_layer.txc.models.txc_data import TXCData
 from structlog.stdlib import get_logger
 
@@ -18,7 +21,7 @@ from .load import (
 from .models import TaskData
 from .transform.stop_points import (
     create_stop_point_location_mapping,
-    get_naptan_stops_from_db,
+    get_naptan_stops_from_dynamo,
 )
 
 log = get_logger()
@@ -32,11 +35,13 @@ class MissingLines(Exception):
         super().__init__(self.message)
 
 
-def build_lookup_data(txc: TXCData, db: SqlDB) -> ReferenceDataLookups:
+def build_lookup_data(
+    txc: TXCData, db: SqlDB, stop_point_client: NaptanStopPointDynamoDBClient
+) -> ReferenceDataLookups:
     """
     Get from DB with inserts of reference data used accross the workflow
     """
-    db_stops = get_naptan_stops_from_db(txc.StopPoints, db)
+    db_stops = get_naptan_stops_from_dynamo(txc.StopPoints, stop_point_client)
     stop_mapping = create_stop_point_location_mapping(txc.StopPoints, db_stops)
 
     serviced_orgs = load_serviced_organizations(txc.ServicedOrganisations, db)
@@ -47,12 +52,17 @@ def build_lookup_data(txc: TXCData, db: SqlDB) -> ReferenceDataLookups:
     )
 
 
-def transform_data(txc: TXCData, task_data: TaskData, db: SqlDB):
+def transform_data(
+    txc: TXCData,
+    task_data: TaskData,
+    db: SqlDB,
+    stop_point_client: NaptanStopPointDynamoDBClient,
+):
     """
     Transform Parsed TXC XML Data into SQLAlchmeny Database Models to apply
     """
 
-    reference_data = build_lookup_data(txc, db)
+    reference_data = build_lookup_data(txc, db, stop_point_client)
     for service in txc.Services:
 
         tm_service = load_transmodel_service(service, task_data, db)

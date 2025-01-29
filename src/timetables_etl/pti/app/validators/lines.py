@@ -21,8 +21,8 @@ class LinesValidator(BaseValidator):
     Class for running Line validations
     """
 
-    def __init__(self, *args, stop_area_map=None, **kwargs):
-        self._stop_area_map = stop_area_map or {}
+    def __init__(self, *args, stop_area_map: dict[str, list[str]], **kwargs):
+        self._stop_area_map = stop_area_map
         super().__init__(*args, **kwargs)
 
     def _flatten_stop_areas(self, stops: list[str]) -> set[str]:

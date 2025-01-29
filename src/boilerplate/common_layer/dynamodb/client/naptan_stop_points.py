@@ -81,7 +81,7 @@ class NaptanStopPointDynamoDBClient(DynamoDB):
         )
         return stop_points, missing_atco_codes
 
-    def get_stop_area_map(self, atco_codes: list[str]) -> dict[str, list[str] | None]:
+    def get_stop_area_map(self, atco_codes: list[str]) -> dict[str, list[str]]:
         """
         Build a stop area map from list of AtcoCodes.
 
@@ -89,7 +89,10 @@ class NaptanStopPointDynamoDBClient(DynamoDB):
             Dict of {AtcoCode: StopAreas}
         """
         stop_points, _ = self.get_by_atco_codes(atco_codes)
-        return {stop_point.AtcoCode: stop_point.StopAreas for stop_point in stop_points}
+        return {
+            stop_point.AtcoCode: (stop_point.StopAreas or [])
+            for stop_point in stop_points
+        }
 
     def _batch_queries(self, items: list[Any], batch_size: int) -> Iterator[list[Any]]:
         """

@@ -2,9 +2,10 @@
 Stop Point Information
 """
 
-from common_layer.database import SqlDB
 from common_layer.database.models import NaptanStopPoint
-from common_layer.database.repos import NaptanStopPointRepo
+from common_layer.dynamodb.client.naptan_stop_points import (
+    NaptanStopPointDynamoDBClient,
+)
 from common_layer.txc.models import (
     AnnotatedStopPointRef,
     LocationStructure,
@@ -41,6 +42,12 @@ def create_custom_stop_point_data(stop: TXCStopPoint) -> NaptanStopPoint:
     it may be easier to work with if we create a NaptanStopPoint based on the TXC data
     TODO: Investigate how they use custom stop points
     """
+    bus_stop_type = (
+        stop.StopClassification.OnStreet.Bus.BusStopType
+        if (stop.StopClassification.OnStreet and stop.StopClassification.OnStreet.Bus)
+        else None
+    )
+
     return NaptanStopPoint(
         atco_code=stop.AtcoCode,
         naptan_code=stop.NaptanCode,
@@ -51,14 +58,14 @@ def create_custom_stop_point_data(stop: TXCStopPoint) -> NaptanStopPoint:
         admin_area_id=int(stop.AdministrativeAreaRef),
         stop_areas=stop.StopAreas if stop.StopAreas else [],
         stop_type=stop.StopClassification.StopType,
-        bus_stop_type=stop.StopClassification.OnStreet.Bus.BusStopType,
+        bus_stop_type=bus_stop_type,
         locality_id=stop.Place.NptgLocalityRef,
     )
 
 
 def create_stop_point_location_mapping(
     stop_points: list[AnnotatedStopPointRef | TXCStopPoint],
-    naptan_stops: list[NaptanStopPoint],
+    naptan_stops: list[TXCStopPoint],
 ) -> StopsLookup:
     """
     Create a mapping dict between AtcoCodes and it's location
@@ -66,16 +73,17 @@ def create_stop_point_location_mapping(
     stop_location_map: StopsLookup = {}
 
     for naptan in naptan_stops:
-        stop_location_map[naptan.atco_code] = naptan
+        stop_location_map[naptan.AtcoCode] = create_custom_stop_point_data(naptan)
     for stop in stop_points:
         if isinstance(stop, TXCStopPoint):
             stop_location_map[stop.AtcoCode] = create_custom_stop_point_data(stop)
     return stop_location_map
 
 
-def get_naptan_stops_from_db(
-    stop_points: list[AnnotatedStopPointRef | TXCStopPoint], db: SqlDB
-) -> list[NaptanStopPoint]:
+def get_naptan_stops_from_dynamo(
+    stop_points: list[AnnotatedStopPointRef | TXCStopPoint],
+    stop_point_client: NaptanStopPointDynamoDBClient,
+) -> list[TXCStopPoint]:
     """
     Filter the TXC Stop Points for AnnotatedStopPointRef and query the DB for them
     TODO: Figure out how to handle when a referenced stop point ref is not in the DB
@@ -85,7 +93,7 @@ def get_naptan_stops_from_db(
     for stop in stop_points:
         if isinstance(stop, AnnotatedStopPointRef):
             stop_refs.append(stop.StopPointRef)
-    stops, missing_stops = NaptanStopPointRepo(db).get_by_atco_codes(stop_refs)
+    stops, missing_stops = stop_point_client.get_by_atco_codes(stop_refs)
     if missing_stops:
         log.error("AnnotatedStopPointRef not found in DB", missing_stops=missing_stops)
     log.info("Fetched naptan stops", count=len(stops), missing_stops=len(missing_stops))
