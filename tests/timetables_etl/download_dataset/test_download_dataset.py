@@ -2,10 +2,14 @@
 Tests for DownloadDataset Lambda
 """
 
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import boto3
 import pytest
+from botocore.stub import Stubber
 from common_layer.exceptions.file_exceptions import UnknownFileType
+from download_dataset.app.models import DownloadResult
 
 from timetables_etl.download_dataset.app.download_dataset import (
     lambda_handler,
@@ -14,7 +18,7 @@ from timetables_etl.download_dataset.app.download_dataset import (
 
 DT_FORMAT = "%Y-%m-%d_%H-%M-%S"
 TEST_ENV_VAR = {
-    "PROJECT_ENV": "dev",
+    "PROJECT_ENV": "local",
     "POSTGRES_HOST": "sample_host",
     "POSTGRES_PORT": "1234",
     "POSTGRES_USER": "sample_user",
@@ -42,18 +46,23 @@ TEST_ENV_VAR = {
     ],
 )
 def test_get_no_exception(
-    mock_data_downloader, content_type, content: bytes, expected_filetype: str
+    mock_file_downloader, content_type, content: bytes, expected_filetype: str
 ):
     """
-    Test the `get` method of the `mock_data_downloader` for valid file responses.
+    Test the FileDownloader for valid file responses.
     """
     mock_response = MagicMock()
     mock_response.headers = {"Content-Type": content_type}
     mock_response.content = content
-    mock_data_downloader._make_request = MagicMock(return_value=mock_response)
-    result = mock_data_downloader.get()
-    assert result.filetype == expected_filetype
-    assert result.content == content
+
+    # Mock the requests.get call
+    with patch("requests.get") as mock_get:
+        mock_get.return_value.__enter__.return_value = mock_response
+        result = mock_file_downloader.download_to_temp("https://test.com")
+
+        assert isinstance(result, DownloadResult)
+        assert result.filetype == expected_filetype
+        assert isinstance(result.path, Path)
 
 
 @pytest.mark.parametrize(
@@ -66,79 +75,15 @@ def test_get_no_exception(
         ),
     ],
 )
-def test_get_exception(mock_data_downloader, content_type, content):
+def test_get_exception(mock_file_downloader, content_type, content):
     """
-    Test the `get` method of the `mock_data_downloader`
-    For unknown file responses (raises exception).
+    Test the FileDownloader for unknown file responses (raises exception).
     """
     mock_response = MagicMock()
     mock_response.headers = {"Content-Type": content_type}
     mock_response.content = content
-    mock_data_downloader._make_request = MagicMock(return_value=mock_response)
 
-    with pytest.raises(UnknownFileType):
-        mock_data_downloader.get()
-
-
-@patch("builtins.open", new_callable=MagicMock)
-@patch("timetables_etl.download_dataset.app.download_dataset.S3.put_object")
-def test_upload_file_to_s3(mock_put, mock_open):
-    """
-    Test the `upload_file_to_s3` method to upload file to s3
-    """
-    mock_file = MagicMock()
-    mock_file.read.return_value = b"file content"
-    mock_open.return_value.__enter__.return_value = mock_file
-    mock_open.return_value.__exit__.return_value = None
-    mock_s3_handler = MagicMock()
-
-    temp_filename = "fakefile.tmp"
-    filename = "fakefile.txt"
-
-    upload_file_to_s3(temp_filename, filename, mock_s3_handler)
-    mock_open.assert_called_once_with(temp_filename, "rb")
-    mock_file.read.assert_called_once()
-
-
-@pytest.mark.parametrize(
-    "event, expected_status_code, expected_body",
-    [
-        pytest.param(
-            {
-                "Bucket": "my-bucket",
-                "ObjectKey": "file.zip",
-                "URLLink": "https://fakeurl.com/file.zip",
-                "DatasetRevisionId": 1,
-                "DatasetEtlTaskResultId": "1234",
-            },
-            200,
-            "file downloaded successfully",
-            id="Valid URL Link",
-        ),
-    ],
-)
-@patch("common_layer.db.file_processing_result.SqlDB")
-@patch(
-    "timetables_etl.download_dataset.app.download_dataset.download_and_upload_dataset"
-)
-@patch.dict("os.environ", TEST_ENV_VAR)
-def test_lambda_handler_no_exception(
-    mock_download_upload_dataset,
-    mock_sqldb,
-    event,
-    expected_status_code,
-    expected_body,
-):
-    """
-    Test the `lambda_handler` method when no exception is raised.
-    """
-    mock_db_instance = MagicMock()
-    mock_sqldb.get_db.return_value = mock_db_instance
-    mock_response = {"statusCode": 200, "body": expected_body}
-    mock_download_upload_dataset.return_value = mock_response
-    mock_context = MagicMock()
-
-    response = lambda_handler(event, mock_context)
-
-    assert response["statusCode"] == expected_status_code
-    assert response["body"] == expected_body
+    with patch("requests.get") as mock_get:
+        mock_get.return_value.__enter__.return_value = mock_response
+        with pytest.raises(UnknownFileType):
+            mock_file_downloader.download_to_temp("https://test.com")

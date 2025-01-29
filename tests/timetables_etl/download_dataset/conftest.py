@@ -6,13 +6,14 @@ import zipfile
 from io import BytesIO
 
 import pytest
-from download_dataset.app.file_download import DataDownloader
+from common_layer.database.models.model_organisation import OrganisationDatasetRevision
+from download_dataset.app.file_download import FileDownloader
 
 from tests.factories.database.organisation import OrganisationDatasetRevisionFactory
 
 
 @pytest.fixture
-def mock_revision():
+def mock_revision() -> OrganisationDatasetRevision:
     """Fixture for creating a mock revision"""
     return OrganisationDatasetRevisionFactory.create(
         url_link="https://example.com/data.csv"
@@ -20,11 +21,11 @@ def mock_revision():
 
 
 @pytest.fixture
-def mock_data_downloader():
+def mock_file_downloader():
     """
-    Mocked Data Downloader?
+    Mock FileDownloader instance
     """
-    return DataDownloader("https://fakeurl.com")
+    return FileDownloader()
 
 
 def create_valid_zip() -> bytes:

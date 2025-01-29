@@ -1,71 +1,129 @@
 {
   "StartAt": "ProcessInput",
+  "QueryLanguage": "JSONata",
   "States": {
     "ProcessInput": {
       "Type": "Pass",
-      "ResultPath": "$",
-      "Parameters": {
-        "detail.$": "$[0].detail"
-      },
-      "Next": "InitializePipeline"
+      "Next": "RouteByInputType",
+      "Assign": {
+        "inputDataSource": "{% $states.input.inputDataSource %}",
+        "datasetRevisionId": "{% $states.input.datasetRevisionId %}",
+        "datasetType": "{% $states.input.datasetType %}",
+        "url": "{% $exists($states.input.url) ? $states.input.url : null %}",
+        "s3Bucket": "{% $exists($states.input.s3.bucket) ? $states.input.s3.bucket : '${DefaultS3BucketName}' %}",
+        "s3Object": "{% $exists($states.input.s3.object) ? $states.input.s3.object : null %}"
+      }
     },
-    "InitializePipeline": {
+    "RouteByInputType": {
+      "Type": "Choice",
+      "Default": "ParentFail",
+      "Choices": [
+        {
+          "Condition": "{% $inputDataSource = 'URL_DOWNLOAD' and $url != null %}",
+          "Next": "DownloadDataset"
+        },
+        {
+          "Condition": "{% $inputDataSource = 'S3_FILE' and $s3Bucket != null and $s3Object != null %}",
+          "Next": "InitializePipeline"
+        }
+      ]
+    },
+    "DownloadDataset": {
       "Type": "Task",
-      "Resource": "${InitializePipelineLambdaArn}",
-      "Parameters": {
-        "Bucket.$": "$.detail.bucket.name",
-        "ObjectKey.$": "$.detail.object.key",
-        "DatasetRevisionId.$": "$.detail.datasetRevisionId"
+      "Next": "InitializePipeline",
+      "Resource": "${DownloadDatasetLambdaArn}",
+      "Arguments": {
+        "Url": "{% $url %}",
+        "Bucket": "{% $s3Bucket %}",
+        "DatasetType": "{% $datasetType %}",
+        "DatasetRevisionId": "{% $datasetRevisionId %}"
       },
-      "ResultPath": "$.initializePipeline",
-      "Next": "ClamAvScanner",
+      "Assign": {
+        "s3Bucket": "{% $states.result.s3.bucket %}",
+        "s3Object": "{% $states.result.s3.object %}"
+      },
+
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
           "Next": "ParentExceptionHandler",
-          "ResultPath": "$.errorInfo"
+          "Output": {
+            "errorInfo": "{% $states.errorOutput %}"
+          }
+        }
+      ]
+    },
+    "InitializePipeline": {
+      "Type": "Task",
+      "Next": "ClamAvScanner",
+      "Resource": "${InitializePipelineLambdaArn}",
+      "Arguments": {
+        "Bucket": "{% $s3Bucket %}",
+        "ObjectKey": "{% $s3Object %}",
+        "DatasetRevisionId": "{% $datasetRevisionId %}"
+      },
+      "Assign": {
+        "DatasetEtlTaskResultId": "{% $states.result.DatasetEtlTaskResultId %}"
+      },
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "ParentExceptionHandler",
+          "Output": {
+            "errorInfo": "{% $states.errorOutput %}"
+          }
         }
       ]
     },
     "ClamAvScanner": {
       "Type": "Task",
-      "Resource": "${ClamAvScannerLambdaArn}",
-      "Parameters": {
-        "Bucket.$": "$.detail.bucket.name",
-        "ObjectKey.$": "$.detail.object.key",
-        "DatasetRevisionId.$": "$.detail.datasetRevisionId",
-        "DatasetType.$": "$.detail.datasetType"
-      },
-      "ResultPath": "$.scanner",
       "Next": "FileLevelProcessing",
+      "Resource": "${ClamAvScannerLambdaArn}",
+      "Arguments": {
+        "Bucket": "{% $s3Bucket %}",
+        "ObjectKey": "{% $s3Object %}",
+        "DatasetRevisionId": "{% $datasetRevisionId %}",
+        "DatasetType": "{% $datasetType %}"
+      },
+      "Assign": {
+        "ExtractedSubFolder": "{% $states.result.body.generatedPrefix %}"
+      },
+
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
           "Next": "ParentExceptionHandler",
-          "ResultPath": "$.errorInfo"
+          "Output": {
+            "errorInfo": "{% $states.errorOutput %}"
+          }
         }
       ]
     },
     "FileLevelProcessing": {
       "Type": "Map",
-      "Parameters": {
-        "DatasetRevisionId.$": "$.detail.datasetRevisionId",
-        "Bucket.$": "$.detail.bucket.name",
-        "Key.$": "$$.Map.Item.Value.Key",
-        "DatasetEtlTaskResultId.$": "$.initializePipeline.DatasetEtlTaskResultId",
-        "detail.$": "$.detail"
+      "Next": "GenerateOutputZip",
+      "MaxConcurrency": 1000,
+      "ToleratedFailurePercentage": 100,
+      "Output": {
+        "mapResults": "{% $states.result %}"
+      },
+      "ItemSelector": {
+        "mapS3Object": "{% $states.context.Map.Item.Value.Key %}",
+        "mapDatasetRevisionId": "{% $datasetRevisionId %}",
+        "mapS3Bucket": "{% $s3Bucket %}",
+        "mapDatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}"
       },
       "ItemReader": {
         "Resource": "arn:aws:states:::s3:listObjectsV2",
-        "Parameters": {
-          "Bucket.$": "$.detail.bucket.name",
-          "Prefix.$": "$.scanner.body.generatedPrefix"
+        "Arguments": {
+          "Bucket": "{% $s3Bucket %}",
+          "Prefix": "{% $ExtractedSubFolder %}"
         }
       },
       "ResultWriter": {
         "Resource": "arn:aws:states:::s3:putObject",
-        "Parameters": {
-          "Bucket.$": "$.detail.bucket.name",
+        "Arguments": {
+          "Bucket": "{% $s3Bucket %}",
           "Prefix": "tt-etl-map-results"
         }
       },
@@ -74,120 +132,158 @@
           "Mode": "DISTRIBUTED",
           "ExecutionType": "STANDARD"
         },
-        "StartAt": "FileValidation",
+        "StartAt": "ProcessMapInput",
         "States": {
+          "ProcessMapInput": {
+            "Type": "Pass",
+            "Next": "FileValidation",
+            "Assign": {
+              "Bucket": "{% $states.input.mapS3Bucket %}",
+              "ObjectKey": "{% $states.input.mapS3Object %}",
+              "DatasetRevisionId": "{% $states.input.mapDatasetRevisionId %}",
+              "datasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}"
+            }
+          },
+
           "FileValidation": {
             "Type": "Task",
-            "Resource": "${FileValidationLambdaArn}",
-            "Parameters": {
-              "Bucket.$": "$.Bucket",
-              "ObjectKey.$": "$.Key",
-              "DatasetRevisionId.$": "$.DatasetRevisionId"
-            },
-            "ResultPath": "$.fileValidation",
             "Next": "SchemaCheck",
+            "Resource": "${FileValidationLambdaArn}",
+            "Arguments": {
+              "Bucket": "{% $Bucket %}",
+              "ObjectKey": "{% $ObjectKey %}",
+              "DatasetRevisionId": "{% $DatasetRevisionId %}"
+            },
+            "Output": {
+              "fileValidation": "{% $states.result %}"
+            },
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
-                "ResultPath": "$.errorInfo"
+                "Output": {
+                  "errorInfo": "{% $states.errorOutput %}"
+                }
               }
             ]
           },
           "SchemaCheck": {
             "Type": "Task",
-            "Resource": "${SchemaCheckLambdaArn}",
-            "Parameters": {
-              "Bucket.$": "$.Bucket",
-              "ObjectKey.$": "$.Key",
-              "DatasetRevisionId.$": "$.DatasetRevisionId",
-              "ValidationResult.$": "$.fileValidation"
-            },
-            "ResultPath": "$.schemaCheck",
             "Next": "PostSchemaCheck",
+            "Resource": "${SchemaCheckLambdaArn}",
+            "Arguments": {
+              "Bucket": "{% $Bucket %}",
+              "ObjectKey": "{% $ObjectKey %}",
+              "DatasetRevisionId": "{% $DatasetRevisionId %}"
+            },
+            "Output": {
+              "schemaCheck": "{% $states.result %}"
+            },
+
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
-                "ResultPath": "$.errorInfo"
+                "Output": {
+                  "Error": "{% $states.errorOutput %}",
+                  "Cause": "{% $states.errorOutput %}"
+                }
               }
             ]
           },
           "PostSchemaCheck": {
             "Type": "Task",
-            "Resource": "${PostSchemaCheckLambdaArn}",
-            "Parameters": {
-              "Bucket.$": "$.Bucket",
-              "ObjectKey.$": "$.Key",
-              "DatasetRevisionId.$": "$.DatasetRevisionId",
-              "SchemaCheckResult.$": "$.schemaCheck"
-            },
-            "ResultPath": "$.postSchemaCheck",
             "Next": "FileAttributesEtl",
+            "Resource": "${PostSchemaCheckLambdaArn}",
+            "Arguments": {
+              "Bucket": "{% $Bucket %}",
+              "ObjectKey": "{% $ObjectKey %}",
+              "DatasetRevisionId": "{% $DatasetRevisionId %}"
+            },
+            "Output": {
+              "postSchemaCheck": "{% $states.result %}"
+            },
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
-                "ResultPath": "$.errorInfo"
+                "Output": {
+                  "errorInfo": "{% $states.errorOutput %}"
+                }
               }
             ]
           },
           "FileAttributesEtl": {
             "Type": "Task",
-            "Resource": "${FileAttributesEtlLambdaArn}",
-            "Parameters": {
-              "Bucket.$": "$.Bucket",
-              "ObjectKey.$": "$.Key",
-              "DatasetRevisionId.$": "$.DatasetRevisionId",
-              "PostSchemaCheckResult.$": "$.postSchemaCheck"
-            },
-            "ResultPath": "$.fileAttributesEtl",
             "Next": "PtiValidation",
+            "Resource": "${FileAttributesEtlLambdaArn}",
+            "Arguments": {
+              "Bucket": "{% $Bucket %}",
+              "ObjectKey": "{% $ObjectKey %}",
+              "DatasetRevisionId": "{% $DatasetRevisionId %}"
+            },
+            "Assign": {
+              "fileAttributesEtl": "{% $states.result.id %}"
+            },
+            "Output": {
+              "fileAttributesEtl": "{% $states.result.id %}"
+            },
+
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
-                "ResultPath": "$.errorInfo"
+                "Output": {
+                  "errorInfo": "{% $states.errorOutput %}"
+                }
               }
             ]
           },
           "PtiValidation": {
             "Type": "Task",
-            "Resource": "${PtiValidationLambdaArn}",
-            "Parameters": {
-              "Bucket.$": "$.Bucket",
-              "ObjectKey.$": "$.Key",
-              "DatasetRevisionId.$": "$.DatasetRevisionId",
-              "TxcFileAttributesId.$": "$.fileAttributesEtl.id"
-            },
-            "ResultPath": "$.ptiValidation",
             "Next": "ETLProcess",
+            "Resource": "${PtiValidationLambdaArn}",
+            "Arguments": {
+              "Bucket": "{% $Bucket %}",
+              "ObjectKey": "{% $ObjectKey %}",
+              "DatasetRevisionId": "{% $DatasetRevisionId %}",
+              "TxcFileAttributesId": "{% $fileAttributesEtl %}"
+            },
+            "Output": {
+              "ptiValidation": "{% $states.result %}"
+            },
+
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
-                "ResultPath": "$.errorInfo"
+                "Output": {
+                  "errorInfo": "{% $states.errorOutput %}"
+                }
               }
             ]
           },
           "ETLProcess": {
             "Type": "Task",
-            "Resource": "${ETLProcessLambdaArn}",
-            "Parameters": {
-              "Bucket.$": "$.Bucket",
-              "ObjectKey.$": "$.Key",
-              "DatasetRevisionId.$": "$.DatasetRevisionId",
-              "fileAttributesId.$": "$.fileAttributesEtl.id",
-              "DatasetEtlTaskResultId.$": "$.DatasetEtlTaskResultId",
-              "ValidationResult.$": "$.ptiValidation"
-            },
-            "ResultPath": "$.etlProcess",
             "Next": "Success",
+            "Resource": "${ETLProcessLambdaArn}",
+            "Arguments": {
+              "Bucket": "{% $Bucket %}",
+              "ObjectKey": "{% $ObjectKey %}",
+              "DatasetRevisionId": "{% $DatasetRevisionId %}",
+              "fileAttributesId": "{% $fileAttributesEtl %}",
+              "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}"
+            },
+            "Output": {
+              "etlProcess": "{% $states.result %}"
+            },
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
-                "ResultPath": "$.errorInfo"
+                "Output": {
+                  "errorInfo": "{% $states.errorOutput %}"
+                }
               }
             ]
           },
@@ -196,46 +292,59 @@
           },
           "ExceptionHandler": {
             "Type": "Task",
+            "Next": "Fail",
             "Resource": "${ExceptionHandlerLambdaArn}",
-            "Parameters": {
-              "Error.$": "$.errorInfo.Error",
-              "Cause.$": "States.StringToJson($.errorInfo.Cause)",
-              "DatasetEtlTaskResultId.$": "$.DatasetEtlTaskResultId"
-            },
-            "Next": "Fail"
+            "Arguments": {
+              "Error": "{% $states.input.errorInfo.Error %}",
+              "Cause": "{% $parse($states.input.errorInfo.Cause) %}",
+              "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}"
+            }
           },
           "Fail": {
-            "Type": "Fail"
+            "Type": "Fail",
+            "Comment": "Processing Single File in ETL Failed"
           }
         }
-      },
-      "MaxConcurrency": 1000,
-      "ToleratedFailurePercentage": 100,
-      "Next": "GenerateOutputZip",
-      "ResultPath": "$.mapResults"
+      }
     },
     "GenerateOutputZip": {
       "Type": "Task",
+      "Next": "Completed",
       "Resource": "${GenerateOutputZipLambdaArn}",
-      "Parameters": {
-        "MapRunArn.$": "$.mapResults.MapRunArn",
-        "DestinationBucket.$": "$.detail.bucket.name",
-        "OutputPrefix.$": "$.scanner.body.generatedPrefix",
-        "DatasetRevisionId.$": "$.detail.datasetRevisionId",
-        "OriginalObjectKey.$": "$.detail.object.key"
+      "Arguments": {
+        "MapRunArn": "{% $states.input.mapResults.MapRunArn %}",
+        "DestinationBucket": "{% $s3Bucket %}",
+        "OutputPrefix": "{% $ExtractedSubFolder %}",
+        "DatasetRevisionId": "{% $datasetRevisionId %}",
+        "OriginalObjectKey": "{% $s3Object %}"
       },
-      "End": true
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "ParentExceptionHandler",
+          "Output": {
+            "errorInfo": "{% $states.errorOutput %}"
+          }
+        }
+      ]
     },
-
     "ParentExceptionHandler": {
       "Type": "Task",
+      "Next": "ParentFail",
       "Resource": "${ExceptionHandlerLambdaArn}",
-      "Parameters": {
-        "Error.$": "$.errorInfo.Error",
-        "Cause.$": "States.StringToJson($.errorInfo.Cause)",
-        "DatasetEtlTaskResultId.$": "$.initializePipeline.DatasetEtlTaskResultId"
-      },
-      "End": true
+      "Arguments": {
+        "Error": "{% $states.input.errorInfo.Error %}",
+        "Cause": "{% $parse($states.input.errorInfo.Cause) %}",
+        "DatasetRevisionId": "{% $datasetRevisionId %}"
+      }
+    },
+    "ParentFail": {
+      "Type": "Fail",
+      "Comment": "Entire ETL Pipeline Failed"
+    },
+    "Completed": {
+      "Type": "Succeed",
+      "Comment": "ETL Process Successully Completed"
     }
   }
 }
