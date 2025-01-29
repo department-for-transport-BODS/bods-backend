@@ -15,7 +15,7 @@ from common_layer.database.repos import NaptanStopPointRepo
 from structlog.stdlib import get_logger
 from typer import BadParameter, Option, Typer
 
-from tools.common.db_tools import create_db_config, setup_db_instance
+from tools.common.db_tools import DbConfig, create_db_config, setup_db_instance
 
 from .etl_task import process_etl_entities_by_revision_id
 from .organisation import (
@@ -183,7 +183,9 @@ def validate_params(revision_id: int | None, service_id: int | None) -> None:
         )
 
 
-def make_default_output_path(revision_id: int | None, service_id: int | None) -> Path:
+def make_default_output_path(
+    db_config: DbConfig, revision_id: int | None, service_id: int | None
+) -> Path:
     """
     Generate a default output path based on revision_id or service_id.
     Creates directories if they don't exist.
@@ -196,10 +198,12 @@ def make_default_output_path(revision_id: int | None, service_id: int | None) ->
         logger.info("Creating base directory structure", path=str(base_path))
         base_path.mkdir(parents=True, exist_ok=True)
 
+    db_host_port = f"{db_config.host}-{db_config.port}"
+
     if revision_id is not None:
-        final_path = base_path / "revision_id" / str(revision_id)
+        final_path = base_path / db_host_port / "revision_id" / str(revision_id)
     else:
-        final_path = base_path / "service_id" / str(service_id)
+        final_path = base_path / db_host_port / "service_id" / str(service_id)
 
     if not final_path.exists():
         logger.info("Creating output directory", path=str(final_path))
@@ -275,7 +279,7 @@ def main(
         raise typer.Exit(1)
     db = setup_db_instance(config)
     if output_path is None:
-        output_path = make_default_output_path(revision_id, service_id)
+        output_path = make_default_output_path(config, revision_id, service_id)
     if revision_id:
         process_from_revision_id(
             db=db, revision_id=revision_id, output_path=output_path
