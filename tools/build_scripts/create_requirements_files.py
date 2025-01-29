@@ -64,8 +64,7 @@ def export_requirements_for_lambdas(poetry_dependency_groups: set[str]):
     )
     for lambda_name in lambda_dependency_groups:
         lambda_path = LAMBDA_BASE_DIR / lambda_name
-        requirements_out_path = lambda_path / "requirements.txt"
-        export_requirements(lambda_name, requirements_out_path)
+        export_requirements(lambda_name, lambda_path)
 
 
 def export_requirements_for_layer(poetry_dependency_groups: set[str]):
@@ -83,7 +82,7 @@ def export_requirements(dependency_group: str, out_path: Path):
     """
     print(f"Generating requirements.txt for {dependency_group} in {out_path})...")
     requirements_out_file = out_path / "requirements.txt"
-    cmd = f"poetry export -f requirements.txt --without-hashes --without-annotations --without dev --with {dependency_group} -o {requirements_out_file}"
+    cmd = f"poetry export -f requirements.txt --without-hashes --without dev --with {dependency_group} -o {requirements_out_file}"
     subprocess.run(cmd, shell=True, check=True)
 
 
