@@ -8,7 +8,12 @@ import time
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
+from common_layer.database.client import ProjectEnvironment
 from common_layer.database.create_tables import create_db_tables
+from common_layer.dynamodb.client.naptan_stop_points import (
+    NaptanDynamoDBSettings,
+    NaptanStopPointDynamoDBClient,
+)
 from common_layer.txc.parser.parser_txc import TXCParserConfig, parse_txc_file
 from structlog.stdlib import get_logger
 
@@ -27,6 +32,11 @@ def process_single_file(config: TestConfig, file_path: Path) -> TimingStats:
     # Create a new database connection for each process
     db = setup_db_instance(config.db_config)
 
+    # Create stop_point_client with env set to dev (will use AWS profile instead of localstack)
+    stop_point_client = NaptanStopPointDynamoDBClient(
+        NaptanDynamoDBSettings(PROJECT_ENV=ProjectEnvironment.DEVELOPMENT)
+    )
+
     stats = TimingStats(file_path=file_path)
     start_time = time.time()
 
@@ -42,7 +52,7 @@ def process_single_file(config: TestConfig, file_path: Path) -> TimingStats:
             txc, config.task_id, config.file_attributes_id, config.revision_id, db
         )
         log.info("✅ Setup Complete, starting ETL Task")
-        transform_data(txc, task_data, db)
+        transform_data(txc, task_data, db, stop_point_client)
         stats.transform_time = time.time() - transform_start
 
     except Exception as e:  # pylint: disable=broad-exception-caught
