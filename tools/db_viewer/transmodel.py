@@ -1,3 +1,7 @@
+"""
+Transmodel Data fetching
+"""
+
 from common_layer.database.models import (
     TransmodelBookingArrangements,
     TransmodelFlexibleServiceOperationPeriod,
@@ -34,7 +38,7 @@ from structlog.stdlib import get_logger
 
 from .utils import SqlDB, csv_extractor
 
-logger = get_logger()
+log = get_logger()
 
 
 @csv_extractor()

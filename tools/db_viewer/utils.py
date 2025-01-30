@@ -18,7 +18,7 @@ from geoalchemy2.elements import WKBElement
 from geoalchemy2.shape import to_shape
 from structlog.stdlib import get_logger
 
-logger = get_logger()
+log = get_logger()
 
 P = ParamSpec("P")
 T = TypeVar("T")
@@ -41,26 +41,26 @@ def csv_extractor():
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
         @wraps(func)
         def wrapper(db: SqlDB, *args: Any, output_path: Path | None = None) -> T:
-            log = logger.bind(
+            log_ = log.bind(
                 operation="CSV Data Extraction and Output", function=func.__name__
             )
             try:
-                log.info("Querying DB", args=args)
+                log_.info("Querying DB", args=args)
                 results = func(db, *args)
                 if isinstance(results, list):
-                    log.info("Got DB Results", result_count=len(results))
+                    log_.info("Got DB Results", result_count=len(results))
                 if results:
                     model_to_csv(
                         [results] if not isinstance(results, list) else results,  # type: ignore
                         output_dir=output_path,
                     )
-                    log.info("Outputted Data to CSV", output_path=str(output_path))
+                    log_.info("Outputted Data to CSV", output_path=str(output_path))
                 else:
-                    log.warning("No Data to generate CSV")
+                    log_.warning("No Data to generate CSV")
 
                 return cast(T, results)
             except Exception as e:
-                log.error(
+                log_.error(
                     "Failed to Generate CSV", error=str(e), error_type=type(e).__name__
                 )
                 raise
@@ -113,7 +113,7 @@ def model_to_csv(
     records = [model_to_dict(instance) for instance in instances]
     column_names = list(records[0].keys())
     full_path = Path(f"{instances[0].__tablename__}.csv")
-    logger.info(f"Table {instances[0].__tablename__}")
+    log.info(f"Table {instances[0].__tablename__}")
 
     # Handle the output directory
     if output_dir:
@@ -131,7 +131,7 @@ def model_to_csv(
         # Ensure the parent directory exists
         full_path.parent.mkdir(parents=True, exist_ok=True)
 
-    logger.info(f"Writing CSV to file", path=full_path)
+    log.info("Writing CSV to file", path=full_path)
 
     # Write to CSV
     with StringIO() as output:
