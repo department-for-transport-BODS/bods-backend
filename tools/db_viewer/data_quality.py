@@ -18,7 +18,7 @@ from structlog.stdlib import get_logger
 
 from .utils import SqlDB, csv_extractor
 
-logger = get_logger()
+log = get_logger()
 
 
 @csv_extractor()
@@ -63,8 +63,8 @@ def process_data_quality_entities_by_revision_id(
     """
     Extract Data from DB tables related to ETL and Output to CSVs
     """
-    logger.info("Starting data quality data extraction and output to CSV")
+    log.info("Starting data quality data extraction and output to CSV")
     extract_data_quality_postschemaviolation(db, revision_id, output_path=output_path)
     extract_data_quality_schemaviolation(db, revision_id, output_path=output_path)
     extarct_data_quality_ptiobservation(db, revision_id, output_path=output_path)
-    logger.info("Finished data quality data extraction and output to CSV")
+    log.info("Finished data quality data extraction and output to CSV")

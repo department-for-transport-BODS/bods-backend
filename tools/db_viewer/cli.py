@@ -43,7 +43,7 @@ from .transmodel import (
 )
 from .utils import csv_extractor
 
-logger = get_logger()
+log = get_logger()
 app = Typer()
 
 
@@ -55,7 +55,7 @@ def extract_stoppoint(db: SqlDB, atco_codes: list[str]) -> list[NaptanStopPoint]
     repo = NaptanStopPointRepo(db)
     stop_points, missing_stops = repo.get_by_atco_codes(atco_codes)
     if missing_stops:
-        logger.warning("Some Stops were not found in DB", missing_stops=missing_stops)
+        log.warning("Some Stops were not found in DB", missing_stops=missing_stops)
     return stop_points
 
 
@@ -121,10 +121,10 @@ def process_from_service_id(
     """
     Process data from Service ID
     """
-    log = logger.bind(operation="batch_extraction")
+    log_ = log.bind(operation="batch_extraction")
     service = extract_service_by_id(db, service_id, output_path=output_path)
     if service is None:
-        log.error("Transmodel Service Not Found")
+        log_.error("Transmodel Service Not Found")
         raise BadParameter("Transmodel Service was not found in Database")
     extract_bookingarrangements(db, [service.id], output_path=output_path)
     service_service_patterns = extract_service_service_patterns(
@@ -143,8 +143,8 @@ def process_from_revision_id(
     """
     Extract Data from DB and Output to CSVs based on table name
     """
-    log = logger.bind(operation="batch_extraction")
-    log.info("Starting DB Data extraction and output to CSV")
+    log_ = log.bind(operation="batch_extraction")
+    log_.info("Starting DB Data extraction and output to CSV")
 
     # Organisation related entity
     dataset_revision = extract_dataset_revision(
@@ -196,7 +196,7 @@ def make_default_output_path(
     base_path = Path("./data/db_viewer")
 
     if not base_path.exists():
-        logger.info("Creating base directory structure", path=str(base_path))
+        log.info("Creating base directory structure", path=str(base_path))
         base_path.mkdir(parents=True, exist_ok=True)
 
     db_host_port = f"{db_config.host}-{db_config.port}"
@@ -207,14 +207,14 @@ def make_default_output_path(
         final_path = base_path / db_host_port / "service_id" / str(service_id)
 
     if not final_path.exists():
-        logger.info("Creating output directory", path=str(final_path))
+        log.info("Creating output directory", path=str(final_path))
         final_path.mkdir(parents=True, exist_ok=True)
 
     return final_path
 
 
 @app.command()
-def main(  # pylint: disable=R0913, R0917
+def main(  # pylint: disable=too-many-arguments, too-many-positional-arguments
     output_path: Path | None = Option(
         None,
         "--output-path",
@@ -276,7 +276,7 @@ def main(  # pylint: disable=R0913, R0917
             use_dotenv, db_host, db_port, db_name, db_user, db_password
         )
     except ValueError as e:
-        logger.error("Database configuration error", error=str(e))
+        log.error("Database configuration error", error=str(e))
         raise typer.Exit(1)
     db = setup_db_instance(config)
     if output_path is None:
@@ -294,7 +294,7 @@ def main(  # pylint: disable=R0913, R0917
             db, revision_id, output_path=output_path
         )
 
-    logger.info("Completed Processing", output_path=output_path)
+    log.info("Completed Processing", output_path=output_path)
 
 
 if __name__ == "__main__":

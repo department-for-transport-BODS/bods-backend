@@ -18,7 +18,7 @@ from structlog.stdlib import get_logger
 
 from .utils import DatasetRevisionNotFoundError, SqlDB, csv_extractor
 
-logger = get_logger()
+log = get_logger()
 
 
 @csv_extractor()
@@ -32,7 +32,7 @@ def extract_dataset_revision(
     result = repo.get_by_id(revision_id)
 
     if not result:
-        logger.error("Dataset Revision Not Found", revision_id=revision_id)
+        log.error("Dataset Revision Not Found", revision_id=revision_id)
         raise DatasetRevisionNotFoundError(revision_id)
     return result
 
