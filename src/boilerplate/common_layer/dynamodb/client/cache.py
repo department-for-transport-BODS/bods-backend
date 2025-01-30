@@ -36,6 +36,7 @@ class DynamoDBCache(DynamoDB):
                 DYNAMODB_ENDPOINT_URL=cache_settings.DYNAMODB_ENDPOINT_URL,
                 AWS_REGION=cache_settings.AWS_REGION,
                 DYNAMODB_TABLE_NAME=cache_settings.DYNAMODB_CACHE_TABLE_NAME,
+                PROJECT_ENV=cache_settings.PROJECT_ENV,
             )
         )
 

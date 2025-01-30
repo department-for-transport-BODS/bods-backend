@@ -7,9 +7,9 @@ from pathlib import Path
 
 import typer
 from common_layer.json_logging import configure_logging
-from file_validation.app.xml_checks import dangerous_xml_check
 from structlog.stdlib import get_logger
 
+from src.timetables_etl.file_validation.app.xml_checks import dangerous_xml_check
 from tools.common.xml_tools import get_xml_paths
 
 app = typer.Typer()

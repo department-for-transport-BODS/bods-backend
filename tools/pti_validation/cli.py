@@ -4,15 +4,19 @@ Runs PTI Validation against specified database
 
 from io import BytesIO
 
+import boto3
 import typer
+from common_layer.database.client import ProjectEnvironment
 from common_layer.dynamodb.client import DynamoDB
-from common_layer.dynamodb.client.cache import DynamoDBCache
+from common_layer.dynamodb.client.cache import DynamoDBCache, DynamoDbCacheSettings
 from common_layer.dynamodb.client.naptan_stop_points import (
+    NaptanDynamoDBSettings,
     NaptanStopPointDynamoDBClient,
 )
 from common_layer.json_logging import configure_logging
 from structlog.stdlib import get_logger
 
+from src.timetables_etl.pti.app.models.models_pti_task import DbClients
 from src.timetables_etl.pti.app.pti_validation import (
     PTIValidationEvent,
     get_task_data,
@@ -51,6 +55,7 @@ def main(
         "--use-dotenv",
         help="Load database and dynamodb configurations from .env file",
     ),
+    profile: str = typer.Option("boddsdev", "--profile", help="AWS profile to use"),
 ):
     """Run PTI Validation on given TXC XML files for testing"""
     if log_json:
@@ -66,8 +71,20 @@ def main(
         raise typer.Exit(1) from e
 
     db = setup_db_instance(db_config)
-    dynamodb = DynamoDBCache()
-    stop_point_client = NaptanStopPointDynamoDBClient()
+
+    # Setup Dynamo DB clients to connect to AWS
+    log.info(f"Running CLI with AWS profile", profile_name=profile)
+    boto3.setup_default_session(profile_name=profile, region_name="eu-west-2")
+    dynamodb = DynamoDBCache(
+        DynamoDbCacheSettings(PROJECT_ENV=ProjectEnvironment.DEVELOPMENT)
+    )
+    stop_point_client = NaptanStopPointDynamoDBClient(
+        NaptanDynamoDBSettings(PROJECT_ENV=ProjectEnvironment.DEVELOPMENT)
+    )
+
+    clients = DbClients(
+        sql_db=db, dynamodb=dynamodb, stop_point_client=stop_point_client
+    )
 
     with open(xml_file_name, "rb") as xml_file:
         event = PTIValidationEvent(
@@ -78,8 +95,8 @@ def main(
         )
         file = BytesIO(xml_file.read())
 
-        task_data = get_task_data(event, file, db, dynamodb)
-        run_validation(task_data, db, dynamodb, stop_point_client)
+        task_data = get_task_data(event, file, clients)
+        run_validation(task_data, clients)
 
 
 if __name__ == "__main__":

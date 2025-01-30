@@ -2,6 +2,7 @@
 Base Settings Models for DynamoDB client
 """
 
+from common_layer.database.client import ProjectEnvironment
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
@@ -11,6 +12,9 @@ class DynamoBaseSettings(BaseSettings):
     BaseSettings for DynamoDB client
     """
 
+    PROJECT_ENV: ProjectEnvironment = Field(
+        default=ProjectEnvironment.LOCAL, description="Project environment"
+    )
     DYNAMODB_ENDPOINT_URL: str = Field(
         default="http://host.docker.internal:4566",
         description="Endpoint URL for DynamoDB",
