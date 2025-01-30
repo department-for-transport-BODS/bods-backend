@@ -335,7 +335,7 @@
       "Arguments": {
         "Error": "{% $states.input.errorInfo.Error %}",
         "Cause": "{% $parse($states.input.errorInfo.Cause) %}",
-        "DatasetRevisionId": "{% $datasetRevisionId %}"
+        "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}"
       }
     },
     "ParentFail": {
