@@ -64,6 +64,10 @@ venv.bak/
 # Pycharm
 .idea/
 
+# Ignore requirement.txt generated at build time
+.src/timetables_etl/**/requirements.txt
+./src/boilerplate/**/requirements.txt
+
 # Ignore Generated CSVs from db_viewer
 data/
 # Do not ignore test fixture files
