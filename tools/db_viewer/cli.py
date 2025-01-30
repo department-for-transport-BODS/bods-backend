@@ -17,6 +17,7 @@ from typer import BadParameter, Option, Typer
 
 from tools.common.db_tools import DbConfig, create_db_config, setup_db_instance
 
+from .data_quality import process_data_quality_entities_by_revision_id
 from .etl_task import process_etl_entities_by_revision_id
 from .organisation import (
     extract_dataset,
@@ -213,7 +214,7 @@ def make_default_output_path(
 
 
 @app.command()
-def main(
+def main(  # pylint: disable=R0913, R0917
     output_path: Path | None = Option(
         None,
         "--output-path",
@@ -289,6 +290,9 @@ def main(
 
     if etl_result and revision_id:
         process_etl_entities_by_revision_id(db, revision_id, output_path=output_path)
+        process_data_quality_entities_by_revision_id(
+            db, revision_id, output_path=output_path
+        )
 
     logger.info("Completed Processing", output_path=output_path)
 

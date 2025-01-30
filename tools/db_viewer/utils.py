@@ -131,7 +131,7 @@ def model_to_csv(
         # Ensure the parent directory exists
         full_path.parent.mkdir(parents=True, exist_ok=True)
 
-    logger.info(f"Writing CSV to file", path=full_path)
+    logger.info("Writing CSV to file", path=full_path)
 
     # Write to CSV
     with StringIO() as output:
