@@ -73,7 +73,7 @@ def main(
     db = setup_db_instance(db_config)
 
     # Setup Dynamo DB clients to connect to AWS
-    log.info(f"Running CLI with AWS profile {profile}")
+    log.info(f"Running CLI with AWS profile", profile_name=profile)
     boto3.setup_default_session(profile_name=profile, region_name="eu-west-2")
     dynamodb = DynamoDBCache(
         DynamoDbCacheSettings(PROJECT_ENV=ProjectEnvironment.DEVELOPMENT)

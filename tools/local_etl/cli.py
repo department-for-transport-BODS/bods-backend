@@ -106,7 +106,7 @@ def main(
         log.error("Database configuration error", error=str(e))
         raise typer.Exit(1)
 
-    log.info(f"Running CLI with AWS profile {profile}")
+    log.info(f"Running CLI with AWS profile", profile_name=profile)
     boto3.setup_default_session(profile_name=profile, region_name="eu-west-2")
 
     config = TestConfig(
