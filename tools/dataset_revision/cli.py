@@ -68,7 +68,9 @@ def create_dataset(
     """
     Create a new dataset
     """
-    dataset_record = OrganisationDatasetFactory()
+    dataset_record = OrganisationDatasetFactory(
+        live_revision_id=None, organisation_id=1, contact_id=1
+    )
 
     repo = OrganisationDatasetRepo(db)
     dataset = repo.insert(dataset_record)
