@@ -30,11 +30,12 @@ from tests.timetables_etl.factories.txc import (
 from timetables_etl.etl.app.transform.service_patterns import (
     create_service_pattern,
     generate_service_pattern_geometry,
+    get_valid_route_points,
 )
 
 
 @pytest.mark.parametrize(
-    "journey_pattern,sections,stop_mapping,expected_coordinates",
+    "journey_pattern,sections,stop_mapping,expected_points",
     [
         pytest.param(
             TXCJourneyPatternFactory.create(
@@ -69,12 +70,12 @@ from timetables_etl.etl.app.transform.service_patterns import (
                 ]
             ),
             [(50.7, -3.5), (50.8, -3.6)],
-            id="Single JourneyPatternSection",
+            id="Valid points from single section",
         ),
         pytest.param(
             TXCJourneyPatternFactory.create(
                 id="JP1",
-                JourneyPatternSectionRefs=["JPS1", "JPS2"],
+                JourneyPatternSectionRefs=["JPS1"],
             ),
             [
                 TXCJourneyPatternSectionFactory.create(
@@ -84,34 +85,102 @@ from timetables_etl.etl.app.transform.service_patterns import (
                             id="JPTL1",
                             From=TXCJourneyPatternStopUsageFactory.create(
                                 id="JPSU1",
-                                Activity="pickUp",
-                                StopPointRef="Atco1",
+                                Activity="pickUpAndSetDown",
+                                StopPointRef="MissingStop1",
                             ),
                             To=TXCJourneyPatternStopUsageFactory.create(
                                 id="JPSU2",
-                                Activity="pickUpAndSetDown",
+                                Activity="setDown",
                                 StopPointRef="Atco2",
                             ),
                             RouteLinkRef="RL1",
                         ),
                     ],
                 ),
+            ],
+            NaptanStopPointFactory.create_mapping_with_locations(
+                [
+                    ("Atco2", "Stop 2", (50.8, -3.6)),
+                ]
+            ),
+            [(50.8, -3.6)],  # Single point
+            id="Missing stop returns single point",
+        ),
+        pytest.param(
+            TXCJourneyPatternFactory.create(
+                id="JP1",
+                JourneyPatternSectionRefs=["JPS1"],
+            ),
+            [
                 TXCJourneyPatternSectionFactory.create(
-                    id="JPS2",
+                    id="JPS1",
                     JourneyPatternTimingLink=[
                         TXCJourneyPatternTimingLinkFactory.create(
-                            id="JPTL2",
+                            id="JPTL1",
                             From=TXCJourneyPatternStopUsageFactory.create(
-                                id="JPSU3",
+                                id="JPSU1",
                                 Activity="pickUpAndSetDown",
-                                StopPointRef="Atco2",
+                                StopPointRef="MissingStop1",
                             ),
                             To=TXCJourneyPatternStopUsageFactory.create(
-                                id="JPSU4",
+                                id="JPSU2",
                                 Activity="setDown",
-                                StopPointRef="Atco3",
+                                StopPointRef="MissingStop2",
                             ),
-                            RouteLinkRef="RL2",
+                            RouteLinkRef="RL1",
+                        ),
+                    ],
+                ),
+            ],
+            NaptanStopPointFactory.create_mapping_with_locations(
+                [
+                    ("Atco3", "Stop 3", (50.9, -3.7)),
+                ]
+            ),
+            [],  # No valid points
+            id="All stops missing returns empty list",
+        ),
+    ],
+)
+def test_get_valid_route_points(
+    journey_pattern: TXCJourneyPattern,
+    sections: list[TXCJourneyPatternSection],
+    stop_mapping: dict[str, NaptanStopPoint],
+    expected_points: list[tuple[float, float]],
+) -> None:
+    """Test getting valid route points from journey pattern sections."""
+    result = get_valid_route_points(journey_pattern, sections, stop_mapping)
+    assert len(result) == len(expected_points)
+    for point, expected in zip(result, expected_points):
+        assert point.x == expected[0]
+        assert point.y == expected[1]
+
+
+@pytest.mark.parametrize(
+    "journey_pattern,sections,stop_mapping,expected_result",
+    [
+        pytest.param(
+            TXCJourneyPatternFactory.create(
+                id="JP1",
+                JourneyPatternSectionRefs=["JPS1"],
+            ),
+            [
+                TXCJourneyPatternSectionFactory.create(
+                    id="JPS1",
+                    JourneyPatternTimingLink=[
+                        TXCJourneyPatternTimingLinkFactory.create(
+                            id="JPTL1",
+                            From=TXCJourneyPatternStopUsageFactory.create(
+                                id="JPSU1",
+                                Activity="pickUpAndSetDown",
+                                StopPointRef="Atco1",
+                            ),
+                            To=TXCJourneyPatternStopUsageFactory.create(
+                                id="JPSU2",
+                                Activity="setDown",
+                                StopPointRef="Atco2",
+                            ),
+                            RouteLinkRef="RL1",
                         ),
                     ],
                 ),
@@ -120,11 +189,44 @@ from timetables_etl.etl.app.transform.service_patterns import (
                 [
                     ("Atco1", "Stop 1", (50.7, -3.5)),
                     ("Atco2", "Stop 2", (50.8, -3.6)),
-                    ("Atco3", "Stop 3", (50.9, -3.7)),
                 ]
             ),
-            [(50.7, -3.5), (50.8, -3.6), (50.9, -3.7)],
-            id="Multiple JourneyPatternSections",
+            [(50.7, -3.5), (50.8, -3.6)],
+            id="Valid service pattern",
+        ),
+        pytest.param(
+            TXCJourneyPatternFactory.create(
+                id="JP1",
+                JourneyPatternSectionRefs=["JPS1"],
+            ),
+            [
+                TXCJourneyPatternSectionFactory.create(
+                    id="JPS1",
+                    JourneyPatternTimingLink=[
+                        TXCJourneyPatternTimingLinkFactory.create(
+                            id="JPTL1",
+                            From=TXCJourneyPatternStopUsageFactory.create(
+                                id="JPSU1",
+                                Activity="pickUpAndSetDown",
+                                StopPointRef="MissingStop1",
+                            ),
+                            To=TXCJourneyPatternStopUsageFactory.create(
+                                id="JPSU2",
+                                Activity="setDown",
+                                StopPointRef="Atco2",
+                            ),
+                            RouteLinkRef="RL1",
+                        ),
+                    ],
+                ),
+            ],
+            NaptanStopPointFactory.create_mapping_with_locations(
+                [
+                    ("Atco2", "Stop 2", (50.8, -3.6)),
+                ]
+            ),
+            None,  # Single point should return None
+            id="Single point returns None",
         ),
     ],
 )
@@ -132,18 +234,19 @@ def test_generate_service_pattern_geometry(
     journey_pattern: TXCJourneyPattern,
     sections: list[TXCJourneyPatternSection],
     stop_mapping: dict[str, NaptanStopPoint],
-    expected_coordinates: list[tuple[float, float]],
+    expected_result: list[tuple[float, float]] | None,
 ) -> None:
-    """
-    Test generating the LineString from the JourneyPatternSections for a JourneyPattern.
-
-    """
+    """Test generating the LineString from the JourneyPatternSections."""
     result = generate_service_pattern_geometry(journey_pattern, sections, stop_mapping)
-    assert isinstance(result, WKBElement)
 
+    if expected_result is None:
+        assert result is None
+        return
+
+    assert isinstance(result, WKBElement)
     line = to_shape(result)
-    assert len(line.coords) == len(expected_coordinates)
-    for actual, expected in zip(line.coords, expected_coordinates):
+    assert len(line.coords) == len(expected_result)
+    for actual, expected in zip(line.coords, expected_result):
         assert actual == expected
 
 
