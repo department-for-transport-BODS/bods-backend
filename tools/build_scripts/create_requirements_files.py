@@ -12,7 +12,7 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 PYPROJECT_PATH = ROOT_DIR / "pyproject.toml"
-LAMBDA_BASE_DIR = ROOT_DIR / "src/timetables_etl"
+LAMBDA_BASE_DIRS = [ROOT_DIR / "src/timetables_etl", ROOT_DIR / "src/periodic_tasks"]
 BOILERPLATE_LAYER_DIR = ROOT_DIR / "src/boilerplate"
 
 
@@ -25,20 +25,29 @@ def get_dependency_groups() -> set[str]:
         return set(pyproject.get("tool", {}).get("poetry", {}).get("group", {}).keys())
 
 
-def get_dependency_groups_for_lambdas(poetry_dependency_groups: set[str]) -> list[str]:
+def get_dependency_groups_for_lambdas(
+    poetry_dependency_groups: set[str],
+) -> dict[Path, list[str]]:
     """
-    Return a list of poetry dependency groups for lambdas.
+    Build a mapping between lambda directories to their dependency groups.
     Note that the poetry dependency group name and the lambda names are the same
     """
-    lambda_dirs = [d for d in LAMBDA_BASE_DIR.iterdir() if d.is_dir()]
+    lambda_groups = {}
 
-    lambda_dependency_groups = []
-    for lambda_dir in lambda_dirs:
-        lambda_name = lambda_dir.name
-        if lambda_name in poetry_dependency_groups:
-            lambda_dependency_groups.append(lambda_name)
+    # Iterate through the lambda applications (timetables & periodic tasks)
+    for lambda_application_dir in LAMBDA_BASE_DIRS:
+        if not lambda_application_dir.exists():
+            continue
 
-    return lambda_dependency_groups
+        lambda_dirs = [d for d in lambda_application_dir.iterdir() if d.is_dir()]
+        lambda_dependency_groups = [
+            lambda_dir.name
+            for lambda_dir in lambda_dirs
+            if lambda_dir.name in poetry_dependency_groups
+        ]
+        lambda_groups[lambda_application_dir] = lambda_dependency_groups
+
+    return lambda_groups
 
 
 def get_boilerplate_layer_dependency_group(poetry_dependency_groups: set[str]) -> str:
@@ -57,14 +66,14 @@ def get_boilerplate_layer_dependency_group(poetry_dependency_groups: set[str]) -
 
 def export_requirements_for_lambdas(poetry_dependency_groups: set[str]):
     """
-    Export requirements.txt for lambdas
+    Export requirements.txt for all lambdas in both `timetables_etl` and `periodic_tasks`.
     """
-    lambda_dependency_groups = get_dependency_groups_for_lambdas(
-        poetry_dependency_groups
-    )
-    for lambda_name in lambda_dependency_groups:
-        lambda_path = LAMBDA_BASE_DIR / lambda_name
-        export_requirements(lambda_name, lambda_path)
+    lambda_groups = get_dependency_groups_for_lambdas(poetry_dependency_groups)
+
+    for base_dir, lambda_dependency_groups in lambda_groups.items():
+        for lambda_name in lambda_dependency_groups:
+            lambda_path = base_dir / lambda_name
+            export_requirements(lambda_name, lambda_path)
 
 
 def export_requirements_for_layer(poetry_dependency_groups: set[str]):

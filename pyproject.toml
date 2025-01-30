@@ -55,6 +55,10 @@ structlog = "^24.4.0"
 shapely = "^2.0.6"
 pydantic-settings = "^2.7.1"
 
+# Periodic Task Lamaba Dependencies
+[tool.poetry.group.naptan_cache.dependencies]
+pyproj = "^3.7.0"
+
 # Timetables ETL Lambda Dependencies
 [tool.poetry.group.etl.dependencies]
 pyproj = "^3.7.0"
