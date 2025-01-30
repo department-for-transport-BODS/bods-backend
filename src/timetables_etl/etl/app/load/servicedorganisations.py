@@ -69,11 +69,6 @@ def create_serviced_org_mapping(
         if org.organisation_code is None:
             raise ValueError(f"Organisation {org.name} has no organisation_code")
 
-        if org.organisation_code in org_mapping:
-            raise ValueError(
-                f"Duplicate organisation_code found: {org.organisation_code}"
-            )
-
         org_mapping[org.organisation_code] = org
 
     return org_mapping
