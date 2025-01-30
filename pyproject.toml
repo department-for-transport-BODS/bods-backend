@@ -10,6 +10,9 @@ packages = [
   { from = ".", include = "tools" },
 ]
 
+[tool.poetry.requires-plugins]
+poetry-plugin-export = ">=1.8"
+
 [tool.poetry.scripts]
 profile = "tools.profiler.cli:app"
 initialize-pipeline = "tools.initialize_pipeline.cli:app"
@@ -25,37 +28,51 @@ create-tables-dev = "src.boilerplate.common_layer.database.create_tables:create_
 download-dataset = "tools.download_dataset.cli:app"
 txc-tools = "tools.txc_tools.cli:cli"
 etl-state-machine = "tools.state_runner.cli:app"
+create-requirements-files = "tools.build_scripts.create_requirements_files:main"
 
 [tool.poetry.dependencies]
 python = "^3.11"
 lxml = "^5.3.0"
 pydantic = "^2.9.2"
 boto3 = "^1.35.57"
+structlog = "^24.4.0"
 
 [tool.poetry.group.database.dependencies]
 sqlalchemy = "^2.0.36"
 geoalchemy2 = "^0.16.0"
 psycopg2-binary = "^2.9.10"
 
-[tool.poetry.group.etl.dependencies]
+[tool.poetry.group.boilerplate.dependencies]
+boto3 = "^1.35.92"
+psycopg2-binary = "^2.9.10"
+pydantic = "^2.10.4"
+requests = "^2.32.3 "
+SQLAlchemy = "^2.0.36"
+urllib3 = "^2.3.0"
+GeoAlchemy2 = "^0.16.0"
+lxml = "^5.3.0"
 structlog = "^24.4.0"
-pydantic-settings = "^2.6.1"
 shapely = "^2.0.6"
+pydantic-settings = "^2.7.1"
+
+# Periodic Task Lamaba Dependencies
+[tool.poetry.group.naptan_cache.dependencies]
 pyproj = "^3.7.0"
 
-[tool.poetry.group.boilerplate.dependencies]
-django = "^5.1.4"
-requests = "^2.32.3"
-defusedxml = "^0.7.1"
-pytz = "^2024.2"
-pandas = "^2.2.3"
+# Timetables ETL Lambda Dependencies
+[tool.poetry.group.etl.dependencies]
+pyproj = "^3.7.0"
 
 [tool.poetry.group.pti.dependencies]
 isoduration = "^20.11.0"
 
-[tool.poetry.group.antivirus.dependencies]
+[tool.poetry.group.clamav_scanner.dependencies]
 clamd = "^1.0.2"
 
+[tool.poetry.group.file_validation.dependencies]
+defusedxml = "^0.7.1"
+
+# Dev & Tooling Dependencies
 [tool.poetry.group.model_gen.dependencies]
 sqlalchemy-citext = "^1.8.0"
 pgvector = "^0.3.6"
