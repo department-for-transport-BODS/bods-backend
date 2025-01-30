@@ -37,6 +37,7 @@ class NaptanStopPointDynamoDBClient(DynamoDB):
                 DYNAMODB_ENDPOINT_URL=naptan_settings.DYNAMODB_ENDPOINT_URL,
                 AWS_REGION=naptan_settings.AWS_REGION,
                 DYNAMODB_TABLE_NAME=naptan_settings.DYNAMODB_NAPTAN_STOP_POINT_TABLE_NAME,
+                PROJECT_ENV=naptan_settings.PROJECT_ENV,
             )
         )
 
