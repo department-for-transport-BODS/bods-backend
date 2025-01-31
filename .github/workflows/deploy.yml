@@ -164,15 +164,15 @@ jobs:
         run: |
           DYNAMIC_PARAMS="DDGitData='${GIT_COMMIT},${GIT_REPO_URL}' Version='${VERSION}'"
 
-          if ! yq eval ".\"${{ env.RC_ENV }}".deploy.parameters.parameter_overrides" samconfig.yaml >/dev/null; then
+          if ! yq eval ".\"${{ env.RC_ENV }}\".deploy.parameters.parameter_overrides" samconfig.yaml >/dev/null; then
             echo "[WARN] parameter_overrides not found, initialising key"
-            yq eval -i ".\"${{ env.RC_ENV }}".deploy.parameters.parameter_overrides = \"\"" samconfig.yaml
+            yq eval -i ".\"${{ env.RC_ENV }}\".deploy.parameters.parameter_overrides = \"\"" samconfig.yaml
           fi
 
-          EXISTING_PARAMS=$(yq eval ".\"${{ env.RC_ENV }}".deploy.parameters.parameter_overrides" samconfig.yaml)
+          EXISTING_PARAMS=$(yq eval ".\"${{ env.RC_ENV }}\".deploy.parameters.parameter_overrides" samconfig.yaml)
           UPDATED_PARAMS="${EXISTING_PARAMS} ${DYNAMIC_PARAMS}"
 
-          yq eval -i ".\"${{ env.RC_ENV }}".deploy.parameters.parameter_overrides = \"${UPDATED_PARAMS}\"" samconfig.yaml
+          yq eval -i ".\"${{ env.RC_ENV }}\".deploy.parameters.parameter_overrides = \"${UPDATED_PARAMS}\"" samconfig.yaml
 
           sam deploy \
             --template-file packaged.yaml \
@@ -252,15 +252,15 @@ jobs:
         run: |
           DYNAMIC_PARAMS="DDGitData='${GIT_COMMIT},${GIT_REPO_URL}' Version='${VERSION}'"
 
-          if ! yq eval ".\"${{ matrix.stack }}".deploy.parameters.parameter_overrides" samconfig.yaml >/dev/null; then
+          if ! yq eval ".\"${{ matrix.stack }}\".deploy.parameters.parameter_overrides" samconfig.yaml >/dev/null; then
             echo "[WARN] parameter_overrides not found, initialising key"
-            yq eval -i ".\"${{ matrix.stack }}".deploy.parameters.parameter_overrides = \"\"" samconfig.yaml
+            yq eval -i ".\"${{ matrix.stack }}\".deploy.parameters.parameter_overrides = \"\"" samconfig.yaml
           fi
 
-          EXISTING_PARAMS=$(yq eval ".\"${{ matrix.stack }}".deploy.parameters.parameter_overrides" samconfig.yaml)
+          EXISTING_PARAMS=$(yq eval ".\"${{ matrix.stack }}\".deploy.parameters.parameter_overrides" samconfig.yaml)
           UPDATED_PARAMS="${EXISTING_PARAMS} ${DYNAMIC_PARAMS}"
 
-          yq eval -i ".\"${{ matrix.stack }}".deploy.parameters.parameter_overrides = \"${UPDATED_PARAMS}\"" samconfig.yaml
+          yq eval -i ".\"${{ matrix.stack }}\".deploy.parameters.parameter_overrides = \"${UPDATED_PARAMS}\"" samconfig.yaml
 
           sam deploy \
             --template-file packaged.yaml \
