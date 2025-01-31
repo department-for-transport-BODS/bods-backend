@@ -73,13 +73,25 @@ jobs:
       contents: read
 
     steps:
-      - name: checkout
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: setup python
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: 3.11
+          cache: 'poetry'
+
+      - name: Install Dependencies [Poetry]
+        run: |
+          poetry install
+
+      - name: Create requirements.txt Files
+        run: |
+          poetry run create-requirements-files
 
       - name: setup sam
         uses: aws-actions/setup-sam@v2

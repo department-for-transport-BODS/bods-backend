@@ -11,7 +11,9 @@ from common_layer.txc.parser.parser_txc import parse_txc_file
 from lxml import etree
 from structlog.stdlib import get_logger
 
-from src.timetables_etl.post_schema_check import run_post_schema_validations
+from src.timetables_etl.post_schema_check.app.post_schema_check import (
+    run_post_schema_validations,
+)
 
 structlog.configure(
     processors=[

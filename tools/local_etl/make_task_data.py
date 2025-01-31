@@ -8,12 +8,14 @@ from common_layer.database.repos.repo_organisation import (
     OrganisationTXCFileAttributesRepo,
 )
 from common_layer.txc.models.txc_data import TXCData
-from file_attributes_etl.app.process_txc import make_txc_file_attributes
 from structlog.stdlib import get_logger
 
+from src.timetables_etl.file_attributes_etl.app.process_txc import (
+    make_txc_file_attributes,
+)
 from tests.factories.database.organisation import OrganisationDatasetRevisionFactory
 from tests.factories.database.pipelines import DatasetETLTaskResultFactory
-from timetables_etl.etl.app.app import get_task_data
+from timetables_etl.etl.app.etl_process import get_task_data
 from timetables_etl.etl.app.models import ETLInputData, TaskData
 from tools.local_etl.mock_task_data import create_mocked_task_data
 

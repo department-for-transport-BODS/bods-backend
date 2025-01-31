@@ -3,6 +3,7 @@
 import asyncio
 from pathlib import Path
 
+import boto3
 import typer
 from common_layer.json_logging import configure_logging
 from structlog.stdlib import get_logger
@@ -87,6 +88,9 @@ def main(
         "--use-dotenv",
         help="Load database configuration from .env file",
     ),
+    profile: str = typer.Option(
+        "boddsdev", "--profile", help="AWS profile to use for dynamodb"
+    ),
 ):
     """Process TXC XML files for transformation testing"""
     if log_json:
@@ -101,6 +105,10 @@ def main(
     except ValueError as e:
         log.error("Database configuration error", error=str(e))
         raise typer.Exit(1)
+
+    log.info(f"Running CLI with AWS profile", profile_name=profile)
+    boto3.setup_default_session(profile_name=profile, region_name="eu-west-2")
+
     config = TestConfig(
         txc_paths=xml_paths,
         db_config=db_config,

@@ -2,13 +2,13 @@
 DynamoDB Client
 """
 
-import os
 import time
 from typing import Any
 
 import boto3
 import botocore.config
 from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
+from common_layer.database.client import ProjectEnvironment
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 from structlog.stdlib import get_logger
 
@@ -33,7 +33,7 @@ class DynamoDB:
         Create a DynamoDB client
         If running locally, it points to the LocalStack DynamoDB service.
         """
-        if os.environ.get("PROJECT_ENV") == "local":
+        if self._settings.PROJECT_ENV == ProjectEnvironment.LOCAL:
             return boto3.client(
                 "dynamodb",
                 endpoint_url=self._settings.DYNAMODB_ENDPOINT_URL,
