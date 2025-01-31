@@ -179,7 +179,7 @@ Resources:
         FileAttributesEtlLambdaArn: !GetAtt FileAttributesEtlLambda.Arn
         PtiValidationLambdaArn: !GetAtt PtiValidationLambda.Arn
         ExceptionHandlerLambdaArn: !GetAtt ExceptionHandlerLambda.Arn
-        ETLProcessLambdaArn: !GetAtt ETLProcessLambda.Arn
+        EtlProcessLambdaArn: !GetAtt EtlProcessLambda.Arn
         GenerateOutputZipLambdaArn: !GetAtt GenerateOutputZipLambda.Arn
         DefaultS3BucketName: !Sub 'bodds-${Environment}'
 
@@ -373,7 +373,7 @@ Resources:
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
-        LogGroup: !Ref ETLProcessLambdaLogGroup
+        LogGroup: !Ref EtlProcessLambdaLogGroup
 
   GenerateOutputZipLambda:
     Type: AWS::Serverless::Function
@@ -637,7 +637,7 @@ Resources:
                   - !GetAtt PostSchemaCheckLambda.Arn
                   - !GetAtt FileAttributesEtlLambda.Arn
                   - !GetAtt PtiValidationLambda.Arn
-                  - !GetAtt ETLProcessLambda.Arn
+                  - !GetAtt EtlProcessLambda.Arn
                   - !GetAtt ExceptionHandlerLambda.Arn
                   - !GetAtt GenerateOutputZipLambda.Arn
         - PolicyName: S3BucketAccessPolicy
@@ -934,7 +934,8 @@ Resources:
           - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
           - !Ref AWS::NoValue
       RetentionInDays: 30
-  ETLProcessLambdaLogGroup:
+
+  EtlProcessLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-etl-process-lambda'

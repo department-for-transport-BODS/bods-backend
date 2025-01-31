@@ -241,7 +241,7 @@
           },
           "PtiValidation": {
             "Type": "Task",
-            "Next": "ETLProcess",
+            "Next": "EtlProcess",
             "Resource": "${PtiValidationLambdaArn}",
             "Arguments": {
               "Bucket": "{% $Bucket %}",
@@ -263,10 +263,10 @@
               }
             ]
           },
-          "ETLProcess": {
+          "EtlProcess": {
             "Type": "Task",
             "Next": "Success",
-            "Resource": "${ETLProcessLambdaArn}",
+            "Resource": "${EtlProcessLambdaArn}",
             "Arguments": {
               "Bucket": "{% $Bucket %}",
               "ObjectKey": "{% $ObjectKey %}",
