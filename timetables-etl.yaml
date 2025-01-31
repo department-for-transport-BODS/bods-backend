@@ -111,7 +111,13 @@ Globals:
         PROJECT_NAME: !Ref ProjectName
         POSTGRES_HOST: !If
           - IsUsingBodsInfra
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-endpoint}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
+          - !If ## Remove condition once isolated testing is completed and ETL is fully integrated into BODS
+            - !Equals [
+                !Select ['3', !Split ['-', !Ref 'AWS::StackName']],
+                'temp',
+              ]
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-endpoint}}'
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
           - !If
             - IsStandalone
             - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-endpoint'
@@ -353,15 +359,15 @@ Resources:
       LoggingConfig:
         LogGroup: !Ref PtiValidationLambdaLogGroup
 
-  ETLProcessLambda:
+  EtlProcessLambda:
     Type: AWS::Serverless::Function
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-etl-process-lambda'
-      Description: Timetables ETL - FileProcessing - Takes a TXC XML and generates transmodel_ database table data
+      Description: Timetables ETL - FileProcessing - Takes a TXC XML and generates transmodel_database table data
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl/etl
-      Handler: app.app.lambda_handler
+      Handler: app.etl_process.lambda_handler
       Timeout: 900
       MemorySize: 1024
       Layers:
@@ -488,14 +494,26 @@ Resources:
         - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
         - !If
           - IsUsingBodsInfra
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-rw-user-access-policy-arn}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
+          - !If ## Remove condition once isolated testing is completed and ETL is fully integrated into BODS
+            - !Equals [
+                !Select ['3', !Split ['-', !Ref 'AWS::StackName']],
+                'temp',
+              ]
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-rw-user-access-policy-arn}}'
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
           - !If
             - IsStandalone
             - !Ref AWS::NoValue
             - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess'
         - !If
           - IsUsingBodsInfra
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-ro-user-access-policy-arn}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
+          - !If ## Remove condition once isolated testing is completed and ETL is fully integrated into BODS
+            - !Equals [
+                !Select ['3', !Split ['-', !Ref 'AWS::StackName']],
+                'temp',
+              ]
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-ro-user-access-policy-arn}}'
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
           - !If
             - IsStandalone
             - !Ref AWS::NoValue

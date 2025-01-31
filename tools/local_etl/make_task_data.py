@@ -15,7 +15,7 @@ from src.timetables_etl.file_attributes_etl.app.process_txc import (
 )
 from tests.factories.database.organisation import OrganisationDatasetRevisionFactory
 from tests.factories.database.pipelines import DatasetETLTaskResultFactory
-from timetables_etl.etl.app.app import get_task_data
+from timetables_etl.etl.app.etl_process import get_task_data
 from timetables_etl.etl.app.models import ETLInputData, TaskData
 from tools.local_etl.mock_task_data import create_mocked_task_data
 
