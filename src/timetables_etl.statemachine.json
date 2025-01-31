@@ -309,7 +309,7 @@
     },
     "GenerateOutputZip": {
       "Type": "Task",
-      "Next": "Completed",
+      "Next": "DQSTrigger",
       "Resource": "${GenerateOutputZipLambdaArn}",
       "Arguments": {
         "MapRunArn": "{% $states.input.mapResults.MapRunArn %}",
@@ -328,6 +328,18 @@
         }
       ]
     },
+    "DQSTrigger": {  
+        "Type":"Task",
+        "Next": "Completed",
+        "Resource":"arn:aws:states:::states:startExecution",
+        "Parameters":{  
+            "Input":{
+              "DatasetRevisionId": "{% $datasetRevisionId %}"
+            },
+        "StateMachineArn":"{$DQSStateMachineArn}",
+        },
+        "End":true
+      },
     "ParentExceptionHandler": {
       "Type": "Task",
       "Next": "ParentFail",
