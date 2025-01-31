@@ -54,6 +54,8 @@ Parameters:
 Conditions:
   IsNotLocal: !Not [!Equals [!Ref Environment, 'local']]
   IsNotProd: !Not [!Equals [!Ref Environment, 'prod']]
+  IsNotTemp:
+    !Equals [!Select ['3', !Split ['-', !Ref 'AWS::StackName']], 'temp']
   IsStandalone: !Equals [!Ref Environment, 'standalone']
   IsUsingBodsInfra:
     !Not [
@@ -62,6 +64,7 @@ Conditions:
         !Equals [!Ref Environment, 'standalone'],
       ],
     ]
+
 Globals:
   Function:
     Architectures:
@@ -112,12 +115,9 @@ Globals:
         POSTGRES_HOST: !If
           - IsUsingBodsInfra
           - !If ## Remove condition once isolated testing is completed and ETL is fully integrated into BODS
-            - !Equals [
-                !Select ['3', !Split ['-', !Ref 'AWS::StackName']],
-                'temp',
-              ]
-            - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-endpoint}}'
+            - IsNotTemp
             - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-endpoint}}'
           - !If
             - IsStandalone
             - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-endpoint'
@@ -438,9 +438,9 @@ Resources:
             - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
             - !Ref AWS::NoValue
 
-  #########################################
-  ####           SQS QUEUES            ####
-  #########################################
+  ####################
+  #### SQS QUEUES ####
+  ####################
 
   TimetablesProcessQueue:
     Type: AWS::SQS::Queue
@@ -473,9 +473,9 @@ Resources:
           - !Ref AWS::NoValue
       VisibilityTimeout: 300
 
-  #########################################
+  ###################
   #### IAM ROLES ####
-  #########################################
+  ###################
   CommonLambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -495,12 +495,9 @@ Resources:
         - !If
           - IsUsingBodsInfra
           - !If ## Remove condition once isolated testing is completed and ETL is fully integrated into BODS
-            - !Equals [
-                !Select ['3', !Split ['-', !Ref 'AWS::StackName']],
-                'temp',
-              ]
-            - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-rw-user-access-policy-arn}}'
+            - IsNotTemp
             - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-rw-user-access-policy-arn}}'
           - !If
             - IsStandalone
             - !Ref AWS::NoValue
@@ -508,12 +505,9 @@ Resources:
         - !If
           - IsUsingBodsInfra
           - !If ## Remove condition once isolated testing is completed and ETL is fully integrated into BODS
-            - !Equals [
-                !Select ['3', !Split ['-', !Ref 'AWS::StackName']],
-                'temp',
-              ]
-            - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-ro-user-access-policy-arn}}'
+            - IsNotTemp
             - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-ro-user-access-policy-arn}}'
           - !If
             - IsStandalone
             - !Ref AWS::NoValue

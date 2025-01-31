@@ -55,10 +55,10 @@ dev:
 dev-temp:
   deploy:
     parameters:
-      stack_name: 'bods-backend-dev-temp-app-stack'
+      stack_name: 'bods-backend-temp-dev-app-stack'
       s3_prefix: dev
       capabilities: 'CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND'
-      parameter_overrides: ProjectName='bods-backend-standalone'
+      parameter_overrides: ProjectName='bods-backend-temp'
         Environment='dev'
         AvlConsumerApiBaseUrl='https://x87vl7rpc0.execute-api.eu-west-2.amazonaws.com/v1'
 
