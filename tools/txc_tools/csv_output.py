@@ -16,6 +16,7 @@ from .models import (
     XMLTagInfo,
     ZipStats,
     ZipTagStats,
+    XmlTagLookUpInfo,
 )
 from .utils import calculate_zip_stats
 
@@ -69,6 +70,8 @@ def generate_xml_info_report(**kwargs: dict[str, Any]) -> None:
     )
 
     lookup_details = kwargs.get("lookup_info")
+    assert isinstance(lookup_details, XmlTagLookUpInfo)
+
     tag_name = lookup_details.tag_name if lookup_details else None
     tag_name = f"_{tag_name}" if tag_name else ""
     detailed_path = base_path.with_name(f"{base_path.stem}{tag_name}_detailed.csv")
@@ -118,8 +121,12 @@ def generate_xml_tag_with_parent_report(**kwargs: dict[str, Any]) -> None:
     assert isinstance(base_path, Path)
 
     search_details = kwargs.get("lookup_info")
+    assert isinstance(search_details, XmlTagLookUpInfo)
+    assert search_details.tag_name
+    assert search_details.search_path
+
     tag_name = f"_{search_details.tag_name}"
-    search_path = search_details.search_path.split(':')[-1]
+    search_path = search_details.search_path.split(":")[-1]
     search_path = f"_{search_path}"
 
     file_path = base_path.with_name(f"{base_path.stem}{tag_name}{search_path}.csv")

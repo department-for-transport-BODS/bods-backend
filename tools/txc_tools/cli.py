@@ -3,7 +3,7 @@ TXC Reporting Tools with Typer Subcommands
 """
 
 from pathlib import Path
-from typing import Annotated, List, Optional
+from typing import Annotated, Optional
 
 import typer
 
@@ -41,7 +41,12 @@ def zip_size_report(
     Process multiple ZIP files in parallel, analyzing their XML contents and
     generating CSV reports.
     """
-    execute_process(zip_files=zip_files, mode=AnalysisMode.SIZE, sub_zip_workers=sub_zip_workers, lookup_info=XmlTagLookUpInfo())
+    execute_process(
+        zip_files=zip_files,
+        mode=AnalysisMode.SIZE,
+        sub_zip_workers=sub_zip_workers,
+        lookup_info=XmlTagLookUpInfo(),
+    )
 
 
 @app.command(name="zip-tag-counter")
@@ -77,7 +82,12 @@ def zip_tag_counter(
     XML tags and generating CSV reports.
     """
     lookup_info = XmlTagLookUpInfo(tag_name=tag_name)
-    execute_process(zip_files=zip_files, mode=AnalysisMode.TAG, sub_zip_workers=sub_zip_workers, lookup_info=lookup_info)
+    execute_process(
+        zip_files=zip_files,
+        mode=AnalysisMode.TAG,
+        sub_zip_workers=sub_zip_workers,
+        lookup_info=lookup_info,
+    )
 
 
 @app.command(name="zip-report-inventory")
@@ -108,7 +118,12 @@ def zip_txc_report(
     Process multiple ZIP files in parallel, parsing TxC data from XML
     and generating CSV reports.
     """
-    execute_process(zip_files=zip_files, mode=AnalysisMode.TXC, sub_zip_workers=sub_zip_workers, lookup_info=XmlTagLookUpInfo())
+    execute_process(
+        zip_files=zip_files,
+        mode=AnalysisMode.TXC,
+        sub_zip_workers=sub_zip_workers,
+        lookup_info=XmlTagLookUpInfo(),
+    )
 
 
 @app.command(name="zip-tag-search-parent")
@@ -134,7 +149,8 @@ def zip_tag_with_parent(
     id_elements: Annotated[
         Optional[str],
         typer.Argument(
-            help='Identifier of tag(comma separated values eg. "id,ref,name"'),
+            help='Identifier of tag(comma separated values eg. "id,ref,name"'
+        ),
     ] = None,
     sub_zip_workers: Annotated[
         int,
@@ -155,9 +171,16 @@ def zip_tag_with_parent(
     if id_elements is None:
         id_elements = "id,ref,name"
 
-    id_elements = [it.strip() for it in id_elements.split(",")]
-    lookup_info = XmlTagLookUpInfo(tag_name=tag_name, search_path=search_path, id_elements=id_elements)
-    execute_process(zip_files=zip_files, mode=AnalysisMode.TAG_PARENT_CHILD, sub_zip_workers=sub_zip_workers, lookup_info=lookup_info)
+    id_elements_list = [it.strip() for it in id_elements.split(",")]
+    lookup_info = XmlTagLookUpInfo(
+        tag_name=tag_name, search_path=search_path, id_elements=id_elements_list
+    )
+    execute_process(
+        zip_files=zip_files,
+        mode=AnalysisMode.TAG_PARENT_CHILD,
+        sub_zip_workers=sub_zip_workers,
+        lookup_info=lookup_info,
+    )
 
 
 def cli() -> None:

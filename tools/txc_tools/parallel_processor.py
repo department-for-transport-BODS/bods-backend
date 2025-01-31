@@ -15,7 +15,13 @@ import structlog
 from pydantic import BaseModel
 
 from .csv_output import write_csv_reports
-from .models import AnalysisMode, WorkerConfig, XmlTagLookUpInfo, XMLFileInfo, XMLTagInfo
+from .models import (
+    AnalysisMode,
+    WorkerConfig,
+    XmlTagLookUpInfo,
+    XMLFileInfo,
+    XMLTagInfo,
+)
 from .xml_processor import process_single_xml, process_xml_file
 
 structlog.configure(
@@ -57,7 +63,6 @@ def process_nested_zip(
 ) -> list[BaseModel]:
     """Process a nested zip file, returning XML file information"""
     results: list[BaseModel] = []
-    log.info("process_nested_zip", lookup_info=lookup_info)
     with BytesIO(nested_zip_data) as zip_buffer:
         with zipfile.ZipFile(zip_buffer) as nested_zip_ref:
             for nested_file in nested_zip_ref.filelist:

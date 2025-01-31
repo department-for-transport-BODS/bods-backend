@@ -33,16 +33,17 @@ class XMLFileInfo(BaseModel):
 
 class XMLSearchResult(BaseModel):
     """Model for XML search results."""
+
     parent_zip: str | None = Field(
-        None, title="Parent Zip",
-        description="Name of the parent zip file if nested"
+        None, title="Parent Zip", description="Name of the parent zip file if nested"
     )
     file_path: str = Field(
-        ..., title="File Path",
-        description="Path to the XML file within the zip"
+        ..., title="File Path", description="Path to the XML file within the zip"
     )
     path_found: bool = Field(
-        default=True, title="Tag Path Found", description="Always True when included in results"
+        default=True,
+        title="Tag Path Found",
+        description="Always True when included in results",
     )
     element_tag: str = Field(title="Name", description="Tag name of the found element")
     has_child: bool | None = Field(
@@ -131,6 +132,7 @@ class XmlTagLookUpInfo:
     """
     Tag search details
     """
+
     tag_name: str | None = None
     search_path: str | None = None
     id_elements: list[str] | None = None
