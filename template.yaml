@@ -38,7 +38,7 @@ Conditions:
   IsNotStandalone: !Not [!Equals [!Ref Environment, 'standalone']]
   ## Remove conditions once isolated testing is completed and ETL is fully integrated into BODS
   IsNotTemp:
-    !Equals [!Select ['3', !Split ['-', !Ref 'AWS::StackName']], 'temp']
+    !Not [!Equals [!Select ['2', !Split ['-', !Ref 'AWS::StackName']], 'temp']]
   IsNotStandaloneOrTemp: !Or [!Condition IsNotStandalone, !Condition IsNotTemp]
 
 Resources:
