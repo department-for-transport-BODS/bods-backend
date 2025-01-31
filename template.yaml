@@ -32,9 +32,15 @@ Parameters:
     Type: String
     Default: 'unknown'
     Description: 'Version to pass to Datadog APM'
+
 Conditions:
   IsStandalone: !Equals [!Ref Environment, 'standalone']
   IsNotStandalone: !Not [!Equals [!Ref Environment, 'standalone']]
+  ## Remove conditions once isolated testing is completed and ETL is fully integrated into BODS
+  IsNotTemp:
+    !Equals [!Select ['3', !Split ['-', !Ref 'AWS::StackName']], 'temp']
+  IsNotStandaloneOrTemp: !Or [!Condition IsNotStandalone, !Condition IsNotTemp]
+
 Resources:
   StandaloneResources:
     Type: AWS::Serverless::Application
@@ -44,9 +50,11 @@ Resources:
       Parameters:
         Environment: !Ref Environment
         ProjectName: !Ref ProjectName
+
   PeriodicTasks:
     Type: AWS::Serverless::Application
-    Condition: IsNotStandalone
+    ## Revert back to `IsNotStandalone` once isolated testing is completed and ETL is fully integrated into BODS
+    Condition: IsNotStandaloneOrTemp
     Properties:
       Location: './periodic-tasks.yaml'
       Parameters:
@@ -61,6 +69,7 @@ Resources:
       Tags:
         env: !Ref Environment
         service: !Sub '${ProjectName}-periodic-tasks'
+
   PeriodicTasksStandalone:
     Type: AWS::Serverless::Application
     Condition: IsStandalone
@@ -79,6 +88,7 @@ Resources:
       Tags:
         env: !Ref Environment
         service: !Sub '${ProjectName}-periodic-tasks'
+
   TimetablesEtl:
     Type: AWS::Serverless::Application
     Condition: IsNotStandalone
@@ -95,6 +105,7 @@ Resources:
       Tags:
         env: !Ref Environment
         service: !Sub '${ProjectName}-timetables-etl'
+
   TimetablesEtlStandalone:
     Type: AWS::Serverless::Application
     Condition: IsStandalone
@@ -109,6 +120,7 @@ Resources:
       Tags:
         env: !Ref Environment
         service: !Sub '${ProjectName}-timetables-etl'
+
   BoilerplateLambdaLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
