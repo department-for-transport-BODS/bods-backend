@@ -55,7 +55,7 @@ Conditions:
   IsNotLocal: !Not [!Equals [!Ref Environment, 'local']]
   IsNotProd: !Not [!Equals [!Ref Environment, 'prod']]
   IsNotTemp:
-    !Equals [!Select ['3', !Split ['-', !Ref 'AWS::StackName']], 'temp']
+    !Not [!Equals [!Select ['2', !Split ['-', !Ref 'AWS::StackName']], 'temp']]
   IsStandalone: !Equals [!Ref Environment, 'standalone']
   IsUsingBodsInfra:
     !Not [
