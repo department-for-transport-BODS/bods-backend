@@ -3,17 +3,21 @@ Module defines helper functions to process xml TxC data
 """
 
 import zipfile
+from dataclasses import is_dataclass
 from datetime import date
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Callable
+from lxml import etree
+from lxml.etree import _Element
+
 
 import structlog
 from common_layer.txc.models.txc_data import TXCData
 from common_layer.txc.models.txc_stoppoint import TXCStopPoint
 from common_layer.txc.parser.parser_txc import load_xml_data, parse_txc_from_element
 
-from .models import AnalysisMode, WorkerConfig, XMLFileInfo, XMLTagInfo, XmlTxcInventory
+from .models import AnalysisMode, WorkerConfig, XMLFileInfo, XMLSearchResult, XMLTagInfo, XmlTxcInventory
 from .utils import count_tags_in_xml, get_size_mb
 
 log = structlog.stdlib.get_logger()
@@ -32,14 +36,16 @@ def get_txc_object(**kwargs: dict[str, Any]) -> XmlTxcInventory:
 
     # Validate xml_file
     if not isinstance(xml_file, BytesIO):
-        raise ValueError("xml_file must be a file-like object (BytesIO) or a Path")
+        raise ValueError(
+            "xml_file must be a file-like object (BytesIO) or a Path")
 
     # Validate filename
     if not isinstance(filename, (Path, BytesIO)):
         raise ValueError("filename must be of type Path or BytesIO")
 
     log.debug(
-        "Parsing XML File with TxC parser", filename=filename, parent_zip=parent_zip
+        "Parsing XML File with TxC parser", filename=filename,
+        parent_zip=parent_zip
     )
 
     txc_object = parse_txc_from_element(load_xml_data(xml_file))
@@ -53,13 +59,15 @@ def get_tag_size_object(**kwargs: dict[str, Any]) -> XMLFileInfo | XMLTagInfo:
     parent_zip = kwargs.get("parent_zip")
     filename = kwargs.get("filename")
     xml_file = kwargs.get("xml_file")
-    tag_name = str(kwargs.get("tag_name", ""))
+    lookup_details = kwargs.get("lookup_info", None)
+    tag_name = lookup_details.tag_name if is_dataclass(lookup_details) else ''
     assert isinstance(xml_file, BytesIO)
 
     parent_zip = str(parent_zip) if parent_zip else None
 
     log.debug(
-        "Parsing and searching XML File", filename=filename, parent_zip=parent_zip
+        "Parsing and searching XML File", filename=filename,
+        parent_zip=parent_zip
     )
     if kwargs.get("mode") == AnalysisMode.TAG:
         count = count_tags_in_xml(xml_file.read(), tag_name)
@@ -68,7 +76,62 @@ def get_tag_size_object(**kwargs: dict[str, Any]) -> XMLFileInfo | XMLTagInfo:
         )
 
     size_mb = get_size_mb(xml_file)
-    return XMLFileInfo(file_path=str(filename), size_mb=size_mb, parent_zip=parent_zip)
+    return XMLFileInfo(file_path=str(filename), size_mb=size_mb,
+                       parent_zip=parent_zip)
+
+
+def find_element_identifier(
+    element: _Element,
+    id_elements: list[str] = ("id", "ref", "name"),
+) -> str | None:
+    """
+    Find identifier for an XML element by checking provided identifier attributes.
+
+    """
+    for id_element in id_elements:
+        identifier = element.find(id_element)
+        if identifier is not None:
+            return identifier.text
+    return None
+
+
+def get_elements_with_related_parent(**kwargs: dict[str, Any]) -> list[
+    XMLSearchResult]:
+    """
+    Fetch and return all elements with related parents
+    """
+    parent_zip = kwargs.get("parent_zip")
+    filename = kwargs.get("filename")
+    xml_content = kwargs.get("xml_file")
+    lookup_details = kwargs.get("lookup_info", None)
+
+    if lookup_details is None:
+        raise ValueError("lookup_info must be provided")
+
+    # assert isinstance(xml_content, BytesIO)
+
+    xml_file = load_xml_data(xml_content)
+
+    search_path = f"//{lookup_details.search_path}"
+    matching_elements = xml_file.xpath(search_path)
+    tag_name = lookup_details.tag_name
+    id_elements = lookup_details.id_elements
+
+    results: list[XMLSearchResult] = []
+    for element in matching_elements:
+        result = XMLSearchResult(
+            parent_zip=parent_zip,
+            file_path=filename,
+            element_tag=etree.QName(element).localname,
+            has_child=element.find(tag_name) is not None,
+            identifier=find_element_identifier(element, id_elements),
+        )
+        result.parent_zip = parent_zip
+        result.file_path = filename
+
+        results.append(result)
+
+    return results
 
 
 XML_OBJECTS: dict[
@@ -77,6 +140,7 @@ XML_OBJECTS: dict[
     AnalysisMode.SIZE: get_tag_size_object,
     AnalysisMode.TAG: get_tag_size_object,
     AnalysisMode.TXC: get_txc_object,
+    AnalysisMode.TAG_PARENT_CHILD: get_elements_with_related_parent,
 }
 
 
@@ -91,15 +155,18 @@ def process_xml_file(**kwargs) -> XMLFileInfo | XMLTagInfo | XmlTxcInventory:
 
     xml_file = kwargs.get("xml_file")
     if not hasattr(xml_file, "read"):
-        raise ValueError("xml_file must be a file-like object with a 'read' method")
+        raise ValueError(
+            "xml_file must be a file-like object with a 'read' method")
     return XML_OBJECTS[mode](**kwargs)
 
 
-def generate_txc_row_data(txc: TXCData, file_path: Path | BytesIO) -> XmlTxcInventory:
+def generate_txc_row_data(txc: TXCData,
+                          file_path: Path | BytesIO) -> XmlTxcInventory:
     """
     Generate Row Data
     """
-    log.info("Generating TxC row data for report inventory", file_path=file_path)
+    log.info("Generating TxC row data for report inventory",
+             file_path=file_path)
     operator = txc.Operators[0]
     service = txc.Services[0]
     line = service.Lines[0]
@@ -116,7 +183,8 @@ def generate_txc_row_data(txc: TXCData, file_path: Path | BytesIO) -> XmlTxcInve
     service_start_date = (
         service.StartDate if isinstance(service.StartDate, date) else None
     )
-    service_end_date = service.EndDate if isinstance(service.EndDate, date) else None
+    service_end_date = service.EndDate if isinstance(service.EndDate,
+                                                     date) else None
 
     return XmlTxcInventory(
         national_operator_code=operator.NationalOperatorCode,
@@ -142,7 +210,8 @@ def generate_txc_row_data(txc: TXCData, file_path: Path | BytesIO) -> XmlTxcInve
     )
 
 
-def process_single_xml(file_info: zipfile.ZipInfo, config: WorkerConfig) -> None:
+def process_single_xml(file_info: zipfile.ZipInfo,
+                       config: WorkerConfig) -> None:
     """Process a single XML file and add it to the queue"""
     try:
         with config.zip_ref.open(file_info.filename) as xml_file:
@@ -152,11 +221,15 @@ def process_single_xml(file_info: zipfile.ZipInfo, config: WorkerConfig) -> None
                     xml_file=xml_buffer,
                     filename=file_info.filename,
                     parent_zip=None,
-                    tag_name=config.tag_name,
                     mode=config.mode,
+                    lookup_info=config.lookup_info,
                 )
-                config.xml_queue.put(info)
+                if isinstance(info, list):
+                    map(config.xml_queue.put, info)
+                else:
+                    config.xml_queue.put(info)
     except Exception:  # pylint: disable=broad-except
         log.error(
-            "Error processing XML file", filename=file_info.filename, exc_info=True
+            "Error processing XML file", filename=file_info.filename,
+            exc_info=True
         )

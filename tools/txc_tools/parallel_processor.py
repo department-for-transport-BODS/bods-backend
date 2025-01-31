@@ -15,7 +15,7 @@ import structlog
 from pydantic import BaseModel
 
 from .csv_output import write_csv_reports
-from .models import AnalysisMode, WorkerConfig, XMLFileInfo, XMLTagInfo
+from .models import AnalysisMode, WorkerConfig, XmlTagLookUpInfo, XMLFileInfo, XMLTagInfo
 from .xml_processor import process_single_xml, process_xml_file
 
 structlog.configure(
@@ -40,7 +40,7 @@ def process_single_nested_zip(file_info: zipfile.ZipInfo, config: WorkerConfig) 
                 nested_zip_data,
                 file_info.filename,
                 config.mode,
-                config.tag_name,
+                config.lookup_info,
             )
             config.future_queue.put(future)
     except Exception:  # pylint: disable=broad-except
@@ -53,10 +53,11 @@ def process_nested_zip(
     nested_zip_data: bytes,
     parent_zip_name: str,
     mode: AnalysisMode,
-    tag_name: str | None = None,
+    lookup_info: XmlTagLookUpInfo | None = None,
 ) -> list[BaseModel]:
     """Process a nested zip file, returning XML file information"""
     results: list[BaseModel] = []
+    log.info("process_nested_zip", lookup_info=lookup_info)
     with BytesIO(nested_zip_data) as zip_buffer:
         with zipfile.ZipFile(zip_buffer) as nested_zip_ref:
             for nested_file in nested_zip_ref.filelist:
@@ -69,10 +70,13 @@ def process_nested_zip(
                                     xml_file=xml_buffer,
                                     filename=nested_file.filename,
                                     parent_zip=parent_zip_name,
-                                    tag_name=tag_name,
                                     mode=mode,
+                                    lookup_info=lookup_info,
                                 )
-                                results.append(info)
+                                if isinstance(info, list):
+                                    results.extend(info)
+                                else:
+                                    results.append(info)
                     except Exception as e:  # pylint: disable=broad-except
                         log.error(
                             "Error processing XML in nested zip",
@@ -141,7 +145,7 @@ def process_zip_contents(
     zip_path: str,
     max_workers: int,
     mode: AnalysisMode,
-    tag_name: str | None = None,
+    lookup_info: XmlTagLookUpInfo | None = None,
 ) -> Iterator[XMLFileInfo | XMLTagInfo]:
     """Process contents of a zip file with parallel sub-zip processing"""
     try:
@@ -161,7 +165,7 @@ def process_zip_contents(
                     future_queue=future_queue,
                     executor=executor,
                     mode=mode,
-                    tag_name=tag_name,
+                    lookup_info=lookup_info,
                 )
 
                 # Start processing thread
@@ -187,8 +191,8 @@ def process_zip_contents(
 def process_zip_file_parallel(
     zip_path: str,
     mode: AnalysisMode,
-    tag_name: str | None = None,
     sub_zip_workers: int = 4,
+    lookup_info: XmlTagLookUpInfo | None = None,
 ) -> None:
     """Process a zip file and generate both detailed and summary reports"""
     if not os.path.exists(zip_path):
@@ -199,23 +203,26 @@ def process_zip_file_parallel(
         "Processing ZIP File",
         zip_path=zip_path,
         mode=mode,
-        tag_name=tag_name,
         sub_zip_workers=sub_zip_workers,
+        lookup_info=lookup_info,
     )
     xml_files: list[BaseModel] = list(  # type: ignore
         process_zip_contents(
             zip_path,
             max_workers=sub_zip_workers,
             mode=mode,
-            tag_name=tag_name,
+            lookup_info=lookup_info,
         )
     )
+
+    log.info("process_zip_file_parallel", xml_files=xml_files)
+
     # Generate reports
     report_args = {
         "xml_files": xml_files,
         "base_path": Path(zip_path).with_suffix(".csv"),
         "mode": mode,
-        "tag_name": tag_name,
+        "lookup_info": lookup_info,
     }
     write_csv_reports(**report_args)
 
@@ -223,8 +230,8 @@ def process_zip_file_parallel(
 def execute_process(
     zip_files: list[Path],
     mode: AnalysisMode,
-    tag_name: str | None = None,
     sub_zip_workers: int = 4,
+    lookup_info: XmlTagLookUpInfo | None = None,
 ) -> None:
     """
     Launch process for xml file parsing and extracting datas
@@ -233,7 +240,7 @@ def execute_process(
         "Starting Processing",
         zip_files=zip_files,
         mode=mode,
-        tag_name=tag_name,
+        lookup_info=lookup_info,
         sub_zip_workers=sub_zip_workers,
     )
     with concurrent.futures.ProcessPoolExecutor() as executor:
@@ -243,8 +250,8 @@ def execute_process(
                 process_zip_file_parallel,
                 str(zip_path),
                 mode,
-                tag_name,
                 sub_zip_workers,
+                lookup_info,
             )
             for zip_path in zip_files
         ]
