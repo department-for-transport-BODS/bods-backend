@@ -235,7 +235,8 @@ def process_single_xml(file_info: zipfile.ZipInfo, config: WorkerConfig) -> None
                     lookup_info=config.lookup_info,
                 )
                 if isinstance(info, list):
-                    map(config.xml_queue.put, info)
+                    for item in info:
+                        config.xml_queue.put(item)
                 else:
                     config.xml_queue.put(info)
     except Exception:  # pylint: disable=broad-except

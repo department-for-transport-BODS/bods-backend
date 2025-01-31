@@ -220,8 +220,6 @@ def process_zip_file_parallel(
         )
     )
 
-    log.info("process_zip_file_parallel", xml_files=xml_files)
-
     # Generate reports
     report_args = {
         "xml_files": xml_files,
