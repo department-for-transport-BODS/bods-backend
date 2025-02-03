@@ -144,7 +144,7 @@ Globals:
             - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-app-username'
             - !Ref RdsDbUsername
         DYNAMODB_CACHE_TABLE_NAME: !Ref TimetablesCache
-        DYNAMODB_NAPTAN_STOP_POINT_TABLE_NAME: 'bods-backend-dev-naptan-stop-points-table' ## TODO: stop hardcoding this once IsNotTemp is removed
+        DYNAMODB_NAPTAN_STOP_POINT_TABLE_NAME: !Sub 'bods-backend-${Environment}-naptan-stop-points-table' ## TODO: stop hardcoding this once IsNotTemp is removed
         DD_MERGE_XRAY_TRACES: true
         DD_RUNTIME_METRICS_ENABLED: true
         DD_DBM_PROPAGATION_MODE: full
@@ -579,7 +579,7 @@ Resources:
                   - dynamodb:GetItem
                   - dynamodb:PutItem
                   - dynamodb:BatchGetItem
-                Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/bods-backend-dev-naptan-stop-points-table' ## TODO: stop hardcoding this once IsNotTemp is removed
+                Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/bods-backend-${Environment}-naptan-stop-points-table' ## TODO: stop hardcoding this once IsNotTemp is removed
         - PolicyName: DataDogAPIAccess
           PolicyDocument:
             Version: '2012-10-17'
