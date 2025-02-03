@@ -13,9 +13,10 @@ from common_layer.database.models.model_pipelines import (
 )
 from common_layer.database.repos import OrganisationDatasetRevisionRepo
 from common_layer.database.repos.repo_etl_task import ETLTaskResultRepo
-from generate_output_zip.app.models.model_results import MapResults
-from generate_output_zip.app.models.model_zip_processing import ProcessingResult
 from structlog.stdlib import get_logger
+
+from .models.model_results import MapResults
+from .models.model_zip_processing import ProcessingResult
 
 log = get_logger()
 
