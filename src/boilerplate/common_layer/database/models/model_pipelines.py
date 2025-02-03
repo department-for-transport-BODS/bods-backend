@@ -2,6 +2,8 @@
 SQL Alchemy models for tables starting with pipelines_
 """
 
+# pylint: disable=too-many-ancestors
+
 from __future__ import annotations
 
 from datetime import UTC, datetime

@@ -128,9 +128,7 @@ def process_map_results(
     input_data: GenerateOutputZipInputData, db: SqlDB
 ) -> ProcessingResult:
     """
-    Process the map results and create an output file of successful files
-
-
+    Process the map results, create an output file of successful files and update task/revision statuses
     """
     s3_client = S3(input_data.destination_bucket)
 
