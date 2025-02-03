@@ -50,7 +50,7 @@ class NaptanStopPointDynamoDBClient(DynamoDB):
         found_atco_codes: Set[str] = set()
 
         # Limit for BatchGetItem is 100
-        batch_size = 100
+        batch_size: int = 100
         for batch in self._batch_queries(atco_codes, batch_size=batch_size):
             raw_items = self._batch_get_items(batch)
             for item in raw_items:
@@ -60,7 +60,7 @@ class NaptanStopPointDynamoDBClient(DynamoDB):
                     stop_points.append(stop_point)
                     found_atco_codes.add(stop_point.AtcoCode)
 
-        missing_atco_codes = [
+        missing_atco_codes: list[str] = [
             code for code in atco_codes if code not in found_atco_codes
         ]
 
@@ -83,7 +83,7 @@ class NaptanStopPointDynamoDBClient(DynamoDB):
                 Key={"AtcoCode": {"S": atco_code}},
             )
 
-            item = response.get("Item")
+            item: dict[str, AttributeValueTypeDef] | None = response.get("Item")
             if not item:
                 log.info("No StopPoint found for AtcoCode", atco_code=atco_code)
                 return None
@@ -142,16 +142,18 @@ class NaptanStopPointDynamoDBClient(DynamoDB):
         Use DynamoDB BatchGetItem to fetch items for a list of AtcoCodes.
         """
         try:
-            request_keys = [{"AtcoCode": {"S": atco_code}} for atco_code in atco_codes]
+            request_keys: list[dict[str, dict[str, str]]] = [
+                {"AtcoCode": {"S": atco_code}} for atco_code in atco_codes
+            ]
             response = self._client.batch_get_item(
                 RequestItems={
                     self._settings.DYNAMODB_TABLE_NAME: {"Keys": request_keys}
                 }
             )
             # Extract items for the specific table
-            raw_items = response.get("Responses", {}).get(
-                self._settings.DYNAMODB_TABLE_NAME, []
-            )
+            raw_items: list[dict[str, AttributeValueTypeDef]] = response.get(
+                "Responses", {}
+            ).get(self._settings.DYNAMODB_TABLE_NAME, [])
 
             log.info(
                 "BatchGetItem completed",
