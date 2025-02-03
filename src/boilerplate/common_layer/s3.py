@@ -8,7 +8,7 @@ import shutil
 import tempfile
 from io import BytesIO
 from pathlib import Path
-from typing import Iterator, cast
+from typing import Iterator
 
 import boto3
 import botocore.config
@@ -156,7 +156,7 @@ class S3:
 
         try:
             # Create temp dir to store the file with original name
-            temp_dir = cast(str, tempfile.mkdtemp(prefix="s3_download_"))
+            temp_dir = tempfile.mkdtemp(prefix="s3_download_")
             temp_path = Path(temp_dir) / filename
 
             # Download directly to the temp file
@@ -188,7 +188,7 @@ class S3:
 
     def upload_fileobj_streaming(
         self,
-        fileobj: BytesIO | tempfile._TemporaryFileWrapper,
+        fileobj: BytesIO,
         file_path: str,
         content_type: str | None = None,
     ) -> None:

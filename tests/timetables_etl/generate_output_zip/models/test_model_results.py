@@ -11,6 +11,7 @@ from generate_output_zip.app.models.model_results import (
     MapResultFailed,
     MapResultSucceeded,
     MapRunExecutionStatus,
+    ParsedInputData,
 )
 
 
@@ -155,3 +156,83 @@ def test_failed_parsing_valid(json_str: str, expected_model: MapResultFailed) ->
     """Test parsing valid failed execution data by comparing complete model instances"""
     result = MapResultFailed.model_validate_json(json_str)
     assert result == expected_model
+
+
+@pytest.mark.parametrize(
+    "json_str,expected_parsed_input",
+    [
+        pytest.param(
+            r"""[{
+                "ExecutionArn": "arn:aws:states:eu-west-2:123:execution:test",
+                "Input": "{\"mapS3Bucket\":\"test-bucket\",\"mapS3Object\":\"test/key.xml\",\"mapDatasetRevisionId\":123,\"mapDatasetEtlTaskResultId\":456}",
+                "InputDetails": { "Included": true },
+                "Name": "test-execution",
+                "Output": "",
+                "OutputDetails": { "Included": false },
+                "RedriveCount": 0,
+                "RedriveStatus": "NOT_REDRIVABLE",
+                "RedriveStatusReason": "Test reason",
+                "StartDate": "2025-01-09T18:13:01.189Z",
+                "StateMachineArn": "arn:aws:states:eu-west-2:123:stateMachine:test",
+                "Status": "SUCCEEDED",
+                "StopDate": "2025-01-09T18:14:18.554Z"
+            }]""",
+            ParsedInputData(
+                Bucket="test-bucket",
+                Key="test/key.xml",
+                DatasetRevisionId=123,
+                mapDatasetEtlTaskResultId=456,
+            ),
+            id="Map prefixed fields parsing",
+        ),
+        pytest.param(
+            r"""[{
+                "ExecutionArn": "arn:aws:states:eu-west-2:123:execution:test",
+                "Input": "{\"Bucket\":\"test-bucket\",\"Key\":\"test/key.xml\",\"DatasetRevisionId\":123,\"mapDatasetEtlTaskResultId\":456}",
+                "InputDetails": { "Included": true },
+                "Name": "test-execution",
+                "Output": "",
+                "OutputDetails": { "Included": false },
+                "RedriveCount": 0,
+                "RedriveStatus": "NOT_REDRIVABLE",
+                "RedriveStatusReason": "Test reason",
+                "StartDate": "2025-01-09T18:13:01.189Z",
+                "StateMachineArn": "arn:aws:states:eu-west-2:123:stateMachine:test",
+                "Status": "SUCCEEDED",
+                "StopDate": "2025-01-09T18:14:18.554Z"
+            }]""",
+            ParsedInputData(
+                Bucket="test-bucket",
+                Key="test/key.xml",
+                DatasetRevisionId=123,
+                mapDatasetEtlTaskResultId=456,
+            ),
+            id="Standard field names parsing",
+        ),
+        pytest.param(
+            r"""[{
+                "ExecutionArn": "arn:aws:states:eu-west-2:123:execution:test",
+                "Input": "{\"invalid_json",
+                "InputDetails": { "Included": true },
+                "Name": "test-execution",
+                "Output": "",
+                "OutputDetails": { "Included": false },
+                "RedriveCount": 0,
+                "RedriveStatus": "NOT_REDRIVABLE",
+                "RedriveStatusReason": "Test reason",
+                "StartDate": "2025-01-09T18:13:01.189Z",
+                "StateMachineArn": "arn:aws:states:eu-west-2:123:stateMachine:test",
+                "Status": "SUCCEEDED",
+                "StopDate": "2025-01-09T18:14:18.554Z"
+            }]""",
+            None,
+            id="Invalid JSON input",
+        ),
+    ],
+)
+def test_parsed_input_field(
+    json_str: str, expected_parsed_input: ParsedInputData | None
+) -> None:
+    """Test the parsed_input field is correctly populated from Input JSON"""
+    result = MapResultSucceeded.model_validate_json(json_str)
+    assert result.root[0].parsed_input == expected_parsed_input
