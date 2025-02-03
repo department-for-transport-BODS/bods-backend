@@ -150,9 +150,9 @@ Resources:
               intervals.$: $.config.intervals
             End: true
 
-  #########################
+  ##########################
   #### LAMBDA FUNCTIONS ####
-  #########################
+  ##########################
   IteratorLambda:
     Type: AWS::Serverless::Function
     # checkov:skip=CKV_AWS_117:Ensure that AWS Lambda function is configured inside a VPC
@@ -356,10 +356,10 @@ Resources:
                 "dynamo_table": "${ProjectName}-${Environment}-naptan-stop-points-table",
                 "aws_region": "eu-west-2"
               }
-  #########################################
-  #### DYNAMODB TABLES ####
-  #########################################
 
+  #########################
+  #### DYNAMODB TABLES ####
+  #########################
   NaptanStopPointTable:
     ## checkov:skip=CKV_AWS_28:Ensure DynamoDB point in time recovery (backup) is enabled. Backup isn't Required, it's a cache
     Type: AWS::DynamoDB::Table
@@ -385,10 +385,9 @@ Resources:
             - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
             - !Ref AWS::NoValue
 
-  #########################################
-  #### IAM POLICIES ####
-  #########################################
-
+  ##############################
+  #### IAM ROLES + POLICIES ####
+  ##############################
   GenerateLambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -527,9 +526,10 @@ Resources:
                     - IsStandalone
                     - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
                     - '*'
-  #########################################
+
+  #########################
   #### SECURITY GROUPS ####
-  #########################################
+  #########################
   CommonLambdaSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Condition: IsNotLocal
@@ -568,9 +568,9 @@ Resources:
       ToPort: 5432
       SourceSecurityGroupId: !GetAtt CommonLambdaSecurityGroup.GroupId
 
-  ####################################
-  #### Log Groups ####
-  ####################################
+  ####################
+  #### LOG GROUPS ####
+  ####################
   IteratorLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
