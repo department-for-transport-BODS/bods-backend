@@ -151,8 +151,7 @@ def get_journey_pattern_stops(
             return get_stops_from_sections(
                 jp.JourneyPatternSectionRefs, journey_pattern_sections
             )
-        case _:
-            raise ValueError(f"Unknown journey pattern type: {type(jp)}")
+    raise ValueError(f"Unknown journey pattern type: {type(jp)}")
 
 
 def get_stop_activity_details(
@@ -166,13 +165,13 @@ def get_stop_activity_details(
         case TXCFixedStopUsage():
             is_timing_point = stop_point.TimingStatus == "principalPoint"
             activity_type: ActivityT = "pickUpAndSetDown"
+            return is_timing_point, activity_type
         case TXCFlexibleStopUsage():
             is_timing_point = False
             activity_type = "pickUpAndSetDown"
-        case _:
-            raise ValueError(f"Unknown stop type: {type(stop_point)}")
+            return is_timing_point, activity_type
 
-    return is_timing_point, activity_type
+    raise ValueError(f"Unknown stop type: {type(stop_point)}")
 
 
 def get_service_modes(services: list[TXCService]) -> list[TransportModeT]:
