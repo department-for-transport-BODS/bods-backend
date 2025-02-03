@@ -178,11 +178,11 @@ Resources:
         PostSchemaCheckLambdaArn: !GetAtt PostSchemaCheckLambda.Arn
         FileAttributesEtlLambdaArn: !GetAtt FileAttributesEtlLambda.Arn
         PtiValidationLambdaArn: !GetAtt PtiValidationLambda.Arn
-        ExceptionHandlerLambdaArn: !GetAtt ExceptionHandlerLambda.Arn
         EtlProcessLambdaArn: !GetAtt EtlProcessLambda.Arn
         GenerateOutputZipLambdaArn: !GetAtt GenerateOutputZipLambda.Arn
-        DefaultS3BucketName: !Sub 'bodds-${Environment}'
         DqsStateMachineArn: !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:dqs-${Environment}-sm'
+        ExceptionHandlerLambdaArn: !GetAtt ExceptionHandlerLambda.Arn
+        DefaultS3BucketName: !Sub 'bodds-${Environment}'
 
   ##########################################
   #### TIMETABLES STATE MACHINE TRIGGER ####

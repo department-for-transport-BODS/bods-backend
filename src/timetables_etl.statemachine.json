@@ -332,14 +332,12 @@
       "Type": "Task",
       "Next": "Completed",
       "Resource": "arn:aws:states:::states:startExecution.sync:2",
-      "Arguments": {  
-          "StateMachineArn": "{$DqsStateMachineArn}",
-          "Input":{
-            "DatasetRevisionId": "{% $datasetRevisionId %}"
-          }
+      "Arguments": {
+        "StateMachineArn": "${DqsStateMachineArn}",
+        "Input": {
+          "DatasetRevisionId": "{% $datasetRevisionId %}"
         }
-      },
-      "End":true
+      }
     },
     "ParentExceptionHandler": {
       "Type": "Task",
