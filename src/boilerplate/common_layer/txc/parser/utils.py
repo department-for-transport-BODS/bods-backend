@@ -2,7 +2,7 @@
 XML Parsing Utils
 """
 
-from lxml.etree import _Element
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 log = get_logger()

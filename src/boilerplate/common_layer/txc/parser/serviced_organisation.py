@@ -4,7 +4,7 @@ Serviced Organisation Section Parsing
 
 from typing import cast
 
-from lxml.etree import _Element
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 from ..models.txc_serviced_organisation import (
@@ -54,11 +54,10 @@ def parse_date_ranges(
     Returns None if no date ranges were parsed
     """
     date_ranges: list[TXCServicedOrganisationDatePattern] = []
-    if date_ranges_xml is not None:
-        for date_range in date_ranges_xml.findall("DateRange"):
-            parsed_range = parse_date_range(date_range)
-            if parsed_range is not None:
-                date_ranges.append(parsed_range)
+    for date_range in date_ranges_xml.findall("DateRange"):
+        parsed_range = parse_date_range(date_range)
+        if parsed_range is not None:
+            date_ranges.append(parsed_range)
     return date_ranges if date_ranges else None
 
 

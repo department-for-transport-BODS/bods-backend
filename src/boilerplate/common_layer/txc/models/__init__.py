@@ -79,3 +79,84 @@ from .txc_vehicle_journey_flexible import (
     TXCFlexibleVehicleJourney,
     TXCServicePeriod,
 )
+
+__all__ = [
+    # TXC Data
+    "TXCData",
+    # Journey Pattern
+    "TXCJourneyPatternSection",
+    "TXCJourneyPatternStopUsage",
+    "TXCJourneyPatternTimingLink",
+    # Operator
+    "TXCOperator",
+    # Route
+    "TXCLocation",
+    "TXCMapping",
+    "TXCRoute",
+    "TXCRouteLink",
+    "TXCRouteSection",
+    "TXCTrack",
+    # Service
+    "TXCJourneyPattern",
+    "TXCLine",
+    "TXCLineDescription",
+    "TXCService",
+    "TXCStandardService",
+    # Service Flexible
+    "TXCBookingArrangements",
+    "TXCFixedStopUsage",
+    "TXCFlexibleJourneyPattern",
+    "TXCFlexibleService",
+    "TXCFlexibleStopUsage",
+    "TXCPhone",
+    # Serviced Organisation
+    "TXCServicedOrganisation",
+    "TXCServicedOrganisationAnnotatedNptgLocalityRef",
+    "TXCServicedOrganisationDatePattern",
+    # Stop Point
+    "AirStopClassificationStructure",
+    "AnnotatedStopPointRef",
+    "BayStructure",
+    "BearingStructure",
+    "BusAndCoachStationStructure",
+    "BusStopStructure",
+    "DescriptorStructure",
+    "FerryStopClassificationStructure",
+    "LocationStructure",
+    "MarkedPointStructure",
+    "MetroStopClassificationStructure",
+    "OffStreetStructure",
+    "OnStreetStructure",
+    "PlaceStructure",
+    "RailStopClassificationStructure",
+    "StopClassificationStructure",
+    "TaxiStopClassificationStructure",
+    "TXCStopPoint",
+    "UnmarkedPointStructure",
+    # Types
+    "ActivityT",
+    "LicenceClassificationT",
+    "TimingStatusT",
+    "TransportModeT",
+    # Vehicle Journey
+    "TXCBankHolidayDays",
+    "TXCBankHolidayOperation",
+    "TXCDateRange",
+    "TXCDaysOfWeek",
+    "TXCLayoverPoint",
+    "TXCOperatingProfile",
+    "TXCPeriodicDayType",
+    "TXCServicedOrganisationDayType",
+    "TXCSpecialDaysOperation",
+    "TXCVehicleJourney",
+    "TXCVehicleJourneyStopUsageStructure",
+    "TXCVehicleJourneyTimingLink",
+    # Vehicle Journey Common
+    "TXCBlock",
+    "TXCOperational",
+    "TXCTicketMachine",
+    # Vehicle Journey Flexible
+    "TXCFlexibleServiceTimes",
+    "TXCFlexibleVehicleJourney",
+    "TXCServicePeriod",
+]

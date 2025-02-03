@@ -2,7 +2,7 @@
 Parse Routes from TXC
 """
 
-from lxml.etree import _Element
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 from ..models.txc_route import TXCRoute, TXCRouteSection
@@ -45,10 +45,8 @@ def parse_routes(
     except ValueError:
         log.warning("No Routes Found")
         return []
-    if section is None:
-        return []
 
-    routes = []
+    routes: list[TXCRoute] = []
     for route_xml in section.findall("Route"):
         route_id = route_xml.get("id")
         if not route_id:

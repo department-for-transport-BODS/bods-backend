@@ -4,7 +4,7 @@ Vehicle Journey Operating Profile Parsing
 
 from datetime import date
 
-from lxml.etree import _Element
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 from ..models.txc_vehicle_journey import (
@@ -208,8 +208,6 @@ def parse_serviced_organisation_days(
     """
     VehicleJourney -> OperatingProfile -> ServicedOrganisationDayType
     """
-    if serviced_organisation_xml is None:
-        return None
 
     days_of_operation = serviced_organisation_xml.find("DaysOfOperation")
     if days_of_operation is None:

@@ -4,7 +4,7 @@ Parse Vehicle Journeys
 
 from typing import cast
 
-from lxml.etree import _Element
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 from ..models.txc_types import DirectionT
@@ -31,8 +31,6 @@ def parse_flexible_service_times(
     Parse FlexibleServiceTimes section which can contain either
     ServicePeriod or AllDayService
     """
-    if flexible_times_xml is None:
-        return None
 
     service_times: list[TXCFlexibleServiceTimes] = []
 

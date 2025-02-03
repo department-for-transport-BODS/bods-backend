@@ -4,7 +4,7 @@ Parse Operators TXC XML
 
 from typing import cast, get_args
 
-from lxml.etree import _Element
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 from ..models.txc_operator import TXCOperator
@@ -77,8 +77,9 @@ def parse_operators(xml_data: _Element) -> list[TXCOperator]:
     """
     Operators Section
     """
-    section = find_section(xml_data, "Operators")
-    if section is None:
+    try:
+        section = find_section(xml_data, "Operators")
+    except ValueError:
         log.warning("No Operators Found")
         return []
 
