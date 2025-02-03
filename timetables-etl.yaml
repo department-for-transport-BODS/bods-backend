@@ -150,9 +150,11 @@ Globals:
           - !Sub '${ProjectName}-${Environment}-naptan-stop-points-table'
           - !Join [
               '-',
-              !Select ['0', !Split ['-', !Ref 'AWS::StackName']],
-              !Select ['1', !Split ['-', !Ref 'AWS::StackName']],
-              !Sub '${Environment}-naptan-stop-points-table',
+              [
+                !Select ['0', !Split ['-', !Ref 'AWS::StackName']],
+                !Select ['1', !Split ['-', !Ref 'AWS::StackName']],
+                !Sub '${Environment}-naptan-stop-points-table',
+              ],
             ]
         DD_MERGE_XRAY_TRACES: true
         DD_RUNTIME_METRICS_ENABLED: true
