@@ -78,7 +78,7 @@ def update_task_error_state(
     """
     log.warning(message)
     task_result.status = TaskState.FAILURE
-    task_result.error_code = ETLErrorCode.NO_VALID_FILE_TO_PROCESS.value
+    task_result.error_code = error_code.value
     task_result.additional_info = message
 
     return task_result
