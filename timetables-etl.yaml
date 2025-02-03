@@ -182,7 +182,7 @@ Resources:
         EtlProcessLambdaArn: !GetAtt EtlProcessLambda.Arn
         GenerateOutputZipLambdaArn: !GetAtt GenerateOutputZipLambda.Arn
         DefaultS3BucketName: !Sub 'bodds-${Environment}'
-        DQSStateMachineArn: !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:dqs-${Environment}-sm'
+        DqsStateMachineArn: !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:dqs-${Environment}-sm'
 
   ##########################################
   #### TIMETABLES STATE MACHINE TRIGGER ####
@@ -713,14 +713,14 @@ Resources:
                 Resource:
                   - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-sm:*'
                   - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-sm'
-        - PolicyName: StateMachineSfInvokePolicy  
+        - PolicyName: StateMachineSfInvokePolicy
           PolicyDocument:
             Version: '2012-10-17'
-            Statement:    
+            Statement:
               - Effect: Allow
                 Action: states:StartExecution
-                Resource:      
-                  - !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:dqs-${Environment}-sm' 
+                Resource:
+                  - !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:dqs-${Environment}-sm'
 
   TimetablesStateMachineTriggerRole:
     Type: AWS::IAM::Role
