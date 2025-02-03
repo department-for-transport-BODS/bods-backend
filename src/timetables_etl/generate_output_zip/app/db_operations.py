@@ -115,16 +115,14 @@ def update_task_and_revision_status(
     no_valid_files = len(map_results.succeeded) == 0
 
     # Files succeeded in map run but failed during re-zip
-    no_sucessful_files = (
-        not (no_valid_files) and processing_result.successful_files == 0
-    )
+    failed_rezip_files = not (no_valid_files) and processing_result.failed_files != 0
 
     if no_valid_files:
         message = "No valid files to process"
         error_code = ETLErrorCode.NO_VALID_FILE_TO_PROCESS
         task_result = update_task_error_state(task_result, message, error_code)
-    elif no_sucessful_files:
-        message = "Files failed to upload"
+    elif failed_rezip_files:
+        message = "Files failed during re-zipping process"
         error_code = ETLErrorCode.SYSTEM_ERROR
         task_result = update_task_error_state(task_result, message, error_code)
         revision.status = TaskState.FAILURE.value
