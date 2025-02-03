@@ -16,12 +16,17 @@ from common_layer.s3 import S3
 from common_layer.txc.parser.hashing import get_bytes_hash
 from structlog.stdlib import get_logger
 
-from .db_operations import update_revision_hash
+from .db_operations import (
+    fetch_task_result,
+    update_revision_hash,
+    update_task_and_revision_status,
+)
 from .map_results import load_map_results
 from .models import (
     GenerateOutputZipInputData,
     MapExecutionFailed,
     MapExecutionSucceeded,
+    MapResults,
     ProcessingResult,
 )
 from .output_processing import process_files
@@ -119,7 +124,9 @@ def construct_output_path(original_path: str, is_test_mode: bool = True) -> str:
     return str(path.with_name(f"{stem}_etl_output_{timestamp}"))
 
 
-def process_map_results(input_data: GenerateOutputZipInputData) -> ProcessingResult:
+def process_map_results(
+    input_data: GenerateOutputZipInputData, db: SqlDB
+) -> ProcessingResult:
     """
     Process the map results and create an output file of successful files
 
@@ -139,10 +146,18 @@ def process_map_results(input_data: GenerateOutputZipInputData) -> ProcessingRes
     processing_result = process_and_upload_successful_files(
         s3_client, map_results.succeeded, output_key_base
     )
-    db = SqlDB()
     update_revision_hash(
         db, input_data.dataset_revision_id, processing_result.file_hash
     )
+
+    update_task_and_revision_status(
+        db,
+        map_results,
+        processing_result,
+        input_data.dataset_etl_task_result_id,
+        input_data.dataset_revision_id,
+    )
+
     return processing_result
 
 
@@ -152,7 +167,8 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, 
     Lambda handler for generating zip file from map state results
     """
     input_data = GenerateOutputZipInputData(**event)
-    result = process_map_results(input_data)
+    db = SqlDB()
+    result = process_map_results(input_data, db)
 
     log.info(
         "Completed output generation",
