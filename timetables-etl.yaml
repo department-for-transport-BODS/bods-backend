@@ -54,7 +54,7 @@ Parameters:
 Conditions:
   IsNotLocal: !Not [!Equals [!Ref Environment, 'local']]
   IsNotProd: !Not [!Equals [!Ref Environment, 'prod']]
-  IsNotTemp:
+  IsNotTemp: ## TODO: Remove condition and references to it once isolated testing is completed and ETL is fully integrated into BODS
     !Not [!Equals [!Select ['2', !Split ['-', !Ref 'AWS::StackName']], 'temp']]
   IsStandalone: !Equals [!Ref Environment, 'standalone']
   IsUsingBodsInfra:
@@ -148,14 +148,7 @@ Globals:
           !If ## Remove condition once isolated testing is completed and ETL is fully integrated into BODS
           - IsNotTemp
           - !Sub '${ProjectName}-${Environment}-naptan-stop-points-table'
-          - !Join [
-              '-',
-              [
-                !Select ['0', !Split ['-', !Ref 'AWS::StackName']],
-                !Select ['1', !Split ['-', !Ref 'AWS::StackName']],
-                !Sub '${Environment}-naptan-stop-points-table',
-              ],
-            ]
+          - !Sub '${ProjectName}-temp-${Environment}-naptan-stop-points-table'
         DD_MERGE_XRAY_TRACES: true
         DD_RUNTIME_METRICS_ENABLED: true
         DD_DBM_PROPAGATION_MODE: full
@@ -592,8 +585,8 @@ Resources:
                   - dynamodb:BatchGetItem
                 Resource: !If
                   - IsNotTemp
-                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ProjectName}-${Environment}-tt-cache'
-                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ProjectName}-temp-${Environment}-tt-cache'
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ProjectName}-${Environment}-naptan-stop-points-table'
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ProjectName}-temp-${Environment}-naptan-stop-points-table'
         - PolicyName: DataDogAPIAccess
           PolicyDocument:
             Version: '2012-10-17'
