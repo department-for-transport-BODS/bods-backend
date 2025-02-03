@@ -2,27 +2,17 @@
 DynamoDB NAPTAN StopPoint Client
 """
 
-from typing import Any, Iterator
+from typing import Iterator, Set
 
 from common_layer.txc.models.txc_stoppoint import TXCStopPoint
-from pydantic import Field
+from pydantic import ValidationError
 from structlog.stdlib import get_logger
 
 from .base import DynamoDB
-from .settings import DynamoBaseSettings, DynamoDBSettings
+from .models import AttributeValueTypeDef
+from .settings import DynamoDBSettings, NaptanDynamoDBSettings
 
 log = get_logger()
-
-
-class NaptanDynamoDBSettings(DynamoBaseSettings):
-    """
-    Settings for DynamoDBCache client
-    """
-
-    DYNAMODB_NAPTAN_STOP_POINT_TABLE_NAME: str = Field(
-        default="",
-        description="Table Name for NAPTAN StopPoint table",
-    )
 
 
 class NaptanStopPointDynamoDBClient(DynamoDB):
@@ -57,21 +47,20 @@ class NaptanStopPointDynamoDBClient(DynamoDB):
             return [], []
 
         stop_points: list[TXCStopPoint] = []
-        found_atco_codes = set()
+        found_atco_codes: Set[str] = set()
 
         # Limit for BatchGetItem is 100
-        batch_size = 100
+        batch_size: int = 100
         for batch in self._batch_queries(atco_codes, batch_size=batch_size):
             raw_items = self._batch_get_items(batch)
             for item in raw_items:
-                try:
-                    stop_point = TXCStopPoint(**item)
+                atco_code = item.get("AtcoCode", {}).get("S")
+                stop_point = self._deserialize_stop_point(item, atco_code)
+                if stop_point:
                     stop_points.append(stop_point)
                     found_atco_codes.add(stop_point.AtcoCode)
-                except ValueError as e:
-                    log.error("Failed to parse StopPoint", item=item, error=str(e))
 
-        missing_atco_codes = [
+        missing_atco_codes: list[str] = [
             code for code in atco_codes if code not in found_atco_codes
         ]
 
@@ -81,6 +70,29 @@ class NaptanStopPointDynamoDBClient(DynamoDB):
             total_missing=len(missing_atco_codes),
         )
         return stop_points, missing_atco_codes
+
+    def get_by_atco_code(self, atco_code: str) -> TXCStopPoint | None:
+        """
+        Get a single StopPoint from DynamoDB by AtcoCode.
+        """
+        log.info("Fetching single StopPoint from DynamoDB", atco_code=atco_code)
+
+        try:
+            response = self._client.get_item(
+                TableName=self._settings.DYNAMODB_TABLE_NAME,
+                Key={"AtcoCode": {"S": atco_code}},
+            )
+
+            item: dict[str, AttributeValueTypeDef] | None = response.get("Item")
+            if not item:
+                log.info("No StopPoint found for AtcoCode", atco_code=atco_code)
+                return None
+
+            return self._deserialize_stop_point(item, atco_code)
+
+        except Exception:
+            log.error("Failed to fetch StopPoint", atco_code=atco_code, exc_info=True)
+            raise
 
     def get_stop_area_map(self, atco_codes: list[str]) -> dict[str, list[str]]:
         """
@@ -95,43 +107,60 @@ class NaptanStopPointDynamoDBClient(DynamoDB):
             for stop_point in stop_points
         }
 
-    def _batch_queries(self, items: list[Any], batch_size: int) -> Iterator[list[Any]]:
+    def _deserialize_stop_point(
+        self, raw_item: dict[str, AttributeValueTypeDef], atco_code: str | None = None
+    ) -> TXCStopPoint | None:
+        """
+        Deserialize a DynamoDB item into a TXCStopPoint.
+        """
+        try:
+            deserialized_item = {
+                key: self._deserializer.deserialize(value)
+                for key, value in raw_item.items()
+            }
+            return TXCStopPoint(**deserialized_item)
+        except (ValueError, ValidationError):
+            log.error(
+                "Failed to parse StopPoint",
+                atco_code=atco_code,
+                item=raw_item,
+                exc_info=True,
+            )
+            return None
+
+    def _batch_queries(self, items: list[str], batch_size: int) -> Iterator[list[str]]:
         """
         Split list into batch of a specified size.
         """
         for i in range(0, len(items), batch_size):
             yield items[i : i + batch_size]
 
-    def _batch_get_items(self, atco_codes: list[str]) -> list[dict[str, Any]]:
+    def _batch_get_items(
+        self, atco_codes: list[str]
+    ) -> list[dict[str, AttributeValueTypeDef]]:
         """
         Use DynamoDB BatchGetItem to fetch items for a list of AtcoCodes.
         """
         try:
-            request_keys = [{"AtcoCode": {"S": atco_code}} for atco_code in atco_codes]
+            request_keys: list[dict[str, dict[str, str]]] = [
+                {"AtcoCode": {"S": atco_code}} for atco_code in atco_codes
+            ]
             response = self._client.batch_get_item(
                 RequestItems={
                     self._settings.DYNAMODB_TABLE_NAME: {"Keys": request_keys}
                 }
             )
             # Extract items for the specific table
-            raw_items = response.get("Responses", {}).get(
-                self._settings.DYNAMODB_TABLE_NAME, []
-            )
-
-            deserialized_items = []
-            for raw_item in raw_items:
-                deserialized_item = {
-                    key: self._deserializer.deserialize(value)
-                    for key, value in raw_item.items()
-                }
-                deserialized_items.append(deserialized_item)
+            raw_items: list[dict[str, AttributeValueTypeDef]] = response.get(
+                "Responses", {}
+            ).get(self._settings.DYNAMODB_TABLE_NAME, [])
 
             log.info(
                 "BatchGetItem completed",
-                fetched=len(deserialized_items),
+                fetched=len(raw_items),
                 requested=len(atco_codes),
             )
-            return deserialized_items
-        except Exception as e:
-            log.error("Failed to execute BatchGetItem", error=str(e))
+            return raw_items
+        except Exception:
+            log.error("Failed to execute BatchGetItem", exc_info=True)
             raise

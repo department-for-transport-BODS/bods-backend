@@ -34,3 +34,14 @@ class DynamoDBSettings(DynamoBaseSettings):
         default="",
         description="Table Name for DynamoDB",
     )
+
+
+class NaptanDynamoDBSettings(DynamoBaseSettings):
+    """
+    Settings for DynamoDBCache client
+    """
+
+    DYNAMODB_NAPTAN_STOP_POINT_TABLE_NAME: str = Field(
+        default="",
+        description="Table Name for NAPTAN StopPoint table",
+    )
