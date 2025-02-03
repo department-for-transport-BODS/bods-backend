@@ -331,7 +331,7 @@
     "DqsTrigger": {  
       "Type": "Task",
       "Next": "Completed",
-      "Resource": "arn:aws:states:::states:startExecution.sync:2",
+      "Resource": "arn:aws:states:::states:startExecution",
       "Arguments": {
         "StateMachineArn": "${DqsStateMachineArn}",
         "Input": {
