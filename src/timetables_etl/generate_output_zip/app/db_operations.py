@@ -13,6 +13,7 @@ from common_layer.database.models.model_pipelines import (
 )
 from common_layer.database.repos import OrganisationDatasetRevisionRepo
 from common_layer.database.repos.repo_etl_task import ETLTaskResultRepo
+from common_layer.enums import FeedStatus
 from structlog.stdlib import get_logger
 
 from .models.model_results import MapResults
@@ -60,7 +61,7 @@ def update_task_success_state(
     Update task state to success, resetting any error fields
     Returns updated task result without saving to DB
     """
-    task_result.status = TaskState.SUCCESS
+    task_result.status = TaskState.SUCCESS.value
     task_result.completed = datetime.now(UTC)
     task_result.progress = 100
 
@@ -78,7 +79,7 @@ def update_task_error_state(
     Update the task state to error, with the code NO_VALID_FILES_TO_PROCESS
     """
     log.warning(message)
-    task_result.status = TaskState.FAILURE
+    task_result.status = TaskState.FAILURE.value
     task_result.error_code = error_code.value
     task_result.additional_info = message
 
@@ -121,14 +122,15 @@ def update_task_and_revision_status(
         message = "No valid files to process"
         error_code = ETLErrorCode.NO_VALID_FILE_TO_PROCESS
         task_result = update_task_error_state(task_result, message, error_code)
+        revision.status = FeedStatus.ERROR.value
     elif failed_rezip_files:
         message = "Files failed during re-zipping process"
         error_code = ETLErrorCode.SYSTEM_ERROR
         task_result = update_task_error_state(task_result, message, error_code)
-        revision.status = TaskState.FAILURE.value
+        revision.status = FeedStatus.ERROR.value
     else:
         log.info("Setting task result and revision to success")
         task_result = update_task_success_state(task_result)
-        revision.status = TaskState.SUCCESS.value
+        revision.status = FeedStatus.SUCCESS.value
 
     save_changes(db, task_result, revision)

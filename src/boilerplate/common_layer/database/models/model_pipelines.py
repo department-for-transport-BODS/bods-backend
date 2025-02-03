@@ -46,10 +46,10 @@ class TaskResult(TimeStampedMixin, BaseSQLModel):
         doc="The ID for the Task that was run",
     )
 
-    status: Mapped[TaskState] = mapped_column(
-        SQLEnum(TaskState),
+    status: Mapped[str] = mapped_column(
+        String(50),
         index=True,
-        default=TaskState.PENDING,
+        default=TaskState.PENDING.value,
         kw_only=True,
         doc="Current state of the task being run",
     )
