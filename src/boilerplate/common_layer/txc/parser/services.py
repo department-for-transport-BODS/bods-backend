@@ -5,7 +5,7 @@ Parse XML Services Section
 from datetime import date
 from typing import cast, get_args
 
-from lxml.etree import _Element
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 from ..models.txc_service import (
@@ -150,7 +150,7 @@ def parse_standard_service(standard_service_xml: _Element) -> TXCStandardService
         )
         return None
 
-    journey_patterns = []
+    journey_patterns: list[TXCJourneyPattern] = []
     for journey_pattern_xml in standard_service_xml.findall("JourneyPattern"):
         journey_pattern = parse_journey_pattern(journey_pattern_xml)
         if journey_pattern:
@@ -261,11 +261,12 @@ def parse_services(xml_data: _Element) -> list[TXCService]:
     """
     Parse Services Section of TXC XML
     """
-    section = find_section(xml_data, "Services")
-    if section is None:
+    try:
+        section = find_section(xml_data, "Services")
+    except ValueError:
         return []
 
-    services = []
+    services: list[TXCService] = []
     for service_xml in section.findall("Service"):
 
         service_parsed = parse_service(service_xml)

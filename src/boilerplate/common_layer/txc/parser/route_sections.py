@@ -2,7 +2,7 @@
 Parse Route Sections XML into Pydantic Models
 """
 
-from lxml.etree import _Element
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 from ..models.txc_data import TXCRouteSection
@@ -38,7 +38,7 @@ def parse_locations(track_xml: _Element) -> list[TXCLocation] | None:
     """
     if track_xml.tag != "Track":
         return None
-    locations = []
+    locations: list[TXCLocation] = []
     location_xmls = track_xml.findall("Mapping/Location")
     if location_xmls:
         for location_xml in location_xmls:

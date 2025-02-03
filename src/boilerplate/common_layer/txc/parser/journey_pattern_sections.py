@@ -5,7 +5,7 @@ Parse Journey Patterns XML
 from random import random
 from typing import cast, get_args
 
-from lxml.etree import _Element
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 from ..models.txc_journey_pattern import (
@@ -28,9 +28,7 @@ def parse_journey_pattern_stop_usage(
     """
     stop_usage_id = stop_usage_xml.get("id")
     if not stop_usage_id:
-        log.warning(
-            "JourneyPatternStopUsage missing required id attribute. Generating random ID"
-        )
+
         stop_usage_id = f"JPTL{round(random())}"
 
     wait_time = get_element_text(stop_usage_xml, "WaitTime")
@@ -144,7 +142,7 @@ def parse_journey_pattern_section(
         log.warning("JourneyPatternSection missing required id attribute. Skipping.")
         return None
 
-    timing_links = []
+    timing_links: list[TXCJourneyPatternTimingLink] = []
     for timing_link_xml in section_xml.findall("JourneyPatternTimingLink"):
         timing_link = parse_journey_pattern_timing_link(timing_link_xml)
         if timing_link:
@@ -173,11 +171,8 @@ def parse_journey_pattern_sections(
     except ValueError:
         log.warning("JourneyPatternSections Not Found")
         return []
-    if section is None:
-        log.warning("JourneyPatternSections Not Found")
-        return []
 
-    journey_pattern_sections = []
+    journey_pattern_sections: list[TXCJourneyPatternSection] = []
     for section_xml in section.findall("JourneyPatternSection"):
         journey_pattern_section = parse_journey_pattern_section(section_xml)
         if journey_pattern_section:

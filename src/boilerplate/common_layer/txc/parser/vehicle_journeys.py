@@ -4,7 +4,7 @@ Vehicle Journey  XML Parsing
 
 from typing import cast, get_args
 
-from lxml.etree import _Element
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 from ..models.txc_types import CommercialBasisT, TimeDemandT
@@ -98,11 +98,10 @@ def parse_vehicle_journey_timing_links(
     """
     Parse all VehicleJourneyTimingLink sections
     """
-    timing_links = []
+    timing_links: list[TXCVehicleJourneyTimingLink] = []
     for timing_link_xml in vehicle_journey_xml.findall("VehicleJourneyTimingLink"):
         timing_link = parse_vehicle_journey_timing_link(timing_link_xml)
-        if timing_link is not None:
-            timing_links.append(timing_link)
+        timing_links.append(timing_link)
     return timing_links
 
 
@@ -265,8 +264,9 @@ def parse_vehicle_journeys(
     Parse XML for both regular and flexible Vehicle Journeys
     Returns a combined list of both journey types
     """
-    section: _Element = find_section(xml_data, "VehicleJourneys")
-    if section is None:
+    try:
+        section: _Element = find_section(xml_data, "VehicleJourneys")
+    except ValueError:
         return []
 
     journeys: list[TXCVehicleJourney | TXCFlexibleVehicleJourney] = []

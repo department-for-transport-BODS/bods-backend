@@ -5,7 +5,7 @@ XML Attribute Parsing Utils
 from datetime import datetime
 from typing import cast
 
-from lxml.etree import _Element
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 from ..models.txc_types import ModificationType

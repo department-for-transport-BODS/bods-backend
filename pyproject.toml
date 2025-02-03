@@ -110,6 +110,7 @@ exclude = ["**/__pycache__"]
 extraPaths = ["src", "src/boilerplate", "src/timetables_etl"]
 reportMissingImports = "error"
 reportMissingTypeStubs = false
+strict = ["src/boilerplate/common_layer/txc/*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["./src", "./src/timetables_etl", "./tests", "./src/boilerplate"]
