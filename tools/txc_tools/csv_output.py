@@ -136,7 +136,7 @@ def generate_xml_tag_with_parent_report(**kwargs: dict[str, Any]) -> None:
         file_path=file_path,
     )
 
-    log.info("CSV reports generated", inventory_path=file_path)
+    log.info("CSV reports generated", csv_path=file_path)
 
 
 REPORTS: dict[AnalysisMode, Callable[..., None]] = {
