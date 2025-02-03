@@ -144,12 +144,24 @@ Globals:
             - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-app-username'
             - !Ref RdsDbUsername
         DYNAMODB_CACHE_TABLE_NAME: !Ref TimetablesCache
-        DYNAMODB_NAPTAN_STOP_POINT_TABLE_NAME: !Sub '${ProjectName}-${Environment}-naptan-stop-points-table'
+        DYNAMODB_NAPTAN_STOP_POINT_TABLE_NAME:
+          !If ## Remove condition once isolated testing is completed and ETL is fully integrated into BODS
+          - IsNotTemp
+          - !Sub '${ProjectName}-${Environment}-naptan-stop-points-table'
+          - !Join [
+              '-',
+              [
+                !Select ['0', !Split ['-', !Ref 'AWS::StackName']],
+                !Select ['1', !Split ['-', !Ref 'AWS::StackName']],
+                !Sub '${Environment}-naptan-stop-points-table',
+              ],
+            ]
         DD_MERGE_XRAY_TRACES: true
         DD_RUNTIME_METRICS_ENABLED: true
         DD_DBM_PROPAGATION_MODE: full
         # New Profiler causes random segmentation faults need to wait until newer python layer version than 104 to enable
         DD_PROFILING_STACK_V2_ENABLED: false
+
 Resources:
   ##################################
   #### TIMETABLES STATE MACHINE ####
@@ -405,9 +417,9 @@ Resources:
       LoggingConfig:
         LogGroup: !Ref ExceptionHandlerLogGroup
 
-  #########################################
-  ####         DYNAMODB                ####
-  #########################################
+  ##################
+  #### DYNAMODB ####
+  ##################
   TimetablesCache:
     Type: AWS::DynamoDB::Table
     ## checkov:skip=CKV_AWS_28:Ensure DynamoDB point in time recovery (backup) is enabled
@@ -442,7 +454,6 @@ Resources:
   ####################
   #### SQS QUEUES ####
   ####################
-
   TimetablesProcessQueue:
     Type: AWS::SQS::Queue
     Condition: IsNotLocal
