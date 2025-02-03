@@ -591,9 +591,9 @@ Resources:
                   - dynamodb:PutItem
                   - dynamodb:BatchGetItem
                 Resource: !If
-                  - IsTemp
-                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ProjectName}-temp-${Environment}-tt-cache'
+                  - IsNotTemp
                   - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ProjectName}-${Environment}-tt-cache'
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ProjectName}-temp-${Environment}-tt-cache'
         - PolicyName: DataDogAPIAccess
           PolicyDocument:
             Version: '2012-10-17'
