@@ -12,6 +12,7 @@ from common_layer.database.client import ProjectEnvironment
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 from structlog.stdlib import get_logger
 
+from .models import AttributeValueTypeDef
 from .settings import DynamoDBSettings
 
 log = get_logger()
@@ -68,8 +69,8 @@ class DynamoDB:
         Store a value in the DynamoDB table with (optional) TTL.
         """
         try:
-            serialized_value = self._serializer.serialize(value)
-            item = {
+            serialized_value: AttributeValueTypeDef = self._serializer.serialize(value)
+            item: dict[str, str | AttributeValueTypeDef] = {
                 "Key": {"S": key},
                 "Value": serialized_value,
             }
