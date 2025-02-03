@@ -316,7 +316,8 @@
         "DestinationBucket": "{% $s3Bucket %}",
         "OutputPrefix": "{% $ExtractedSubFolder %}",
         "DatasetRevisionId": "{% $datasetRevisionId %}",
-        "OriginalObjectKey": "{% $s3Object %}"
+        "OriginalObjectKey": "{% $s3Object %}",
+        "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}"
       },
       "Catch": [
         {
