@@ -9,27 +9,35 @@ from common_layer.database.models import DataQualityPostSchemaViolation
 from common_layer.database.repos import DataQualityPostSchemaViolationRepo
 from structlog.stdlib import get_logger
 
+from .models import ValidationResult
+
 log = get_logger()
 
 
 def create_schema_violations_objects(
     revision_id: int,
     filename: str,
-    violations: list[str],
+    violations: list[ValidationResult],
 ) -> list[DataQualityPostSchemaViolation]:
     """
     Construct data to put into DB
     """
     db_violations: list[DataQualityPostSchemaViolation] = []
     for violation in violations:
-        db_violations.append(
-            DataQualityPostSchemaViolation(
-                filename=filename,
-                details=violation,
-                created=datetime.now(UTC),
-                revision_id=revision_id,
+        if violation.error_code is not None:
+            db_violations.append(
+                DataQualityPostSchemaViolation(
+                    filename=filename,
+                    details=violation.error_code,
+                    created=datetime.now(UTC),
+                    revision_id=revision_id,
+                )
             )
-        )
+        else:
+            log.error(
+                "Violation Error Code Missing, skipping adding to DB",
+                violation=violation,
+            )
     return db_violations
 
 

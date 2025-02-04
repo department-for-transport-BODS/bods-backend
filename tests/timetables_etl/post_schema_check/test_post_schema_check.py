@@ -104,7 +104,13 @@ def test_validate_filepath_pii(
     [
         pytest.param(
             "C:\\Users\\Jon\\file.xml",
-            ["PII_ERROR"],
+            [
+                ValidationResult(
+                    is_valid=False,
+                    error_code="PII_ERROR",
+                    message="Filename contains potential filepath PII",
+                )
+            ],
             id="File with PII violation",
         ),
         pytest.param(
