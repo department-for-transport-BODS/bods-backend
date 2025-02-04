@@ -83,8 +83,8 @@ def load_txc_schema(version: str = "2.4") -> XMLSchema:
             txc_schema = XMLSchema(schema_doc)
             log.info("Sucessfully parsed Schema Doc as XMLSchema")
             return txc_schema
-    except (XMLSchemaParseError, ParseError) as e:
-        log.error("schema_parse_error", error=str(e))
+    except (XMLSchemaParseError, ParseError):
+        log.error("schema_parse_error", exc_info=True)
         raise
 
 
@@ -139,11 +139,11 @@ def parse_xml_from_s3(input_data: SchemaCheckInputData) -> _Element:
         txc_data = parse(streaming_body).getroot()
         log.info("Successfully Parsed TXC Data as LXML etree._Element")
         return txc_data
-    except (ClientError, BotoCoreError) as e:
-        log.error("S3 Operation Failed", s3_key=input_data.s3_file_key, error=str(e))
+    except (ClientError, BotoCoreError):
+        log.error("S3 Operation Failed", s3_key=input_data.s3_file_key, exc_info=True)
         raise
-    except XMLSyntaxError as e:
-        log.error("XML Parsing Failed", s3_key=input_data.s3_file_key, error=str(e))
+    except XMLSyntaxError:
+        log.error("XML Parsing Failed", s3_key=input_data.s3_file_key, exc_info=True)
         raise
 
 
