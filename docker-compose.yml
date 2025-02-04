@@ -1,43 +1,13 @@
-version: '3.8'
+version: "3.8"
 services:
-  postgres:
-    container_name: postgres
-    image: postgres:15
-    hostname: postgres
+  clamav:
+    container_name: clamav
+    image: mkodockx/docker-clamav:alpine
     ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: ${POSTGRES_ADMIN_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD}
+      - "3310:3310"
+    restart: unless-stopped
     volumes:
-      - ${PWD}/sql/local:/docker-entrypoint-initdb.d:ro
-      - postgres-data:/var/lib/postgresql/data
-    restart: unless-stopped
-    networks: 
-      - lambda-local
-
-  pgadmin:
-    build:
-      context: .
-      dockerfile: ./docker/pgadmin/Dockerfile
-      args:
-        - POSTGRES_PORT=${POSTGRES_PORT}
-        - POSTGRES_USER=${POSTGRES_ADMIN_USER}
-        - POSTGRES_HOST=postgres
-    container_name: pgadmin
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    depends_on:
-      - postgres
-    ports:
-      - "5050:80"
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: ${POSTGRES_PASSWORD}
-      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: "False"
-    restart: unless-stopped
-    networks: 
-    - lambda-local
+      - clamav-store:/var/lib/clamav
 
   localstack:
     container_name: ${LOCALSTACK_DOCKER_NAME:-localstack-main}
@@ -53,9 +23,28 @@ services:
     networks:
       - lambda-local
 
+  postgres:
+    container_name: postgres
+    image: postgis/postgis:13-3.4
+    hostname: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: bodds_test
+      POSTGRES_USER: bodds_test
+      POSTGRES_PASSWORD: password
+
+    volumes:
+      - ${PWD}/sql/local:/docker-entrypoint-initdb.d:ro
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - lambda-local
+
 volumes:
-  postgres-data:
+  clamav-store:
   localstack-data:
+  postgres-data:
 
 networks:
   lambda-local:

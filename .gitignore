@@ -10,7 +10,16 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Unit test / coverage reports
+htmlcov/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+coverage.xml
+
 # Distribution / packaging
+.python-version
 .Python
 build/
 develop-eggs/
@@ -51,3 +60,17 @@ venv.bak/
 
 # SAM default build folder
 .aws-sam/
+
+# Pycharm
+.idea/
+
+# Ignore requirement.txt generated at build time
+src/timetables_etl/**/requirements.txt
+src/periodic_tasks/**/requirements.txt
+src/boilerplate/**/requirements.txt
+
+# Ignore Generated CSVs from db_viewer
+data/
+# Do not ignore test fixture files
+!tests/**/data/
+!tests/**/data/**

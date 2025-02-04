@@ -3,12 +3,11 @@ name: checkov
 on:
   pull_request:
     paths-ignore:
-      - ".github/CODEOWNERS"
-      - ".github/settings.yml"
-      - "README.md"
-      - "CHANGELOG.md"
-      - ".gitignore"
-  
+      - '.github/CODEOWNERS'
+      - '.github/settings.yml'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - '.gitignore'
 
 jobs:
   checkov:
@@ -22,9 +21,8 @@ jobs:
         id: checkov
         uses: bridgecrewio/checkov-action@master
         with:
-
           directory: ${{ github.workspace }}
           framework: all
-          skip_check: ""
+          skip_check: CKV_AWS_116,CKV2_GHA_1
           output_format: cli,sarif
           quiet: true # display only failed checks

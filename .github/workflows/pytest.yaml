@@ -1,0 +1,172 @@
+name: pytest
+on:
+  pull_request:
+    branches:
+      - 'dev'
+      - '!test'
+      - '!main'
+    paths:
+      - 'src/**'
+      - 'tests/**'
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      statuses: write
+      checks: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Start Docker
+        run: |
+          sudo apt update -y && \
+            sudo apt install -y pwgen
+
+          export POSTGRES_ADMIN_USER="postgres"
+          export POSTGRES_ADMIN_PASSWORD=`pwgen 12`
+
+          docker compose --compatibility up -d --force-recreate postgres
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+          cache: 'poetry'
+
+      - name: Install Dependencies [Poetry]
+        run: |
+          poetry install
+
+      - name: Install PyTest PR Annotation Plugin
+        run: poetry run pip install pytest-github-actions-annotate-failures
+
+      - name: Run Pytest
+        run: poetry run pytest --junitxml=junit/test-results.xml --cov-report term --color=yes -ra
+
+      - name: Generate Test Summary
+        id: test-summary
+        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # v2.4
+        if: always()
+        with:
+          paths: junit/*.xml
+
+      # Test Results Check
+      - name: Prepare Test Summary
+        if: always()
+        id: prepare-test-summary
+        shell: bash
+        run: |
+          passed=${{ steps.test-summary.outputs.passed }}
+          failed=${{ steps.test-summary.outputs.failed }}
+          skipped=${{ steps.test-summary.outputs.skipped }}
+          total=${{ steps.test-summary.outputs.total }}
+
+          # Default to neutral if we can't determine
+          conclusion="neutral"
+          if [ -n "$failed" ]; then
+            if [ "$failed" -gt 0 ]; then
+              conclusion="failure"
+            else
+              conclusion="success"
+            fi
+          fi
+
+          title="Passed: $passed, Failed: $failed, Skipped: $skipped, Total: $total"
+
+          if [ "$total" -gt 0 ]; then
+            pass_rate=$(echo "scale=2; ($passed * 100) / $total" | bc)
+            summary="### Test Results
+            - Pass Rate: ${pass_rate}%
+            - Passed: $passed tests
+            - Failed: $failed tests
+            - Skipped: $skipped tests
+            - Total: $total tests"
+          else
+            summary="No tests were run"
+          fi
+
+          echo "conclusion=$conclusion" >> $GITHUB_OUTPUT
+          echo "title<<EOF" >> $GITHUB_OUTPUT
+          echo "$title" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "summary<<EOF" >> $GITHUB_OUTPUT
+          echo "$summary" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Test Check
+        if: always()
+        uses: ./.github/actions/create-check
+        with:
+          name: 'Tests'
+          title: ${{ steps.prepare-test-summary.outputs.title }}
+          summary: ${{ steps.prepare-test-summary.outputs.summary }}
+          conclusion: ${{ steps.prepare-test-summary.outputs.conclusion }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-sha: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      # Coverage Check
+      - name: Extract Coverage
+        if: always()
+        id: extract_coverage
+        shell: bash
+        run: |
+          poetry run coverage json -q -o cov.json
+
+          coverage_percentage=$(jq -r .totals.percent_covered_display cov.json)
+          num_statements=$(jq .totals.num_statements cov.json)
+          missing_lines=$(jq .totals.missing_lines cov.json)
+          excluded_lines=$(jq .totals.excluded_lines cov.json)
+          num_branches=$(jq .totals.num_branches cov.json)
+          num_partial_branches=$(jq .totals.num_partial_branches cov.json)
+          covered_branches=$(jq .totals.covered_branches cov.json)
+          missing_branches=$(jq .totals.missing_branches cov.json)
+
+          echo "coverage=$coverage_percentage" >> $GITHUB_OUTPUT
+
+          title="Coverage: $coverage_percentage%"
+
+          summary=$(cat << EOF
+          ### Coverage Report
+          - Total Statements: $num_statements
+          - Missing Lines: $missing_lines
+          - Excluded Lines: $excluded_lines
+          - Total Branches: $num_branches
+          - Partial Branches: $num_partial_branches
+          - Covered Branches: $covered_branches
+          - Missing Branches: $missing_branches
+          EOF
+          )
+
+          echo "title=$title" >> $GITHUB_OUTPUT
+          echo "summary<<EOF" >> $GITHUB_OUTPUT
+          echo "$summary" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          if (( $(echo "$coverage_percentage < 77" | bc -l) )); then
+            echo "conclusion=failure" >> $GITHUB_OUTPUT
+          else
+            echo "conclusion=success" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Coverage Check
+        if: always()
+        uses: ./.github/actions/create-check
+        with:
+          name: 'Coverage'
+          title: ${{ steps.extract_coverage.outputs.title }}
+          summary: ${{ steps.extract_coverage.outputs.summary }}
+          conclusion: ${{ steps.extract_coverage.outputs.conclusion }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-sha: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Stop Docker
+        if: always()
+        run: docker compose down

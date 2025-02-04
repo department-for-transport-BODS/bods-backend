@@ -1,0 +1,154 @@
+[tool.poetry]
+name = "bods-backend"
+version = "1.0.2"
+description = ""
+authors = []
+readme = "README.md"
+packages = [
+  { from = "src", include = "boilerplate" },
+  { from = "src/boilerplate", include = "common_layer" },
+  { from = ".", include = "tools" },
+]
+
+[tool.poetry.requires-plugins]
+poetry-plugin-export = ">=1.8"
+
+[tool.poetry.scripts]
+profile = "tools.profiler.cli:app"
+initialize-pipeline = "tools.initialize_pipeline.cli:app"
+file-validation = "tools.file_validation.cli:app"
+schema-check = "tools.schema_check.cli:app"
+post-schema-check = "tools.post_schema_check.cli:app"
+file-attributes = "tools.file_attributes.cli:app"
+pti-validation = "tools.pti_validation.cli:app"
+local-etl = "tools.local_etl.cli:app"
+create-revision = "tools.dataset_revision.cli:app"
+db-viewer = "tools.db_viewer.cli:app"
+create-tables-dev = "src.boilerplate.common_layer.database.create_tables:create_db_tables"
+download-dataset = "tools.download_dataset.cli:app"
+txc-tools = "tools.txc_tools.cli:cli"
+etl-state-machine = "tools.state_runner.cli:app"
+create-requirements-files = "tools.build_scripts.create_requirements_files:main"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+lxml = "^5.3.0"
+pydantic = "^2.9.2"
+boto3 = "^1.35.57"
+structlog = "^24.4.0"
+
+[tool.poetry.group.database.dependencies]
+sqlalchemy = "^2.0.36"
+geoalchemy2 = "^0.16.0"
+psycopg2-binary = "^2.9.10"
+
+[tool.poetry.group.boilerplate.dependencies]
+boto3 = "^1.35.92"
+psycopg2-binary = "^2.9.10"
+pydantic = "^2.10.4"
+requests = "^2.32.3 "
+SQLAlchemy = "^2.0.36"
+urllib3 = "^2.3.0"
+GeoAlchemy2 = "^0.16.0"
+lxml = "^5.3.0"
+structlog = "^24.4.0"
+shapely = "^2.0.6"
+pydantic-settings = "^2.7.1"
+
+# Periodic Task Lamaba Dependencies
+[tool.poetry.group.naptan_cache.dependencies]
+pyproj = "^3.7.0"
+
+# Timetables ETL Lambda Dependencies
+[tool.poetry.group.etl.dependencies]
+pyproj = "^3.7.0"
+
+[tool.poetry.group.pti.dependencies]
+isoduration = "^20.11.0"
+
+[tool.poetry.group.clamav_scanner.dependencies]
+clamd = "^1.0.2"
+
+[tool.poetry.group.file_validation.dependencies]
+defusedxml = "^0.7.1"
+
+# Dev & Tooling Dependencies
+[tool.poetry.group.model_gen.dependencies]
+sqlalchemy-citext = "^1.8.0"
+pgvector = "^0.3.6"
+
+[tool.poetry.group.dev.dependencies]
+pylint = "^3.3.1"
+black = "^24.10.0"
+pytest = "^8.3.3"
+types-lxml = "^2024.11.8"
+freezegun = "^1.5.1"
+factory-boy = "^3.3.1"
+mypy-boto3-s3 = "^1.35.76"
+boto3-stubs = { extras = ["essential"], version = "^1.35.0" }
+pytest-cov = "^6.0.0"
+rich = "^13.9.4"
+aws-sam-cli = "^1.131.0"
+aws-sam-cli-local = "^1.70.0"
+python-dotenv = "^1.0.1"
+typer = "^0.15.1"
+aws-lambda-powertools = { extras = ["all"], version = "^3.4.0" }
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pylint.MAIN]
+source-roots = ["./src/timetables_etl", "./src/boilerplate"]
+extension-pkg-allow-list = ["lxml", "pydantic", "pydantic_core"]
+[tool.pylint."MESSAGES CONTROL"]
+disable = ["too-few-public-methods"]
+
+[tool.pyright]
+include = ["src", "tests", "tools"]
+exclude = ["**/__pycache__"]
+extraPaths = ["src", "src/boilerplate", "src/timetables_etl"]
+reportMissingImports = "error"
+reportMissingTypeStubs = false
+strict = ["src/boilerplate/common_layer/txc/**"]
+
+[tool.pytest.ini_options]
+pythonpath = ["./src", "./src/timetables_etl", "./tests", "./src/boilerplate"]
+addopts = [
+  "-v",
+  "-rsxX",
+  "--continue-on-collection-errors",
+  "--cov=./src/",
+  "--cov-report=term-missing",
+  "--cov-fail-under=77",
+]
+testpaths = ["./tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+
+[tool.coverage.run]
+omit = [
+  "src/standalone/**/*", # Standalone Deployment Scripts
+]
+
+[tool.black]
+line-length = 88
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.aws-sam
+  | \.pytest_cache
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | \.venv-aws
+  | _build
+  | buck-out
+  | build
+  | dist
+  | node_modules
+)/
+'''
