@@ -291,14 +291,8 @@
             "Type": "Succeed"
           },
           "ExceptionHandler": {
-            "Type": "Task",
-            "Next": "Fail",
-            "Resource": "${ExceptionHandlerLambdaArn}",
-            "Arguments": {
-              "Error": "{% $states.input.errorInfo.Error %}",
-              "Cause": "{% $parse($states.input.errorInfo.Cause) %}",
-              "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}"
-            }
+            "Type": "Pass",
+            "Next": "Fail"
           },
           "Fail": {
             "Type": "Fail",
