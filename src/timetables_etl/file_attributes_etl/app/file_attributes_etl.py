@@ -14,9 +14,12 @@ from common_layer.database.repos import (
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.download import download_and_parse_txc
+from common_layer.s3.utils import get_filename_from_object_key
 from common_layer.txc.models import TXCData
 from common_layer.txc.parser.parser_txc import TXCParserConfig
 from structlog.stdlib import get_logger
+
+from tests.timetables_etl.pti.test_pti_validation import s3_file
 
 from .models import FileAttributesInputData
 from .process_txc import make_txc_file_attributes
@@ -50,23 +53,15 @@ def replace_filename_with_object_key(
     """
 
     try:
-        parts = s3_file_key.split("/")
-        if parts and s3_file_key.strip():
-            filename = parts[-1]
-            if filename:
-                file_attributes.filename = filename
-                log.info(
-                    "File Name Updated",
-                    original_filename=file_attributes.filename,
-                    new_filename=filename,
-                    s3_key=s3_file_key,
-                )
-            else:
-                log.warning(
-                    "Unable To Extract Filename From S3 Key",
-                    s3_key=s3_file_key,
-                    current_filename=file_attributes.filename,
-                )
+        filename = get_filename_from_object_key(s3_file_key)
+        if filename:
+            file_attributes.filename = filename
+            log.info(
+                "File Name Updated",
+                original_filename=file_attributes.filename,
+                new_filename=filename,
+                s3_key=s3_file_key,
+            )
         else:
             log.warning(
                 "Unable To Extract Filename From S3 Key",
