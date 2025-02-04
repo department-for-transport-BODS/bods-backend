@@ -1,3 +1,7 @@
+"""
+SQLAlchemy Models for Tables prepended otc_
+"""
+
 import datetime
 from datetime import date, datetime
 

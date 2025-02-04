@@ -79,6 +79,9 @@ class OrganisationTXCFileAttributesRepo(
     def get_by_revision_id(
         self, revision_id: int
     ) -> list[OrganisationTXCFileAttributes]:
+        """
+        Get TXC File Attributes by OrganisationDatasetRevision ID
+        """
         statement = self._build_query().where(self._model.revision_id == revision_id)
         return self._fetch_all(statement)
 

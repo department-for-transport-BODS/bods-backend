@@ -1,3 +1,7 @@
+"""
+TXC File Attributes Models
+"""
+
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -8,6 +12,10 @@ from common_layer.database.models.model_organisation import (
 
 @dataclass
 class TXCFileAttributes:
+    """
+    TXC File Attributes class used by PTI
+    """
+
     id: int
     revision_number: int
     service_code: str
@@ -18,6 +26,9 @@ class TXCFileAttributes:
 
     @staticmethod
     def from_orm(obj: OrganisationTXCFileAttributes):
+        """
+        Conversion of TXCFileAttributes from DB into the PTI Model
+        """
         return TXCFileAttributes(
             id=obj.id,
             revision_number=obj.revision_number,
