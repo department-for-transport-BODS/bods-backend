@@ -19,8 +19,6 @@ from common_layer.txc.models import TXCData
 from common_layer.txc.parser.parser_txc import TXCParserConfig
 from structlog.stdlib import get_logger
 
-from tests.timetables_etl.pti.test_pti_validation import s3_file
-
 from .models import FileAttributesInputData
 from .process_txc import make_txc_file_attributes
 
