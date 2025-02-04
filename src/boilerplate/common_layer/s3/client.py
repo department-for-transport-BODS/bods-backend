@@ -36,19 +36,19 @@ class S3:
         return self._bucket_name
 
     def _create_s3_client(self):
-        """
-        Creates an S3 client. If running locally (PROJECT_ENV=local),
-        it points to the LocalStack S3 service; otherwise, it connects to AWS
-        S3.
-        """
-        if os.environ.get("PROJECT_ENV") == "local":
-            logger.info("Using LocalStack for S3 (local environment)")
-            return boto3.client(
-                "s3",
-                endpoint_url="http://host.docker.internal:4566",
-                aws_access_key_id="dummy",
-                aws_secret_access_key="dummy",
-            )
+        #     """
+        #     Creates an S3 client. If running locally (PROJECT_ENV=local),
+        #     it points to the LocalStack S3 service; otherwise, it connects to AWS
+        #     S3.
+        #     """
+        #     if os.environ.get("PROJECT_ENV") == "local":
+        #         logger.info("Using LocalStack for S3 (local environment)")
+        #         return boto3.client(
+        #             "s3",
+        #             endpoint_url="http://host.docker.internal:4566",
+        #             aws_access_key_id="dummy",
+        #             aws_secret_access_key="dummy",
+        #         )
         logger.info("Using AWS S3 (production or non-local environment)")
         config = botocore.config.Config(proxies={})
         return boto3.client("s3", config=config)
