@@ -11,6 +11,10 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 
 class OtcService(BaseSQLModel):
+    """
+    Stores the registration details of active registered bus services.
+    otc_inactiveservice table stores details of registrations that are now inactive/not yet active
+    """
 
     __tablename__ = "otc_service"
 
@@ -42,6 +46,11 @@ class OtcService(BaseSQLModel):
 
 
 class OtcLocalAuthorityRegistrationNumbers(BaseSQLModel):
+    """
+    Junction table linking registered service to the local authority it is registered to.
+    A service can be registered with one or more local authority.
+    """
+
     __tablename__ = "otc_localauthority_registration_numbers"
 
     id: Mapped[int] = mapped_column(
@@ -54,6 +63,11 @@ class OtcLocalAuthorityRegistrationNumbers(BaseSQLModel):
 
 
 class OtcLocalAuthority(BaseSQLModel):
+    """
+    Stores the name of the local authority each service is registered with
+    From the bus registrations data.
+    """
+
     __tablename__ = "otc_localauthority"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
