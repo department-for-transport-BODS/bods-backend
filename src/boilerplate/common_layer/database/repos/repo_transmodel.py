@@ -4,7 +4,7 @@ Transmodel table repos
 
 from collections import defaultdict
 from datetime import date
-from typing import Literal, List
+from typing import Literal
 
 from sqlalchemy import tuple_
 
@@ -32,13 +32,19 @@ class TransmodelServiceRepo(BaseRepositoryWithId[TransmodelService]):
 
     @handle_repository_errors
     def get_by_revision_id(self, revision_id: int) -> list[TransmodelService]:
+        """
+        Get multiple TransmodelService by OrganisationDatasetRevision ID
+        """
         statement = self._build_query().where(self._model.revision_id == revision_id)
         return self._fetch_all(statement)
 
     @handle_repository_errors
     def get_by_txcfileattributes_ids(
-        self, txcfileattributes_ids
+        self, txcfileattributes_ids: list[int]
     ) -> list[TransmodelService]:
+        """
+        Get multiple TransmodelService by a list of TXCFileAttributes Ids
+        """
         if not txcfileattributes_ids:
             return []
         statement = self._build_query().where(
@@ -57,6 +63,9 @@ class TransmodelServicePatternRepo(BaseRepositoryWithId[TransmodelServicePattern
 
     @handle_repository_errors
     def get_by_revision_id(self, revision_id: int) -> list[TransmodelServicePattern]:
+        """
+        Get a list of TransmodelServicePattern by OrganisationDatasetRevision ID
+        """
         statement = self._build_query().where(self._model.revision_id == revision_id)
         return self._fetch_all(statement)
 
@@ -71,8 +80,11 @@ class TransmodelServicePatternStopRepo(
 
     @handle_repository_errors
     def get_by_service_pattern_ids(
-        self, pattern_ids: List[int]
+        self, pattern_ids: list[int]
     ) -> list[TransmodelServicePatternStop]:
+        """
+        Get a list of TransmodelServicePatternStop by TransmodelServicePattern
+        """
         statement = self._build_query().where(
             self._model.service_pattern_id.in_(pattern_ids)
         )
