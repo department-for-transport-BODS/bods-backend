@@ -1,19 +1,35 @@
-# Exception fot XML Document processing
+"""
+Exceptions used by XMLElement in src/boilerplate/common_layer/xmlelements/elements.py
+Which is used by TransXChangeElement in src/boilerplate/common_layer/timetables/transxchange.py
+(Should be Replaced/Removed)
+"""
+
+
 class XMLElementException(Exception):
-    pass
+    """
+    General XML Exception
+    """
 
 
 class XMLAttributeError(XMLElementException):
-    pass
+    """
+    XML Attributes Issue
+    """
 
 
 class NoElement(XMLElementException):
-    pass
+    """
+    Missing Element
+    """
 
 
 class TooManyElements(XMLElementException):
-    pass
+    """
+    Too Many Elements
+    """
 
 
 class ParentDoesNotExist(XMLElementException):
-    pass
+    """
+    Parent does not exist
+    """
