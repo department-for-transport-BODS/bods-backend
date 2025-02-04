@@ -65,15 +65,16 @@ def test_create_violation_from_error(error_params, expected_result):
     """
     revision_id = 123
     frozen_time = datetime(2024, 1, 3, 12, 0, 0, tzinfo=UTC)
+    filename = "filename.xml"
 
     mock_error = Mock(spec=etree._LogEntry)
     mock_error.filename = error_params["filename"]
     mock_error.line = error_params["line"]
     mock_error.message = error_params["message"]
 
-    violation = create_violation_from_error(mock_error, revision_id)
+    violation = create_violation_from_error(mock_error, revision_id, filename)
 
-    assert violation.filename == expected_result["filename"]
+    assert violation.filename == filename
     assert violation.line == expected_result["line"]
     assert violation.details == expected_result["details"]
     assert violation.revision_id == revision_id
@@ -130,15 +131,16 @@ def test_schema_validation(schema, revision_id, test_xml, expected_violations):
     # Given
     xml_doc = etree.fromstring(test_xml.encode())
     frozen_time = datetime(2024, 1, 3, 12, 0, 0, tzinfo=UTC)
+    filename = "filename.xml"
 
     # When
-    violations = get_schema_violations(schema, xml_doc, revision_id)
+    violations = get_schema_violations(schema, xml_doc, revision_id, filename=filename)
 
     # Then
     assert len(violations) == len(expected_violations)
 
     for violation, expected in zip(violations, expected_violations):
-        assert violation.filename == expected["filename"]
+        assert violation.filename == filename
         assert violation.line == expected["line"]
         assert violation.details == expected["details"]
         assert violation.revision_id == revision_id
