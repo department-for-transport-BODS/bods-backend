@@ -1,15 +1,15 @@
-import json
-import logging
-from typing import Optional
+"""
+General Pipeline Exception
+"""
 
-logger = logging.getLogger(__name__)
+import json
 
 
 # Exception for Pipeline
 class PipelineException(Exception):
     """Basic exception for errors raised by a pipeline"""
 
-    def __init__(self, message: Optional[str] = None, step_name: Optional[str] = ""):
+    def __init__(self, message: str | None = None, step_name: str | None = ""):
         if message is None:
             # Set some default error message
             message = "An error occurred in the pipeline"
