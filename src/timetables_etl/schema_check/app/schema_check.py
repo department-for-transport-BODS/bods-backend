@@ -15,16 +15,8 @@ from common_layer.database.repos.repo_data_quality import DataQualitySchemaViola
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.s3 import S3
-from lxml.etree import _Element  # type: ignore
-from lxml.etree import _LogEntry  # type: ignore
-from lxml.etree import (
-    ParseError,
-    XMLParser,
-    XMLSchema,
-    XMLSchemaParseError,
-    XMLSyntaxError,
-    parse,
-)
+from common_layer.s3.utils import get_filename_from_object_key
+from lxml import etree
 from pydantic import BaseModel, ConfigDict, Field
 from structlog.stdlib import get_logger
 
@@ -49,7 +41,7 @@ class TXCVersion(Enum):
     V2_4 = "2.4"
 
 
-def load_txc_schema(version: str = "2.4") -> XMLSchema:
+def load_txc_schema(version: str = "2.4") -> etree.XMLSchema:
     """
     Load the TransXChange XML schema for the specified version.
     """
@@ -76,25 +68,24 @@ def load_txc_schema(version: str = "2.4") -> XMLSchema:
         raise FileNotFoundError(f"Schema file not found at: {schema_path}")
     log.info("Loading TXC Schema", schema_path=schema_path)
     try:
-        parser = XMLParser(load_dtd=False, no_network=True)
+        parser = etree.XMLParser(load_dtd=False, no_network=True)
         with open(schema_path, "rb") as schema_file:
-            schema_doc = parse(schema_file, parser)
+            schema_doc = etree.parse(schema_file, parser)
             log.debug("Parsed Schema Doc as _ElementTree[_Element]")
-            txc_schema = XMLSchema(schema_doc)
+            txc_schema = etree.XMLSchema(schema_doc)
             log.info("Sucessfully parsed Schema Doc as XMLSchema")
             return txc_schema
-    except (XMLSchemaParseError, ParseError):
-        log.error("schema_parse_error", exc_info=True)
+    except (etree.XMLSchemaParseError, etree.ParseError) as e:
+        log.error("schema_parse_error", error=str(e))
         raise
 
 
 def create_violation_from_error(
-    error: _LogEntry, revision_id: int
+    error: etree._LogEntry, revision_id: int, filename: str
 ) -> DataQualitySchemaViolation:
     """
     Create a DataQualitySchemaViolation instance from an lxml error
     """
-    filename = Path(error.filename).name
     return DataQualitySchemaViolation(
         filename=filename,
         line=error.line,
@@ -105,7 +96,10 @@ def create_violation_from_error(
 
 
 def get_schema_violations(
-    txc_schema: XMLSchema, txc_file: _Element, revision_id: int
+    txc_schema: etree.XMLSchema,
+    txc_file: etree._Element,
+    revision_id: int,
+    filename: str,
 ) -> list[DataQualitySchemaViolation]:
     """
     Validate parsed XML document against schema and collect any violations
@@ -116,8 +110,7 @@ def get_schema_violations(
 
     if not is_valid:
         for error in txc_schema.error_log:
-            violation = create_violation_from_error(error, revision_id)
-
+            violation = create_violation_from_error(error, revision_id, filename)
             violations.append(violation)
     if violations:
         log.warning(
@@ -128,7 +121,7 @@ def get_schema_violations(
     return violations
 
 
-def parse_xml_from_s3(input_data: SchemaCheckInputData) -> _Element:
+def parse_xml_from_s3(input_data: SchemaCheckInputData) -> etree._Element:
     """
     Parse XML document from S3 object, streaming directly from S3 to lxml parser
     """
@@ -136,14 +129,14 @@ def parse_xml_from_s3(input_data: SchemaCheckInputData) -> _Element:
     try:
         log.info("Downloading TXC XML from S3", s3_key=input_data.s3_file_key)
         streaming_body = s3_client.get_object(input_data.s3_file_key)
-        txc_data = parse(streaming_body).getroot()
+        txc_data = etree.parse(streaming_body).getroot()
         log.info("Successfully Parsed TXC Data as LXML etree._Element")
         return txc_data
-    except (ClientError, BotoCoreError):
-        log.error("S3 Operation Failed", s3_key=input_data.s3_file_key, exc_info=True)
+    except (ClientError, BotoCoreError) as e:
+        log.error("S3 Operation Failed", s3_key=input_data.s3_file_key, error=str(e))
         raise
-    except XMLSyntaxError:
-        log.error("XML Parsing Failed", s3_key=input_data.s3_file_key, exc_info=True)
+    except etree.XMLSyntaxError as e:
+        log.error("XML Parsing Failed", s3_key=input_data.s3_file_key, error=str(e))
         raise
 
 
@@ -155,8 +148,13 @@ def process_schema_check(
     """
     txc_schema = load_txc_schema()
     txc_data = parse_xml_from_s3(input_data)
+    filename = get_filename_from_object_key(input_data.s3_file_key)
+    if not filename:
+        raise ValueError(
+            f"Unable to parse filename from input_data.s3_file_key: {input_data.s3_file_key}"
+        )
 
-    return get_schema_violations(txc_schema, txc_data, input_data.revision_id)
+    return get_schema_violations(txc_schema, txc_data, input_data.revision_id, filename)
 
 
 def add_violations_to_db(
@@ -174,12 +172,6 @@ def add_violations_to_db(
     return result
 
 
-class SchemaViolationsFound(Exception):
-    """
-    Exception raised when schema violation is found
-    """
-
-
 @file_processing_result_to_db(step_name=StepName.TIMETABLE_SCHEMA_CHECK)
 def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, Any]:
     """
@@ -193,7 +185,6 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, 
 
         if violations:
             add_violations_to_db(db, violations)
-            raise SchemaViolationsFound(f"Found {len(violations)} Schema Violations")
     except Exception as e:
         log.error(
             "Error scanning file",

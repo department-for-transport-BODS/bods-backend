@@ -10,6 +10,7 @@ from common_layer.database.models import DataQualityPostSchemaViolation
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.download import download_and_parse_txc
+from common_layer.s3.utils import get_filename_from_object_key
 from common_layer.txc.models.txc_data import TXCData
 from common_layer.txc.parser.parser_txc import TXCParserConfig
 from structlog.stdlib import get_logger
@@ -61,8 +62,13 @@ def process_post_schema_check(
     Process the schema check
     """
     violations = process_txc_data_check(txc_data)
+    filename = get_filename_from_object_key(input_data.s3_file_key)
+    if not filename:
+        raise ValueError(
+            f"Unable to parse filename from input_data.s3_file_key: {input_data.s3_file_key}"
+        )
     db_violations = create_schema_violations_objects(
-        input_data.revision_id, input_data.s3_file_key, violations
+        input_data.revision_id, filename, violations
     )
     add_violations_to_db(db, db_violations)
     log.info(
