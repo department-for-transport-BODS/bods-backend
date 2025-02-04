@@ -44,7 +44,7 @@ class TaskResult(TimeStampedMixin, BaseSQLModel):
         doc="The ID for the Task that was run",
     )
 
-    status: Mapped[str] = mapped_column(
+    status: Mapped[TaskState] = mapped_column(
         String(50),
         index=True,
         default=TaskState.PENDING.value,
@@ -112,7 +112,7 @@ class DatasetETLTaskResult(TaskResult):
 
     task_name_failed: Mapped[str] = mapped_column(String(255), default="", kw_only=True)
 
-    error_code: Mapped[str] = mapped_column(
+    error_code: Mapped[ETLErrorCode] = mapped_column(
         String(50),
         nullable=False,
         index=True,

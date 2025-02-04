@@ -61,13 +61,13 @@ def update_task_success_state(
     Update task state to success, resetting any error fields
     Returns updated task result without saving to DB
     """
-    task_result.status = TaskState.SUCCESS.value
+    task_result.status = TaskState.SUCCESS
     task_result.completed = datetime.now(UTC)
     task_result.progress = 100
 
     # Reset any error fields just in case they were modified elsewhere
     task_result.task_name_failed = ""
-    task_result.error_code = ETLErrorCode.EMPTY.value
+    task_result.error_code = ETLErrorCode.EMPTY
 
     return task_result
 
@@ -79,8 +79,8 @@ def update_task_error_state(
     Update the task state to error, with the code NO_VALID_FILES_TO_PROCESS
     """
     log.warning(message)
-    task_result.status = TaskState.FAILURE.value
-    task_result.error_code = error_code.value
+    task_result.status = TaskState.FAILURE
+    task_result.error_code = error_code
     task_result.additional_info = message
 
     return task_result
@@ -122,15 +122,15 @@ def update_task_and_revision_status(
         message = "No valid files to process"
         error_code = ETLErrorCode.NO_VALID_FILE_TO_PROCESS
         task_result = update_task_error_state(task_result, message, error_code)
-        revision.status = FeedStatus.ERROR.value
+        revision.status = FeedStatus.ERROR
     elif failed_rezip_files:
         message = "Files failed during re-zipping process"
         error_code = ETLErrorCode.SYSTEM_ERROR
         task_result = update_task_error_state(task_result, message, error_code)
-        revision.status = FeedStatus.ERROR.value
+        revision.status = FeedStatus.ERROR
     else:
         log.info("Setting task result and revision to success")
         task_result = update_task_success_state(task_result)
-        revision.status = FeedStatus.SUCCESS.value
+        revision.status = FeedStatus.SUCCESS
 
     save_changes(db, task_result, revision)
