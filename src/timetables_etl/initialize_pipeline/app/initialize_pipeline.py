@@ -122,6 +122,7 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
     dynamodb = DynamoDB()
     created_task_result = initialize_pipeline(db, dynamodb, parsed_event)
     metrics.add_metric(name="PipelineStarts", unit=MetricUnit.Count, value=1)
+    ETLTaskResultRepo(db).update_progress(created_task_result.id, 10)
     return {
         "status_code": 200,
         "message": "Pipeline Initialized",

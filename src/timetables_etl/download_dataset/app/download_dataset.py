@@ -10,6 +10,7 @@ from urllib.parse import unquote
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.database import SqlDB
 from common_layer.database.models import OrganisationDatasetRevision
+from common_layer.database.repos.repo_etl_task import ETLTaskResultRepo
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.s3 import S3
@@ -74,4 +75,5 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, 
     input_data = DownloadDatasetInputData(**event)
     db = SqlDB()
     s3_object_path = download_and_upload_dataset(db, input_data)
+    ETLTaskResultRepo(db).update_progress(input_data.dataset_etl_task_result_id, 20)
     return {"s3": {"bucket": input_data.s3_bucket_name, "object": s3_object_path}}
