@@ -194,7 +194,7 @@ Resources:
               - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-endpoint'
               - !If
                 - IsNotLocal
-                - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-endpoint}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
+                - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
                 - !Ref RdsDbHostAddr
           POSTGRES_PORT: !If
             - IsUsingBodsInfra
@@ -249,7 +249,7 @@ Resources:
               - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-endpoint'
               - !If
                 - IsNotLocal
-                - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-endpoint}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
+                - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
                 - !Ref RdsDbHostAddr
           POSTGRES_PORT: !If
             - IsUsingBodsInfra
@@ -303,7 +303,7 @@ Resources:
               - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-endpoint'
               - !If
                 - IsNotLocal
-                - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-endpoint}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
+                - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
                 - !Ref RdsDbHostAddr
           POSTGRES_PORT: !If
             - IsUsingBodsInfra
@@ -354,7 +354,7 @@ Resources:
               {
                 "naptan_url": "https://naptan.api.dft.gov.uk/v1/access-nodes?dataFormat=xml",
                 "dynamo_table": "${ProjectName}-${Environment}-naptan-stop-points-table",
-                "aws_region": "eu-west-2"
+                "aws_region": "${AWS::Region}"
               }
 
   #########################
@@ -407,14 +407,14 @@ Resources:
         - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
         - !If
           - IsUsingBodsInfra
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-rw-user-access-policy-arn}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
           - !If
             - IsStandalone
             - !Ref AWS::NoValue
             - arn:aws:iam::aws:policy/AmazonRDSFullAccess
         - !If
           - IsUsingBodsInfra
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-ro-user-access-policy-arn}}' ## UPDATE TO STANDARD POLICY ONCE ISOLATED TESTING COMPLETE
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
           - !If
             - IsStandalone
             - !Ref AWS::NoValue
