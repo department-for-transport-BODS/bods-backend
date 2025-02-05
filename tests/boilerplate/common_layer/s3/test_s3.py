@@ -12,7 +12,7 @@ from common_layer.s3 import S3
 
 @pytest.fixture
 def mock_s3_client():
-    with patch("common_layer.s3.boto3.client") as mock_boto_client:
+    with patch("common_layer.s3.client.boto3.client") as mock_boto_client:
         mock_client = MagicMock()
         mock_boto_client.return_value = mock_client
         yield mock_client
