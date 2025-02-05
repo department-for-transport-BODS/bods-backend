@@ -3,17 +3,29 @@ Module defines helper functions to process xml TxC data
 """
 
 import zipfile
+from dataclasses import is_dataclass
 from datetime import date
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Sequence
+from lxml import etree
+from lxml.etree import _Element
+
 
 import structlog
 from common_layer.txc.models.txc_data import TXCData
 from common_layer.txc.models.txc_stoppoint import TXCStopPoint
 from common_layer.txc.parser.parser_txc import load_xml_data, parse_txc_from_element
 
-from .models import AnalysisMode, WorkerConfig, XMLFileInfo, XMLTagInfo, XmlTxcInventory
+from .models import (
+    AnalysisMode,
+    WorkerConfig,
+    XMLFileInfo,
+    XMLSearchResult,
+    XMLTagInfo,
+    XmlTxcInventory,
+    XmlTagLookUpInfo,
+)
 from .utils import count_tags_in_xml, get_size_mb
 
 log = structlog.stdlib.get_logger()
@@ -53,7 +65,11 @@ def get_tag_size_object(**kwargs: dict[str, Any]) -> XMLFileInfo | XMLTagInfo:
     parent_zip = kwargs.get("parent_zip")
     filename = kwargs.get("filename")
     xml_file = kwargs.get("xml_file")
-    tag_name = str(kwargs.get("tag_name", ""))
+
+    lookup_details = kwargs.get("lookup_info", None)
+    assert isinstance(lookup_details, XmlTagLookUpInfo)
+
+    tag_name = lookup_details.tag_name if is_dataclass(lookup_details) else ""
     assert isinstance(xml_file, BytesIO)
 
     parent_zip = str(parent_zip) if parent_zip else None
@@ -62,6 +78,7 @@ def get_tag_size_object(**kwargs: dict[str, Any]) -> XMLFileInfo | XMLTagInfo:
         "Parsing and searching XML File", filename=filename, parent_zip=parent_zip
     )
     if kwargs.get("mode") == AnalysisMode.TAG:
+        assert isinstance(tag_name, str)
         count = count_tags_in_xml(xml_file.read(), tag_name)
         return XMLTagInfo(
             file_path=str(filename), tag_count=count, parent_zip=parent_zip
@@ -71,16 +88,78 @@ def get_tag_size_object(**kwargs: dict[str, Any]) -> XMLFileInfo | XMLTagInfo:
     return XMLFileInfo(file_path=str(filename), size_mb=size_mb, parent_zip=parent_zip)
 
 
+def find_element_identifier(
+    element: _Element,
+    id_elements: Sequence[str] | None = None,
+) -> str | None:
+    """
+    Find identifier for an XML element by checking provided identifier attributes.
+    """
+    if id_elements is None:
+        id_elements = ["id", "ref", "name"]
+    for id_element in id_elements:
+        identifier = element.find(id_element)
+        if identifier is not None:
+            return identifier.text
+    return None
+
+
+def get_elements_with_related_parent(**kwargs: dict[str, Any]) -> list[XMLSearchResult]:
+    """
+    Fetch and return all elements with related parents
+    """
+    parent_zip = kwargs.get("parent_zip", None)
+    filename = kwargs.get("filename")
+    xml_content = kwargs.get("xml_file")
+    lookup_details = kwargs.get("lookup_info", None)
+
+    if lookup_details is None:
+        raise ValueError("lookup_info must be provided")
+
+    assert isinstance(xml_content, BytesIO)
+
+    xml_file = load_xml_data(xml_content)
+    assert isinstance(lookup_details, XmlTagLookUpInfo)
+
+    search_path = f"//{lookup_details.search_path}"
+    matching_elements = xml_file.xpath(search_path)
+    tag_name = lookup_details.tag_name
+    id_elements = lookup_details.id_elements
+
+    assert isinstance(parent_zip, (str, type(None)))
+    assert isinstance(filename, str)
+
+    results: list[XMLSearchResult] = []
+    for element in matching_elements:
+        result = XMLSearchResult(
+            parent_zip=parent_zip,
+            file_path=filename,
+            element_tag=etree.QName(element).localname,
+            has_child=element.find(tag_name) is not None,
+            identifier=find_element_identifier(element, id_elements),
+        )
+        result.parent_zip = parent_zip
+        result.file_path = filename
+
+        results.append(result)
+
+    return results
+
+
 XML_OBJECTS: dict[
-    AnalysisMode, Callable[..., XMLFileInfo | XMLTagInfo | XmlTxcInventory]
+    AnalysisMode,
+    Callable[..., XMLFileInfo | XMLTagInfo | XmlTxcInventory | list[XMLSearchResult]],
 ] = {
     AnalysisMode.SIZE: get_tag_size_object,
     AnalysisMode.TAG: get_tag_size_object,
     AnalysisMode.TXC: get_txc_object,
+    AnalysisMode.SEARCH: get_elements_with_related_parent,
 }
 
 
-def process_xml_file(**kwargs) -> XMLFileInfo | XMLTagInfo | XmlTxcInventory:
+def process_xml_file(
+    **kwargs,
+) -> XMLFileInfo | XMLTagInfo | XmlTxcInventory | list[XMLSearchResult]:
     """
     Process a single XML file and return its information (size or tag count).
     """
@@ -152,10 +231,14 @@ def process_single_xml(file_info: zipfile.ZipInfo, config: WorkerConfig) -> None
                     xml_file=xml_buffer,
                     filename=file_info.filename,
                     parent_zip=None,
-                    tag_name=config.tag_name,
                     mode=config.mode,
+                    lookup_info=config.lookup_info,
                 )
-                config.xml_queue.put(info)
+                if isinstance(info, list):
+                    for item in info:
+                        config.xml_queue.put(item)
+                else:
+                    config.xml_queue.put(info)
     except Exception:  # pylint: disable=broad-except
         log.error(
             "Error processing XML file", filename=file_info.filename, exc_info=True

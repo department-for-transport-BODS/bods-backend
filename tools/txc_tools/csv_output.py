@@ -16,6 +16,7 @@ from .models import (
     XMLTagInfo,
     ZipStats,
     ZipTagStats,
+    XmlTagLookUpInfo,
 )
 from .utils import calculate_zip_stats
 
@@ -67,7 +68,11 @@ def generate_xml_info_report(**kwargs: dict[str, Any]) -> None:
             reverse=True,
         )
     )
-    tag_name = kwargs.get("tag_name", None)
+
+    lookup_details = kwargs.get("lookup_info")
+    assert isinstance(lookup_details, XmlTagLookUpInfo)
+
+    tag_name = lookup_details.tag_name if lookup_details else None
     tag_name = f"_{tag_name}" if tag_name else ""
     detailed_path = base_path.with_name(f"{base_path.stem}{tag_name}_detailed.csv")
     stats_path = base_path.with_name(f"{base_path.stem}{tag_name}_stats.csv")
@@ -95,9 +100,8 @@ def generate_xml_txc_report(**kwargs: dict[str, Any]) -> None:
     """
     xml_files = kwargs.get("xml_files", [])
     base_path = kwargs.get("base_path")
-    tag_name = kwargs.get("tag_name", None)
     assert isinstance(base_path, Path)
-    file_path = base_path.with_name(f"{base_path.stem}{tag_name}_inventory.csv")
+    file_path = base_path.with_name(f"{base_path.stem}_inventory.csv")
 
     generate_csv_reports(
         xml_datas=cast(list[BaseModel], xml_files),
@@ -107,10 +111,39 @@ def generate_xml_txc_report(**kwargs: dict[str, Any]) -> None:
     log.info("CSV reports generated", inventory_path=file_path)
 
 
+def generate_xml_tag_with_parent_report(**kwargs: dict[str, Any]) -> None:
+    """
+    Generate report for XML tag with parent report
+    """
+    xml_files = kwargs.get("xml_files", [])
+    base_path = kwargs.get("base_path")
+
+    assert isinstance(base_path, Path)
+
+    search_details = kwargs.get("lookup_info")
+    assert isinstance(search_details, XmlTagLookUpInfo)
+    assert search_details.tag_name
+    assert search_details.search_path
+
+    tag_name = f"_{search_details.tag_name}"
+    search_path = search_details.search_path.split(":")[-1]
+    search_path = f"_{search_path}"
+
+    file_path = base_path.with_name(f"{base_path.stem}{tag_name}{search_path}.csv")
+
+    generate_csv_reports(
+        xml_datas=cast(list[BaseModel], xml_files),
+        file_path=file_path,
+    )
+
+    log.info("CSV reports generated", csv_path=file_path)
+
+
 REPORTS: dict[AnalysisMode, Callable[..., None]] = {
     AnalysisMode.SIZE: generate_xml_info_report,
     AnalysisMode.TAG: generate_xml_info_report,
     AnalysisMode.TXC: generate_xml_txc_report,
+    AnalysisMode.SEARCH: generate_xml_tag_with_parent_report,
 }
 
 

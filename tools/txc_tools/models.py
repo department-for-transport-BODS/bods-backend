@@ -31,6 +31,29 @@ class XMLFileInfo(BaseModel):
     )
 
 
+class XMLSearchResult(BaseModel):
+    """Model for XML search results."""
+
+    parent_zip: str | None = Field(
+        None, title="Parent Zip", description="Name of the parent zip file if nested"
+    )
+    file_path: str = Field(
+        ..., title="File Path", description="Path to the XML file within the zip"
+    )
+    path_found: bool = Field(
+        default=True,
+        title="Tag Path Found",
+        description="Always True when included in results",
+    )
+    element_tag: str = Field(title="Name", description="Tag name of the found element")
+    has_child: bool | None = Field(
+        default=None, title="Has Child", description="Whether specified child exists"
+    )
+    identifier: str | None = Field(
+        default=None, title="Indentifier", description="Identifier value if found"
+    )
+
+
 class XMLTagInfo(BaseModel):
     """Pydantic model for XML tag count information"""
 
@@ -101,6 +124,18 @@ class AnalysisMode(str, Enum):
     SIZE = "size"
     TAG = "tag"
     TXC = "txc"
+    SEARCH = "search"
+
+
+@dataclass
+class XmlTagLookUpInfo:
+    """
+    Tag search details
+    """
+
+    tag_name: str | None = None
+    search_path: str | None = None
+    id_elements: list[str] | None = None
 
 
 @dataclass
@@ -115,7 +150,7 @@ class WorkerConfig:
     future_queue: queue.Queue
     executor: ThreadPoolExecutor
     mode: AnalysisMode
-    tag_name: str | None = None
+    lookup_info: XmlTagLookUpInfo | None = None
 
 
 class XmlTxcInventory(BaseModel):
