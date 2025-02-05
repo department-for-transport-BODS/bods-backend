@@ -141,11 +141,11 @@ def parse_xml_from_s3(input_data: SchemaCheckInputData) -> _Element:
         txc_data = parse(streaming_body).getroot()
         log.info("Successfully Parsed TXC Data as LXML _Element")
         return txc_data
-    except (ClientError, BotoCoreError) as e:
-        log.error("S3 Operation Failed", s3_key=input_data.s3_file_key, error=str(e))
+    except (ClientError, BotoCoreError):
+        log.error("S3 Operation Failed", s3_key=input_data.s3_file_key, exc_info=True)
         raise
-    except XMLSyntaxError as e:
-        log.error("XML Parsing Failed", s3_key=input_data.s3_file_key, error=str(e))
+    except XMLSyntaxError:
+        log.error("XML Parsing Failed", s3_key=input_data.s3_file_key, exc_info=True)
         raise
 
 
