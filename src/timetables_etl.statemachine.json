@@ -4,7 +4,7 @@
   "States": {
     "ProcessInput": {
       "Type": "Pass",
-      "Next": "RouteByInputType",
+      "Next": "InitializePipeline",
       "Assign": {
         "inputDataSource": "{% $states.input.inputDataSource %}",
         "datasetRevisionId": "{% $states.input.datasetRevisionId %}",
@@ -13,45 +13,6 @@
         "s3Bucket": "{% $exists($states.input.s3.bucket) ? $states.input.s3.bucket : '${DefaultS3BucketName}' %}",
         "s3Object": "{% $exists($states.input.s3.object) ? $states.input.s3.object : null %}"
       }
-    },
-    "RouteByInputType": {
-      "Type": "Choice",
-      "Default": "ParentFail",
-      "Choices": [
-        {
-          "Condition": "{% $inputDataSource = 'URL_DOWNLOAD' and $url != null %}",
-          "Next": "DownloadDataset"
-        },
-        {
-          "Condition": "{% $inputDataSource = 'S3_FILE' and $s3Bucket != null and $s3Object != null %}",
-          "Next": "InitializePipeline"
-        }
-      ]
-    },
-    "DownloadDataset": {
-      "Type": "Task",
-      "Next": "InitializePipeline",
-      "Resource": "${DownloadDatasetLambdaArn}",
-      "Arguments": {
-        "Url": "{% $url %}",
-        "Bucket": "{% $s3Bucket %}",
-        "DatasetType": "{% $datasetType %}",
-        "DatasetRevisionId": "{% $datasetRevisionId %}"
-      },
-      "Assign": {
-        "s3Bucket": "{% $states.result.s3.bucket %}",
-        "s3Object": "{% $states.result.s3.object %}"
-      },
-
-      "Catch": [
-        {
-          "ErrorEquals": ["States.ALL"],
-          "Next": "ParentExceptionHandler",
-          "Output": {
-            "errorInfo": "{% $states.errorOutput %}"
-          }
-        }
-      ]
     },
     "InitializePipeline": {
       "Type": "Task",
@@ -64,6 +25,44 @@
       },
       "Assign": {
         "DatasetEtlTaskResultId": "{% $states.result.DatasetEtlTaskResultId %}"
+      },
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "ParentExceptionHandler",
+          "Output": {
+            "errorInfo": "{% $states.errorOutput %}"
+          }
+        }
+      ]
+    },
+    "RouteByInputType": {
+      "Type": "Choice",
+      "Default": "ParentFail",
+      "Choices": [
+        {
+          "Condition": "{% $inputDataSource = 'URL_DOWNLOAD' and $url != null %}",
+          "Next": "DownloadDataset"
+        },
+        {
+          "Condition": "{% $inputDataSource = 'S3_FILE' and $s3Bucket != null and $s3Object != null %}",
+          "Next": "ClamAvScanner"
+        }
+      ]
+    },
+    "DownloadDataset": {
+      "Type": "Task",
+      "Next": "ClamAvScanner",
+      "Resource": "${DownloadDatasetLambdaArn}",
+      "Arguments": {
+        "Url": "{% $url %}",
+        "Bucket": "{% $s3Bucket %}",
+        "DatasetType": "{% $datasetType %}",
+        "DatasetRevisionId": "{% $datasetRevisionId %}"
+      },
+      "Assign": {
+        "s3Bucket": "{% $states.result.s3.bucket %}",
+        "s3Object": "{% $states.result.s3.object %}"
       },
       "Catch": [
         {
