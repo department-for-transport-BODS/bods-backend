@@ -16,7 +16,7 @@
     },
     "InitializePipeline": {
       "Type": "Task",
-      "Next": "ClamAvScanner",
+      "Next": "RouteByInputType",
       "Resource": "${InitializePipelineLambdaArn}",
       "Arguments": {
         "Bucket": "{% $s3Bucket %}",
