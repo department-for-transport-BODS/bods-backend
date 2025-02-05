@@ -10,19 +10,19 @@ import zipfile
 from io import BytesIO
 from pathlib import Path
 from typing import Iterator
-
-import structlog
 from pydantic import BaseModel
+import structlog
 
 from .csv_output import write_csv_reports
 from .models import (
     AnalysisMode,
     WorkerConfig,
-    XmlTagLookUpInfo,
     XMLFileInfo,
     XMLTagInfo,
+    XmlTagLookUpInfo,
 )
 from .xml_processor import process_single_xml, process_xml_file
+from .zip_tag_match_xml import build_zip_with_matching_tag_xmls
 
 structlog.configure(
     processors=[
@@ -193,11 +193,32 @@ def process_zip_contents(
         log.error("Error processing zip file", zip_path=zip_path, exc_info=True)
 
 
+def make_default_output_path(zip_path: str) -> Path:
+    """
+    Generate a default output path based on filename. Creates directories
+    if they don't exist.
+    Base path is ./data/txc_tools/<filename>
+    """
+    base_path = Path("./data/txc_tools")
+
+    if not base_path.exists():
+        log.info("Creating base directory structure", path=str(base_path))
+        base_path.mkdir(parents=True, exist_ok=True)
+
+    final_path = base_path / Path(zip_path).stem
+    if not final_path.exists():
+        log.info("Creating output directory", path=str(final_path))
+        final_path.mkdir(parents=True, exist_ok=True)
+
+    return final_path
+
+
 def process_zip_file_parallel(
     zip_path: str,
     mode: AnalysisMode,
     sub_zip_workers: int = 4,
     lookup_info: XmlTagLookUpInfo | None = None,
+    zip_file_structure: str = "flat",
 ) -> None:
     """Process a zip file and generate both detailed and summary reports"""
     if not os.path.exists(zip_path):
@@ -220,14 +241,25 @@ def process_zip_file_parallel(
         )
     )
 
+    base_path = make_default_output_path(zip_path)
+    file_name = Path(zip_path).stem
+
     # Generate reports
     report_args = {
         "xml_files": xml_files,
-        "base_path": Path(zip_path).with_suffix(".csv"),
+        "base_path": base_path / Path(file_name).with_suffix(".csv"),
         "mode": mode,
         "lookup_info": lookup_info,
     }
     write_csv_reports(**report_args)
+
+    assert lookup_info
+    # Build the zip file with valid tag in xmls
+    if lookup_info.tag_name and zip_path.endswith(".zip"):
+        new_zip_path = base_path / Path(file_name).with_suffix(".zip")
+        build_zip_with_matching_tag_xmls(
+            xml_files, mode, zip_path, new_zip_path, zip_file_structure
+        )
 
 
 def execute_process(
@@ -235,6 +267,7 @@ def execute_process(
     mode: AnalysisMode,
     sub_zip_workers: int = 4,
     lookup_info: XmlTagLookUpInfo | None = None,
+    zip_file_structure: str = "flat",
 ) -> None:
     """
     Launch process for xml file parsing and extracting datas
@@ -255,6 +288,7 @@ def execute_process(
                 mode,
                 sub_zip_workers,
                 lookup_info,
+                zip_file_structure,
             )
             for zip_path in zip_files
         ]

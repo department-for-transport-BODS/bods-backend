@@ -153,7 +153,7 @@ XML_OBJECTS: dict[
     AnalysisMode.SIZE: get_tag_size_object,
     AnalysisMode.TAG: get_tag_size_object,
     AnalysisMode.TXC: get_txc_object,
-    AnalysisMode.TAG_PARENT_CHILD: get_elements_with_related_parent,
+    AnalysisMode.SEARCH: get_elements_with_related_parent,
 }
 
 

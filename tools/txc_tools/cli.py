@@ -65,6 +65,10 @@ def zip_tag_counter(
         str,
         typer.Argument(help="XML tag name to search for"),
     ],
+    zip_structure: Annotated[
+        str,
+        typer.Argument(help="Zip file structure(flat or nested)"),
+    ] = "flat",
     sub_zip_workers: Annotated[
         int,
         typer.Option(
@@ -87,6 +91,7 @@ def zip_tag_counter(
         mode=AnalysisMode.TAG,
         sub_zip_workers=sub_zip_workers,
         lookup_info=lookup_info,
+        zip_file_structure=zip_structure,
     )
 
 
@@ -126,8 +131,8 @@ def zip_txc_report(
     )
 
 
-@app.command(name="zip-tag-search-parent")
-def zip_tag_with_parent(
+@app.command(name="zip-tag-search")
+def zip_tag_with_parent(  # pylint: disable=too-many-arguments, too-many-positional-arguments
     zip_files: Annotated[
         list[Path],
         typer.Argument(
@@ -152,6 +157,10 @@ def zip_tag_with_parent(
             help='Identifier of tag(comma separated values eg. "id,ref,name"'
         ),
     ] = None,
+    zip_structure: Annotated[
+        str,
+        typer.Argument(help="Zip file structure(flat or nested)"),
+    ] = "flat",
     sub_zip_workers: Annotated[
         int,
         typer.Option(
@@ -165,8 +174,8 @@ def zip_tag_with_parent(
     ] = 4,
 ) -> None:
     """
-    Process multiple ZIP files in parallel, parsing TxC data from XML
-    and generating CSV reports.
+    Process multiple ZIP files in parallel, searching tag in XML with respect to
+    the path and generating CSV reports.
     """
     if id_elements is None:
         id_elements = "id,ref,name"
@@ -177,9 +186,10 @@ def zip_tag_with_parent(
     )
     execute_process(
         zip_files=zip_files,
-        mode=AnalysisMode.TAG_PARENT_CHILD,
+        mode=AnalysisMode.SEARCH,
         sub_zip_workers=sub_zip_workers,
         lookup_info=lookup_info,
+        zip_file_structure=zip_structure,
     )
 
 

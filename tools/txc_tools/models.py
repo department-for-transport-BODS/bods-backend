@@ -124,7 +124,7 @@ class AnalysisMode(str, Enum):
     SIZE = "size"
     TAG = "tag"
     TXC = "txc"
-    TAG_PARENT_CHILD = "tag-parent-child"
+    SEARCH = "search"
 
 
 @dataclass

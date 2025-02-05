@@ -143,7 +143,7 @@ REPORTS: dict[AnalysisMode, Callable[..., None]] = {
     AnalysisMode.SIZE: generate_xml_info_report,
     AnalysisMode.TAG: generate_xml_info_report,
     AnalysisMode.TXC: generate_xml_txc_report,
-    AnalysisMode.TAG_PARENT_CHILD: generate_xml_tag_with_parent_report,
+    AnalysisMode.SEARCH: generate_xml_tag_with_parent_report,
 }
 
 
