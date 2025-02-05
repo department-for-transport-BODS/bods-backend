@@ -11,7 +11,8 @@
         "datasetType": "{% $states.input.datasetType %}",
         "url": "{% $exists($states.input.url) ? $states.input.url : null %}",
         "s3Bucket": "{% $exists($states.input.s3.bucket) ? $states.input.s3.bucket : '${DefaultS3BucketName}' %}",
-        "s3Object": "{% $exists($states.input.s3.object) ? $states.input.s3.object : null %}"
+        "s3Object": "{% $exists($states.input.s3.object) ? $states.input.s3.object : null %}",
+        "publishDatasetRevision": "{% $exists($states.input.publishDatasetRevision) ? $states.input.publishDatasetRevision : false %}"
       }
     },
     "InitializePipeline": {
@@ -312,7 +313,8 @@
         "OutputPrefix": "{% $ExtractedSubFolder %}",
         "DatasetRevisionId": "{% $datasetRevisionId %}",
         "OriginalObjectKey": "{% $s3Object %}",
-        "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}"
+        "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}",
+        "PublishDatasetRevision": "{% $publishDatasetRevision %}"
       },
       "Catch": [
         {
