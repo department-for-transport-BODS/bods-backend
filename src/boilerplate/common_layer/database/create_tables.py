@@ -83,7 +83,10 @@ def compare_and_alter_table(
             try:
                 compiled_type = column.type.compile(engine.dialect)
                 # Generate ALTER TABLE statement
-                alter_stmt = f'ALTER TABLE "{table.name}" ADD COLUMN "{column.name}" {compiled_type}'
+                alter_stmt = (
+                    f'ALTER TABLE "{table.name}" '
+                    f'ADD COLUMN "{column.name}" {compiled_type}'
+                )
 
                 # Add nullable constraint if specified
                 if not column.nullable:
@@ -195,7 +198,8 @@ def get_enum_info(
             # Fallback to generating a name based on table and column
             enum_name = f"{table_name}_{column.key}_enum"
 
-        enum_values = tuple(enum_type.enums)
+        # (type stub says it's a list[Unknown]) so need to ignore in strict
+        enum_values: tuple[str, ...] = tuple(enum_type.enums)  # type: ignore
 
         log.info(
             "Processing enum column",
@@ -210,12 +214,12 @@ def get_enum_info(
 
 
 def create_column_definition(
-    column: SQLColumn, enum_info: tuple[str, tuple[str, ...]] | None = None
-) -> SQLColumn:
+    column: SQLColumn[Any], enum_info: tuple[str, tuple[str, ...]] | None = None
+) -> SQLColumn[Any]:
     """
     Create a SQLAlchemy column definition, handling both enum and standard columns
     """
-    log_context = {
+    log_context: dict[str, str | bool | None] = {
         "column_name": column.key,
         "column_type": str(column.type),
         "is_enum": enum_info is not None,
@@ -224,7 +228,6 @@ def create_column_definition(
         "has_index": column.index,
         "is_unique": column.unique,
     }
-
     log.info("Creating column definition", **log_context)
 
     try:
@@ -238,15 +241,14 @@ def create_column_definition(
                 index=column.index,
                 unique=column.unique,
             )
-        else:
-            return SQLColumn(
-                column.key,
-                column.type,
-                primary_key=column.primary_key,
-                nullable=column.nullable,
-                index=column.index,
-                unique=column.unique,
-            )
+        return SQLColumn(
+            column.key,
+            column.type,
+            primary_key=column.primary_key,
+            nullable=column.nullable,
+            index=column.index,
+            unique=column.unique,
+        )
     except Exception as e:
         log.error(
             "Failed to create column definition",
@@ -314,7 +316,7 @@ def handle_enums_and_create_table(
             model_name=model.__name__,
             table_name=table_name,
         )
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         log.warning(
             "Table creation failed, checking if table exists",
             model_name=model.__name__,
@@ -326,6 +328,11 @@ def handle_enums_and_create_table(
 
 
 def enable_postgis_extension(engine: Engine):
+    """
+    PostGIS is used for LineString in tables
+    It's an extension that needs to be installed on the machine running postgres
+    And then for every database inside the postgres server, it needs to be enabled
+    """
     postgis_stmt = "CREATE EXTENSION IF NOT EXISTS postgis;"
     with engine.begin() as conn:
         conn.execute(text(postgis_stmt))
