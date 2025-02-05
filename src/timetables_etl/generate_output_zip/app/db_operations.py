@@ -104,10 +104,13 @@ def update_task_and_revision_status(
     processing_result: ProcessingResult,
     dataset_etl_task_result_id: int,
     dataset_revision_id: int,
-):
+) -> OrganisationDatasetRevision:
     """
     Update the DatasetEtlTaskResult and Revision status to
     success or failure based on the given map_results and processing_result
+
+    Returns:
+        revision: The updated DatasetRevision record
     """
     task_result = fetch_task_result(db, dataset_etl_task_result_id)
     revision = fetch_revision(db, dataset_revision_id)
@@ -134,3 +137,20 @@ def update_task_and_revision_status(
         revision.status = FeedStatus.SUCCESS
 
     save_changes(db, task_result, revision)
+
+    return revision
+
+
+def publish_revision(db: SqlDB, revision: OrganisationDatasetRevision):
+    """
+    Publish the given revision
+    """
+    if revision.status in [FeedStatus.SUCCESS, FeedStatus.ERROR]:
+        log.info("Publishing revision", revision_id=revision.id)
+        repo = OrganisationDatasetRevisionRepo(db)
+        repo.publish_revision(revision.id)
+    else:
+        log.warning(
+            "Could not publish revision because status is not in success or error state",
+            revision_status=revision.status,
+        )
