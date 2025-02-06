@@ -8,14 +8,13 @@ from datetime import date
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Callable, Sequence
-from lxml import etree
-from lxml.etree import _Element
-
 
 import structlog
 from common_layer.txc.models.txc_data import TXCData
 from common_layer.txc.models.txc_stoppoint import TXCStopPoint
 from common_layer.txc.parser.parser_txc import load_xml_data, parse_txc_from_element
+from lxml import etree
+from lxml.etree import _Element
 
 from .models import (
     AnalysisMode,
@@ -23,8 +22,8 @@ from .models import (
     XMLFileInfo,
     XMLSearchResult,
     XMLTagInfo,
-    XmlTxcInventory,
     XmlTagLookUpInfo,
+    XmlTxcInventory,
 )
 from .utils import count_tags_in_xml, get_size_mb
 
@@ -56,8 +55,14 @@ def get_txc_object(**kwargs: dict[str, Any]) -> XmlTxcInventory:
     try:
         txc_object = parse_txc_from_element(load_xml_data(xml_file))
         return generate_txc_row_data(txc_object, filename)
-    except Exception as err:
-        log.error("Failed to parse XML File with TxC parser", filename=filename, parent_zip=parent_zip, err=err)
+    except Exception as err:  # pylint: disable=broad-except
+        log.error(
+            "Failed to parse XML File with TxC parser",
+            filename=filename,
+            parent_zip=parent_zip,
+            err=err,
+        )
+        raise
 
 
 def get_tag_size_object(**kwargs: dict[str, Any]) -> XMLFileInfo | XMLTagInfo:

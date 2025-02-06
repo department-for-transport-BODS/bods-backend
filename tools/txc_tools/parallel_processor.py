@@ -10,8 +10,9 @@ import zipfile
 from io import BytesIO
 from pathlib import Path
 from typing import Iterator
-from pydantic import BaseModel
+
 import structlog
+from pydantic import BaseModel
 
 from .csv_output import write_csv_reports
 from .models import (
@@ -244,7 +245,10 @@ def process_zip_file_parallel(
     )
 
     if not xml_files:
-        log.error("No XML files are processed successfully to generate CSV report", zip_path=zip_path)
+        log.error(
+            "No XML files are processed successfully to generate CSV report",
+            zip_path=zip_path,
+        )
         return
 
     base_path = make_default_output_path(zip_path)
