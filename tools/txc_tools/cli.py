@@ -17,7 +17,9 @@ app = typer.Typer()
 def zip_size_report(
     zip_files: Annotated[
         list[Path],
-        typer.Argument(
+        typer.Option(
+            "--zip-files",
+            "-z",
             help="One or more zip files to process",
             exists=True,
             file_okay=True,
@@ -53,7 +55,9 @@ def zip_size_report(
 def zip_tag_counter(
     zip_files: Annotated[
         list[Path],
-        typer.Argument(
+        typer.Option(
+            "--zip-files",
+            "-z",
             help="One or more zip files to process",
             exists=True,
             file_okay=True,
@@ -63,11 +67,15 @@ def zip_tag_counter(
     ],
     tag_name: Annotated[
         str,
-        typer.Argument(help="XML tag name to search for"),
+        typer.Option("--tag-name", "-t", help="XML tag name to search for"),
     ],
     zip_structure: Annotated[
         str,
-        typer.Argument(help="Zip file structure(flat or nested)"),
+        typer.Option(
+            "--zip-structure",
+            "-x",
+            help="Zip file structure (flat or nested)",
+        ),
     ] = "flat",
     sub_zip_workers: Annotated[
         int,
@@ -99,7 +107,9 @@ def zip_tag_counter(
 def zip_txc_report(
     zip_files: Annotated[
         list[Path],
-        typer.Argument(
+        typer.Option(
+            "--zip-files",
+            "-z",
             help="One or more zip files to process",
             exists=True,
             file_okay=True,
@@ -135,7 +145,9 @@ def zip_txc_report(
 def zip_tag_with_parent(  # pylint: disable=too-many-arguments, too-many-positional-arguments
     zip_files: Annotated[
         list[Path],
-        typer.Argument(
+        typer.Option(
+            "--zip-files",
+            "-z",
             help="One or more zip files to process",
             exists=True,
             file_okay=True,
@@ -145,21 +157,27 @@ def zip_tag_with_parent(  # pylint: disable=too-many-arguments, too-many-positio
     ],
     tag_name: Annotated[
         str,
-        typer.Argument(help="XML tag name to search for"),
+        typer.Option("--tag-name", "-t", help="XML tag name to search for"),
     ],
     search_path: Annotated[
         str,
-        typer.Argument(help="XML parent path to search for"),
+        typer.Option("--search-path", "-s", help="XML parent path to search for"),
     ],
     id_elements: Annotated[
         Optional[str],
-        typer.Argument(
-            help='Identifier of tag(comma separated values eg. "id,ref,name"'
+        typer.Option(
+            "--id-elements",
+            "-i",
+            help='Identifier of tag (comma-separated values, e.g., "id,ref,name")',
         ),
-    ] = None,
+    ] = "id,ref,name",  # Default as a string
     zip_structure: Annotated[
         str,
-        typer.Argument(help="Zip file structure(flat or nested)"),
+        typer.Option(
+            "--zip-structure",
+            "-x",
+            help="Zip file structure (flat or nested)",
+        ),
     ] = "flat",
     sub_zip_workers: Annotated[
         int,

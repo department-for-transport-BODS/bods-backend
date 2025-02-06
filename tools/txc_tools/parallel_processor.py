@@ -78,6 +78,8 @@ def process_nested_zip(
                                     mode=mode,
                                     lookup_info=lookup_info,
                                 )
+                                if not info:
+                                    return []
                                 if isinstance(info, list):
                                     results.extend(info)
                                 else:
@@ -240,6 +242,10 @@ def process_zip_file_parallel(
             lookup_info=lookup_info,
         )
     )
+
+    if not xml_files:
+        log.error("No XML files are processed successfully to generate CSV report", zip_path=zip_path)
+        return
 
     base_path = make_default_output_path(zip_path)
     file_name = Path(zip_path).stem

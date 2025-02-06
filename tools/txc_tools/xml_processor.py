@@ -53,9 +53,11 @@ def get_txc_object(**kwargs: dict[str, Any]) -> XmlTxcInventory:
     log.debug(
         "Parsing XML File with TxC parser", filename=filename, parent_zip=parent_zip
     )
-
-    txc_object = parse_txc_from_element(load_xml_data(xml_file))
-    return generate_txc_row_data(txc_object, filename)
+    try:
+        txc_object = parse_txc_from_element(load_xml_data(xml_file))
+        return generate_txc_row_data(txc_object, filename)
+    except Exception as err:
+        log.error("Failed to parse XML File with TxC parser", filename=filename, parent_zip=parent_zip, err=err)
 
 
 def get_tag_size_object(**kwargs: dict[str, Any]) -> XMLFileInfo | XMLTagInfo:
@@ -234,6 +236,8 @@ def process_single_xml(file_info: zipfile.ZipInfo, config: WorkerConfig) -> None
                     mode=config.mode,
                     lookup_info=config.lookup_info,
                 )
+                if not info:
+                    return
                 if isinstance(info, list):
                     for item in info:
                         config.xml_queue.put(item)

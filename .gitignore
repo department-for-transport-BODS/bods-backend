@@ -74,3 +74,6 @@ data/
 # Do not ignore test fixture files
 !tests/**/data/
 !tests/**/data/**
+
+# Ignore TxC zip
+*.zip
