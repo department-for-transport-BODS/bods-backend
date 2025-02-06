@@ -17,7 +17,11 @@ from common_layer.s3 import S3
 from common_layer.txc.parser.hashing import get_bytes_hash
 from structlog.stdlib import get_logger
 
-from .db_operations import update_revision_hash, update_task_and_revision_status
+from .db_operations import (
+    publish_revision,
+    update_revision_hash,
+    update_task_and_revision_status,
+)
 from .map_results import load_map_results
 from .models import (
     GenerateOutputZipInputData,
@@ -145,13 +149,16 @@ def process_map_results(
         db, input_data.dataset_revision_id, processing_result.file_hash
     )
 
-    update_task_and_revision_status(
+    revision = update_task_and_revision_status(
         db,
         map_results,
         processing_result,
         input_data.dataset_etl_task_result_id,
         input_data.dataset_revision_id,
     )
+
+    if input_data.publish_dataset_revision:
+        publish_revision(db, revision)
 
     return processing_result
 

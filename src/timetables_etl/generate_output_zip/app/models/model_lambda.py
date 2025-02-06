@@ -18,3 +18,4 @@ class GenerateOutputZipInputData(BaseModel):
     original_object_key: str = Field(alias="OriginalObjectKey")
     dataset_revision_id: int = Field(alias="DatasetRevisionId")
     dataset_etl_task_result_id: int = Field(alias="DatasetEtlTaskResultId")
+    publish_dataset_revision: bool = Field(alias="PublishDatasetRevision")

@@ -2,6 +2,11 @@
 SQLAlchemy Organisation Repos
 """
 
+from datetime import UTC, datetime
+
+from common_layer.enums import FeedStatus
+from structlog.stdlib import get_logger
+
 from ..client import SqlDB
 from ..models import (
     OrganisationDataset,
@@ -11,6 +16,8 @@ from ..models import (
 )
 from .operation_decorator import handle_repository_errors
 from .repo_common import BaseRepositoryWithId
+
+log = get_logger()
 
 
 class OrganisationDatasetRepo(BaseRepositoryWithId[OrganisationDataset]):
@@ -65,6 +72,35 @@ class OrganisationDatasetRevisionRepo(
             record.modified_file_hash = new_hash
 
         self._execute_update(update_hash, statement)
+
+    @handle_repository_errors
+    def publish_revision(self, revision_id: int) -> None:
+        """
+        Publish a revision by the given revision_id.
+
+        This will:
+            - Update the FeedStatus from Success => Live
+            - Set is_published and published_at fields
+        """
+        statement = self._build_query().where(self._model.id == revision_id)
+        now = datetime.now(UTC)
+
+        def update_record(record: OrganisationDatasetRevision) -> None:
+            if record.is_published:
+                return None
+            if record.status == FeedStatus.SUCCESS:
+                log.info("Publishing revision", revision_id=record.id)
+                record.status = FeedStatus.LIVE
+                record.is_published = True
+                record.published_at = now
+            else:
+                log.warning(
+                    "Could not publish revision because status is not success",
+                    revision_status=record.status,
+                )
+            return None
+
+        self._execute_update(update_record, statement)
 
 
 class OrganisationTXCFileAttributesRepo(
