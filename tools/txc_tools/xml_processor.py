@@ -64,7 +64,7 @@ def get_txc_object(**kwargs: dict[str, Any]) -> XmlTxcInventory | XmlTxcParserEr
         )
         return XmlTxcParserError(
             file_path=str(filename),
-            txc_parser=str(err),
+            txc_parser_error=str(err),
         )
 
 
