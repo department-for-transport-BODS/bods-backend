@@ -35,7 +35,7 @@ jobs:
             revert
             tools
       - name: Comment on Incorrect PR Title
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@52423e01640425a022ef5fd42c6fb5f633a02728 #v2.9.1
         if: always() && (steps.lint_pr_title.outputs.error_message != null)
         with:
           header: pr-title-lint-error
@@ -50,7 +50,7 @@ jobs:
             ${{ steps.lint_pr_title.outputs.error_message }}
 
       - name: Remove Comment about Incorrect PR Title if fixed
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@52423e01640425a022ef5fd42c6fb5f633a02728 #v2.9.1
         if: ${{ steps.lint_pr_title.outputs.error_message == null }}
         with:
           header: pr-title-lint-error
