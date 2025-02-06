@@ -5,6 +5,7 @@ SQLAlchemy Organisation Repos
 from datetime import UTC, datetime
 
 from common_layer.enums import FeedStatus
+from structlog.stdlib import get_logger
 
 from ..client import SqlDB
 from ..models import (
@@ -15,6 +16,8 @@ from ..models import (
 )
 from .operation_decorator import handle_repository_errors
 from .repo_common import BaseRepositoryWithId
+
+log = get_logger()
 
 
 class OrganisationDatasetRepo(BaseRepositoryWithId[OrganisationDataset]):
@@ -83,10 +86,18 @@ class OrganisationDatasetRevisionRepo(
         now = datetime.now(UTC)
 
         def update_record(record: OrganisationDatasetRevision) -> None:
+            if record.is_published:
+                return None
             if record.status == FeedStatus.SUCCESS:
+                log.info("Publishing revision", revision_id=record.id)
                 record.status = FeedStatus.LIVE
-            record.is_published = True
-            record.published_at = now
+                record.is_published = True
+                record.published_at = now
+            else:
+                log.warning(
+                    "Could not publish revision because status is not success",
+                    revision_status=record.status,
+                )
 
         self._execute_update(update_record, statement)
 

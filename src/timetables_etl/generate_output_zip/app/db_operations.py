@@ -145,12 +145,11 @@ def publish_revision(db: SqlDB, revision: OrganisationDatasetRevision):
     """
     Publish the given revision
     """
-    if revision.status in [FeedStatus.SUCCESS, FeedStatus.ERROR]:
-        log.info("Publishing revision", revision_id=revision.id)
+    if revision.status == FeedStatus.SUCCESS:
         repo = OrganisationDatasetRevisionRepo(db)
         repo.publish_revision(revision.id)
     else:
-        log.warning(
-            "Could not publish revision because status is not in success or error state",
+        log.info(
+            "Skipping publishing because revision status is not success",
             revision_status=revision.status,
         )
