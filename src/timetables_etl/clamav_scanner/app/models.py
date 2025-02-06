@@ -17,6 +17,7 @@ class ClamAVScannerInputData(BaseModel):
     s3_bucket_name: str = Field(alias="Bucket")
     s3_file_key: str = Field(alias="ObjectKey")
     revision_id: int = Field(alias="DatasetRevisionId")
+    dataset_etl_task_result_id: int = Field(alias="DatasetEtlTaskResultId")
 
 
 class ClamAVConfig(BaseModel):

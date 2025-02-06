@@ -10,6 +10,7 @@ from typing import Any
 
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.database.client import SqlDB
+from common_layer.database.repos.repo_etl_task import ETLTaskResultRepo
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.s3 import S3
@@ -162,8 +163,9 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, 
     """
     input_data = GenerateOutputZipInputData(**event)
     db = SqlDB()
+    ETLTaskResultRepo(db).update_progress(input_data.dataset_etl_task_result_id, 90)
     result = process_map_results(input_data, db)
-
+    ETLTaskResultRepo(db).update_progress(input_data.dataset_etl_task_result_id, 100)
     log.info(
         "Completed output generation",
         successful_files=result.successful_files,

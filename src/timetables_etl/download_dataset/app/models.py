@@ -30,6 +30,7 @@ class DownloadDatasetInputData(BaseModel):
     s3_bucket_name: str = Field(alias="Bucket")
     remote_dataset_url_link: AnyUrl = Field(alias="Url")
     revision_id: int = Field(alias="DatasetRevisionId")
+    dataset_etl_task_result_id: int = Field(alias="DatasetEtlTaskResultId")
 
 
 @dataclass
