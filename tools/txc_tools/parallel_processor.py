@@ -79,8 +79,6 @@ def process_nested_zip(
                                     mode=mode,
                                     lookup_info=lookup_info,
                                 )
-                                if not info:
-                                    return []
                                 if isinstance(info, list):
                                     results.extend(info)
                                 else:

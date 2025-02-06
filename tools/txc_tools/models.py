@@ -2,13 +2,13 @@
 Model definitions for txc tools
 """
 
+import queue
+import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 from enum import Enum
-import queue
-import zipfile
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
@@ -157,45 +157,51 @@ class XmlTxcInventory(BaseModel):
     """Pydantic model for txc inventory"""
 
     model_config = ConfigDict(frozen=True)
-    national_operator_code: str = Field(
-        ..., title="National Operator Code", description="National Operator Code"
+
+    national_operator_code: str | None = Field(
+        None, title="National Operator Code", description="National Operator Code"
     )
-    operator_short_name: str = Field(
-        ..., title="Operator Short Name", description="Operator Short Name"
+    operator_short_name: str | None = Field(
+        None, title="Operator Short Name", description="Operator Short Name"
     )
-    line_name: str = Field(..., title="Line Name", description="Line Name")
-    service_code: str = Field(..., title="Service Code", description="Service Code")
-    out_bound_description: str = Field(
-        ..., title="Outbound Description", description="Outbound Description"
+    line_name: str | None = Field(None, title="Line Name", description="Line Name")
+    service_code: str | None = Field(
+        None, title="Service Code", description="Service Code"
     )
-    in_bound_description: str = Field(
-        ..., title="Inbound Description", description="Inbound Description"
+    out_bound_description: str | None = Field(
+        None, title="Outbound Description", description="Outbound Description"
     )
-    total_stop_points: int = Field(
-        ..., title="Total Stop Points", description="Total Stop Points"
+    in_bound_description: str | None = Field(
+        None, title="Inbound Description", description="Inbound Description"
     )
-    custom_stop_points: int = Field(
-        ..., title="Custom Stop Points", description="Number of custom stop points"
+    total_stop_points: int | None = Field(
+        None, title="Total Stop Points", description="Total Stop Points"
     )
-    route_sections: int = Field(
-        ..., title="Route Sections", description="Number of route sections"
+    custom_stop_points: int | None = Field(
+        None, title="Custom Stop Points", description="Number of custom stop points"
     )
-    routes: int = Field(..., title="Routes", description="Routes")
-    journey_pattern_sections: int = Field(
-        ..., title="Journey Pattern Sections", description="Journey Pattern Sections"
+    route_sections: int | None = Field(
+        None, title="Route Sections", description="Number of route sections"
     )
-    vehicle_journeys: int = Field(
-        ..., title="Vehicle Journeys", description="Vehicle Journeys"
+    routes: int | None = Field(None, title="Routes", description="Routes")
+    journey_pattern_sections: int | None = Field(
+        None, title="Journey Pattern Sections", description="Journey Pattern Sections"
+    )
+    vehicle_journeys: int | None = Field(
+        None, title="Vehicle Journeys", description="Vehicle Journeys"
     )
     file_path: str = Field(
         ..., title="File Path", description="Path to the XML file within the zip"
     )
     service_start_date: date | None = Field(
-        ..., title="Service Start Date", description="Service Start Date"
+        None, title="Service Start Date", description="Service Start Date"
     )
     service_end_date: date | None = Field(
-        ..., title="Service End Date", description="Service End Date"
+        None, title="Service End Date", description="Service End Date"
     )
-    event_service: int | str = Field(
-        ..., title="Event Service", description="Event Service"
+    event_service: int | str | None = Field(
+        None, title="Event Service", description="Event Service"
+    )
+    txc_parser: str | None = Field(
+        None, title="TxC Parser", description="TxC parser exception"
     )

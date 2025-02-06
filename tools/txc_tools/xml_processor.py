@@ -56,13 +56,13 @@ def get_txc_object(**kwargs: dict[str, Any]) -> XmlTxcInventory:
         txc_object = parse_txc_from_element(load_xml_data(xml_file))
         return generate_txc_row_data(txc_object, filename)
     except Exception as err:  # pylint: disable=broad-except
-        log.error(
+        log.warning(
             "Failed to parse XML File with TxC parser",
             filename=filename,
-            parent_zip=parent_zip,
-            err=err,
+            parent_zip=parent_zip
         )
-        raise
+        error_msg = '\n'.join([f"{it.get('msg', '')}-{it.get('input', '')}"for it in err.errors()])
+        return XmlTxcInventory(file_path=str(filename), txc_parser=error_msg)
 
 
 def get_tag_size_object(**kwargs: dict[str, Any]) -> XMLFileInfo | XMLTagInfo:
@@ -241,8 +241,6 @@ def process_single_xml(file_info: zipfile.ZipInfo, config: WorkerConfig) -> None
                     mode=config.mode,
                     lookup_info=config.lookup_info,
                 )
-                if not info:
-                    return
                 if isinstance(info, list):
                     for item in info:
                         config.xml_queue.put(item)
