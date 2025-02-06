@@ -8,14 +8,13 @@ from datetime import date
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Callable, Sequence
-from lxml import etree
-from lxml.etree import _Element
-
 
 import structlog
 from common_layer.txc.models.txc_data import TXCData
 from common_layer.txc.models.txc_stoppoint import TXCStopPoint
 from common_layer.txc.parser.parser_txc import load_xml_data, parse_txc_from_element
+from lxml import etree
+from lxml.etree import _Element
 
 from .models import (
     AnalysisMode,
@@ -23,15 +22,16 @@ from .models import (
     XMLFileInfo,
     XMLSearchResult,
     XMLTagInfo,
-    XmlTxcInventory,
     XmlTagLookUpInfo,
+    XmlTxcInventory,
+    XmlTxcParserError,
 )
 from .utils import count_tags_in_xml, get_size_mb
 
 log = structlog.stdlib.get_logger()
 
 
-def get_txc_object(**kwargs: dict[str, Any]) -> XmlTxcInventory:
+def get_txc_object(**kwargs: dict[str, Any]) -> XmlTxcInventory | XmlTxcParserError:
     """
     Parse the XML, returns XMLTxCInventory object
     """
@@ -62,23 +62,8 @@ def get_txc_object(**kwargs: dict[str, Any]) -> XmlTxcInventory:
             filename=filename,
             parent_zip=parent_zip,
         )
-        return XmlTxcInventory(
-            national_operator_code="",
-            operator_short_name="",
-            line_name="",
-            service_code="",
-            out_bound_description="",
-            in_bound_description="",
-            total_stop_points=None,
-            custom_stop_points=None,
-            route_sections=None,
-            routes=None,
-            journey_pattern_sections=None,
-            vehicle_journeys=None,
+        return XmlTxcParserError(
             file_path=str(filename),
-            service_start_date=None,
-            service_end_date=None,
-            event_service="",
             txc_parser=str(err),
         )
 
@@ -146,6 +131,14 @@ def get_elements_with_related_parent(**kwargs: dict[str, Any]) -> list[XMLSearch
     xml_file = load_xml_data(xml_content)
     assert isinstance(lookup_details, XmlTagLookUpInfo)
 
+    log.info(
+        "Searching XML tag",
+        parent_zip=parent_zip,
+        filename=filename,
+        search_path=lookup_details.search_path,
+        tag_name=lookup_details.tag_name,
+    )
+
     search_path = f"//{lookup_details.search_path}"
     matching_elements = xml_file.xpath(search_path)
     tag_name = lookup_details.tag_name
@@ -173,7 +166,14 @@ def get_elements_with_related_parent(**kwargs: dict[str, Any]) -> list[XMLSearch
 
 XML_OBJECTS: dict[
     AnalysisMode,
-    Callable[..., XMLFileInfo | XMLTagInfo | XmlTxcInventory | list[XMLSearchResult]],
+    Callable[
+        ...,
+        XMLFileInfo
+        | XMLTagInfo
+        | XmlTxcInventory
+        | XmlTxcParserError
+        | list[XMLSearchResult],
+    ],
 ] = {
     AnalysisMode.SIZE: get_tag_size_object,
     AnalysisMode.TAG: get_tag_size_object,
@@ -184,7 +184,13 @@ XML_OBJECTS: dict[
 
 def process_xml_file(
     **kwargs,
-) -> XMLFileInfo | XMLTagInfo | XmlTxcInventory | list[XMLSearchResult]:
+) -> (
+    XMLFileInfo
+    | XMLTagInfo
+    | XmlTxcInventory
+    | XmlTxcParserError
+    | list[XMLSearchResult]
+):
     """
     Process a single XML file and return its information (size or tag count).
     """
@@ -243,7 +249,6 @@ def generate_txc_row_data(txc: TXCData, file_path: Path | BytesIO) -> XmlTxcInve
         service_start_date=service_start_date,
         service_end_date=service_end_date,
         event_service=duration,
-        txc_parser="",
     )
 
 

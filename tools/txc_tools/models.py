@@ -171,20 +171,20 @@ class XmlTxcInventory(BaseModel):
     in_bound_description: str = Field(
         ..., title="Inbound Description", description="Inbound Description"
     )
-    total_stop_points: int | None = Field(
+    total_stop_points: int = Field(
         ..., title="Total Stop Points", description="Total Stop Points"
     )
-    custom_stop_points: int | None = Field(
+    custom_stop_points: int = Field(
         ..., title="Custom Stop Points", description="Number of custom stop points"
     )
-    route_sections: int | None = Field(
+    route_sections: int = Field(
         ..., title="Route Sections", description="Number of route sections"
     )
-    routes: int | None = Field(..., title="Routes", description="Routes")
-    journey_pattern_sections: int | None = Field(
+    routes: int = Field(..., title="Routes", description="Routes")
+    journey_pattern_sections: int = Field(
         ..., title="Journey Pattern Sections", description="Journey Pattern Sections"
     )
-    vehicle_journeys: int | None = Field(
+    vehicle_journeys: int = Field(
         ..., title="Vehicle Journeys", description="Vehicle Journeys"
     )
     file_path: str = Field(
@@ -198,5 +198,14 @@ class XmlTxcInventory(BaseModel):
     )
     event_service: int | str = Field(
         ..., title="Event Service", description="Event Service"
+    )
+
+
+class XmlTxcParserError(BaseModel):
+    """Pydantic model for txc parser error"""
+
+    model_config = ConfigDict(frozen=True)
+    file_path: str = Field(
+        ..., title="File Path", description="Path to the XML file within the zip"
     )
     txc_parser: str = Field(..., title="TxC Parser", description="TxC parser exception")
