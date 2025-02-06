@@ -98,6 +98,7 @@ class OrganisationDatasetRevisionRepo(
                     "Could not publish revision because status is not success",
                     revision_status=record.status,
                 )
+            return None
 
         self._execute_update(update_record, statement)
 
