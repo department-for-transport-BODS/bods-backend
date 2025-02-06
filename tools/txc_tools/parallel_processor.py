@@ -10,9 +10,8 @@ import zipfile
 from io import BytesIO
 from pathlib import Path
 from typing import Iterator
-
-import structlog
 from pydantic import BaseModel
+import structlog
 
 from .csv_output import write_csv_reports
 from .models import (

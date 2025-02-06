@@ -8,13 +8,14 @@ from datetime import date
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Callable, Sequence
+from lxml import etree
+from lxml.etree import _Element
+
 
 import structlog
 from common_layer.txc.models.txc_data import TXCData
 from common_layer.txc.models.txc_stoppoint import TXCStopPoint
 from common_layer.txc.parser.parser_txc import load_xml_data, parse_txc_from_element
-from lxml import etree
-from lxml.etree import _Element
 
 from .models import (
     AnalysisMode,
@@ -22,8 +23,8 @@ from .models import (
     XMLFileInfo,
     XMLSearchResult,
     XMLTagInfo,
-    XmlTagLookUpInfo,
     XmlTxcInventory,
+    XmlTagLookUpInfo,
 )
 from .utils import count_tags_in_xml, get_size_mb
 
@@ -59,10 +60,27 @@ def get_txc_object(**kwargs: dict[str, Any]) -> XmlTxcInventory:
         log.warning(
             "Failed to parse XML File with TxC parser",
             filename=filename,
-            parent_zip=parent_zip
+            parent_zip=parent_zip,
         )
-        error_msg = '\n'.join([f"{it.get('msg', '')}-{it.get('input', '')}"for it in err.errors()])
-        return XmlTxcInventory(file_path=str(filename), txc_parser=error_msg)
+        return XmlTxcInventory(
+            national_operator_code="",
+            operator_short_name="",
+            line_name="",
+            service_code="",
+            out_bound_description="",
+            in_bound_description="",
+            total_stop_points=None,
+            custom_stop_points=None,
+            route_sections=None,
+            routes=None,
+            journey_pattern_sections=None,
+            vehicle_journeys=None,
+            file_path=str(filename),
+            service_start_date=None,
+            service_end_date=None,
+            event_service="",
+            txc_parser=str(err),
+        )
 
 
 def get_tag_size_object(**kwargs: dict[str, Any]) -> XMLFileInfo | XMLTagInfo:
@@ -225,6 +243,7 @@ def generate_txc_row_data(txc: TXCData, file_path: Path | BytesIO) -> XmlTxcInve
         service_start_date=service_start_date,
         service_end_date=service_end_date,
         event_service=duration,
+        txc_parser="",
     )
 
 
