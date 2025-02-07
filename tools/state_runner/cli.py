@@ -6,47 +6,52 @@ the execution process.
 
 from typing import Optional
 
-import structlog
 import typer
-from structlog.stdlib import get_logger
 
 from .s3_uploads import create_aws_session, upload_to_s3
-from .state_machines import create_event_payload, get_state_machine_arn, start_execution
-
-structlog.configure(
-    processors=[
-        structlog.processors.add_log_level,
-        structlog.processors.StackInfoRenderer(),
-        structlog.dev.ConsoleRenderer(),
-    ]
+from .state_machines import (
+    create_event_payload,
+    get_state_machine_arn,
+    logger,
+    start_execution,
 )
-
-logger = get_logger()
 
 app = typer.Typer()
 
 
 @app.command(name="start-state-machine")
-def start_state_machine(
+def start_state_machine(  # pylint: disable=too-many-arguments, too-many-positional-arguments, too-many-locals
     bucket_name: str = typer.Option(
         "bodds-dev", "--bucket-name", help="Name of the S3 bucket"
     ),
-    object_key: str = typer.Option(
+    object_or_url: str = typer.Option(
         "coach-data/FLIX-FlixBus-N1710-Paris-London.xml",
-        "--object-key",
+        "--object-or-url",
         help="Key of the object in S3, when upload file option \
-        used file uploaded to the key given here",
+        used file uploaded to the key given here. If user uses URL_DOWNLOAD for \
+        --data-source then url expected here",
     ),
     upload_file: str = typer.Option(
         None,
         "--upload-file",
         help="Source file to be uploaded to the s3 key given in object-key",
     ),
+    data_source: str = typer.Option(
+        "URL_DOWNLOAD",
+        "--data-source",
+        help="Data source from s3 or download from url. One of S3_FILE or URL_DOWNLOAD",
+    ),
     revision_id: str = typer.Option(
         "3989", "--revision-id", help="Dataset revision ID"
     ),
     dataset_type: str = typer.Option(
         "timetables", "--dataset-type", help="Type of the dataset"
+    ),
+    publish_data_revision: bool = typer.Option(
+        False, "--publish-data-revision", help="Publish dataset revision"
+    ),
+    overwrite_dataset: bool = typer.Option(
+        False, "--overwrite-dataset", help="Overwrite input dataset"
     ),
     state_machine_name: str = typer.Option(
         "bods-backend-dev-tt-sm",
@@ -80,15 +85,17 @@ def start_state_machine(
                 s3_client=client,
                 file_name=upload_file,
                 bucket_name=bucket_name,
-                object_name=object_key,
+                object_name=object_or_url,
             )
 
         # Create event payload
         event = create_event_payload(
-            bucket_name=bucket_name,
-            object_key=object_key,
+            data_source=data_source,
+            object_key=object_or_url,
             revision_id=revision_id,
             dataset_type=dataset_type,
+            publish_data_revision=publish_data_revision,
+            overwrite_dataset=overwrite_dataset,
         )
 
         # Get statemachine ARN
