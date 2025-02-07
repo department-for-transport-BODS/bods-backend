@@ -100,19 +100,21 @@ def log_failed_files(failed_files: list[MapExecutionFailed]):
         )
 
 
-def construct_output_path(original_path: str, is_test_mode: bool = True) -> str:
+def construct_output_path(
+    original_path: str, overwrite_input_dataset: bool = True
+) -> str:
     """
     Construct the output file path based on the original path.
-    In test mode, appends a timestamp to avoid overwriting.
-    In production mode, will overwrite the original file.
+    When testing, appends a timestamp to avoid overwriting.
+    Normally we will overwrite the original file.
     """
     path = Path(original_path.rstrip("/"))
 
-    if not is_test_mode:
-        # In production, we'll overwrite the original file
-        return str(path.with_suffix(""))
+    if overwrite_input_dataset:
+        output_path = str(path.with_suffix(""))
+        log.info("Overwriting original file in S3", output_path=output_path)
+        return output_path
 
-    # In test mode, create a new file with timestamp
     timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     stem = path.stem  # Get filename without extension
 
@@ -120,8 +122,12 @@ def construct_output_path(original_path: str, is_test_mode: bool = True) -> str:
     # e.g. "file.xml.zip" -> "file"
     while "." in stem:
         stem = Path(stem).stem
-
-    return str(path.with_name(f"{stem}_etl_output_{timestamp}"))
+    output_path = str(path.with_name(f"{stem}_etl_output_{timestamp}"))
+    log.info(
+        "Generating different output path to prevent overwritin input data",
+        output_path=output_path,
+    )
+    return output_path
 
 
 def process_map_results(
@@ -139,9 +145,9 @@ def process_map_results(
     map_results = load_map_results(s3_client, input_data.output_prefix, map_run_id)
     log_failed_files(map_results.failed)
 
-    # TEMPORARY: The ETL is supposed to overwrite the original file
-    # However this makes it hard to test so output to a different file for now
-    output_key_base = construct_output_path(input_data.original_object_key, True)
+    output_key_base = construct_output_path(
+        input_data.original_object_key, input_data.overwrite_input_dataset
+    )
     processing_result = process_and_upload_successful_files(
         s3_client, map_results.succeeded, output_key_base
     )
