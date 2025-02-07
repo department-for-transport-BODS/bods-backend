@@ -1,0 +1,76 @@
+name: 'Lint PR'
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
+
+permissions:
+  pull-requests: write
+  statuses: write
+
+jobs:
+  main:
+    name: Validate PR title against Conventional Commits
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR Title is in Conventional Commit format and the Type is allowed
+        id: lint_pr_title
+        uses: amannn/action-semantic-pull-request@0723387faaf9b38adef4775cd42cfd5155ed6017 # v5.5.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            fix
+            feat
+            docs
+            style
+            refactor
+            test
+            ci
+            chore
+            revert
+            tools
+      - name: Comment on Incorrect PR Title
+        uses: marocchino/sticky-pull-request-comment@52423e01640425a022ef5fd42c6fb5f633a02728 #v2.9.1
+        if: always() && (steps.lint_pr_title.outputs.error_message != null)
+        with:
+          header: pr-title-lint-error
+          message: |
+            Thanks for opening this pull request! 👋🏼
+
+            We require pull request titles to follow the [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/) and it looks like your proposed title needs to be adjusted.
+
+            Details:
+
+            ```
+            ${{ steps.lint_pr_title.outputs.error_message }}
+
+      - name: Remove Comment about Incorrect PR Title if fixed
+        uses: marocchino/sticky-pull-request-comment@52423e01640425a022ef5fd42c6fb5f633a02728 #v2.9.1
+        if: ${{ steps.lint_pr_title.outputs.error_message == null }}
+        with:
+          header: pr-title-lint-error
+          delete: true
+      - name: Add PR Type Label to allow easy filtering
+        if: steps.lint_pr_title.outcome == 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number
+            });
+            const title = pr.data.title;
+            const type = title.trim().match(/^([a-z]+)(?:\([a-z0-9-]*\))?:/)?.[1];
+            if (!type || title.split(':').length > 2) return;
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              labels: [type]
+            });
