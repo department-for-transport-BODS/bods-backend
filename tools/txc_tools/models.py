@@ -2,13 +2,13 @@
 Model definitions for txc tools
 """
 
+import queue
+import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 from enum import Enum
-import queue
-import zipfile
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
@@ -198,4 +198,16 @@ class XmlTxcInventory(BaseModel):
     )
     event_service: int | str = Field(
         ..., title="Event Service", description="Event Service"
+    )
+
+
+class XmlTxcParserError(BaseModel):
+    """Pydantic model for txc parser error"""
+
+    model_config = ConfigDict(frozen=True)
+    file_path: str = Field(
+        ..., title="File Path", description="Path to the XML file within the zip"
+    )
+    txc_parser_error: str = Field(
+        ..., title="Validation Error", description="TxC parser validation error"
     )

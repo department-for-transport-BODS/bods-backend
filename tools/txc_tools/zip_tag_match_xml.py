@@ -91,8 +91,7 @@ def build_zip_with_matching_tag_xmls(
         parent_zip = getattr(item, "parent_zip", None)
         file_path = getattr(item, "file_path", None)
 
-        if parent_zip and file_path:
-            valid_xmls[parent_zip].add(file_path)
+        valid_xmls[parent_zip].add(file_path)
 
     if not valid_xmls:
         log.info("No matching tag found, hence no zip file created")
