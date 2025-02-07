@@ -5,36 +5,34 @@ Model definition for state runner
 from pydantic import BaseModel
 
 
-class StateMachineInputS3Bucket(BaseModel):
-    """
-    Class to hold information about S3 bucket.
-    """
-
-    name: str
-
-
-class StateMachineInputS3ObjectKey(BaseModel):
+class StateMachineInputS3Object(BaseModel):
     """
     Class to hold information about S3 object key.
     """
 
-    key: str
+    object: str
 
 
-class StateMachineInputS3Details(BaseModel):
+class StateMachineS3Payload(BaseModel):
     """
-    Class to hold information about state machine payload details.
+    Class to hold information about state machine payload data from S3.
     """
 
-    bucket: StateMachineInputS3Bucket
-    object: StateMachineInputS3ObjectKey
+    inputDataSource: str
+    s3: StateMachineInputS3Object
     datasetRevisionId: str
     datasetType: str
+    overwriteInputDataset: bool = False
 
 
-class StateMachineInputPayload(BaseModel):
+class StateMachineURLPayload(BaseModel):
     """
-    Class to hold information about state machine payload events.
+    Class to hold information about state machine payload data from url.
     """
 
-    detail: StateMachineInputS3Details
+    inputDataSource: str
+    url: str
+    datasetRevisionId: str
+    datasetType: str
+    publishDatasetRevision: bool = False
+    overwriteInputDataset: bool = False

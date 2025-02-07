@@ -3,7 +3,6 @@ Module to define the functionality to upload the file for state runner
 """
 
 import boto3
-import structlog
 from botocore.exceptions import (
     BotoCoreError,
     ClientError,
@@ -11,17 +10,8 @@ from botocore.exceptions import (
     ProfileNotFound,
 )
 from mypy_boto3_s3 import S3Client
-from structlog.stdlib import get_logger
 
-structlog.configure(
-    processors=[
-        structlog.processors.add_log_level,
-        structlog.processors.StackInfoRenderer(),
-        structlog.dev.ConsoleRenderer(),
-    ]
-)
-
-logger = get_logger()
+from .state_machines import logger
 
 
 class SessionCreationError(Exception):

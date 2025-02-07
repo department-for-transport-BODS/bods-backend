@@ -5,16 +5,17 @@ Module to define the state machine functionality used by state runner
 import json
 import re
 from datetime import UTC, datetime
+from pathlib import Path
+from urllib.parse import urlparse
 
 import structlog
 from botocore.exceptions import BotoCoreError, ClientError
 from structlog.stdlib import get_logger
 
 from .models import (
-    StateMachineInputPayload,
-    StateMachineInputS3Bucket,
-    StateMachineInputS3Details,
-    StateMachineInputS3ObjectKey,
+    StateMachineInputS3Object,
+    StateMachineS3Payload,
+    StateMachineURLPayload,
 )
 
 structlog.configure(
@@ -48,25 +49,40 @@ def clean_name(name: str) -> str:
     return cleaned
 
 
-def create_event_payload(
-    bucket_name: str, object_key: str, revision_id: str, dataset_type: str
-) -> StateMachineInputPayload:
+def create_event_payload(  # pylint: disable=too-many-arguments, too-many-positional-arguments
+    data_source: str,
+    object_key: str,
+    revision_id: str,
+    dataset_type: str,
+    publish_data_revision: bool,
+    overwrite_dataset: bool = False,
+) -> StateMachineS3Payload | StateMachineURLPayload:
     """
     Creates event payload for state machine execution.
     """
     logger.info(
         "Creating event payload",
-        bucket=bucket_name,
+        data_source=data_source,
         key=object_key,
         revision_id=revision_id,
         dataset_type=dataset_type,
     )
-    return StateMachineInputPayload(
-        detail=StateMachineInputS3Details(
-            bucket=StateMachineInputS3Bucket(name=bucket_name),
-            object=StateMachineInputS3ObjectKey(key=object_key),
+    return (
+        StateMachineS3Payload(
+            inputDataSource=data_source,
+            s3=StateMachineInputS3Object(object=object_key),
             datasetRevisionId=revision_id,
             datasetType=dataset_type,
+            overwriteInputDataset=overwrite_dataset,
+        )
+        if data_source == "S3_FILE"
+        else StateMachineURLPayload(
+            inputDataSource=data_source,
+            url=object_key,
+            datasetRevisionId=revision_id,
+            datasetType=dataset_type,
+            publishDatasetRevision=publish_data_revision,
+            overwriteInputDataset=overwrite_dataset,
         )
     )
 
@@ -101,12 +117,16 @@ def get_state_machine_arn(client, state_machine_name) -> str:
         raise StateMachinesListError(message) from e
 
 
-def generate_step_name(event: StateMachineInputPayload) -> str:
+def generate_step_name(event: StateMachineS3Payload | StateMachineURLPayload) -> str:
     """
     Generate a unique step name
     """
-    object_key = event.detail.object.key
-    revision_id = event.detail.datasetRevisionId
+    if isinstance(event, StateMachineURLPayload):
+        object_key = Path(urlparse(event.url).path).name
+    else:
+        object_key = event.s3.object
+
+    revision_id = event.datasetRevisionId
     key_names = object_key.split(".")
     key_name = "-".join(key_names[:-1])
     ext = key_names[-1]
@@ -119,7 +139,9 @@ def generate_step_name(event: StateMachineInputPayload) -> str:
 
 
 def start_execution(
-    client, state_machine_arn: str, event: StateMachineInputPayload
+    client,
+    state_machine_arn: str,
+    event: StateMachineS3Payload | StateMachineURLPayload,
 ) -> str:
     """
     Execute statemachine with payload
@@ -131,7 +153,7 @@ def start_execution(
         client_response = client.start_execution(
             stateMachineArn=state_machine_arn,
             name=generate_step_name(event),
-            input=json.dumps([event.model_dump()]),
+            input=json.dumps(event.model_dump()),
         )
         logger.info(
             "Statemachine execution started successfully!", arn=state_machine_arn
