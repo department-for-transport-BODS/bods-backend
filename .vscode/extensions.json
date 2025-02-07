@@ -7,7 +7,12 @@
 		"redhat.vscode-yaml",
 		"redhat.vscode-xml",
 		"esbenp.prettier-vscode",
-		"amazonwebservices.aws-toolkit-vscode"
+		"amazonwebservices.aws-toolkit-vscode",
+		"tamasfe.even-better-toml",
+		"mechatroner.rainbow-csv",
+		"GitHub.vscode-pull-request-github",
+		"github.vscode-github-actions",
+		"eamodio.gitlens"
 	],
 	"unwantedRecommendations": []
 }
