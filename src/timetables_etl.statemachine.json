@@ -12,7 +12,8 @@
         "url": "{% $exists($states.input.url) ? $states.input.url : null %}",
         "s3Bucket": "{% $exists($states.input.s3.bucket) ? $states.input.s3.bucket : '${DefaultS3BucketName}' %}",
         "s3Object": "{% $exists($states.input.s3.object) ? $states.input.s3.object : null %}",
-        "publishDatasetRevision": "{% $exists($states.input.publishDatasetRevision) ? $states.input.publishDatasetRevision : false %}"
+        "publishDatasetRevision": "{% $exists($states.input.publishDatasetRevision) ? $states.input.publishDatasetRevision : false %}",
+        "overwriteInputDataset": "{% $exists($states.input.overwriteInputDataset) ? $states.input.overwriteInputDataset : true %}"
       }
     },
     "InitializePipeline": {
@@ -314,7 +315,8 @@
         "DatasetRevisionId": "{% $datasetRevisionId %}",
         "OriginalObjectKey": "{% $s3Object %}",
         "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}",
-        "PublishDatasetRevision": "{% $publishDatasetRevision %}"
+        "PublishDatasetRevision": "{% $publishDatasetRevision %}",
+        "OverwriteInputDataset": "{% $overwriteInputDataset %}"
       },
       "Catch": [
         {

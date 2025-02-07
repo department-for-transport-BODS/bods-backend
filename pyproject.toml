@@ -113,6 +113,7 @@ reportMissingTypeStubs = false
 strict = [
   "src/boilerplate/common_layer/txc/**",
   "src/timetables_etl/schema_check/**",
+  "src/timetables_etl/generate_output_zip/**",
 ]
 
 [tool.pytest.ini_options]
