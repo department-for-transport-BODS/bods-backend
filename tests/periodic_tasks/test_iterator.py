@@ -8,7 +8,7 @@ MODULE_PATH = "periodic_tasks.iterator"
 
 
 @patch(f"{MODULE_PATH}.client")
-@patch(f"{MODULE_PATH}.logger")
+@patch(f"{MODULE_PATH}.log")
 class TestPtIterator(unittest.TestCase):
 
     def setUp(self):
@@ -24,14 +24,14 @@ class TestPtIterator(unittest.TestCase):
         mock_client.invoke.assert_called_with(
             FunctionName="test-function", InvocationType="RequestResponse"
         )
-        mock_logger.info.assert_any_call("Actioning interval: 5")
-        mock_logger.info.assert_any_call("Actioning interval: 10")
+        mock_logger.info.assert_any_call("Actioning interval", interval=5)
+        mock_logger.info.assert_any_call("Actioning interval", interval=10)
         self.assertTrue(
             any(
-                "Synchronous invocation time:" in call[0][0]
+                "Synchronous invocation time" in call[0][0]
                 for call in mock_logger.info.call_args_list
             ),
-            "Expected 'Synchronous invocation time:' to be logged",
+            "Expected 'Synchronous invocation time' to be logged",
         )
         mock_logger.info.assert_any_call(f"Response from test-function: Mock response")
         self.assertEqual(
@@ -56,7 +56,9 @@ class TestPtIterator(unittest.TestCase):
     def test_lambda_handler_invoke_error(self, mock_logger, mock_client):
         mock_client.invoke.side_effect = Exception("Invoke failed")
         result = lambda_handler(self.event, self.context)
-        mock_logger.error.assert_any_call("Error invoking test-function: Invoke failed")
+        mock_logger.error.assert_any_call(
+            "Error invoking function", function_name="test-function", exc_info=True
+        )
         self.assertEqual(
             result,
             {
