@@ -66,12 +66,28 @@ jobs:
               repo: context.repo.repo,
               pull_number: context.payload.pull_request.number
             });
+
+            core.info(`PR Title: ${pr.data.title}`);
+
             const title = pr.data.title;
-            const type = title.trim().match(/^([a-z]+)(?:\([a-z0-9-]*\))?:/)?.[1];
-            if (!type || title.split(':').length > 2) return;
+            const typeMatch = title.trim().match(/^([a-z]+)(?:\([a-z0-9-]*\))?:/);
+            core.info(`Type Match: ${JSON.stringify(typeMatch)}`);
+
+            const type = typeMatch?.[1];
+            core.info(`Extracted Type: ${type}`);
+
+            if (!type || title.split(':').length > 2) {
+              core.warning(`Validation failed - Has type: ${!!type}, Colon count: ${title.split(':').length}`);
+              return;
+            }
+
+            core.info(`Attempting to add label: ${type}`);
+
             await github.rest.issues.addLabels({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.payload.pull_request.number,
               labels: [type]
             });
+
+            core.info('Label added successfully');
