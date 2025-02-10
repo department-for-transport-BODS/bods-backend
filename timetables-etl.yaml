@@ -5,8 +5,8 @@ Transform:
     Parameters:
       stackName: !Ref 'AWS::StackName'
       apiKeySecretArn: arn:aws:secretsmanager:eu-west-2:228266753808:secret:DD_API_KEY_ALL_ENV-WDa721
-      pythonLayerVersion: 104
-      extensionLayerVersion: 68
+      pythonLayerVersion: 105
+      extensionLayerVersion: 69
       site: datadoghq.eu
       service: !Sub '${ProjectName}-timetables-etl'
       env: !Ref Environment
@@ -14,7 +14,7 @@ Transform:
       gitData: !Ref DDGitData
       enableDDTracing: true
       captureLambdaPayload: true
-      enableProfiling: true
+      enableProfiling: false
 Description: Supporting services for the execution of the timetables ETL process
 
 Parameters:
@@ -148,8 +148,6 @@ Globals:
         DD_MERGE_XRAY_TRACES: true
         DD_RUNTIME_METRICS_ENABLED: true
         DD_DBM_PROPAGATION_MODE: full
-        # New Profiler causes random segmentation faults need to wait until newer python layer version than 104 to enable
-        DD_PROFILING_STACK_V2_ENABLED: false
 
 Resources:
   ##################################
@@ -184,7 +182,6 @@ Resources:
         GenerateOutputZipLambdaArn: !GetAtt GenerateOutputZipLambda.Arn
         DefaultS3BucketName: !Sub 'bodds-${Environment}'
         DqsStateMachineArn: !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:dqs-${Environment}-sm'
-
 
   ##########################################
   #### TIMETABLES STATE MACHINE TRIGGER ####
