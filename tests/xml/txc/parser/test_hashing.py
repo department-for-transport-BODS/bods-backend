@@ -6,7 +6,7 @@ import platform
 from pathlib import Path
 
 import pytest
-from common_layer.xml.txc.parser.hashing import get_file_hash
+from common_layer.xml.utils import get_file_hash
 
 
 @pytest.mark.parametrize(

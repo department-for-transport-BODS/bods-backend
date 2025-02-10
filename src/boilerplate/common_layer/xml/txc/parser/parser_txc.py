@@ -10,9 +10,9 @@ from lxml.etree import QName, _Element, _ElementTree, parse  # type: ignore
 from pydantic import BaseModel, Field
 from structlog.stdlib import get_logger
 
+from ...utils import get_file_hash
 from ..models.txc_data import TXCData
 from ..parser.metadata import parse_metadata
-from .hashing import get_file_hash
 from .journey_pattern_sections import parse_journey_pattern_sections
 from .operators import parse_operators
 from .route_sections import parse_route_sections

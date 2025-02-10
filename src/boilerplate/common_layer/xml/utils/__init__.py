@@ -2,6 +2,7 @@
 Exports
 """
 
+from .hashing import get_bytes_hash, get_file_hash
 from .xml_utils import find_section
 from .xml_utils_attributes import (
     parse_creation_datetime,
@@ -45,4 +46,7 @@ __all__ = [
     "get_element_texts",
     "get_tag_str",
     "does_element_exist",
+    # Hashing Functions
+    "get_file_hash",
+    "get_bytes_hash",
 ]

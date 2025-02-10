@@ -20,7 +20,7 @@ from common_layer.json_logging import (
 
 # pylint: disable=protected-access
 @pytest.fixture(name="lambda_context")
-def lambda_context_fixture():
+def lambda_context_fixture() -> LambdaContext:
     """
     Lambda Context
     """

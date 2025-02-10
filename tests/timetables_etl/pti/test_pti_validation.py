@@ -5,12 +5,12 @@ Test PTI Validation Handler
 from unittest.mock import patch
 
 import pytest
-from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.dynamodb.models import TXCFileAttributes
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 from common_layer.xml.txc.models.txc_data import TXCData
 from pti.app.pti_validation import lambda_handler
 
+from tests.boilerplate.common_layer.aws.test_json_logging import lambda_context_fixture
 from tests.factories.database.organisation import (
     OrganisationDatasetRevisionFactory,
     OrganisationTXCFileAttributesFactory,
@@ -77,9 +77,9 @@ def test_lambda_handler(mock_imports, mock_sqldb, s3_file, s3_content, test_para
 
     if test_params["should_raise"]:
         with pytest.raises(PipelineException):
-            lambda_handler(event, LambdaContext())
+            lambda_handler(event, lambda_context_fixture())
     else:
-        result = lambda_handler(event, LambdaContext())
+        result = lambda_handler(event, lambda_context_fixture())
         assert result == {"statusCode": test_params["expected_status"]}
 
         validate_call = (
