@@ -36,6 +36,7 @@ def upsert_cavl_table(db: SqlDB, data_format: str, file_name: str) -> None:
         )
         AvlCavlDataArchiveRepo(db).insert(archive)
     else:
+        archive.data = file_name
         archive.last_updated = datetime.now(timezone.utc)
         AvlCavlDataArchiveRepo(db).update(archive)
 
@@ -55,22 +56,22 @@ class ConsumerAPIArchiver:
         self.url: str = url
         self.db: SqlDB = SqlDB()
         self._access_time: datetime | None = None
-        self._content = None
+        self._content: bytes | None = None
 
     @property
     def filename(self) -> str:
-        """Get the filename"""
+        """Get the zip filename"""
         now = (self.access_time or datetime.now()).strftime("%Y-%m-%d_%H%M%S")
         return self.data_format_value + "_" + now + ".zip"
 
     @property
     def data_format_value(self) -> str:
-        """Get the format value"""
+        """Get the file format value"""
         return self.filename_prefix
 
     @property
     def access_time(self) -> datetime | None:
-        """Get time"""
+        """Get access time for request send to fetch url data"""
         if self._content is None:
             raise ValueError("`content` has not been fetched yet.")
 
@@ -81,7 +82,7 @@ class ConsumerAPIArchiver:
 
     @property
     def content(self) -> bytes:
-        """Get the content"""
+        """Get the file content"""
         if self._content is None:
             self._content = self._get_content()
         return self._content
@@ -92,14 +93,14 @@ class ConsumerAPIArchiver:
         return self.content_filename_prefix + self.extension
 
     def archive(self) -> None:
-        """Archive the files"""
+        """Archive the file"""
         file_ = self.get_file(self.content)
         self.save_to_database(file_)
 
     def _get_content(self) -> bytes:
-        """Helper function to get the content of file"""
+        """Helper function to get the content of file from url"""
         try:
-            response = requests.get(self.url)  # pylint: disable=missing-timeout
+            response = requests.get(self.url, timeout=60)
             self._access_time = datetime.now(timezone.utc)
             log.info(
                 "Total time elapsed to get response",
@@ -118,7 +119,7 @@ class ConsumerAPIArchiver:
             raise ArchivingError(msg) from err
 
     def get_file(self, content: bytes) -> BytesIO:
-        """Get the file"""
+        """Get the zip file content"""
         start_get_file_op = time.time()
         bytesio = BytesIO()
         with ZipFile(bytesio, mode="w", compression=ZIP_DEFLATED) as zf:
@@ -133,7 +134,7 @@ class ConsumerAPIArchiver:
         return bytesio
 
     def save_to_database(self, bytesio: BytesIO) -> None:
-        """Save to bodds database"""
+        """Save the archived details to database"""
         start_s3_op = time.time()
         self.upload_file_to_s3(bytesio.getvalue())
         upsert_cavl_table(self.db, self.data_format, self.filename)
@@ -143,17 +144,18 @@ class ConsumerAPIArchiver:
             "S3 archiving and saving to DB operation completed",
             archiving_type=self.archiving_type,
             time=end_s3_op - start_s3_op,
+            filename=self.filename,
         )
 
     def upload_file_to_s3(self, bytesio: bytes) -> None:
-        """Upload the archied file to s3"""
+        """Upload the archived file to s3"""
         bucket_name = environ.get("AWS_SIRIVM_STORAGE_BUCKET_NAME", default="")
         s3 = S3(bucket_name)
         s3.put_object(self.filename, bytesio)
 
 
 class SiriVMArchiver(ConsumerAPIArchiver):
-    """class for sirivm file archiving"""
+    """Class supports sirivm file archiving"""
 
     data_format = CAVLDataFormat.SIRIVM.value
     extension = ".xml"
@@ -163,7 +165,7 @@ class SiriVMArchiver(ConsumerAPIArchiver):
 
 
 class SiriVMTFLArchiver(ConsumerAPIArchiver):
-    """class for sirivm tfl file archiving"""
+    """Class supports sirivm tfl file archiving"""
 
     data_format = CAVLDataFormat.SIRIVM_TFL.value
     extension = ".xml"
@@ -173,7 +175,7 @@ class SiriVMTFLArchiver(ConsumerAPIArchiver):
 
 
 class GTFSRTArchiver(ConsumerAPIArchiver):
-    """class for gtfsrt file archiving"""
+    """Class supports gtfsrt file archiving"""
 
     data_format = CAVLDataFormat.GTFSRT.value
     extension = ".bin"
