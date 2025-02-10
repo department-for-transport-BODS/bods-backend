@@ -29,9 +29,9 @@ log = get_logger()
 class StopContext:
     """Context for creating a service pattern stop"""
 
+    auto_sequence: int
     service_pattern: TransmodelServicePattern
     vehicle_journey: TransmodelVehicleJourney
-    auto_sequence: int
     departure_time: time | None
 
 

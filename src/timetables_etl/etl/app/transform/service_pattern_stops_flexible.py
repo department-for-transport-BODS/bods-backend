@@ -26,12 +26,12 @@ log = get_logger()
 
 
 @dataclass
-class StopContext:
+class FlexibleStopContext:
     """Context for creating a service pattern stop"""
 
+    sequence_number: int
     service_pattern: TransmodelServicePattern
     vehicle_journey: TransmodelVehicleJourney
-    sequence_number: int
 
 
 @dataclass
@@ -62,7 +62,7 @@ def find_naptan_stop(
 
 def create_flexible_stop(
     details: StopDetails,
-    context: StopContext,
+    context: FlexibleStopContext,
 ) -> TransmodelServicePatternStop:
     """
     Create a service pattern stop for flexible services
@@ -87,7 +87,7 @@ def create_flexible_stop(
 def process_sequence_stop(
     stop_point: TXCFixedStopUsage | TXCFlexibleStopUsage,
     stop_sequence: Sequence[NaptanStopPoint],
-    context: StopContext,
+    context: FlexibleStopContext,
     activity_map: dict[str, TransmodelStopActivity],
 ) -> TransmodelServicePatternStop | None:
     """Process a single stop in the sequence"""
@@ -146,7 +146,7 @@ def generate_flexible_pattern_stops(
 
     # Process main sequence stops
     for stop_point in flexible_pattern.StopPointsInSequence:
-        context = StopContext(
+        context = FlexibleStopContext(
             service_pattern=service_pattern,
             vehicle_journey=vehicle_journey,
             sequence_number=auto_sequence,
@@ -163,7 +163,7 @@ def generate_flexible_pattern_stops(
 
     # Process flexible zones
     for zone in flexible_pattern.FlexibleZones:
-        context = StopContext(
+        context = FlexibleStopContext(
             service_pattern=service_pattern,
             vehicle_journey=vehicle_journey,
             sequence_number=auto_sequence,

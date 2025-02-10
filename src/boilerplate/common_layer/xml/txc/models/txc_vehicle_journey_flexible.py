@@ -99,11 +99,11 @@ class TXCFlexibleVehicleJourney(BaseModel):
     )
     JourneyPatternRef: str | None = Field(
         default=None,
-        description="One of JourneyPatternRef or VehicleJourneyRef Required",
+        description="A VJ Requires a JourneyPatternRef or VehicleJourneyRef",
     )
     VehicleJourneyRef: str | None = Field(
         default=None,
-        description="One of JourneyPatternRef or VehicleJourneyRef Required",
+        description="A reference to another VJ and then that VJ Journey Pattern will be used",
     )
     FlexibleServiceTimes: list[TXCFlexibleServiceTimes] = Field(
         ..., description="Time windows during which the flexible service operates"

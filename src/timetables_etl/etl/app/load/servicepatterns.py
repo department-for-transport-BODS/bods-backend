@@ -82,11 +82,11 @@ def process_standard_service_patterns(
         stops = get_pattern_stops(txc_jp, txc.JourneyPatternSections, lookups.stops)
 
         context = ProcessPatternCommonContext(
+            db=db,
             txc=txc,
             service_pattern=service_pattern,
             stops=stops,
             lookups=lookups,
-            db=db,
         )
 
         process_pattern_common(service, txc_jp, context)
