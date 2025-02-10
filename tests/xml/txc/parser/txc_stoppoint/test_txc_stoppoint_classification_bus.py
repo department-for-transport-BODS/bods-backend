@@ -68,6 +68,27 @@ from lxml.etree import fromstring
             None,
             id="Missing TimingStatus",
         ),
+        pytest.param(
+            """
+            <Bus>
+                <BusStopType>custom</BusStopType>
+                <TimingStatus>principalTimingPoint</TimingStatus>
+                <MarkedPoint>
+                    <Bearing>
+                        <CompassPoint>N</CompassPoint>
+                    </Bearing>
+                </MarkedPoint>
+            </Bus>
+            """,
+            BusStopStructure(
+                BusStopType="custom",
+                TimingStatus="principalTimingPoint",
+                MarkedPoint=MarkedPointStructure(
+                    Bearing=BearingStructure(CompassPoint="N")
+                ),
+            ),
+            id="Custom BusStopType with MarkedPoint",
+        ),
     ],
 )
 def test_parse_bus_stop_structure(

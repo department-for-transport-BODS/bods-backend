@@ -74,10 +74,6 @@ def parse_bus_stop_structure(bus_xml: _Element) -> BusStopStructure | None:
         log.warning("Missing MarkedPoint for marked bus stop type")
         return None
 
-    if bus_stop_type == "custom" and unmarked_point is None:
-        log.warning("Missing UnmarkedPoint for custom bus stop type")
-        return None
-
     return BusStopStructure(
         BusStopType=cast(BusStopTypeT, bus_stop_type),
         TimingStatus=cast(TimingStatusT, timing_status),
