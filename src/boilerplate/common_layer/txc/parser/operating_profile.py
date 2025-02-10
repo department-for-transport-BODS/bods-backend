@@ -147,25 +147,46 @@ def parse_special_days_operation(
 
 def parse_regular_days(regular_day_type_xml: _Element) -> TXCDaysOfWeek:
     """
-    VehicleJourneys -> VehicleJourney -> OperatingProfile -> RegularDayTime
+    Parse the RegularDayType element from TXC XML.
+
+    The TXC 2.1 specification states that if a DaysOfWeek element is present but empty,
+    it should default to MondayToSunday (all days true). However, the current BODS
+    timetable generator tool incorrectly assumes all days are false in this case.
+
+    To maintain backward compatibility during transition, we maintain this incorrect
+    behavior by default. To implement the correct spec behavior, change
+    incorrect_implementation to False.
+
+    Jira issue: Issue: BODS-8037
     """
+    # Set to False to implement correct TXC 2.1 spec behavior where empty
+    # DaysOfWeek means all days true
+    incorrect_implementation = True
+
     dow_xml = regular_day_type_xml.find("DaysOfWeek")
     holidays_only = does_element_exist(regular_day_type_xml, "HolidaysOnly")
 
-    monday = does_element_exist(dow_xml, "Monday")
-    tuesday = does_element_exist(dow_xml, "Tuesday")
-    wednesday = does_element_exist(dow_xml, "Wednesday")
-    thursday = does_element_exist(dow_xml, "Thursday")
-    friday = does_element_exist(dow_xml, "Friday")
-    saturday = does_element_exist(dow_xml, "Saturday")
-    sunday = does_element_exist(dow_xml, "Sunday")
+    # If we find an empty DaysOfWeek element, handle according to implementation flag
+    if dow_xml is not None and len(dow_xml) == 0:
+        if incorrect_implementation:
+            monday = tuesday = wednesday = thursday = friday = saturday = sunday = False
+        else:
+            monday = tuesday = wednesday = thursday = friday = saturday = sunday = True
+    else:
+        monday = does_element_exist(dow_xml, "Monday")
+        tuesday = does_element_exist(dow_xml, "Tuesday")
+        wednesday = does_element_exist(dow_xml, "Wednesday")
+        thursday = does_element_exist(dow_xml, "Thursday")
+        friday = does_element_exist(dow_xml, "Friday")
+        saturday = does_element_exist(dow_xml, "Saturday")
+        sunday = does_element_exist(dow_xml, "Sunday")
 
-    if does_element_exist(dow_xml, "MondayToFriday"):
-        monday = tuesday = wednesday = thursday = friday = True
-    elif does_element_exist(dow_xml, "Weekend"):
-        saturday = sunday = True
-    elif does_element_exist(dow_xml, "MondayToSunday"):
-        monday = tuesday = wednesday = thursday = friday = saturday = sunday = True
+        if does_element_exist(dow_xml, "MondayToFriday"):
+            monday = tuesday = wednesday = thursday = friday = True
+        elif does_element_exist(dow_xml, "Weekend"):
+            saturday = sunday = True
+        elif does_element_exist(dow_xml, "MondayToSunday"):
+            monday = tuesday = wednesday = thursday = friday = saturday = sunday = True
 
     return TXCDaysOfWeek(
         Monday=monday,

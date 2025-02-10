@@ -7,10 +7,13 @@ from datetime import date, datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
+from structlog.stdlib import get_logger
 
 from .txc_types import CommercialBasisT, ModificationType, TimeDemandT
 from .txc_validators import convert_runtime
 from .txc_vehicle_journey_common import TXCOperational
+
+log = get_logger()
 
 
 class TXCDaysOfWeek(BaseModel):
@@ -46,9 +49,15 @@ class TXCDaysOfWeek(BaseModel):
             raise ValueError("If HolidaysOnly is True, all other days must be False")
 
         if not self.HolidaysOnly and not any(days):
-            raise ValueError(
-                "If HolidaysOnly is False, at least one other day must be True"
+            log.info(
+                "No days selected but validation passing due to backwards compatibility",
+                current_behavior="Current implementation treats empty DaysOfWeek as all false",
+                correct_behavior="TXC 2.1 spec treats empty DaysOfWeek as MondayToSunday",
             )
+            # Temporarily removed to accommodate current implementation bug:
+            # incorrect_implementation in parse_regular days can be removed when fixing
+            # Issue: BODS-8037
+            # raise ValueError("If HolidaysOnly is False, at least one other day must be True")
 
         return self
 
