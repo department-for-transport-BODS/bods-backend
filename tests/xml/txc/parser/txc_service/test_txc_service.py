@@ -21,7 +21,7 @@ from common_layer.xml.txc.models import (
 from common_layer.xml.txc.parser.services import parse_service
 from lxml import etree
 
-from ..utils import assert_model_equal
+from tests.xml.conftest import assert_model_equal
 
 
 @pytest.mark.parametrize(
