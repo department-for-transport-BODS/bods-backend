@@ -108,7 +108,7 @@ def generate_standard_service_tracks(
     return journey_tracks
 
 
-def generate_flexible_service_tracks(journey_pattern: TXCFlexibleJourneyPattern):
+def generate_flexible_service_tracks(_journey_pattern: TXCFlexibleJourneyPattern):
     """
     Generate the tracks for a StandardService
     """

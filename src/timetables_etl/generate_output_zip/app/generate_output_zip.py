@@ -14,7 +14,7 @@ from common_layer.database.repos.repo_etl_task import ETLTaskResultRepo
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.s3 import S3
-from common_layer.xml.txc.parser.hashing import get_bytes_hash
+from common_layer.xml.utils.hashing import get_bytes_hash
 from structlog.stdlib import get_logger
 
 from .db_operations import (

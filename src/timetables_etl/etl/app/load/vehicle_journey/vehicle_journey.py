@@ -3,17 +3,12 @@ Transmodel Vehicle Journeys
 """
 
 from datetime import date
-from typing import Sequence, TypeGuard
+from typing import TypeGuard
 
 from common_layer.database.client import SqlDB
-from common_layer.database.models import NaptanStopPoint, TransmodelServicePattern
-from common_layer.database.models.model_transmodel_vehicle_journey import (
-    TransmodelVehicleJourney,
-)
-from common_layer.database.repos.repo_transmodel_flexible import (
+from common_layer.database.models import TransmodelVehicleJourney
+from common_layer.database.repos import (
     TransmodelFlexibleServiceOperationPeriodRepo,
-)
-from common_layer.database.repos.repo_transmodel_vehicle_journey import (
     TransmodelVehicleJourneyRepo,
 )
 from common_layer.xml.txc.models import (
@@ -26,14 +21,19 @@ from common_layer.xml.txc.models import (
 )
 from structlog.stdlib import get_logger
 
-from ..helpers import ServicedOrgLookup
-from ..load.service_pattern_stop import (
+from ...helpers import ServicedOrgLookup
+from ...load.service_pattern_stop import (
     process_flexible_pattern_stops,
     process_pattern_stops,
 )
-from ..transform.vehicle_journeys import (
+from ...transform.vehicle_journeys import (
     generate_flexible_service_operation_period,
     generate_pattern_vehicle_journeys,
+)
+from ..models_context import ServicePatternVehicleJourneyContext
+from .models_context import (
+    OperatingProfileProcessingContext,
+    VehicleJourneyProcessingContext,
 )
 from .vehicle_journey_operating_profile import process_operating_profile
 
@@ -66,52 +66,37 @@ def process_vehicle_journey_operations(
     """
     Process and save operations data for vehicle journeys
     """
-
     txc_serviced_orgs_dict = {org.OrganisationCode: org for org in txc_serviced_orgs}
+    context = OperatingProfileProcessingContext(
+        bank_holidays=bank_holidays,
+        tm_serviced_orgs=tm_serviced_orgs,
+        txc_serviced_orgs_dict=txc_serviced_orgs_dict,
+        db=db,
+    )
+
     log.debug(
         "Journey Operations processing started", journey_results=len(journey_results)
     )
     for tm_vj, txc_vj in journey_results:
-        try:
-            match txc_vj:
-                case TXCVehicleJourney():
-                    process_operating_profile(
-                        tm_vj,
-                        txc_vj,
-                        txc_serviced_orgs_dict,
-                        bank_holidays,
-                        tm_serviced_orgs,
-                        db,
+        match txc_vj:
+            case TXCVehicleJourney():
+                process_operating_profile(tm_vj, txc_vj, context)
+            case TXCFlexibleVehicleJourney():
+                flexible_operating_periods = generate_flexible_service_operation_period(
+                    tm_vj, txc_vj
+                )
+                if flexible_operating_periods:
+                    TransmodelFlexibleServiceOperationPeriodRepo(db).bulk_insert(
+                        flexible_operating_periods
                     )
-                case TXCFlexibleVehicleJourney():
-                    flexible_operating_periods = (
-                        generate_flexible_service_operation_period(tm_vj, txc_vj)
-                    )
-                    if flexible_operating_periods:
-                        TransmodelFlexibleServiceOperationPeriodRepo(db).bulk_insert(
-                            flexible_operating_periods
-                        )
-                case _:
-                    raise ValueError(f"Unknown vehicle journey type: {type(txc_vj)}")
-
-        except Exception as e:
-            log.error(
-                "Failed to process journey operations",
-                error=str(e),
-                exc_info=True,
-                journey_id=tm_vj.id,
-            )
-            continue
+            case _:
+                raise ValueError(f"Unknown vehicle journey type: {type(txc_vj)}")
 
 
 def process_vehicle_journeys(
     txc_vjs: list[TXCVehicleJourney | TXCFlexibleVehicleJourney],
     txc_jp: TXCJourneyPattern | TXCFlexibleJourneyPattern,
-    tm_service_pattern: TransmodelServicePattern,
-    bank_holidays: dict[str, list[date]],
-    tm_serviced_orgs: ServicedOrgLookup,
-    txc_serviced_orgs: list[TXCServicedOrganisation],
-    db: SqlDB,
+    context: VehicleJourneyProcessingContext,
 ) -> list[TransmodelVehicleJourney]:
     """
     Generate and insert Transmodel Vehicle Journeys
@@ -124,7 +109,7 @@ def process_vehicle_journeys(
         ),
     )
     journey_results = generate_pattern_vehicle_journeys(
-        txc_vjs, txc_jp, tm_service_pattern
+        txc_vjs, txc_jp, context.service_pattern
     )
 
     if not journey_results:
@@ -133,10 +118,14 @@ def process_vehicle_journeys(
 
     tm_journeys = [result[0] for result in journey_results]
 
-    results = TransmodelVehicleJourneyRepo(db).bulk_insert(tm_journeys)
+    results = TransmodelVehicleJourneyRepo(context.db).bulk_insert(tm_journeys)
 
     process_vehicle_journey_operations(
-        journey_results, bank_holidays, tm_serviced_orgs, txc_serviced_orgs, db
+        journey_results,
+        context.bank_holidays,
+        context.tm_serviced_orgs,
+        context.txc_serviced_orgs,
+        context.db,
     )
 
     log.info(
@@ -152,37 +141,33 @@ def process_vehicle_journeys(
 def process_service_pattern_vehicle_journeys(
     txc: TXCData,
     txc_jp: TXCJourneyPattern | TXCFlexibleJourneyPattern,
-    tm_service_pattern: TransmodelServicePattern,
-    stops: Sequence[NaptanStopPoint],
-    bank_holidays: dict[str, list[date]],
-    serviced_orgs: ServicedOrgLookup,
-    db: SqlDB,
+    context: ServicePatternVehicleJourneyContext,
 ) -> list[TransmodelVehicleJourney]:
     """
     Generate and save to DB Transmodel Vehicle Journeys for a Service Pattern
     """
-    # Get relevant vehicle journeys for this pattern
     log.info(
         "Generating Transmodel Vehicle Journeys for Service Pattern",
         txc_jp_id=txc_jp.id,
         pattern_type=(
             "flexible" if isinstance(txc_jp, TXCFlexibleJourneyPattern) else "standard"
         ),
-        tm_service_pattern_id=tm_service_pattern.id,
+        tm_service_pattern_id=context.service_pattern.id,
     )
+
     vehicle_journeys = [
         vj for vj in txc.VehicleJourneys if vj.JourneyPatternRef == txc_jp.id
     ]
 
-    tm_vjs = process_vehicle_journeys(
-        vehicle_journeys,
-        txc_jp,
-        tm_service_pattern,
-        bank_holidays,
-        serviced_orgs,
-        txc.ServicedOrganisations,
-        db,
+    vj_context = VehicleJourneyProcessingContext(
+        service_pattern=context.service_pattern,
+        bank_holidays=context.bank_holidays,
+        tm_serviced_orgs=context.serviced_orgs,
+        txc_serviced_orgs=txc.ServicedOrganisations,
+        db=context.db,
     )
+
+    tm_vjs = process_vehicle_journeys(vehicle_journeys, txc_jp, vj_context)
 
     for tm_vj in tm_vjs:
         txc_vj = next(j for j in vehicle_journeys if j.JourneyPatternRef == txc_jp.id)
@@ -198,11 +183,11 @@ def process_service_pattern_vehicle_journeys(
                     continue
 
                 process_flexible_pattern_stops(
-                    tm_service_pattern,
+                    context.service_pattern,
                     tm_vj,
                     txc_jp,
-                    stops,
-                    db,
+                    context.stops,
+                    context.db,
                 )
             case TXCJourneyPattern():
                 if not is_standard_vehicle_journey(txc_vj):
@@ -219,12 +204,12 @@ def process_service_pattern_vehicle_journeys(
                     if section.id in txc_jp.JourneyPatternSectionRefs
                 ]
                 process_pattern_stops(
-                    tm_service_pattern=tm_service_pattern,
+                    tm_service_pattern=context.service_pattern,
                     tm_vehicle_journey=tm_vj,
                     txc_vehicle_journey=txc_vj,
                     jp_sections=jp_sections,
-                    stop_sequence=stops,
-                    db=db,
+                    stop_sequence=context.stops,
+                    db=context.db,
                 )
             case _:
                 raise ValueError(f"Unknown journey pattern type: {type(txc_jp)}")
@@ -236,6 +221,6 @@ def process_service_pattern_vehicle_journeys(
         pattern_type=(
             "flexible" if isinstance(txc_jp, TXCFlexibleJourneyPattern) else "standard"
         ),
-        tm_service_pattern_id=tm_service_pattern.id,
+        tm_service_pattern_id=context.service_pattern.id,
     )
     return tm_vjs

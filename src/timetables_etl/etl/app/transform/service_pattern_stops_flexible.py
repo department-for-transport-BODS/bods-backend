@@ -2,6 +2,7 @@
 Flexible Service Pattern Stop Handling
 """
 
+from dataclasses import dataclass
 from typing import Sequence
 
 from common_layer.database.models import (
@@ -24,6 +25,25 @@ from structlog.stdlib import get_logger
 log = get_logger()
 
 
+@dataclass
+class StopContext:
+    """Context for creating a service pattern stop"""
+
+    service_pattern: TransmodelServicePattern
+    vehicle_journey: TransmodelVehicleJourney
+    sequence_number: int
+
+
+@dataclass
+class StopDetails:
+    """Details for a service pattern stop"""
+
+    stop_ref: str
+    naptan_stop: NaptanStopPoint | None
+    is_timing_point: bool
+    activity_id: int
+
+
 def find_naptan_stop(
     stop_ref: str,
     stop_sequence: Sequence[NaptanStopPoint],
@@ -41,44 +61,36 @@ def find_naptan_stop(
 
 
 def create_flexible_stop(
-    stop_ref: str,
-    naptan_stop: NaptanStopPoint,
-    service_pattern: TransmodelServicePattern,
-    vehicle_journey: TransmodelVehicleJourney,
-    sequence_number: int,
-    is_timing_point: bool,
-    activity_id: int,
+    details: StopDetails,
+    context: StopContext,
 ) -> TransmodelServicePatternStop:
     """
     Create a service pattern stop for flexible services
     Flexible Services don't have departure times
     """
     return TransmodelServicePatternStop(
-        sequence_number=sequence_number,
-        atco_code=stop_ref,
-        naptan_stop_id=naptan_stop.id if naptan_stop else None,
-        service_pattern_id=service_pattern.id,
+        sequence_number=context.sequence_number,
+        atco_code=details.stop_ref,
+        naptan_stop_id=details.naptan_stop.id if details.naptan_stop else None,
+        service_pattern_id=context.service_pattern.id,
         departure_time=None,
-        is_timing_point=is_timing_point,
-        txc_common_name=naptan_stop.common_name if naptan_stop else None,
-        vehicle_journey_id=vehicle_journey.id,
-        stop_activity_id=activity_id,
-        auto_sequence_number=sequence_number,
+        is_timing_point=details.is_timing_point,
+        txc_common_name=(
+            details.naptan_stop.common_name if details.naptan_stop else None
+        ),
+        vehicle_journey_id=context.vehicle_journey.id,
+        stop_activity_id=details.activity_id,
+        auto_sequence_number=context.sequence_number,
     )
 
 
 def process_sequence_stop(
     stop_point: TXCFixedStopUsage | TXCFlexibleStopUsage,
     stop_sequence: Sequence[NaptanStopPoint],
-    service_pattern: TransmodelServicePattern,
-    vehicle_journey: TransmodelVehicleJourney,
-    sequence_number: int,
+    context: StopContext,
     activity_map: dict[str, TransmodelStopActivity],
 ) -> TransmodelServicePatternStop | None:
-    """
-    Process a single stop in the sequence
-
-    """
+    """Process a single stop in the sequence"""
     naptan_stop = find_naptan_stop(stop_point.StopPointRef, stop_sequence)
     if not naptan_stop:
         return None
@@ -87,7 +99,9 @@ def process_sequence_stop(
         is_timing_point, activity_type = get_stop_activity_details(stop_point)
     except ValueError as e:
         log.warning(
-            "Unknown stop type", error=str(e), vehicle_journey_id=vehicle_journey.id
+            "Unknown stop type",
+            error=str(e),
+            vehicle_journey_id=context.vehicle_journey.id,
         )
         return None
 
@@ -98,19 +112,18 @@ def process_sequence_stop(
             requested_activity=activity_type,
             available_activities=list(activity_map.keys()),
             stop_point=stop_point.StopPointRef,
-            vehicle_journey_id=vehicle_journey.id,
+            vehicle_journey_id=context.vehicle_journey.id,
         )
         return None
 
-    return create_flexible_stop(
+    details = StopDetails(
         stop_ref=stop_point.StopPointRef,
         naptan_stop=naptan_stop,
-        service_pattern=service_pattern,
-        vehicle_journey=vehicle_journey,
-        sequence_number=sequence_number,
         is_timing_point=is_timing_point,
         activity_id=activity.id,
     )
+
+    return create_flexible_stop(details, context)
 
 
 def generate_flexible_pattern_stops(
@@ -133,12 +146,16 @@ def generate_flexible_pattern_stops(
 
     # Process main sequence stops
     for stop_point in flexible_pattern.StopPointsInSequence:
+        context = StopContext(
+            service_pattern=service_pattern,
+            vehicle_journey=vehicle_journey,
+            sequence_number=auto_sequence,
+        )
+
         if stop := process_sequence_stop(
             stop_point,
             stop_sequence,
-            service_pattern,
-            vehicle_journey,
-            auto_sequence,
+            context,
             activity_map,
         ):
             pattern_stops.append(stop)
@@ -146,12 +163,16 @@ def generate_flexible_pattern_stops(
 
     # Process flexible zones
     for zone in flexible_pattern.FlexibleZones:
+        context = StopContext(
+            service_pattern=service_pattern,
+            vehicle_journey=vehicle_journey,
+            sequence_number=auto_sequence,
+        )
+
         if stop := process_sequence_stop(
             zone,
             stop_sequence,
-            service_pattern,
-            vehicle_journey,
-            auto_sequence,
+            context,
             activity_map,
         ):
             pattern_stops.append(stop)

@@ -20,6 +20,7 @@ from ..helpers import ReferenceDataLookups, StopsLookup
 from ..models import TaskData
 from ..transform.service_patterns import create_service_pattern
 from ..transform.utils_stops import get_pattern_stops
+from .models_context import ProcessPatternCommonContext
 from .service_patterns_flexible import process_flexible_service_patterns
 from .servicepatterns_common import process_pattern_common
 
@@ -68,6 +69,7 @@ def process_standard_service_patterns(
     patterns: list[TransmodelServicePattern] = []
     if not service.StandardService:
         return []
+
     for txc_jp in service.StandardService.JourneyPattern:
         service_pattern = process_service_pattern(
             service,
@@ -79,9 +81,15 @@ def process_standard_service_patterns(
         )
         stops = get_pattern_stops(txc_jp, txc.JourneyPatternSections, lookups.stops)
 
-        process_pattern_common(
-            service, txc_jp, service_pattern, stops, txc, lookups, db
+        context = ProcessPatternCommonContext(
+            txc=txc,
+            service_pattern=service_pattern,
+            stops=stops,
+            lookups=lookups,
+            db=db,
         )
+
+        process_pattern_common(service, txc_jp, context)
         patterns.append(service_pattern)
 
     return patterns

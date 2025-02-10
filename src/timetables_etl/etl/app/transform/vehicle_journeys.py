@@ -92,17 +92,8 @@ def generate_pattern_vehicle_journeys(
     ] = []
 
     for vj in pattern_journeys:
-        try:
-            tm_journey = create_vehicle_journey(vj, tm_service_pattern, txc_jp)
-            results.append((tm_journey, vj))
-        except Exception as e:
-            log.error(
-                "Failed to create vehicle journey",
-                error=str(e),
-                journey_id=vj.VehicleJourneyCode,
-                pattern_id=txc_jp.id,
-            )
-            continue
+        tm_journey = create_vehicle_journey(vj, tm_service_pattern, txc_jp)
+        results.append((tm_journey, vj))
 
     log.info(
         "Generated vehicle journeys",

@@ -28,20 +28,3 @@ def get_stops_from_journey_pattern_section(
         stops.append(link.From.StopPointRef)
     stops.append(section.JourneyPatternTimingLink[-1].To.StopPointRef)
     return stops
-
-
-def get_stops_from_sections(
-    section_refs: list[str], journey_pattern_sections: list[TXCJourneyPatternSection]
-) -> list[str]:
-    """
-    Get the list of stops from a list of JourneyPatternSectionRefs
-    """
-    stops: list[str] = []
-    for jps_id in section_refs:
-        jps = get_jps_by_id(jps_id, journey_pattern_sections)
-        section_stops = get_stops_from_journey_pattern_section(jps)
-        if not stops:
-            stops.extend(section_stops)
-        else:
-            stops.extend(section_stops[1:])
-    return stops

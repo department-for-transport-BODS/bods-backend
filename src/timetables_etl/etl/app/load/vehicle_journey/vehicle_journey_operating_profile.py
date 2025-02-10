@@ -2,30 +2,25 @@
 transmodel_vehiclejourny Operating profiles generation
 """
 
-from datetime import date
-
-from common_layer.database.client import SqlDB
-from common_layer.database.models import TransmodelServicedOrganisationWorkingDays
-from common_layer.database.models.model_transmodel_vehicle_journey import (
+from common_layer.database.models import (
+    TransmodelServicedOrganisationWorkingDays,
     TransmodelVehicleJourney,
 )
 from common_layer.database.repos import (
-    TransmodelServicedOrganisationVehicleJourneyRepo,
-    TransmodelServicedOrganisationWorkingDaysRepo,
-)
-from common_layer.database.repos.repo_transmodel_vehicle_journey import (
     TransmodelNonOperatingDatesExceptionsRepo,
     TransmodelOperatingDatesExceptionsRepo,
     TransmodelOperatingProfileRepo,
+    TransmodelServicedOrganisationVehicleJourneyRepo,
+    TransmodelServicedOrganisationWorkingDaysRepo,
 )
-from common_layer.xml.txc.models import TXCServicedOrganisation, TXCVehicleJourney
+from common_layer.xml.txc.models import TXCVehicleJourney
 from structlog.stdlib import get_logger
 
-from ..helpers import ServicedOrgLookup
-from ..transform.vehicle_journey_operations import (
+from ...transform.vehicle_journey_operations import (
     create_serviced_organisation_working_days,
     create_vehicle_journey_operations,
 )
+from .models_context import OperatingProfileProcessingContext
 
 log = get_logger()
 
@@ -33,10 +28,7 @@ log = get_logger()
 def process_operating_profile(
     tm_vj: TransmodelVehicleJourney,
     txc_vj: TXCVehicleJourney,
-    txc_serviced_orgs_dict: dict[str, TXCServicedOrganisation],
-    bank_holidays: dict[str, list[date]],
-    tm_serviced_orgs: ServicedOrgLookup,
-    db: SqlDB,
+    context: OperatingProfileProcessingContext,
 ):
     """
     Process a single Operating Profile
@@ -44,28 +36,30 @@ def process_operating_profile(
     operations = create_vehicle_journey_operations(
         txc_vj=txc_vj,
         tm_vj=tm_vj,
-        bank_holidays=bank_holidays,
-        tm_serviced_orgs=tm_serviced_orgs,
-        txc_serviced_orgs=txc_serviced_orgs_dict,
+        bank_holidays=context.bank_holidays,
+        tm_serviced_orgs=context.tm_serviced_orgs,
+        txc_serviced_orgs=context.txc_serviced_orgs_dict,
     )
 
     if operations.operating_profiles:
-        TransmodelOperatingProfileRepo(db).bulk_insert(operations.operating_profiles)
+        TransmodelOperatingProfileRepo(context.db).bulk_insert(
+            operations.operating_profiles
+        )
 
     if operations.operating_dates:
-        TransmodelOperatingDatesExceptionsRepo(db).bulk_insert(
+        TransmodelOperatingDatesExceptionsRepo(context.db).bulk_insert(
             operations.operating_dates
         )
 
     if operations.non_operating_dates:
-        TransmodelNonOperatingDatesExceptionsRepo(db).bulk_insert(
+        TransmodelNonOperatingDatesExceptionsRepo(context.db).bulk_insert(
             operations.non_operating_dates
         )
 
     if operations.serviced_organisation_vehicle_journeys:
-        saved_so_vjs = TransmodelServicedOrganisationVehicleJourneyRepo(db).bulk_insert(
-            operations.serviced_organisation_vehicle_journeys
-        )
+        saved_so_vjs = TransmodelServicedOrganisationVehicleJourneyRepo(
+            context.db
+        ).bulk_insert(operations.serviced_organisation_vehicle_journeys)
 
         saved_map = {
             orig.id: saved
@@ -82,7 +76,9 @@ def process_operating_profile(
             )
 
         if working_days:
-            TransmodelServicedOrganisationWorkingDaysRepo(db).bulk_insert(working_days)
+            TransmodelServicedOrganisationWorkingDaysRepo(context.db).bulk_insert(
+                working_days
+            )
 
     log.info(
         "Processed journey operations",

@@ -71,22 +71,17 @@ def calculate_distance_from_geometry(line: LineString) -> int | None:
     """
     geod = pyproj.Geod(ellps="WGS84")
 
-    try:
-        coords = list(line.coords)
-        total_distance = 0
+    coords = list(line.coords)
+    total_distance = 0
 
-        for i in range(len(coords) - 1):
-            lon1, lat1 = coords[i]
-            lon2, lat2 = coords[i + 1]
+    for i in range(len(coords) - 1):
+        lon1, lat1 = coords[i]
+        lon2, lat2 = coords[i + 1]
 
-            _, _, distance = geod.inv(lons1=lon1, lats1=lat1, lons2=lon2, lats2=lat2)
-            total_distance += distance
+        _, _, distance = geod.inv(lons1=lon1, lats1=lat1, lons2=lon2, lats2=lat2)
+        total_distance += distance
 
-        return int(total_distance)
-
-    except Exception as e:
-        log.warning("Failed to calculate geodesic distance", error=str(e))
-        return None
+    return int(total_distance)
 
 
 def process_track_geometry(track: TXCTrack) -> TrackGeometry | None:

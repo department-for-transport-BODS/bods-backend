@@ -16,7 +16,7 @@ from ..models import (
     TXCJourneyPatternSection,
     TXCService,
 )
-from .jps import get_jps_by_id, get_stops_from_journey_pattern_section
+from .stops import get_stops_from_sections
 
 log = get_logger()
 
@@ -94,23 +94,6 @@ def get_service_destinations(services: list[TXCService]) -> list[str]:
     if not destinations:
         log.warning("No services with destinations found")
     return destinations
-
-
-def get_stops_from_sections(
-    section_refs: list[str], journey_pattern_sections: list[TXCJourneyPatternSection]
-) -> list[str]:
-    """
-    Get the list of stops from a list of JourneyPatternSectionRefs
-    """
-    stops: list[str] = []
-    for jps_id in section_refs:
-        jps = get_jps_by_id(jps_id, journey_pattern_sections)
-        section_stops = get_stops_from_journey_pattern_section(jps)
-        if not stops:
-            stops.extend(section_stops)
-        else:
-            stops.extend(section_stops[1:])
-    return stops
 
 
 def extract_flexible_pattern_stop_refs(

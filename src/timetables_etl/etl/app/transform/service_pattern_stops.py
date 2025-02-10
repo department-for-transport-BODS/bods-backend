@@ -3,16 +3,15 @@ Processing for transmodel_servicepatternstop
 """
 
 import re
+from dataclasses import dataclass
 from datetime import datetime, time, timedelta
 from typing import Sequence
 
-from common_layer.database.models.model_naptan import NaptanStopPoint
-from common_layer.database.models.model_transmodel import (
+from common_layer.database.models import (
+    NaptanStopPoint,
     TransmodelServicePattern,
     TransmodelServicePatternStop,
     TransmodelStopActivity,
-)
-from common_layer.database.models.model_transmodel_vehicle_journey import (
     TransmodelVehicleJourney,
 )
 from common_layer.xml.txc.models import (
@@ -24,6 +23,24 @@ from common_layer.xml.txc.models import (
 from structlog.stdlib import get_logger
 
 log = get_logger()
+
+
+@dataclass
+class StopContext:
+    """Context for creating a service pattern stop"""
+
+    service_pattern: TransmodelServicePattern
+    vehicle_journey: TransmodelVehicleJourney
+    auto_sequence: int
+    departure_time: time | None
+
+
+@dataclass
+class StopData:
+    """Data for a service pattern stop"""
+
+    stop_usage: TXCJourneyPatternStopUsage
+    naptan_stop: NaptanStopPoint
 
 
 def parse_duration(duration: str | None) -> timedelta:
@@ -69,39 +86,37 @@ def calculate_next_time(
 
 
 def create_stop(
-    stop_usage: TXCJourneyPatternStopUsage,
-    naptan_stop: NaptanStopPoint,
-    service_pattern: TransmodelServicePattern,
-    vehicle_journey: TransmodelVehicleJourney,
-    departure_time: time | None,
-    auto_sequence: int,
+    stop_data: StopData,
+    context: StopContext,
     activity_map: dict[str, TransmodelStopActivity],
 ) -> TransmodelServicePatternStop | None:
     """
     Create a TransmodelServicePatternStop for a single stop in the vehicle journey
     """
-    activity = activity_map.get(stop_usage.Activity)
+    activity = activity_map.get(stop_data.stop_usage.Activity)
     if not activity:
         log.error(
             "Stop activity not found - skipping stop",
-            requested_activity=stop_usage.Activity,
+            requested_activity=stop_data.stop_usage.Activity,
             available_activities=list(activity_map.keys()),
-            stop_point=stop_usage.StopPointRef,
-            vehicle_journey_id=vehicle_journey.id,
+            stop_point=stop_data.stop_usage.StopPointRef,
+            vehicle_journey_id=context.vehicle_journey.id,
         )
         return None
 
     return TransmodelServicePatternStop(
-        sequence_number=int(stop_usage.SequenceNumber or auto_sequence),
-        atco_code=stop_usage.StopPointRef,
-        naptan_stop_id=naptan_stop.id if naptan_stop else None,
-        service_pattern_id=service_pattern.id,
-        departure_time=departure_time,
-        is_timing_point=stop_usage.TimingStatus == "principalTimingPoint",
-        txc_common_name=naptan_stop.common_name,
-        vehicle_journey_id=vehicle_journey.id,
+        sequence_number=int(
+            stop_data.stop_usage.SequenceNumber or context.auto_sequence
+        ),
+        atco_code=stop_data.stop_usage.StopPointRef,
+        naptan_stop_id=stop_data.naptan_stop.id if stop_data.naptan_stop else None,
+        service_pattern_id=context.service_pattern.id,
+        departure_time=context.departure_time,
+        is_timing_point=stop_data.stop_usage.TimingStatus == "principalTimingPoint",
+        txc_common_name=stop_data.naptan_stop.common_name,
+        vehicle_journey_id=context.vehicle_journey.id,
         stop_activity_id=activity.id,
-        auto_sequence_number=auto_sequence,
+        auto_sequence_number=context.auto_sequence,
     )
 
 
@@ -184,16 +199,19 @@ def generate_pattern_stops(
     for section in jp_sections:
         for link in section.JourneyPatternTimingLink:
             # Handle 'From' stop
-            stop = create_stop(
-                stop_usage=link.From,
-                naptan_stop=naptan_stop,
+            context = StopContext(
                 service_pattern=tm_service_pattern,
                 vehicle_journey=tm_vehicle_journey,
-                departure_time=current_time,
                 auto_sequence=auto_sequence,
-                activity_map=activity_map,
+                departure_time=current_time,
             )
-            if stop:
+
+            stop_data = StopData(
+                stop_usage=link.From,
+                naptan_stop=naptan_stop,
+            )
+
+            if stop := create_stop(stop_data, context, activity_map):
                 pattern_stops.append(stop)
                 auto_sequence += 1
 
@@ -217,18 +235,22 @@ def generate_pattern_stops(
 
             # Handle 'To' stop if it's the last link
             if link == section.JourneyPatternTimingLink[-1]:
-                stop = create_stop(
-                    stop_usage=link.To,
-                    naptan_stop=naptan_stop,
+                context = StopContext(
                     service_pattern=tm_service_pattern,
                     vehicle_journey=tm_vehicle_journey,
-                    departure_time=current_time,
                     auto_sequence=auto_sequence,
-                    activity_map=activity_map,
+                    departure_time=current_time,
                 )
-                if stop:
+
+                stop_data = StopData(
+                    stop_usage=link.To,
+                    naptan_stop=naptan_stop,
+                )
+
+                if stop := create_stop(stop_data, context, activity_map):
                     pattern_stops.append(stop)
                     auto_sequence += 1
+
     log.info(
         "Generated Service Pattern Stops",
         txc_vj=txc_vehicle_journey.VehicleJourneyCode,

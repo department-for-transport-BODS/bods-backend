@@ -15,8 +15,8 @@ from common_layer.xml.txc.models import (
 )
 from structlog.stdlib import get_logger
 
-from ..helpers import TrackLookup
-from ..transform.vehicle_journey_tracks import generate_vehicle_journey_tracks
+from ...helpers import TrackLookup
+from ...transform.vehicle_journey_tracks import generate_vehicle_journey_tracks
 
 log = get_logger()
 
