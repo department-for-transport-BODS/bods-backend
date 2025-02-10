@@ -3,13 +3,38 @@ Tests for Post Schema Checks
 """
 
 from datetime import datetime
+from unittest.mock import MagicMock, patch
 
 import pytest
+from common_layer.database.client import SqlDB
 from common_layer.txc.models.txc_data import TXCData
 from common_layer.txc.models.txc_metadata import TXCMetadata
 from post_schema_check.app.models import ValidationResult
 from post_schema_check.app.post_schema_check import process_txc_data_check
-from post_schema_check.app.validators import check_filename_for_filepath_pii
+from post_schema_check.app.validators import (
+    check_filename_for_filepath_pii,
+    check_service_code_exists,
+)
+
+from tests.timetables_etl.factories.txc.factory_txc_data import TXCDataFactory
+from tests.timetables_etl.factories.txc.factory_txc_service import TXCServiceFactory
+
+
+@pytest.fixture
+def mock_db():
+    """Fixture to create a mocked database connection"""
+    return MagicMock(spec=SqlDB)
+
+
+@pytest.fixture
+def mock_txc_data():
+    """Mock TXCData Object with Services"""
+    return TXCDataFactory(
+        Services=[
+            TXCServiceFactory(ServiceCode="SC123"),
+            TXCServiceFactory(ServiceCode="SC456"),
+        ]
+    )
 
 
 @pytest.mark.parametrize(
@@ -144,4 +169,166 @@ def test_process_txc_data_check(filename: str | None, expected_violations: list[
         )
     )
 
-    assert process_txc_data_check(txc_data) == expected_violations
+    assert process_txc_data_check(txc_data, mock_db) == expected_violations
+
+
+def test_no_service_codes_provided():
+    """
+    Test Case 1: No Service Codes Provided
+    """
+    txc_data = TXCDataFactory(Services=[])  # Empty Services List
+    result = check_service_code_exists(txc_data, mock_db)
+    assert result == [ValidationResult(is_valid=True)]
+
+
+def test_service_codes_not_found(mock_txc_file_attributes_repo, mock_txc_data):
+    """
+    Service Codes Not Found in TXC Attributes
+    """
+    mock_txc_file_attributes_repo.get_by_service_code.return_value = []
+
+    with patch(
+        "post_schema_check.app.validators.check_service_code_exists.OrganisationTXCFileAttributesRepo",
+        return_value=mock_txc_file_attributes_repo,
+    ):
+        result = check_service_code_exists(mock_txc_data, mock_db)
+
+        assert len(result) == 1
+        assert result[0].is_valid is True
+        assert result[0].error_code is None
+        assert result[0].message is None
+
+        mock_txc_file_attributes_repo.get_by_service_code.assert_called_once_with(
+            ["SC123", "SC456"]
+        )
+
+
+def test_service_codes_found_no_active_datasets(
+    mock_txc_file_attributes_repo,
+    mock_revision_repo,
+    mock_txc_data,
+):
+    """
+    Service Codes Found but No Active Dataset Revisions
+    """
+    mock_txc_file_attributes_repo.get_by_service_code.return_value = [
+        MagicMock(id=1, service_code="SC123", revision_id=1),
+        MagicMock(id=2, service_code="SC456", revision_id=2),
+    ]
+    mock_revision_repo.get_active_datasets.return_value = []  # No active revisions
+
+    with (
+        patch(
+            "post_schema_check.app.validators.check_service_code_exists.OrganisationTXCFileAttributesRepo",
+            return_value=mock_txc_file_attributes_repo,
+        ),
+        patch(
+            "post_schema_check.app.validators.check_service_code_exists.OrganisationDatasetRevisionRepo",
+            return_value=mock_revision_repo,
+        ),
+    ):
+        result = check_service_code_exists(mock_txc_data, mock_db)
+
+        assert result == [ValidationResult(is_valid=True)]
+        mock_txc_file_attributes_repo.get_by_service_code.assert_called_once_with(
+            ["SC123", "SC456"]
+        )
+        mock_revision_repo.get_active_datasets.assert_called_once()
+
+
+def test_service_codes_found_published_dataset_exists(
+    mock_txc_file_attributes_repo,
+    mock_revision_repo,
+    mock_dataset_repo,
+    mock_txc_data,
+):
+    """
+    Service Codes Found and Published Dataset Exists
+    """
+    mock_txc_file_attributes_repo.get_by_service_code.return_value = [
+        MagicMock(service_code="SC123", revision_id=1),
+        MagicMock(service_code="SC456", revision_id=2),
+    ]
+    mock_revision_repo.get_active_datasets.return_value = [
+        MagicMock(id=1),
+        MagicMock(id=2),
+    ]
+    mock_dataset_repo.get_published.return_value = [MagicMock(id=100, revision_id=1)]
+    mock_txc_file_attributes_repo.get_by_revision_id.return_value = [
+        MagicMock(service_code="SC123", revision_id=1),
+        MagicMock(service_code="SC777", revision_id=1),
+    ]
+
+    with (
+        patch(
+            "post_schema_check.app.validators.check_service_code_exists.OrganisationTXCFileAttributesRepo",
+            return_value=mock_txc_file_attributes_repo,
+        ),
+        patch(
+            "post_schema_check.app.validators.check_service_code_exists.OrganisationDatasetRevisionRepo",
+            return_value=mock_revision_repo,
+        ),
+        patch(
+            "post_schema_check.app.validators.check_service_code_exists.OrganisationDatasetRepo",
+            return_value=mock_dataset_repo,
+        ),
+    ):
+        result = check_service_code_exists(mock_txc_data, mock_db)
+
+        assert len(result) == 1
+        assert result[0].is_valid is False
+        assert "PUBLISHED_DATASET:100" in result[0].error_code
+        assert "'SC123'" in result[0].message and "'SC777'" in result[0].message
+
+
+def test_multiple_published_dataset_exists(
+    mock_txc_file_attributes_repo,
+    mock_revision_repo,
+    mock_dataset_repo,
+    mock_txc_data,
+):
+    """
+    Service Codes Found and multiple Published Dataset Exists
+    """
+    mock_txc_file_attributes_repo.get_by_service_code.return_value = [
+        MagicMock(service_code="SC123", revision_id=1),
+        MagicMock(service_code="SC456", revision_id=2),
+    ]
+    mock_revision_repo.get_active_datasets.return_value = [
+        MagicMock(id=1),
+        MagicMock(id=2),
+    ]
+    mock_dataset_repo.get_published.return_value = [
+        MagicMock(id=100, revision_id=1),
+        MagicMock(id=200, revision_id=2),
+    ]
+    mock_txc_file_attributes_repo.get_by_revision_id.return_value = [
+        MagicMock(service_code="SC123", revision_id=1),
+        MagicMock(service_code="SC777", revision_id=1),
+        MagicMock(service_code="SC456", revision_id=2),
+        MagicMock(service_code="SC000", revision_id=2),
+    ]
+
+    with (
+        patch(
+            "post_schema_check.app.validators.check_service_code_exists.OrganisationTXCFileAttributesRepo",
+            return_value=mock_txc_file_attributes_repo,
+        ),
+        patch(
+            "post_schema_check.app.validators.check_service_code_exists.OrganisationDatasetRevisionRepo",
+            return_value=mock_revision_repo,
+        ),
+        patch(
+            "post_schema_check.app.validators.check_service_code_exists.OrganisationDatasetRepo",
+            return_value=mock_dataset_repo,
+        ),
+    ):
+        result = check_service_code_exists(mock_txc_data, mock_db)
+
+        assert len(result) == 2
+        assert result[0].is_valid is False
+        assert result[1].is_valid is False
+        assert "PUBLISHED_DATASET:100" in result[0].error_code
+        assert "PUBLISHED_DATASET:200" in result[1].error_code
+        assert "'SC123'" in result[0].message and "'SC777'" in result[0].message
+        assert "'SC456'" in result[1].message and "'SC000'" in result[1].message

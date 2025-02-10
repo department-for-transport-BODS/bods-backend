@@ -5,6 +5,7 @@ SQLAlchemy Organisation Repos
 from datetime import UTC, datetime
 
 from common_layer.enums import FeedStatus
+from sqlalchemy import and_
 from structlog.stdlib import get_logger
 
 from ..client import SqlDB
@@ -28,6 +29,18 @@ class OrganisationDatasetRepo(BaseRepositoryWithId[OrganisationDataset]):
 
     def __init__(self, db: SqlDB):
         super().__init__(db, OrganisationDataset)
+
+    @handle_repository_errors
+    def get_published(
+        self, active_revision_id_list: list[int]
+    ) -> list[OrganisationDataset]:
+        """
+        Get all published datasets
+        """
+        statement = self._build_query().where(
+            self._model.live_revision_id.in_(active_revision_id_list)
+        )
+        return self._fetch_all(statement)
 
 
 class OrganisationDatasetRevisionRepo(
@@ -72,6 +85,22 @@ class OrganisationDatasetRevisionRepo(
             record.modified_file_hash = new_hash
 
         self._execute_update(update_hash, statement)
+
+    @handle_repository_errors
+    def get_active_datasets(
+        self, revision_id_list: list[int]
+    ) -> list[OrganisationDatasetRevision]:
+        """
+        Get Revisions that are live and published
+        """
+        statement = self._build_query().where(
+            and_(
+                self._model.id.in_(revision_id_list),
+                self._model.status == "live",
+                self._model.is_published.is_(True),
+            )
+        )
+        return self._fetch_all(statement)
 
     @handle_repository_errors
     def publish_revision(self, revision_id: int) -> None:
@@ -132,6 +161,18 @@ class OrganisationTXCFileAttributesRepo(
             self._model.revision_id == revision_id and self._model.filename == filename
         )
         return self._fetch_one(statement)
+
+    @handle_repository_errors
+    def get_by_service_code(
+        self, service_code: list[str]
+    ) -> list[OrganisationTXCFileAttributes]:
+        """
+        Get TXC File Attributes by service code
+        """
+        statement = self._build_query().where(
+            self._model.service_code.in_(service_code)
+        )
+        return self._fetch_all(statement)
 
 
 class OrganisationOrganisationRepo(BaseRepositoryWithId[OrganisationOrganisation]):
