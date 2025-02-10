@@ -18,7 +18,7 @@ from common_layer.txc.parser.vehicle_journeys import (
 from lxml import etree
 from pydantic import ValidationError
 
-from .utils import assert_model_equal
+from ..utils import assert_model_equal
 
 
 @pytest.mark.parametrize(
