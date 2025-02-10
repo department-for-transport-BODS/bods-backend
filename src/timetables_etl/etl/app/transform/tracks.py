@@ -7,8 +7,8 @@ from typing import NamedTuple
 
 import pyproj
 from common_layer.database.models.model_transmodel import TransmodelTracks
-from common_layer.txc.models import TXCTrack
-from common_layer.txc.models.txc_route import TXCRouteSection
+from common_layer.xml.txc.models import TXCTrack
+from common_layer.xml.txc.models.txc_route import TXCRouteSection
 from geoalchemy2 import WKBElement
 from geoalchemy2.shape import from_shape
 from shapely import LineString, Point

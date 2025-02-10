@@ -16,7 +16,7 @@ from common_layer.database.repos import (
     TransmodelServicePatternAdminAreaRepo,
     TransmodelServicePatternLocalityRepo,
 )
-from common_layer.txc.models import (
+from common_layer.xml.txc.models import (
     TXCData,
     TXCFlexibleJourneyPattern,
     TXCJourneyPattern,

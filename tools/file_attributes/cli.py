@@ -7,7 +7,7 @@ from pathlib import Path
 import typer
 from common_layer.database.client import SqlDB
 from common_layer.json_logging import configure_logging
-from common_layer.txc.parser.parser_txc import TXCParserConfig, parse_txc_file
+from common_layer.xml.txc.parser.parser_txc import TXCParserConfig, parse_txc_file
 from structlog.stdlib import get_logger
 
 from src.timetables_etl.file_attributes_etl.app.file_attributes_etl import (

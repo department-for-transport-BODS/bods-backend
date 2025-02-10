@@ -21,8 +21,8 @@ from common_layer.dynamodb.data_manager import FileProcessingDataManager
 from common_layer.dynamodb.models import TXCFileAttributes
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 from common_layer.s3 import S3
-from common_layer.txc.models.txc_data import TXCData
-from common_layer.txc.parser.parser_txc import (
+from common_layer.xml.txc.models import TXCData
+from common_layer.xml.txc.parser.parser_txc import (
     TXCParserConfig,
     load_xml_data,
     parse_txc_from_element,

@@ -5,11 +5,11 @@ Stop Calculation Utilities
 from typing import Sequence
 
 from common_layer.database.models import NaptanStopPoint
-from common_layer.txc.helpers.jps import (
+from common_layer.xml.txc.helpers.jps import (
     get_jps_by_id,
     get_stops_from_journey_pattern_section,
 )
-from common_layer.txc.models import TXCJourneyPattern, TXCJourneyPatternSection
+from common_layer.xml.txc.models import TXCJourneyPattern, TXCJourneyPatternSection
 from structlog.stdlib import get_logger
 
 from ..helpers import StopsLookup

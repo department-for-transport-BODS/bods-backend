@@ -8,7 +8,7 @@ from common_layer.database.models.model_transmodel_vehicle_journey import (
     TransmodelVehicleJourney,
 )
 from common_layer.database.repos import TransmodelTracksVehicleJourneyRepo
-from common_layer.txc.models import (
+from common_layer.xml.txc.models import (
     TXCData,
     TXCFlexibleJourneyPattern,
     TXCJourneyPattern,

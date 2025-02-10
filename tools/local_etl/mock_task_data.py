@@ -9,7 +9,7 @@ from common_layer.database.models import (
     ETLErrorCode,
     OrganisationDatasetRevision,
 )
-from common_layer.txc.models.txc_data import TXCData
+from common_layer.xml.txc.models import TXCData
 
 from src.timetables_etl.file_attributes_etl.app.process_txc import (
     make_txc_file_attributes,

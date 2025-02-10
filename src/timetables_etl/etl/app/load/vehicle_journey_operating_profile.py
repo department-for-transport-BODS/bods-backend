@@ -18,7 +18,7 @@ from common_layer.database.repos.repo_transmodel_vehicle_journey import (
     TransmodelOperatingDatesExceptionsRepo,
     TransmodelOperatingProfileRepo,
 )
-from common_layer.txc.models import TXCServicedOrganisation, TXCVehicleJourney
+from common_layer.xml.txc.models import TXCServicedOrganisation, TXCVehicleJourney
 from structlog.stdlib import get_logger
 
 from ..helpers import ServicedOrgLookup

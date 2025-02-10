@@ -2,7 +2,7 @@
 XMLFilePTIValidator Factory
 """
 
-from common_layer.txc.models.txc_data import TXCData
+from common_layer.xml.txc.models import TXCData
 
 from ..constants import PTI_SCHEMA_PATH
 from ..models import DbClients

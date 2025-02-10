@@ -8,7 +8,7 @@ from common_layer.database.models import (
     TransmodelServicePattern,
 )
 from common_layer.database.repos import TransmodelServicePatternRepo
-from common_layer.txc.models import (
+from common_layer.xml.txc.models import (
     TXCData,
     TXCJourneyPattern,
     TXCJourneyPatternSection,

@@ -6,8 +6,8 @@ from common_layer.database.models import (
     OrganisationDatasetRevision,
     TransmodelServicePattern,
 )
-from common_layer.txc.helpers.jps import get_stops_from_sections
-from common_layer.txc.models import (
+from common_layer.xml.txc.helpers.jps import get_stops_from_sections
+from common_layer.xml.txc.models import (
     TXCJourneyPattern,
     TXCJourneyPatternSection,
     TXCService,

@@ -16,7 +16,7 @@ from common_layer.database.repos.repo_transmodel_flexible import (
 from common_layer.database.repos.repo_transmodel_vehicle_journey import (
     TransmodelVehicleJourneyRepo,
 )
-from common_layer.txc.models import (
+from common_layer.xml.txc.models import (
     TXCData,
     TXCFlexibleJourneyPattern,
     TXCFlexibleVehicleJourney,

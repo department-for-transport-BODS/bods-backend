@@ -6,8 +6,8 @@ from common_layer.database.models import TransmodelTracksVehicleJourney
 from common_layer.database.models.model_transmodel_vehicle_journey import (
     TransmodelVehicleJourney,
 )
-from common_layer.txc.helpers.routes import extract_stop_point_pairs
-from common_layer.txc.models import (
+from common_layer.xml.txc.helpers.routes import extract_stop_point_pairs
+from common_layer.xml.txc.models import (
     TXCData,
     TXCFlexibleJourneyPattern,
     TXCJourneyPattern,

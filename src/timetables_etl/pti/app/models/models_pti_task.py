@@ -12,7 +12,7 @@ from common_layer.dynamodb.client.naptan_stop_points import (
     NaptanStopPointDynamoDBClient,
 )
 from common_layer.dynamodb.models import TXCFileAttributes
-from common_layer.txc.models.txc_data import TXCData
+from common_layer.xml.txc.models import TXCData
 from pydantic import BaseModel, ConfigDict
 
 

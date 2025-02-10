@@ -13,9 +13,9 @@ from common_layer.database.models import (
 from common_layer.database.models.model_transmodel_vehicle_journey import (
     TransmodelVehicleJourney,
 )
-from common_layer.txc.helpers.service import get_stop_activity_details
-from common_layer.txc.models import TXCFlexibleJourneyPattern
-from common_layer.txc.models.txc_service_flexible import (
+from common_layer.xml.txc.helpers.service import get_stop_activity_details
+from common_layer.xml.txc.models import TXCFlexibleJourneyPattern
+from common_layer.xml.txc.models.txc_service_flexible import (
     TXCFixedStopUsage,
     TXCFlexibleStopUsage,
 )

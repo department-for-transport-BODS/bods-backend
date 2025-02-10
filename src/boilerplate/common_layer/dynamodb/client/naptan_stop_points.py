@@ -4,7 +4,7 @@ DynamoDB NAPTAN StopPoint Client
 
 from typing import Iterator, Set
 
-from common_layer.txc.models.txc_stoppoint import TXCStopPoint
+from common_layer.xml.txc.models import TXCStopPoint
 from pydantic import ValidationError
 from structlog.stdlib import get_logger
 

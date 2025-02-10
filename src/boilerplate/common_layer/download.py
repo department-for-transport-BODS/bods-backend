@@ -3,9 +3,9 @@ Downloader functions
 """
 
 from common_layer.s3 import S3
-from common_layer.txc.models.txc_data import TXCData
-from common_layer.txc.parser.hashing import get_bytes_hash
-from common_layer.txc.parser.parser_txc import (
+from common_layer.xml.txc.models import TXCData
+from common_layer.xml.txc.parser.hashing import get_bytes_hash
+from common_layer.xml.txc.parser.parser_txc import (
     TXCParserConfig,
     load_xml_data,
     parse_txc_from_element,

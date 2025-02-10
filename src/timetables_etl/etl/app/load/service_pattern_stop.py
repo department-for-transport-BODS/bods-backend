@@ -17,7 +17,7 @@ from common_layer.database.repos import (
     TransmodelServicePatternStopRepo,
     TransmodelStopActivityRepo,
 )
-from common_layer.txc.models import (
+from common_layer.xml.txc.models import (
     TXCFlexibleJourneyPattern,
     TXCFlexibleVehicleJourney,
     TXCJourneyPatternSection,

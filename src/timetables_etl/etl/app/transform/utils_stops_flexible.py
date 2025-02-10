@@ -5,8 +5,8 @@ Flexible Stop Handling Functions
 from typing import Sequence
 
 from common_layer.database.models import NaptanStopPoint
-from common_layer.txc.helpers.service import extract_flexible_pattern_stop_refs
-from common_layer.txc.models import TXCFlexibleJourneyPattern
+from common_layer.xml.txc.helpers.service import extract_flexible_pattern_stop_refs
+from common_layer.xml.txc.models import TXCFlexibleJourneyPattern
 from structlog.stdlib import get_logger
 
 from ..helpers import StopsLookup

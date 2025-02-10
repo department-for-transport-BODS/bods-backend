@@ -6,12 +6,12 @@ from common_layer.database.models import NaptanStopPoint
 from common_layer.dynamodb.client.naptan_stop_points import (
     NaptanStopPointDynamoDBClient,
 )
-from common_layer.txc.models import (
+from common_layer.utils_location import osgrid_to_lonlat
+from common_layer.xml.txc.models import (
     AnnotatedStopPointRef,
     LocationStructure,
     TXCStopPoint,
 )
-from common_layer.utils_location import osgrid_to_lonlat
 from geoalchemy2.shape import from_shape
 from shapely.geometry import Point
 from structlog.stdlib import get_logger
