@@ -98,11 +98,11 @@ def create_service_pattern(
 
     pattern = TransmodelServicePattern(
         service_pattern_id=make_service_pattern_id(service, jp),
+        description=metadata.description,
         origin=metadata.origin,
         destination=metadata.destination,
-        description=metadata.description,
-        revision_id=revision.id,
         line_name=metadata.line_name,
+        revision_id=revision.id,
         geom=generate_service_pattern_geometry(
             jp, journey_pattern_sections, stop_mapping
         ),

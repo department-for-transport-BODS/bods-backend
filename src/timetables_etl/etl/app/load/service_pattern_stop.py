@@ -24,7 +24,10 @@ from common_layer.xml.txc.models import (
 )
 from structlog.stdlib import get_logger
 
-from ..transform.service_pattern_stops import generate_pattern_stops
+from ..transform.service_pattern_stops import (
+    GeneratePatternStopsContext,
+    generate_pattern_stops,
+)
 from ..transform.service_pattern_stops_flexible import generate_flexible_pattern_stops
 from .models_context import ProcessPatternStopsContext
 
@@ -46,9 +49,9 @@ def process_pattern_stops(
         tm_service_pattern,
         tm_vehicle_journey,
         txc_vehicle_journey,
-        context.jp_sections,
-        context.stop_sequence,
-        activity_map,
+        GeneratePatternStopsContext(
+            context.jp_sections, context.stop_sequence, activity_map
+        ),
     )
 
     results = TransmodelServicePatternStopRepo(context.db).bulk_insert(pattern_stops)

@@ -2,6 +2,8 @@
 Transmodel Service Patterns Loader
 """
 
+from dataclasses import dataclass
+
 from common_layer.database import SqlDB
 from common_layer.database.models import (
     OrganisationDatasetRevision,
@@ -27,27 +29,33 @@ from .servicepatterns_common import process_pattern_common
 log = get_logger()
 
 
+@dataclass
+class ProcessServicePatternContext:
+    """Context for service pattern processing"""
+
+    revision: OrganisationDatasetRevision
+    journey_pattern_sections: list[TXCJourneyPatternSection]
+    stop_mapping: StopsLookup
+    db: SqlDB
+
+
 def process_service_pattern(
     txc_service: TXCService,
     txc_jp: TXCJourneyPattern,
-    revision: OrganisationDatasetRevision,
-    journey_pattern_sections: list[TXCJourneyPatternSection],
-    stop_mapping: StopsLookup,
-    db: SqlDB,
+    context: ProcessServicePatternContext,
 ) -> TransmodelServicePattern:
     """
     Generate Service Pattern and Add to db
     Returns model instance with generated ID
     """
-
     pattern = create_service_pattern(
         txc_service,
         txc_jp,
-        revision,
-        journey_pattern_sections,
-        stop_mapping,
+        context.revision,
+        context.journey_pattern_sections,
+        context.stop_mapping,
     )
-    saved_pattern = TransmodelServicePatternRepo(db).insert(pattern)
+    saved_pattern = TransmodelServicePatternRepo(context.db).insert(pattern)
 
     log.info(
         "Saved service pattern",
@@ -70,18 +78,22 @@ def process_standard_service_patterns(
     if not service.StandardService:
         return []
 
+    service_pattern_context = ProcessServicePatternContext(
+        revision=task_data.revision,
+        journey_pattern_sections=txc.JourneyPatternSections,
+        stop_mapping=lookups.stops,
+        db=db,
+    )
+
     for txc_jp in service.StandardService.JourneyPattern:
         service_pattern = process_service_pattern(
             service,
             txc_jp,
-            task_data.revision,
-            txc.JourneyPatternSections,
-            lookups.stops,
-            db,
+            service_pattern_context,
         )
         stops = get_pattern_stops(txc_jp, txc.JourneyPatternSections, lookups.stops)
 
-        context = ProcessPatternCommonContext(
+        common_context = ProcessPatternCommonContext(
             db=db,
             txc=txc,
             service_pattern=service_pattern,
@@ -89,7 +101,7 @@ def process_standard_service_patterns(
             lookups=lookups,
         )
 
-        process_pattern_common(service, txc_jp, context)
+        process_pattern_common(service, txc_jp, common_context)
         patterns.append(service_pattern)
 
     return patterns
