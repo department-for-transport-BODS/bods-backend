@@ -5,8 +5,8 @@ Tests for Post Schema Checks
 from datetime import datetime
 
 import pytest
-from common_layer.txc.models.txc_data import TXCData
-from common_layer.txc.models.txc_metadata import TXCMetadata
+from common_layer.xml.txc.models.txc_data import TXCData
+from common_layer.xml.txc.models.txc_metadata import TXCMetadata
 from post_schema_check.app.models import ValidationResult
 from post_schema_check.app.post_schema_check import process_txc_data_check
 from post_schema_check.app.validators import check_filename_for_filepath_pii

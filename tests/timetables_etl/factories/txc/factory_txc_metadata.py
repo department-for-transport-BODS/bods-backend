@@ -4,7 +4,7 @@ TXC MetaData Factories
 
 from datetime import UTC, datetime
 
-from common_layer.txc.models.txc_metadata import TXCMetadata
+from common_layer.xml.txc.models.txc_metadata import TXCMetadata
 from factory import Factory, LazyFunction, Sequence
 
 

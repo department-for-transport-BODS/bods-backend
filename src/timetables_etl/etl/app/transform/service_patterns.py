@@ -6,8 +6,8 @@ from common_layer.database.models import (
     OrganisationDatasetRevision,
     TransmodelServicePattern,
 )
-from common_layer.txc.helpers.jps import get_stops_from_sections
-from common_layer.txc.models import (
+from common_layer.xml.txc.helpers import get_stops_from_sections
+from common_layer.xml.txc.models import (
     TXCJourneyPattern,
     TXCJourneyPatternSection,
     TXCService,
@@ -98,11 +98,11 @@ def create_service_pattern(
 
     pattern = TransmodelServicePattern(
         service_pattern_id=make_service_pattern_id(service, jp),
+        description=metadata.description,
         origin=metadata.origin,
         destination=metadata.destination,
-        description=metadata.description,
-        revision_id=revision.id,
         line_name=metadata.line_name,
+        revision_id=revision.id,
         geom=generate_service_pattern_geometry(
             jp, journey_pattern_sections, stop_mapping
         ),

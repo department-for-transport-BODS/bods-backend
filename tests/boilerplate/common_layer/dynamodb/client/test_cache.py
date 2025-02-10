@@ -1,10 +1,16 @@
-from gc import freeze
+"""
+DynamoDB cache tests
+"""
+
 from unittest.mock import MagicMock
 
 from common_layer.dynamodb.client import DynamoDBCache
 
 
 def test_get_or_compute_cache_hit(m_boto_client):
+    """
+    Test Getting or Computing data for DynamodB Cache Table
+    """
     m_boto_client.get_item = MagicMock(
         return_value={
             "Item": {"Key": {"S": "test-key"}, "Value": {"M": {"key": {"S": "value"}}}}
@@ -24,6 +30,9 @@ def test_get_or_compute_cache_hit(m_boto_client):
 
 
 def test_get_or_compute_cache_miss(m_boto_client):
+    """
+    Test DynamoDB Cache Misses
+    """
     m_boto_client.get_item.return_value = {}
 
     func_to_cache = MagicMock(return_value={"key": "computed-value"})

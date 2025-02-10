@@ -2,7 +2,7 @@
 Functions that get the counts 
 """
 
-from common_layer.txc.models import TXCJourneyPatternSection
+from common_layer.xml.txc.models import TXCJourneyPatternSection
 
 
 def count_principle_timing_points(jps_list: list[TXCJourneyPatternSection]) -> int:

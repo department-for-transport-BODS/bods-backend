@@ -2,7 +2,7 @@
 Hash Functions used by the ETL Pipeline
 """
 
-from common_layer.txc.models import TXCJourneyPattern, TXCJourneyPatternSection
+from common_layer.xml.txc.models import TXCJourneyPattern, TXCJourneyPatternSection
 from structlog.stdlib import get_logger
 
 log = get_logger()

@@ -7,7 +7,7 @@ from pathlib import Path
 import structlog
 import typer
 from common_layer.json_logging import configure_logging
-from common_layer.txc.parser.parser_txc import parse_txc_file
+from common_layer.xml.txc.parser.parser_txc import parse_txc_file
 from lxml import etree
 from structlog.stdlib import get_logger
 

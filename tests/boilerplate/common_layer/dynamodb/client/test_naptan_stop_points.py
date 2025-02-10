@@ -1,13 +1,18 @@
-from unittest.mock import patch
+"""
+Test Naptan Stop Point Client
+"""
+
+from typing import Any, Generator
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from common_layer.dynamodb.client import NaptanStopPointDynamoDBClient
 from common_layer.dynamodb.client.naptan_stop_points import NaptanDynamoDBSettings
-from common_layer.txc.models.txc_stoppoint import TXCStopPoint
+from common_layer.xml.txc.models import TXCStopPoint
 
 
-@pytest.fixture
-def m_boto3_client():
+@pytest.fixture(name="m_boto3_client")
+def mocked_boto3_client() -> Generator[MagicMock | AsyncMock, Any, None]:
     """
     Fixture to patch the boto3 client used by the DynamoDB base class.
     """
@@ -16,6 +21,9 @@ def m_boto3_client():
 
 
 def get_stop_point_stored_document(atco_code: str):
+    """
+    Returns a stored document
+    """
     return {
         "AtcoCode": {"S": atco_code},
         "NaptanCode": {"S": "bstjaja"},

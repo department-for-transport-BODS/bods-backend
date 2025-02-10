@@ -3,7 +3,7 @@ Journey Pattern Section Factories
 """
 
 import factory
-from common_layer.txc.models import (
+from common_layer.xml.txc.models import (
     TXCJourneyPatternSection,
     TXCJourneyPatternStopUsage,
     TXCJourneyPatternTimingLink,

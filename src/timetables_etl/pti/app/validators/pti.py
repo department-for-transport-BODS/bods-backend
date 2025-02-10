@@ -6,9 +6,9 @@ import json
 from io import BytesIO
 from typing import IO, Any, Callable
 
-from common_layer.txc.models.txc_data import TXCData
-from common_layer.txc.parser.metadata import parse_metadata
-from common_layer.txc.parser.parser_txc import load_xml_tree
+from common_layer.xml.txc.models import TXCData
+from common_layer.xml.txc.parser.metadata import parse_metadata
+from common_layer.xml.txc.parser.parser_txc import load_xml_tree
 from lxml import etree
 from structlog.stdlib import get_logger
 

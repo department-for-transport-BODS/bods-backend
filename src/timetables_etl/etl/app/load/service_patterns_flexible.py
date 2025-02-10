@@ -8,13 +8,14 @@ from common_layer.database.models import (
     TransmodelServicePattern,
 )
 from common_layer.database.repos import TransmodelServicePatternRepo
-from common_layer.txc.models import TXCData, TXCFlexibleJourneyPattern, TXCService
+from common_layer.xml.txc.models import TXCData, TXCFlexibleJourneyPattern, TXCService
 from structlog.stdlib import get_logger
 
 from ..helpers import ReferenceDataLookups, StopsLookup
 from ..models import TaskData
 from ..transform.service_patterns_flexible import create_flexible_service_pattern
 from ..transform.utils_stops_flexible import get_flexible_pattern_stops
+from .models_context import ProcessPatternCommonContext
 from .servicepatterns_common import process_pattern_common
 
 log = get_logger()
@@ -51,6 +52,7 @@ def process_flexible_service_patterns(
     patterns: list[TransmodelServicePattern] = []
     if not service.FlexibleService:
         return []
+
     for flexible_jp in service.FlexibleService.FlexibleJourneyPattern:
         service_pattern = process_flexible_service_pattern(
             service,
@@ -61,9 +63,16 @@ def process_flexible_service_patterns(
         )
         stops = get_flexible_pattern_stops(flexible_jp, lookups.stops)
 
-        process_pattern_common(
-            service, flexible_jp, service_pattern, stops, txc, lookups, db
+        context = ProcessPatternCommonContext(
+            txc=txc,
+            service_pattern=service_pattern,
+            stops=stops,
+            lookups=lookups,
+            db=db,
         )
+
+        process_pattern_common(service, flexible_jp, context)
         patterns.append(service_pattern)
+
     log.info("Flexible Service Patterns Created", count=len(patterns))
     return patterns
