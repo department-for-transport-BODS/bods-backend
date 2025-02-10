@@ -20,13 +20,13 @@ from common_layer.database.repos import (
 from common_layer.xml.txc.models import (
     TXCFlexibleJourneyPattern,
     TXCFlexibleVehicleJourney,
-    TXCJourneyPatternSection,
     TXCVehicleJourney,
 )
 from structlog.stdlib import get_logger
 
 from ..transform.service_pattern_stops import generate_pattern_stops
 from ..transform.service_pattern_stops_flexible import generate_flexible_pattern_stops
+from .models_context import ProcessPatternStopsContext
 
 log = get_logger()
 
@@ -35,25 +35,23 @@ def process_pattern_stops(
     tm_service_pattern: TransmodelServicePattern,
     tm_vehicle_journey: TransmodelVehicleJourney,
     txc_vehicle_journey: TXCVehicleJourney | TXCFlexibleVehicleJourney,
-    jp_sections: list[TXCJourneyPatternSection],
-    stop_sequence: Sequence[NaptanStopPoint],
-    db: SqlDB,
+    context: ProcessPatternStopsContext,
 ) -> list[TransmodelServicePatternStop]:
     """
     Process and insert transmodel_servicepatternstop
     """
-    activity_map = TransmodelStopActivityRepo(db).get_activity_map()
+    activity_map = TransmodelStopActivityRepo(context.db).get_activity_map()
 
     pattern_stops = generate_pattern_stops(
         tm_service_pattern,
         tm_vehicle_journey,
         txc_vehicle_journey,
-        jp_sections,
-        stop_sequence,
+        context.jp_sections,
+        context.stop_sequence,
         activity_map,
     )
 
-    results = TransmodelServicePatternStopRepo(db).bulk_insert(pattern_stops)
+    results = TransmodelServicePatternStopRepo(context.db).bulk_insert(pattern_stops)
 
     log.info(
         "Saved Service Pattern Stops for Vehicle Journey",

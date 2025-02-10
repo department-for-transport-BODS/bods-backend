@@ -30,7 +30,10 @@ from ...transform.vehicle_journeys import (
     generate_flexible_service_operation_period,
     generate_pattern_vehicle_journeys,
 )
-from ..models_context import ServicePatternVehicleJourneyContext
+from ..models_context import (
+    ProcessPatternStopsContext,
+    ServicePatternVehicleJourneyContext,
+)
 from .models_context import (
     OperatingProfileProcessingContext,
     VehicleJourneyProcessingContext,
@@ -203,13 +206,14 @@ def process_service_pattern_vehicle_journeys(
                     for section in txc.JourneyPatternSections
                     if section.id in txc_jp.JourneyPatternSectionRefs
                 ]
+
                 process_pattern_stops(
                     tm_service_pattern=context.service_pattern,
                     tm_vehicle_journey=tm_vj,
                     txc_vehicle_journey=txc_vj,
-                    jp_sections=jp_sections,
-                    stop_sequence=context.stops,
-                    db=context.db,
+                    context=ProcessPatternStopsContext(
+                        jp_sections, context.stops, context.db
+                    ),
                 )
             case _:
                 raise ValueError(f"Unknown journey pattern type: {type(txc_jp)}")

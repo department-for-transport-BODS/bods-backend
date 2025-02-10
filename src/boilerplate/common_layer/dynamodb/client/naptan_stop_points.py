@@ -162,5 +162,8 @@ class NaptanStopPointDynamoDBClient(DynamoDB):
             )
             return raw_items
         except Exception:
-            log.error("Failed to execute BatchGetItem", exc_info=True)
+            log.error(
+                "Failed to execute BatchGetItem", exc_info=True, settings=self._settings
+            )
+
             raise
