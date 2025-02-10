@@ -6,6 +6,7 @@ import pytest
 from common_layer.txc.models import TXCDaysOfWeek
 from common_layer.txc.parser.operating_profile import parse_regular_days
 from lxml import etree
+from pydantic import ValidationError
 
 
 @pytest.mark.parametrize(
@@ -184,3 +185,32 @@ def test_parse_regular_days(xml_string: str, expected_result: TXCDaysOfWeek):
 
     result = parse_regular_days(xml_element)
     assert result == expected_result
+
+
+@pytest.mark.parametrize(
+    "xml_string",
+    [
+        pytest.param(
+            """
+            <RegularDayType>
+                <DaysOfWeek>
+                    <Monday/>
+                </DaysOfWeek>
+                <HolidaysOnly/>
+            </RegularDayType>
+            """,
+            id="Invalid regular days (holidays only with other days)",
+        ),
+    ],
+)
+def test_parse_regular_days_validation(xml_string: str):
+    """
+    Test Validation Error is raised
+
+    We don't need to test for the <RegularDayType />
+    As the spec and the current incorrect implementation both have defaults
+
+    """
+    xml_element = etree.fromstring(xml_string)
+    with pytest.raises(ValidationError):
+        parse_regular_days(xml_element)

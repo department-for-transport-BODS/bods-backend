@@ -22,12 +22,10 @@ from common_layer.txc.parser.operating_profile import (
     parse_date_ranges,
     parse_operating_profile,
     parse_periodic_days,
-    parse_regular_days,
     parse_serviced_organisation_days,
     parse_special_days_operation,
 )
 from lxml import etree
-from pydantic import ValidationError
 
 
 @pytest.mark.parametrize(
@@ -401,38 +399,6 @@ def test_parse_special_days_operation(
     xml_element = etree.fromstring(xml_string)
     result = parse_special_days_operation(xml_element)
     assert result == expected_result
-
-
-@pytest.mark.parametrize(
-    "xml_string",
-    [
-        pytest.param(
-            """
-            <RegularDayType>
-                <DaysOfWeek>
-                    <Monday/>
-                </DaysOfWeek>
-                <HolidaysOnly/>
-            </RegularDayType>
-            """,
-            id="Invalid regular days (holidays only with other days)",
-        ),
-        pytest.param(
-            """
-            <RegularDayType>
-            </RegularDayType>
-            """,
-            id="Invalid regular days (no days specified)",
-        ),
-    ],
-)
-def test_parse_regular_days_validation(xml_string: str):
-    """
-    Test Validation Error is raised
-    """
-    xml_element = etree.fromstring(xml_string)
-    with pytest.raises(ValidationError):
-        parse_regular_days(xml_element)
 
 
 @pytest.mark.parametrize(
