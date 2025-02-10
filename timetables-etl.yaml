@@ -14,7 +14,7 @@ Transform:
       gitData: !Ref DDGitData
       enableDDTracing: true
       captureLambdaPayload: true
-      enableProfiling: true
+      enableProfiling: false
 Description: Supporting services for the execution of the timetables ETL process
 
 Parameters:
@@ -148,7 +148,6 @@ Globals:
         DD_MERGE_XRAY_TRACES: true
         DD_RUNTIME_METRICS_ENABLED: true
         DD_DBM_PROPAGATION_MODE: full
-        DD_PROFILING_STACK_V2_ENABLED: true
 
 Resources:
   ##################################
