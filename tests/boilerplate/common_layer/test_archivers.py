@@ -1,129 +1,169 @@
+"""
+Unit tests for the archivers module.
+"""
+
 import io
 from datetime import datetime, timezone
-from unittest.mock import Mock, patch, MagicMock
-from zipfile import ZIP_DEFLATED, ZipFile
+from unittest.mock import MagicMock, patch
+from zipfile import ZipFile
 
 import pytest
+from common_layer.archiver import ConsumerAPIArchiver, SiriVMArchiver, upsert_cavl_table
+from common_layer.database.client import SqlDB
+from common_layer.database.models import AvlCavlDataArchive
+from common_layer.database.repos import AvlCavlDataArchiveRepo
+from common_layer.s3 import S3
 
-from common_layer.archiver import GTFSRTArchiver
-from common_layer.enums import CAVLDataFormat
-from tests.mock_db import MockedDB
-
-ARCHIVE_MODULE = "common_layer.archiver"
-
-@pytest.fixture(scope="module", autouse=True)
-def mock_db_manager():
-    with patch(ARCHIVE_MODULE + ".DbManager") as m_db_manager:
-        yield m_db_manager
-
-
-def test_filename():
-    url = "https://fakeurl.zz/datafeed"
-    archiver = GTFSRTArchiver(url)
-    archiver._access_time = datetime(2020, 1, 1, 1, 1, 1, tzinfo=timezone.utc)
-    archiver._content = b"fakedata"
-    expected_filename = "gtfsrt_2020-01-01_010101.zip"
-    assert expected_filename == archiver.filename
+# Sample test URL and test content
+TEST_URL = "https://example.com/api/data"
+TEST_RESPONSE_CONTENT = b"<xml>Sample Data</xml>"
+TEST_DATA_FORMAT = "SIRIVM"
+TEST_FILE_NAME = "sirivm_2025-02-01_120000.zip"
 
 
-def test_data_format_value():
-    url = "https://fakeurl.zz/datafeed"
-    archiver = GTFSRTArchiver(url)
-    assert archiver.data_format_value == "gtfsrt"
+@pytest.fixture(name="mock_db")
+def mock_db_fixture():
+    """Fixture to mock the database"""
+    return MagicMock(spec=SqlDB)
 
 
-def test_access_time_value_error():
-    url = "https://fakeurl.zz/datafeed"
-
-    archiver = GTFSRTArchiver(url)
-    with pytest.raises(ValueError) as exc:
-        _ = archiver.access_time
-    assert str(exc.value) == "`content` has not been fetched yet."
+@pytest.fixture(name="mock_s3")
+def mock_s3_fixture():
+    """Fixture to mock S3"""
+    with patch.object(S3, "put_object") as mock_s3:
+        yield mock_s3
 
 
-@patch(ARCHIVE_MODULE + ".requests")
-def test_access_time(mock_requests):
-    mock_requests.get.return_value = Mock(content=b"response")
-    url = "https://fakeurl.zz/datafeed"
-    archiver = GTFSRTArchiver(url)
-    _ = archiver.content
-    assert archiver.access_time is not None
+@pytest.fixture(name="mock_avl_repo")
+def mock_avl_repo_fixture():
+    """Fixture to mock AvlCavlDataArchiveRepo"""
+    with patch.object(
+        AvlCavlDataArchiveRepo, "get_by_data_format", return_value=None
+    ), patch.object(AvlCavlDataArchiveRepo, "insert") as mock_insert, patch.object(
+        AvlCavlDataArchiveRepo, "update"
+    ) as mock_update, patch.object(
+        AvlCavlDataArchiveRepo, "get_by_data_format", return_value=None
+    ) as mock_get:
+        yield mock_insert, mock_update, mock_get
 
 
-def test_content_filename():
-    url = "https://fakeurl.zz/datafeed"
-    archiver = GTFSRTArchiver(url)
-    assert archiver.content_filename == "gtfsrt.bin"
+@pytest.fixture(name="mock_requests_get")
+def mock_requests_get_fixture():
+    """Fixture to mock requests.get"""
+    with patch("requests.get") as mock_get:
+        mock_response = MagicMock()
+        mock_response.content = TEST_RESPONSE_CONTENT
+        mock_response.elapsed.total_seconds.return_value = 1.23
+        mock_get.return_value = mock_response
+        yield mock_get
+
+
+def test_upsert_cavl_table_insert_new_record(mock_db, mock_avl_repo):
+    """Test inserting a new record when no existing record is found"""
+    mock_insert, mock_update, mock_get = mock_avl_repo
+
+    # Mock `get_by_data_format` to return None (no existing record)
+    mock_get.return_value = None
+
+    # Run function
+    upsert_cavl_table(mock_db, TEST_DATA_FORMAT, TEST_FILE_NAME)
+
+    # Assertions
+    mock_insert.assert_called_once()
+    inserted_record = mock_insert.call_args[0][0]
+    assert inserted_record.data_format == TEST_DATA_FORMAT
+    assert inserted_record.data == TEST_FILE_NAME
+    mock_update.assert_not_called()
+
+
+def test_upsert_cavl_table_update_existing_record(mock_db, mock_avl_repo):
+    """Test updating an existing record when a record is found"""
+    mock_insert, mock_update, mock_get = mock_avl_repo
+
+    # Mock existing record
+    existing_record = MagicMock(spec=AvlCavlDataArchive)
+    existing_record.data_format = TEST_DATA_FORMAT
+    existing_record.data = "old_file.zip"
+    existing_record.last_updated = None
+
+    # Mock `get_by_data_format` to return an existing record
+    mock_get.return_value = existing_record
+
+    # Run function
+    upsert_cavl_table(mock_db, TEST_DATA_FORMAT, TEST_FILE_NAME)
+
+    # Assertions
+    mock_update.assert_called_once_with(existing_record)
+    assert existing_record.last_updated is not None
+    assert isinstance(existing_record.last_updated, datetime)
+    mock_insert.assert_not_called()
+
+
+def test_get_content(mock_requests_get):
+    """Test `_get_content()` method fetches data correctly"""
+    archiver = ConsumerAPIArchiver(TEST_URL)
+    content = archiver._get_content()  # pylint: disable=protected-access
+
+    # Assertions
+    assert content == TEST_RESPONSE_CONTENT
+    mock_requests_get.assert_called_once_with(TEST_URL)
+    assert isinstance(
+        archiver._access_time, datetime
+    )  # pylint: disable=protected-access
 
 
 def test_get_file():
-    url = "https://fakeurl.zz/datafeed"
-    archiver = GTFSRTArchiver(url)
-    archiver._content = b"content"
-    bytesio = archiver.get_file(archiver._content)
+    """Test `get_file()` method creates a valid ZIP file"""
+    archiver = ConsumerAPIArchiver(TEST_URL)
+    zip_bytes = archiver.get_file(TEST_RESPONSE_CONTENT)
 
-    expected = io.BytesIO()
-    with ZipFile(expected, mode="w", compression=ZIP_DEFLATED) as zf:
-        zf.writestr("gtfsrt.bin", archiver._content)
+    # Ensure it's a valid ZIP file
+    zip_bytes.seek(0)
+    with ZipFile(zip_bytes, "r") as zip_file:
+        assert (
+            archiver.content_filename in zip_file.namelist()
+        )  # Ensure filename exists
 
-    expected.seek(0)
-    bytesio.seek(0)
-    assert expected.read() == bytesio.read()
 
-@patch(ARCHIVE_MODULE + ".GTFSRTArchiver.upload_file_to_s3")
-def test_archive(mock_upload_to_s3, mock_db_manager):
-    db_object = MockedDB()
-    mock_db_manager.get_db.return_value = db_object
-    mock_upload_to_s3.return_value = None
+def test_save_to_database(
+    mock_db, mock_s3, mock_avl_repo
+):  # pylint: disable=unused-argument
+    """Test `save_to_database()` saves correctly"""
+    archiver = ConsumerAPIArchiver(TEST_URL)
 
-    url = "https://fakeurl.zz/datafeed"
-    archiver = GTFSRTArchiver(url)
+    # Mock _get_content() to fetch valid content
+    with patch.object(archiver, "_get_content", return_value=b"<xml>Data</xml>"):
+        # pylint: disable=protected-access
+        archiver._content = archiver._get_content()
+        archiver._access_time = datetime.now(timezone.utc)
 
-    content = b"newcontent"
-    access_time = datetime(2020, 1, 1, 12, 1, 1, tzinfo=timezone.utc)
+        # Mock ZIP file creation
+        zip_file = io.BytesIO()
+        zip_file.write(b"Test Data")
+        zip_file.seek(0)
 
-    archiver._content = content
-    archiver._access_time = access_time
-    cavl_data_archive = db_object.classes.avl_cavldataarchive
+        archiver.save_to_database(zip_file)
 
-    with db_object.session as session:
-        assert session.query(cavl_data_archive).count() == 0
+        # Assertions
+        mock_s3.assert_called_once()
+        mock_avl_repo[0].assert_called_once()
+
+
+def test_sirivm_archiver(
+    mock_requests_get, mock_db, mock_s3, mock_avl_repo
+):  # pylint: disable=unused-argument
+    """Test `SiriVMArchiver` class functionality"""
+    archiver = SiriVMArchiver(TEST_URL)
+
+    # Mock `_get_content()` to fetch valid content
+    with patch.object(archiver, "_get_content", return_value=b"<xml>Data</xml>"):
+        # pylint: disable=protected-access
+        archiver._content = archiver._get_content()  # Initialize content
+        archiver._access_time = datetime(2025, 2, 1, 12, 0, 0, tzinfo=timezone.utc)
+
+        # Run archive process
         archiver.archive()
-        assert session.query(cavl_data_archive).count() == 1
-        archive = session.query(cavl_data_archive).first()
-        assert archive.data_format == CAVLDataFormat.GTFSRT.value
 
-
-@patch(ARCHIVE_MODULE + ".GTFSRTArchiver.upload_file_to_s3")
-def test_archive_if_existing_file(mock_upload_to_s3, mock_db_manager):
-    db_object = MockedDB()
-    mock_db_manager.get_db.return_value = db_object
-    mock_upload_to_s3.return_value = None
-
-    url = "https://fakeurl.zz/datafeed"
-
-    cavl_data_archive = db_object.classes.avl_cavldataarchive
-
-    test_cavldataarchive = cavl_data_archive(
-        id=1,
-        data_format=CAVLDataFormat.GTFSRT.value,
-        data=f"gtfsrt_2023-11-10_152636.zip",
-    )
-    with db_object.session as session:
-        session.add(test_cavldataarchive)
-        session.commit()
-
-    archiver = GTFSRTArchiver(url)
-
-    content = b"newcontent"
-    access_time = datetime(2020, 1, 1, 12, 1, 1, tzinfo=timezone.utc)
-
-    archiver._content = content
-    archiver._access_time = access_time
-
-    with db_object.session as session:
-        assert session.query(cavl_data_archive).count() == 1
-        archiver.archive()
-        assert session.query(cavl_data_archive).count() == 1
-        archive = session.query(cavl_data_archive).first()
-        assert archive.data_format == CAVLDataFormat.GTFSRT.value
+        # Assertions
+        mock_s3.assert_called_once()
+        mock_avl_repo[0].assert_called_once()
