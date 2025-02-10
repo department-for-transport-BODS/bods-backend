@@ -9,7 +9,7 @@ import pytest
 from botocore.response import StreamingBody
 from common_layer.dynamodb.models import TXCFileAttributes
 from common_layer.exceptions.pipeline_exceptions import PipelineException
-from common_layer.txc.models.txc_data import TXCData
+from common_layer.xml.txc.models.txc_data import TXCData
 
 from tests.factories.database.organisation import (
     OrganisationDatasetRevisionFactory,

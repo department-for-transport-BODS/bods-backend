@@ -6,7 +6,7 @@ from datetime import date
 from typing import Optional
 
 import factory
-from common_layer.txc.models.txc_data import TXCData
+from common_layer.xml.txc.models.txc_data import TXCData
 
 from tests.timetables_etl.factories.txc.factory_txc_metadata import TXCMetadataFactory
 from tests.timetables_etl.factories.txc.factory_txc_operator import TXCOperatorFactory

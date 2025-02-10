@@ -6,7 +6,7 @@ from typing import Callable
 
 import pytest
 from common_layer.database.models import NaptanStopPoint, TransmodelServicePattern
-from common_layer.txc.models import (
+from common_layer.xml.txc.models import (
     TXCJourneyPattern,
     TXCJourneyPatternSection,
     TXCService,

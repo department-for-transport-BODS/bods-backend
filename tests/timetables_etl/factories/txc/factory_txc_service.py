@@ -5,7 +5,7 @@ Factories for a TXC Service
 from datetime import date
 
 import factory
-from common_layer.txc.models import (
+from common_layer.xml.txc.models import (
     TXCJourneyPattern,
     TXCLine,
     TXCLineDescription,

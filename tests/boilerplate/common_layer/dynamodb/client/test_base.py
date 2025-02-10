@@ -1,5 +1,8 @@
-from gc import freeze
-from unittest.mock import MagicMock, patch
+"""
+Base DynamoDB Tests
+"""
+
+from unittest.mock import MagicMock
 
 import pytest
 from common_layer.dynamodb.client import DynamoDB, DynamoDBSettings
@@ -7,13 +10,10 @@ from common_layer.exceptions.pipeline_exceptions import PipelineException
 from freezegun import freeze_time
 
 
-@pytest.fixture
-def m_boto_client():
-    with patch("common_layer.dynamodb.client.base.boto3.client") as m_boto:
-        yield m_boto.return_value
-
-
 def test_put(m_boto_client):
+    """
+    Test Putting into DynamoDB
+    """
     settings = DynamoDBSettings()
     with freeze_time("2024-12-06 12:00:00"):
         ttl = 3600
@@ -35,6 +35,9 @@ def test_put(m_boto_client):
 
 
 def test_put_exception(m_boto_client):
+    """
+    Test Put Raises Exception
+    """
     m_boto_client.put_item.side_effect = Exception("Client exception")
     dynamodb = DynamoDB()
     with pytest.raises(
@@ -45,6 +48,9 @@ def test_put_exception(m_boto_client):
 
 
 def test_get(m_boto_client):
+    """
+    Test Getting data from MongoDB
+    """
     settings = DynamoDBSettings()
     m_boto_client.get_item = MagicMock(
         return_value={
@@ -62,6 +68,9 @@ def test_get(m_boto_client):
 
 
 def test_get_exception(m_boto_client):
+    """
+    Test Get Exception
+    """
     m_boto_client.get_item.side_effect = Exception("Client exception")
     dynamodb = DynamoDB()
     with pytest.raises(

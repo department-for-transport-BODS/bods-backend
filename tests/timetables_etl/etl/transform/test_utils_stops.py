@@ -3,7 +3,7 @@ Test Stop Handling Utils
 """
 
 import pytest
-from common_layer.txc.models import (
+from common_layer.xml.txc.models import (
     TXCJourneyPattern,
     TXCJourneyPatternSection,
     TXCJourneyPatternStopUsage,

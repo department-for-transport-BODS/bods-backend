@@ -4,7 +4,7 @@ Tests for the FileAttributesEtlLambda
 
 import pytest
 from common_layer.database.models.model_organisation import OrganisationDatasetRevision
-from common_layer.txc.models.txc_data import TXCData
+from common_layer.xml.txc.models.txc_data import TXCData
 from file_attributes_etl.app.process_txc import make_txc_file_attributes
 
 from tests.factories.database.organisation import OrganisationDatasetRevisionFactory

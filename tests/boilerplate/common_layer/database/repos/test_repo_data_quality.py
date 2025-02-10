@@ -6,12 +6,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from common_layer.database.client import SqlDB
-from common_layer.database.models.model_data_quality import DataQualityPTIObservation
-from common_layer.database.repos.operation_decorator import RepositoryError
-from common_layer.database.repos.repo_data_quality import DataQualityPTIObservationRepo
-from common_layer.database.repos.repo_organisation import (
+from common_layer.database.models import DataQualityPTIObservation
+from common_layer.database.repos import (
+    DataQualityPTIObservationRepo,
     OrganisationDatasetRevisionRepo,
 )
+from common_layer.database.repos.operation_decorator import RepositoryError
 from pti.app.models.models_pti import PtiObservation, PtiRule, PtiViolation
 from sqlalchemy.exc import SQLAlchemyError
 

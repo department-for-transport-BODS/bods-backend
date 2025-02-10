@@ -7,7 +7,7 @@ from typing import Callable
 
 import pytest
 from common_layer.database.models import TransmodelService
-from common_layer.txc.models import TXCService
+from common_layer.xml.txc.models import TXCService
 
 from tests.factories.database.organisation import (
     OrganisationDatasetRevisionFactory,
