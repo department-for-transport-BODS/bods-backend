@@ -9,26 +9,12 @@ from typing import Any
 
 import pytest
 import structlog
-from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.json_logging import (
     _NOISY_LOG_SOURCES,
     AWSCloudWatchLogs,
     configure_logging,
     get_processors,
 )
-
-
-# pylint: disable=protected-access
-@pytest.fixture(name="lambda_context")
-def lambda_context_fixture() -> LambdaContext:
-    """
-    Lambda Context
-    """
-    context = LambdaContext()
-    context._aws_request_id = "test-123"
-    context._function_name = "test-function"
-    context._log_group_name = "/aws/lambda/test"
-    return context
 
 
 @pytest.mark.parametrize(

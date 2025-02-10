@@ -6,6 +6,7 @@ from io import BytesIO
 from unittest.mock import MagicMock, patch
 
 import pytest
+from aws_lambda_powertools.utilities.typing import LambdaContext
 from botocore.response import StreamingBody
 
 
@@ -75,3 +76,16 @@ def s3_file(s3_content):
     """
     stream = StreamingBody(BytesIO(s3_content), len(s3_content))
     return stream
+
+
+# pylint: disable=protected-access
+@pytest.fixture(name="lambda_context")
+def lambda_context_fixture() -> LambdaContext:
+    """
+    Lambda Context
+    """
+    context = LambdaContext()
+    context._aws_request_id = "test-123"
+    context._function_name = "test-function"
+    context._log_group_name = "/aws/lambda/test"
+    return context

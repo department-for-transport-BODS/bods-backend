@@ -10,7 +10,6 @@ from common_layer.exceptions.pipeline_exceptions import PipelineException
 from common_layer.xml.txc.models.txc_data import TXCData
 from pti.app.pti_validation import lambda_handler
 
-from tests.boilerplate.common_layer.aws.test_json_logging import lambda_context_fixture
 from tests.factories.database.organisation import (
     OrganisationDatasetRevisionFactory,
     OrganisationTXCFileAttributesFactory,
@@ -43,7 +42,9 @@ TEST_ENV_VAR = {
     ],
 )
 @patch.dict("os.environ", TEST_ENV_VAR)
-def test_lambda_handler(mock_imports, mock_sqldb, s3_file, s3_content, test_params):
+def test_lambda_handler(
+    mock_imports, mock_sqldb, s3_file, s3_content, test_params, lambda_context
+):
     """
     Test Lambda Handler for PTI Validation
     """
@@ -77,9 +78,9 @@ def test_lambda_handler(mock_imports, mock_sqldb, s3_file, s3_content, test_para
 
     if test_params["should_raise"]:
         with pytest.raises(PipelineException):
-            lambda_handler(event, lambda_context_fixture())
+            lambda_handler(event, lambda_context)
     else:
-        result = lambda_handler(event, lambda_context_fixture())
+        result = lambda_handler(event, lambda_context)
         assert result == {"statusCode": test_params["expected_status"]}
 
         validate_call = (
