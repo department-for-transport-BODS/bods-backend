@@ -2,20 +2,20 @@
 Module to support different dataset archiving to S3
 """
 
-import io
-import time
 from datetime import datetime, timezone
+from io import BytesIO
+import time
 from os import environ
 from zipfile import ZIP_DEFLATED, ZipFile
 
 import requests
+from requests import RequestException
+from structlog.stdlib import get_logger
 from common_layer.database.client import SqlDB
 from common_layer.database.models import AvlCavlDataArchive
 from common_layer.database.repos import AvlCavlDataArchiveRepo
 from common_layer.enums import CAVLDataFormat
 from common_layer.s3 import S3
-from requests import RequestException
-from structlog.stdlib import get_logger
 
 log = get_logger()
 
@@ -51,25 +51,25 @@ class ConsumerAPIArchiver:
     content_filename_prefix = "siri"
     archiving_type = ""
 
-    def __init__(self, url):
-        self.url = url
-        self.db = SqlDB()
-        self._access_time = None
+    def __init__(self, url: str) -> None:
+        self.url: str = url
+        self.db: SqlDB = SqlDB()
+        self._access_time: datetime | None = None
         self._content = None
 
     @property
-    def filename(self):
+    def filename(self) -> str:
         """Get the filename"""
-        now = self.access_time.strftime("%Y-%m-%d_%H%M%S")
+        now = (self.access_time or datetime.now()).strftime("%Y-%m-%d_%H%M%S")
         return self.data_format_value + "_" + now + ".zip"
 
     @property
-    def data_format_value(self):
+    def data_format_value(self) -> str:
         """Get the format value"""
         return self.filename_prefix
 
     @property
-    def access_time(self):
+    def access_time(self) -> datetime | None:
         """Get time"""
         if self._content is None:
             raise ValueError("`content` has not been fetched yet.")
@@ -80,23 +80,23 @@ class ConsumerAPIArchiver:
         return self._access_time
 
     @property
-    def content(self):
+    def content(self) -> bytes:
         """Get the content"""
         if self._content is None:
             self._content = self._get_content()
         return self._content
 
     @property
-    def content_filename(self):
+    def content_filename(self) -> str:
         """Get content filename"""
         return self.content_filename_prefix + self.extension
 
-    def archive(self):
+    def archive(self) -> None:
         """Archive the files"""
         file_ = self.get_file(self.content)
         self.save_to_database(file_)
 
-    def _get_content(self):
+    def _get_content(self) -> bytes:
         """Helper function to get the content of file"""
         try:
             response = requests.get(self.url)  # pylint: disable=missing-timeout
@@ -117,10 +117,10 @@ class ConsumerAPIArchiver:
             )
             raise ArchivingError(msg) from err
 
-    def get_file(self, content):
+    def get_file(self, content: bytes) -> BytesIO:
         """Get the file"""
         start_get_file_op = time.time()
-        bytesio = io.BytesIO()
+        bytesio = BytesIO()
         with ZipFile(bytesio, mode="w", compression=ZIP_DEFLATED) as zf:
             zf.writestr(self.content_filename, content)
         end_file_op = time.time()
@@ -132,10 +132,10 @@ class ConsumerAPIArchiver:
 
         return bytesio
 
-    def save_to_database(self, bytesio):
+    def save_to_database(self, bytesio: BytesIO) -> None:
         """Save to bodds database"""
         start_s3_op = time.time()
-        self.upload_file_to_s3(bytesio)
+        self.upload_file_to_s3(bytesio.getvalue())
         upsert_cavl_table(self.db, self.data_format, self.filename)
 
         end_s3_op = time.time()
@@ -145,7 +145,7 @@ class ConsumerAPIArchiver:
             time=end_s3_op - start_s3_op,
         )
 
-    def upload_file_to_s3(self, bytesio):
+    def upload_file_to_s3(self, bytesio: bytes) -> None:
         """Upload the archied file to s3"""
         bucket_name = environ.get("AWS_SIRIVM_STORAGE_BUCKET_NAME", default="")
         s3 = S3(bucket_name)
