@@ -7,19 +7,19 @@ from typing import cast
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
-from ..models.txc_types import DirectionT
-from ..models.txc_vehicle_journey_flexible import (
-    TXCFlexibleServiceTimes,
-    TXCFlexibleVehicleJourney,
-    TXCServicePeriod,
-)
-from .utils_attributes import (
+from ...utils import (
+    get_element_text,
     parse_creation_datetime,
     parse_modification,
     parse_modification_datetime,
     parse_revision_number,
 )
-from .utils_tags import get_element_text
+from ..models import (
+    DirectionT,
+    TXCFlexibleServiceTimes,
+    TXCFlexibleVehicleJourney,
+    TXCServicePeriod,
+)
 
 log = get_logger()
 

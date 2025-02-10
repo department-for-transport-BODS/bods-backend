@@ -8,14 +8,14 @@ from typing import cast, get_args
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
-from ..models.txc_journey_pattern import (
+from ...utils import find_section, get_element_bool, get_element_int, get_element_text
+from ..models import (
+    ActivityT,
+    TimingStatusT,
     TXCJourneyPatternSection,
     TXCJourneyPatternStopUsage,
     TXCJourneyPatternTimingLink,
 )
-from ..models.txc_types import ActivityT, TimingStatusT
-from .utils import find_section
-from .utils_tags import get_element_bool, get_element_int, get_element_text
 
 log = get_logger()
 

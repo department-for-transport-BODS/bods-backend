@@ -7,10 +7,8 @@ from typing import cast, get_args
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
-from ..models.txc_operator import TXCOperator
-from ..models.txc_types import LicenceClassificationT, TransportModeT
-from .utils import find_section
-from .utils_tags import get_element_text, get_tag_str
+from ...utils import find_section, get_element_text, get_tag_str
+from ..models import LicenceClassificationT, TransportModeT, TXCOperator
 
 log = get_logger()
 

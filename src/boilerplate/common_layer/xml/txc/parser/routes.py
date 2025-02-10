@@ -5,15 +5,15 @@ Parse Routes from TXC
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
-from ..models.txc_route import TXCRoute, TXCRouteSection
-from .utils import find_section
-from .utils_attributes import (
+from ...utils import (
+    find_section,
+    get_element_text,
     parse_creation_datetime,
     parse_modification,
     parse_modification_datetime,
     parse_revision_number,
 )
-from .utils_tags import get_element_text
+from ..models import TXCRoute, TXCRouteSection
 
 log = get_logger()
 

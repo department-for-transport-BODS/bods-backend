@@ -8,24 +8,24 @@ from typing import cast, get_args
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
-from ..models.txc_service import (
+from ...utils import (
+    find_section,
+    get_elem_bool_default,
+    get_element_date,
+    get_element_text,
+    get_element_texts,
+    parse_xml_int,
+)
+from ..models import (
+    TransportModeT,
+    TXCFlexibleService,
     TXCJourneyPattern,
     TXCLine,
     TXCLineDescription,
     TXCService,
     TXCStandardService,
 )
-from ..models.txc_service_flexible import TXCFlexibleService
-from ..models.txc_types import TransportModeT
 from .services_flexible import parse_flexible_service
-from .utils import find_section
-from .utils_attributes import parse_xml_int
-from .utils_tags import (
-    get_elem_bool_default,
-    get_element_date,
-    get_element_text,
-    get_element_texts,
-)
 
 log = get_logger()
 

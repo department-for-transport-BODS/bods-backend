@@ -7,7 +7,8 @@ from datetime import date
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
-from ..models.txc_vehicle_journey import (
+from ...utils import does_element_exist, get_element_text, get_element_texts
+from ..models import (
     TXCBankHolidayDays,
     TXCBankHolidayOperation,
     TXCDateRange,
@@ -17,7 +18,6 @@ from ..models.txc_vehicle_journey import (
     TXCServicedOrganisationDayType,
     TXCSpecialDaysOperation,
 )
-from .utils_tags import does_element_exist, get_element_text, get_element_texts
 
 log = get_logger()
 

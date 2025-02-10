@@ -5,16 +5,16 @@ Parse Route Sections XML into Pydantic Models
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
-from ..models.txc_data import TXCRouteSection
-from ..models.txc_route import TXCLocation, TXCMapping, TXCRouteLink, TXCTrack
-from .utils import find_section
-from .utils_attributes import (
+from ...utils import (
+    find_section,
+    get_element_int,
+    get_element_text,
     parse_creation_datetime,
     parse_modification,
     parse_modification_datetime,
     parse_revision_number,
 )
-from .utils_tags import get_element_int, get_element_text
+from ..models import TXCLocation, TXCMapping, TXCRouteLink, TXCRouteSection, TXCTrack
 
 log = get_logger()
 

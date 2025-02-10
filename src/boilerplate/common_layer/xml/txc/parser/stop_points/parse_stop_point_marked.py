@@ -7,9 +7,13 @@ from typing import cast, get_args
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
-from ...models import BearingStructure, MarkedPointStructure, UnmarkedPointStructure
-from ...models.txc_types import CompassPointT
-from ..utils_tags import get_element_text
+from ....utils import get_element_text
+from ...models import (
+    BearingStructure,
+    CompassPointT,
+    MarkedPointStructure,
+    UnmarkedPointStructure,
+)
 
 log = get_logger()
 

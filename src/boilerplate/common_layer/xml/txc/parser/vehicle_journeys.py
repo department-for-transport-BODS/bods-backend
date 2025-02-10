@@ -7,28 +7,28 @@ from typing import cast, get_args
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
-from ..models.txc_types import CommercialBasisT, TimeDemandT
-from ..models.txc_vehicle_journey import (
-    TXCLayoverPoint,
-    TXCVehicleJourney,
-    TXCVehicleJourneyStopUsageStructure,
-    TXCVehicleJourneyTimingLink,
-)
-from ..models.txc_vehicle_journey_common import (
-    TXCBlock,
-    TXCOperational,
-    TXCTicketMachine,
-)
-from ..models.txc_vehicle_journey_flexible import TXCFlexibleVehicleJourney
-from .operating_profile import parse_operating_profile
-from .utils import find_section
-from .utils_attributes import (
+from ...utils import (
+    find_section,
+    get_element_text,
+    get_element_texts,
     parse_creation_datetime,
     parse_modification,
     parse_modification_datetime,
     parse_revision_number,
 )
-from .utils_tags import get_element_text, get_element_texts
+from ..models import (
+    CommercialBasisT,
+    TimeDemandT,
+    TXCBlock,
+    TXCFlexibleVehicleJourney,
+    TXCLayoverPoint,
+    TXCOperational,
+    TXCTicketMachine,
+    TXCVehicleJourney,
+    TXCVehicleJourneyStopUsageStructure,
+    TXCVehicleJourneyTimingLink,
+)
+from .operating_profile import parse_operating_profile
 from .vehicle_journeys_flexible import parse_flexible_vehicle_journey
 
 log = get_logger()

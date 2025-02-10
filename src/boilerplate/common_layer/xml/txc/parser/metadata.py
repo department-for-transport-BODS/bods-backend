@@ -5,12 +5,12 @@ TXC File Metadata
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
-from ..models.txc_metadata import TXCMetadata
-from .utils_attributes import (
+from ...utils import (
     parse_creation_datetime,
     parse_modification,
     parse_modification_datetime,
 )
+from ..models.txc_metadata import TXCMetadata
 
 log = get_logger()
 

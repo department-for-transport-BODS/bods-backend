@@ -5,7 +5,7 @@ Parse OffStreet StopPoints Classification
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
-from ...models.txc_stoppoint import OffStreetStructure
+from ...models import OffStreetStructure
 from .parse_stop_point_types import (
     parse_air_structure,
     parse_bus_and_coach_structure,

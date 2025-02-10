@@ -8,7 +8,7 @@ from typing import cast
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
-from ..models.txc_types import ModificationType
+from ..txc.models import ModificationType
 
 log = get_logger()
 

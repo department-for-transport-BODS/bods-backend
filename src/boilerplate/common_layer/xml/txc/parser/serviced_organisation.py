@@ -7,21 +7,23 @@ from typing import cast
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
-from ..models.txc_serviced_organisation import (
-    TXCServicedOrganisation,
-    TXCServicedOrganisationAnnotatedNptgLocalityRef,
-    TXCServicedOrganisationDatePattern,
-)
-from ..models.txc_types import ServiceOrganisationClassificationT, StatusT
-from .utils import find_section
-from .utils_attributes import (
+from ...utils import (
+    find_section,
+    get_elem_bool_default,
+    get_element_date,
+    get_element_text,
     parse_creation_datetime,
     parse_modification,
     parse_modification_datetime,
     parse_revision_number,
     parse_xml_attribute,
 )
-from .utils_tags import get_elem_bool_default, get_element_date, get_element_text
+from ..models import (
+    TXCServicedOrganisation,
+    TXCServicedOrganisationAnnotatedNptgLocalityRef,
+    TXCServicedOrganisationDatePattern,
+)
+from ..models.txc_types import ServiceOrganisationClassificationT, StatusT
 
 log = get_logger()
 

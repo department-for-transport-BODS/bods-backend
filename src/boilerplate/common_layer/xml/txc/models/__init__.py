@@ -58,7 +58,21 @@ from .txc_stoppoint import (
     TXCStopPoint,
     UnmarkedPointStructure,
 )
-from .txc_types import ActivityT, LicenceClassificationT, TimingStatusT, TransportModeT
+from .txc_types import (
+    STOP_CLASSIFICATION_STOP_TYPE_MAPPING,
+    TIMING_STATUS_MAPPING,
+    ActivityT,
+    BusStopTypeT,
+    CommercialBasisT,
+    CompassPointT,
+    DirectionT,
+    LicenceClassificationT,
+    ModificationType,
+    TimeDemandT,
+    TimingStatusT,
+    TransportModeT,
+    TXCStopTypeT,
+)
 from .txc_vehicle_journey import (
     TXCBankHolidayDays,
     TXCBankHolidayOperation,
@@ -138,6 +152,15 @@ __all__ = [
     "LicenceClassificationT",
     "TimingStatusT",
     "TransportModeT",
+    "CommercialBasisT",
+    "TimeDemandT",
+    "ModificationType",
+    "BusStopTypeT",
+    "TXCStopTypeT",
+    "CompassPointT",
+    "DirectionT",
+    "TIMING_STATUS_MAPPING",
+    "STOP_CLASSIFICATION_STOP_TYPE_MAPPING",
     # Vehicle Journey
     "TXCBankHolidayDays",
     "TXCBankHolidayOperation",

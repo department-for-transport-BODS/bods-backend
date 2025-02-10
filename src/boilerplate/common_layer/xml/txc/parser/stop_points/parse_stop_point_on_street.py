@@ -7,13 +7,15 @@ from typing import cast, get_args
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
+from ....utils import get_element_text
 from ...models import (
+    TIMING_STATUS_MAPPING,
     BusStopStructure,
+    BusStopTypeT,
     OnStreetStructure,
     TaxiStopClassificationStructure,
+    TimingStatusT,
 )
-from ...models.txc_types import TIMING_STATUS_MAPPING, BusStopTypeT, TimingStatusT
-from ..utils_tags import get_element_text
 from .parse_stop_point_marked import (
     parse_marked_point_structure,
     parse_unmarked_point_structure,

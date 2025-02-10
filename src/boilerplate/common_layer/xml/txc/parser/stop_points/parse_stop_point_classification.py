@@ -7,9 +7,12 @@ from typing import cast, get_args
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
-from ...models import StopClassificationStructure
-from ...models.txc_types import STOP_CLASSIFICATION_STOP_TYPE_MAPPING, TXCStopTypeT
-from ..utils_tags import get_element_text
+from ....utils import get_element_text
+from ...models import (
+    STOP_CLASSIFICATION_STOP_TYPE_MAPPING,
+    StopClassificationStructure,
+    TXCStopTypeT,
+)
 from .parse_stop_point_off_street import parse_off_street_structure
 from .parse_stop_point_on_street import parse_on_street_structure
 
