@@ -6,7 +6,7 @@ from datetime import date
 
 import pytest
 from common_layer.database.models import NaptanStopPoint
-from common_layer.txc.models import (
+from common_layer.xml.txc.models import (
     TXCJourneyPattern,
     TXCJourneyPatternSection,
     TXCJourneyPatternStopUsage,

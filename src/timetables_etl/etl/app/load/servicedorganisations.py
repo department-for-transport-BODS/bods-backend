@@ -5,7 +5,7 @@ Serviced Organisation Loading
 from common_layer.database import SqlDB
 from common_layer.database.models import TransmodelServicedOrganisations
 from common_layer.database.repos import TransmodelServicedOrganisationsRepo
-from common_layer.txc.models import TXCServicedOrganisation
+from common_layer.xml.txc.models import TXCServicedOrganisation
 from structlog.stdlib import get_logger
 
 from ..helpers import ServicedOrgLookup

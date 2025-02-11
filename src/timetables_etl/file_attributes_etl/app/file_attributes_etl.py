@@ -15,8 +15,8 @@ from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.download import download_and_parse_txc
 from common_layer.s3.utils import get_filename_from_object_key
-from common_layer.txc.models import TXCData
-from common_layer.txc.parser.parser_txc import TXCParserConfig
+from common_layer.xml.txc.models import TXCData
+from common_layer.xml.txc.parser.parser_txc import TXCParserConfig
 from structlog.stdlib import get_logger
 
 from .models import FileAttributesInputData

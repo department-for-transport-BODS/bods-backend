@@ -234,8 +234,7 @@ def test_get_locality_name_from_annotated_stop_point_ref(ref, expected_locality_
 @pytest.mark.parametrize(
     "ref, xml_content, expected_section_refs",
     [
-        # Single matching section ref
-        (
+        pytest.param(
             "RouteLink1",
             """
             <JourneyPatternSections xmlns="http://www.example.com">
@@ -247,9 +246,9 @@ def test_get_locality_name_from_annotated_stop_point_ref(ref, expected_locality_
             </JourneyPatternSections>
             """,
             ["Section1"],
+            id="Single matching section ref",
         ),
-        # Multiple matching section refs
-        (
+        pytest.param(
             "RouteLink2",
             """
             <JourneyPatternSections xmlns="http://www.example.com">
@@ -266,9 +265,9 @@ def test_get_locality_name_from_annotated_stop_point_ref(ref, expected_locality_
             </JourneyPatternSections>
             """,
             ["Section2", "Section3"],
+            id="Multiple matching section refs",
         ),
-        # No matching section refs
-        (
+        pytest.param(
             "RouteLink3",
             """
             <JourneyPatternSections xmlns="http://www.example.com">
@@ -280,6 +279,7 @@ def test_get_locality_name_from_annotated_stop_point_ref(ref, expected_locality_
             </JourneyPatternSections>
             """,
             [],
+            id="No matching section refs",
         ),
     ],
 )

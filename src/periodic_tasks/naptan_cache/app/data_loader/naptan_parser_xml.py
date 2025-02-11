@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import Any, Iterator
 
 from common_layer.dynamodb.client_loader import DynamoDBLoader
-from common_layer.txc.parser.parser_txc import strip_namespace
-from common_layer.txc.parser.stop_points import parse_txc_stop_point
+from common_layer.xml.txc.parser.parser_txc import strip_namespace
+from common_layer.xml.txc.parser.stop_points import parse_txc_stop_point
 from lxml import etree
 from structlog.stdlib import get_logger
 

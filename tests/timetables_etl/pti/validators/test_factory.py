@@ -10,7 +10,7 @@ from common_layer.dynamodb.client.cache import DynamoDBCache
 from common_layer.dynamodb.client.naptan_stop_points import (
     NaptanStopPointDynamoDBClient,
 )
-from common_layer.txc.models.txc_data import TXCData
+from common_layer.xml.txc.models.txc_data import TXCData
 from pti.app.models.models_pti_task import DbClients
 from pti.app.validators.factory import get_xml_file_pti_validator
 from pti.app.validators.xml_file import XmlFilePTIValidator

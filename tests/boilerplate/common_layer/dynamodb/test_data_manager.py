@@ -1,7 +1,10 @@
+"""
+Test DynamoDB Data Manager
+"""
+
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
-import pytest
 from common_layer.database.client import SqlDB
 from common_layer.dynamodb.client import DynamoDB
 from common_layer.dynamodb.data_manager import FileProcessingDataManager
@@ -14,43 +17,14 @@ from tests.factories.database.organisation import (
 )
 
 
-@pytest.fixture
-def frozen_time():
-    """Set a consistent datetime for tests."""
-    with freeze_time("2024-10-12 12:00:00"):
-        yield datetime.now()
-
-
-@pytest.fixture
-def cached_attributes(frozen_time):
-    timestamp = int(frozen_time.timestamp())
-    return [
-        {
-            "id": 1,
-            "revision_number": 10,
-            "service_code": "XYZ",
-            "line_names": ["line1", "line2"],
-            "modification_datetime": timestamp,
-            "hash": "filehash1",
-            "filename": "file1.xml",
-        },
-        {
-            "id": 2,
-            "revision_number": 10,
-            "service_code": "ZYX",
-            "line_names": ["line3", "line4"],
-            "modification_datetime": timestamp,
-            "hash": "filehash2",
-            "filename": "file2.xml",
-        },
-    ]
-
-
 @patch("common_layer.dynamodb.data_manager.OrganisationTXCFileAttributesRepo")
 @patch("common_layer.dynamodb.data_manager.OrganisationDatasetRepo")
 def test_prefetch_and_cache_data(
     m_dataset_repo, m_file_attributes_repo, cached_attributes, frozen_time
 ):
+    """
+    Test prefetching and caching data
+    """
     m_db = MagicMock(spec=SqlDB)
     m_dynamodb = MagicMock(spec=DynamoDB)
 
@@ -108,6 +82,9 @@ def test_prefetch_and_cache_data(
 
 
 def test_get_cached_live_txc_file_attributes(cached_attributes):
+    """
+    Test getting live txc file attributes from cache
+    """
     m_db = MagicMock(spec=SqlDB)
     m_dynamodb = MagicMock(spec=DynamoDB)
 

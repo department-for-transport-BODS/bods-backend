@@ -6,7 +6,7 @@ from common_layer.database import SqlDB
 from common_layer.dynamodb.client.naptan_stop_points import (
     NaptanStopPointDynamoDBClient,
 )
-from common_layer.txc.models.txc_data import TXCData
+from common_layer.xml.txc.models import TXCData
 from structlog.stdlib import get_logger
 
 from .helpers import ReferenceDataLookups

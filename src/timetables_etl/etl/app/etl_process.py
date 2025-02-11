@@ -18,8 +18,8 @@ from common_layer.dynamodb.client.naptan_stop_points import (
     NaptanStopPointDynamoDBClient,
 )
 from common_layer.s3 import S3
-from common_layer.txc.models import TXCData
-from common_layer.txc.parser.parser_txc import load_xml_data, parse_txc_from_element
+from common_layer.xml.txc.models import TXCData
+from common_layer.xml.txc.parser.parser_txc import load_xml_data, parse_txc_from_element
 from lxml.etree import _Element
 from structlog.stdlib import get_logger
 

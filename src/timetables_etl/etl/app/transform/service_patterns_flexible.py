@@ -8,8 +8,8 @@ from common_layer.database.models import (
     OrganisationDatasetRevision,
     TransmodelServicePattern,
 )
-from common_layer.txc.helpers.service import extract_flexible_pattern_stop_refs
-from common_layer.txc.models import TXCFlexibleJourneyPattern, TXCService
+from common_layer.xml.txc.helpers.service import extract_flexible_pattern_stop_refs
+from common_layer.xml.txc.models import TXCFlexibleJourneyPattern, TXCService
 from geoalchemy2 import WKBElement
 from geoalchemy2.shape import from_shape
 from shapely import LineString, Point

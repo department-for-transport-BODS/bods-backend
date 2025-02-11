@@ -6,7 +6,7 @@ import pytest
 from common_layer.database.client import SqlDB
 from common_layer.dynamodb.client import DynamoDB, NaptanStopPointDynamoDBClient
 from common_layer.dynamodb.client.cache import DynamoDBCache, DynamoDbCacheSettings
-from common_layer.txc.models.txc_data import TXCData
+from common_layer.xml.txc.models.txc_data import TXCData
 from pti.app.constants import PTI_SCHEMA_PATH
 from pti.app.models.models_pti import PtiJsonSchema
 from pti.app.models.models_pti_task import DbClients

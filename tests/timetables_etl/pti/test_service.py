@@ -12,7 +12,7 @@ from common_layer.dynamodb.client.naptan_stop_points import (
     NaptanStopPointDynamoDBClient,
 )
 from common_layer.dynamodb.models import TXCFileAttributes
-from common_layer.txc.models.txc_data import TXCData
+from common_layer.xml.txc.models.txc_data import TXCData
 from pti.app.models.models_pti import PtiObservation, PtiRule, PtiViolation
 from pti.app.models.models_pti_task import DbClients
 from pti.app.service import PTIValidationService

@@ -6,11 +6,11 @@ from common_layer.database.models import (
     OrganisationDatasetRevision,
     OrganisationTXCFileAttributes,
 )
-from common_layer.txc.helpers.operator import (
+from common_layer.xml.txc.helpers.operator import (
     get_licence_number,
     get_national_operator_code,
 )
-from common_layer.txc.helpers.service import (
+from common_layer.xml.txc.helpers.service import (
     get_all_line_names,
     get_service_destinations,
     get_service_end_dates,
@@ -18,7 +18,7 @@ from common_layer.txc.helpers.service import (
     get_service_origins,
     get_service_start_dates,
 )
-from common_layer.txc.models import TXCData
+from common_layer.xml.txc.models import TXCData
 from structlog.stdlib import get_logger
 
 log = get_logger()

@@ -14,7 +14,7 @@ from common_layer.dynamodb.client.naptan_stop_points import (
     NaptanDynamoDBSettings,
     NaptanStopPointDynamoDBClient,
 )
-from common_layer.txc.parser.parser_txc import TXCParserConfig, parse_txc_file
+from common_layer.xml.txc.parser.parser_txc import TXCParserConfig, parse_txc_file
 from structlog.stdlib import get_logger
 
 from timetables_etl.etl.app.pipeline import transform_data

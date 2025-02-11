@@ -17,12 +17,12 @@ from common_layer.database.models.model_transmodel_vehicle_journey import (
     TransmodelOperatingProfile,
     TransmodelVehicleJourney,
 )
-from common_layer.txc.models import TXCDateRange, TXCDaysOfWeek, TXCVehicleJourney
-from common_layer.txc.models.txc_serviced_organisation import (
+from common_layer.xml.txc.models import TXCDateRange, TXCDaysOfWeek, TXCVehicleJourney
+from common_layer.xml.txc.models.txc_serviced_organisation import (
     TXCServicedOrganisation,
     TXCServicedOrganisationDatePattern,
 )
-from common_layer.txc.models.txc_vehicle_journey import (
+from common_layer.xml.txc.models.txc_vehicle_journey import (
     TXCBankHolidayDays,
     TXCBankHolidayOperation,
     TXCServicedOrganisationDayType,

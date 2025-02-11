@@ -2,7 +2,7 @@
 TXC Operator Factories
 """
 
-from common_layer.txc.models import TXCOperator
+from common_layer.xml.txc.models import TXCOperator
 from factory import Factory
 
 

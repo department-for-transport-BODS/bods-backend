@@ -10,9 +10,8 @@ from pathlib import Path
 from typing import Any, Callable, Sequence
 
 import structlog
-from common_layer.txc.models.txc_data import TXCData
-from common_layer.txc.models.txc_stoppoint import TXCStopPoint
-from common_layer.txc.parser.parser_txc import load_xml_data, parse_txc_from_element
+from common_layer.xml.txc.models import TXCData, TXCStopPoint
+from common_layer.xml.txc.parser.parser_txc import load_xml_data, parse_txc_from_element
 from lxml import etree
 from lxml.etree import _Element
 

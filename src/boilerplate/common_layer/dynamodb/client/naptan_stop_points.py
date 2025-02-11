@@ -4,7 +4,7 @@ DynamoDB NAPTAN StopPoint Client
 
 from typing import Iterator, Set
 
-from common_layer.txc.models.txc_stoppoint import TXCStopPoint
+from common_layer.xml.txc.models import TXCStopPoint
 from pydantic import ValidationError
 from structlog.stdlib import get_logger
 
@@ -162,5 +162,8 @@ class NaptanStopPointDynamoDBClient(DynamoDB):
             )
             return raw_items
         except Exception:
-            log.error("Failed to execute BatchGetItem", exc_info=True)
+            log.error(
+                "Failed to execute BatchGetItem", exc_info=True, settings=self._settings
+            )
+
             raise

@@ -6,8 +6,7 @@ import itertools
 from collections import defaultdict
 
 from common_layer.dynamodb.client import NaptanStopPointDynamoDBClient
-from common_layer.txc.models.txc_data import TXCData
-from common_layer.txc.models.txc_stoppoint import TXCStopPoint
+from common_layer.xml.txc.models import TXCData, TXCStopPoint
 from lxml import etree
 from structlog.stdlib import get_logger
 

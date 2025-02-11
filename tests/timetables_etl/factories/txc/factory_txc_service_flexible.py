@@ -3,7 +3,7 @@ Flexible Service Factories
 """
 
 import factory
-from common_layer.txc.models import (
+from common_layer.xml.txc.models import (
     TXCBookingArrangements,
     TXCFixedStopUsage,
     TXCFlexibleJourneyPattern,
