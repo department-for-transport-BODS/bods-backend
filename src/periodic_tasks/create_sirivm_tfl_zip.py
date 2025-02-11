@@ -1,25 +1,46 @@
+"""
+Lambda function to archive the sirivm tfl data
+"""
+
 import time
 from os import environ
+from typing import Any
 
-from common_layer.archiver import SiriVMTFLArchiver
+from aws_lambda_powertools.utilities.typing import LambdaContext
+from common_layer.archiver import ArchiveDetails, archive_data
+from common_layer.enums import CAVLDataFormat
 from common_layer.json_logging import configure_logging
 from structlog.stdlib import get_logger
 
 log = get_logger()
 
 
-def lambda_handler(event, context):
-    configure_logging()
+def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any]:
+    """
+    Handler for archiving sirivm tfl data
+    """
+    event.update({"archive_type": "[SIRIVM_TFL_Archiving]"})
+    configure_logging(event, context)
+    bucket = environ.get("AWS_SIRIVM_STORAGE_BUCKET_NAME", None)
+    file_name = None
     try:
-        AVL_CONSUMER_API_BASE_URL = environ.get("AVL_CONSUMER_API_BASE_URL", default="")
-        url = f"{AVL_CONSUMER_API_BASE_URL}/siri-vm?downloadTfl=true"
-        _prefix = f"[SIRIVM_TFL_Archiving] => "
-        log.info(_prefix + "Begin archiving SIRIVM TFL data.")
+        url = f"{environ.get('AVL_CONSUMER_API_BASE_URL', '')}/siri-vm?downloadTfl=true"
+        sirivm_zip = ArchiveDetails(
+            url=url,
+            data_format=CAVLDataFormat.SIRIVM_TFL.value,
+            file_extension=".xml",
+            s3_file_prefix="sirivm_tfl",
+            local_file_prefix="siri_tfl",
+        )
+        log.info("Start archiving the data", details=sirivm_zip)
         start = time.time()
-        archiver = SiriVMTFLArchiver(url)
-        archiver.archive()
+        archive_data(sirivm_zip)
         end = time.time()
-        log.info(_prefix + f"Finished archiving in {end-start:.2f} seconds.")
-    except Exception as e:
-        log.error(f"SIRIVM TFL zip task failed", exc_info=True)
-    return
+        log.info("Finished archiving the data", time=end - start)
+    except Exception as err:
+        log.error("Archiving data failed", exc_info=True)
+        raise err
+    return {
+        "statusCode": 200,
+        "body": f"Successfully archived sirivm tfl data to file '{file_name}' in bucket '{bucket}'",
+    }

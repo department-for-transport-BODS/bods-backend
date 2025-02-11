@@ -2,168 +2,150 @@
 Unit tests for the archivers module.
 """
 
-import io
-from datetime import datetime, timezone
+import unittest
+from datetime import datetime
+from io import BytesIO
 from unittest.mock import MagicMock, patch
-from zipfile import ZipFile
 
-import pytest
-from common_layer.archiver import ConsumerAPIArchiver, SiriVMArchiver, upsert_cavl_table
-from common_layer.database.client import SqlDB
-from common_layer.database.models import AvlCavlDataArchive
-from common_layer.database.repos import AvlCavlDataArchiveRepo
-from common_layer.s3 import S3
-
-# Sample test URL and test content
-TEST_URL = "https://example.com/api/data"
-TEST_RESPONSE_CONTENT = b"<xml>Sample Data</xml>"
-TEST_DATA_FORMAT = "SIRIVM"
-TEST_FILE_NAME = "sirivm_2025-02-01_120000.zip"
+from common_layer.archiver import (
+    ArchiveDetails,
+    ArchivingError,
+    archive_data,
+    get_content,
+    upload_to_s3,
+    upsert_cavl_table,
+    zip_content,
+)
+from requests import exceptions
 
 
-@pytest.fixture(name="mock_db")
-def mock_db_fixture():
-    """Fixture to mock the database"""
-    return MagicMock(spec=SqlDB)
+class TestArchiving(unittest.TestCase):
+    """Test cases for archivers module."""
 
-
-@pytest.fixture(name="mock_s3")
-def mock_s3_fixture():
-    """Fixture to mock S3"""
-    with patch.object(S3, "put_object") as mock_s3:
-        yield mock_s3
-
-
-@pytest.fixture(name="mock_avl_repo")
-def mock_avl_repo_fixture():
-    """Fixture to mock AvlCavlDataArchiveRepo"""
-    with patch.object(
-        AvlCavlDataArchiveRepo, "get_by_data_format", return_value=None
-    ), patch.object(AvlCavlDataArchiveRepo, "insert") as mock_insert, patch.object(
-        AvlCavlDataArchiveRepo, "update"
-    ) as mock_update, patch.object(
-        AvlCavlDataArchiveRepo, "get_by_data_format", return_value=None
-    ) as mock_get:
-        yield mock_insert, mock_update, mock_get
-
-
-@pytest.fixture(name="mock_requests_get")
-def mock_requests_get_fixture():
-    """Fixture to mock requests.get"""
-    with patch("requests.get") as mock_get:
+    @patch("common_layer.archiver.requests.get")
+    def test_get_content_success(self, mock_get):
+        """Test case for get_content success."""
         mock_response = MagicMock()
-        mock_response.content = TEST_RESPONSE_CONTENT
-        mock_response.elapsed.total_seconds.return_value = 1.23
+        mock_response.status_code = 200
+        mock_response.content = b"test data"
         mock_get.return_value = mock_response
-        yield mock_get
 
+        content = get_content("http://example.com")
+        self.assertEqual(content, b"test data")
+        mock_get.assert_called_once()
 
-def test_upsert_cavl_table_insert_new_record(mock_db, mock_avl_repo):
-    """Test inserting a new record when no existing record is found"""
-    mock_insert, mock_update, mock_get = mock_avl_repo
+    @patch("common_layer.archiver.requests.get", side_effect=exceptions.Timeout)
+    def test_get_content_timeout(self, mock_get):
+        """Test case for get_content timeout."""
+        with self.assertRaises(RuntimeError) as exc:
+            get_content("http://example.com")
+        self.assertIn("timed out", str(exc.exception))
+        mock_get.assert_called_once()
 
-    # Mock `get_by_data_format` to return None (no existing record)
-    mock_get.return_value = None
+    @patch("common_layer.archiver.requests.get", side_effect=exceptions.ConnectionError)
+    def test_get_content_connection_error(self, mock_get):
+        """Test case for get_content connection error."""
+        with self.assertRaises(RuntimeError) as exc:
+            get_content("http://example.com")
+        self.assertIn("Network error", str(exc.exception))
+        mock_get.assert_called_once()
 
-    # Run function
-    upsert_cavl_table(mock_db, TEST_DATA_FORMAT, TEST_FILE_NAME)
+    @patch("common_layer.archiver.requests.get")
+    def test_get_content_http_error(self, mock_get):
+        """Test case for get_content HTTP error."""
+        mock_response = MagicMock()
+        mock_response.status_code = 500
+        mock_response.raise_for_status.side_effect = exceptions.HTTPError(
+            "Internal Server Error"
+        )
+        mock_get.return_value = mock_response
 
-    # Assertions
-    mock_insert.assert_called_once()
-    inserted_record = mock_insert.call_args[0][0]
-    assert inserted_record.data_format == TEST_DATA_FORMAT
-    assert inserted_record.data == TEST_FILE_NAME
-    mock_update.assert_not_called()
+        with self.assertRaises(RuntimeError) as exc:
+            get_content("http://example.com")
+        self.assertIn("HTTP error 500", str(exc.exception))
 
+    @patch(
+        "common_layer.archiver.requests.get",
+        side_effect=exceptions.RequestException("Unknown error"),
+    )
+    def test_get_content_request_exception(self, mock_get):
+        """Test case for get_content request exception."""
+        with self.assertRaises(RuntimeError) as exc:
+            get_content("http://example.com")
+        self.assertIn("Unable to retrieve data", str(exc.exception))
+        mock_get.assert_called_once()
 
-def test_upsert_cavl_table_update_existing_record(mock_db, mock_avl_repo):
-    """Test updating an existing record when a record is found"""
-    mock_insert, mock_update, mock_get = mock_avl_repo
+    def test_zip_content(self):
+        """Test case for zip_content."""
+        content = b"test data"
+        filename = "test.xml"
+        zipped_file = zip_content(content, filename)
 
-    # Mock existing record
-    existing_record = MagicMock(spec=AvlCavlDataArchive)
-    existing_record.data_format = TEST_DATA_FORMAT
-    existing_record.data = "old_file.zip"
-    existing_record.last_updated = None
+        self.assertIsInstance(zipped_file, BytesIO)
 
-    # Mock `get_by_data_format` to return an existing record
-    mock_get.return_value = existing_record
+    @patch("common_layer.archiver.S3")
+    @patch("common_layer.archiver.environ.get", return_value="test-bucket")
+    def test_upload_to_s3(self, _mock_env, mock_s3):
+        """Test case for upload_to_s3."""
+        mock_s3_instance = mock_s3.return_value
+        upload_to_s3("test.zip", b"zip content")
 
-    # Run function
-    upsert_cavl_table(mock_db, TEST_DATA_FORMAT, TEST_FILE_NAME)
+        mock_s3_instance.put_object.assert_called_with("test.zip", b"zip content")
 
-    # Assertions
-    mock_update.assert_called_once_with(existing_record)
-    assert existing_record.last_updated is not None
-    assert isinstance(existing_record.last_updated, datetime)
-    mock_insert.assert_not_called()
+    @patch("common_layer.archiver.SqlDB")
+    @patch("common_layer.archiver.AvlCavlDataArchiveRepo")
+    def test_upsert_cavl_table_insert(self, mock_repo, mock_db):
+        """Test case for upsert_cavl_table."""
+        mock_repo_instance = mock_repo.return_value
+        mock_repo_instance.get_by_data_format.return_value = None
+        upsert_cavl_table(mock_db, "TEST_FORMAT", "test.zip", datetime(2020, 1, 1))
 
+        mock_repo_instance.insert.assert_called()
 
-def test_get_content(mock_requests_get):
-    """Test `_get_content()` method fetches data correctly"""
-    archiver = ConsumerAPIArchiver(TEST_URL)
-    content = archiver._get_content()  # pylint: disable=protected-access
+    @patch("common_layer.archiver.SqlDB")
+    @patch("common_layer.archiver.AvlCavlDataArchiveRepo")
+    def test_upsert_cavl_table_update(self, mock_repo, mock_db):
+        """Test case for upsert_cavl_table."""
+        mock_repo_instance = mock_repo.return_value
+        archive_mock = MagicMock()
+        mock_repo_instance.get_by_data_format.return_value = archive_mock
+        upsert_cavl_table(mock_db, "TEST_FORMAT", "test.zip", datetime(2020, 1, 1))
 
-    # Assertions
-    assert content == TEST_RESPONSE_CONTENT
-    mock_requests_get.assert_called_once_with(TEST_URL)
-    assert isinstance(
-        archiver._access_time, datetime
-    )  # pylint: disable=protected-access
+        self.assertEqual(archive_mock.data, "test.zip")
+        mock_repo_instance.update.assert_called()
 
+    @patch("common_layer.archiver.get_content", return_value=b"test data")
+    @patch("common_layer.archiver.zip_content", return_value=BytesIO(b"zipped data"))
+    @patch("common_layer.archiver.upload_to_s3")
+    @patch("common_layer.archiver.upsert_cavl_table")
+    def test_archive_data(self, mock_upsert, mock_upload, mock_zip, mock_get):
+        """Test case for archive_data."""
+        archive_details = ArchiveDetails(
+            url="http://example.com",
+            data_format="TEST_FORMAT",
+            file_extension=".xml",
+            s3_file_prefix="test_prefix",
+            local_file_prefix="test_local",
+        )
 
-def test_get_file():
-    """Test `get_file()` method creates a valid ZIP file"""
-    archiver = ConsumerAPIArchiver(TEST_URL)
-    zip_bytes = archiver.get_file(TEST_RESPONSE_CONTENT)
+        archive_data(archive_details)
 
-    # Ensure it's a valid ZIP file
-    zip_bytes.seek(0)
-    with ZipFile(zip_bytes, "r") as zip_file:
-        assert (
-            archiver.content_filename in zip_file.namelist()
-        )  # Ensure filename exists
+        mock_get.assert_called()
+        mock_zip.assert_called()
+        mock_upload.assert_called()
+        mock_upsert.assert_called()
 
+    @patch("common_layer.archiver.get_content", side_effect=Exception("Failed"))
+    def test_archive_data_failure(self, mock_get):
+        """Test case for archive_data."""
+        archive_details = ArchiveDetails(
+            url="http://example.com",
+            data_format="TEST_FORMAT",
+            file_extension=".xml",
+            s3_file_prefix="test_prefix",
+            local_file_prefix="test_local",
+        )
 
-def test_save_to_database(
-    mock_db, mock_s3, mock_avl_repo
-):  # pylint: disable=unused-argument
-    """Test `save_to_database()` saves correctly"""
-    archiver = ConsumerAPIArchiver(TEST_URL)
-
-    # Mock _get_content() to fetch valid content
-    with patch.object(archiver, "_get_content", return_value=b"<xml>Data</xml>"):
-        # pylint: disable=protected-access
-        archiver._content = archiver._get_content()
-        archiver._access_time = datetime.now(timezone.utc)
-
-        # Mock ZIP file creation
-        zip_file = io.BytesIO()
-        zip_file.write(b"Test Data")
-        zip_file.seek(0)
-
-        archiver.save_to_database(zip_file)
-
-        # Assertions
-        mock_s3.assert_called_once()
-        mock_avl_repo[0].assert_called_once()
-
-
-def test_sirivm_archiver(
-    mock_requests_get, mock_db, mock_s3, mock_avl_repo
-):  # pylint: disable=unused-argument
-    """Test `SiriVMArchiver` class functionality"""
-    archiver = SiriVMArchiver(TEST_URL)
-
-    # Mock `_get_content()` to fetch valid content
-    with patch.object(archiver, "_get_content", return_value=b"<xml>Data</xml>"):
-        # pylint: disable=protected-access
-        archiver._content = archiver._get_content()  # Initialize content
-        archiver._access_time = datetime(2025, 2, 1, 12, 0, 0, tzinfo=timezone.utc)
-
-        # Run archive process
-        archiver.archive()
-
-        # Assertions
-        mock_s3.assert_called_once()
-        mock_avl_repo[0].assert_called_once()
+        with self.assertRaises(ArchivingError):
+            archive_data(archive_details)
+        mock_get.assert_called_once()

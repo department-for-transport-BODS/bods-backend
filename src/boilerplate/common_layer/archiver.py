@@ -2,22 +2,33 @@
 Module to support different dataset archiving to S3
 """
 
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from io import BytesIO
-import time
 from os import environ
 from zipfile import ZIP_DEFLATED, ZipFile
 
 import requests
-from requests import RequestException
-from structlog.stdlib import get_logger
 from common_layer.database.client import SqlDB
 from common_layer.database.models import AvlCavlDataArchive
 from common_layer.database.repos import AvlCavlDataArchiveRepo
-from common_layer.enums import CAVLDataFormat
 from common_layer.s3 import S3
+from structlog.stdlib import get_logger
 
 log = get_logger()
+
+
+@dataclass
+class ArchiveDetails:
+    """
+    Handle archive details
+    """
+
+    url: str
+    data_format: str
+    file_extension: str
+    s3_file_prefix: str
+    local_file_prefix: str
 
 
 class ArchivingError(Exception):
@@ -26,159 +37,98 @@ class ArchivingError(Exception):
     """
 
 
-def upsert_cavl_table(db: SqlDB, data_format: str, file_name: str) -> None:
-    """Update the record in the db if exist otherwise create a new record"""
+def upsert_cavl_table(
+    db: SqlDB, data_format: str, file_name: str, current_time: datetime
+) -> None:
+    """Update or insert a record in the database."""
     archive = AvlCavlDataArchiveRepo(db).get_by_data_format(data_format)
     if not archive:
-        archive = AvlCavlDataArchive(
-            data_format=data_format,
-            data=file_name,
-        )
+        archive = AvlCavlDataArchive(data_format=data_format, data=file_name)
+        archive.last_updated = current_time
         AvlCavlDataArchiveRepo(db).insert(archive)
     else:
         archive.data = file_name
-        archive.last_updated = datetime.now(timezone.utc)
+        archive.last_updated = current_time
         AvlCavlDataArchiveRepo(db).update(archive)
 
 
-class ConsumerAPIArchiver:
-    """
-    ConsumerAPIArchiver class
-    """
+def get_content(url: str) -> bytes:
+    """Fetches content from a given URL."""
+    response = None
+    try:
+        response = requests.get(url, timeout=60)
+        response.raise_for_status()
+        log.info("Response received", url=url, status_code=response.status_code)
+        return response.content
 
-    data_format = CAVLDataFormat.SIRIVM.value
-    extension = ".xml"
-    filename_prefix = "sirivm"
-    content_filename_prefix = "siri"
-    archiving_type = ""
+    except requests.exceptions.Timeout as err:
+        log.error("Request timed out", url=url)
+        raise RuntimeError(f"Request to {url} timed out.") from err
 
-    def __init__(self, url: str) -> None:
-        self.url: str = url
-        self.db: SqlDB = SqlDB()
-        self._access_time: datetime | None = None
-        self._content: bytes | None = None
+    except requests.exceptions.ConnectionError as err:
+        log.error("Network connection error", url=url)
+        raise RuntimeError(f"Network error while connecting to {url}.") from err
 
-    @property
-    def filename(self) -> str:
-        """Get the zip filename"""
-        now = (self.access_time or datetime.now()).strftime("%Y-%m-%d_%H%M%S")
-        return self.data_format_value + "_" + now + ".zip"
+    except requests.exceptions.HTTPError as err:
+        status_code = response.status_code if response is not None else "Unknown"
+        log.error("HTTP error occurred", url=url, status_code=status_code)
+        raise RuntimeError(
+            f"HTTP error {status_code} when accessing {url}: {err}"
+        ) from err
 
-    @property
-    def data_format_value(self) -> str:
-        """Get the file format value"""
-        return self.filename_prefix
+    except requests.exceptions.RequestException as err:
+        log.error("Failed to fetch data", url=url, error=str(err))
+        raise RuntimeError(f"Unable to retrieve data from {url}") from err
 
-    @property
-    def access_time(self) -> datetime | None:
-        """Get access time for request send to fetch url data"""
-        if self._content is None:
-            raise ValueError("`content` has not been fetched yet.")
 
-        if self._access_time is None:
-            raise ValueError("`access_time` has not been set.")
+def zip_content(content: bytes, filename: str) -> BytesIO:
+    """Compress content into a zip file."""
+    log.info("Zipping content", filename=filename)
+    bytesio = BytesIO()
+    with ZipFile(bytesio, mode="w", compression=ZIP_DEFLATED) as zf:
+        zf.writestr(filename, content)
+    return bytesio
 
-        return self._access_time
 
-    @property
-    def content(self) -> bytes:
-        """Get the file content"""
-        if self._content is None:
-            self._content = self._get_content()
-        return self._content
-
-    @property
-    def content_filename(self) -> str:
-        """Get content filename"""
-        return self.content_filename_prefix + self.extension
-
-    def archive(self) -> None:
-        """Archive the file"""
-        file_ = self.get_file(self.content)
-        self.save_to_database(file_)
-
-    def _get_content(self) -> bytes:
-        """Helper function to get the content of file from url"""
-        try:
-            response = requests.get(self.url, timeout=60)
-            self._access_time = datetime.now(timezone.utc)
-            log.info(
-                "Total time elapsed to get response",
-                url=self.url,
-                archiving_type=self.archiving_type,
-                time=response.elapsed.total_seconds(),
-            )
-            return response.content
-        except RequestException as err:
-            msg = f"Unable to retrieve data from {self.url}"
-            log.error(
-                "Unable to retrive data",
-                url=self.url,
-                archiving_type=self.archiving_type,
-            )
-            raise ArchivingError(msg) from err
-
-    def get_file(self, content: bytes) -> BytesIO:
-        """Get the zip file content"""
-        start_get_file_op = time.time()
-        bytesio = BytesIO()
-        with ZipFile(bytesio, mode="w", compression=ZIP_DEFLATED) as zf:
-            zf.writestr(self.content_filename, content)
-        end_file_op = time.time()
-        log.info(
-            "Zipping file operation completed",
-            archiving_type=self.archiving_type,
-            time=end_file_op - start_get_file_op,
-        )
-
-        return bytesio
-
-    def save_to_database(self, bytesio: BytesIO) -> None:
-        """Save the archived details to database"""
-        start_s3_op = time.time()
-        self.upload_file_to_s3(bytesio.getvalue())
-        upsert_cavl_table(self.db, self.data_format, self.filename)
-
-        end_s3_op = time.time()
-        log.info(
-            "S3 archiving and saving to DB operation completed",
-            archiving_type=self.archiving_type,
-            time=end_s3_op - start_s3_op,
-            filename=self.filename,
-        )
-
-    def upload_file_to_s3(self, bytesio: bytes) -> None:
-        """Upload the archived file to s3"""
-        bucket_name = environ.get("AWS_SIRIVM_STORAGE_BUCKET_NAME", default="")
+def upload_to_s3(filename: str, content: bytes) -> None:
+    """Uploads file content to S3 bucket."""
+    bucket_name = environ.get("AWS_SIRIVM_STORAGE_BUCKET_NAME", None)
+    if bucket_name:
+        log.info("Uploading archive file", bucket=bucket_name, filename=filename)
         s3 = S3(bucket_name)
-        s3.put_object(self.filename, bytesio)
+        s3.put_object(filename, content)
+    else:
+        log.error("S3 bucket not set")
+        raise ValueError("S3 bucket not defined")
 
 
-class SiriVMArchiver(ConsumerAPIArchiver):
-    """Class supports sirivm file archiving"""
+def archive_data(archive_details: ArchiveDetails) -> str:
+    """Main function to fetch, archive, and save the data."""
+    try:
+        # Get the content from url
+        content = get_content(archive_details.url)
 
-    data_format = CAVLDataFormat.SIRIVM.value
-    extension = ".xml"
-    filename_prefix = "sirivm"
-    content_filename_prefix = "siri"
-    archiving_type = "[SIRIVM_Archiving]"
+        # Write the content to local file
+        local_file_name = (
+            f"{archive_details.local_file_prefix}{archive_details.file_extension}"
+        )
+        zipped_file = zip_content(content, local_file_name)
 
+        # Uploading file to s3
+        current_time = datetime.now(timezone.utc)
+        s3_filename = (
+            f"{archive_details.s3_file_prefix}_"
+            f"{current_time.strftime('%Y-%m-%d_%H%M%S')}.zip"
+        )
+        upload_to_s3(s3_filename, zipped_file.getvalue())
 
-class SiriVMTFLArchiver(ConsumerAPIArchiver):
-    """Class supports sirivm tfl file archiving"""
-
-    data_format = CAVLDataFormat.SIRIVM_TFL.value
-    extension = ".xml"
-    filename_prefix = "sirivm_tfl"
-    content_filename_prefix = "siri_tfl"
-    archiving_type = "[SIRIVM_TFL_Archiving]"
-
-
-class GTFSRTArchiver(ConsumerAPIArchiver):
-    """Class supports gtfsrt file archiving"""
-
-    data_format = CAVLDataFormat.GTFSRT.value
-    extension = ".bin"
-    filename_prefix = "gtfsrt"
-    content_filename_prefix = "gtfsrt"
-    archiving_type = "[GTFSRT_Archiving]"
+        # Writing to db
+        db = SqlDB()
+        upsert_cavl_table(db, archive_details.data_format, s3_filename, current_time)
+        log.info("Archiving completed", filename=s3_filename)
+        return s3_filename
+    except Exception as err:
+        log.error("Failed to archive the data", url=archive_details.url, exc_info=True)
+        raise ArchivingError(
+            f"Unable archive the date from url {archive_details.url}"
+        ) from err
