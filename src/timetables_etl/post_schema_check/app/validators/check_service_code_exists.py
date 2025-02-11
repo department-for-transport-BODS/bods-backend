@@ -113,8 +113,16 @@ def get_published_services(
         list(active_revision_ids)
     )
 
-    published_revision_ids = {ds.live_revision_id for ds in published_datasets}
-    revision_to_dataset = {ds.live_revision_id: ds.id for ds in published_datasets}
+    published_revision_ids = {
+        ds.live_revision_id
+        for ds in published_datasets
+        if ds.live_revision_id is not None
+    }
+    revision_to_dataset = {
+        ds.live_revision_id: ds.id
+        for ds in published_datasets
+        if ds.live_revision_id is not None
+    }
 
     txc_file_attributes_repo = OrganisationTXCFileAttributesRepo(db)
 
