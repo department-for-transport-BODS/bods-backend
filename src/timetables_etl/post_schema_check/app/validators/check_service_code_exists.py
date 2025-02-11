@@ -1,3 +1,7 @@
+"""
+Check if service code exists in published dataset
+"""
+
 from dataclasses import dataclass
 
 from common_layer.database.client import SqlDB
@@ -25,6 +29,9 @@ class ServiceRevisions:
 
     @classmethod
     def empty(cls) -> "ServiceRevisions":
+        """
+        Returns empty ServiceRevisions
+        """
         return cls({}, set(), set())
 
 
@@ -43,7 +50,8 @@ class PublishedServiceData:
         return ValidationResult(
             is_valid=False,
             error_code=f"PUBLISHED_DATASET:{self.dataset_id},SERVICE_CODES:{service_codes_list}",
-            message=f"Found an existing published dataset (ID: {self.dataset_id}) with service codes: {service_codes_list}",
+            message=f"Found an existing published dataset \
+            (ID: {self.dataset_id}) with service codes: {service_codes_list}",
         )
 
 
