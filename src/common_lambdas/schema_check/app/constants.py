@@ -16,7 +16,7 @@ class TXCVersion(Enum):
 class NeTExVersion(Enum):
     """Supported NeTEx schema versions."""
 
-    V1_10 = "1.10"
+    V1_1 = "1.1"
 
 
 class XMLDataType(Enum):
@@ -51,8 +51,8 @@ SCHEMA_SPECS: Dict[Tuple[XMLSchemaType, str], SchemaSpec] = {
         XMLSchemaType.TRANSXCHANGE,
         "TransXChange_general.xsd",
     ),
-    (XMLSchemaType.NETEX, "1.10"): SchemaSpec(
-        NeTExVersion.V1_10,
+    (XMLSchemaType.NETEX, "1.1"): SchemaSpec(
+        NeTExVersion.V1_1,
         XMLSchemaType.NETEX,
         "NeTEx_publication.xsd",
     ),

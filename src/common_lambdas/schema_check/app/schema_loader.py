@@ -37,8 +37,8 @@ def load_schema(schema_type: XMLSchemaType, version: str) -> XMLSchema:
 
     schema_path = (
         Path(__file__).parent
-        / "schema"
-        / schema_spec.schema_type.value
+        / "schemas"
+        / schema_spec.schema_type.value.lower()
         / schema_spec.version_enum.value
         / schema_spec.filename
     )

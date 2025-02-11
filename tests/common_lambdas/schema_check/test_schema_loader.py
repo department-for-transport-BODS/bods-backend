@@ -58,7 +58,11 @@ def test_load_schema_valid(setup_mocks, inputs, expected_file_name):
     m_open, m_xml_schema = setup_mocks
 
     expected_path = (
-        MODULE_PATH / "schema" / schema_type.value / version / expected_file_name
+        MODULE_PATH
+        / "schemas"
+        / schema_type.value.lower()
+        / version
+        / expected_file_name
     )
 
     result = load_schema(schema_type, version)

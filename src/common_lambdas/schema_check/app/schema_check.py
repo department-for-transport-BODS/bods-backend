@@ -51,7 +51,6 @@ class SchemaCheckInputData(BaseModel):
     revision_id: int = Field(alias="DatasetRevisionId")
     s3_bucket_name: str = Field(alias="Bucket")
     s3_file_key: str = Field(alias="ObjectKey")
-    data_type: XMLDataType = Field(alias="DataType")
 
 
 def get_schema_violations(
