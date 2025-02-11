@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from io import BytesIO
 from os import environ
+import time
 from zipfile import ZIP_DEFLATED, ZipFile
 
 import requests
@@ -16,6 +17,8 @@ from common_layer.s3 import S3
 from structlog.stdlib import get_logger
 
 log = get_logger()
+
+BUCKET_NAME = environ.get("AWS_SIRIVM_STORAGE_BUCKET_NAME", None)
 
 
 @dataclass
@@ -92,18 +95,17 @@ def zip_content(content: bytes, filename: str) -> BytesIO:
 
 def upload_to_s3(filename: str, content: bytes) -> None:
     """Uploads file content to S3 bucket."""
-    bucket_name = environ.get("AWS_SIRIVM_STORAGE_BUCKET_NAME", None)
-    if bucket_name:
-        log.info("Uploading archive file", bucket=bucket_name, filename=filename)
-        s3 = S3(bucket_name)
+    if BUCKET_NAME:
+        log.info("Uploading archive file", bucket=BUCKET_NAME, filename=filename)
+        s3 = S3(BUCKET_NAME)
         s3.put_object(filename, content)
     else:
         log.error("S3 bucket not set")
         raise ValueError("S3 bucket not defined")
 
 
-def archive_data(archive_details: ArchiveDetails) -> str:
-    """Main function to fetch, archive, and save the data."""
+def archive_data(archive_details: ArchiveDetails) -> tuple[str, datetime]:
+    """Function to fetch and archive."""
     try:
         # Get the content from url
         content = get_content(archive_details.url)
@@ -122,13 +124,31 @@ def archive_data(archive_details: ArchiveDetails) -> str:
         )
         upload_to_s3(s3_filename, zipped_file.getvalue())
 
-        # Writing to db
-        db = SqlDB()
-        upsert_cavl_table(db, archive_details.data_format, s3_filename, current_time)
-        log.info("Archiving completed", filename=s3_filename)
-        return s3_filename
+        return s3_filename, current_time
+
     except Exception as err:
         log.error("Failed to archive the data", url=archive_details.url, exc_info=True)
         raise ArchivingError(
             f"Unable archive the date from url {archive_details.url}"
         ) from err
+
+
+def process_archive(db: SqlDB, archive_details: ArchiveDetails) -> str:
+    """Process the archive and save the data."""
+
+    log.info("Start archiving the data", details=ArchiveDetails)
+
+    start_time = time.time()
+    # Archive the data and upload to s3
+    file_name, current_time = archive_data(archive_details)
+    # Wrtie to db
+    upsert_cavl_table(db, archive_details.data_format, file_name, current_time)
+
+    log.info(
+        "Finished archiving the data",
+        bucket=BUCKET_NAME,
+        file_name=file_name,
+        time=time.time() - start_time,
+    )
+
+    return file_name
