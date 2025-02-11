@@ -108,7 +108,12 @@ disable = ["too-few-public-methods"]
 [tool.pyright]
 include = ["src", "tests", "tools"]
 exclude = ["**/__pycache__"]
-extraPaths = ["src", "src/boilerplate", "src/timetables_etl"]
+extraPaths = [
+  "src",
+  "src/boilerplate",
+  "src/timetables_etl",
+  "src/common_lambdas",
+]
 reportMissingImports = "error"
 reportMissingTypeStubs = false
 strict = [
@@ -118,7 +123,13 @@ strict = [
 ]
 
 [tool.pytest.ini_options]
-pythonpath = ["./src", "./src/timetables_etl", "./tests", "./src/boilerplate"]
+pythonpath = [
+  "./src",
+  "./src/timetables_etl",
+  "./tests",
+  "./src/boilerplate",
+  "./src/common_lambdas",
+]
 addopts = [
   "-v",
   "-rsxX",
