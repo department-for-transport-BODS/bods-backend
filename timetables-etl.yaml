@@ -309,7 +309,7 @@ Resources:
       MemorySize: 768
       Environment:
         Variables:
-          XML_DATA_TYPE: 'timetables'
+          SCHEMA_CHECK_XML_DATA_TYPE: 'timetables'
       LoggingConfig:
         LogGroup: !Ref SchemaCheckLambdaLogGroup
 

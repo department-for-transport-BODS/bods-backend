@@ -35,7 +35,9 @@ class SchemaCheckSettings(BaseSettings):
     """
 
     XML_DATA_TYPE: XMLDataType | None = Field(
-        default=None, description="Type of check: FARES or TIMETABLES"
+        default=None,
+        description="Type of check: FARES or TIMETABLES",
+        alias="SCHEMA_CHECK_XML_DATA_TYPE",
     )
 
 
@@ -110,7 +112,9 @@ def validate_schema_type(data_type: XMLDataType, detected_schema_type: XMLSchema
 
     expected_schema_type = expected_mapping.get(data_type)
     if expected_schema_type is None:
-        raise ValueError(f"XML_DATA_TYPE '{data_type}' not found in mapping")
+        raise ValueError(
+            f"SCHEMA_CHECK_XML_DATA_TYPE '{data_type}' not found in mapping"
+        )
 
     if detected_schema_type != expected_schema_type:
         msg = "XMLSchemaType mismatch: provided XML file does not match expected schema type"
@@ -131,11 +135,11 @@ def process_schema_check(
     xml_root = parse_xml_from_s3(input_data)
     schema_type, schema_version = get_xml_type(xml_root)
 
-    # TODO: Replace SchemaCheckSettings with input_data.XML_DATA_TYPE # pylint: disable=fixme
+    # TODO: Replace SchemaCheckSettings with input_data.SCHEMA_CHECK_XML_DATA_TYPE # pylint: disable=fixme
     # once Lambda is promoted to its own application
     settings = SchemaCheckSettings()
     if settings.XML_DATA_TYPE is None:
-        msg = "Expected XML_DATA_TYPE is not set in environment variables."
+        msg = "Expected SCHEMA_CHECK_XML_DATA_TYPE is not set in environment variables."
         log.error(msg)
         raise ValueError(msg)
     validate_schema_type(settings.XML_DATA_TYPE, schema_type)
