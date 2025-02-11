@@ -309,7 +309,7 @@ Resources:
       MemorySize: 768
       Environment:
         Variables:
-          TXC_XSD_PATH: 'TransXChange_general.xsd'
+          XML_DATA_TYPE: 'timetables'
       LoggingConfig:
         LogGroup: !Ref SchemaCheckLambdaLogGroup
 
