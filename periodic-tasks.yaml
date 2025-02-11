@@ -162,6 +162,8 @@ Resources:
       Handler: iterator.lambda_handler
       MemorySize: 128
       Role: !GetAtt IteratorLambdaExecutionRole.Arn
+      Layers:
+        - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
         LogGroup: !Ref IteratorLambdaLogGroup
 
