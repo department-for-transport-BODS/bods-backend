@@ -31,14 +31,14 @@ class OrganisationDatasetRepo(BaseRepositoryWithId[OrganisationDataset]):
         super().__init__(db, OrganisationDataset)
 
     @handle_repository_errors
-    def get_published(
-        self, active_revision_id_list: list[int]
+    def get_published_datasets(
+        self, live_revision_ids: list[int]
     ) -> list[OrganisationDataset]:
         """
         Get all published datasets
         """
         statement = self._build_query().where(
-            self._model.live_revision_id.in_(active_revision_id_list)
+            self._model.live_revision_id.in_(live_revision_ids)
         )
         return self._fetch_all(statement)
 
@@ -87,7 +87,7 @@ class OrganisationDatasetRevisionRepo(
         self._execute_update(update_hash, statement)
 
     @handle_repository_errors
-    def get_active_datasets(
+    def get_live_revisions(
         self, revision_id_list: list[int]
     ) -> list[OrganisationDatasetRevision]:
         """
@@ -96,7 +96,7 @@ class OrganisationDatasetRevisionRepo(
         statement = self._build_query().where(
             and_(
                 self._model.id.in_(revision_id_list),
-                self._model.status == "live",
+                self._model.status == FeedStatus.LIVE,
                 self._model.is_published.is_(True),
             )
         )
@@ -164,13 +164,13 @@ class OrganisationTXCFileAttributesRepo(
 
     @handle_repository_errors
     def get_by_service_code(
-        self, service_code: list[str]
+        self, service_codes: list[str]
     ) -> list[OrganisationTXCFileAttributes]:
         """
         Get TXC File Attributes by service code
         """
         statement = self._build_query().where(
-            self._model.service_code.in_(service_code)
+            self._model.service_code.in_(service_codes)
         )
         return self._fetch_all(statement)
 
