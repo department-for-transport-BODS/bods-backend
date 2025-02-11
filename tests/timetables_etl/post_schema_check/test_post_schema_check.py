@@ -123,10 +123,10 @@ def test_validate_filepath_pii(
         )
     )
 
-    result = check_filename_for_filepath_pii(txc_data)
-    assert isinstance(result, ValidationResult)
-    assert result.is_valid == expected_valid
-    assert result.error_code == expected_error
+    result = check_filename_for_filepath_pii(txc_data, mock_db)
+    assert isinstance(result, list)
+    assert result[0].is_valid == expected_valid
+    assert result[0].error_code == expected_error
 
 
 @pytest.mark.parametrize(
