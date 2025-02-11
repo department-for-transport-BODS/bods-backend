@@ -7,8 +7,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from common_layer.database.client import SqlDB
-from common_layer.txc.models.txc_data import TXCData
-from common_layer.txc.models.txc_metadata import TXCMetadata
+from common_layer.xml.txc.models import TXCData
+from common_layer.xml.txc.models.txc_metadata import TXCMetadata
 from post_schema_check.app.models import ValidationResult
 from post_schema_check.app.post_schema_check import process_txc_data_check
 from post_schema_check.app.validators import (
@@ -16,6 +16,11 @@ from post_schema_check.app.validators import (
     check_service_code_exists,
 )
 
+from tests.factories.database.organisation import (
+    OrganisationDatasetFactory,
+    OrganisationDatasetRevisionFactory,
+    OrganisationTXCFileAttributesFactory,
+)
 from tests.timetables_etl.factories.txc.factory_txc_data import TXCDataFactory
 from tests.timetables_etl.factories.txc.factory_txc_service import TXCServiceFactory
 
@@ -215,7 +220,7 @@ def test_service_codes_found_no_active_datasets(
         MagicMock(id=1, service_code="SC123", revision_id=1),
         MagicMock(id=2, service_code="SC456", revision_id=2),
     ]
-    mock_revision_repo.get_active_datasets.return_value = []  # No active revisions
+    mock_revision_repo.get_live_revisions.return_value = []  # No active revisions
 
     with (
         patch(
@@ -233,7 +238,7 @@ def test_service_codes_found_no_active_datasets(
         mock_txc_file_attributes_repo.get_by_service_code.assert_called_once_with(
             ["SC123", "SC456"]
         )
-        mock_revision_repo.get_active_datasets.assert_called_once()
+        mock_revision_repo.get_live_revisions.assert_called_once()
 
 
 def test_service_codes_found_published_dataset_exists(
@@ -246,17 +251,27 @@ def test_service_codes_found_published_dataset_exists(
     Service Codes Found and Published Dataset Exists
     """
     mock_txc_file_attributes_repo.get_by_service_code.return_value = [
-        MagicMock(service_code="SC123", revision_id=1),
-        MagicMock(service_code="SC456", revision_id=2),
+        OrganisationTXCFileAttributesFactory.create_with_id(
+            id_number=111, service_code="SC123", revision_id=1
+        ),
+        OrganisationTXCFileAttributesFactory.create_with_id(
+            id_number=222, service_code="SC456", revision_id=2
+        ),
     ]
-    mock_revision_repo.get_active_datasets.return_value = [
-        MagicMock(id=1),
-        MagicMock(id=2),
+    mock_revision_repo.get_live_revisions.return_value = [
+        OrganisationDatasetRevisionFactory.create_with_id(id_number=1),
+        OrganisationDatasetRevisionFactory.create_with_id(id_number=2),
     ]
-    mock_dataset_repo.get_published.return_value = [MagicMock(id=100, revision_id=1)]
+    mock_dataset_repo.get_published_datasets.return_value = [
+        OrganisationDatasetFactory.create_with_id(id_number=100, live_revision_id=1)
+    ]
     mock_txc_file_attributes_repo.get_by_revision_id.return_value = [
-        MagicMock(service_code="SC123", revision_id=1),
-        MagicMock(service_code="SC777", revision_id=1),
+        OrganisationTXCFileAttributesFactory.create_with_id(
+            id_number=111, service_code="SC123", revision_id=1
+        ),
+        OrganisationTXCFileAttributesFactory.create_with_id(
+            id_number=333, service_code="SC777", revision_id=1
+        ),
     ]
 
     with (
@@ -291,22 +306,34 @@ def test_multiple_published_dataset_exists(
     Service Codes Found and multiple Published Dataset Exists
     """
     mock_txc_file_attributes_repo.get_by_service_code.return_value = [
-        MagicMock(service_code="SC123", revision_id=1),
-        MagicMock(service_code="SC456", revision_id=2),
+        OrganisationTXCFileAttributesFactory.create_with_id(
+            id_number=111, service_code="SC123", revision_id=1
+        ),
+        OrganisationTXCFileAttributesFactory.create_with_id(
+            id_number=222, service_code="SC456", revision_id=2
+        ),
     ]
-    mock_revision_repo.get_active_datasets.return_value = [
-        MagicMock(id=1),
-        MagicMock(id=2),
+    mock_revision_repo.get_live_revisions.return_value = [
+        OrganisationDatasetRevisionFactory.create_with_id(id_number=1),
+        OrganisationDatasetRevisionFactory.create_with_id(id_number=2),
     ]
-    mock_dataset_repo.get_published.return_value = [
-        MagicMock(id=100, revision_id=1),
-        MagicMock(id=200, revision_id=2),
+    mock_dataset_repo.get_published_datasets.return_value = [
+        OrganisationDatasetFactory.create_with_id(id_number=100, live_revision_id=1),
+        OrganisationDatasetFactory.create_with_id(id_number=200, live_revision_id=2),
     ]
     mock_txc_file_attributes_repo.get_by_revision_id.return_value = [
-        MagicMock(service_code="SC123", revision_id=1),
-        MagicMock(service_code="SC777", revision_id=1),
-        MagicMock(service_code="SC456", revision_id=2),
-        MagicMock(service_code="SC000", revision_id=2),
+        OrganisationTXCFileAttributesFactory.create_with_id(
+            id_number=111, service_code="SC123", revision_id=1
+        ),
+        OrganisationTXCFileAttributesFactory.create_with_id(
+            id_number=333, service_code="SC777", revision_id=1
+        ),
+        OrganisationTXCFileAttributesFactory.create_with_id(
+            id_number=111, service_code="SC456", revision_id=2
+        ),
+        OrganisationTXCFileAttributesFactory.create_with_id(
+            id_number=333, service_code="SC000", revision_id=2
+        ),
     ]
 
     with (
