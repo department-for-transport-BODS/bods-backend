@@ -49,7 +49,7 @@ class PublishedServiceData:
         service_codes_list = list(self.service_codes)
         return ValidationResult(
             is_valid=False,
-            error_code=f"PUBLISHED_DATASET:{self.dataset_id},SERVICE_CODES:{service_codes_list}",
+            error_code=f"PUBLISHED_DATASET:{self.dataset_id}|SERVICE_CODES:{service_codes_list}",
             message=f"Found an existing published dataset \
             (ID: {self.dataset_id}) with service codes: {service_codes_list}",
         )
