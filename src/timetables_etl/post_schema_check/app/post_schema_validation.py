@@ -2,7 +2,7 @@
 Post Schema TXC Validation
 """
 
-from typing import Callable
+from typing import Callable, List
 
 from common_layer.database.client import SqlDB
 from common_layer.xml.txc.models import TXCData
@@ -13,7 +13,7 @@ from .validators import check_filename_for_filepath_pii, check_service_code_exis
 
 log = get_logger()
 
-ValidatorFn = Callable[[TXCData, SqlDB], [ValidationResult]]
+ValidatorFn = Callable[[TXCData, SqlDB], List[ValidationResult]]
 
 
 POST_SCHEMA_VALIDATORS: list[ValidatorFn] = [
