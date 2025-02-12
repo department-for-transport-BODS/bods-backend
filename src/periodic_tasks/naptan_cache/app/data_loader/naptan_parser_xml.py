@@ -2,6 +2,7 @@
 Naptan Parser for XMLs
 """
 
+import asyncio
 from pathlib import Path
 from typing import Any, Iterator
 
@@ -9,6 +10,7 @@ from common_layer.dynamodb.client_loader import DynamoDBLoader
 from common_layer.xml.txc.parser.parser_txc import strip_namespace
 from common_layer.xml.txc.parser.stop_points import parse_txc_stop_point
 from lxml import etree
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 from .download import download_file
@@ -19,7 +21,7 @@ log = get_logger()
 
 
 def get_element_text(
-    element: etree._Element | None, xpath: str, namespace: dict[str, str]
+    element: _Element | None, xpath: str, namespace: dict[str, str]
 ) -> str:
     """Efficiently extract text from an XML element using direct access when possible."""
     if element is None:
@@ -45,7 +47,7 @@ def download_naptan_xml(url: str, data_dir: Path) -> Path:
         raise
 
 
-def validate_stop_point(stop_point: etree._Element) -> bool:
+def validate_stop_point(stop_point: _Element) -> bool:
     """
     Validate if the stop point is active and not marked for deletion
     """
@@ -155,6 +157,45 @@ def process_naptan_data(
     return processed_count, error_count
 
 
+async def async_process_naptan_data(
+    xml_path: Path, dynamo_loader: DynamoDBLoader, concurrent_batches: int = 10
+) -> tuple[int, int]:
+    """
+    Process NaPTAN XML file and load into DynamoDB using concurrent batches.
+    DynamoDB batch_write_item has a limit of 25 items per request.
+    We'll collect multiple batches of 25 items before triggering concurrent processing.
+    """
+    total_processed = 0
+    total_errors = 0
+    current_batch: list[dict[str, Any]] = []
+
+    batch_target: int = dynamo_loader.batch_size * concurrent_batches
+
+    for stop_batch in stream_stops(xml_path):
+        current_batch.extend(stop_batch)
+
+        if len(current_batch) >= batch_target:
+            processed, errors = await dynamo_loader.async_batch_write_items(
+                current_batch
+            )
+            total_processed += processed
+            total_errors += errors
+            current_batch = []
+
+    if current_batch:
+        processed, errors = await dynamo_loader.async_batch_write_items(current_batch)
+        total_processed += processed
+        total_errors += errors
+
+    log.info(
+        "Completed NaPTAN data processing",
+        processed_count=total_processed,
+        error_count=total_errors,
+    )
+
+    return total_processed, total_errors
+
+
 def load_naptan_data_from_xml(
     url: str, data_dir: Path, dynamo_loader: Any
 ) -> tuple[int, int]:
@@ -163,4 +204,4 @@ def load_naptan_data_from_xml(
     Returns tuple of (processed_count, error_count).
     """
     xml_path = prepare_naptan_data(url, data_dir)
-    return process_naptan_data(xml_path, dynamo_loader)
+    return asyncio.run(async_process_naptan_data(xml_path, dynamo_loader))
