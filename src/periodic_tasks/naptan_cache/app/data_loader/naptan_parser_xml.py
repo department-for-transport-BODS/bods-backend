@@ -158,7 +158,7 @@ def process_naptan_data(
 
 
 async def async_process_naptan_data(
-    xml_path: Path, dynamo_loader: DynamoDBLoader, concurrent_batches: int = 10
+    xml_path: Path, dynamo_loader: DynamoDBLoader
 ) -> tuple[int, int]:
     """
     Process NaPTAN XML file and load into DynamoDB using concurrent batches.
@@ -169,7 +169,7 @@ async def async_process_naptan_data(
     total_errors = 0
     current_batch: list[dict[str, Any]] = []
 
-    batch_target: int = dynamo_loader.batch_size * concurrent_batches
+    batch_target: int = dynamo_loader.batch_size * dynamo_loader.max_concurrent_batches
 
     for stop_batch in stream_stops(xml_path):
         current_batch.extend(stop_batch)

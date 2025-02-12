@@ -92,21 +92,23 @@ DynamoDBOperation = Literal["put", "delete"]
 class DynamoDBLoader:
     """Handles batch writing of items to DynamoDB with retry logic and error handling."""
 
+    batch_size: int = 25
+    deserializer = TypeDeserializer()
+
     def __init__(
         self,
         table_name: str,
         region: str = "eu-west-2",
         partition_key: str = "AtcoCode",
-        max_concurrent_batches: int = 10,
+        max_concurrent_batches: int = 30,
     ):
         """Initialize DynamoDB loader with table name and region."""
         self.dynamodb = boto3.resource("dynamodb", region_name=region)  # type: ignore
         self.table_name = table_name
         self.table = self.dynamodb.Table(table_name)
-        self.batch_size: int = 25
-        self.deserializer = TypeDeserializer()
         self.log = get_logger().bind(table_name=table_name)
         self.partition_key = partition_key
+        self.max_concurrent_batches = max_concurrent_batches
         self.semaphore = asyncio.Semaphore(max_concurrent_batches)
 
     def prepare_put_requests(
