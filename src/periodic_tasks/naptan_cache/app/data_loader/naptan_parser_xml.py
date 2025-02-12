@@ -2,13 +2,16 @@
 Naptan Parser for XMLs
 """
 
+import asyncio
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, AsyncIterator
 
+from botocore.exceptions import ClientError
 from common_layer.dynamodb.client_loader import DynamoDBLoader
 from common_layer.xml.txc.parser.parser_txc import strip_namespace
 from common_layer.xml.txc.parser.stop_points import parse_txc_stop_point
 from lxml import etree
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 from .download import download_file
@@ -19,7 +22,7 @@ log = get_logger()
 
 
 def get_element_text(
-    element: etree._Element | None, xpath: str, namespace: dict[str, str]
+    element: _Element | None, xpath: str, namespace: dict[str, str]
 ) -> str:
     """Efficiently extract text from an XML element using direct access when possible."""
     if element is None:
@@ -45,22 +48,23 @@ def download_naptan_xml(url: str, data_dir: Path) -> Path:
         raise
 
 
-def validate_stop_point(stop_point: etree._Element) -> bool:
+def prepare_naptan_data(url: str, data_dir: Path) -> Path:
     """
-    Validate if the stop point is active and not marked for deletion
+    Download and prepare NaPTAN data for processing.
+    Returns path to the downloaded XML file.
     """
-    return (
-        stop_point.get("Status") == "active"
-        and stop_point.get("Modification") != "delete"
-    )
+    log.info("Preparing an Output Path", path=str(data_dir))
+    new_data_dir = create_data_dir(data_dir)
+    log.info("Output dir set", path=str(new_data_dir))
+    log.info("Downloading Naptan Data", url=url)
+    return download_naptan_xml(url, data_dir)
 
 
-def stream_stops(
-    xml_path: Path, batch_size: int = 25
-) -> Iterator[list[dict[str, Any]]]:
-    """Stream stop points from XML in batches."""
-    log.info("Starting to stream stops from XML", file_path=str(xml_path))
-
+async def async_stream_stop_points(xml_path: Path) -> AsyncIterator[dict[str, Any]]:
+    """
+    Stream stop points from XML file.
+    Uses iterparse for memory efficiency and validates stop points before processing.
+    """
     context = etree.iterparse(
         str(xml_path),
         events=("end",),
@@ -76,28 +80,19 @@ def stream_stops(
         no_network=True,
     )
 
-    current_batch: list[dict[str, Any]] = []
-
     try:
         for _, stop_point in context:
             stop_point = strip_namespace(stop_point)
+
             if stop_data := parse_txc_stop_point(stop_point):
-                stop_point_dict = stop_data.model_dump()
-                current_batch.append(stop_point_dict)
+                yield stop_data.model_dump()
 
-                if len(current_batch) >= batch_size:
-                    yield current_batch
-                    current_batch = []
-
-            # Remove Processed Elements from Memory
+            # Clean up processed elements
             stop_point.clear()
             parent = stop_point.getparent()
             previous = stop_point.getprevious()
             if parent is not None and previous is not None:
                 parent.remove(previous)
-
-        if current_batch:
-            yield current_batch
 
     except Exception:
         log.error("Failed to parse XML file", exc_info=True)
@@ -106,53 +101,84 @@ def stream_stops(
         del context
 
 
-def prepare_naptan_data(url: str, data_dir: Path) -> Path:
-    """
-    Download and prepare NaPTAN data for processing.
-    Returns path to the downloaded XML file.
-    """
-    log.info("Preparing an Output Path", path=str(data_dir))
-    new_data_dir = create_data_dir(data_dir)
-    log.info("Output dir set", path=str(new_data_dir))
-    log.info("Downloading Naptan Data", url=url)
-    return download_naptan_xml(url, data_dir)
-
-
-def process_naptan_data(
-    xml_path: Path, dynamo_loader: DynamoDBLoader
+async def process_stop_points(
+    stop_points_stream: AsyncIterator[dict[str, Any]], dynamo_loader: DynamoDBLoader
 ) -> tuple[int, int]:
     """
-    Process NaPTAN XML file and load into DynamoDB.
-    Returns tuple of (processed_count, error_count).
-    DynamoDB's batch_write_tiems only supports 25 at a time
-    If more speed is required, then multithreading is required
+    Process stream of stop points using concurrent DynamoDB batch operations.
+    Returns (processed_count, error_count).
     """
-    processed_count = 0
-    error_count = 0
-    batch: list[dict[str, Any]] = []
+    total_processed = 0
+    total_errors = 0
+    active_tasks: list[asyncio.Task[tuple[int, int]]] = []
+    current_batch: list[dict[str, Any]] = []
 
-    for stop_batch in stream_stops(xml_path):
-        for item in stop_batch:
-            batch.append(item)
+    async def process_batch(items: list[dict[str, Any]]) -> tuple[int, int]:
+        return await dynamo_loader.async_batch_write_items(items)
 
-            if len(batch) >= dynamo_loader.batch_size:
-                unprocessed = dynamo_loader.batch_write_items(batch, "put")
-                error_count += len(unprocessed)
-                processed_count += len(batch) - len(unprocessed)
-                batch = []
+    async def wait_for_slot() -> None:
+        """Wait for a task slot to become available and process completed tasks."""
+        nonlocal total_processed, total_errors, active_tasks
 
-    if batch:
-        unprocessed = dynamo_loader.batch_write_items(batch, "put")
-        error_count += len(unprocessed)
-        processed_count += len(batch) - len(unprocessed)
+        done, pending = await asyncio.wait(
+            active_tasks, return_when=asyncio.FIRST_COMPLETED
+        )
+
+        for completed_task in done:
+            try:
+                processed, errors = await completed_task
+                total_processed += processed
+                total_errors += errors
+            except ClientError as e:
+                error_code = e.response.get("Error", {}).get("Code", "Unknown")
+                error_message = e.response.get("Error", {}).get("Message", "No message")
+                log.error(
+                    "AWS operation failed",
+                    error_code=error_code,
+                    error_message=error_message,
+                )
+                total_errors += dynamo_loader.batch_size
+            except ValueError as e:
+                log.error("Failed to process batch result", error=str(e))
+                total_errors += dynamo_loader.batch_size
+
+        active_tasks = list(pending)
+
+    try:
+        async for stop_point in stop_points_stream:
+            current_batch.append(stop_point)
+
+            # When we have a full batch, process it
+            if len(current_batch) >= dynamo_loader.batch_size:
+                # Wait for a slot if we're at max concurrency
+                while len(active_tasks) >= dynamo_loader.max_concurrent_batches:
+                    await wait_for_slot()
+
+                # Create new task
+                task = asyncio.create_task(process_batch(current_batch))
+                active_tasks.append(task)
+                current_batch = []
+
+        # Process any remaining items
+        if current_batch:
+            task = asyncio.create_task(process_batch(current_batch))
+            active_tasks.append(task)
+
+        # Wait for all remaining tasks to complete
+        while active_tasks:
+            await wait_for_slot()
+
+    except Exception:
+        log.error("Failed to process stop points", exc_info=True)
+        raise
 
     log.info(
-        "Completed NaPTAN data processing",
-        processed_count=processed_count,
-        error_count=error_count,
+        "Completed stop point processing",
+        processed_count=total_processed,
+        error_count=total_errors,
     )
 
-    return processed_count, error_count
+    return total_processed, total_errors
 
 
 def load_naptan_data_from_xml(
@@ -163,4 +189,5 @@ def load_naptan_data_from_xml(
     Returns tuple of (processed_count, error_count).
     """
     xml_path = prepare_naptan_data(url, data_dir)
-    return process_naptan_data(xml_path, dynamo_loader)
+    stream = async_stream_stop_points(xml_path)
+    return asyncio.run(process_stop_points(stream, dynamo_loader))
