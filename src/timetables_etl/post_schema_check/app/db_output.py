@@ -32,7 +32,7 @@ def create_schema_violations_objects(
                     additional_details=(
                         violation.additional_details.model_dump()
                         if violation.additional_details
-                        else None
+                        else {}
                     ),
                     created=datetime.now(UTC),
                     revision_id=revision_id,
