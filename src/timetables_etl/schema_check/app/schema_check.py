@@ -181,6 +181,12 @@ def add_violations_to_db(
     return result
 
 
+class SchemaViolationsFound(Exception):
+    """
+    Exception raised when schema violation is found
+    """
+
+
 @file_processing_result_to_db(step_name=StepName.TIMETABLE_SCHEMA_CHECK)
 def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, Any]:
     """
@@ -194,6 +200,7 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, 
 
         if violations:
             add_violations_to_db(db, violations)
+            raise SchemaViolationsFound(f"Found {len(violations)} Schema Violations")
     except Exception as e:
         log.error(
             "Error scanning file",
