@@ -3,12 +3,14 @@ Unit test for create_sirivm_zipfile lambda
 """
 
 import importlib
+import os
+
 import pytest
 
 MAPPING_LAMBDAS = {
     "create_sirivm_zip": "sirivm",
     "create_sirivm_tfl_zip": "sirivm tfl",
-    "create_gtfsrt_zip": "gtfsrt"
+    "create_gtfsrt_zip": "gtfsrt",
 }
 
 
@@ -16,10 +18,16 @@ def test_lambda_handler_success(mocker):
     """
     Test the lambda_handler when process_archive returns a valid file name.
     """
+    mocker.patch.dict(os.environ, {"AWS_SIRIVM_STORAGE_BUCKET_NAME": "test-bucket"})
     for module_name, text in MAPPING_LAMBDAS.items():
         lambda_module = importlib.import_module(f"periodic_tasks.{module_name}")
         lambda_handler = lambda_module.lambda_handler
-        bucket_name = lambda_module.BUCKET_NAME
+        settings = (
+            lambda_module.SirivmSettings()
+            if module_name.startswith("create_sirivm")
+            else lambda_module.GtfsrtSettings()
+        )
+        bucket_name = settings.bucket_name
         event = {"key": "value"}
         context = mocker.Mock()
         dummy_archived_file_name = "gtfsrt_2025-02-11_123456.zip"

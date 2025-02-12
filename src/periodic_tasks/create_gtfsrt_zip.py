@@ -2,23 +2,17 @@
 Lambda function to archive the gtfsrt data
 """
 
-from os import environ
 from typing import Any
 
 from aws_lambda_powertools.utilities.typing import LambdaContext
-from structlog.stdlib import get_logger
-from structlog.contextvars import bind_contextvars, clear_contextvars
+from common_layer.archiver import ArchiveDetails, GtfsrtSettings, process_archive
 from common_layer.database.client import SqlDB
 from common_layer.enums import CAVLDataFormat
 from common_layer.json_logging import configure_logging
-from common_layer.archiver import ArchiveDetails, process_archive, BUCKET_NAME
-
+from structlog.contextvars import bind_contextvars, clear_contextvars
+from structlog.stdlib import get_logger
 
 log = get_logger()
-
-CAVL_URL = environ.get("CAVL_CONSUMER_URL", "")
-BASE_URL = environ.get("GTFS_API_BASE_URL", "")
-API_ACTIVE = environ.get("GTFS_API_ACTIVE", "False") == "True"
 
 
 def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any]:
@@ -27,12 +21,14 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
     """
     configure_logging(event, context)
     bind_contextvars(archive_type="GTFSRT")
+    gtfsrt_settings = GtfsrtSettings()
     gtfsrt_zip = ArchiveDetails(
-        url=f"{BASE_URL}/gtfs-rt" if API_ACTIVE else f"{CAVL_URL}/gtfsrtfeed",
+        url=gtfsrt_settings.url,
         data_format=CAVLDataFormat.GTFSRT.value,
         file_extension=".bin",
         s3_file_prefix="gtfsrt",
         local_file_prefix="gtfsrt",
+        bucket_name=gtfsrt_settings.bucket_name,
     )
 
     try:
@@ -47,5 +43,5 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
     return {
         "statusCode": 200,
         "body": f"Successfully archived gtfsrt data to file "
-        f"'{archived_file_name}' in bucket '{BUCKET_NAME}'",
+        f"'{archived_file_name}' in bucket '{gtfsrt_settings.bucket_name}'",
     }

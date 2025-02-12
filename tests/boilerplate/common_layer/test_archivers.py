@@ -9,20 +9,20 @@ from zipfile import ZipFile
 import pytest
 import requests
 import requests.exceptions as req_exc
-from pytest_mock import MockerFixture
-from pytest import MonkeyPatch
-from common_layer.database.client import SqlDB
-from common_layer.database.models import AvlCavlDataArchive
 from common_layer.archiver import (
     ArchiveDetails,
     ArchivingError,
     archive_data,
     get_content,
+    process_archive,
     upload_to_s3,
     upsert_cavl_table,
     zip_content,
-    process_archive,
 )
+from common_layer.database.client import SqlDB
+from common_layer.database.models import AvlCavlDataArchive
+from pytest import MonkeyPatch
+from pytest_mock import MockerFixture
 
 
 class MockResponse:
@@ -43,8 +43,8 @@ class MockResponse:
 
 
 def get_success(
-    url: str, timeout: int
-) -> MockResponse:  # pylint: disable=unused-argument
+    url: str, timeout: int  # pylint: disable=unused-argument
+) -> MockResponse:
     """Get response for testing."""
     return MockResponse(b"dummy data", status_code=200)
 
@@ -60,8 +60,8 @@ def get_conn_error(url: str, timeout: int) -> NoReturn:
 
 
 def get_http_error(
-    url: str, timeout: int
-) -> MockResponse:  # pylint: disable=unused-argument
+    url: str, timeout: int  # pylint: disable=unused-argument
+) -> MockResponse:
     """Get HTTP error exception for testing."""
     response = MockResponse(
         b"error",
@@ -129,24 +129,16 @@ def test_zip_content(mocker: MockerFixture) -> None:
 
 def test_upload_to_s3(mocker: MockerFixture) -> None:
     """Test upload to s3."""
-    mocker.patch("common_layer.archiver.BUCKET_NAME", "test-bucket")
+    # mocker.patch("common_layer.archiver.BUCKET_NAME", "test-bucket")
     mock_s3_class = mocker.patch("common_layer.archiver.S3")
 
     filename = "test.txt"
     content = b"some test content"
-    upload_to_s3(filename, content)
-    mock_s3_class.assert_called_once_with("test-bucket")
+    bucket_name = "test-bucket"
+    upload_to_s3(bucket_name, filename, content)
+    mock_s3_class.assert_called_once_with(bucket_name)
     mock_s3_instance = mock_s3_class.return_value
     mock_s3_instance.put_object.assert_called_once_with(filename, content)
-
-
-def test_upload_to_s3_no_bucket(mocker: MockerFixture) -> None:
-    """Test upload to s3 without bucket."""
-    mocker.patch("common_layer.archiver.BUCKET_NAME", "")
-    mock_s3_class = mocker.patch("common_layer.archiver.S3")
-    with pytest.raises(ValueError, match="S3 bucket not defined"):
-        upload_to_s3("test.zip", b"content")
-    mock_s3_class.assert_not_called()
 
 
 def test_archive_data_success(monkeypatch: MonkeyPatch) -> None:
@@ -157,8 +149,8 @@ def test_archive_data_success(monkeypatch: MonkeyPatch) -> None:
 
     fake_upload_calls = []
 
-    def _upload_to_s3(filename, content):
-        fake_upload_calls.append((filename, content))
+    def _upload_to_s3(bucket_name, filename, content):
+        fake_upload_calls.append((bucket_name, filename, content))
 
     monkeypatch.setattr("common_layer.archiver.get_content", _get_content)
     monkeypatch.setattr("common_layer.archiver.upload_to_s3", _upload_to_s3)
@@ -169,11 +161,12 @@ def test_archive_data_success(monkeypatch: MonkeyPatch) -> None:
         file_extension=".json",
         s3_file_prefix="data",
         local_file_prefix="local_data",
+        bucket_name="test_bucket",
     )
 
     s3_filename, current_time = archive_data(archive_details)
     assert len(fake_upload_calls) == 1
-    uploaded_filename, __ = fake_upload_calls[0]
+    __, uploaded_filename, __ = fake_upload_calls[0]
     assert s3_filename == uploaded_filename
     assert s3_filename.startswith("data_")
     assert s3_filename.endswith(".zip")
@@ -194,6 +187,7 @@ def test_archive_data_failure(monkeypatch: MonkeyPatch) -> None:
         file_extension=".json",
         s3_file_prefix="data",
         local_file_prefix="local_data",
+        bucket_name="test_bucket",
     )
     with pytest.raises(ArchivingError, match="Unable archive the date"):
         archive_data(archive_details)
@@ -216,6 +210,7 @@ def test_process_archive(mocker: MockerFixture) -> None:
         file_extension=".csv",
         s3_file_prefix="data",
         local_file_prefix="local_data",
+        bucket_name="test_bucket",
     )
 
     result = process_archive(db_mock, archive_details)

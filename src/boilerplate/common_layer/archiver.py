@@ -2,11 +2,10 @@
 Module to support different dataset archiving to S3
 """
 
+import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from io import BytesIO
-from os import environ
-import time
 from zipfile import ZIP_DEFLATED, ZipFile
 
 import requests
@@ -14,11 +13,61 @@ from common_layer.database.client import SqlDB
 from common_layer.database.models import AvlCavlDataArchive
 from common_layer.database.repos import AvlCavlDataArchiveRepo
 from common_layer.s3 import S3
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from structlog.stdlib import get_logger
 
 log = get_logger()
 
-BUCKET_NAME = environ.get("AWS_SIRIVM_STORAGE_BUCKET_NAME", None)
+
+class BucketSettings(BaseSettings):
+    """Archive bucket settings"""
+
+    model_config = SettingsConfigDict(case_sensitive=False, extra="allow")
+
+    bucket_name: str = Field(
+        default="",
+        validation_alias="AWS_SIRIVM_STORAGE_BUCKET_NAME",
+        description="Name of archive s3 bucket",
+    )
+
+
+class SirivmSettings(BucketSettings):
+    """Url settings for sirivm archive"""
+
+    base_url: str = Field(
+        default="",
+        validation_alias="AVL_CONSUMER_API_BASE_URL",
+        description="Avl consumer api base url",
+    )
+
+    @property
+    def url(self):
+        """Get api url to archive data from"""
+        return self.base_url
+
+
+class GtfsrtSettings(BucketSettings):
+    """Url settings for gtfsrt archive"""
+
+    cavl_url: str = Field(
+        default="", validation_alias="CAVL_CONSUMER_URL", description="Avl consumer url"
+    )
+    gtfs_url: str = Field(
+        default="", validation_alias="GTFS_API_BASE_URL", description="Gtfs base url"
+    )
+    gtfs_api_active: str = Field(
+        default="false",
+        validation_alias="GTFS_API_ACTIVE",
+        description="State of Gtfs api active or not",
+    )
+
+    @property
+    def url(self) -> str:
+        """Get api url to archive data from"""
+        if self.gtfs_api_active == "true":
+            return f"{self.gtfs_url}/gtfs-rt"
+        return f"{self.cavl_url}/gtfsrtfeed"
 
 
 @dataclass
@@ -32,6 +81,7 @@ class ArchiveDetails:
     file_extension: str
     s3_file_prefix: str
     local_file_prefix: str
+    bucket_name: str
 
 
 class ArchivingError(Exception):
@@ -93,15 +143,11 @@ def zip_content(content: bytes, filename: str) -> BytesIO:
     return bytesio
 
 
-def upload_to_s3(filename: str, content: bytes) -> None:
+def upload_to_s3(bucket_name: str, filename: str, content: bytes) -> None:
     """Uploads file content to S3 bucket."""
-    if BUCKET_NAME:
-        log.info("Uploading archive file", bucket=BUCKET_NAME, filename=filename)
-        s3 = S3(BUCKET_NAME)
-        s3.put_object(filename, content)
-    else:
-        log.error("S3 bucket not set")
-        raise ValueError("S3 bucket not defined")
+    log.info("Uploading archive file", bucket=bucket_name, filename=filename)
+    s3 = S3(bucket_name)
+    s3.put_object(filename, content)
 
 
 def archive_data(archive_details: ArchiveDetails) -> tuple[str, datetime]:
@@ -122,7 +168,7 @@ def archive_data(archive_details: ArchiveDetails) -> tuple[str, datetime]:
             f"{archive_details.s3_file_prefix}_"
             f"{current_time.strftime('%Y-%m-%d_%H%M%S')}.zip"
         )
-        upload_to_s3(s3_filename, zipped_file.getvalue())
+        upload_to_s3(archive_details.bucket_name, s3_filename, zipped_file.getvalue())
 
         return s3_filename, current_time
 
@@ -146,7 +192,7 @@ def process_archive(db: SqlDB, archive_details: ArchiveDetails) -> str:
 
     log.info(
         "Finished archiving the data",
-        bucket=BUCKET_NAME,
+        bucket=archive_details.bucket_name,
         file_name=file_name,
         time=time.time() - start_time,
     )
