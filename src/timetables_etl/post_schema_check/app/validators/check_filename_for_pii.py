@@ -35,7 +35,7 @@ def check_filename_for_filepath_pii(
         return [
             ValidationResult(
                 is_valid=False,
-                error_code="PII_ERROR",
+                error_code="PII ERROR",
                 message="Filename contains potential filepath PII",
             )
         ]

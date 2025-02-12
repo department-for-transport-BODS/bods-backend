@@ -36,6 +36,7 @@ def run_post_schema_validations(txc_data: TXCData, db: SqlDB) -> list[Validation
                     "Validation failed",
                     validator=validator.__name__,
                     error_code=result.error_code,
+                    additional_details=result.additional_details,
                     message=result.message,
                 )
             results.append(result)

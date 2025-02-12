@@ -29,6 +29,7 @@ def create_schema_violations_objects(
                 DataQualityPostSchemaViolation(
                     filename=filename,
                     details=violation.error_code,
+                    additional_details=violation.additional_details,
                     created=datetime.now(UTC),
                     revision_id=revision_id,
                 )

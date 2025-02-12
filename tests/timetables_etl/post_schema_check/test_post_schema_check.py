@@ -48,25 +48,25 @@ def mock_txc_data():
         pytest.param(
             "C:\\Users\\Jon\\Documents\\transit.xml",
             False,
-            "PII_ERROR",
+            "PII ERROR",
             id="Windows filepath with multiple backslashes",
         ),
         pytest.param(
             "\\\\networkshare\\folder\\file.xml",
             False,
-            "PII_ERROR",
+            "PII ERROR",
             id="Network path with backslashes",
         ),
         pytest.param(
             "/home/john/documents/transit.xml",
             False,
-            "PII_ERROR",
+            "PII ERROR",
             id="Unix filepath with forward slashes",
         ),
         pytest.param(
             "/Users/Jon/Documents/transit.xml",
             False,
-            "PII_ERROR",
+            "PII ERROR",
             id="OSX filepath with forward slashes",
         ),
         pytest.param(
@@ -84,19 +84,19 @@ def mock_txc_data():
         pytest.param(
             "file\\",
             False,
-            "PII_ERROR",
+            "PII ERROR",
             id="Single backslash",
         ),
         pytest.param(
             "file/",
             False,
-            "PII_ERROR",
+            "PII ERROR",
             id="Single forward slash",
         ),
         pytest.param(
             "~/.local/share/file.xml",
             False,
-            "PII_ERROR",
+            "PII ERROR",
             id="Unix home directory shorthand",
         ),
     ],
@@ -137,7 +137,7 @@ def test_validate_filepath_pii(
             [
                 ValidationResult(
                     is_valid=False,
-                    error_code="PII_ERROR",
+                    error_code="PII ERROR",
                     message="Filename contains potential filepath PII",
                 )
             ],
@@ -292,8 +292,9 @@ def test_service_codes_found_published_dataset_exists(
 
         assert len(result) == 1
         assert result[0].is_valid is False
-        assert "PUBLISHED_DATASET:100" in result[0].error_code
-        assert "'SC123'" in result[0].message and "'SC777'" in result[0].message
+        assert result[0].additional_details.published_dataset == 100
+        assert result[0].additional_details.service_codes[0] in ["SC123", "SC777"]
+        assert result[0].additional_details.service_codes[1] in ["SC123", "SC777"]
 
 
 def test_multiple_published_dataset_exists(
@@ -355,7 +356,9 @@ def test_multiple_published_dataset_exists(
         assert len(result) == 2
         assert result[0].is_valid is False
         assert result[1].is_valid is False
-        assert "PUBLISHED_DATASET:100" in result[0].error_code
-        assert "PUBLISHED_DATASET:200" in result[1].error_code
-        assert "'SC123'" in result[0].message and "'SC777'" in result[0].message
-        assert "'SC456'" in result[1].message and "'SC000'" in result[1].message
+        assert result[0].additional_details.published_dataset == 100
+        assert result[1].additional_details.published_dataset == 200
+        assert result[0].additional_details.service_codes[0] in ["SC123", "SC777"]
+        assert result[0].additional_details.service_codes[1] in ["SC123", "SC777"]
+        assert result[1].additional_details.service_codes[0] in ["SC456", "SC000"]
+        assert result[1].additional_details.service_codes[1] in ["SC456", "SC000"]

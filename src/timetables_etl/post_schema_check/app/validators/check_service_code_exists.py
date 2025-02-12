@@ -47,9 +47,15 @@ class PublishedServiceData:
         Convert Published Service Data to a ValidationResult
         """
         service_codes_list = list(self.service_codes)
+
+        data = {
+            "published_dataset": self.dataset_id,
+            "service_codes": service_codes_list,
+        }
         return ValidationResult(
             is_valid=False,
-            error_code=f"PUBLISHED_DATASET:{self.dataset_id}|SERVICE_CODES:{service_codes_list}",
+            error_code="SERVICE EXISTS",
+            additional_details=data,
             message=f"Found an existing published dataset \
             (ID: {self.dataset_id}) with service codes: {service_codes_list}",
         )
