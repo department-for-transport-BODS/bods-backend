@@ -14,7 +14,7 @@ from common_layer.database.repos.repo_organisation import (
 from common_layer.xml.txc.models import TXCData
 from structlog.stdlib import get_logger
 
-from ..models import ValidationResult
+from ..models import PublishedDatasetModel, ValidationResult
 
 log = get_logger()
 
@@ -46,7 +46,6 @@ class PublishedServiceData:
         """
         Convert Published Service Data to a ValidationResult
         """
-        service_codes_list: list[str] = []
         service_codes_list = list(self.service_codes)
 
         data = {
@@ -56,7 +55,7 @@ class PublishedServiceData:
         return ValidationResult(
             is_valid=False,
             error_code="SERVICE EXISTS",
-            additional_details=data,
+            additional_details=PublishedDatasetModel(**data),
             message=f"Found an existing published dataset \
             (ID: {self.dataset_id}) with service codes: {service_codes_list}",
         )
