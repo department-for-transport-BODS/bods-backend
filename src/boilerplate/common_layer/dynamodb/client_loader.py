@@ -2,6 +2,7 @@
 DynamoDB Data Loader Client
 """
 
+import asyncio
 import random
 import time
 from typing import Any, Literal, NotRequired, TypedDict
@@ -91,20 +92,24 @@ DynamoDBOperation = Literal["put", "delete"]
 class DynamoDBLoader:
     """Handles batch writing of items to DynamoDB with retry logic and error handling."""
 
+    batch_size: int = 25
+    deserializer = TypeDeserializer()
+
     def __init__(
         self,
         table_name: str,
         region: str = "eu-west-2",
         partition_key: str = "AtcoCode",
+        max_concurrent_batches: int = 30,
     ):
         """Initialize DynamoDB loader with table name and region."""
-        self.dynamodb = boto3.resource("dynamodb", region_name=region)
+        self.dynamodb = boto3.resource("dynamodb", region_name=region)  # type: ignore
         self.table_name = table_name
         self.table = self.dynamodb.Table(table_name)
-        self.batch_size = 25
-        self.deserializer = TypeDeserializer()
         self.log = get_logger().bind(table_name=table_name)
         self.partition_key = partition_key
+        self.max_concurrent_batches = max_concurrent_batches
+        self.semaphore = asyncio.Semaphore(max_concurrent_batches)
 
     def prepare_put_requests(
         self, items: list[dict[str, Any]]
@@ -272,3 +277,85 @@ class DynamoDBLoader:
             )
 
         return result
+
+    async def async_process_batch(self, items: list[dict[str, Any]]) -> int:
+        """
+        Process a single batch of items with retries.
+        Semaphore is used to limit the concurrent executions
+        """
+        if not items:
+            return 0
+
+        request_items = self.prepare_put_requests(items)
+        max_retries = 5
+        retry_count = 0
+        unprocessed_items: BatchWriteItemInputRequestItems = request_items
+
+        async with self.semaphore:
+            while unprocessed_items and retry_count < max_retries:
+                if retry_count > 0:
+                    wait_time = (2**retry_count) * 0.1 + (random.random() * 0.1)
+                    self.log.info(
+                        "Retrying batch operation",
+                        retry_count=retry_count,
+                        wait_time=wait_time,
+                        remaining_items=len(unprocessed_items),
+                    )
+                    await asyncio.sleep(wait_time)
+
+                try:
+                    loop = asyncio.get_event_loop()
+                    response = await loop.run_in_executor(
+                        None,
+                        lambda: self.dynamodb.meta.client.batch_write_item(
+                            RequestItems=unprocessed_items
+                        ),
+                    )
+                    unprocessed_items = response.get("UnprocessedItems", {})
+                    retry_count += 1
+
+                except ClientError as e:
+                    error_code = e.response.get("Error", {}).get("Code", "")
+                    if error_code == "ProvisionedThroughputExceededException":
+                        retry_count += 1
+                        await asyncio.sleep(2**retry_count * 0.1)
+                        continue
+                    raise
+
+        return len(unprocessed_items)
+
+    async def async_batch_write_items(
+        self, items: list[dict[str, Any]]
+    ) -> tuple[int, int]:
+        """
+        Write items in parallel batches
+         returning (processed_count, error_count)."""
+        if not items:
+            return 0, 0
+
+        # Split items into batches of batch_size
+        batches = [
+            items[i : i + self.batch_size]
+            for i in range(0, len(items), self.batch_size)
+        ]
+
+        tasks = [self.async_process_batch(batch) for batch in batches]
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        error_count: int = 0
+        for result in results:
+            if isinstance(result, BaseException):
+                error_count += self.batch_size
+                self.log.error("Batch failed", error=str(result))
+            else:
+                error_count += result
+        processed_count = len(items) - error_count
+
+        self.log.info(
+            "Completed batch operation",
+            processed_count=processed_count,
+            error_count=error_count,
+        )
+
+        return processed_count, error_count

@@ -148,6 +148,7 @@ Globals:
         DD_MERGE_XRAY_TRACES: true
         DD_RUNTIME_METRICS_ENABLED: true
         DD_DBM_PROPAGATION_MODE: full
+        DD_EXTENSION_VERSION: compatibility
 
 Resources:
   ##################################
