@@ -6,7 +6,7 @@ Transform:
       stackName: !Ref 'AWS::StackName'
       apiKeySecretArn: arn:aws:secretsmanager:eu-west-2:228266753808:secret:DD_API_KEY_ALL_ENV-WDa721
       pythonLayerVersion: 105
-      extensionLayerVersion: 68
+      extensionLayerVersion: 69
       site: datadoghq.eu
       service: !Sub '${ProjectName}-timetables-etl'
       env: !Ref Environment
