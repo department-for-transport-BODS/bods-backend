@@ -46,6 +46,7 @@ class PublishedServiceData:
         """
         Convert Published Service Data to a ValidationResult
         """
+        service_codes_list: list[str] = []
         service_codes_list = list(self.service_codes)
 
         data = {

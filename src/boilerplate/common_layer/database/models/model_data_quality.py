@@ -37,7 +37,9 @@ class DataQualityPostSchemaViolation(BaseSQLModel):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
     filename: Mapped[str] = mapped_column(String(256), nullable=False)
     details: Mapped[str] = mapped_column(String(1024), nullable=False)
-    additional_details: Mapped[dict] = mapped_column(JSON, nullable=True)
+    additional_details: Mapped[dict[str, str | list[str]]] = mapped_column(
+        JSON, nullable=True
+    )
     created: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     revision_id: Mapped[int] = mapped_column(
         Integer,
