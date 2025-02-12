@@ -60,16 +60,6 @@ def prepare_naptan_data(url: str, data_dir: Path) -> Path:
     return download_naptan_xml(url, data_dir)
 
 
-def validate_stop_point(stop_point: _Element) -> bool:
-    """
-    Validate if the stop point is active and not marked for deletion
-    """
-    return (
-        stop_point.get("Status") == "active"
-        and stop_point.get("Modification") != "delete"
-    )
-
-
 async def async_stream_stop_points(xml_path: Path) -> AsyncIterator[dict[str, Any]]:
     """
     Stream stop points from XML file.
@@ -94,13 +84,7 @@ async def async_stream_stop_points(xml_path: Path) -> AsyncIterator[dict[str, An
         for _, stop_point in context:
             stop_point = strip_namespace(stop_point)
 
-            if not validate_stop_point(stop_point):
-                log.debug(
-                    "Skipping invalid stop point",
-                    status=stop_point.get("Status"),
-                    modification=stop_point.get("Modification"),
-                )
-            elif stop_data := parse_txc_stop_point(stop_point):
+            if stop_data := parse_txc_stop_point(stop_point):
                 yield stop_data.model_dump()
 
             # Clean up processed elements
