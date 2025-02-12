@@ -20,6 +20,10 @@ class PostSchemaCheckInputData(BaseModel):
 
 
 class PublishedDatasetModel(BaseModel):
+    """
+    Additional details for published dataset
+    """
+
     published_dataset: int
     service_codes: List[str]
 
