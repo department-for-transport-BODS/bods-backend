@@ -341,7 +341,7 @@ Resources:
       Role: !GetAtt NaptanCacheLambdaExecutionRole.Arn
       Layers:
         - !Ref BoilerplateLambdaLayerArn
-      Timeout: 600
+      Timeout: 900
       MemorySize: 1280
       EphemeralStorage:
         Size: 1024
