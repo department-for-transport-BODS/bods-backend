@@ -2,6 +2,7 @@
 Exported repos
 """
 
+from .repo_avl import AvlCavlDataArchiveRepo
 from .repo_data_quality import (
     DataQualityPostSchemaViolationRepo,
     DataQualityPTIObservationRepo,
@@ -51,6 +52,7 @@ from .repo_transmodel_vehicle_journey import (
 )
 
 __all__ = [
+    "AvlCavlDataArchiveRepo",
     "OrganisationDatasetRepo",
     "OrganisationDatasetRevisionRepo",
     "OrganisationOrganisationRepo",

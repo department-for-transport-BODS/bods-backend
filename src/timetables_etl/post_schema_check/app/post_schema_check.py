@@ -28,7 +28,7 @@ PARSER_CONFIG = TXCParserConfig(
     routes=False,
     route_sections=False,
     journey_pattern_sections=False,
-    services=False,
+    services=True,
     operators=False,
     vehicle_journeys=False,
     track_data=False,
@@ -36,11 +36,11 @@ PARSER_CONFIG = TXCParserConfig(
 )
 
 
-def process_txc_data_check(txc_data: TXCData) -> list[ValidationResult]:
+def process_txc_data_check(txc_data: TXCData, db: SqlDB) -> list[ValidationResult]:
     """
     Process validations that are separate from XML XSD Schema and PTI
     """
-    results = run_post_schema_validations(txc_data)
+    results = run_post_schema_validations(txc_data, db)
 
     violations = [
         result
@@ -61,7 +61,7 @@ def process_post_schema_check(
     """
     Process the schema check
     """
-    violations = process_txc_data_check(txc_data)
+    violations = process_txc_data_check(txc_data, db)
     filename = get_filename_from_object_key(input_data.s3_file_key)
     if not filename:
         raise ValueError(

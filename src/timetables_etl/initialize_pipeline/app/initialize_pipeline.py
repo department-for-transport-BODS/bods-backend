@@ -18,7 +18,7 @@ from common_layer.database.repos import (
     ETLTaskResultRepo,
     OrganisationDatasetRevisionRepo,
 )
-from common_layer.dynamodb.client import DynamoDB
+from common_layer.dynamodb.client.cache import DynamoDBCache
 from common_layer.dynamodb.data_manager import FileProcessingDataManager
 from common_layer.enums import FeedStatus
 from common_layer.exceptions.pipeline_exceptions import PipelineException
@@ -81,7 +81,7 @@ def create_task_result(db: SqlDB, revision_id: int) -> DatasetETLTaskResult:
 
 
 def initialize_pipeline(
-    db: SqlDB, dynamodb: DynamoDB, event: InitializePipelineEvent
+    db: SqlDB, dynamodb: DynamoDBCache, event: InitializePipelineEvent
 ) -> DatasetETLTaskResult:
     """
     Initializes the pipeline for dataset processing.
@@ -119,7 +119,7 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
     parsed_event = InitializePipelineEvent(**event)
 
     db = SqlDB()
-    dynamodb = DynamoDB()
+    dynamodb = DynamoDBCache()
     created_task_result = initialize_pipeline(db, dynamodb, parsed_event)
     metrics.add_metric(name="PipelineStarts", unit=MetricUnit.Count, value=1)
     ETLTaskResultRepo(db).update_progress(created_task_result.id, 10)
