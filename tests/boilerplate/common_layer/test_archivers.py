@@ -42,10 +42,9 @@ class MockResponse:
             raise self._raise_for_status_exception
 
 
-def get_success(
-    url: str, timeout: int  # pylint: disable=unused-argument
-) -> MockResponse:
+def get_success(url: str, timeout: int) -> MockResponse:
     """Get response for testing."""
+    __, __ = url, timeout
     return MockResponse(b"dummy data", status_code=200)
 
 
@@ -59,10 +58,9 @@ def get_conn_error(url: str, timeout: int) -> NoReturn:
     raise req_exc.ConnectionError("connection error")
 
 
-def get_http_error(
-    url: str, timeout: int  # pylint: disable=unused-argument
-) -> MockResponse:
+def get_http_error(url: str, timeout: int) -> MockResponse:
     """Get HTTP error exception for testing."""
+    __, __ = url, timeout
     response = MockResponse(
         b"error",
         status_code=404,
@@ -144,7 +142,8 @@ def test_upload_to_s3(mocker: MockerFixture) -> None:
 def test_archive_data_success(monkeypatch: MonkeyPatch) -> None:
     """Test archive data success."""
 
-    def _get_content(url):  # pylint: disable=unused-argument
+    def _get_content(url):
+        __ = url
         return b"fake content"
 
     fake_upload_calls = []
