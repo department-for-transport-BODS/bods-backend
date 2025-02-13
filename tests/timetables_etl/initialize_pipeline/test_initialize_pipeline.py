@@ -135,7 +135,7 @@ def test_initialize_pipeline(mock_revision_repo):
     mock_task_repo.insert.return_value = task_result
 
     mock_dynamodb = create_autospec(
-        "common_layer.dynamodb.client.DynamoDB", instance=True
+        "common_layer.dynamodb.client.DynamoDBCache", instance=True
     )
     mock_data_manager = create_autospec(FileProcessingDataManager, instance=True)
     mock_data_manager.prefetch_and_cache_data.return_value = None
