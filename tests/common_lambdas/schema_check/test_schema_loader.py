@@ -47,7 +47,7 @@ def setup_mocks(mocker, m_valid_schema_file):
     "inputs, expected_file_name",
     [
         ((XMLSchemaType.TRANSXCHANGE, "2.4"), "TransXChange_general.xsd"),
-        ((XMLSchemaType.NETEX, "1.10"), "NeTEx_publication.xsd"),
+        ((XMLSchemaType.NETEX, "1.1"), "NeTEx_publication.xsd"),
     ],
 )
 def test_load_schema_valid(setup_mocks, inputs, expected_file_name):
