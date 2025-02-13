@@ -2,6 +2,8 @@
 PostSchemaCheck Pydantic Models and Dataclasses
 """
 
+from typing import List
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -17,6 +19,15 @@ class PostSchemaCheckInputData(BaseModel):
     s3_file_key: str = Field(alias="ObjectKey")
 
 
+class PublishedDatasetModel(BaseModel):
+    """
+    Additional details for published dataset
+    """
+
+    published_dataset: int
+    service_codes: List[str]
+
+
 class ValidationResult(BaseModel):
     """
     Result of a validation check with details
@@ -24,4 +35,5 @@ class ValidationResult(BaseModel):
 
     is_valid: bool
     error_code: str | None = None
+    additional_details: PublishedDatasetModel | None = None
     message: str | None = None

@@ -36,6 +36,13 @@ class OrganisationDatasetFactory(factory.Factory):
     )
     is_dummy = False
 
+    @classmethod
+    def create_with_id(cls, id_number: int, **kwargs) -> OrganisationDataset:
+        """Creates a revision with a specific ID"""
+        dataset = cls.create(**kwargs)
+        dataset.id = id_number
+        return dataset
+
 
 class OrganisationDatasetRevisionFactory(factory.Factory):
     """
