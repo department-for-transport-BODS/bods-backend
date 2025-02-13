@@ -21,18 +21,17 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
     """
     configure_logging(event, context)
     bind_contextvars(archive_type="SIRIVM_TFL")
-    settings = SirivmSettings()
-    sirivm_tfl_zip = ArchiveDetails(
-        url=f"{settings.url}/siri-vm?downloadTfl=true",
-        data_format=CAVLDataFormat.SIRIVM_TFL.value,
-        file_extension=".xml",
-        s3_file_prefix="sirivm_tfl",
-        local_file_prefix="siri_tfl",
-        bucket_name=settings.bucket_name,
-    )
 
     try:
-
+        settings = SirivmSettings()
+        sirivm_tfl_zip = ArchiveDetails(
+            url=f"{settings.url}/siri-vm?downloadTfl=true",
+            data_format=CAVLDataFormat.SIRIVM_TFL.value,
+            file_extension=".xml",
+            s3_file_prefix="sirivm_tfl",
+            local_file_prefix="siri_tfl",
+            bucket_name=settings.bucket_name,
+        )
         db = SqlDB()
         archived_file_name = process_archive(db, sirivm_tfl_zip)
     except Exception as err_:

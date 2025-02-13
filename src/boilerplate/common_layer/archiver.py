@@ -57,7 +57,7 @@ class GtfsrtSettings(BucketSettings):
         default="", validation_alias="GTFS_API_BASE_URL", description="Gtfs base url"
     )
     gtfs_api_active: str = Field(
-        default="false",
+        default="False",
         validation_alias="GTFS_API_ACTIVE",
         description="State of Gtfs api active or not",
     )
@@ -65,7 +65,7 @@ class GtfsrtSettings(BucketSettings):
     @property
     def url(self) -> str:
         """Get api url to archive data from"""
-        if self.gtfs_api_active == "true":
+        if self.gtfs_api_active == "True":
             return f"{self.gtfs_url}/gtfs-rt"
         return f"{self.cavl_url}/gtfsrtfeed"
 

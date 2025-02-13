@@ -21,16 +21,17 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
     """
     configure_logging(event, context)
     bind_contextvars(archive_type="SRIVM")
-    srivim_settings = SirivmSettings()
-    sirivm_zip = ArchiveDetails(
-        url=f"{srivim_settings.url}/siri-vm",
-        data_format=CAVLDataFormat.SIRIVM.value,
-        file_extension=".xml",
-        s3_file_prefix="sirivm",
-        local_file_prefix="siri",
-        bucket_name=srivim_settings.bucket_name,
-    )
+
     try:
+        srivim_settings = SirivmSettings()
+        sirivm_zip = ArchiveDetails(
+            url=f"{srivim_settings.url}/siri-vm",
+            data_format=CAVLDataFormat.SIRIVM.value,
+            file_extension=".xml",
+            s3_file_prefix="sirivm",
+            local_file_prefix="siri",
+            bucket_name=srivim_settings.bucket_name,
+        )
         db = SqlDB()
         archived_name = process_archive(db, sirivm_zip)
     except Exception as e:

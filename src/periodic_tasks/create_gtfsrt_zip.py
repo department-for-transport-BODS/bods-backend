@@ -21,17 +21,17 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
     """
     configure_logging(event, context)
     bind_contextvars(archive_type="GTFSRT")
-    gtfsrt_settings = GtfsrtSettings()
-    gtfsrt_zip = ArchiveDetails(
-        url=gtfsrt_settings.url,
-        data_format=CAVLDataFormat.GTFSRT.value,
-        file_extension=".bin",
-        s3_file_prefix="gtfsrt",
-        local_file_prefix="gtfsrt",
-        bucket_name=gtfsrt_settings.bucket_name,
-    )
 
     try:
+        gtfsrt_settings = GtfsrtSettings()
+        gtfsrt_zip = ArchiveDetails(
+            url=gtfsrt_settings.url,
+            data_format=CAVLDataFormat.GTFSRT.value,
+            file_extension=".bin",
+            s3_file_prefix="gtfsrt",
+            local_file_prefix="gtfsrt",
+            bucket_name=gtfsrt_settings.bucket_name,
+        )
         db = SqlDB()
         archived_file_name = process_archive(db, gtfsrt_zip)
     except Exception as _err:
