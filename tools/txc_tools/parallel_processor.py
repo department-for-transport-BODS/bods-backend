@@ -228,7 +228,9 @@ def generate_output_files(
     # Special Case - Generate error file for TxC Parser
     if mode == AnalysisMode.TXC:
         xml_errors = [it for it in xml_datas if getattr(it, "txc_parser_error", None)]
-        xml_datas = [it for it in xml_datas if not getattr(it, "txc_parser_error", None)]
+        xml_datas = [
+            it for it in xml_datas if not getattr(it, "txc_parser_error", None)
+        ]
         # generate_csv_reports
         if xml_errors:
             error_file = f"{file_name}_parser_error"

@@ -92,7 +92,7 @@ def main(
         "boddsdev", "--profile", help="AWS profile to use for dynamodb"
     ),
 ):
-    """Process TXC XML files for transformation testing"""
+    """Transform TxC data into transmodel for testing"""
     if log_json:
         configure_logging()
 

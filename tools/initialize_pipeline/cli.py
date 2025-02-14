@@ -41,7 +41,7 @@ def main(
         "boddsdev", "--profile", help="AWS profile to use for dynamodb"
     ),
 ):
-    """Run PTI Validation on given TXC XML files for testing"""
+    """Initialize pipeline to process xml file for testing"""
     if log_json:
         configure_logging()
 

@@ -4,8 +4,10 @@ Runs the File Attributes ETL Process against specified database
 
 import typer
 from common_layer.json_logging import configure_logging
-from download_dataset.app.download_dataset import download_and_upload_dataset
-from download_dataset.app.models import DownloadDatasetInputData
+from src.timetables_etl.download_dataset.app.download_dataset import (
+    download_and_upload_dataset,
+)
+from src.timetables_etl.download_dataset.app.models import DownloadDatasetInputData
 from structlog.stdlib import get_logger
 
 from tools.common.db_tools import create_db_config, setup_db_instance
@@ -61,8 +63,13 @@ def main(
         "--url-link",
         help="Remote file url link",
     ),
+    etl_task_result_id: int = typer.Option(
+        5432,
+        "--etl-task-result-id",
+        help="Dataset ETL Task Result ID",
+    ),
     use_dotenv: bool = typer.Option(
-        True,
+        False,
         "--use-dotenv",
         help="Load database configuration from .env file",
     ),
@@ -80,19 +87,13 @@ def main(
     db = setup_db_instance(db_config)
     event_data = DownloadDatasetInputData(
         **{
-            "DatasetEtlTaskResultId": "1234",
+            "DatasetEtlTaskResultId": etl_task_result_id,
             "Bucket": bucket,
-            "ObjectKey": "dummy.xml",
-            "URLLink": url_link,
+            "Url": url_link,
             "DatasetRevisionId": revision_id,
         }
     )
-    download_and_upload_dataset(
-        db,
-        event_data.s3_bucket_name,
-        event_data.revision_id,
-        event_data.remote_dataset_url_link,
-    )
+    download_and_upload_dataset(db, event_data)
 
 
 if __name__ == "__main__":

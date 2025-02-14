@@ -50,7 +50,10 @@ def validate(
         help="Enable structured logging output",
     ),
 ):
-    """Validate a TXC XML file against the 2.4 schema"""
+    """
+    Validate a TXC XML file against the 2.4 schema for filename check
+    and service for testing
+    """
     if log_json:
         configure_logging()
 
