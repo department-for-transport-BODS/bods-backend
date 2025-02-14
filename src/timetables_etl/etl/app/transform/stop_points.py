@@ -95,7 +95,8 @@ def create_stop_point_location_mapping(
 
     :param stop_points: Custom StopPoints.
     :param naptan_stops: AnnotatedStopPoints, retrieved from the Naptan DB.
-    :param missing_stop_atco_codes: AnnotatedStopPoints that could not be found in Naptan (to be populated with dummy data).
+    :param missing_stop_atco_codes: AnnotatedStopPoints that
+    could not be found in the Naptan DB (to be populated with dummy data).
     """
     stop_location_map: StopsLookup = {}
 
