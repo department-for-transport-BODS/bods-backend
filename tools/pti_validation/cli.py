@@ -3,11 +3,10 @@ Runs PTI Validation against specified database
 """
 
 from io import BytesIO
-
+import os
 import boto3
 import typer
 from common_layer.database.client import ProjectEnvironment
-from common_layer.dynamodb.client import DynamoDB
 from common_layer.dynamodb.client.cache import DynamoDBCache, DynamoDbCacheSettings
 from common_layer.dynamodb.client.naptan_stop_points import (
     NaptanDynamoDBSettings,
@@ -26,6 +25,12 @@ from tools.common.db_tools import create_db_config, dotenv_loader, setup_db_inst
 
 app = typer.Typer()
 log = get_logger()
+
+DYNAMODB_ENVS = [
+    "DYNAMODB_ENDPOINT_URL",
+    "DYNAMODB_CACHE_TABLE_NAME",
+    "DYNAMODB_NAPTAN_STOP_POINT_TABLE_NAME",
+]
 
 
 @app.command(name="pti-validation")
@@ -58,6 +63,15 @@ def main(
     profile: str = typer.Option("boddsdev", "--profile", help="AWS profile to use"),
 ):
     """Run PTI Validation on given TXC XML files for testing"""
+
+    # Check if all variables are set
+    missing_vars = [var for var in DYNAMODB_ENVS if not os.getenv(var)]
+
+    if missing_vars:
+        raise EnvironmentError(
+            f"Missing required environment variables: {', '.join(missing_vars)}"
+        )
+
     if log_json:
         configure_logging()
 

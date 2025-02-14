@@ -52,6 +52,7 @@ def clean_name(name: str) -> str:
 def create_event_payload(  # pylint: disable=too-many-arguments, too-many-positional-arguments
     data_source: str,
     object_key: str,
+    url: str,
     revision_id: str,
     dataset_type: str,
     publish_data_revision: bool,
@@ -75,10 +76,10 @@ def create_event_payload(  # pylint: disable=too-many-arguments, too-many-positi
             datasetType=dataset_type,
             overwriteInputDataset=overwrite_dataset,
         )
-        if data_source == "S3_FILE"
+        if object_key
         else StateMachineURLPayload(
             inputDataSource=data_source,
-            url=object_key,
+            url=url,
             datasetRevisionId=revision_id,
             datasetType=dataset_type,
             publishDatasetRevision=publish_data_revision,

@@ -90,7 +90,7 @@ def main(
         help="Load database configuration from .env file",
     ),
 ):
-    """Process TXC XML files for transformation testing"""
+    """Process TXC XML file to parse TxC data for testing"""
     if log_json:
         configure_logging()
 

@@ -39,7 +39,7 @@ def main(
         help="Enable Structured logging output",
     ),
 ):
-    """Process TXC XML files for transformation testing"""
+    """Process TXC XML file to check whether xml is dangerous for testing"""
     if log_json:
         configure_logging()
 

@@ -24,12 +24,15 @@ def start_state_machine(  # pylint: disable=too-many-arguments, too-many-positio
     bucket_name: str = typer.Option(
         "bodds-dev", "--bucket-name", help="Name of the S3 bucket"
     ),
-    object_or_url: str = typer.Option(
-        "coach-data/FLIX-FlixBus-N1710-Paris-London.xml",
-        "--object-or-url",
-        help="Key of the object in S3, when upload file option \
-        used file uploaded to the key given here. If user uses URL_DOWNLOAD for \
-        --data-source then url expected here",
+    object_key: str = typer.Option(
+        None,
+        "--object-key",
+        help="Key of the object in S3",
+    ),
+    url: str = typer.Option(
+        None,
+        "--url",
+        help="File download URL",
     ),
     upload_file: str = typer.Option(
         None,
@@ -75,6 +78,9 @@ def start_state_machine(  # pylint: disable=too-many-arguments, too-many-positio
             "Starting state machine execution", state_machine_name=state_machine_name
         )
 
+        if object_key and url:
+            raise ValueError("Object key and url cannot be set at the same time")
+
         # Create AWS session
         session = create_aws_session(profile, region)
 
@@ -85,13 +91,14 @@ def start_state_machine(  # pylint: disable=too-many-arguments, too-many-positio
                 s3_client=client,
                 file_name=upload_file,
                 bucket_name=bucket_name,
-                object_name=object_or_url,
+                object_name=object_key,
             )
 
         # Create event payload
         event = create_event_payload(
             data_source=data_source,
-            object_key=object_or_url,
+            object_key=object_key,
+            url=url,
             revision_id=revision_id,
             dataset_type=dataset_type,
             publish_data_revision=publish_data_revision,
