@@ -41,8 +41,12 @@ def build_lookup_data(
     """
     Get from DB with inserts of reference data used accross the workflow
     """
-    db_stops = get_naptan_stops_from_dynamo(txc.StopPoints, stop_point_client)
-    stop_mapping = create_stop_point_location_mapping(txc.StopPoints, db_stops)
+    db_stops, missing_atco_codes = get_naptan_stops_from_dynamo(
+        txc.StopPoints, stop_point_client
+    )
+    stop_mapping = create_stop_point_location_mapping(
+        txc.StopPoints, db_stops, missing_atco_codes
+    )
 
     serviced_orgs = load_serviced_organizations(txc.ServicedOrganisations, db)
     track_lookup = load_tracks(txc.RouteSections, db)

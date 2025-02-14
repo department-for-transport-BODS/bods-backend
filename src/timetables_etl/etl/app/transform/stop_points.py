@@ -63,12 +63,39 @@ def create_custom_stop_point_data(stop: TXCStopPoint) -> NaptanStopPoint:
     )
 
 
+def create_dummy_stop_point_data(atco_code: str) -> NaptanStopPoint:
+    """
+    Create a stop point with dummy data using only an atco code
+
+    In some cases Operators are using an AnnotatedStopPointRef
+    instead of StopPoint for stops that don't exist in Naptan.
+    """
+    return NaptanStopPoint(
+        atco_code=atco_code,
+        naptan_code="dummy_stop",
+        common_name="dummy_stop",
+        street=None,
+        indicator=None,
+        location=from_shape(Point(0, 0), srid=-1),
+        admin_area_id=None,
+        stop_areas=[],
+        stop_type=None,
+        bus_stop_type=None,
+        locality_id=None,
+    )
+
+
 def create_stop_point_location_mapping(
     stop_points: list[AnnotatedStopPointRef | TXCStopPoint],
     naptan_stops: list[TXCStopPoint],
+    missing_stop_atco_codes: list[str],
 ) -> StopsLookup:
     """
     Create a mapping dict between AtcoCodes and it's location
+
+    :param stop_points: Custom StopPoints.
+    :param naptan_stops: AnnotatedStopPoints, retrieved from the Naptan DB.
+    :param missing_stop_atco_codes: AnnotatedStopPoints that could not be found in Naptan (to be populated with dummy data).
     """
     stop_location_map: StopsLookup = {}
 
@@ -77,16 +104,27 @@ def create_stop_point_location_mapping(
     for stop in stop_points:
         if isinstance(stop, TXCStopPoint):
             stop_location_map[stop.AtcoCode] = create_custom_stop_point_data(stop)
+
+    if missing_stop_atco_codes:
+        log.info(
+            "Populating missing stops with dummy data in stop_point_location_mapping",
+        )
+        for missing_stop_code in missing_stop_atco_codes:
+            dummy_stop = create_dummy_stop_point_data(missing_stop_code)
+            stop_location_map[missing_stop_code] = dummy_stop
+
     return stop_location_map
 
 
 def get_naptan_stops_from_dynamo(
     stop_points: list[AnnotatedStopPointRef | TXCStopPoint],
     stop_point_client: NaptanStopPointDynamoDBClient,
-) -> list[TXCStopPoint]:
+) -> tuple[list[TXCStopPoint], list[str]]:
     """
     Filter the TXC Stop Points for AnnotatedStopPointRef and query the DB for them
     TODO: Figure out how to handle when a referenced stop point ref is not in the DB
+
+    Returns: (TXCStopPoints, missing_stop_atco_codes)
     """
     log.debug("Getting list of AnnotatedStopPointRef stops found in DB")
     stop_refs: list[str] = []
@@ -95,6 +133,10 @@ def get_naptan_stops_from_dynamo(
             stop_refs.append(stop.StopPointRef)
     stops, missing_stops = stop_point_client.get_by_atco_codes(stop_refs)
     if missing_stops:
-        log.error("AnnotatedStopPointRef not found in DB", missing_stops=missing_stops)
+        log.warning(
+            "AnnotatedStopPointRef(s) not found in DB",
+            missing_stops=missing_stops,
+        )
+
     log.info("Fetched naptan stops", count=len(stops), missing_stops=len(missing_stops))
-    return stops
+    return stops, missing_stops
