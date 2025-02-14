@@ -107,8 +107,7 @@ def parse_user_profile(elem: _Element) -> UserProfile:
 
     if not name:
         raise ValueError("Missing Name")
-    if not type_of_concession_ref:
-        raise ValueError("Missing TypeOfConcessionRef")
+
     return UserProfile(
         id=profile_id,
         version=version,

@@ -7,7 +7,12 @@ Useful for tests as we can move things around without having to change imports
 from .data_objects import (
     parse_companion_profile,
     parse_distance_matrix_element,
+    parse_frequency_of_use,
+    parse_generic_parameter_assignment,
+    parse_round_trip,
+    parse_usage_validity_period,
     parse_user_profile,
+    parse_validity_parameters,
 )
 from .netex_network_frame import (
     parse_network_filter_by_value,
@@ -47,4 +52,9 @@ __all__ = [
     "parse_companion_profile",
     "parse_user_profile",
     "parse_distance_matrix_element",
+    "parse_generic_parameter_assignment",
+    "parse_round_trip",
+    "parse_usage_validity_period",
+    "parse_validity_parameters",
+    "parse_frequency_of_use",
 ]

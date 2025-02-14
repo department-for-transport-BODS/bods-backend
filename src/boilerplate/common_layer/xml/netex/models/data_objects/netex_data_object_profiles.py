@@ -39,8 +39,8 @@ class UserProfile(BaseModel):
         Field(description="Description of the profile", default=None),
     ] = None
     TypeOfConcessionRef: Annotated[
-        VersionedRef, Field(description="Reference to concession type")
-    ]
+        VersionedRef | None, Field(description="Reference to concession type")
+    ] = None
     MinimumAge: Annotated[
         int | None, Field(description="Minimum age", default=None)
     ] = None

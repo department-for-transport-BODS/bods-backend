@@ -6,7 +6,13 @@ from .data_objects import (
     CompanionProfile,
     CompositeFrame,
     DistanceMatrixElement,
+    FareStructureElement,
+    FrequencyOfUse,
+    GenericParameterAssignment,
+    RoundTrip,
+    UsageValidityPeriod,
     UserProfile,
+    ValidityParameters,
 )
 from .netex_publication_delivery import PublicationDeliveryStructure
 from .netex_publication_request import (
@@ -47,4 +53,10 @@ __all__ = [
     "UserProfile",
     "DistanceMatrixElement",
     "CompositeFrame",
+    "FareStructureElement",
+    "GenericParameterAssignment",
+    "RoundTrip",
+    "UsageValidityPeriod",
+    "FrequencyOfUse",
+    "ValidityParameters",
 ]
