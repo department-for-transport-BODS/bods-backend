@@ -301,7 +301,7 @@ Resources:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-schema-check-lambda'
       Description: Timetables ETL - FileProcessing - Validation Against TXC XSD Schema
       Role: !GetAtt CommonLambdaExecutionRole.Arn
-      CodeUri: ./src/timetables_etl/schema_check
+      CodeUri: ./src/common_lambdas/schema_check
       Handler: app.schema_check.lambda_handler
       Timeout: 600
       Layers:
