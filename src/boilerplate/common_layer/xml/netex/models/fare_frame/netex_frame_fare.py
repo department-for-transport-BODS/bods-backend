@@ -2,24 +2,18 @@
 Fare Frame
 """
 
+from __future__ import annotations
+
 from typing import Annotated
 
 from pydantic import BaseModel, Field
 
-from ..netex_utility import FromToDate, MultilingualString, VersionedRef
-from .netex_data_object_profiles import UserProfile
-from .netex_fare_tariff_fare_structure import FareStructureElement
-
-
-class ScheduledStopPointRef(VersionedRef):
-    """Reference to a scheduled stop point with optional content"""
-
-    content: Annotated[
-        str | None,
-        Field(
-            description="Optional description or name of the stop point", default=None
-        ),
-    ]
+from ..data_objects.netex_data_object_profiles import UserProfile
+from ..netex_references import PointRefs
+from ..netex_utility import MultilingualString, VersionedRef
+from .netex_fare_preassigned import PreassignedFareProduct
+from .netex_fare_table import FareTable
+from .netex_fare_tariff import Tariff
 
 
 class FareZone(BaseModel):
@@ -31,65 +25,9 @@ class FareZone(BaseModel):
         MultilingualString | str, Field(description="Name of the fare zone")
     ]
     members: Annotated[
-        list[ScheduledStopPointRef],
+        PointRefs | None,
         Field(description="list of scheduled stop points in this fare zone"),
-    ]
-
-
-class ValidableElement(BaseModel):
-    """Definition of a validable element"""
-
-    id: Annotated[str, Field(description="Validable element identifier")]
-    version: Annotated[str, Field(description="Version")]
-    Name: Annotated[MultilingualString | str, Field(description="Name of the element")]
-    fareStructureElements: Annotated[
-        list[VersionedRef], Field(description="References to fare structure elements")
-    ]
-
-
-class AccessRightInProduct(BaseModel):
-    """Definition of an access right in product"""
-
-    id: Annotated[str, Field(description="Access right identifier")]
-    version: Annotated[str, Field(description="Version")]
-    order: Annotated[str, Field(description="Order")]
-    ValidableElementRef: Annotated[
-        VersionedRef, Field(description="Reference to validable element")
-    ]
-
-
-class ConditionSummary(BaseModel):
-    """Summary of fare conditions"""
-
-    FareStructureType: Annotated[str, Field(description="Type of fare structure")]
-    TariffBasis: Annotated[str, Field(description="Basis of tariff")]
-    IsPersonal: Annotated[bool, Field(description="Whether the fare is personal")]
-
-
-class PreassignedFareProduct(BaseModel):
-    """Definition of a preassigned fare product"""
-
-    id: Annotated[str, Field(description="Product identifier")]
-    version: Annotated[str, Field(description="Version")]
-    Name: Annotated[MultilingualString | str, Field(description="Name of the product")]
-    ChargingMomentRef: Annotated[
-        VersionedRef, Field(description="Reference to charging moment")
-    ]
-    ChargingMomentType: Annotated[str, Field(description="Type of charging moment")]
-    TypeOfFareProductRef: Annotated[
-        VersionedRef, Field(description="Reference to product type")
-    ]
-    OperatorRef: Annotated[VersionedRef, Field(description="Reference to operator")]
-    ConditionSummary: Annotated[
-        ConditionSummary, Field(description="Summary of conditions")
-    ]
-    validableElements: Annotated[
-        list[ValidableElement], Field(description="list of validable elements")
-    ]
-    accessRightsInProduct: Annotated[
-        list[AccessRightInProduct], Field(description="list of access rights")
-    ]
-    ProductType: Annotated[str, Field(description="Type of product")]
+    ] = None
 
 
 class DistributionAssignment(BaseModel):
@@ -123,97 +61,6 @@ class PriceGroup(BaseModel):
     members: Annotated[
         list[GeographicalIntervalPrice],
         Field(description="list of prices in this group"),
-    ]
-
-
-class FareTableColumn(BaseModel):
-    """Definition of a fare table column"""
-
-    id: Annotated[str, Field(description="Column identifier")]
-    version: Annotated[str, Field(description="Version")]
-    order: Annotated[str, Field(description="Column order")]
-    Name: Annotated[MultilingualString | str, Field(description="Column name")]
-    representing: Annotated[
-        dict[str, VersionedRef],
-        Field(description="References for what this column represents"),
-    ]
-
-
-class FareTableRow(BaseModel):
-    """Definition of a fare table row"""
-
-    id: Annotated[str, Field(description="Row identifier")]
-    version: Annotated[str, Field(description="Version")]
-    order: Annotated[str, Field(description="Row order")]
-    Name: Annotated[MultilingualString | str, Field(description="Row name")]
-
-
-class DistanceMatrixElementPrice(BaseModel):
-    """Definition of a distance matrix element price"""
-
-    id: Annotated[str, Field(description="Price identifier")]
-    version: Annotated[str, Field(description="Version")]
-    GeographicalIntervalPriceRef: Annotated[
-        VersionedRef, Field(description="Reference to geographical interval price")
-    ]
-    DistanceMatrixElementRef: Annotated[
-        VersionedRef, Field(description="Reference to distance matrix element")
-    ]
-
-
-class Cell(BaseModel):
-    """Definition of a fare table cell"""
-
-    id: Annotated[str, Field(description="Cell identifier")]
-    version: Annotated[str, Field(description="Version")]
-    order: Annotated[str, Field(description="Cell order")]
-    DistanceMatrixElementPrice: Annotated[
-        DistanceMatrixElementPrice, Field(description="Price for this cell")
-    ]
-    ColumnRef: Annotated[VersionedRef, Field(description="Reference to column")]
-    RowRef: Annotated[VersionedRef, Field(description="Reference to row")]
-
-
-class NestedFareTable(BaseModel):
-    """Definition of a nested fare table"""
-
-    id: Annotated[str, Field(description="Table identifier")]
-    version: Annotated[str, Field(description="Version")]
-    Name: Annotated[MultilingualString | str, Field(description="Table name")]
-    Description: Annotated[
-        MultilingualString | str | None,
-        Field(description="Table description", default=None),
-    ]
-    cells: Annotated[list[Cell], Field(description="list of cells in this table")]
-
-
-class FareTable(BaseModel):
-    """Definition of a fare table"""
-
-    id: Annotated[str, Field(description="Table identifier")]
-    version: Annotated[str, Field(description="Version")]
-    Name: Annotated[MultilingualString | str, Field(description="Table name")]
-    Description: Annotated[
-        MultilingualString | str | None,
-        Field(description="Table description", default=None),
-    ]
-    pricesFor: Annotated[
-        dict[str, VersionedRef],
-        Field(description="References for what these prices are for"),
-    ]
-    usedIn: Annotated[
-        dict[str, VersionedRef],
-        Field(description="References for where these prices are used"),
-    ]
-    specifics: Annotated[
-        dict[str, VersionedRef], Field(description="Specific references for this table")
-    ]
-    columns: Annotated[
-        list[FareTableColumn], Field(description="list of columns in this table")
-    ]
-    rows: Annotated[list[FareTableRow], Field(description="list of rows in this table")]
-    includes: Annotated[
-        list[NestedFareTable], Field(description="list of nested fare tables")
     ]
 
 
@@ -314,26 +161,6 @@ class FrameDefaults(BaseModel):
     ]
     DefaultResponsibilitySetRef: Annotated[
         VersionedRef, Field(description="Default responsibility set reference")
-    ]
-
-
-class Tariff(BaseModel):
-    """Definition of a tariff"""
-
-    id: Annotated[str, Field(description="Tariff identifier")]
-    version: Annotated[str, Field(description="Version")]
-    validityConditions: Annotated[
-        list[FromToDate], Field(description="Validity conditions")
-    ]
-    Name: Annotated[MultilingualString | str, Field(description="Name of the tariff")]
-    OperatorRef: Annotated[VersionedRef, Field(description="Reference to operator")]
-    LineRef: Annotated[VersionedRef, Field(description="Reference to line")]
-    TypeOfTariffRef: Annotated[
-        VersionedRef, Field(description="Reference to tariff type")
-    ]
-    TariffBasis: Annotated[str, Field(description="Basis of tariff")]
-    fareStructureElements: Annotated[
-        list[FareStructureElement], Field(description="list of fare structure elements")
     ]
 
 

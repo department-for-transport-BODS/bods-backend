@@ -37,5 +37,5 @@ class FromToDate(BaseModel):
 class VersionedRef(BaseModel):
     """Base class for versioned references"""
 
-    version: Annotated[str, Field(description="Version of the reference")]
     ref: Annotated[str, Field(description="Reference value")]
+    version: Annotated[str | None, Field(description="Version of the reference")] = None

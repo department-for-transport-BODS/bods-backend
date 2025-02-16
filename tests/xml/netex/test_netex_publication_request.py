@@ -9,14 +9,15 @@ from common_layer.xml.netex.models import (
     MultilingualString,
     NetworkFilterByValueStructure,
     NetworkFrameTopicStructure,
-    ObjectReferences,
     PublicationRequestStructure,
     VersionedRef,
 )
+from common_layer.xml.netex.models.netex_references import ObjectReferences
 from common_layer.xml.netex.parser import parse_publication_request, parse_topics
 from lxml.etree import fromstring
 
 from tests.xml.conftest import assert_model_equal
+from tests.xml.netex.conftest import parse_xml_str_as_netex_wrapped
 
 UTC = timezone.utc
 
@@ -109,7 +110,7 @@ def test_parse_topics(
     xml_str: str, expected: list[NetworkFrameTopicStructure] | None
 ) -> None:
     """Test parsing of topics element with various inputs."""
-    elem = fromstring(xml_str.strip())
+    elem = parse_xml_str_as_netex_wrapped(xml_str.strip())
     result = parse_topics(elem)
     if expected is None:
         assert result is None

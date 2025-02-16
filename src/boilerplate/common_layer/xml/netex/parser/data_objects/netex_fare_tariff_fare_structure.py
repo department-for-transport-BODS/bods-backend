@@ -18,7 +18,7 @@ from ...models import (
     VersionedRef,
 )
 from ..netex_utility import parse_versioned_ref
-from .netex_data_object_profiles import parse_user_profile
+from .netex_profiles import parse_user_profile
 
 log = get_logger()
 
@@ -42,11 +42,22 @@ def parse_distance_matrix_element(elem: _Element) -> DistanceMatrixElement:
             case "priceGroups":
                 for price_group in child:
                     if get_tag_name(price_group) == "PriceGroupRef":
-                        price_groups.append(parse_versioned_ref(price_group))
+                        ref = price_group.get("ref")
+                        version = price_group.get("version") or price_group.get(
+                            "versionRef"
+                        )
+                        if ref and version:
+                            price_groups.append(VersionedRef(ref=ref, version=version))
             case "StartTariffZoneRef":
-                start_tariff_zone_ref = parse_versioned_ref(child)
+                ref = child.get("ref")
+                version = child.get("version") or child.get("versionRef")
+                if ref and version:
+                    start_tariff_zone_ref = VersionedRef(ref=ref, version=version)
             case "EndTariffZoneRef":
-                end_tariff_zone_ref = parse_versioned_ref(child)
+                ref = child.get("ref")
+                version = child.get("version") or child.get("versionRef")
+                if ref and version:
+                    end_tariff_zone_ref = VersionedRef(ref=ref, version=version)
             case _:
                 log.warning("Unknown DistanceMatrixElement tag", tag=tag)
         child.clear()
@@ -156,16 +167,7 @@ def parse_round_trip(elem: _Element) -> RoundTrip:
 
 def parse_validity_parameters(elem: _Element) -> ValidityParameters:
     """Parse ValidityParameters element."""
-    line_ref = None
-
-    for child in elem:
-        tag = get_tag_name(child)
-        match tag:
-            case "LineRef":
-                line_ref = parse_versioned_ref(child)
-            case _:
-                log.warning("Unknown ValidityParameters tag", tag=tag)
-        child.clear()
+    line_ref = parse_versioned_ref(elem, "LineRef")
 
     if not line_ref:
         raise ValueError("Missing required LineRef in ValidityParameters")
@@ -175,7 +177,9 @@ def parse_validity_parameters(elem: _Element) -> ValidityParameters:
 
 def parse_generic_parameter_assignment(elem: _Element) -> GenericParameterAssignment:
     """Parse GenericParameterAssignment element."""
-    type_of_access_right_assignment_ref = None
+    type_of_access_right_assignment_ref = parse_versioned_ref(
+        elem, "TypeOfAccessRightAssignmentRef"
+    )
     validity_parameter_assignment_type = None
     limitation_grouping_type = None
     validity_parameters = None
@@ -190,12 +194,10 @@ def parse_generic_parameter_assignment(elem: _Element) -> GenericParameterAssign
 
     if not assignment_id or not version or not order:
         raise ValueError("Missing required attributes in GenericParameterAssignment")
-
     for child in elem:
         tag = get_tag_name(child)
         match tag:
-            case "TypeOfAccessRightAssignmentRef":
-                type_of_access_right_assignment_ref = parse_versioned_ref(child)
+
             case "ValidityParameterAssignmentType":
                 validity_parameter_assignment_type = child.text
             case "LimitationGroupingType":

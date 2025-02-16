@@ -5,12 +5,11 @@ Parse TXC XML into Pydantic Models
 from io import BytesIO
 from pathlib import Path
 
-from lxml import etree
-from lxml.etree import QName, _Element, _ElementTree, parse  # type: ignore
+from lxml.etree import QName, _Element  # type: ignore
 from pydantic import BaseModel, Field
 from structlog.stdlib import get_logger
 
-from ...utils import get_file_hash
+from ...utils import get_file_hash, load_xml_tree
 from ..models.txc_data import TXCData
 from ..parser.metadata import parse_metadata
 from .journey_pattern_sections import parse_journey_pattern_sections
@@ -102,16 +101,6 @@ def strip_namespace(xml_data: _Element) -> _Element:
         if isinstance(tag, str) and "}" in tag:
             elem.tag = tag.split("}", 1)[1]
     return xml_data
-
-
-def load_xml_tree(filename: Path | BytesIO) -> _ElementTree:
-    """
-    Load XML ElementTreee
-    """
-    log.info("Opening TXC file", filename=filename)
-    parser = etree.XMLParser()
-    tree = parse(filename, parser=parser)
-    return tree
 
 
 def load_xml_data(filename: Path | BytesIO) -> _Element:

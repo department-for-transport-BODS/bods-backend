@@ -3,11 +3,16 @@ Profile Parsing Tests
 """
 
 import pytest
-from common_layer.xml.netex.models import CompanionProfile, UserProfile, VersionedRef
+from common_layer.xml.netex.models import (
+    CompanionProfile,
+    MultilingualString,
+    UserProfile,
+    VersionedRef,
+)
 from common_layer.xml.netex.parser import parse_companion_profile, parse_user_profile
-from lxml.etree import fromstring
 
 from tests.xml.conftest import assert_model_equal
+from tests.xml.netex.conftest import parse_xml_str_as_netex
 
 
 @pytest.mark.parametrize(
@@ -37,7 +42,7 @@ from tests.xml.conftest import assert_model_equal
                 <UserProfileRef ref="fxc:child" version="fxc:v1.0"/>
                 <MinimumNumberOfPersons>1</MinimumNumberOfPersons>
                 <MaximumNumberOfPersons>2</MaximumNumberOfPersons>
-                <DiscountBasis>percentage</DiscountBasis>
+                <DiscountBasis>free</DiscountBasis>
             </CompanionProfile>
             """,
             CompanionProfile(
@@ -46,7 +51,7 @@ from tests.xml.conftest import assert_model_equal
                 UserProfileRef=VersionedRef(version="fxc:v1.0", ref="fxc:child"),
                 MinimumNumberOfPersons=1,
                 MaximumNumberOfPersons=2,
-                DiscountBasis="percentage",
+                DiscountBasis="free",
             ),
             id="Companion profile with discount basis",
         ),
@@ -73,7 +78,7 @@ from tests.xml.conftest import assert_model_equal
 )
 def test_parse_companion_profile(xml_str: str, expected: CompanionProfile) -> None:
     """Test parsing of companion profile with various inputs."""
-    elem = fromstring(xml_str.strip())
+    elem = parse_xml_str_as_netex(xml_str)
     result = parse_companion_profile(elem)
     assert_model_equal(result, expected)
 
@@ -98,7 +103,7 @@ def test_parse_companion_profile(xml_str: str, expected: CompanionProfile) -> No
             UserProfile(
                 id="fxc:adult",
                 version="fxc:v1.0",
-                Name="Adult",
+                Name=MultilingualString(value="Adult", lang=None, textIdType=None),
                 TypeOfConcessionRef=VersionedRef(version="fxc:v1.0", ref="fxc:none"),
                 companionProfiles=[
                     CompanionProfile(
@@ -127,7 +132,7 @@ def test_parse_companion_profile(xml_str: str, expected: CompanionProfile) -> No
             UserProfile(
                 id="fxc:child",
                 version="fxc:v1.0",
-                Name="Child",
+                Name=MultilingualString(value="Child", lang=None, textIdType=None),
                 TypeOfConcessionRef=VersionedRef(version="fxc:v1.0", ref="fxc:child"),
                 MinimumAge=5,
                 MaximumAge=15,
@@ -156,8 +161,10 @@ def test_parse_companion_profile(xml_str: str, expected: CompanionProfile) -> No
             UserProfile(
                 id="fxc:infant",
                 version="fxc:v1.0",
-                Name="Infant",
-                Description="Under 5 years",
+                Name=MultilingualString(value="Infant", lang=None, textIdType=None),
+                Description=MultilingualString(
+                    value="Under 5 years", lang=None, textIdType=None
+                ),
                 TypeOfConcessionRef=VersionedRef(version="fxc:v1.0", ref="fxc:infant"),
                 MinimumAge=0,
                 MaximumAge=4,
@@ -189,7 +196,7 @@ def test_parse_companion_profile(xml_str: str, expected: CompanionProfile) -> No
             UserProfile(
                 id="fxc:senior",
                 version="fxc:v1.0",
-                Name="Senior",
+                Name=MultilingualString(value="Senior", lang=None, textIdType=None),
                 TypeOfConcessionRef=VersionedRef(version="fxc:v1.0", ref="fxc:senior"),
                 ProofRequired="membershipCard",
                 DiscountBasis="discount",
@@ -200,6 +207,6 @@ def test_parse_companion_profile(xml_str: str, expected: CompanionProfile) -> No
 )
 def test_parse_user_profile(xml_str: str, expected: UserProfile) -> None:
     """Test parsing of user profile with various inputs."""
-    elem = fromstring(xml_str.strip())
+    elem = parse_xml_str_as_netex(xml_str)
     result = parse_user_profile(elem)
     assert_model_equal(result, expected)

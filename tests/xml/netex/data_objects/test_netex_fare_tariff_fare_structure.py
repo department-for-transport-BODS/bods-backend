@@ -21,9 +21,9 @@ from common_layer.xml.netex.parser import (
     parse_usage_validity_period,
     parse_validity_parameters,
 )
-from lxml.etree import fromstring
 
 from tests.xml.conftest import assert_model_equal
+from tests.xml.netex.conftest import parse_xml_str_as_netex
 
 
 @pytest.mark.parametrize(
@@ -108,7 +108,7 @@ def test_parse_distance_matrix_element(
     xml_str: str, expected: DistanceMatrixElement
 ) -> None:
     """Test parsing of distance matrix element with various inputs."""
-    elem = fromstring(xml_str.strip())
+    elem = parse_xml_str_as_netex(xml_str)
     result = parse_distance_matrix_element(elem)
     assert_model_equal(result, expected)
 
@@ -149,7 +149,7 @@ def test_parse_usage_validity_period(
     xml_str: str, expected: UsageValidityPeriod
 ) -> None:
     """Test parsing of usage validity period."""
-    elem = fromstring(xml_str.strip())
+    elem = parse_xml_str_as_netex(xml_str)
     result = parse_usage_validity_period(elem)
     assert_model_equal(result, expected)
 
@@ -179,7 +179,7 @@ def test_parse_usage_validity_period(
 )
 def test_parse_frequency_of_use(xml_str: str, expected: FrequencyOfUse) -> None:
     """Test parsing of frequency of use."""
-    elem = fromstring(xml_str.strip())
+    elem = parse_xml_str_as_netex(xml_str)
     result = parse_frequency_of_use(elem)
     assert_model_equal(result, expected)
 
@@ -209,7 +209,7 @@ def test_parse_frequency_of_use(xml_str: str, expected: FrequencyOfUse) -> None:
 )
 def test_parse_round_trip(xml_str: str, expected: RoundTrip) -> None:
     """Test parsing of round trip."""
-    elem = fromstring(xml_str.strip())
+    elem = parse_xml_str_as_netex(xml_str)
     result = parse_round_trip(elem)
     assert_model_equal(result, expected)
 
@@ -241,7 +241,7 @@ def test_parse_round_trip(xml_str: str, expected: RoundTrip) -> None:
 )
 def test_parse_validity_parameters(xml_str: str, expected: ValidityParameters) -> None:
     """Test parsing of validity parameters."""
-    elem = fromstring(xml_str.strip())
+    elem = parse_xml_str_as_netex(xml_str)
     result = parse_validity_parameters(elem)
     assert_model_equal(result, expected)
 
@@ -323,6 +323,6 @@ def test_parse_generic_parameter_assignment(
     xml_str: str, expected: GenericParameterAssignment
 ) -> None:
     """Test parsing of generic parameter assignment."""
-    elem = fromstring(xml_str.strip())
+    elem = parse_xml_str_as_netex(xml_str)
     result = parse_generic_parameter_assignment(elem)
     assert_model_equal(result, expected)

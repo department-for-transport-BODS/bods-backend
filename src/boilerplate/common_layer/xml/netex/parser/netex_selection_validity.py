@@ -18,23 +18,10 @@ log = get_logger()
 
 def parse_availability_condition(elem: _Element) -> AvailabilityCondition:
     """Parse AvailabilityCondition element."""
-    from_date = None
-    to_date = None
+    from_date = parse_timestamp(elem, "FromDate")
+    to_date = parse_timestamp(elem, "ToDate")
     version = elem.get("version", "1.0")
     id_ = elem.get("id", "")
-
-    for child in elem.iterchildren():
-        tag = get_tag_name(child)
-        match tag:
-            case "FromDate":
-                from_date = parse_timestamp(child)
-                log.info("From data", from_data=from_date)
-            case "ToDate":
-                to_date = parse_timestamp(child)
-            case _:
-                if tag:
-                    log.warning("Unknown AvailabilityCondition tag", tag=tag)
-    elem.clear()
 
     return AvailabilityCondition(
         version=version,

@@ -6,8 +6,8 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
+from ..data_objects.netex_data_object_profiles import UserProfile
 from ..netex_utility import MultilingualString, VersionedRef
-from .netex_data_object_profiles import UserProfile
 
 
 class DistanceMatrixElement(BaseModel):

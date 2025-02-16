@@ -6,6 +6,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
+from ..netex_types import DiscountBasisT, ProofOfIdentityT
 from ..netex_utility import MultilingualString, VersionedRef
 
 
@@ -48,10 +49,10 @@ class UserProfile(BaseModel):
         int | None, Field(description="Maximum age", default=None)
     ] = None
     ProofRequired: Annotated[
-        str | None, Field(description="Required proof", default=None)
+        ProofOfIdentityT | None, Field(description="Required proof", default=None)
     ] = None
     DiscountBasis: Annotated[
-        str | None, Field(description="Basis for discount", default=None)
+        DiscountBasisT | None, Field(description="Basis for discount", default=None)
     ] = None
     companionProfiles: Annotated[
         list[CompanionProfile] | None,

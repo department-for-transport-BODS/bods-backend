@@ -2,74 +2,62 @@
 Parser for Top Level PublicationDelivery
 """
 
+from io import BytesIO
 from pathlib import Path
 
-from lxml import etree
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
-from ...utils import get_tag_name, unload_element
+from ...utils import load_xml_tree, parse_xml_attribute
 from ..models import PublicationDeliveryStructure
-from .netex_data_objects import parse_data_objects
+from .data_objects.netex_data_objects import parse_data_objects
+from .netex_constants import NETEX_NS
 from .netex_publication_request import parse_publication_request
-from .netex_utility import parse_multilingual_string, parse_timedelta, parse_timestamp
+from .netex_utility import (
+    get_netex_element,
+    get_netex_text,
+    parse_multilingual_string,
+    parse_timedelta,
+    parse_timestamp,
+)
 
 log = get_logger()
 
-NETEX_NS = "http://www.netex.org.uk/netex"
 
-
-def parse_netex(filename: Path) -> PublicationDeliveryStructure:
+def parse_publication_delivery(elem: _Element) -> PublicationDeliveryStructure:
     """
-    Parse NeTEx PublicationDelivery XML iteratively with modular parsing functions.
+    Parse PublicationDelivery element from loaded XML tree.
     """
-    context = etree.iterparse(
-        filename, events=("start", "end"), remove_blank_text=True, remove_comments=True
-    )
-
-    event, root = next(context)
-    if root.tag != f"{{{NETEX_NS}}}PublicationDelivery":
-        raise ValueError("Root element must be PublicationDelivery")
-
-    version = root.get("version")
-    publication_timestamp = None
-    participant_ref = None
-    publication_request = None
-    description = None
-    refresh_interval = None
-    data_objects = []
-
-    # Parse remaining elements
-    for event, elem in context:
-        if event != "end":
-            continue
-
-        try:
-            tag = get_tag_name(elem)
-
-            match tag:
-                case "PublicationTimestamp":
-                    publication_timestamp = parse_timestamp(elem)
-                case "ParticipantRef":
-                    participant_ref = elem.text
-                case "PublicationRequest":
-                    publication_request = parse_publication_request(elem)
-                case "PublicationRefreshInterval":
-                    refresh_interval = parse_timedelta(elem)
-                case "Description":
-                    description = parse_multilingual_string(elem)
-                case "dataObjects":
-                    data_objects = parse_data_objects(elem)
-                case _:
-                    log.warning("Unexpected Tag in PublicationDelivery", tag=tag)
-        finally:
-            unload_element(elem)
+    # Get required elements
+    publication_timestamp = parse_timestamp(elem, "PublicationTimestamp")
     if publication_timestamp is None:
         raise ValueError("PublicationTimestamp is Required")
+
+    participant_ref = get_netex_text(elem, "ParticipantRef")
     if participant_ref is None:
         raise ValueError("ParticipantRef is Required")
 
+    version = parse_xml_attribute(elem, "version") or "v1.0"
+
+    # Get optional elements
+    publication_request_elem = get_netex_element(elem, "PublicationRequest")
+    publication_request = (
+        parse_publication_request(publication_request_elem)
+        if publication_request_elem is not None
+        else None
+    )
+
+    refresh_interval = parse_timedelta(elem, "PublicationRefreshInterval")
+
+    description = parse_multilingual_string(elem, "Description")
+
+    data_objects_elem = get_netex_element(elem, "dataObjects")
+    data_objects = (
+        parse_data_objects(data_objects_elem) if data_objects_elem is not None else []
+    )
+
     return PublicationDeliveryStructure(
-        version=version if version else "v1.0",
+        version=version,
         PublicationTimestamp=publication_timestamp,
         ParticipantRef=participant_ref,
         PublicationRequest=publication_request,
@@ -77,3 +65,16 @@ def parse_netex(filename: Path) -> PublicationDeliveryStructure:
         Description=description,
         dataObjects=data_objects,
     )
+
+
+def parse_netex(filename: Path | BytesIO) -> PublicationDeliveryStructure:
+    """
+    Parse NeTEx file by first loading the tree then processing PublicationDelivery.
+    """
+    tree = load_xml_tree(filename)
+    root = tree.getroot()
+
+    if root.tag != f"{{{NETEX_NS}}}PublicationDelivery":
+        raise ValueError("Root element must be PublicationDelivery")
+
+    return parse_publication_delivery(root)

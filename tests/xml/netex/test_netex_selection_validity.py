@@ -13,13 +13,13 @@ from common_layer.xml.netex.parser import (
     parse_availability_condition,
     parse_selection_validity_conditions,
 )
-from lxml import etree
 
 from tests.xml.conftest import assert_model_equal
+from tests.xml.netex.conftest import parse_xml_str_as_netex
 
 
 @pytest.mark.parametrize(
-    "xml_string, expected_result",
+    "xml_str, expected_result",
     [
         pytest.param(
             """
@@ -96,12 +96,12 @@ from tests.xml.conftest import assert_model_equal
     ],
 )
 def test_parse_availability_condition(
-    xml_string: str, expected_result: AvailabilityCondition
+    xml_str: str, expected_result: AvailabilityCondition
 ):
     """
     Test AvailabilityCondition parsing
     """
-    xml_element = etree.fromstring(xml_string)
+    xml_element = parse_xml_str_as_netex(xml_str)
     result = parse_availability_condition(xml_element)
     assert_model_equal(result, expected_result)
 
@@ -205,6 +205,6 @@ def test_parse_selection_validity_conditions(
     xml_str: str, expected: SelectionValidityConditions
 ) -> None:
     """Test parsing of selection validity conditions with various inputs."""
-    elem = etree.fromstring(xml_str.strip())
+    elem = parse_xml_str_as_netex(xml_str)
     result = parse_selection_validity_conditions(elem)
     assert_model_equal(result, expected)

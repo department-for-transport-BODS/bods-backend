@@ -14,12 +14,32 @@ from .data_objects import (
     parse_user_profile,
     parse_validity_parameters,
 )
+from .fare_frame import (
+    parse_fare_table,
+    parse_fare_zone,
+    parse_specifics,
+    parse_used_in,
+)
+from .fare_frame.netex_fare_table_cell import (
+    parse_cell,
+    parse_distance_matrix_element_price,
+)
+from .fare_frame.netex_fare_table_column import (
+    parse_fare_table_column,
+    parse_fare_table_columns,
+)
+from .fare_frame.netex_fare_table_row import parse_fare_table_row, parse_fare_table_rows
+from .netex_constants import NETEX_NS
 from .netex_network_frame import (
     parse_network_filter_by_value,
     parse_network_frame_topic,
-    parse_object_references,
 )
 from .netex_publication_request import parse_publication_request, parse_topics
+from .netex_references import (
+    parse_object_references,
+    parse_point_refs,
+    parse_pricable_object_refs,
+)
 from .netex_selection_validity import (
     parse_availability_condition,
     parse_selection_validity_conditions,
@@ -57,4 +77,6 @@ __all__ = [
     "parse_usage_validity_period",
     "parse_validity_parameters",
     "parse_frequency_of_use",
+    # Constants
+    "NETEX_NS",
 ]

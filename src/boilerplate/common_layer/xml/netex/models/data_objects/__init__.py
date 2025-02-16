@@ -2,10 +2,7 @@
 dataObject Exports
 """
 
-from .netex_data_object_fare_frame import FareFrame
-from .netex_data_object_profiles import CompanionProfile, UserProfile
-from .netex_data_objects import CompositeFrame
-from .netex_fare_tariff_fare_structure import (
+from ..fare_frame.netex_fare_tariff_fare_structure import (
     DistanceMatrixElement,
     FareStructureElement,
     FrequencyOfUse,
@@ -14,9 +11,13 @@ from .netex_fare_tariff_fare_structure import (
     UsageValidityPeriod,
     ValidityParameters,
 )
+from .netex_codespaces import Codespace, CodespaceRef
+from .netex_data_object_profiles import CompanionProfile, UserProfile
+from .netex_frame_composite import CompositeFrame, FrameDefaultsStructure
+from .netex_frame_resource import DataSource, Operator, ResourceFrame
+from .netex_frame_service import Line, ScheduledStopPoint, ServiceFrame
 
 __all__ = [
-    "FareFrame",
     "CompanionProfile",
     "UserProfile",
     "DistanceMatrixElement",
@@ -27,4 +28,13 @@ __all__ = [
     "UsageValidityPeriod",
     "FrequencyOfUse",
     "ValidityParameters",
+    "DataSource",
+    "FrameDefaultsStructure",
+    "Line",
+    "Operator",
+    "ResourceFrame",
+    "ScheduledStopPoint",
+    "ServiceFrame",
+    "Codespace",
+    "CodespaceRef",
 ]

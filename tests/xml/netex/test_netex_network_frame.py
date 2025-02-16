@@ -9,57 +9,18 @@ from common_layer.xml.netex.models import (
     AvailabilityCondition,
     NetworkFilterByValueStructure,
     NetworkFrameTopicStructure,
-    ObjectReferences,
     SelectionValidityConditions,
     VersionedRef,
 )
+from common_layer.xml.netex.models.netex_references import ObjectReferences
 from common_layer.xml.netex.parser import (
     parse_network_filter_by_value,
     parse_network_frame_topic,
-    parse_object_references,
 )
-from lxml.etree import fromstring
+from common_layer.xml.netex.parser.netex_references import parse_object_references
 
 from tests.xml.conftest import assert_model_equal
-
-
-@pytest.mark.parametrize(
-    "xml_str,expected",
-    [
-        pytest.param(
-            """
-            <objectReferences>
-                <OperatorRef version="1.0" ref="noc:BRTB" />
-                <LineRef version="1.0" ref="BRTB:PC0003375:3:15" />
-            </objectReferences>
-            """,
-            ObjectReferences(
-                OperatorRef=VersionedRef(version="1.0", ref="noc:BRTB"),
-                LineRef=VersionedRef(version="1.0", ref="BRTB:PC0003375:3:15"),
-            ),
-            id="Valid object references",
-        ),
-        pytest.param(
-            """
-            <objectReferences>
-                <OperatorRef version="2.0" ref="operator1" />
-                <LineRef version="2.0" ref="line1" />
-                <UnknownRef version="1.0" ref="something" />
-            </objectReferences>
-            """,
-            ObjectReferences(
-                OperatorRef=VersionedRef(version="2.0", ref="operator1"),
-                LineRef=VersionedRef(version="2.0", ref="line1"),
-            ),
-            id="Object references with unknown tag",
-        ),
-    ],
-)
-def test_parse_object_references(xml_str: str, expected: ObjectReferences) -> None:
-    """Test parsing of object references with various inputs."""
-    elem = fromstring(xml_str.strip())
-    result = parse_object_references(elem)
-    assert_model_equal(result, expected)
+from tests.xml.netex.conftest import parse_xml_str_as_netex
 
 
 @pytest.mark.parametrize(
@@ -95,7 +56,7 @@ def test_parse_object_references(xml_str: str, expected: ObjectReferences) -> No
 )
 def test_parse_object_references_errors(xml_str: str, error_msg: str) -> None:
     """Test error cases for object references parsing."""
-    elem = fromstring(xml_str.strip())
+    elem = parse_xml_str_as_netex(xml_str)
     with pytest.raises(ValueError, match=error_msg):
         parse_object_references(elem)
 
@@ -126,7 +87,7 @@ def test_parse_network_filter_by_value(
     xml_str: str, expected: NetworkFilterByValueStructure
 ) -> None:
     """Test parsing of network filter with various inputs."""
-    elem = fromstring(xml_str.strip())
+    elem = parse_xml_str_as_netex(xml_str)
     result = parse_network_filter_by_value(elem)
     assert_model_equal(result, expected)
 
@@ -280,6 +241,6 @@ def test_parse_network_frame_topic(
     xml_str: str, expected: NetworkFrameTopicStructure
 ) -> None:
     """Test parsing of network frame topic with various inputs."""
-    elem = fromstring(xml_str.strip())
+    elem = parse_xml_str_as_netex(xml_str)
     result = parse_network_frame_topic(elem)
     assert_model_equal(result, expected)

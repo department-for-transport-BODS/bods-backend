@@ -2,21 +2,18 @@
 PublicationRequestParsing
 """
 
-from datetime import datetime
-
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 from ...utils import get_tag_name
-from ..models import (
-    MultilingualString,
-    NetworkFrameRequestPolicyStructure,
-    NetworkFrameSubscriptionPolicyStructure,
-    NetworkFrameTopicStructure,
-    PublicationRequestStructure,
-)
+from ..models import NetworkFrameTopicStructure, PublicationRequestStructure
 from .netex_network_frame import parse_network_frame_topic
-from .netex_utility import parse_multilingual_string, parse_timestamp
+from .netex_utility import (
+    get_netex_element,
+    get_netex_text,
+    parse_multilingual_string,
+    parse_timestamp,
+)
 
 log = get_logger()
 
@@ -37,44 +34,31 @@ def parse_topics(elem: _Element) -> list[NetworkFrameTopicStructure] | None:
 
 def parse_publication_request(elem: _Element) -> PublicationRequestStructure:
     """
-    Parse PublicationRequest element.
+    Parse PublicationRequest element with namespace-aware child iteration.
     """
     version = elem.get("version", "1.0")
-    request_timestamp: datetime | None = None
-    participant_ref: str | None = None
-    description: MultilingualString | None = None
-    topics_list: list[NetworkFrameTopicStructure] | None = None
-    request_policy: NetworkFrameRequestPolicyStructure | None = None
-    subscription_policy: NetworkFrameSubscriptionPolicyStructure | None = None
-
-    for child in elem:
-        tag = get_tag_name(child)
-
-        match tag:
-            case "RequestTimestamp":
-                request_timestamp = parse_timestamp(child)
-            case "ParticipantRef":
-                participant_ref = child.text
-            case "Description":
-                description = parse_multilingual_string(child)
-            case "topics":
-                topics_list = parse_topics(child)
-            case "RequestPolicy":
-                log.error("Parsing Network Frame Subscription Policy not implemented")
-                request_policy = None
-            case "SubscriptionPolicy":
-                log.error("Parsing Network Frame Subscription Policy not implemented")
-                subscription_policy = None
-            case _:
-                log.warning("Unknown PublicationRequest Tag", tag=tag)
-        child.clear()
+    request_timestamp = parse_timestamp(elem, "RequestTimestamp")
+    participant_ref = get_netex_text(elem, "ParticipantRef")
+    description = parse_multilingual_string(elem, "Description")
+    topics = []
+    topics_xml = get_netex_element(elem, "topics")
+    if topics_xml is not None:
+        topics = parse_topics(topics_xml)
+    request_policy = get_netex_element(elem, "RequestPolicy")
+    if request_policy:
+        log.error("Parsing Network Frame Subscription Policy not implemented")
+        request_policy = None
+    subscription_policy = get_netex_element(elem, "SubscriptionPolicy")
+    if subscription_policy:
+        log.error("Parsing Network Frame Subscription Policy not implemented")
+        raise ValueError("Error")
 
     return PublicationRequestStructure(
         version=version,
         RequestTimestamp=request_timestamp,
         ParticipantRef=participant_ref,
         Description=description,
-        topics=topics_list,
-        RequestPolicy=request_policy,
-        SubscriptionPolicy=subscription_policy,
+        topics=topics,
+        RequestPolicy=None,
+        SubscriptionPolicy=None,
     )
