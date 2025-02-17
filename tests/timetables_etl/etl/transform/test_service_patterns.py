@@ -74,6 +74,25 @@ from timetables_etl.etl.app.transform.service_patterns import (
             [(50.7, -3.5), (50.8, -3.6)],
             id="Valid points from single section",
         ),
+    ],
+)
+def test_get_valid_route_points(
+    journey_pattern: TXCJourneyPattern,
+    sections: list[TXCJourneyPatternSection],
+    stop_mapping: dict[str, LookupStopPoint],
+    expected_points: list[tuple[float, float]],
+) -> None:
+    """Test getting valid route points from journey pattern sections."""
+    result = get_valid_route_points(journey_pattern, sections, stop_mapping)
+    assert len(result) == len(expected_points)
+    for point, expected in zip(result, expected_points):
+        assert point.x == expected[0]
+        assert point.y == expected[1]
+
+
+@pytest.mark.parametrize(
+    "journey_pattern,sections,stop_mapping",
+    [
         pytest.param(
             TXCJourneyPatternFactory.create(
                 id="JP1",
@@ -105,8 +124,7 @@ from timetables_etl.etl.app.transform.service_patterns import (
                     ("Atco2", "Stop 2", (50.8, -3.6)),
                 ]
             ),
-            [(50.8, -3.6)],  # Single point
-            id="Missing stop returns single point",
+            id="Missing stop",
         ),
         pytest.param(
             TXCJourneyPatternFactory.create(
@@ -139,23 +157,17 @@ from timetables_etl.etl.app.transform.service_patterns import (
                     ("Atco3", "Stop 3", (50.9, -3.7)),
                 ]
             ),
-            [],  # No valid points
-            id="All stops missing returns empty list",
+            id="All stops missing",
         ),
     ],
 )
-def test_get_valid_route_points(
-    journey_pattern: TXCJourneyPattern,
-    sections: list[TXCJourneyPatternSection],
-    stop_mapping: dict[str, LookupStopPoint],
-    expected_points: list[tuple[float, float]],
-) -> None:
-    """Test getting valid route points from journey pattern sections."""
-    result = get_valid_route_points(journey_pattern, sections, stop_mapping)
-    assert len(result) == len(expected_points)
-    for point, expected in zip(result, expected_points):
-        assert point.x == expected[0]
-        assert point.y == expected[1]
+def test_get_valid_route_points_error(journey_pattern, sections, stop_mapping) -> None:
+    """Test that a ValueError is raised when any stop points are missing."""
+    with pytest.raises(
+        ValueError,
+        match="Stop referenced in JourneyPatternSections not found in stop map",
+    ):
+        get_valid_route_points(journey_pattern, sections, stop_mapping)
 
 
 @pytest.mark.parametrize(
@@ -196,58 +208,23 @@ def test_get_valid_route_points(
             [(50.7, -3.5), (50.8, -3.6)],
             id="Valid service pattern",
         ),
-        pytest.param(
-            TXCJourneyPatternFactory.create(
-                id="JP1",
-                JourneyPatternSectionRefs=["JPS1"],
-            ),
-            [
-                TXCJourneyPatternSectionFactory.create(
-                    id="JPS1",
-                    JourneyPatternTimingLink=[
-                        TXCJourneyPatternTimingLinkFactory.create(
-                            id="JPTL1",
-                            From=TXCJourneyPatternStopUsageFactory.create(
-                                id="JPSU1",
-                                Activity="pickUpAndSetDown",
-                                StopPointRef="MissingStop1",
-                            ),
-                            To=TXCJourneyPatternStopUsageFactory.create(
-                                id="JPSU2",
-                                Activity="setDown",
-                                StopPointRef="Atco2",
-                            ),
-                            RouteLinkRef="RL1",
-                        ),
-                    ],
-                ),
-            ],
-            NaptanStopPointFactory.create_mapping_with_locations(
-                [
-                    ("Atco2", "Stop 2", (50.8, -3.6)),
-                ]
-            ),
-            None,  # Single point should return None
-            id="Single point returns None",
-        ),
     ],
 )
 def test_generate_service_pattern_geometry(
     journey_pattern: TXCJourneyPattern,
     sections: list[TXCJourneyPatternSection],
     stop_mapping: dict[str, LookupStopPoint],
-    expected_result: list[tuple[float, float]] | None,
+    expected_result: list[tuple[float, float]],
 ) -> None:
     """Test generating the LineString from the JourneyPatternSections."""
-    result = generate_service_pattern_geometry(journey_pattern, sections, stop_mapping)
 
-    if expected_result is None:
-        assert result is None
-        return
+    result = generate_service_pattern_geometry(journey_pattern, sections, stop_mapping)
 
     assert isinstance(result, WKBElement)
     line = to_shape(result)
+    assert isinstance(line, LineString)
     assert len(line.coords) == len(expected_result)
+
     for actual, expected in zip(line.coords, expected_result):
         assert actual == expected
 
