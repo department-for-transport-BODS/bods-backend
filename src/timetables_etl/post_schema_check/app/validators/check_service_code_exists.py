@@ -153,7 +153,7 @@ def get_published_services(
     ]
 
 
-def check_service_code_exists(txc_data: TXCData, db: SqlDB) -> list[ValidationResult]:
+def check_service_code_exists(txc_data: TXCData, _db: SqlDB) -> list[ValidationResult]:
     """
     Checks if a service code already exists in a published dataset
     """
@@ -161,7 +161,7 @@ def check_service_code_exists(txc_data: TXCData, db: SqlDB) -> list[ValidationRe
     if not validation_result.is_valid or not service_codes:
         return [validation_result]
 
-    service_revisions = get_live_service_revisions(service_codes, db)
+    service_revisions = get_live_service_revisions(service_codes, _db)
 
     if not service_revisions.active_services:
         log.info(
@@ -170,7 +170,9 @@ def check_service_code_exists(txc_data: TXCData, db: SqlDB) -> list[ValidationRe
         )
         return [ValidationResult(is_valid=True)]
 
-    published_services = get_published_services(service_revisions.live_revision_ids, db)
+    published_services = get_published_services(
+        service_revisions.live_revision_ids, _db
+    )
 
     if not published_services:
         return [ValidationResult(is_valid=True)]
