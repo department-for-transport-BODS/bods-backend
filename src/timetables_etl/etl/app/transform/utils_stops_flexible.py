@@ -7,6 +7,7 @@ from typing import Sequence
 from common_layer.database.models import NaptanStopPoint
 from common_layer.xml.txc.helpers.service import extract_flexible_pattern_stop_refs
 from common_layer.xml.txc.models import TXCFlexibleJourneyPattern
+from etl.app.helpers.stop_points import NonExistentNaptanStop
 from structlog.stdlib import get_logger
 
 from ..helpers import StopsLookup
@@ -25,14 +26,15 @@ def map_stop_refs_to_naptan(
     stops: list[NaptanStopPoint] = []
 
     for stop_ref in stop_refs:
-        if stop_ref in atco_location_mapping:
-            stops.append(atco_location_mapping[stop_ref])
-        else:
+        stop_data = atco_location_mapping[stop_ref]
+        if isinstance(stop_data, NonExistentNaptanStop):
             log.warning(
-                "stop_ref_not_found_in_mapping",
+                "Skipping NonExistentNaptanStop in atco_location_mapping",
                 stop_ref=stop_ref,
                 journey_pattern_id=journey_pattern_id,
             )
+        else:
+            stops.append(stop_data)
 
     return stops
 

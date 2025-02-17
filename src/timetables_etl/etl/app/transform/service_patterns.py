@@ -12,6 +12,7 @@ from common_layer.xml.txc.models import (
     TXCJourneyPatternSection,
     TXCService,
 )
+from etl.app.helpers.stop_points import NonExistentNaptanStop
 from geoalchemy2 import WKBElement
 from geoalchemy2.shape import from_shape
 from shapely import Point
@@ -42,14 +43,15 @@ def get_valid_route_points(
     route_points: list[Point] = []
 
     for stop in stops:
-        if stop not in atco_location_mapping:
+        stop_data = atco_location_mapping[stop]
+        if isinstance(stop_data, NonExistentNaptanStop):
             log.warning(
-                "Stop not found in location mapping",
+                "Skipping NonExistentNaptanStop",
                 stop_id=stop,
                 journey_pattern_id=jp.id,
             )
             continue
-        route_points.append(atco_location_mapping[stop].shape)
+        route_points.append(stop_data.shape)
 
     return route_points
 

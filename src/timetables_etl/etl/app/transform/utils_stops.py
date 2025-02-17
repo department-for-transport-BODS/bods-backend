@@ -10,6 +10,8 @@ from common_layer.xml.txc.helpers.jps import (
     get_stops_from_journey_pattern_section,
 )
 from common_layer.xml.txc.models import TXCJourneyPattern, TXCJourneyPatternSection
+from etl.app.helpers.stop_points import NonExistentNaptanStop
+from etl.app.helpers.types import LookupStopPoint
 from structlog.stdlib import get_logger
 
 from ..helpers import StopsLookup
@@ -30,7 +32,14 @@ def get_pattern_stops(
     for jps_id in jp.JourneyPatternSectionRefs:
         jps = get_jps_by_id(jps_id, journey_pattern_sections)
         stop_refs = get_stops_from_journey_pattern_section(jps)
-        stops.extend(atco_location_mapping[stop_ref] for stop_ref in stop_refs)
+        for stop_ref in stop_refs:
+            stop_data = atco_location_mapping[stop_ref]
+            if isinstance(stop_data, NonExistentNaptanStop):
+                log.warning(
+                    "Skipping NonExistentNaptanStop", stop_ref=stop_data.atco_code
+                )
+            else:
+                stops.append(stop_data)
 
     return stops
 
@@ -39,7 +48,7 @@ def get_terminal_stop_points(
     jp: TXCJourneyPattern,
     journey_pattern_sections: list[TXCJourneyPatternSection],
     stop_mapping: StopsLookup,
-) -> tuple[NaptanStopPoint, NaptanStopPoint]:
+) -> tuple[LookupStopPoint, LookupStopPoint]:
     """Get first and last NaptanStopPoints in a journey pattern"""
     first_jps = get_jps_by_id(jp.JourneyPatternSectionRefs[0], journey_pattern_sections)
     last_jps = get_jps_by_id(jp.JourneyPatternSectionRefs[-1], journey_pattern_sections)

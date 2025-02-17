@@ -10,6 +10,10 @@ from common_layer.database.models import (
     TransmodelTracks,
 )
 
+from .stop_points import NonExistentNaptanStop
+
 TrackLookup: TypeAlias = dict[tuple[str, str], TransmodelTracks]
 ServicedOrgLookup: TypeAlias = dict[str, TransmodelServicedOrganisations]
-StopsLookup: TypeAlias = dict[str, NaptanStopPoint]
+
+LookupStopPoint: TypeAlias = NaptanStopPoint | NonExistentNaptanStop
+StopsLookup: TypeAlias = dict[str, LookupStopPoint]

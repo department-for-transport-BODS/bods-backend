@@ -5,7 +5,8 @@ Test Generating Transmodel Service Patterns
 from typing import Callable
 
 import pytest
-from common_layer.database.models import NaptanStopPoint, TransmodelServicePattern
+from common_layer.database.models import TransmodelServicePattern
+from common_layer.database.models.model_naptan import NaptanStopPoint
 from common_layer.xml.txc.models import (
     TXCJourneyPattern,
     TXCJourneyPatternSection,
@@ -27,6 +28,7 @@ from tests.timetables_etl.factories.txc import (
     TXCJourneyPatternTimingLinkFactory,
     TXCServiceFactory,
 )
+from timetables_etl.etl.app.helpers.types import LookupStopPoint, StopsLookup
 from timetables_etl.etl.app.transform.service_patterns import (
     create_service_pattern,
     generate_service_pattern_geometry,
@@ -145,7 +147,7 @@ from timetables_etl.etl.app.transform.service_patterns import (
 def test_get_valid_route_points(
     journey_pattern: TXCJourneyPattern,
     sections: list[TXCJourneyPatternSection],
-    stop_mapping: dict[str, NaptanStopPoint],
+    stop_mapping: dict[str, LookupStopPoint],
     expected_points: list[tuple[float, float]],
 ) -> None:
     """Test getting valid route points from journey pattern sections."""
@@ -233,7 +235,7 @@ def test_get_valid_route_points(
 def test_generate_service_pattern_geometry(
     journey_pattern: TXCJourneyPattern,
     sections: list[TXCJourneyPatternSection],
-    stop_mapping: dict[str, NaptanStopPoint],
+    stop_mapping: dict[str, LookupStopPoint],
     expected_result: list[tuple[float, float]] | None,
 ) -> None:
     """Test generating the LineString from the JourneyPatternSections."""
@@ -351,7 +353,7 @@ def test_create_service_pattern(
     service: TXCService,
     journey_pattern: TXCJourneyPattern,
     sections: list[TXCJourneyPatternSection],
-    stop_mapping: dict[str, NaptanStopPoint],
+    stop_mapping: StopsLookup,
     expected_pattern: Callable[[TransmodelServicePattern], TransmodelServicePattern],
 ) -> None:
     """
@@ -378,9 +380,17 @@ def test_create_service_pattern(
     # Validate geometry
     assert isinstance(result.geom, WKBElement)
     result_line = to_shape(result.geom)
+
+    expected_stops_mapping = {
+        atco_code: stop
+        for atco_code, stop in stop_mapping.items()
+        if isinstance(stop, NaptanStopPoint)
+    }
     expected_line = LineString(
         [
-            Point(to_shape(stop_mapping[stop.StopPointRef].location).coords[0])
+            Point(
+                to_shape(expected_stops_mapping[stop.StopPointRef].location).coords[0]
+            )
             for link in sections[0].JourneyPatternTimingLink
             for stop in [link.From, link.To]
         ]

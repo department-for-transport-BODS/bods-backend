@@ -10,6 +10,7 @@ from common_layer.database.models import (
 )
 from common_layer.xml.txc.helpers.service import extract_flexible_pattern_stop_refs
 from common_layer.xml.txc.models import TXCFlexibleJourneyPattern, TXCService
+from etl.app.helpers.stop_points import NonExistentNaptanStop
 from geoalchemy2 import WKBElement
 from geoalchemy2.shape import from_shape
 from shapely import LineString, Point
@@ -52,8 +53,9 @@ def generate_flexible_pattern_geometry(
     """
     route_points: list[Point] = []
     for stop in stops:
-        if stop in stop_mapping:
-            route_points.append(stop_mapping[stop].shape)
+        stop_data = stop_mapping[stop]
+        if not isinstance(stop_data, NonExistentNaptanStop):
+            route_points.append(stop_data.shape)
 
     if len(route_points) < 2:
         log.warning(

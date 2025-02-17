@@ -12,6 +12,7 @@ from common_layer.xml.txc.models import (
     LocationStructure,
     TXCStopPoint,
 )
+from etl.app.helpers.stop_points import NonExistentNaptanStop
 from geoalchemy2.shape import from_shape
 from shapely.geometry import Point
 from structlog.stdlib import get_logger
@@ -63,25 +64,18 @@ def create_custom_stop_point_data(stop: TXCStopPoint) -> NaptanStopPoint:
     )
 
 
-def create_dummy_stop_point_data(atco_code: str) -> NaptanStopPoint:
+def create_non_existent_stop_point_data(
+    stop_point_ref: AnnotatedStopPointRef,
+) -> NonExistentNaptanStop:
     """
-    Create a stop point with dummy data using only an atco code
+    Create a NonExistentNaptanStop
 
     In some cases Operators are using an AnnotatedStopPointRef
     instead of StopPoint for stops that don't exist in Naptan.
     """
-    return NaptanStopPoint(
-        atco_code=atco_code,
-        naptan_code="dummy_stop",
-        common_name="dummy_stop",
-        street=None,
-        indicator=None,
-        location=from_shape(Point(0, 0), srid=-1),
-        admin_area_id=None,
-        stop_areas=[],
-        stop_type=None,
-        bus_stop_type=None,
-        locality_id=None,
+    return NonExistentNaptanStop(
+        atco_code=stop_point_ref.StopPointRef,
+        common_name=stop_point_ref.CommonName,
     )
 
 
@@ -96,7 +90,7 @@ def create_stop_point_location_mapping(
     :param stop_points: Custom StopPoints.
     :param naptan_stops: AnnotatedStopPoints, retrieved from the Naptan DB.
     :param missing_stop_atco_codes: AnnotatedStopPoints that
-    could not be found in the Naptan DB (to be populated with dummy data).
+    could not be found in the Naptan DB
     """
     stop_location_map: StopsLookup = {}
 
@@ -106,13 +100,14 @@ def create_stop_point_location_mapping(
         if isinstance(stop, TXCStopPoint):
             stop_location_map[stop.AtcoCode] = create_custom_stop_point_data(stop)
 
-    if missing_stop_atco_codes:
-        log.info(
-            "Populating missing stops with dummy data in stop_point_location_mapping",
-        )
-        for missing_stop_code in missing_stop_atco_codes:
-            dummy_stop = create_dummy_stop_point_data(missing_stop_code)
-            stop_location_map[missing_stop_code] = dummy_stop
+        # Handle AnnotatedStopPointRefs not found in Naptan DB
+        if (
+            isinstance(stop, AnnotatedStopPointRef)
+            and stop.StopPointRef in missing_stop_atco_codes
+        ):
+            stop_location_map[stop.StopPointRef] = create_non_existent_stop_point_data(
+                stop
+            )
 
     return stop_location_map
 
