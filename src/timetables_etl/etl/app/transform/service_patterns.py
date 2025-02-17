@@ -12,14 +12,13 @@ from common_layer.xml.txc.models import (
     TXCJourneyPatternSection,
     TXCService,
 )
-from etl.app.helpers.dataclasses import NonExistentNaptanStop
 from geoalchemy2 import WKBElement
 from geoalchemy2.shape import from_shape
 from shapely import Point
 from shapely.geometry import LineString
 from structlog.stdlib import get_logger
 
-from ..helpers import StopsLookup
+from ..helpers import NonExistentNaptanStop, StopsLookup
 from ..transform.service_pattern_metadata import (
     extract_pattern_metadata,
     make_service_pattern_id,

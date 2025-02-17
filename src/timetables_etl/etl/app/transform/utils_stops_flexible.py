@@ -7,10 +7,9 @@ from typing import Sequence
 from common_layer.database.models import NaptanStopPoint
 from common_layer.xml.txc.helpers.service import extract_flexible_pattern_stop_refs
 from common_layer.xml.txc.models import TXCFlexibleJourneyPattern
-from etl.app.helpers.dataclasses.stop_points import NonExistentNaptanStop
 from structlog.stdlib import get_logger
 
-from ..helpers import StopsLookup
+from ..helpers import NonExistentNaptanStop, StopsLookup
 
 log = get_logger()
 
