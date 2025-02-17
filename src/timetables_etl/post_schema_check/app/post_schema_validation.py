@@ -2,6 +2,7 @@
 Post Schema TXC Validation
 """
 
+import os
 from typing import Callable, List
 
 from common_layer.database.client import SqlDB
@@ -15,11 +16,17 @@ log = get_logger()
 
 ValidatorFn = Callable[[TXCData, SqlDB], List[ValidationResult]]
 
+SERVICE_CHECK_ENABLED = os.environ["SERVICE_CHECK_ENABLED"]
 
-POST_SCHEMA_VALIDATORS: list[ValidatorFn] = [
-    check_filename_for_filepath_pii,
-    check_service_code_exists,
-]
+if SERVICE_CHECK_ENABLED:
+    POST_SCHEMA_VALIDATORS: list[ValidatorFn] = [
+        check_filename_for_filepath_pii,
+        check_service_code_exists,
+    ]
+else:
+    POST_SCHEMA_VALIDATORS: list[ValidatorFn] = [
+        check_filename_for_filepath_pii,
+    ]
 
 
 def run_post_schema_validations(txc_data: TXCData, db: SqlDB) -> list[ValidationResult]:

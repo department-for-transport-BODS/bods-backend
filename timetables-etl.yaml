@@ -325,6 +325,9 @@ Resources:
       MemorySize: 768
       Layers:
         - !Ref BoilerplateLambdaLayerArn
+      Environment:
+        Variables:
+          SERVICE_CHECK_ENABLED: true
       LoggingConfig:
         LogGroup: !Ref PostSchemaCheckLambdaLogGroup
 

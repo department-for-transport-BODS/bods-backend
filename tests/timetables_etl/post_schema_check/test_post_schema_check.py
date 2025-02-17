@@ -3,10 +3,9 @@ Tests for Post Schema Checks
 """
 
 from datetime import datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
-from common_layer.database.client import SqlDB
 from common_layer.xml.txc.models import TXCData
 from common_layer.xml.txc.models.txc_metadata import TXCMetadata
 from post_schema_check.app.models import ValidationResult
@@ -25,13 +24,7 @@ from tests.timetables_etl.factories.txc.factory_txc_data import TXCDataFactory
 from tests.timetables_etl.factories.txc.factory_txc_service import TXCServiceFactory
 
 
-@pytest.fixture
-def mock_db():
-    """Fixture to create a mocked database connection"""
-    return MagicMock(spec=SqlDB)
-
-
-@pytest.fixture
+@pytest.fixture(name="txc_data")
 def mock_txc_data():
     """Mock TXCData Object with Services"""
     return TXCDataFactory(
@@ -123,7 +116,7 @@ def test_validate_filepath_pii(
         )
     )
 
-    result = check_filename_for_filepath_pii(txc_data, mock_db)
+    result = check_filename_for_filepath_pii(txc_data, Mock())
     assert isinstance(result, list)
     assert result[0].is_valid == expected_valid
     assert result[0].error_code == expected_error
@@ -174,7 +167,7 @@ def test_process_txc_data_check(filename: str | None, expected_violations: list[
         )
     )
 
-    assert process_txc_data_check(txc_data, mock_db) == expected_violations
+    assert process_txc_data_check(txc_data, Mock()) == expected_violations
 
 
 def test_no_service_codes_provided():
@@ -182,11 +175,11 @@ def test_no_service_codes_provided():
     Test Case 1: No Service Codes Provided
     """
     txc_data = TXCDataFactory(Services=[])  # Empty Services List
-    result = check_service_code_exists(txc_data, mock_db)
+    result = check_service_code_exists(txc_data, Mock())
     assert result == [ValidationResult(is_valid=True)]
 
 
-def test_service_codes_not_found(mock_txc_file_attributes_repo, mock_txc_data):
+def test_service_codes_not_found(mock_txc_file_attributes_repo, txc_data):
     """
     Service Codes Not Found in TXC Attributes
     """
@@ -196,7 +189,7 @@ def test_service_codes_not_found(mock_txc_file_attributes_repo, mock_txc_data):
         "post_schema_check.app.validators.check_service_code_exists.OrganisationTXCFileAttributesRepo",
         return_value=mock_txc_file_attributes_repo,
     ):
-        result = check_service_code_exists(mock_txc_data, mock_db)
+        result = check_service_code_exists(txc_data, Mock())
 
         assert len(result) == 1
         assert result[0].is_valid is True
@@ -211,7 +204,7 @@ def test_service_codes_not_found(mock_txc_file_attributes_repo, mock_txc_data):
 def test_service_codes_found_no_active_datasets(
     mock_txc_file_attributes_repo,
     mock_revision_repo,
-    mock_txc_data,
+    txc_data,
 ):
     """
     Service Codes Found but No Active Dataset Revisions
@@ -232,7 +225,7 @@ def test_service_codes_found_no_active_datasets(
             return_value=mock_revision_repo,
         ),
     ):
-        result = check_service_code_exists(mock_txc_data, mock_db)
+        result = check_service_code_exists(txc_data, Mock())
 
         assert result == [ValidationResult(is_valid=True)]
         mock_txc_file_attributes_repo.get_by_service_code.assert_called_once_with(
@@ -245,7 +238,7 @@ def test_service_codes_found_published_dataset_exists(
     mock_txc_file_attributes_repo,
     mock_revision_repo,
     mock_dataset_repo,
-    mock_txc_data,
+    txc_data,
 ):
     """
     Service Codes Found and Published Dataset Exists
@@ -288,20 +281,20 @@ def test_service_codes_found_published_dataset_exists(
             return_value=mock_dataset_repo,
         ),
     ):
-        result = check_service_code_exists(mock_txc_data, mock_db)
+        result = check_service_code_exists(txc_data, Mock())
 
         assert len(result) == 1
         assert result[0].is_valid is False
-        assert result[0].additional_details.published_dataset == 100
-        assert result[0].additional_details.service_codes[0] in ["SC123", "SC777"]
-        assert result[0].additional_details.service_codes[1] in ["SC123", "SC777"]
+        assert result[0].additional_details.published_dataset == 100  # type: ignore
+        assert result[0].additional_details.service_codes[0] in ["SC123", "SC777"]  # type: ignore
+        assert result[0].additional_details.service_codes[1] in ["SC123", "SC777"]  # type: ignore
 
 
 def test_multiple_published_dataset_exists(
     mock_txc_file_attributes_repo,
     mock_revision_repo,
     mock_dataset_repo,
-    mock_txc_data,
+    txc_data,
 ):
     """
     Service Codes Found and multiple Published Dataset Exists
@@ -351,14 +344,14 @@ def test_multiple_published_dataset_exists(
             return_value=mock_dataset_repo,
         ),
     ):
-        result = check_service_code_exists(mock_txc_data, mock_db)
+        result = check_service_code_exists(txc_data, Mock())
 
         assert len(result) == 2
         assert result[0].is_valid is False
         assert result[1].is_valid is False
-        assert result[0].additional_details.published_dataset == 100
-        assert result[1].additional_details.published_dataset == 200
-        assert result[0].additional_details.service_codes[0] in ["SC123", "SC777"]
-        assert result[0].additional_details.service_codes[1] in ["SC123", "SC777"]
-        assert result[1].additional_details.service_codes[0] in ["SC456", "SC000"]
-        assert result[1].additional_details.service_codes[1] in ["SC456", "SC000"]
+        assert result[0].additional_details.published_dataset == 100  # type: ignore
+        assert result[1].additional_details.published_dataset == 200  # type: ignore
+        assert result[0].additional_details.service_codes[0] in ["SC123", "SC777"]  # type: ignore
+        assert result[0].additional_details.service_codes[1] in ["SC123", "SC777"]  # type: ignore
+        assert result[1].additional_details.service_codes[0] in ["SC456", "SC000"]  # type: ignore
+        assert result[1].additional_details.service_codes[1] in ["SC456", "SC000"]  # type: ignore
