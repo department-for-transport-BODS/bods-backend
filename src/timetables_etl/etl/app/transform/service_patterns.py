@@ -12,7 +12,7 @@ from common_layer.xml.txc.models import (
     TXCJourneyPatternSection,
     TXCService,
 )
-from etl.app.helpers.stop_points import NonExistentNaptanStop
+from etl.app.helpers.dataclasses import NonExistentNaptanStop
 from geoalchemy2 import WKBElement
 from geoalchemy2.shape import from_shape
 from shapely import Point

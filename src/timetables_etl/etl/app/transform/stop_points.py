@@ -12,7 +12,7 @@ from common_layer.xml.txc.models import (
     LocationStructure,
     TXCStopPoint,
 )
-from etl.app.helpers.stop_points import NonExistentNaptanStop
+from etl.app.helpers.dataclasses import NonExistentNaptanStop
 from geoalchemy2.shape import from_shape
 from shapely.geometry import Point
 from structlog.stdlib import get_logger

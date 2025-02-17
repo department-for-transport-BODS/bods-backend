@@ -4,7 +4,7 @@ Dataclasses to group data being passed in the ETL process
 
 from dataclasses import dataclass
 
-from .types import ServicedOrgLookup, StopsLookup, TrackLookup
+from ..types import ServicedOrgLookup, StopsLookup, TrackLookup
 
 
 @dataclass

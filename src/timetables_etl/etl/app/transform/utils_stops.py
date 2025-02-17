@@ -10,7 +10,7 @@ from common_layer.xml.txc.helpers.jps import (
     get_stops_from_journey_pattern_section,
 )
 from common_layer.xml.txc.models import TXCJourneyPattern, TXCJourneyPatternSection
-from etl.app.helpers.stop_points import NonExistentNaptanStop
+from etl.app.helpers.dataclasses import NonExistentNaptanStop
 from etl.app.helpers.types import LookupStopPoint
 from structlog.stdlib import get_logger
 

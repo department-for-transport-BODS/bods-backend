@@ -12,7 +12,7 @@ from common_layer.database.models.model_transmodel import TransmodelServicePatte
 from common_layer.xml.txc.models.txc_data import TXCData
 from common_layer.xml.txc.models.txc_journey_pattern import TXCJourneyPatternSection
 
-from ..helpers.lookups import ReferenceDataLookups
+from ..helpers.dataclasses import ReferenceDataLookups
 from ..helpers.types import ServicedOrgLookup
 
 
