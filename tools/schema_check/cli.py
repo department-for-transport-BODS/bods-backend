@@ -56,7 +56,7 @@ def validate(
         help="Enable structured logging output",
     ),
 ):
-    """Validate a TXC XML file against the 2.4 schema"""
+    """Validate a TXC XML file against the 2.4 schema for testing"""
     if log_json:
         configure_logging()
 
@@ -66,7 +66,7 @@ def validate(
         xml_doc = parse_xml_from_file(xml_file)
 
         # Validate and get violations
-        violations = get_schema_violations(schema, xml_doc, revision_id)
+        violations = get_schema_violations(schema, xml_doc, revision_id, str(xml_file))
 
         # Output results
         violation_count = len(violations)
