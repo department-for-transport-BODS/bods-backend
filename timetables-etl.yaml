@@ -327,7 +327,7 @@ Resources:
         - !Ref BoilerplateLambdaLayerArn
       Environment:
         Variables:
-          SERVICE_CHECK_ENABLED: true
+          SERVICE_CHECK_ENABLED: false
       LoggingConfig:
         LogGroup: !Ref PostSchemaCheckLambdaLogGroup
 

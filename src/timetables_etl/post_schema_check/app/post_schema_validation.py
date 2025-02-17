@@ -3,7 +3,7 @@ Post Schema TXC Validation
 """
 
 import os
-from typing import Callable, List
+from typing import Callable
 
 from common_layer.database.client import SqlDB
 from common_layer.xml.txc.models import TXCData
@@ -14,19 +14,26 @@ from .validators import check_filename_for_filepath_pii, check_service_code_exis
 
 log = get_logger()
 
-ValidatorFn = Callable[[TXCData, SqlDB], List[ValidationResult]]
+ValidatorFn = Callable[[TXCData, SqlDB], list[ValidationResult]]
 
-SERVICE_CHECK_ENABLED = os.environ["SERVICE_CHECK_ENABLED"]
 
-if SERVICE_CHECK_ENABLED:
-    POST_SCHEMA_VALIDATORS: list[ValidatorFn] = [
-        check_filename_for_filepath_pii,
-        check_service_code_exists,
-    ]
-else:
-    POST_SCHEMA_VALIDATORS: list[ValidatorFn] = [
-        check_filename_for_filepath_pii,
-    ]
+def is_service_check_enabled() -> bool:
+    """
+    Return if service check is enabled
+    """
+    return os.environ.get("SERVICE_CHECK_ENABLED", "false").lower() == "true"
+
+
+def get_active_validators() -> list[ValidatorFn]:
+    """
+    Returns a list of validator functions to run
+    """
+    validators = [check_filename_for_filepath_pii]
+
+    if is_service_check_enabled():
+        validators.append(check_service_code_exists)
+
+    return validators
 
 
 def run_post_schema_validations(txc_data: TXCData, db: SqlDB) -> list[ValidationResult]:
@@ -35,7 +42,7 @@ def run_post_schema_validations(txc_data: TXCData, db: SqlDB) -> list[Validation
     """
     results: list[ValidationResult] = []
 
-    for validator in POST_SCHEMA_VALIDATORS:
+    for validator in get_active_validators():
         validation_results = validator(txc_data, db)
         for result in validation_results:
             if not result.is_valid:
