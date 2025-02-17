@@ -7,7 +7,6 @@ from .data_objects import (
     CompositeFrame,
     DistanceMatrixElement,
     FareStructureElement,
-    FrameDefaultsStructure,
     FrequencyOfUse,
     GenericParameterAssignment,
     RoundTrip,
@@ -27,18 +26,18 @@ from .fare_frame import (
     FareTable,
     FareTableColumn,
     FareTableRow,
-    FareZone,
     FulfilmentMethod,
-    GeographicalIntervalPrice,
     GeographicalUnit,
     PreassignedFareProduct,
-    PriceGroup,
     PriceUnit,
     PricingParameterSet,
     Tariff,
     TypeOfTravelDocument,
     ValidableElement,
 )
+from .fare_frame.netex_fare_zone import FareZone
+from .fare_frame.netex_frame_defaults import FrameDefaultsStructure
+from .fare_frame.netex_price_group import GeographicalIntervalPrice, PriceGroup
 from .netex_publication_delivery import PublicationDeliveryStructure
 from .netex_publication_request import (
     NetworkFrameRequestPolicyStructure,
@@ -60,7 +59,14 @@ from .netex_selection_validity import (
     SelectionValidityConditions,
     SimpleAvailabilityCondition,
 )
-from .netex_types import DiscountBasisT, LineTypeT, ProofOfIdentityT
+from .netex_types import (
+    ActivationMeansT,
+    DiscountBasisT,
+    LineTypeT,
+    ProofOfIdentityT,
+    UsageEndT,
+    UsageTriggerT,
+)
 from .netex_utility import FromToDate, MultilingualString, VersionedRef
 
 __all__ = [
@@ -103,6 +109,9 @@ __all__ = [
     "LineTypeT",
     "ProofOfIdentityT",
     "DiscountBasisT",
+    "UsageTriggerT",
+    "UsageEndT",
+    "ActivationMeansT",
     # References
     "ObjectReferences",
     "PricableObjectRefs",

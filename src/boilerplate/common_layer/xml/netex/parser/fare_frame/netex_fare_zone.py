@@ -6,7 +6,8 @@ from lxml.etree import _Element
 from structlog.stdlib import get_logger
 
 from ....utils import get_tag_name
-from ...models import FareZone, PointRefs
+from ...models import PointRefs
+from ...models.fare_frame.netex_fare_zone import FareZone
 from ..netex_references import parse_point_refs
 from ..netex_utility import get_netex_element, parse_multilingual_string
 

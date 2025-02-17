@@ -4,11 +4,11 @@ Test Parsing a FareZone
 
 import pytest
 from common_layer.xml.netex.models import (
-    FareZone,
     MultilingualString,
     PointRefs,
     ScheduledStopPointReference,
 )
+from common_layer.xml.netex.models.fare_frame.netex_fare_zone import FareZone
 from common_layer.xml.netex.parser import parse_fare_zone
 
 from tests.xml.conftest import assert_model_equal

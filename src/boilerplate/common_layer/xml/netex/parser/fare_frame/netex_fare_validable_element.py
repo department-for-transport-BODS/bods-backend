@@ -8,7 +8,6 @@ from structlog.stdlib import get_logger
 from ....utils import get_tag_name
 from ...models import VersionedRef
 from ...models.fare_frame.netex_fare_preassigned import ValidableElement
-from ...parser import parse_multilingual_string
 from ..netex_utility import get_netex_element, parse_multilingual_string
 
 log = get_logger()

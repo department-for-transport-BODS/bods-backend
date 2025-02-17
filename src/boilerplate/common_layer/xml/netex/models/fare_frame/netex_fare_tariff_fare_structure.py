@@ -7,6 +7,7 @@ from typing import Annotated
 from pydantic import BaseModel, Field
 
 from ..data_objects.netex_data_object_profiles import UserProfile
+from ..netex_types import ActivationMeansT, UsageEndT, UsageTriggerT
 from ..netex_utility import MultilingualString, VersionedRef
 
 
@@ -31,9 +32,13 @@ class UsageValidityPeriod(BaseModel):
 
     id: Annotated[str, Field(description="Usage validity period identifier")]
     version: Annotated[str, Field(description="Version")]
-    UsageTrigger: Annotated[str, Field(description="Trigger for usage")]
-    UsageEnd: Annotated[str, Field(description="End condition")]
-    ActivationMeans: Annotated[str, Field(description="Means of activation")]
+    UsageTrigger: Annotated[
+        UsageTriggerT | None, Field(description="Trigger for usage")
+    ] = None
+    UsageEnd: Annotated[UsageEndT | None, Field(description="End condition")] = None
+    ActivationMeans: Annotated[
+        ActivationMeansT | None, Field(description="Means of activation")
+    ] = None
 
 
 class FrequencyOfUse(BaseModel):
@@ -71,14 +76,20 @@ class GenericParameterAssignment(BaseModel):
     ]
     ValidityParameterAssignmentType: Annotated[
         str | None,
-        Field(description="Type of validity parameter assignment", default=None),
+        Field(
+            description="Type of validity parameter assignment (e.g. EQ, OR, XOR)",
+            default=None,
+        ),
     ]
     LimitationGroupingType: Annotated[
-        str | None, Field(description="Type of limitation grouping", default=None)
+        str | None,
+        Field(
+            description="Type of limitation grouping (e.g. AND, OR, XOR)", default=None
+        ),
     ]
     validityParameters: Annotated[
         ValidityParameters | None,
-        Field(description="list of validity parameters", default=None),
+        Field(description="Validity parameters, can be empty", default=None),
     ]
     limitations: Annotated[
         list[UserProfile | RoundTrip | FrequencyOfUse | UsageValidityPeriod] | None,

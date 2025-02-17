@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
-from ..models import MultilingualString
+from ..models import FromToDate, MultilingualString
 from ..models.netex_utility import VersionedRef
 from .netex_constants import NETEX_NS
 
@@ -50,8 +50,25 @@ def get_netex_int(xml_data: _Element, element_name: str) -> int | None:
     try:
         return int(text)
     except (ValueError, TypeError):
-        log.info("Could not parse element as int", element_name=element_name)
+        log.warning("Could not parse element as int", element_name=element_name)
         return None
+
+
+def get_netex_bool(xml_data: _Element, element_name: str) -> bool | None:
+    """
+    Parse Element Text as Bool
+    """
+    text = get_netex_text(xml_data, element_name)
+    if text is None:
+        return None
+
+    if text.lower() == "true":
+        return True
+    if text.lower() == "false":
+        return False
+
+    log.warning("Could not parse element as bool", element_name=element_name)
+    return None
 
 
 def find_required_netex_element(xml_data: _Element, element_name: str) -> _Element:
@@ -124,4 +141,17 @@ def parse_versioned_ref(elem: _Element, element_name: str) -> VersionedRef | Non
     return VersionedRef(
         version=version,
         ref=ref,
+    )
+
+
+def parse_from_to_date(elem: _Element) -> FromToDate:
+    """
+    Parse ValidBetween element containing FromDate and ToDate
+    """
+    from_date = parse_timestamp(elem, "FromDate")
+    to_date = parse_timestamp(elem, "ToDate")
+
+    return FromToDate(
+        FromDate=from_date,
+        ToDate=to_date,
     )

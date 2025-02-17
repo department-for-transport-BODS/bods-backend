@@ -16,14 +16,13 @@ from .netex_fare_table import (
     FareTableRow,
 )
 from .netex_fare_tariff import Tariff
+from .netex_fare_zone import FareZone
 from .netex_frame_fare import (
     FareFrame,
-    FareZone,
     FulfilmentMethod,
-    GeographicalIntervalPrice,
     GeographicalUnit,
-    PriceGroup,
     PriceUnit,
     PricingParameterSet,
     TypeOfTravelDocument,
 )
+from .netex_price_group import GeographicalIntervalPrice, PriceGroup

@@ -6,28 +6,16 @@ from __future__ import annotations
 
 from typing import Annotated
 
+from common_layer.xml.netex.models.fare_frame.netex_fare_zone import FareZone
+from common_layer.xml.netex.models.fare_frame.netex_price_group import PriceGroup
 from pydantic import BaseModel, Field
 
 from ..data_objects.netex_data_object_profiles import UserProfile
-from ..netex_references import PointRefs
 from ..netex_utility import MultilingualString, VersionedRef
 from .netex_fare_preassigned import PreassignedFareProduct
 from .netex_fare_table import FareTable
 from .netex_fare_tariff import Tariff
-
-
-class FareZone(BaseModel):
-    """Definition of a fare zone"""
-
-    id: Annotated[str, Field(description="Fare zone identifier")]
-    version: Annotated[str, Field(description="Version of the fare zone")]
-    Name: Annotated[
-        MultilingualString | str, Field(description="Name of the fare zone")
-    ]
-    members: Annotated[
-        PointRefs | None,
-        Field(description="list of scheduled stop points in this fare zone"),
-    ] = None
+from .netex_frame_defaults import FrameDefaultsStructure
 
 
 class DistributionAssignment(BaseModel):
@@ -45,33 +33,12 @@ class DistributionAssignment(BaseModel):
     PaymentMethods: Annotated[str, Field(description="Allowed payment methods")]
 
 
-class GeographicalIntervalPrice(BaseModel):
-    """Definition of a geographical interval price"""
-
-    id: Annotated[str, Field(description="Price identifier")]
-    version: Annotated[str, Field(description="Version")]
-    Amount: Annotated[float, Field(description="Price amount")]
-
-
-class PriceGroup(BaseModel):
-    """Definition of a price group"""
-
-    id: Annotated[str, Field(description="Price group identifier")]
-    version: Annotated[str, Field(description="Version")]
-    members: Annotated[
-        list[GeographicalIntervalPrice],
-        Field(description="list of prices in this group"),
-    ]
-
-
 class PriceUnit(BaseModel):
     """Definition of a price unit (currency)"""
 
     id: Annotated[str, Field(description="Price unit identifier")]
     version: Annotated[str, Field(description="Version")]
-    Name: Annotated[
-        MultilingualString | str, Field(description="Name of the price unit")
-    ]
+    Name: Annotated[MultilingualString, Field(description="Name of the price unit")]
     PrivateCode: Annotated[str, Field(description="Currency symbol")]
     Precision: Annotated[int, Field(description="Decimal precision")]
 
@@ -150,20 +117,6 @@ class TypeOfTravelDocument(BaseModel):
     ]
 
 
-class FrameDefaults(BaseModel):
-    """Default values for the frame"""
-
-    DefaultCodespaceRef: Annotated[
-        VersionedRef, Field(description="Default codespace reference")
-    ]
-    DefaultDataSourceRef: Annotated[
-        VersionedRef, Field(description="Default data source reference")
-    ]
-    DefaultResponsibilitySetRef: Annotated[
-        VersionedRef, Field(description="Default responsibility set reference")
-    ]
-
-
 class FareFrame(BaseModel):
     """
     A frame containing fare-related definitions. Can contain various combinations
@@ -195,7 +148,7 @@ class FareFrame(BaseModel):
 
     # Optional components based on frame type
     FrameDefaults: Annotated[
-        FrameDefaults | None,
+        FrameDefaultsStructure | None,
         Field(description="Default values for the frame", default=None),
     ]
     PricingParameterSet: Annotated[

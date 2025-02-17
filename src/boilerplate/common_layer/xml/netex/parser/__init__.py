@@ -15,9 +15,13 @@ from .data_objects import (
     parse_validity_parameters,
 )
 from .fare_frame import (
+    parse_distance_matrix_element,
+    parse_fare_structure_element,
     parse_fare_table,
     parse_fare_zone,
+    parse_price_groups,
     parse_specifics,
+    parse_tariff,
     parse_used_in,
 )
 from .fare_frame.netex_fare_table_cell import (

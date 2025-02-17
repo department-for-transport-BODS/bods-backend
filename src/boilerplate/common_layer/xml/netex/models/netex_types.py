@@ -32,5 +32,40 @@ ProofOfIdentityT = Literal[
     "other",
 ]
 
-
 DiscountBasisT = Literal["none", "free", "discount"]
+
+UsageTriggerT = Literal[
+    "enrolment",
+    "reservation",
+    "purchase",
+    "fulfilment",
+    "activation",
+    "specifiedStartDate",
+    "startOutboundRide",
+    "endOutboundRide",
+    "startReturnRide",
+    "startOfPeriod",
+    "dayOffsetBeforeCalendarPeriod",
+]
+ActivationMeansT = Literal[
+    "noneRequired",
+    "checkIn",
+    "useOfValidator",
+    "useOfMobileDevice",
+    "automaticByTime",
+    "automaticByProximity",
+    "other",
+]
+
+UsageEndT = Literal[
+    "standardDuration",
+    "endOfCalendarPeriod",
+    "endOfRide",
+    "endOfTrip",
+    "endOfFareDay",
+    "endOfFarePeriod",
+    "productExpiry",
+    "profileExpiry",
+    "deregistration",
+    "other",
+]

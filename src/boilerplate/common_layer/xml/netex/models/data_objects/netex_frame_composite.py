@@ -6,26 +6,11 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
+from ..fare_frame.netex_frame_defaults import FrameDefaultsStructure
 from ..netex_utility import FromToDate, MultilingualString, VersionedRef
 from .netex_codespaces import Codespace, CodespaceRef
 from .netex_frame_resource import ResourceFrame
 from .netex_frame_service import ServiceFrame
-
-
-class FrameDefaultsStructure(BaseModel):
-    """
-    Default values for the frame
-    """
-
-    DefaultCodespaceRef: Annotated[
-        CodespaceRef | None, Field(description="Default codespace reference")
-    ] = None
-    DefaultDataSourceRef: Annotated[
-        VersionedRef | None, Field(description="Default data source reference")
-    ] = None
-    DefaultCurrency: Annotated[
-        str | None, Field(description="Default currency for the frame")
-    ] = None
 
 
 class CompositeFrame(BaseModel):

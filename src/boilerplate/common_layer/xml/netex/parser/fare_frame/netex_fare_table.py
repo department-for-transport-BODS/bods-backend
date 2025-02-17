@@ -81,3 +81,17 @@ def parse_fare_table(elem: _Element) -> FareTable | None:
         rows=parse_fare_table_rows(elem),
         includes=includes,
     )
+
+
+def parse_fare_tables(elem: _Element) -> list[FareTable]:
+    """Parse fareTables list element"""
+    fare_tables: list[FareTable] = []
+    for fare_table in elem:
+        if get_tag_name(fare_table) == "FareTable":
+            fare_table = parse_fare_table(fare_table)
+            if fare_table is not None:
+
+                fare_tables.append(fare_table)
+        else:
+            log.warning("Unknown fareTables tag", tag=get_tag_name(fare_table))
+    return fare_tables

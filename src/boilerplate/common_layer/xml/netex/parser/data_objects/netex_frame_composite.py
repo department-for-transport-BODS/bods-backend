@@ -2,18 +2,20 @@
 CompositeFrame
 """
 
+from common_layer.xml.netex.parser.data_objects.netex_frame_defaults import (
+    parse_frame_defaults,
+)
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 from ....utils import get_tag_name, parse_xml_attribute
-from ...models import CompositeFrame, FrameDefaultsStructure, FromToDate
-from ...models.data_objects.netex_codespaces import CodespaceRef
+from ...models import CompositeFrame, FareFrame, FromToDate
 from ...models.data_objects.netex_frame_resource import ResourceFrame
 from ...models.data_objects.netex_frame_service import ServiceFrame
+from ..fare_frame.netex_frame_fare import parse_fare_frame
 from ..netex_utility import (
     find_required_netex_element,
     get_netex_element,
-    get_netex_text,
     parse_multilingual_string,
     parse_timestamp,
     parse_versioned_ref,
@@ -25,11 +27,11 @@ from .netex_frame_service import parse_service_frame
 log = get_logger()
 
 
-def parse_frames(elem: _Element) -> list[ResourceFrame | ServiceFrame]:
+def parse_frames(elem: _Element) -> list[ResourceFrame | ServiceFrame | FareFrame]:
     """
     Parse list of frames
     """
-    frames: list[ResourceFrame | ServiceFrame] = []
+    frames: list[ResourceFrame | ServiceFrame | FareFrame] = []
     for child in elem:
         tag = get_tag_name(child)
         match tag:
@@ -37,30 +39,13 @@ def parse_frames(elem: _Element) -> list[ResourceFrame | ServiceFrame]:
                 frames.append(parse_resource_frame(child))
             case "ServiceFrame":
                 frames.append(parse_service_frame(child))
+            case "FareFrame":
+                fare_frame = parse_fare_frame(child)
+                if fare_frame:
+                    frames.append(fare_frame)
             case _:
                 log.warning("Unsupported frame type", tag=tag)
     return frames
-
-
-def parse_frame_defaults(elem: _Element) -> FrameDefaultsStructure:
-    """
-    Parse Frame Defaults
-    """
-    codespace_ref = None
-    default_codespace = get_netex_element(elem, "DefaultCodespaceRef")
-    if default_codespace is not None:
-        codespace_ref_data = parse_xml_attribute(
-            default_codespace,
-            "ref",
-        )
-        if codespace_ref_data:
-
-            codespace_ref = CodespaceRef(ref=codespace_ref_data)
-    return FrameDefaultsStructure(
-        DefaultCodespaceRef=codespace_ref,
-        DefaultDataSourceRef=parse_versioned_ref(elem, "DefaultDataSourceRef"),
-        DefaultCurrency=get_netex_text(elem, "DefaultCurrency"),
-    )
 
 
 def parse_composite_frame(elem: _Element) -> CompositeFrame:
