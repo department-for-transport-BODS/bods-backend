@@ -236,3 +236,10 @@ class S3:
                 exc_info=True,
             )
             raise err
+
+    def get_file_size(self, file_path: str) -> int:
+        """
+        Gets the size of an S3 object in bytes without downloading it.
+        """
+        response = self._client.head_object(Bucket=self._bucket_name, Key=file_path)
+        return response["ContentLength"]

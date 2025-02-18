@@ -16,9 +16,11 @@ from common_layer.s3 import S3
 from structlog.stdlib import get_logger
 
 from .av_scan import av_scan_file, get_clamav_config
+from .exceptions import S3FileTooLargeError
 from .hashing import calculate_and_update_file_hash
 from .models import ClamAVScannerInputData
 from .s3_upload import unzip_and_upload_files
+from .verify_file import verify_zip_file
 
 log = get_logger()
 
@@ -37,6 +39,49 @@ def make_output_folder_name(
     return f"{file_stem}/{request_id}/"
 
 
+def download_and_verify_s3_file(
+    s3_handler: S3, file_key: str, max_size_bytes: int = 400_000_000
+) -> Path:
+    """
+    Check file does not exceed max file size and then download it to temp dir
+    """
+    file_size = s3_handler.get_file_size(file_key)
+
+    if file_size > max_size_bytes:
+        log.error(
+            "File Too Large",
+            file_key=file_key,
+            file_size=file_size,
+            max_size=max_size_bytes,
+        )
+        raise S3FileTooLargeError("S3 File exceeds maximum allowed size")
+
+    log.info(
+        "File Size Check Passed",
+        file_key=file_key,
+        file_size=file_size,
+        max_size=max_size_bytes,
+    )
+
+    downloaded_file = s3_handler.download_to_tempfile(file_key)
+    return downloaded_file
+
+
+def verify_and_extract(
+    s3_handler: S3, downloaded_file_path: Path, request_id: str
+) -> str:
+    """
+    Scan and extract eh files
+    """
+    if downloaded_file_path.suffix.lower() == ".zip":
+        verify_zip_file(downloaded_file_path)
+    s3_output_folder = make_output_folder_name(downloaded_file_path, request_id)
+    generated_prefix = unzip_and_upload_files(
+        s3_handler, downloaded_file_path, s3_output_folder
+    )
+    return generated_prefix
+
+
 @file_processing_result_to_db(step_name=StepName.CLAM_AV_SCANNER)
 def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any]:
     """
@@ -47,20 +92,17 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
     clam_av_config = get_clamav_config()
     db = SqlDB()
     # Fetch the object from s3
-    downloaded_file_path = s3_handler.download_to_tempfile(
-        file_path=input_data.s3_file_key
+    downloaded_file_path = download_and_verify_s3_file(
+        s3_handler, input_data.s3_file_key
     )
-    s3_output_folder = make_output_folder_name(
-        downloaded_file_path, context.aws_request_id
-    )
+
     try:
         # Calculate hash and scan file
         calculate_and_update_file_hash(db, input_data, downloaded_file_path)
         av_scan_file(clam_av_config, downloaded_file_path)
 
-        # Handle zip extraction if needed
-        generated_prefix = unzip_and_upload_files(
-            s3_handler, downloaded_file_path, s3_output_folder
+        generated_prefix = verify_and_extract(
+            s3_handler, downloaded_file_path, context.aws_request_id
         )
 
         msg = (
