@@ -15,12 +15,12 @@ from common_layer.database.repos.repo_organisation import (
 from common_layer.dynamodb.client.cache import DynamoDBCache
 from common_layer.dynamodb.data_manager import FileProcessingDataManager
 from common_layer.enums import FeedStatus
-
-from tests.factories.database.organisation import OrganisationDatasetRevisionFactory
-from timetables_etl.initialize_pipeline.app.initialize_pipeline import (
+from initialize_pipeline.app.initialize_pipeline import (
     InitializePipelineEvent,
     initialize_pipeline,
 )
+
+from tests.factories.database.organisation import OrganisationDatasetRevisionFactory
 
 
 @pytest.fixture

@@ -7,17 +7,28 @@ from unittest.mock import Mock, create_autospec, patch
 from uuid import UUID, uuid4
 
 import pytest
+from common_layer.database.client import SqlDB
 from common_layer.database.models.model_pipelines import DatasetETLTaskResult, TaskState
+from common_layer.database.repos.repo_data_quality import (
+    DataQualityPostSchemaViolationRepo,
+    DataQualityPTIObservationRepo,
+    DataQualitySchemaViolationRepo,
+)
 from common_layer.database.repos.repo_etl_task import ETLTaskResultRepo
+from common_layer.database.repos.repo_organisation import (
+    OrganisationTXCFileAttributesRepo,
+)
 from common_layer.enums import FeedStatus
 from common_layer.exceptions.pipeline_exceptions import PipelineException
-
-from tests.factories.database.organisation import OrganisationDatasetRevisionFactory
-from timetables_etl.initialize_pipeline.app.db_operations import (
+from initialize_pipeline.app.db_operations import (
     create_task_result,
+    delete_existing_txc_file_attributes,
+    delete_existing_validation_violations,
     get_and_validate_revision,
     update_revision_status,
 )
+
+from tests.factories.database.organisation import OrganisationDatasetRevisionFactory
 
 
 def test_get_and_validate_revision_success(mock_revision_repo):
@@ -109,3 +120,77 @@ def test_create_task_result():
         assert result.status == TaskState.STARTED
         assert UUID(result.task_id, version=4)
         mock_task_repo.insert.assert_called_once()
+
+
+def test_delete_existing_validation_violations():
+    """
+    Test deleting existing validation violations
+    """
+    revision_id = 42
+    mock_db = create_autospec(SqlDB, instance=True)
+
+    # Mock repositories
+    mock_schema_violation_repo = create_autospec(
+        DataQualitySchemaViolationRepo, instance=True
+    )
+    mock_post_schema_violation_repo = create_autospec(
+        DataQualityPostSchemaViolationRepo, instance=True
+    )
+    mock_pti_observation_repo = create_autospec(
+        DataQualityPTIObservationRepo, instance=True
+    )
+
+    # Mock return values
+    mock_schema_violation_repo.delete_by_revision_id.return_value = 3
+    mock_post_schema_violation_repo.delete_by_revision_id.return_value = 2
+    mock_pti_observation_repo.delete_by_revision_id.return_value = 1
+
+    with patch(
+        "initialize_pipeline.app.db_operations.DataQualitySchemaViolationRepo",
+        return_value=mock_schema_violation_repo,
+    ), patch(
+        "initialize_pipeline.app.db_operations.DataQualityPostSchemaViolationRepo",
+        return_value=mock_post_schema_violation_repo,
+    ), patch(
+        "initialize_pipeline.app.db_operations.DataQualityPTIObservationRepo",
+        return_value=mock_pti_observation_repo,
+    ):
+        delete_existing_validation_violations(mock_db, revision_id)
+
+        # Assert delete methods were called with the correct revision ID
+        mock_schema_violation_repo.delete_by_revision_id.assert_called_once_with(
+            revision_id
+        )
+        mock_post_schema_violation_repo.delete_by_revision_id.assert_called_once_with(
+            revision_id
+        )
+        mock_pti_observation_repo.delete_by_revision_id.assert_called_once_with(
+            revision_id
+        )
+
+
+def test_delete_existing_txc_file_attributes():
+    """
+    Test deleting existing TXC file attributes
+    """
+    revision_id = 42
+    mock_db = Mock(spec=SqlDB)
+
+    # Create mock repository
+    mock_file_attributes_repo = create_autospec(
+        OrganisationTXCFileAttributesRepo, instance=True
+    )
+
+    # Mock return value for delete operation
+    mock_file_attributes_repo.delete_by_revision_id.return_value = 5
+
+    with patch(
+        "initialize_pipeline.app.db_operations.OrganisationTXCFileAttributesRepo",
+        return_value=mock_file_attributes_repo,
+    ):
+        delete_existing_txc_file_attributes(mock_db, revision_id)
+
+        # Assert delete method was called with the correct revision ID
+        mock_file_attributes_repo.delete_by_revision_id.assert_called_once_with(
+            revision_id
+        )
