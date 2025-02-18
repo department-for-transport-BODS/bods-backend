@@ -2,6 +2,13 @@
 CompositeFrame
 """
 
+from common_layer.xml.netex.models import (
+    CompositeFrame,
+    FareFrame,
+    ResourceFrame,
+    ServiceFrame,
+)
+from common_layer.xml.utils import get_tag_name
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
@@ -15,6 +22,7 @@ from ...models import (
     ResourceFrame,
     ServiceFrame,
 )
+from ..fare_frame.netex_frame_fare import parse_fare_frame
 from ..netex_parsing_helpers import parse_version_and_id
 from ..netex_utility import (
     find_required_netex_element,
@@ -24,8 +32,9 @@ from ..netex_utility import (
     parse_versioned_ref,
 )
 from .netex_codespaces import parse_codespaces
-from .netex_data_objects import parse_frames
 from .netex_frame_defaults import parse_frame_defaults
+from .netex_frame_resource import parse_resource_frame
+from .netex_frame_service import parse_service_frame
 
 log = get_logger()
 
@@ -43,6 +52,31 @@ def filter_frames(
             continue
         filtered.append(frame)
     return filtered
+
+
+def parse_frames(
+    elem: _Element,
+) -> list[CompositeFrame | ResourceFrame | ServiceFrame | FareFrame]:
+    """
+    Parse list of frames
+    """
+    frames: list[CompositeFrame | ResourceFrame | ServiceFrame | FareFrame] = []
+    for child in elem:
+        tag = get_tag_name(child)
+        match tag:
+            case "CompositeFrame":
+                frames.append(parse_composite_frame(child))
+            case "ResourceFrame":
+                frames.append(parse_resource_frame(child))
+            case "ServiceFrame":
+                frames.append(parse_service_frame(child))
+            case "FareFrame":
+                fare_frame = parse_fare_frame(child)
+                if fare_frame:
+                    frames.append(fare_frame)
+            case _:
+                log.warning("Unsupported frame type", tag=tag)
+    return frames
 
 
 def parse_composite_frame(elem: _Element) -> CompositeFrame:

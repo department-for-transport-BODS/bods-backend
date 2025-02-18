@@ -10,7 +10,7 @@ from structlog.stdlib import get_logger
 
 from ...utils import load_xml_tree, parse_xml_attribute
 from ..models import PublicationDeliveryStructure
-from .data_objects.netex_data_objects import parse_frames
+from .data_objects.netex_frame_composite import parse_frames
 from .netex_constants import NETEX_NS
 from .netex_publication_request import parse_publication_request
 from .netex_utility import (
