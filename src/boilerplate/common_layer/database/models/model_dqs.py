@@ -21,18 +21,6 @@ class DQSTaskResults(BaseSQLModel):
     status: Mapped[str] = mapped_column(String(64), nullable=False)
     message: Mapped[str] = mapped_column(Text, nullable=False)
 
-    checks_id: Mapped[int | None] = mapped_column(
-        Integer,
-        ForeignKey("dqs_checks.id", deferrable=True, initially="DEFERRED"),
-        nullable=True,
-    )
-
-    dataquality_report_id: Mapped[int | None] = mapped_column(
-        Integer,
-        ForeignKey("dqs_report.id", deferrable=True, initially="DEFERRED"),
-        nullable=True,
-    )
-
     transmodel_txcfileattributes_id: Mapped[int | None] = mapped_column(
         Integer,
         ForeignKey(

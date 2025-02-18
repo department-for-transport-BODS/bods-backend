@@ -1,15 +1,24 @@
 from datetime import datetime
 
 import pytest
-from common_layer.database.models.model_organisation import OrganisationDatasetRevision
+from common_layer.database.models.model_dqs import DQSTaskResults
+from common_layer.database.models.model_organisation import (
+    OrganisationDatasetRevision,
+    OrganisationTXCFileAttributes,
+)
 from common_layer.database.repos.repo_organisation import (
     OrganisationDatasetRevisionRepo,
+    OrganisationTXCFileAttributesRepo,
 )
 from common_layer.enums import FeedStatus
 from freezegun import freeze_time
 from pytz import UTC
 
-from tests.factories.database.organisation import OrganisationDatasetRevisionFactory
+from tests.factories.database.dqs import DQSTaskResultsFactory
+from tests.factories.database.organisation import (
+    OrganisationDatasetRevisionFactory,
+    OrganisationTXCFileAttributesFactory,
+)
 
 
 @pytest.mark.parametrize(
@@ -81,3 +90,77 @@ def test_dataset_revision_publish_revision_success(
         )
         for attr, expected_value in expected_state.items():
             assert getattr(record_after_update, attr) == expected_value
+
+
+def test_delete_by_revision_id(test_db):
+    """
+    Test deleting TXCFileAttributes and related DQSTaskResults.
+    """
+
+    revision_id = 42
+
+    with test_db.session_scope() as session:
+        txc_file_attributes = OrganisationTXCFileAttributesFactory.create_batch(
+            3, revision_id=revision_id
+        )
+        session.add_all(txc_file_attributes)
+        session.commit()
+
+        txc_file_attribute_ids = [txc.id for txc in txc_file_attributes]
+
+        # Insert related DQSTaskResults referencing TXCFileAttributes
+        dqs_task_results = []
+        for txc in txc_file_attributes:
+            dqs_task_results.extend(
+                DQSTaskResultsFactory.create_batch(
+                    2, transmodel_txcfileattributes_id=txc.id
+                )
+            )
+
+        session.add_all(dqs_task_results)
+        session.commit()
+
+    # Check records exist before deletion
+    with test_db.session_scope() as session:
+        txc_count_before = (
+            session.query(OrganisationTXCFileAttributes)
+            .filter_by(revision_id=revision_id)
+            .count()
+        )
+        dqs_count_before = (
+            session.query(DQSTaskResults)
+            .filter(
+                DQSTaskResults.transmodel_txcfileattributes_id.in_(
+                    txc_file_attribute_ids
+                )
+            )
+            .count()
+        )
+
+    assert txc_count_before == 3
+    assert dqs_count_before == 6  # 3 TXC attributes x 2 DQS task results each
+
+    # Act
+    repo = OrganisationTXCFileAttributesRepo(test_db)
+    deleted_count = repo.delete_by_revision_id(revision_id)
+
+    # Check records are deleted
+    with test_db.session_scope() as session:
+        txc_count_after = (
+            session.query(OrganisationTXCFileAttributes)
+            .filter_by(revision_id=revision_id)
+            .count()
+        )
+        dqs_count_after = (
+            session.query(DQSTaskResults)
+            .filter(
+                DQSTaskResults.transmodel_txcfileattributes_id.in_(
+                    txc_file_attribute_ids
+                )
+            )
+            .count()
+        )
+
+    assert deleted_count == 3, "Number of TXCFileAttributes deleted"
+    assert txc_count_after == 0
+    assert dqs_count_after == 0
