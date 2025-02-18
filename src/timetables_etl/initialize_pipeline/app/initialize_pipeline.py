@@ -26,6 +26,14 @@ from common_layer.json_logging import configure_logging
 from pydantic import BaseModel
 from structlog.stdlib import get_logger
 
+from .db_operations import (
+    create_task_result,
+    delete_existing_txc_file_attributes,
+    delete_existing_validation_violations,
+    get_and_validate_revision,
+    update_revision_status,
+)
+
 metrics = configure_metrics()
 logger = get_logger()
 
@@ -36,48 +44,6 @@ class InitializePipelineEvent(BaseModel):
     """
 
     DatasetRevisionId: int
-
-
-def get_and_validate_revision(
-    db: SqlDB, revision_id: int
-) -> OrganisationDatasetRevision:
-    """
-    Retrieves and validates the existence of a dataset revision.
-    """
-    revision_repo = OrganisationDatasetRevisionRepo(db)
-    revision = revision_repo.get_by_id(revision_id)
-    if revision is None:
-        raise PipelineException(f"DatasetRevision with id {revision_id} not found.")
-    return revision
-
-
-def update_revision_status(db: SqlDB, revision: OrganisationDatasetRevision) -> None:
-    """
-    Updates the revision status to indexing.
-    """
-    logger.debug(
-        "Setting OrganisationDatasetRevision Status to indexing",
-        dataset_revision_id=revision.id,
-    )
-    revision_repo = OrganisationDatasetRevisionRepo(db)
-    revision.status = FeedStatus.INDEXING.value
-    revision_repo.update(revision)
-
-
-def create_task_result(db: SqlDB, revision_id: int) -> DatasetETLTaskResult:
-    """
-    Creates a new ETL task result entry.
-    Returns:
-        ID of the created task result
-    """
-    task_result_repo = ETLTaskResultRepo(db)
-    task_result = DatasetETLTaskResult(
-        revision_id=revision_id,
-        status=TaskState.STARTED,
-        task_id=str(uuid4()),
-    )
-    created_task_result = task_result_repo.insert(task_result)
-    return created_task_result
 
 
 def initialize_pipeline(
@@ -94,6 +60,8 @@ def initialize_pipeline(
     revision = get_and_validate_revision(db, event.DatasetRevisionId)
 
     update_revision_status(db, revision)
+    delete_existing_validation_violations(db, revision.id)
+    delete_existing_txc_file_attributes(db, revision.id)
 
     task_result = create_task_result(db, revision.id)
 
