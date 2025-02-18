@@ -99,11 +99,11 @@ class ServiceFrame(BaseModel):
     # Attributes
     version: Annotated[str, Field(description="Version of the service frame")]
     id: Annotated[str, Field(description="Service frame identifier")]
-    dataSourceRef: Annotated[
-        str | None, Field(description="Reference to the data source")
-    ] = None
     responsibilitySetRef: Annotated[
         str | None, Field(description="Reference to the responsibility set")
+    ] = None
+    dataSourceRef: Annotated[
+        str | None, Field(description="Reference to the data source")
     ] = None
 
     # Children
