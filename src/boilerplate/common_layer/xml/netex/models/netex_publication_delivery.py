@@ -8,10 +8,10 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
+from .data_objects import CompositeFrame
+from .fare_frame import FareFrame
 from .netex_publication_request import PublicationRequestStructure
 from .netex_utility import MultilingualString
-
-from .data_objects import CompositeFrame
 
 
 class PublicationDeliveryStructure(BaseModel):
@@ -46,6 +46,6 @@ class PublicationDeliveryStructure(BaseModel):
         Field(default=None, description="Description of contents."),
     ]
     dataObjects: Annotated[
-        list[CompositeFrame],
+        list[CompositeFrame | FareFrame],
         Field(default=None, description="Frames"),
     ]
