@@ -1,3 +1,7 @@
+"""
+DB Operations for InitializePipeline lambda
+"""
+
 from uuid import uuid4
 
 from common_layer.database.client import SqlDB

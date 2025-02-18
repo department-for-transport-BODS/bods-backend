@@ -3,25 +3,15 @@ Lambda: InitializePipeline
 """
 
 from typing import Any
-from uuid import uuid4
 
 from aws_lambda_powertools.metrics import MetricUnit
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.aws import configure_metrics
 from common_layer.database.client import SqlDB
-from common_layer.database.models import (
-    DatasetETLTaskResult,
-    OrganisationDatasetRevision,
-    TaskState,
-)
-from common_layer.database.repos import (
-    ETLTaskResultRepo,
-    OrganisationDatasetRevisionRepo,
-)
+from common_layer.database.models import DatasetETLTaskResult
+from common_layer.database.repos import ETLTaskResultRepo
 from common_layer.dynamodb.client.cache import DynamoDBCache
 from common_layer.dynamodb.data_manager import FileProcessingDataManager
-from common_layer.enums import FeedStatus
-from common_layer.exceptions.pipeline_exceptions import PipelineException
 from common_layer.json_logging import configure_logging
 from pydantic import BaseModel
 from structlog.stdlib import get_logger
