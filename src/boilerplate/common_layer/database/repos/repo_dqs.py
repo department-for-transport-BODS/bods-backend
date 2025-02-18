@@ -1,9 +1,11 @@
+"""
+SQL Alchemy Repos for Tables prefixed with dqs_
+"""
+
 from common_layer.database.client import SqlDB
-from common_layer.database.models.model_data_quality import DataQualityPTIObservation
 from common_layer.database.models.model_dqs import DQSTaskResults
 from common_layer.database.repos.operation_decorator import handle_repository_errors
 from common_layer.database.repos.repo_common import BaseRepositoryWithId
-from common_layer.dynamodb.models import TXCFileAttributes
 from sqlalchemy import Select
 
 
