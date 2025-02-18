@@ -25,6 +25,11 @@ def map_stop_refs_to_naptan(
     stops: list[NaptanStopPoint] = []
 
     for stop_ref in stop_refs:
+        if not stop_ref in atco_location_mapping:
+            msg = "Stop referenced in FlexibleJourneyPattern not found in stop map"
+            log.error(msg, stop_id=stop_ref)
+            raise ValueError(msg)
+
         stop_data = atco_location_mapping[stop_ref]
         if isinstance(stop_data, NonExistentNaptanStop):
             log.warning(
