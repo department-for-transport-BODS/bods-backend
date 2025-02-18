@@ -4,8 +4,9 @@ SQLAlchemy Organisation Repos
 
 from datetime import UTC, datetime
 
+from common_layer.database.repos.repo_dqs import DQSTaskResultsRepo
 from common_layer.enums import FeedStatus
-from sqlalchemy import and_
+from sqlalchemy import and_, select
 from structlog.stdlib import get_logger
 
 from ..client import SqlDB
@@ -179,12 +180,51 @@ class OrganisationTXCFileAttributesRepo(
         """
         Delete all TXCFileAttributes for a specific revision
 
-        Returns: number of deleted records
+        Ensures that all related DQSTaskResults are deleted first
+        before deleting TXCFileAttributes to satisfy foreign key constraints.
+
+        If any part of the process fails, the transaction is rolled back.
+
+        Returns: The number of deleted TXCFileAttributes records.
         """
-        statement = self._build_delete_query().where(
-            self._model.revision_id == revision_id
-        )
-        return self._delete_all(statement)
+        with self._db.session_scope() as session:
+            try:
+                # Query to select relevant TXCFileAttributes ids
+                txc_file_attribute_ids_query = select(self._model.id).where(
+                    self._model.revision_id == revision_id
+                )
+
+                # Delete related DQSTaskResults
+                task_results_repo = DQSTaskResultsRepo(self._db)
+                deleted_task_results_count = (
+                    task_results_repo.delete_all_by_txc_file_attributes_ids(
+                        txc_file_attribute_ids_query
+                    )
+                )
+
+                if deleted_task_results_count > 0:
+                    log.info(
+                        "Deleted DQSTaskResults related to TXCFileAttributes",
+                        deleted_task_results_count=deleted_task_results_count,
+                    )
+
+                # Delete TXCFileAttributes
+                delete_statement = self._build_delete_query().where(
+                    self._model.revision_id == revision_id
+                )
+                deleted_count = self._delete_all(delete_statement)
+
+                session.commit()
+
+                return deleted_count
+
+            except Exception as e:
+                session.rollback()
+                log.error(
+                    "Failed to delete TXCFileAttributes & related DQSTaskResults",
+                    exc_info=True,
+                )
+                raise
 
 
 class OrganisationOrganisationRepo(BaseRepositoryWithId[OrganisationOrganisation]):
