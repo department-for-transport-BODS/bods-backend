@@ -2,5 +2,5 @@
 Helper exports
 """
 
-from .dataclasses import ReferenceDataLookups
-from .types import ServicedOrgLookup, StopsLookup, TrackLookup
+from .dataclasses import NonExistentNaptanStop, ReferenceDataLookups
+from .types import LookupStopPoint, ServicedOrgLookup, StopsLookup, TrackLookup

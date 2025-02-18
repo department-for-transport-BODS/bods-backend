@@ -18,7 +18,7 @@ from shapely import Point
 from shapely.geometry import LineString
 from structlog.stdlib import get_logger
 
-from ..helpers import StopsLookup
+from ..helpers import NonExistentNaptanStop, StopsLookup
 from ..transform.service_pattern_metadata import (
     extract_pattern_metadata,
     make_service_pattern_id,
@@ -36,20 +36,26 @@ def get_valid_route_points(
     Get valid route points from journey pattern sections.
     Logs warnings for any stops not found in the mapping.
     """
-    stops: list[str] = get_stops_from_sections(
+    stops_refs: list[str] = get_stops_from_sections(
         jp.JourneyPatternSectionRefs, journey_pattern_sections
     )
     route_points: list[Point] = []
 
-    for stop in stops:
-        if stop not in atco_location_mapping:
+    for stop_ref in stops_refs:
+        if not stop_ref in atco_location_mapping:
+            msg = "Stop referenced in JourneyPatternSections not found in stop map"
+            log.error(msg, stop_id=stop_ref)
+            raise ValueError(msg)
+
+        stop_data = atco_location_mapping[stop_ref]
+        if isinstance(stop_data, NonExistentNaptanStop):
             log.warning(
-                "Stop not found in location mapping",
-                stop_id=stop,
+                "Skipping NonExistentNaptanStop",
+                stop_id=stop_ref,
                 journey_pattern_id=jp.id,
             )
             continue
-        route_points.append(atco_location_mapping[stop].shape)
+        route_points.append(stop_data.shape)
 
     return route_points
 
