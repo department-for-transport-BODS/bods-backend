@@ -1,8 +1,13 @@
+"""
+FareZone inside a FareFrame
+"""
+
 from typing import Annotated
 
-from common_layer.xml.netex.models.netex_references import PointRefs
-from common_layer.xml.netex.models.netex_utility import MultilingualString
 from pydantic import BaseModel, Field
+
+from ..netex_references import PointRefs
+from ..netex_utility import MultilingualString
 
 
 class FareZone(BaseModel):

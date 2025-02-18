@@ -10,7 +10,7 @@ from structlog.stdlib import get_logger
 
 from ...utils import load_xml_tree, parse_xml_attribute
 from ..models import PublicationDeliveryStructure
-from .data_objects.netex_data_objects import parse_data_objects
+from .data_objects.netex_data_objects import parse_frames
 from .netex_constants import NETEX_NS
 from .netex_publication_request import parse_publication_request
 from .netex_utility import (
@@ -53,7 +53,7 @@ def parse_publication_delivery(elem: _Element) -> PublicationDeliveryStructure:
 
     data_objects_elem = get_netex_element(elem, "dataObjects")
     data_objects = (
-        parse_data_objects(data_objects_elem) if data_objects_elem is not None else []
+        parse_frames(data_objects_elem) if data_objects_elem is not None else []
     )
 
     return PublicationDeliveryStructure(

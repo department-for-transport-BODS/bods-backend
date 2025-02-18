@@ -14,17 +14,6 @@ from .netex_constants import NETEX_NS
 log = get_logger()
 
 
-def remove_element_from_memory(elem: _Element) -> None:
-    """Clean up processed element and its ancestors to free memory."""
-    elem.clear()
-    parent = elem.getparent()
-    if parent is not None:
-        previous = elem.getprevious()
-        while previous is not None:
-            parent.remove(previous)
-            previous = elem.getprevious()
-
-
 def get_netex_element(xml_data: _Element, element_name: str) -> _Element | None:
     """Find element in NeTEx namespace"""
     return xml_data.find(f"{{{NETEX_NS}}}{element_name}")

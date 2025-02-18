@@ -8,6 +8,7 @@ from structlog.stdlib import get_logger
 from ....utils import get_tag_name, parse_xml_attribute
 from ...models import ServiceFrame
 from ...models.data_objects.netex_frame_service import Line, ScheduledStopPoint
+from ..netex_parsing_helpers import parse_version_and_id
 from ..netex_types import parse_line_type
 from ..netex_utility import (
     find_required_netex_element,
@@ -69,8 +70,7 @@ def parse_scheduled_stop_point(elem: _Element) -> ScheduledStopPoint | None:
     """
     Parse a single ScheduledStopPoint element
     """
-    stop_id = parse_xml_attribute(elem, "id")
-    stop_version = parse_xml_attribute(elem, "version")
+    stop_id, stop_version = parse_version_and_id(elem)
     name = parse_multilingual_string(elem, "Name")
 
     if not stop_id or not stop_version:
@@ -99,14 +99,7 @@ def parse_service_frame(elem: _Element) -> ServiceFrame:
     lines and scheduled stop points
     """
     # Parse required attributes
-    version = parse_xml_attribute(elem, "version")
-    if version is None:
-        raise ValueError("Missing Version")
-
-    frame_id = parse_xml_attribute(elem, "id")
-    if frame_id is None:
-        raise ValueError("Missing Frame ID")
-
+    version, frame_id = parse_version_and_id(elem)
     data_source_ref = parse_xml_attribute(elem, "dataSourceRef")
     if data_source_ref is None:
         raise ValueError("Missing DataSourceRef")
@@ -119,7 +112,6 @@ def parse_service_frame(elem: _Element) -> ServiceFrame:
     type_of_frame_ref = parse_versioned_ref(elem, "TypeOfFrameRef")
     if type_of_frame_ref is None:
         raise ValueError("Missing TypeOfFrameRef")
-
     # Parse lists
     lines = parse_lines(find_required_netex_element(elem, "lines"))
     stop_points = parse_scheduled_stop_points(

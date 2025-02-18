@@ -11,6 +11,7 @@ from ...models.data_objects.netex_frame_resource import (
     Operator,
     ResourceFrame,
 )
+from ..netex_parsing_helpers import parse_version_and_id
 from ..netex_utility import (
     find_required_netex_element,
     get_netex_text,
@@ -81,14 +82,7 @@ def parse_resource_frame(elem: _Element) -> ResourceFrame:
     Parse a ResourceFrame containing resource definitions like codespaces,
     data sources, and organizations
     """
-    # Parse required attributes
-    version = parse_xml_attribute(elem, "version")
-    if version is None:
-        raise ValueError("Missing Version")
-
-    frame_id = parse_xml_attribute(elem, "id")
-    if frame_id is None:
-        raise ValueError("Missing Frame ID")
+    version, frame_id = parse_version_and_id(elem)
 
     data_source_ref = parse_xml_attribute(elem, "dataSourceRef")
     if data_source_ref is None:

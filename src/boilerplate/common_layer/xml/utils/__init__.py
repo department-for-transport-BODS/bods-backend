@@ -13,7 +13,6 @@ from .xml_utils_attributes import (
     parse_xml_datetime,
     parse_xml_int,
 )
-from .xml_utils_iter import unload_element
 from .xml_utils_tags import (
     does_element_exist,
     get_elem_bool_default,
@@ -53,6 +52,4 @@ __all__ = [
     # Hashing Functions
     "get_file_hash",
     "get_bytes_hash",
-    # Iterparse Functions
-    "unload_element",
 ]
