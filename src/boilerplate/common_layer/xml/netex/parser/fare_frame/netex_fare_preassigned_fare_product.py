@@ -13,7 +13,11 @@ from ...models.fare_frame.netex_fare_preassigned import (
     PreassignedFareProduct,
     ValidableElement,
 )
-from ..netex_types import parse_preassigned_fare_product_type, parse_tariff_basis_type
+from ..netex_types import (
+    parse_charging_moment_type,
+    parse_preassigned_fare_product_type,
+    parse_tariff_basis_type,
+)
 from ..netex_utility import (
     get_netex_bool,
     get_netex_text,
@@ -127,20 +131,12 @@ def parse_preassigned_fare_product(elem: _Element) -> PreassignedFareProduct:
     product_id, version = parse_preassigned_product_attributes(elem)
 
     name = parse_multilingual_string(elem, "Name")
-    if name is None:
-        name = get_netex_text(elem, "Name")
-        if name is None:
-            raise ValueError("Missing required Name in PreassignedFareProduct")
 
     charging_moment_ref, type_of_fare_product_ref, operator_ref = (
         parse_preassigned_product_refs(elem)
     )
 
-    charging_moment_type = get_netex_text(elem, "ChargingMomentType")
-    if charging_moment_type is None:
-        raise ValueError(
-            "Missing required ChargingMomentType in PreassignedFareProduct"
-        )
+    charging_moment_type = parse_charging_moment_type(elem)
 
     product_type = parse_preassigned_fare_product_type(elem)
     validable_elements: list[ValidableElement] = []

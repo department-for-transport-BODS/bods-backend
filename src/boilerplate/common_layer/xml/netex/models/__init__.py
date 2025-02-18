@@ -61,6 +61,7 @@ from .netex_selection_validity import (
 )
 from .netex_types import (
     ActivationMeansT,
+    ChargingMomentTypeT,
     DiscountBasisT,
     LineTypeT,
     PreassignedFareProductTypeT,
@@ -68,6 +69,7 @@ from .netex_types import (
     TariffBasisT,
     UsageEndT,
     UsageTriggerT,
+    UserTypeT,
 )
 from .netex_utility import FromToDate, MultilingualString, VersionedRef
 
@@ -116,6 +118,8 @@ __all__ = [
     "ActivationMeansT",
     "TariffBasisT",
     "PreassignedFareProductTypeT",
+    "ChargingMomentTypeT",
+    "UserTypeT",
     # References
     "ObjectReferences",
     "PricableObjectRefs",

@@ -4,7 +4,7 @@ Helper Functions for working with Tariffs in FareFrames
 
 from datetime import datetime
 
-from ..models import FareFrame, Tariff, TariffBasisT
+from ..models import FareFrame, Tariff, TariffBasisT, UserProfile, UserTypeT
 
 
 def get_tariffs_from_fare_frames(frames: list[FareFrame]) -> list[Tariff]:
@@ -68,3 +68,21 @@ def latest_tariff_to_date(tariffs: list[Tariff]) -> datetime | None:
         return None
 
     return max(to_dates)
+
+
+def get_user_types(tariffs: list[Tariff]) -> list[UserTypeT] | None:
+    """
+    Extract user types from tariff fare structures.
+    Returns a list of UserTypeT if found, None otherwise.
+    """
+    user_types: list[UserTypeT] = [
+        limitation.UserType
+        for tariff in tariffs
+        for fare_structure in tariff.fareStructureElements
+        if fare_structure.GenericParameterAssignment
+        and fare_structure.GenericParameterAssignment.limitations
+        for limitation in fare_structure.GenericParameterAssignment.limitations
+        if isinstance(limitation, UserProfile) and limitation.UserType
+    ]
+
+    return user_types or None

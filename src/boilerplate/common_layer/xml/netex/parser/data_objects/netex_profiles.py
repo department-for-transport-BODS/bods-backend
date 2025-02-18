@@ -6,7 +6,11 @@ from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 from ...models import CompanionProfile, UserProfile
-from ..netex_types import parse_discount_basis_type, parse_proof_of_identity_type
+from ..netex_types import (
+    parse_discount_basis_type,
+    parse_proof_of_identity_type,
+    parse_user_type,
+)
 from ..netex_utility import (
     get_netex_element,
     get_netex_int,
@@ -84,4 +88,5 @@ def parse_user_profile(elem: _Element) -> UserProfile:
         ProofRequired=proof_required,
         DiscountBasis=discount_basis,
         companionProfiles=companion_profiles if companion_profiles else None,
+        UserType=parse_user_type(elem),
     )

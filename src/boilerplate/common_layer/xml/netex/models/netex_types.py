@@ -99,3 +99,36 @@ PreassignedFareProductTypeT = Literal[
     "supplement",
     "other",
 ]
+
+ChargingMomentTypeT = Literal[
+    "beforeTravel",
+    "onStartOfTravel",
+    "beforeEndOfTravel",
+    "onStartThenAdjustAtEndOfTravel",
+    # Note: there's a typo in the XSD ("onStarThen" vs "onStartThen")
+    "onStarThenAdjustAtEndOfFareDay",
+    "onStartThenAdjustAtEndOfChargePeriod",
+    "atEndOfTravel",
+    "atEndOfFareDay",
+    "atEndOfChargePeriod",
+    "free",
+    "anyTime",
+    "other",
+]
+
+UserTypeT = Literal[
+    "adult",
+    "child",
+    "infant",
+    "senior",
+    "student",
+    "youngPerson",
+    "schoolPupil",
+    "military",
+    "disabled",
+    "disabledCompanion",
+    "jobSeeker",
+    "employee",
+    "animal",
+    "anyone",
+]

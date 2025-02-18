@@ -6,7 +6,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
-from ..netex_types import PreassignedFareProductTypeT, TariffBasisT
+from ..netex_types import ChargingMomentTypeT, PreassignedFareProductTypeT, TariffBasisT
 from ..netex_utility import MultilingualString, VersionedRef
 
 
@@ -55,7 +55,9 @@ class PreassignedFareProduct(BaseModel):
     ChargingMomentRef: Annotated[
         VersionedRef, Field(description="Reference to charging moment")
     ]
-    ChargingMomentType: Annotated[str, Field(description="Type of charging moment")]
+    ChargingMomentType: Annotated[
+        ChargingMomentTypeT | None, Field(description="Type of charging moment")
+    ] = None
     TypeOfFareProductRef: Annotated[
         VersionedRef, Field(description="Reference to product type")
     ]

@@ -6,7 +6,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
-from ..netex_types import DiscountBasisT, ProofOfIdentityT
+from ..netex_types import DiscountBasisT, ProofOfIdentityT, UserTypeT
 from ..netex_utility import MultilingualString, VersionedRef
 
 
@@ -34,9 +34,9 @@ class UserProfile(BaseModel):
 
     id: Annotated[str, Field(description="Profile identifier")]
     version: Annotated[str, Field(description="Version")]
-    Name: Annotated[MultilingualString | str, Field(description="Name of the profile")]
+    Name: Annotated[MultilingualString, Field(description="Name of the profile")]
     Description: Annotated[
-        MultilingualString | str | None,
+        MultilingualString | None,
         Field(description="Description of the profile", default=None),
     ] = None
     TypeOfConcessionRef: Annotated[
@@ -57,4 +57,8 @@ class UserProfile(BaseModel):
     companionProfiles: Annotated[
         list[CompanionProfile] | None,
         Field(description="list of companion profiles", default=None),
+    ] = None
+    UserType: Annotated[
+        UserTypeT | None,
+        Field(description="Classification of user profile", default=None),
     ] = None

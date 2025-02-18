@@ -9,6 +9,7 @@ from structlog.stdlib import get_logger
 
 from ..models import (
     ActivationMeansT,
+    ChargingMomentTypeT,
     DiscountBasisT,
     LineTypeT,
     PreassignedFareProductTypeT,
@@ -16,6 +17,7 @@ from ..models import (
     TariffBasisT,
     UsageEndT,
     UsageTriggerT,
+    UserTypeT,
 )
 from .netex_utility import get_netex_text
 
@@ -111,4 +113,26 @@ def parse_preassigned_fare_product_type(
     if text in get_args(PreassignedFareProductTypeT):
         return cast(PreassignedFareProductTypeT, text)
     log.warning("Unknown Preassigned Fare Product type", text=text)
+    return None
+
+
+def parse_charging_moment_type(elem: _Element) -> ChargingMomentTypeT | None:
+    """
+    Parse a ChargingMomentType from a NeTEx XML element
+    """
+    text = get_netex_text(elem, "ChargingMoment")
+    if text in get_args(ChargingMomentTypeT):
+        return cast(ChargingMomentTypeT, text)
+    log.warning("Unknown Charging Moment type", text=text)
+    return None
+
+
+def parse_user_type(elem: _Element) -> UserTypeT | None:
+    """
+    Parse a UserType from a NeTEx XML element
+    """
+    text = get_netex_text(elem, "UserType")
+    if text in get_args(UserTypeT):
+        return cast(UserTypeT, text)
+    log.warning("Unknown User Type", text=text)
     return None
