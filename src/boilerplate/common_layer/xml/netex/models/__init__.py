@@ -63,7 +63,9 @@ from .netex_types import (
     ActivationMeansT,
     DiscountBasisT,
     LineTypeT,
+    PreassignedFareProductTypeT,
     ProofOfIdentityT,
+    TariffBasisT,
     UsageEndT,
     UsageTriggerT,
 )
@@ -112,6 +114,8 @@ __all__ = [
     "UsageTriggerT",
     "UsageEndT",
     "ActivationMeansT",
+    "TariffBasisT",
+    "PreassignedFareProductTypeT",
     # References
     "ObjectReferences",
     "PricableObjectRefs",

@@ -11,7 +11,9 @@ from ..models import (
     ActivationMeansT,
     DiscountBasisT,
     LineTypeT,
+    PreassignedFareProductTypeT,
     ProofOfIdentityT,
+    TariffBasisT,
     UsageEndT,
     UsageTriggerT,
 )
@@ -85,4 +87,28 @@ def parse_usage_end_type(elem: _Element) -> UsageEndT | None:
     if text in get_args(UsageEndT):
         return cast(UsageEndT, text)
     log.warning("Unknown Usage End", text=text)
+    return None
+
+
+def parse_tariff_basis_type(elem: _Element) -> TariffBasisT | None:
+    """
+    Parse a TariffBasis from a NeTEx XML element
+    """
+    text = get_netex_text(elem, "TariffBasis")
+    if text in get_args(TariffBasisT):
+        return cast(TariffBasisT, text)
+    log.warning("Unknown Tariff Basis", text=text)
+    return None
+
+
+def parse_preassigned_fare_product_type(
+    elem: _Element,
+) -> PreassignedFareProductTypeT | None:
+    """
+    Parse a PreassignedFareProduct type from a NeTEx XML element
+    """
+    text = get_netex_text(elem, "PreassignedFareProduct")
+    if text in get_args(PreassignedFareProductTypeT):
+        return cast(PreassignedFareProductTypeT, text)
+    log.warning("Unknown Preassigned Fare Product type", text=text)
     return None

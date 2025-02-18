@@ -13,6 +13,7 @@ from ...models.fare_frame.netex_fare_preassigned import (
     PreassignedFareProduct,
     ValidableElement,
 )
+from ..netex_types import parse_preassigned_fare_product_type, parse_tariff_basis_type
 from ..netex_utility import (
     get_netex_bool,
     get_netex_text,
@@ -27,7 +28,7 @@ log = get_logger()
 def parse_condition_summary(elem: _Element) -> ConditionSummary:
     """Parse ConditionSummary element"""
     fare_structure_type = get_netex_text(elem, "FareStructureType")
-    tariff_basis = get_netex_text(elem, "TariffBasis")
+    tariff_basis = parse_tariff_basis_type(elem)
     is_personal = get_netex_bool(elem, "IsPersonal")
 
     if fare_structure_type is None or tariff_basis is None or is_personal is None:
@@ -141,10 +142,7 @@ def parse_preassigned_fare_product(elem: _Element) -> PreassignedFareProduct:
             "Missing required ChargingMomentType in PreassignedFareProduct"
         )
 
-    product_type = get_netex_text(elem, "ProductType")
-    if product_type is None:
-        raise ValueError("Missing required ProductType in PreassignedFareProduct")
-
+    product_type = parse_preassigned_fare_product_type(elem)
     validable_elements: list[ValidableElement] = []
     access_rights: list[AccessRightInProduct] = []
     condition_summary = None

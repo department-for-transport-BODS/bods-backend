@@ -7,6 +7,7 @@ from structlog.stdlib import get_logger
 
 from ....utils import get_tag_name
 from ...models import FareStructureElement, FromToDate, Tariff
+from ..netex_types import parse_tariff_basis_type
 from ..netex_utility import (
     get_netex_element,
     get_netex_text,
@@ -84,10 +85,7 @@ def parse_tariff(elem: _Element) -> Tariff:
     if type_of_tariff_ref is None:
         raise ValueError("Missing required TypeOfTariffRef in Tariff")
 
-    tariff_basis = get_netex_text(elem, "TariffBasis")
-    if tariff_basis is None:
-        raise ValueError("Missing required TariffBasis in Tariff")
-
+    tariff_basis = parse_tariff_basis_type(elem)
     validity_conditions = parse_validity_conditions(elem)
     fare_structure_elements = parse_fare_structure_elements(elem)
 

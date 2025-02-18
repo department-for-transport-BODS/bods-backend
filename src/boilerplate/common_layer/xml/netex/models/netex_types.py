@@ -69,3 +69,33 @@ UsageEndT = Literal[
     "deregistration",
     "other",
 ]
+
+
+TariffBasisT = Literal[
+    "flat",
+    "distance",
+    "unitSection",
+    "zone",
+    "zoneToZone",
+    "pointToPoint",
+    "route",
+    "tour",
+    "group",
+    "discount",
+    "period",
+    "free",
+    "other",
+]
+
+PreassignedFareProductTypeT = Literal[
+    "singleTrip",
+    "shortTrip",
+    "timeLimitedSingleTrip",
+    "dayReturnTrip",
+    "periodReturnTrip",
+    "multistepTrip",
+    "dayPass",
+    "periodPass",
+    "supplement",
+    "other",
+]

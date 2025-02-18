@@ -2,9 +2,10 @@
 ServiceFrame
 """
 
+from functools import cached_property
 from typing import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 from ..netex_types import LineTypeT
 from ..netex_utility import MultilingualString, VersionedRef
@@ -18,6 +19,51 @@ class ScheduledStopPoint(BaseModel):
     Name: Annotated[
         MultilingualString | str | None, Field(description="Name of the stop point")
     ] = None
+
+    @computed_field
+    @cached_property
+    def atco_code(self) -> str | None:
+        """
+        Extracts the full ATCO code (everything after 'atco:').
+        Returns None if the ID is invalid or doesn't follow the expected format.
+        """
+        if not isinstance(self.id, str):
+            return None
+
+        if not self.id.startswith("atco:"):
+            return None
+
+        try:
+            parts = self.id.split(":")
+            if len(parts) != 2:
+                return None
+            code = parts[1]
+        except IndexError:
+            return None
+
+        if not code:
+            return None
+
+        return code
+
+    @computed_field
+    @cached_property
+    def atco_area_code(self) -> str | None:
+        """
+        Extracts the ATCO area code (first 3 digits) from the stop point ID.
+        Returns None if the ID is invalid or doesn't follow the expected format.
+        e.g.
+            <ScheduledStopPoint id="atco:260014801">
+        """
+        atco = self.atco_code
+        if not atco or len(atco) < 3:
+            return None
+
+        area_code = atco[:3]
+        if not area_code.isnumeric():
+            return None
+
+        return area_code
 
 
 class Line(BaseModel):

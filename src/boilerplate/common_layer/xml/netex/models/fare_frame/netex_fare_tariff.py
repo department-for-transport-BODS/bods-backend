@@ -6,6 +6,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
+from ..netex_types import TariffBasisT
 from ..netex_utility import FromToDate, MultilingualString, VersionedRef
 from .netex_fare_tariff_fare_structure import FareStructureElement
 
@@ -24,7 +25,9 @@ class Tariff(BaseModel):
     TypeOfTariffRef: Annotated[
         VersionedRef, Field(description="Reference to tariff type")
     ]
-    TariffBasis: Annotated[str, Field(description="Basis of tariff")]
+    TariffBasis: Annotated[
+        TariffBasisT | None, Field(description="Basis of tariff")
+    ] = None
     fareStructureElements: Annotated[
         list[FareStructureElement], Field(description="list of fare structure elements")
     ]

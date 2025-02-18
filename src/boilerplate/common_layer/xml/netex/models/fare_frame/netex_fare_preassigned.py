@@ -6,6 +6,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
+from ..netex_types import PreassignedFareProductTypeT, TariffBasisT
 from ..netex_utility import MultilingualString, VersionedRef
 
 
@@ -34,9 +35,13 @@ class AccessRightInProduct(BaseModel):
 class ConditionSummary(BaseModel):
     """Summary of fare conditions"""
 
-    FareStructureType: Annotated[str, Field(description="Type of fare structure")]
-    TariffBasis: Annotated[str, Field(description="Basis of tariff")]
-    IsPersonal: Annotated[bool, Field(description="Whether the fare is personal")]
+    FareStructureType: Annotated[
+        str | None, Field(description="Type of fare structure")
+    ]
+    TariffBasis: Annotated[TariffBasisT, Field(description="Basis of tariff")]
+    IsPersonal: Annotated[
+        bool | None, Field(description="Whether the fare is personal")
+    ]
 
 
 class PreassignedFareProduct(BaseModel):
@@ -44,7 +49,9 @@ class PreassignedFareProduct(BaseModel):
 
     id: Annotated[str, Field(description="Product identifier")]
     version: Annotated[str, Field(description="Version")]
-    Name: Annotated[MultilingualString | str, Field(description="Name of the product")]
+    Name: Annotated[
+        MultilingualString | None, Field(description="Name of the product")
+    ] = None
     ChargingMomentRef: Annotated[
         VersionedRef, Field(description="Reference to charging moment")
     ]
@@ -62,4 +69,6 @@ class PreassignedFareProduct(BaseModel):
     accessRightsInProduct: Annotated[
         list[AccessRightInProduct], Field(description="list of access rights")
     ]
-    ProductType: Annotated[str, Field(description="Type of product")]
+    ProductType: Annotated[
+        PreassignedFareProductTypeT | None, Field(description="Type of product")
+    ]

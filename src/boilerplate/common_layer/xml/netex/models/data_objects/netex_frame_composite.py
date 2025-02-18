@@ -6,6 +6,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
+from ..fare_frame import FareFrame
 from ..fare_frame.netex_frame_defaults import FrameDefaultsStructure
 from ..netex_utility import FromToDate, MultilingualString, VersionedRef
 from .netex_codespaces import Codespace, CodespaceRef
@@ -41,6 +42,6 @@ class CompositeFrame(BaseModel):
         FrameDefaultsStructure | None, Field(description="Default values for the frame")
     ] = None
     frames: Annotated[
-        list[ResourceFrame | ServiceFrame],
+        list[ResourceFrame | ServiceFrame | FareFrame],
         Field(description="list of contained frames"),
     ]
