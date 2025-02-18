@@ -2,119 +2,70 @@
 Tests for InitialisePipeline Lambda
 """
 
-from datetime import UTC, datetime
-from unittest.mock import Mock, create_autospec, patch
-from uuid import UUID, uuid4
+from unittest.mock import MagicMock
+from uuid import uuid4
 
 import pytest
+from common_layer.database.client import SqlDB
 from common_layer.database.models.model_pipelines import DatasetETLTaskResult, TaskState
 from common_layer.database.repos.repo_etl_task import ETLTaskResultRepo
+from common_layer.database.repos.repo_organisation import (
+    OrganisationDatasetRevisionRepo,
+)
+from common_layer.dynamodb.client.cache import DynamoDBCache
 from common_layer.dynamodb.data_manager import FileProcessingDataManager
 from common_layer.enums import FeedStatus
-from common_layer.exceptions.pipeline_exceptions import PipelineException
-from initialize_pipeline.app.initialize_pipeline import (
-    InitializePipelineEvent,
-    create_task_result,
-    get_and_validate_revision,
-    initialize_pipeline,
-    update_revision_status,
-)
 
 from tests.factories.database.organisation import OrganisationDatasetRevisionFactory
-
-
-def test_get_and_validate_revision_success(mock_revision_repo):
-    """
-    Test successful retrieval of revision
-    """
-    revision_id = 42
-    revision = OrganisationDatasetRevisionFactory.create_with_id(
-        id_number=revision_id,
-        name="Dev Org_Test Upload_1",
-        upload_file="FLIX-FlixBus-UK045-London-Plymouth.xml",
-        status="success",
-    )
-    mock_revision_repo.get_by_id.return_value = revision
-
-    with patch(
-        "initialize_pipeline.app.initialize_pipeline.OrganisationDatasetRevisionRepo",
-        return_value=mock_revision_repo,
-    ):
-        result = get_and_validate_revision(Mock(), revision_id)
-
-        assert result is revision
-        assert result.id == revision_id
-        assert result.upload_file == "FLIX-FlixBus-UK045-London-Plymouth.xml"
-        mock_revision_repo.get_by_id.assert_called_once_with(revision_id)
-
-
-def test_get_and_validate_revision_not_found(mock_revision_repo):
-    """
-    Test exception when revision not found
-    """
-    mock_revision_repo.get_by_id.return_value = None
-
-    with patch(
-        "initialize_pipeline.app.initialize_pipeline.OrganisationDatasetRevisionRepo",
-        return_value=mock_revision_repo,
-    ):
-        with pytest.raises(PipelineException) as exc_info:
-            get_and_validate_revision(Mock(), 99999)
-
-        mock_revision_repo.get_by_id.assert_called_once_with(99999)
-
-
-@pytest.mark.parametrize(
-    "initial_status",
-    [
-        pytest.param("success", id="Updates Status From Success To Indexing"),
-        pytest.param("error", id="Updates Status From Error To Indexing"),
-    ],
+from timetables_etl.initialize_pipeline.app.initialize_pipeline import (
+    InitializePipelineEvent,
+    initialize_pipeline,
 )
-def test_update_revision_status(mock_revision_repo, initial_status: str):
-    """
-    Test revision status update
-    """
-    current_time = datetime(2024, 1, 1, tzinfo=UTC)
-    revision = OrganisationDatasetRevisionFactory.build(
-        status=initial_status, modified=current_time, created=current_time
-    )
 
-    with patch(
-        "initialize_pipeline.app.initialize_pipeline.OrganisationDatasetRevisionRepo",
+
+@pytest.fixture
+def setup_mocks(mocker):
+    """
+    Sets up mocks for repository classes and dependencies.
+    """
+    mock_revision_repo = mocker.create_autospec(
+        OrganisationDatasetRevisionRepo, instance=True
+    )
+    mock_task_repo = mocker.create_autospec(ETLTaskResultRepo, instance=True)
+    mock_dynamodb = mocker.create_autospec(DynamoDBCache, instance=True)
+    mock_data_manager = mocker.create_autospec(FileProcessingDataManager, instance=True)
+
+    # Patch dependencies using mocker.patch.object
+    mocker.patch(
+        "initialize_pipeline.app.db_operations.OrganisationDatasetRevisionRepo",
         return_value=mock_revision_repo,
-    ):
-        update_revision_status(Mock(), revision)
-
-        assert revision.status == FeedStatus.INDEXING.value
-        mock_revision_repo.update.assert_called_once_with(revision)
-
-
-def test_create_task_result():
-    """
-    Test the creation of a task result
-    """
-    revision_id = 42
-    mock_task_repo = create_autospec(ETLTaskResultRepo, instance=True)
-    task_result = DatasetETLTaskResult(
-        revision_id=revision_id, status=TaskState.STARTED, task_id=str(uuid4())
     )
-    mock_task_repo.insert.return_value = task_result
-
-    with patch(
-        "initialize_pipeline.app.initialize_pipeline.ETLTaskResultRepo",
+    mocker.patch(
+        "initialize_pipeline.app.db_operations.ETLTaskResultRepo",
         return_value=mock_task_repo,
-    ):
-        result = create_task_result(Mock(), revision_id)
+    )
+    mocker.patch(
+        "initialize_pipeline.app.initialize_pipeline.FileProcessingDataManager",
+        return_value=mock_data_manager,
+    )
+    mock_delete_validation_violations = mocker.patch(
+        "initialize_pipeline.app.initialize_pipeline.delete_existing_validation_violations",
+    )
+    mock_delete_txc_attributes = mocker.patch(
+        "initialize_pipeline.app.initialize_pipeline.delete_existing_txc_file_attributes",
+    )
 
-        assert result is task_result
-        assert result.revision_id == revision_id
-        assert result.status == TaskState.STARTED
-        assert UUID(result.task_id, version=4)
-        mock_task_repo.insert.assert_called_once()
+    return {
+        "mock_revision_repo": mock_revision_repo,
+        "mock_task_repo": mock_task_repo,
+        "mock_dynamodb": mock_dynamodb,
+        "mock_data_manager": mock_data_manager,
+        "mock_delete_validation_violations": mock_delete_validation_violations,
+        "mock_delete_txc_attributes": mock_delete_txc_attributes,
+    }
 
 
-def test_initialize_pipeline(mock_revision_repo):
+def test_initialize_pipeline(setup_mocks):
     """
     Test initializing the pipeline
     """
@@ -126,34 +77,33 @@ def test_initialize_pipeline(mock_revision_repo):
         num_of_timing_points=40,
         transxchange_version="2.4",
     )
-    mock_revision_repo.get_by_id.return_value = revision
+    setup_mocks["mock_revision_repo"].get_by_id.return_value = revision
 
-    mock_task_repo = create_autospec(ETLTaskResultRepo, instance=True)
     task_result = DatasetETLTaskResult(
         revision_id=revision_id, status=TaskState.STARTED, task_id=str(uuid4())
     )
-    mock_task_repo.insert.return_value = task_result
+    setup_mocks["mock_task_repo"].insert.return_value = task_result
 
-    mock_dynamodb = create_autospec(
-        "common_layer.dynamodb.client.DynamoDBCache", instance=True
-    )
-    mock_data_manager = create_autospec(FileProcessingDataManager, instance=True)
-    mock_data_manager.prefetch_and_cache_data.return_value = None
+    setup_mocks["mock_data_manager"].prefetch_and_cache_data.return_value = None
 
     event = InitializePipelineEvent(DatasetRevisionId=revision_id)
+    mock_db = MagicMock(spec=SqlDB)
 
-    with patch.multiple(
-        "initialize_pipeline.app.initialize_pipeline",
-        OrganisationDatasetRevisionRepo=lambda db: mock_revision_repo,
-        ETLTaskResultRepo=lambda db: mock_task_repo,
-        FileProcessingDataManager=lambda db, dynamodb: mock_data_manager,
-    ):
-        result = initialize_pipeline(Mock(), mock_dynamodb, event)
+    result = initialize_pipeline(mock_db, setup_mocks["mock_dynamodb"], event)
 
-        assert result == task_result
-        assert revision.status == FeedStatus.INDEXING.value
-        mock_revision_repo.update.assert_called_once_with(revision)
-        mock_data_manager.prefetch_and_cache_data.assert_called_once_with(revision)
-        assert revision.num_of_bus_stops == 7
-        assert revision.num_of_timing_points == 40
-        assert revision.transxchange_version == "2.4"
+    assert result == task_result
+    assert revision.status == FeedStatus.INDEXING.value
+    setup_mocks["mock_revision_repo"].update.assert_called_once_with(revision)
+    setup_mocks["mock_data_manager"].prefetch_and_cache_data.assert_called_once_with(
+        revision
+    )
+    assert revision.num_of_bus_stops == 7
+    assert revision.num_of_timing_points == 40
+    assert revision.transxchange_version == "2.4"
+
+    setup_mocks["mock_delete_validation_violations"].assert_called_once_with(
+        mock_db, revision_id
+    )
+    setup_mocks["mock_delete_txc_attributes"].assert_called_once_with(
+        mock_db, revision_id
+    )
