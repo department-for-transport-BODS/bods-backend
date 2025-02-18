@@ -218,7 +218,7 @@ class OrganisationTXCFileAttributesRepo(
 
                 return deleted_count
 
-            except Exception as e:
+            except Exception:
                 session.rollback()
                 log.error(
                     "Failed to delete TXCFileAttributes & related DQSTaskResults",
