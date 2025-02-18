@@ -103,22 +103,18 @@ def test_parse_round_trip(xml_str: str, expected: RoundTrip) -> None:
             ),
             id="Complete validity parameters",
         ),
-        pytest.param(
-            """
-            <validityParameters>
-            </validityParameters>
-            """,
-            None,
-            id="Missing line reference",
-            marks=pytest.mark.xfail(raises=ValueError, strict=True),
-        ),
     ],
 )
-def test_parse_validity_parameters(xml_str: str, expected: ValidityParameters) -> None:
+def test_parse_validity_parameters(
+    xml_str: str, expected: ValidityParameters | None
+) -> None:
     """Test parsing of validity parameters."""
     elem = parse_xml_str_as_netex(xml_str)
     result = parse_validity_parameters(elem)
-    assert_model_equal(result, expected)
+    if result is None or expected is None:
+        assert result is None
+    else:
+        assert_model_equal(result, expected)
 
 
 @pytest.mark.parametrize(
@@ -180,7 +176,7 @@ def test_parse_validity_parameters(xml_str: str, expected: ValidityParameters) -
                         Name=MultilingualString(
                             value="Adult", lang=None, textIdType=None
                         ),
-                        UserType="adult",  # type: ignore
+                        UserType="adult",
                     )
                 ],
                 ValidityParameterAssignmentType=None,

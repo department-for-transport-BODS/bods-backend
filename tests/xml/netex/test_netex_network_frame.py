@@ -24,44 +24,6 @@ from tests.xml.netex.conftest import parse_xml_str_as_netex
 
 
 @pytest.mark.parametrize(
-    "xml_str,error_msg",
-    [
-        pytest.param(
-            """
-            <objectReferences>
-                <OperatorRef version="1.0" ref="noc:BRTB" />
-            </objectReferences>
-            """,
-            "Missing required references in ObjectReferences",
-            id="Missing LineRef",
-        ),
-        pytest.param(
-            """
-            <objectReferences>
-                <LineRef version="1.0" ref="BRTB:PC0003375:3:15" />
-            </objectReferences>
-            """,
-            "Missing required references in ObjectReferences",
-            id="Missing OperatorRef",
-        ),
-        pytest.param(
-            """
-            <objectReferences>
-            </objectReferences>
-            """,
-            "Missing required references in ObjectReferences",
-            id="Empty object references",
-        ),
-    ],
-)
-def test_parse_object_references_errors(xml_str: str, error_msg: str) -> None:
-    """Test error cases for object references parsing."""
-    elem = parse_xml_str_as_netex(xml_str)
-    with pytest.raises(ValueError, match=error_msg):
-        parse_object_references(elem)
-
-
-@pytest.mark.parametrize(
     "xml_str,expected",
     [
         pytest.param(

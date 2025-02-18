@@ -228,11 +228,7 @@ def parse_generic_parameter_assignment(elem: _Element) -> GenericParameterAssign
             case "LimitationGroupingType":
                 limitation_grouping_type = child.text
             case "validityParameters":
-                validity_parameters = (
-                    None
-                    if child.find("LineRef") is None
-                    else parse_validity_parameters(child)
-                )
+                validity_parameters = parse_validity_parameters(child)
             case "limitations":
                 limitations = parse_limitations(child)
 

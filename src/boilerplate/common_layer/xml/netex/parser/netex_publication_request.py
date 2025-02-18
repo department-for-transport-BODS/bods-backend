@@ -26,9 +26,9 @@ def parse_topics(elem: _Element) -> list[NetworkFrameTopicStructure] | None:
 
     for child in elem:
         if get_tag_name(child) == "NetworkFrameTopic":
+            log.info("There is a child")
             topics.append(parse_network_frame_topic(child))
-        child.clear()
-
+    log.debug("Parsed Topics", count=len(topics))
     return topics if topics else None
 
 

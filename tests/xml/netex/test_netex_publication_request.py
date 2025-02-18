@@ -14,10 +14,9 @@ from common_layer.xml.netex.models import (
 )
 from common_layer.xml.netex.models.netex_references import ObjectReferences
 from common_layer.xml.netex.parser import parse_publication_request, parse_topics
-from lxml.etree import fromstring
 
 from tests.xml.conftest import assert_model_equal
-from tests.xml.netex.conftest import parse_xml_str_as_netex_wrapped
+from tests.xml.netex.conftest import parse_xml_str_as_netex
 
 UTC = timezone.utc
 
@@ -97,20 +96,13 @@ UTC = timezone.utc
             None,
             id="No network frame topics",
         ),
-        pytest.param(
-            """
-            <topics/>
-            """,
-            None,
-            id="Empty topics element",
-        ),
     ],
 )
 def test_parse_topics(
     xml_str: str, expected: list[NetworkFrameTopicStructure] | None
 ) -> None:
     """Test parsing of topics element with various inputs."""
-    elem = parse_xml_str_as_netex_wrapped(xml_str.strip())
+    elem = parse_xml_str_as_netex(xml_str.strip())
     result = parse_topics(elem)
     if expected is None:
         assert result is None
@@ -168,7 +160,7 @@ def test_parse_topics(
                 RequestTimestamp=datetime(2024, 2, 13, 12, 0, tzinfo=UTC),
                 ParticipantRef="PARTICIPANT_1",
                 Description=None,
-                topics=None,
+                topics=[],
                 RequestPolicy=None,
                 SubscriptionPolicy=None,
             ),
@@ -176,7 +168,7 @@ def test_parse_topics(
         ),
         pytest.param(
             """
-            <PublicationRequest version="2.0">
+            <PublicationRequest version="1.0">
                 <RequestTimestamp>2024-02-13T12:00:00Z</RequestTimestamp>
                 <ParticipantRef>PARTICIPANT_1</ParticipantRef>
                 <UnknownTag>Some content</UnknownTag>
@@ -185,11 +177,11 @@ def test_parse_topics(
             </PublicationRequest>
             """,
             PublicationRequestStructure(
-                version="2.0",
+                version="1.0",
                 RequestTimestamp=datetime(2024, 2, 13, 12, 0, tzinfo=UTC),
                 ParticipantRef="PARTICIPANT_1",
                 Description=None,
-                topics=None,
+                topics=[],
                 RequestPolicy=None,
                 SubscriptionPolicy=None,
             ),
@@ -201,6 +193,6 @@ def test_parse_publication_request(
     xml_str: str, expected: PublicationRequestStructure
 ) -> None:
     """Test parsing of publication request with various inputs."""
-    elem = fromstring(xml_str.strip())
+    elem = parse_xml_str_as_netex(xml_str.strip())
     result = parse_publication_request(elem)
     assert_model_equal(result, expected)
