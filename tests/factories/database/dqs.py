@@ -1,9 +1,24 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 import factory
-from common_layer.database.models.model_dqs import DQSTaskResults
-from factory.fuzzy import FuzzyChoice
+from common_layer.database.models.model_dqs import DQSReport, DQSTaskResults
+from factory.fuzzy import FuzzyChoice, FuzzyInteger
 from pytz import UTC
+
+
+class DQSReportFactory(factory.Factory):
+    """
+    Factory for creating DQSReport instances using the repository pattern.
+    """
+
+    class Meta:  # type: ignore[misc]
+        model = DQSReport
+
+    created = factory.LazyFunction(lambda: datetime.now(UTC))
+    file_name = factory.Faker("file_name")
+    status = FuzzyChoice(["PENDING", "SUCCESS", "FAILED"])
+    revision_id = None
 
 
 class DQSTaskResultsFactory(factory.Factory):
@@ -23,6 +38,9 @@ class DQSTaskResultsFactory(factory.Factory):
 
     transmodel_txcfileattributes_id = None
     transmodel_txcfileattributes = None
+
+    dqs_report_id = None
+    dqs_report = None
 
     @classmethod
     def create_with_id(cls, id_number: int, **kwargs) -> DQSTaskResults:

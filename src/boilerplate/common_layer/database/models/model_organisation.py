@@ -191,4 +191,5 @@ class OrganisationTXCFileAttributes(BaseSQLModel):
     dqs_task_results: Mapped[list["DQSTaskResults"]] = relationship(
         "DQSTaskResults",
         back_populates="transmodel_txcfileattributes",
+        cascade="all, delete",
     )

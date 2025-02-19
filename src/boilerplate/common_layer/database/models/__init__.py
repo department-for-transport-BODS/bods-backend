@@ -9,7 +9,7 @@ from .model_data_quality import (
     DataQualityPTIObservation,
     DataQualitySchemaViolation,
 )
-from .model_dqs import DQSTaskResults
+from .model_dqs import DQSReport, DQSTaskResults
 from .model_junction import (
     TransmodelServicePatternAdminAreas,
     TransmodelServicePatternLocality,
@@ -117,4 +117,5 @@ __all__ = [
     "DataQualityPTIObservation",
     # DQS
     "DQSTaskResults",
+    "DQSReport",
 ]
