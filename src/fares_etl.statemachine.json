@@ -127,7 +127,7 @@
         "Resource": "arn:aws:states:::s3:putObject",
         "Arguments": {
           "Bucket": "{% $s3Bucket %}",
-          "Prefix": "tt-etl-map-results"
+          "Prefix": "fares-etl-map-results"
         }
       },
       "ItemProcessor": {
@@ -147,6 +147,7 @@
               "datasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}"
             }
           },
+
           "FileValidation": {
             "Type": "Task",
             "Next": "SchemaCheck",
@@ -171,7 +172,7 @@
           },
           "SchemaCheck": {
             "Type": "Task",
-            "Next": "PostSchemaCheck",
+            "Next": "Success",
             "Resource": "${SchemaCheckLambdaArn}",
             "Arguments": {
               "Bucket": "{% $Bucket %}",
@@ -182,102 +183,6 @@
               "schemaCheck": "{% $states.result %}"
             },
 
-            "Catch": [
-              {
-                "ErrorEquals": ["States.ALL"],
-                "Next": "ExceptionHandler",
-                "Output": {
-                  "errorInfo": "{% $states.errorOutput %}"
-                }
-              }
-            ]
-          },
-          "PostSchemaCheck": {
-            "Type": "Task",
-            "Next": "FileAttributesEtl",
-            "Resource": "${PostSchemaCheckLambdaArn}",
-            "Arguments": {
-              "Bucket": "{% $Bucket %}",
-              "ObjectKey": "{% $ObjectKey %}",
-              "DatasetRevisionId": "{% $DatasetRevisionId %}"
-            },
-            "Output": {
-              "postSchemaCheck": "{% $states.result %}"
-            },
-            "Catch": [
-              {
-                "ErrorEquals": ["States.ALL"],
-                "Next": "ExceptionHandler",
-                "Output": {
-                  "errorInfo": "{% $states.errorOutput %}"
-                }
-              }
-            ]
-          },
-          "FileAttributesEtl": {
-            "Type": "Task",
-            "Next": "PtiValidation",
-            "Resource": "${FileAttributesEtlLambdaArn}",
-            "Arguments": {
-              "Bucket": "{% $Bucket %}",
-              "ObjectKey": "{% $ObjectKey %}",
-              "DatasetRevisionId": "{% $DatasetRevisionId %}"
-            },
-            "Assign": {
-              "fileAttributesEtl": "{% $states.result.id %}"
-            },
-            "Output": {
-              "fileAttributesEtl": "{% $states.result.id %}"
-            },
-
-            "Catch": [
-              {
-                "ErrorEquals": ["States.ALL"],
-                "Next": "ExceptionHandler",
-                "Output": {
-                  "errorInfo": "{% $states.errorOutput %}"
-                }
-              }
-            ]
-          },
-          "PtiValidation": {
-            "Type": "Task",
-            "Next": "EtlProcess",
-            "Resource": "${PtiValidationLambdaArn}",
-            "Arguments": {
-              "Bucket": "{% $Bucket %}",
-              "ObjectKey": "{% $ObjectKey %}",
-              "DatasetRevisionId": "{% $DatasetRevisionId %}",
-              "TxcFileAttributesId": "{% $fileAttributesEtl %}"
-            },
-            "Output": {
-              "ptiValidation": "{% $states.result %}"
-            },
-
-            "Catch": [
-              {
-                "ErrorEquals": ["States.ALL"],
-                "Next": "ExceptionHandler",
-                "Output": {
-                  "errorInfo": "{% $states.errorOutput %}"
-                }
-              }
-            ]
-          },
-          "EtlProcess": {
-            "Type": "Task",
-            "Next": "Success",
-            "Resource": "${EtlProcessLambdaArn}",
-            "Arguments": {
-              "Bucket": "{% $Bucket %}",
-              "ObjectKey": "{% $ObjectKey %}",
-              "DatasetRevisionId": "{% $DatasetRevisionId %}",
-              "fileAttributesId": "{% $fileAttributesEtl %}",
-              "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}"
-            },
-            "Output": {
-              "etlProcess": "{% $states.result %}"
-            },
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
@@ -304,7 +209,7 @@
     },
     "GenerateOutputZip": {
       "Type": "Task",
-      "Next": "DqsTrigger",
+      "Next": "Completed",
       "Resource": "${GenerateOutputZipLambdaArn}",
       "Arguments": {
         "MapRunArn": "{% $states.input.mapResults.MapRunArn %}",
@@ -325,17 +230,6 @@
           }
         }
       ]
-    },
-    "DqsTrigger": {
-      "Type": "Task",
-      "Next": "Completed",
-      "Resource": "arn:aws:states:::states:startExecution",
-      "Arguments": {
-        "StateMachineArn": "${DqsStateMachineArn}",
-        "Input": {
-          "DatasetRevisionId": "{% $datasetRevisionId %}"
-        }
-      }
     },
     "ParentExceptionHandler": {
       "Type": "Task",

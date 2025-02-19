@@ -34,46 +34,15 @@ Parameters:
     Description: 'Version to pass to Datadog APM'
 
 Conditions:
-  IsStandalone: !Equals [!Ref Environment, 'standalone']
-  IsNotStandalone: !Not [!Equals [!Ref Environment, 'standalone']]
   ## Remove conditions once isolated testing is completed and ETL is fully integrated into BODS
   IsNotTemp:
     !Not [!Equals [!Select ['2', !Split ['-', !Ref 'AWS::StackName']], 'temp']]
-  IsNotStandaloneOrTemp: !And [!Condition IsNotStandalone, !Condition IsNotTemp]
 
 Resources:
-  StandaloneResources:
-    Type: AWS::Serverless::Application
-    Condition: IsStandalone
-    Properties:
-      Location: './timetables-etl-standalone.yaml'
-      Parameters:
-        Environment: !Ref Environment
-        ProjectName: !Ref ProjectName
-
   PeriodicTasks:
     Type: AWS::Serverless::Application
     ## Revert back to `IsNotStandalone` once isolated testing is completed and ETL is fully integrated into BODS
-    Condition: IsNotStandaloneOrTemp
-    Properties:
-      Location: './periodic-tasks.yaml'
-      Parameters:
-        Environment: !Ref Environment
-        ProjectName: !Ref ProjectName
-        AvlConsumerApiBaseUrl: !Ref AvlConsumerApiBaseUrl
-        CavlConsumerUrl: !Ref CavlConsumerUrl
-        GtfsApiBaseUrl: !Ref GtfsApiBaseUrl
-        RdsDbHostAddr: !Ref RdsDbHostAddr
-        RdsDbPort: !Ref RdsDbPort
-        BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
-      Tags:
-        env: !Ref Environment
-        service: !Sub '${ProjectName}-periodic-tasks'
-
-  PeriodicTasksStandalone:
-    Type: AWS::Serverless::Application
-    Condition: IsStandalone
-    DependsOn: StandaloneResources
+    Condition: IsNotTemp
     Properties:
       Location: './periodic-tasks.yaml'
       Parameters:
@@ -91,7 +60,6 @@ Resources:
 
   TimetablesEtl:
     Type: AWS::Serverless::Application
-    Condition: IsNotStandalone
     Properties:
       Location: './timetables-etl.yaml'
       Parameters:
@@ -106,20 +74,22 @@ Resources:
         env: !Ref Environment
         service: !Sub '${ProjectName}-timetables-etl'
 
-  TimetablesEtlStandalone:
+  FaresEtl:
     Type: AWS::Serverless::Application
-    Condition: IsStandalone
-    DependsOn: StandaloneResources
+    DependsOn: TimetablesEtl
     Properties:
-      Location: './timetables-etl.yaml'
+      Location: './fares-etl.yaml'
       Parameters:
         Environment: !Ref Environment
         ProjectName: !Ref ProjectName
+        RdsDbHostAddr: !Ref RdsDbHostAddr
         RdsDbPort: !Ref RdsDbPort
         BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
+        DDGitData: !Ref DDGitData
+        Version: !Ref Version
       Tags:
         env: !Ref Environment
-        service: !Sub '${ProjectName}-timetables-etl'
+        service: !Sub '${ProjectName}-fares-etl'
 
   BoilerplateLambdaLayer:
     Type: AWS::Serverless::LayerVersion
