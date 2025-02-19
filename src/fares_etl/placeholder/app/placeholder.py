@@ -10,7 +10,7 @@ from structlog.stdlib import get_logger
 log = get_logger()
 
 
-def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, Any]:
+def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, Any]: # pylint: disable=unused-variable
     """
     Main lambda handler
     """
