@@ -190,6 +190,6 @@ class OrganisationTXCFileAttributes(BaseSQLModel):
     # Relationship to DQSTaskResults (Auto-deletes related records)
     dqs_task_results: Mapped[list["DQSTaskResults"]] = relationship(
         "DQSTaskResults",
-        back_populates="txc_file_attributes",
+        back_populates="transmodel_txcfileattributes",
         cascade="delete, merge, save-update",  # Automatically delete dependent records
     )
