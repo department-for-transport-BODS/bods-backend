@@ -3,7 +3,9 @@ ServicedOrganisationDayType Parsing
 """
 
 import pytest
-from common_layer.xml.txc.models import TXCServicedOrganisationDayType
+from common_layer.xml.txc.models.txc_operating_profile import (
+    TXCServicedOrganisationDayType,
+)
 from common_layer.xml.txc.parser.operating_profile import (
     parse_serviced_organisation_days,
 )

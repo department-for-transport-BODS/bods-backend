@@ -15,9 +15,9 @@ from .load import (
     load_serviced_organizations,
     load_tracks,
     load_transmodel_service,
-    load_transmodel_service_patterns,
     process_booking_arrangements,
 )
+from .load.servicepatterns import load_transmodel_service_patterns
 from .models import TaskData
 from .transform.stop_points import (
     create_stop_point_location_mapping,

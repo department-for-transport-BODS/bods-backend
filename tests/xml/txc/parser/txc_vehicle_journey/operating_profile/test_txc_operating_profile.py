@@ -5,7 +5,7 @@ Operating Profile Tests for Vehicle Journeys
 from datetime import date
 
 import pytest
-from common_layer.xml.txc.models import (
+from common_layer.xml.txc.models.txc_operating_profile import (
     TXCBankHolidayDays,
     TXCBankHolidayOperation,
     TXCDateRange,
