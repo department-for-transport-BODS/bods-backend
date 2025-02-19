@@ -13,7 +13,7 @@ from typing import (
     runtime_checkable,
 )
 
-from sqlalchemy import Column, Delete, Select, Table, delete, select
+from sqlalchemy import Column, Select, Table, delete, select
 from structlog.stdlib import get_logger
 
 from ..client import SqlDB
