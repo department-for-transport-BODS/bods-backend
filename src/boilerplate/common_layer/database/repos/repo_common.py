@@ -52,10 +52,6 @@ class BaseRepository(Generic[DBModelT]):
         """Build base query for the model"""
         return select(self._model)
 
-    def _build_delete_query(self) -> Delete[tuple[DBModelT]]:
-        """Build base delete query for the model"""
-        return delete(self._model)
-
     @handle_repository_errors
     def _fetch_one(self, statement: Select[tuple[DBModelT]]) -> DBModelT | None:
         with self._db.session_scope() as session:
