@@ -15,7 +15,6 @@ from common_layer.s3.utils import get_filename_from_object_key
 from lxml.etree import _Element  # type: ignore
 from lxml.etree import XMLSchema, XMLSyntaxError, parse
 from pydantic import BaseModel, ConfigDict, Field
-from pydantic_settings import BaseSettings
 from structlog.stdlib import get_logger
 
 from .constants import XMLDataType, XMLSchemaType
@@ -24,21 +23,6 @@ from .schema_loader import load_schema
 from .utils import get_xml_type
 
 log = get_logger()
-
-
-class SchemaCheckSettings(BaseSettings):
-    """
-    Configure schema check for FARES or TIMETABLES
-
-    TODO: Replace this with a field in SchemaCheckInputData
-    once Schema Check lambda is promoted to its own application
-    """
-
-    XML_DATA_TYPE: XMLDataType | None = Field(
-        default=None,
-        description="Type of check: FARES or TIMETABLES",
-        alias="SCHEMA_CHECK_XML_DATA_TYPE",
-    )
 
 
 class SchemaCheckInputData(BaseModel):
@@ -51,6 +35,9 @@ class SchemaCheckInputData(BaseModel):
     revision_id: int = Field(alias="DatasetRevisionId")
     s3_bucket_name: str = Field(alias="Bucket")
     s3_file_key: str = Field(alias="ObjectKey")
+    dataset_type: XMLDataType = Field(
+        default=XMLDataType.TIMETABLES, alias="DatasetType"
+    )
 
 
 def get_schema_violations(
@@ -134,14 +121,7 @@ def process_schema_check(
     xml_root = parse_xml_from_s3(input_data)
     schema_type, schema_version = get_xml_type(xml_root)
 
-    # TODO: Replace SchemaCheckSettings with input_data.SCHEMA_CHECK_XML_DATA_TYPE # pylint: disable=fixme
-    # once Lambda is promoted to its own application
-    settings = SchemaCheckSettings()
-    if settings.XML_DATA_TYPE is None:
-        msg = "Expected SCHEMA_CHECK_XML_DATA_TYPE is not set in environment variables."
-        log.error(msg)
-        raise ValueError(msg)
-    validate_schema_type(settings.XML_DATA_TYPE, schema_type)
+    validate_schema_type(input_data.dataset_type, schema_type)
 
     xml_schema = load_schema(schema_type, schema_version)
 
