@@ -5,7 +5,10 @@ Test Parsing Special Days Operations
 from datetime import date
 
 import pytest
-from common_layer.xml.txc.models import TXCDateRange, TXCSpecialDaysOperation
+from common_layer.xml.txc.models.txc_operating_profile import (
+    TXCDateRange,
+    TXCSpecialDaysOperation,
+)
 from common_layer.xml.txc.parser.operating_profile import (
     parse_date_range,
     parse_date_ranges,

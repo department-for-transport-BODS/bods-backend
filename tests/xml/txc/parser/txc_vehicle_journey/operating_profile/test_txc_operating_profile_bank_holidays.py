@@ -3,7 +3,10 @@ Bank Holiday VJ Parsing Tests
 """
 
 import pytest
-from common_layer.xml.txc.models import TXCBankHolidayDays, TXCBankHolidayOperation
+from common_layer.xml.txc.models.txc_operating_profile import (
+    TXCBankHolidayDays,
+    TXCBankHolidayOperation,
+)
 from common_layer.xml.txc.parser.operating_profile import (
     parse_bank_holiday_days,
     parse_bank_holiday_operation,

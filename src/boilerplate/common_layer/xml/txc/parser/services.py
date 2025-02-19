@@ -25,6 +25,7 @@ from ..models import (
     TXCService,
     TXCStandardService,
 )
+from .operating_profile import parse_operating_profile
 from .services_flexible import parse_flexible_service
 
 log = get_logger()
@@ -224,6 +225,13 @@ def parse_service(service_xml: _Element) -> TXCService | None:
     standard_service, flexible_service = parse_service_type(service_xml)
     mode = parse_transport_mode(service_xml)
 
+    operating_profile_xml = service_xml.find("OperatingProfile")
+    operating_profile = (
+        parse_operating_profile(operating_profile_xml)
+        if operating_profile_xml is not None
+        else None
+    )
+
     if (
         not isinstance(service_code, str)
         or not isinstance(registered_operator_ref, str)
@@ -250,6 +258,7 @@ def parse_service(service_xml: _Element) -> TXCService | None:
         PublicUse=public_use,
         StartDate=start_date,
         EndDate=end_date,
+        OperatingProfile=operating_profile,
         StandardService=standard_service,
         FlexibleService=flexible_service,
         Lines=lines,
