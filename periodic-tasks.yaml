@@ -37,14 +37,6 @@ Parameters:
 
 Conditions:
   IsNotLocal: !Not [!Equals [!Ref Environment, 'local']]
-  IsStandalone: !Equals [!Ref Environment, 'standalone']
-  IsUsingBodsInfra:
-    !Not [
-      !Or [
-        !Equals [!Ref Environment, 'local'],
-        !Equals [!Ref Environment, 'standalone'],
-      ],
-    ]
 
 Globals:
   Function:
@@ -55,7 +47,7 @@ Globals:
     MemorySize: 1024
     ReservedConcurrentExecutions: 3
     Layers:
-      - !Sub arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV3-python311-x86_64:5
+      - !Sub 'arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV3-python311-x86_64:5'
       - !Sub 'arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:53'
     LoggingConfig:
       LogFormat: JSON
@@ -71,28 +63,18 @@ Globals:
           - !Ref AWS::NoValue
 
     KmsKeyArn: !If
-      - IsUsingBodsInfra
+      - IsNotLocal
       - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-      - !If
-        - IsStandalone
-        - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
-        - !Ref AWS::NoValue
+      - !Ref AWS::NoValue
     VpcConfig: !If
-      - IsUsingBodsInfra
+      - IsNotLocal
       - SubnetIds:
           - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-0}}'
           - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-1}}'
           - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-2}}'
         SecurityGroupIds:
           - !GetAtt CommonLambdaSecurityGroup.GroupId
-      - !If
-        - IsStandalone
-        - SubnetIds:
-            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-subnet-1-id'
-            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-subnet-2-id'
-          SecurityGroupIds:
-            - !GetAtt CommonLambdaSecurityGroup.GroupId
-        - !Ref AWS::NoValue
+      - !Ref AWS::NoValue
 
 Resources:
   ###################################
@@ -181,44 +163,23 @@ Resources:
           CAVL_CONSUMER_URL: !Ref CavlConsumerUrl
           GTFS_API_BASE_URL: !Ref GtfsApiBaseUrl
           AWS_SIRIVM_STORAGE_BUCKET_NAME: !If
-            - IsUsingBodsInfra
+            - IsNotLocal
             - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
-            - !If
-              - IsStandalone
-              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-s3-bucket-name'
-              - !Ref AWS::NoValue
+            - !Ref AWS::NoValue
           # Database
           POSTGRES_HOST: !If
-            - IsUsingBodsInfra
+            - IsNotLocal
             - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
-            - !If
-              - IsStandalone
-              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-endpoint'
-              - !If
-                - IsNotLocal
-                - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
-                - !Ref RdsDbHostAddr
-          POSTGRES_PORT: !If
-            - IsUsingBodsInfra
-            - !Ref RdsDbPort
-            - !If
-              - IsStandalone
-              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-port'
-              - !Ref RdsDbPort
+            - !Ref RdsDbHostAddr
+          POSTGRES_PORT: !Ref RdsDbPort
           POSTGRES_DB: !If
-            - IsUsingBodsInfra
+            - IsNotLocal
             - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
-            - !If
-              - IsStandalone
-              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-db-name'
-              - !Ref RdsDbName
+            - !Ref RdsDbName
           POSTGRES_USER: !If
-            - IsUsingBodsInfra
+            - IsNotLocal
             - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
-            - !If
-              - IsStandalone
-              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-app-username'
-              - !Ref RdsDbUsername
+            - !Ref RdsDbUsername
 
       LoggingConfig:
         LogGroup: !Ref GenerateGtfsRtLambdaLogGroup
@@ -236,44 +197,23 @@ Resources:
         Variables:
           AVL_CONSUMER_API_BASE_URL: !Ref AvlConsumerApiBaseUrl
           AWS_SIRIVM_STORAGE_BUCKET_NAME: !If
-            - IsUsingBodsInfra
+            - IsNotLocal
             - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
-            - !If
-              - IsStandalone
-              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-s3-bucket-name'
-              - !Ref AWS::NoValue
+            - !Ref AWS::NoValue
           # Database
           POSTGRES_HOST: !If
-            - IsUsingBodsInfra
+            - IsNotLocal
             - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
-            - !If
-              - IsStandalone
-              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-endpoint'
-              - !If
-                - IsNotLocal
-                - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
-                - !Ref RdsDbHostAddr
-          POSTGRES_PORT: !If
-            - IsUsingBodsInfra
-            - !Ref RdsDbPort
-            - !If
-              - IsStandalone
-              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-port'
-              - !Ref RdsDbPort
+            - !Ref RdsDbHostAddr
+          POSTGRES_PORT: !Ref RdsDbPort
           POSTGRES_DB: !If
-            - IsUsingBodsInfra
+            - IsNotLocal
             - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
-            - !If
-              - IsStandalone
-              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-db-name'
-              - !Ref RdsDbName
+            - !Ref RdsDbName
           POSTGRES_USER: !If
-            - IsUsingBodsInfra
+            - IsNotLocal
             - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
-            - !If
-              - IsStandalone
-              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-app-username'
-              - !Ref RdsDbUsername
+            - !Ref RdsDbUsername
       LoggingConfig:
         LogGroup: !Ref GenerateSiriVmLambdaLogGroup
 
@@ -290,44 +230,23 @@ Resources:
         Variables:
           AVL_CONSUMER_API_BASE_URL: !Ref AvlConsumerApiBaseUrl
           AWS_SIRIVM_STORAGE_BUCKET_NAME: !If
-            - IsUsingBodsInfra
+            - IsNotLocal
             - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
-            - !If
-              - IsStandalone
-              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-s3-bucket-name'
-              - !Ref AWS::NoValue
+            - !Ref AWS::NoValue
           # Database
           POSTGRES_HOST: !If
-            - IsUsingBodsInfra
+            - IsNotLocal
             - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
-            - !If
-              - IsStandalone
-              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-proxy-endpoint'
-              - !If
-                - IsNotLocal
-                - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
-                - !Ref RdsDbHostAddr
-          POSTGRES_PORT: !If
-            - IsUsingBodsInfra
-            - !Ref RdsDbPort
-            - !If
-              - IsStandalone
-              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-port'
-              - !Ref RdsDbPort
+            - !Ref RdsDbHostAddr
+          POSTGRES_PORT: !Ref RdsDbPort
           POSTGRES_DB: !If
-            - IsUsingBodsInfra
+            - IsNotLocal
             - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
-            - !If
-              - IsStandalone
-              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-db-name'
-              - !Ref RdsDbName
+            - !Ref RdsDbName
           POSTGRES_USER: !If
-            - IsUsingBodsInfra
+            - IsNotLocal
             - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
-            - !If
-              - IsStandalone
-              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-app-username'
-              - !Ref RdsDbUsername
+            - !Ref RdsDbUsername
       LoggingConfig:
         LogGroup: !Ref GenerateSiriVmTflLambdaLogGroup
 
@@ -380,12 +299,9 @@ Resources:
         SSEEnabled: true
         SSEType: 'KMS'
         KMSMasterKeyId: !If
-          - IsUsingBodsInfra
+          - IsNotLocal
           - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-          - !If
-            - IsStandalone
-            - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
-            - !Ref AWS::NoValue
+          - !Ref AWS::NoValue
 
   ##############################
   #### IAM ROLES + POLICIES ####
@@ -408,19 +324,13 @@ Resources:
         - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
         - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
         - !If
-          - IsUsingBodsInfra
+          - IsNotLocal
           - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
-          - !If
-            - IsStandalone
-            - !Ref AWS::NoValue
-            - arn:aws:iam::aws:policy/AmazonRDSFullAccess
+          - arn:aws:iam::aws:policy/AmazonRDSFullAccess
         - !If
-          - IsUsingBodsInfra
+          - IsNotLocal
           - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
-          - !If
-            - IsStandalone
-            - !Ref AWS::NoValue
-            - arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess
+          - arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess
       Policies:
         - PolicyName: S3AndKMSPermissions
           PolicyDocument:
@@ -433,25 +343,16 @@ Resources:
                 Resource: !Sub
                   - '${BucketArn}/*'
                   - BucketArn: !If
-                      - IsUsingBodsInfra
+                      - IsNotLocal
                       - !Sub 'arn:aws:s3:::{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
-                      - !If
-                        - IsStandalone
-                        - Fn::Join:
-                            - ''
-                            - - 'arn:aws:s3:::'
-                              - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-s3-bucket-name'
-                        - 'arn:aws:s3:::*'
+                      - 'arn:aws:s3:::*'
               - Effect: Allow
                 Action:
                   - kms:GenerateDataKey
                 Resource: !If
-                  - IsUsingBodsInfra
+                  - IsNotLocal
                   - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-                  - !If
-                    - IsStandalone
-                    - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
-                    - '*'
+                  - '*'
 
   IteratorLambdaExecutionRole:
     Type: AWS::IAM::Role
@@ -522,12 +423,9 @@ Resources:
                   - kms:Decrypt
                   - kms:GenerateDataKey
                 Resource: !If
-                  - IsUsingBodsInfra
+                  - IsNotLocal
                   - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-                  - !If
-                    - IsStandalone
-                    - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
-                    - '*'
+                  - '*'
 
   #########################
   #### SECURITY GROUPS ####
@@ -543,12 +441,9 @@ Resources:
           Description: 'Allow outbound connectivity to any'
           CidrIp: '0.0.0.0/0'
       VpcId: !If
-        - IsUsingBodsInfra
+        - IsNotLocal
         - !Sub '{{resolve:ssm:/bodds/${Environment}/vpc-id}}'
-        - !If
-          - IsStandalone
-          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-vpc-id'
-          - !Ref AWS::NoValue
+        - !Ref AWS::NoValue
       Tags:
         - Key: Name
           Value: !Sub '${ProjectName}-${Environment}-${SubFunction}-common-lambda'
@@ -558,12 +453,9 @@ Resources:
     Condition: IsNotLocal
     Properties:
       GroupId: !If
-        - IsUsingBodsInfra
+        - IsNotLocal
         - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-sg-id}}'
-        - !If
-          - IsStandalone
-          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-rds-sg-id'
-          - !Ref AWS::NoValue
+        - !Ref AWS::NoValue
       Description: !Sub 'Allow inbound connectivity from ${ProjectName}-${Environment}-${SubFunction}-common-lambda'
       IpProtocol: tcp
       FromPort: 5432
@@ -578,12 +470,9 @@ Resources:
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-iterator-lambda'
       KmsKeyId: !If
-        - IsUsingBodsInfra
+        - IsNotLocal
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-        - !If
-          - IsStandalone
-          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
-          - !Ref AWS::NoValue
+        - !Ref AWS::NoValue
       RetentionInDays: 30
 
   GenerateGtfsRtLambdaLogGroup:
@@ -591,24 +480,18 @@ Resources:
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-generate-gtfsrt-lambda'
       KmsKeyId: !If
-        - IsUsingBodsInfra
+        - IsNotLocal
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-        - !If
-          - IsStandalone
-          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
-          - !Ref AWS::NoValue
+        - !Ref AWS::NoValue
       RetentionInDays: 30
   GenerateSiriVmLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-generate-sirivm-lambda'
       KmsKeyId: !If
-        - IsUsingBodsInfra
+        - IsNotLocal
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-        - !If
-          - IsStandalone
-          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
-          - !Ref AWS::NoValue
+        - !Ref AWS::NoValue
       RetentionInDays: 30
 
   GenerateSiriVmTflLambdaLogGroup:
@@ -616,12 +499,9 @@ Resources:
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-generate-sirivm-tfl-lambda'
       KmsKeyId: !If
-        - IsUsingBodsInfra
+        - IsNotLocal
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-        - !If
-          - IsStandalone
-          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
-          - !Ref AWS::NoValue
+        - !Ref AWS::NoValue
       RetentionInDays: 30
 
   PopulateDynamodbNaptanCacheLogGroup:
@@ -629,10 +509,7 @@ Resources:
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-populate-dynamodb-naptan-cache-lambda'
       KmsKeyId: !If
-        - IsUsingBodsInfra
+        - IsNotLocal
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-        - !If
-          - IsStandalone
-          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-standalone-kms-key-arn'
-          - !Ref AWS::NoValue
+        - !Ref AWS::NoValue
       RetentionInDays: 30
