@@ -174,18 +174,6 @@ class OrganisationTXCFileAttributesRepo(
         )
         return self._fetch_all(statement)
 
-    @handle_repository_errors
-    def delete_by_revision_id(self, revision_id: int) -> int:
-        """
-        Delete all TXCFileAttributes for a specific revision
-
-        Returns: number of deleted records
-        """
-        statement = self._build_delete_query().where(
-            self._model.revision_id == revision_id
-        )
-        return self._delete_all(statement)
-
 
 class OrganisationOrganisationRepo(BaseRepositoryWithId[OrganisationOrganisation]):
     """Repository for managing Organisation entities"""
