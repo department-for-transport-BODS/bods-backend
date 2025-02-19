@@ -10,10 +10,11 @@ from structlog.stdlib import get_logger
 log = get_logger()
 
 
-def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, Any]: # pylint: disable=unused-variable
+def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, Any]:
     """
     Main lambda handler
     """
+    input_data = event  # pylint: disable=unused-variable
     log.info("Placeholder Lambda - No functionality")
 
     return {"statusCode": 200, "body": "Successfully ran the placeholder lambda"}
