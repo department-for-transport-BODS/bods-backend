@@ -307,9 +307,6 @@ Resources:
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       MemorySize: 768
-      Environment:
-        Variables:
-          SCHEMA_CHECK_XML_DATA_TYPE: 'timetables'
       LoggingConfig:
         LogGroup: !Ref SchemaCheckLambdaLogGroup
 
