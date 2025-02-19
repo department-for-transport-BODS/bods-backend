@@ -4,11 +4,10 @@ Factories for Naptan Database Data
 
 import factory
 from common_layer.database.models.model_naptan import NaptanAdminArea, NaptanStopPoint
+from etl.app.helpers.types import StopsLookup
 from factory.fuzzy import FuzzyChoice
 from geoalchemy2.shape import from_shape
 from shapely import Point
-
-from timetables_etl.etl.app.helpers.types import StopsLookup
 
 
 class NaptanStopPointFactory(factory.Factory):

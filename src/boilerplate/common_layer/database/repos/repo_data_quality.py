@@ -32,18 +32,6 @@ class DataQualitySchemaViolationRepo(BaseRepositoryWithId[DataQualitySchemaViola
         statement = self._build_query().where(self._model.revision_id == revision_id)
         return self._fetch_all(statement)
 
-    @handle_repository_errors
-    def delete_by_revision_id(self, revision_id: int) -> int:
-        """
-        Delete all DataQualitySchemaViolations for a specific revision
-
-        Returns: number of deleted records
-        """
-        statement = self._build_delete_query().where(
-            self._model.revision_id == revision_id
-        )
-        return self._delete_all(statement)
-
 
 class DataQualityPostSchemaViolationRepo(
     BaseRepositoryWithId[DataQualityPostSchemaViolation]
@@ -63,18 +51,6 @@ class DataQualityPostSchemaViolationRepo(
         statement = self._build_query().where(self._model.revision_id == revision_id)
         return self._fetch_all(statement)
 
-    @handle_repository_errors
-    def delete_by_revision_id(self, revision_id: int) -> int:
-        """
-        Delete all DataQualityPostSchemaViolations for a specific revision
-
-        Returns: number of deleted records
-        """
-        statement = self._build_delete_query().where(
-            self._model.revision_id == revision_id
-        )
-        return self._delete_all(statement)
-
 
 class DataQualityPTIObservationRepo(BaseRepositoryWithId[DataQualityPTIObservation]):
     """
@@ -89,19 +65,7 @@ class DataQualityPTIObservationRepo(BaseRepositoryWithId[DataQualityPTIObservati
         self, revision_id: int
     ) -> list[DataQualityPTIObservation] | None:
         """
-        Retrieve all DataQualityPTIObservations for a specific revision
+        Retrieve all DataQualityPostSchemaViolation for a specific revision
         """
         statement = self._build_query().where(self._model.revision_id == revision_id)
         return self._fetch_all(statement)
-
-    @handle_repository_errors
-    def delete_by_revision_id(self, revision_id: int) -> int:
-        """
-        Delete all DataQualityPTIObservations for a specific revision
-
-        Returns: number of deleted records
-        """
-        statement = self._build_delete_query().where(
-            self._model.revision_id == revision_id
-        )
-        return self._delete_all(statement)
