@@ -94,7 +94,8 @@ def test_dataset_revision_publish_revision_success(
 
 def test_delete_by_revision_id(test_db):
     """
-    Test deleting TXCFileAttributes and related DQSTaskResults.
+    Test deleting TXCFileAttributes by revision id
+    Checks that objects and related objects are deleted as expected
     """
 
     revision_id = 42
@@ -107,7 +108,7 @@ def test_delete_by_revision_id(test_db):
         session.commit()
 
         # Insert related DQSTaskResults referencing TXCFileAttributes
-        # And
+        # And DQSReport objects referencing the DQSTaskResults
         dqs_task_results = []
         dqs_reports = []
         for txc in txc_file_attributes:

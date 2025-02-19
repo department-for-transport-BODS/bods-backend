@@ -192,4 +192,5 @@ class OrganisationTXCFileAttributes(BaseSQLModel):
         "DQSTaskResults",
         back_populates="transmodel_txcfileattributes",
         cascade="all, delete",
+        init=False,
     )
