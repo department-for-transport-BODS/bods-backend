@@ -7,10 +7,13 @@ from datetime import date
 from typing import Sequence
 
 from common_layer.database.client import SqlDB
-from common_layer.database.models.model_naptan import NaptanStopPoint
-from common_layer.database.models.model_transmodel import TransmodelServicePattern
-from common_layer.xml.txc.models.txc_data import TXCData
-from common_layer.xml.txc.models.txc_journey_pattern import TXCJourneyPatternSection
+from common_layer.database.models import NaptanStopPoint, TransmodelServicePattern
+from common_layer.xml.txc.models import (
+    TXCData,
+    TXCJourneyPatternSection,
+    TXCService,
+    TXCServicedOrganisation,
+)
 
 from ..helpers.dataclasses import ReferenceDataLookups
 from ..helpers.types import ServicedOrgLookup
@@ -44,4 +47,29 @@ class ProcessPatternStopsContext:
 
     jp_sections: list[TXCJourneyPatternSection]
     stop_sequence: Sequence[NaptanStopPoint]
+    db: SqlDB
+
+
+@dataclass
+class VehicleJourneyProcessingContext:
+    """Context for vehicle journey processing"""
+
+    service_pattern: TransmodelServicePattern
+    bank_holidays: dict[str, list[date]]
+    tm_serviced_orgs: ServicedOrgLookup
+    txc_serviced_orgs: list[TXCServicedOrganisation]
+    txc_services: list[TXCService]
+    db: SqlDB
+
+
+@dataclass
+class OperatingProfileProcessingContext:
+    """
+    Context Data required to create VJ Operating Profiles
+    """
+
+    bank_holidays: dict[str, list[date]]
+    tm_serviced_orgs: ServicedOrgLookup
+    txc_serviced_orgs_dict: dict[str, TXCServicedOrganisation]
+    txc_services: list[TXCService]
     db: SqlDB

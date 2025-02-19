@@ -6,7 +6,10 @@ from datetime import date
 
 import pytest
 from common_layer.xml.txc.models import (
+    TXCBankHolidayDays,
+    TXCBankHolidayOperation,
     TXCBookingArrangements,
+    TXCDaysOfWeek,
     TXCFixedStopUsage,
     TXCFlexibleJourneyPattern,
     TXCFlexibleService,
@@ -18,6 +21,7 @@ from common_layer.xml.txc.models import (
     TXCService,
     TXCStandardService,
 )
+from common_layer.xml.txc.models.txc_operating_profile import TXCOperatingProfile
 from common_layer.xml.txc.parser.services import parse_service
 from lxml import etree
 
@@ -84,6 +88,7 @@ from tests.xml.conftest import assert_model_equal
                 PublicUse=True,
                 StartDate=date(2024, 11, 11),
                 EndDate=date(2025, 1, 5),
+                OperatingProfile=None,
                 StandardService=TXCStandardService(
                     Origin="London",
                     Destination="Plymouth",
@@ -208,6 +213,36 @@ from tests.xml.conftest import assert_model_equal
                 RegisteredOperatorRef="O1",
                 PublicUse=True,
                 StartDate=date(2022, 1, 1),
+                OperatingProfile=TXCOperatingProfile(
+                    RegularDayType=TXCDaysOfWeek(
+                        Monday=True,
+                        Tuesday=False,
+                        Wednesday=False,
+                        Thursday=False,
+                        Friday=False,
+                        Saturday=False,
+                        Sunday=False,
+                        HolidaysOnly=False,
+                    ),
+                    BankHolidayOperation=TXCBankHolidayOperation(
+                        DaysOfOperation=TXCBankHolidayDays(),
+                        DaysOfNonOperation=TXCBankHolidayDays(
+                            ChristmasDay=True,
+                            BoxingDay=True,
+                            GoodFriday=True,
+                            NewYearsDay=True,
+                            LateSummerBankHolidayNotScotland=True,
+                            MayDay=True,
+                            EasterMonday=True,
+                            SpringBank=True,
+                            ChristmasDayHoliday=True,
+                            BoxingDayHoliday=True,
+                            NewYearsDayHoliday=True,
+                            ChristmasEve=True,
+                            NewYearsEve=True,
+                        ),
+                    ),
+                ),
                 Lines=[TXCLine(id="ARBB:PB0002032:467:53M", LineName="53M")],
                 FlexibleService=TXCFlexibleService(
                     Origin="Market Rasen",

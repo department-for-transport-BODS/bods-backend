@@ -9,6 +9,7 @@ from common_layer.xml.txc.models import (
     TXCJourneyPatternStopUsage,
     TXCJourneyPatternTimingLink,
 )
+from etl.app.helpers.types import StopsLookup
 
 from tests.factories.database.naptan import NaptanStopPointFactory
 from timetables_etl.etl.app.transform.utils_stops import (
@@ -291,7 +292,9 @@ class TestTerminalStops:
         """
         Pytest doesn't accept classes with init methods
         """
-        self.stop_mapping = NaptanStopPointFactory.create_mapping(STOP_MAPPING_DATA)
+        self.stop_mapping: StopsLookup = NaptanStopPointFactory.create_mapping(
+            STOP_MAPPING_DATA
+        )
 
     def test_get_terminal_stop_points(
         self,

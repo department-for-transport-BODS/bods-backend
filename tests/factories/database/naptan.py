@@ -4,6 +4,7 @@ Factories for Naptan Database Data
 
 import factory
 from common_layer.database.models.model_naptan import NaptanAdminArea, NaptanStopPoint
+from etl.app.helpers.types import StopsLookup
 from factory.fuzzy import FuzzyChoice
 from geoalchemy2.shape import from_shape
 from shapely import Point
@@ -31,9 +32,7 @@ class NaptanStopPointFactory(factory.Factory):
     stop_type = None
 
     @classmethod
-    def create_mapping(
-        cls, stop_data: list[tuple[str, str]]
-    ) -> dict[str, NaptanStopPoint]:
+    def create_mapping(cls, stop_data: list[tuple[str, str]]) -> StopsLookup:
         """Creates NaptanStopPoint mapping from list of (atco_code, common_name) tuples"""
         return {
             atco: cls.create(atco_code=atco, common_name=name)
@@ -44,7 +43,7 @@ class NaptanStopPointFactory(factory.Factory):
     def create_mapping_with_locations(
         cls,
         stop_data: list[tuple[str, str, tuple[float, float]]],
-    ) -> dict[str, NaptanStopPoint]:
+    ) -> StopsLookup:
         """
         Creates NaptanStopPoint mapping from list of (atco_code, common_name, (lat, lon)) tuples
         """

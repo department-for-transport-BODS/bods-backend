@@ -112,8 +112,25 @@ def get_elem_bool_default(xml_data: _Element, field_name: str, default: bool = F
 
 
 def get_tag_str(xml_data: _Element) -> str | None:
-    """Get the String of a tag"""
+    """
+    Get the String of a tag
+    This may have a namespace
+    E.g. "{http://www.siri.org.uk/siri}StopPoint"
+    """
     tag = xml_data.tag
     if isinstance(tag, QName):
         return tag.text
     return str(tag)
+
+
+def get_tag_name(elem: _Element) -> str | None:
+    """
+    Extract tag name without namespace.
+    E.g
+     - Tag: "{http://www.siri.org.uk/siri}StopPoint"
+     - Output: StopPoint
+    """
+    tag = get_tag_str(elem)
+    if tag and "}" in tag:
+        return tag.split("}")[-1]
+    return tag

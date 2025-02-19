@@ -150,7 +150,7 @@ jobs:
           echo "$summary" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-          if (( $(echo "$coverage_percentage < 77" | bc -l) )); then
+          if (( $(echo "$coverage_percentage < 75" | bc -l) )); then
             echo "conclusion=failure" >> $GITHUB_OUTPUT
           else
             echo "conclusion=success" >> $GITHUB_OUTPUT

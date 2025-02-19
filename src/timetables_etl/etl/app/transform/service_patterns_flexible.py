@@ -15,7 +15,8 @@ from geoalchemy2.shape import from_shape
 from shapely import LineString, Point
 from structlog.stdlib import get_logger
 
-from ..helpers import StopsLookup
+from ..helpers.dataclasses import NonExistentNaptanStop
+from ..helpers.types import StopsLookup
 from .service_pattern_metadata import PatternMetadata, make_service_pattern_id
 
 log = get_logger()
@@ -52,8 +53,9 @@ def generate_flexible_pattern_geometry(
     """
     route_points: list[Point] = []
     for stop in stops:
-        if stop in stop_mapping:
-            route_points.append(stop_mapping[stop].shape)
+        stop_data = stop_mapping[stop]
+        if not isinstance(stop_data, NonExistentNaptanStop):
+            route_points.append(stop_data.shape)
 
     if len(route_points) < 2:
         log.warning(

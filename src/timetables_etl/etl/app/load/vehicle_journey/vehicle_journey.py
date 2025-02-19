@@ -2,10 +2,8 @@
 Transmodel Vehicle Journeys
 """
 
-from datetime import date
 from typing import TypeGuard
 
-from common_layer.database.client import SqlDB
 from common_layer.database.models import TransmodelVehicleJourney
 from common_layer.database.repos import (
     TransmodelFlexibleServiceOperationPeriodRepo,
@@ -16,12 +14,10 @@ from common_layer.xml.txc.models import (
     TXCFlexibleJourneyPattern,
     TXCFlexibleVehicleJourney,
     TXCJourneyPattern,
-    TXCServicedOrganisation,
     TXCVehicleJourney,
 )
 from structlog.stdlib import get_logger
 
-from ...helpers import ServicedOrgLookup
 from ...load.service_pattern_stop import (
     process_flexible_pattern_stops,
     process_pattern_stops,
@@ -31,11 +27,9 @@ from ...transform.vehicle_journeys import (
     generate_pattern_vehicle_journeys,
 )
 from ..models_context import (
+    OperatingProfileProcessingContext,
     ProcessPatternStopsContext,
     ServicePatternVehicleJourneyContext,
-)
-from .models_context import (
-    OperatingProfileProcessingContext,
     VehicleJourneyProcessingContext,
 )
 from .vehicle_journey_operating_profile import process_operating_profile
@@ -61,20 +55,20 @@ def process_vehicle_journey_operations(
     journey_results: list[
         tuple[TransmodelVehicleJourney, TXCVehicleJourney | TXCFlexibleVehicleJourney]
     ],
-    bank_holidays: dict[str, list[date]],
-    tm_serviced_orgs: ServicedOrgLookup,
-    txc_serviced_orgs: list[TXCServicedOrganisation],
-    db: SqlDB,
+    context: VehicleJourneyProcessingContext,
 ) -> None:
     """
     Process and save operations data for vehicle journeys
     """
-    txc_serviced_orgs_dict = {org.OrganisationCode: org for org in txc_serviced_orgs}
-    context = OperatingProfileProcessingContext(
-        bank_holidays=bank_holidays,
-        tm_serviced_orgs=tm_serviced_orgs,
+    txc_serviced_orgs_dict = {
+        org.OrganisationCode: org for org in context.txc_serviced_orgs
+    }
+    operating_profile_context = OperatingProfileProcessingContext(
+        bank_holidays=context.bank_holidays,
+        tm_serviced_orgs=context.tm_serviced_orgs,
         txc_serviced_orgs_dict=txc_serviced_orgs_dict,
-        db=db,
+        txc_services=context.txc_services,
+        db=context.db,
     )
 
     log.debug(
@@ -83,15 +77,15 @@ def process_vehicle_journey_operations(
     for tm_vj, txc_vj in journey_results:
         match txc_vj:
             case TXCVehicleJourney():
-                process_operating_profile(tm_vj, txc_vj, context)
+                process_operating_profile(tm_vj, txc_vj, operating_profile_context)
             case TXCFlexibleVehicleJourney():
                 flexible_operating_periods = generate_flexible_service_operation_period(
                     tm_vj, txc_vj
                 )
                 if flexible_operating_periods:
-                    TransmodelFlexibleServiceOperationPeriodRepo(db).bulk_insert(
-                        flexible_operating_periods
-                    )
+                    TransmodelFlexibleServiceOperationPeriodRepo(
+                        context.db
+                    ).bulk_insert(flexible_operating_periods)
             case _:
                 raise ValueError(f"Unknown vehicle journey type: {type(txc_vj)}")
 
@@ -125,10 +119,7 @@ def process_vehicle_journeys(
 
     process_vehicle_journey_operations(
         journey_results,
-        context.bank_holidays,
-        context.tm_serviced_orgs,
-        context.txc_serviced_orgs,
-        context.db,
+        context,
     )
 
     log.info(
@@ -167,6 +158,7 @@ def process_service_pattern_vehicle_journeys(
         bank_holidays=context.bank_holidays,
         tm_serviced_orgs=context.serviced_orgs,
         txc_serviced_orgs=txc.ServicedOrganisations,
+        txc_services=txc.Services,
         db=context.db,
     )
 
