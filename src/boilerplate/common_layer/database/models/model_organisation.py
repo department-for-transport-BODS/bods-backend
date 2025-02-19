@@ -6,6 +6,7 @@ SQLAlchemy Models
 from __future__ import annotations
 
 from datetime import date, datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     ARRAY,
@@ -17,9 +18,12 @@ from sqlalchemy import (
     String,
     UniqueConstraint,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .common import BaseSQLModel, TimeStampedMixin
+
+if TYPE_CHECKING:
+    from .model_dqs import DQSTaskResults
 
 
 class OrganisationDataset(TimeStampedMixin, BaseSQLModel):
@@ -182,3 +186,10 @@ class OrganisationTXCFileAttributes(BaseSQLModel):
     origin: Mapped[str] = mapped_column(String(512), nullable=False)
     hash: Mapped[str] = mapped_column(String(40), nullable=False)
     service_mode: Mapped[str] = mapped_column(String(20), nullable=False)
+
+    # Relationship to DQSTaskResults (Auto-deletes related records)
+    dqs_task_results: Mapped[list["DQSTaskResults"]] = relationship(
+        "DQSTaskResults",
+        back_populates="txc_file_attributes",
+        cascade="delete, merge, save-update",  # Automatically delete dependent records
+    )
