@@ -13,7 +13,7 @@ from typing import (
     runtime_checkable,
 )
 
-from sqlalchemy import Column, Delete, Select, Table, delete, select
+from sqlalchemy import Column, Select, Table, delete, select
 from structlog.stdlib import get_logger
 
 from ..client import SqlDB
@@ -51,10 +51,6 @@ class BaseRepository(Generic[DBModelT]):
     def _build_query(self) -> Select[tuple[DBModelT]]:
         """Build base query for the model"""
         return select(self._model)
-
-    def _build_delete_query(self) -> Delete[tuple[DBModelT]]:
-        """Build base delete query for the model"""
-        return delete(self._model)
 
     @handle_repository_errors
     def _fetch_one(self, statement: Select[tuple[DBModelT]]) -> DBModelT | None:
@@ -144,23 +140,6 @@ class BaseRepository(Generic[DBModelT]):
                 session.expunge(result)
             self._log.debug("Bulk inserting completed", inserted_count=len(results))
             return results
-
-    @handle_repository_errors
-    def _delete_all(self, delete_statement: Delete[tuple[DBModelT]]) -> int:
-        """
-        Deletes all records that match the given statement.
-
-        Returns: number of records deleted
-        """
-        self._log.debug(
-            "Deleting multiple records", record_type=type(self._model).__name__
-        )
-        with self._db.session_scope() as session:
-            result = session.execute(delete_statement)
-            session.commit()
-            deleted_count = result.rowcount
-            self._log.debug("Delete all completed", deleted_count=deleted_count)
-            return deleted_count
 
 
 class BaseRepositoryWithId(BaseRepository[DBModelT]):
