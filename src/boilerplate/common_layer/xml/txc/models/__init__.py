@@ -8,6 +8,16 @@ from .txc_journey_pattern import (
     TXCJourneyPatternStopUsage,
     TXCJourneyPatternTimingLink,
 )
+from .txc_operating_profile import (
+    TXCBankHolidayDays,
+    TXCBankHolidayOperation,
+    TXCDateRange,
+    TXCDaysOfWeek,
+    TXCOperatingProfile,
+    TXCPeriodicDayType,
+    TXCServicedOrganisationDayType,
+    TXCSpecialDaysOperation,
+)
 from .txc_operator import TXCOperator
 from .txc_route import (
     TXCLocation,
@@ -74,15 +84,7 @@ from .txc_types import (
     TXCStopTypeT,
 )
 from .txc_vehicle_journey import (
-    TXCBankHolidayDays,
-    TXCBankHolidayOperation,
-    TXCDateRange,
-    TXCDaysOfWeek,
     TXCLayoverPoint,
-    TXCOperatingProfile,
-    TXCPeriodicDayType,
-    TXCServicedOrganisationDayType,
-    TXCSpecialDaysOperation,
     TXCVehicleJourney,
     TXCVehicleJourneyStopUsageStructure,
     TXCVehicleJourneyTimingLink,

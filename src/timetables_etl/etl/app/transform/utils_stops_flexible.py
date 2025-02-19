@@ -9,7 +9,7 @@ from common_layer.xml.txc.helpers.service import extract_flexible_pattern_stop_r
 from common_layer.xml.txc.models import TXCFlexibleJourneyPattern
 from structlog.stdlib import get_logger
 
-from ..helpers import StopsLookup
+from ..helpers import NonExistentNaptanStop, StopsLookup
 
 log = get_logger()
 
@@ -25,14 +25,20 @@ def map_stop_refs_to_naptan(
     stops: list[NaptanStopPoint] = []
 
     for stop_ref in stop_refs:
-        if stop_ref in atco_location_mapping:
-            stops.append(atco_location_mapping[stop_ref])
-        else:
+        if not stop_ref in atco_location_mapping:
+            msg = "Stop referenced in FlexibleJourneyPattern not found in stop map"
+            log.error(msg, stop_id=stop_ref)  # pylint: disable=R0801
+            raise ValueError(msg)
+
+        stop_data = atco_location_mapping[stop_ref]
+        if isinstance(stop_data, NonExistentNaptanStop):
             log.warning(
-                "stop_ref_not_found_in_mapping",
+                "Skipping NonExistentNaptanStop in atco_location_mapping",
                 stop_ref=stop_ref,
                 journey_pattern_id=journey_pattern_id,
             )
+        else:
+            stops.append(stop_data)
 
     return stops
 

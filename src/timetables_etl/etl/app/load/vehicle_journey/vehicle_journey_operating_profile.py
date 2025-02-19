@@ -20,7 +20,7 @@ from ...transform.vehicle_journey_operations import (
     create_serviced_organisation_working_days,
     create_vehicle_journey_operations,
 )
-from .models_context import OperatingProfileProcessingContext
+from ..models_context import OperatingProfileProcessingContext
 
 log = get_logger()
 
@@ -36,9 +36,7 @@ def process_operating_profile(
     operations = create_vehicle_journey_operations(
         txc_vj=txc_vj,
         tm_vj=tm_vj,
-        bank_holidays=context.bank_holidays,
-        tm_serviced_orgs=context.tm_serviced_orgs,
-        txc_serviced_orgs=context.txc_serviced_orgs_dict,
+        context=context,
     )
 
     if operations.operating_profiles:

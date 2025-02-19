@@ -34,9 +34,12 @@ def process_single_file(config: TestConfig, file_path: Path) -> TimingStats:
 
     # Create stop_point_client with env set to dev (will use AWS profile instead of localstack)
     stop_point_client = NaptanStopPointDynamoDBClient(
-        NaptanDynamoDBSettings(PROJECT_ENV=ProjectEnvironment.DEVELOPMENT)
+        NaptanDynamoDBSettings(
+            PROJECT_ENV=ProjectEnvironment.DEVELOPMENT,
+            DYNAMODB_NAPTAN_STOP_POINT_TABLE_NAME="bods-backend-dev-naptan-stop-points-table",
+            DYNAMODB_ENDPOINT_URL="",
+        )
     )
-
     stats = TimingStats(file_path=file_path)
     start_time = time.time()
 

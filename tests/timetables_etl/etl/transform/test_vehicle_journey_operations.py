@@ -9,7 +9,10 @@ from common_layer.database.models import (
     TransmodelNonOperatingDatesExceptions,
     TransmodelOperatingDatesExceptions,
 )
-from common_layer.xml.txc.models import TXCBankHolidayDays, TXCBankHolidayOperation
+from common_layer.xml.txc.models.txc_operating_profile import (
+    TXCBankHolidayDays,
+    TXCBankHolidayOperation,
+)
 
 from tests.factories.database.transmodel import TransmodelVehicleJourneyFactory
 from timetables_etl.etl.app.transform.vehicle_journey_operations import (

@@ -3,7 +3,7 @@ Test PeriodicDayType Parsing
 """
 
 import pytest
-from common_layer.xml.txc.models import TXCPeriodicDayType
+from common_layer.xml.txc.models.txc_operating_profile import TXCPeriodicDayType
 from common_layer.xml.txc.parser.operating_profile import parse_periodic_days
 from lxml import etree
 

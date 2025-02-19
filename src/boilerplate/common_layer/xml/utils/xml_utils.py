@@ -2,7 +2,11 @@
 XML Parsing Utils
 """
 
-from lxml.etree import _Element  # type: ignore
+from io import BytesIO
+from pathlib import Path
+
+from lxml import etree
+from lxml.etree import _Element, _ElementTree, parse  # type: ignore
 from structlog.stdlib import get_logger
 
 log = get_logger()
@@ -18,3 +22,13 @@ def find_section(xml_data: _Element, section_name: str) -> _Element:
         log.warning(error_message, section=section_name)
         raise ValueError(error_message, section_name)
     return section
+
+
+def load_xml_tree(filename: Path | BytesIO) -> _ElementTree:
+    """
+    Load XML ElementTreee
+    """
+    log.info("Opening TXC file", filename=filename)
+    parser = etree.XMLParser()
+    tree = parse(filename, parser=parser)
+    return tree

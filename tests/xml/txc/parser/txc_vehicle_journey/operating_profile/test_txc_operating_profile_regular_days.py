@@ -3,7 +3,7 @@ Days of Week Section
 """
 
 import pytest
-from common_layer.xml.txc.models import TXCDaysOfWeek
+from common_layer.xml.txc.models.txc_operating_profile import TXCDaysOfWeek
 from common_layer.xml.txc.parser.operating_profile import parse_regular_days
 from lxml import etree
 from pydantic import ValidationError
