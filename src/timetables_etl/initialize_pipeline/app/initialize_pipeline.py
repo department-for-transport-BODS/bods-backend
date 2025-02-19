@@ -3,28 +3,26 @@ Lambda: InitializePipeline
 """
 
 from typing import Any
-from uuid import uuid4
 
 from aws_lambda_powertools.metrics import MetricUnit
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.aws import configure_metrics
 from common_layer.database.client import SqlDB
-from common_layer.database.models import (
-    DatasetETLTaskResult,
-    OrganisationDatasetRevision,
-    TaskState,
-)
-from common_layer.database.repos import (
-    ETLTaskResultRepo,
-    OrganisationDatasetRevisionRepo,
-)
+from common_layer.database.models import DatasetETLTaskResult
+from common_layer.database.repos import ETLTaskResultRepo
 from common_layer.dynamodb.client.cache import DynamoDBCache
 from common_layer.dynamodb.data_manager import FileProcessingDataManager
-from common_layer.enums import FeedStatus
-from common_layer.exceptions.pipeline_exceptions import PipelineException
 from common_layer.json_logging import configure_logging
 from pydantic import BaseModel
 from structlog.stdlib import get_logger
+
+from .db_operations import (
+    create_task_result,
+    delete_existing_txc_file_attributes,
+    delete_existing_validation_violations,
+    get_and_validate_revision,
+    update_revision_status,
+)
 
 metrics = configure_metrics()
 logger = get_logger()
@@ -95,6 +93,8 @@ def initialize_pipeline(
     revision = get_and_validate_revision(db, event.DatasetRevisionId)
 
     update_revision_status(db, revision)
+    delete_existing_validation_violations(db, revision.id)
+    delete_existing_txc_file_attributes(db, revision.id)
 
     task_result = create_task_result(db, revision.id)
 
