@@ -3,7 +3,7 @@ Exports
 """
 
 from .hashing import get_bytes_hash, get_file_hash
-from .xml_utils import find_section
+from .xml_utils import find_section, load_xml_tree
 from .xml_utils_attributes import (
     parse_creation_datetime,
     parse_modification,
@@ -22,12 +22,14 @@ from .xml_utils_tags import (
     get_element_int,
     get_element_text,
     get_element_texts,
+    get_tag_name,
     get_tag_str,
 )
 
 __all__ = [
     # Core XML utilities
     "find_section",
+    "load_xml_tree",
     # Attribute parsing utilities
     "parse_creation_datetime",
     "parse_modification",
@@ -45,6 +47,7 @@ __all__ = [
     "get_element_text",
     "get_element_texts",
     "get_tag_str",
+    "get_tag_name",
     "does_element_exist",
     # Hashing Functions
     "get_file_hash",
