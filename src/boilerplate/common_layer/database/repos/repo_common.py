@@ -146,7 +146,7 @@ class BaseRepository(Generic[DBModelT]):
             return results
 
     @handle_repository_errors
-    def _delete_all(self, delete_statement: Delete[tuple[DBModelT]]) -> int:
+    def _delete_all(self, select_statement: Select[tuple[DBModelT]]) -> int:
         """
         Deletes all records that match the given statement.
 
@@ -155,12 +155,19 @@ class BaseRepository(Generic[DBModelT]):
         self._log.debug(
             "Deleting multiple records", record_type=type(self._model).__name__
         )
+        row_count = 0
         with self._db.session_scope() as session:
-            result = session.execute(delete_statement)
+            # Records must be deleted one-by-one instead of bulk delete
+            # for SQLAlchemy to apply cascading deletes
+            # See: https://github.com/sqlalchemy/sqlalchemy/discussions/7974
+            # Consider applying DB level cascading deletes
+            results = session.execute(select_statement).scalars()
+            for result in results:
+                session.delete(result)
+                row_count += 1
+            self._log.debug("Delete all completed", deleted_count=row_count)
             session.commit()
-            deleted_count = result.rowcount
-            self._log.debug("Delete all completed", deleted_count=deleted_count)
-            return deleted_count
+            return row_count
 
 
 class BaseRepositoryWithId(BaseRepository[DBModelT]):

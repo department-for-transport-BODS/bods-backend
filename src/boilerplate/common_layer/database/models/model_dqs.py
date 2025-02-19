@@ -38,5 +38,7 @@ class DQSTaskResults(BaseSQLModel):
         relationship(
             "OrganisationTXCFileAttributes",
             back_populates="dqs_task_results",
+            # cascade="delete, merge, save-update",  # Automatically delete dependent records
+            cascade="all, delete",  # Automatically delete dependent records
         )
     )

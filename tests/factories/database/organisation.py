@@ -155,6 +155,8 @@ class OrganisationTXCFileAttributesFactory(factory.Factory):
     hash = factory.Faker("sha1")
     service_mode = "bus"
 
+    dqs_task_results = []
+
     @classmethod
     def create_with_id(cls, id_number: int, **kwargs) -> OrganisationTXCFileAttributes:
         """Creates file attributes with a specific ID"""

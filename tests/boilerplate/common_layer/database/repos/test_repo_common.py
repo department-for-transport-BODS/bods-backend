@@ -1,7 +1,7 @@
 from common_layer.database.models import NaptanAdminArea
 from common_layer.database.models.common import BaseSQLModel
 from common_layer.database.repos.repo_common import BaseRepositoryWithId
-from sqlalchemy import delete
+from sqlalchemy import select
 
 
 def assert_attributes(expected_attributes: dict, record: BaseSQLModel):
@@ -72,7 +72,7 @@ def test_delete_by_id(test_db):
 
 def test_delete_all(test_db):
     """
-    Test that _delete_all deletes all records satisfying the given delete statement from the db
+    Test that _delete_all deletes all records satisfying the given select statement from the db
     """
     model = NaptanAdminArea
     repo = BaseRepositoryWithId(test_db, model=model)
@@ -95,7 +95,7 @@ def test_delete_all(test_db):
         )
         assert len(records_in_db) == record_count
 
-    stmt = delete(model).where(model.traveline_region_id == "NE")
+    stmt = select(model).where(model.traveline_region_id == "NE")
     result = repo._delete_all(stmt)
 
     assert result == record_count, "Number of deleted rows returned"
@@ -116,6 +116,6 @@ def test_delete_all_no_records(test_db):
     """
     model = NaptanAdminArea
     repo = BaseRepositoryWithId(test_db, model=model)
-    stmt = delete(model).where(model.atco_code == "ATC001")
+    stmt = select(model).where(model.atco_code == "ATC001")
     result = repo._delete_all(stmt)
     assert result == 0

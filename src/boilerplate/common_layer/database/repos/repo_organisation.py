@@ -181,9 +181,7 @@ class OrganisationTXCFileAttributesRepo(
 
         Returns: number of deleted records
         """
-        statement = self._build_delete_query().where(
-            self._model.revision_id == revision_id
-        )
+        statement = self._build_query().where(self._model.revision_id == revision_id)
         return self._delete_all(statement)
 
 
