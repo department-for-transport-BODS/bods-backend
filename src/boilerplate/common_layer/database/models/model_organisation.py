@@ -106,6 +106,23 @@ class OrganisationDatasetRevision(TimeStampedMixin, BaseSQLModel):
     original_file_hash: Mapped[str] = mapped_column(String(40), nullable=False)
 
 
+class OrganisationDatasetMetadata(BaseSQLModel):
+    """
+    Organisation Dataset Metadata
+    """
+
+    __tablename__ = "organisation_datasetmetadata"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
+    schema_version: Mapped[str] = mapped_column(String(8), nullable=False)
+    revision_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("organisation_datasetrevision.id"),
+        nullable=False,
+        unique=True,
+    )
+
+
 class OrganisationOrganisation(TimeStampedMixin, BaseSQLModel):
     """
     Organisations

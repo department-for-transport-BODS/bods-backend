@@ -1,27 +1,27 @@
 version: "3.8"
 services:
-  clamav:
-    container_name: clamav
-    image: mkodockx/docker-clamav:alpine
-    ports:
-      - "3310:3310"
-    restart: unless-stopped
-    volumes:
-      - clamav-store:/var/lib/clamav
+  # clamav:
+  #   container_name: clamav
+  #   image: mkodockx/docker-clamav:alpine
+  #   ports:
+  #     - "3310:3310"
+  #   restart: unless-stopped
+  #   volumes:
+  #     - clamav-store:/var/lib/clamav
 
-  localstack:
-    container_name: ${LOCALSTACK_DOCKER_NAME:-localstack-main}
-    image: localstack/localstack
-    ports:
-      - "127.0.0.1:4566:4566"
-    environment:
-      - DEBUG=1
-    volumes:
-      - ${PWD}/localstack/scripts/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh:ro
-      - localstack-data:/var/lib/localstack"
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - lambda-local
+  # localstack:
+  #   container_name: ${LOCALSTACK_DOCKER_NAME:-localstack-main}
+  #   image: localstack/localstack
+  #   ports:
+  #     - "127.0.0.1:4566:4566"
+  #   environment:
+  #     - DEBUG=1
+  #   volumes:
+  #     - ${PWD}/localstack/scripts/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh:ro
+  #     - localstack-data:/var/lib/localstack"
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   networks:
+  #     - lambda-local
 
   postgres:
     container_name: postgres
@@ -35,15 +35,14 @@ services:
       POSTGRES_PASSWORD: password
 
     volumes:
-      - ${PWD}/sql/local:/docker-entrypoint-initdb.d:ro
       - postgres-data:/var/lib/postgresql/data
     restart: unless-stopped
     networks:
       - lambda-local
 
 volumes:
-  clamav-store:
-  localstack-data:
+  # clamav-store:
+  # localstack-data:
   postgres-data:
 
 networks:

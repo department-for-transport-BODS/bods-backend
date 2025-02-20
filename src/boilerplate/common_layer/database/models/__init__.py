@@ -9,6 +9,13 @@ from .model_data_quality import (
     DataQualityPTIObservation,
     DataQualitySchemaViolation,
 )
+from .model_fares import (
+    FaresDataCatalogueMetadata,
+    FaresMetadata,
+    FaresMetadataStops,
+    FaresValidation,
+    FaresValidationResult,
+)
 from .model_junction import (
     TransmodelServicePatternAdminAreas,
     TransmodelServicePatternLocality,
@@ -18,6 +25,7 @@ from .model_junction import (
 from .model_naptan import NaptanAdminArea, NaptanLocality, NaptanStopPoint
 from .model_organisation import (
     OrganisationDataset,
+    OrganisationDatasetMetadata,
     OrganisationDatasetRevision,
     OrganisationOrganisation,
     OrganisationTXCFileAttributes,
@@ -77,6 +85,7 @@ __all__ = [
     "OrganisationDatasetRevision",
     "OrganisationOrganisation",
     "OrganisationTXCFileAttributes",
+    "OrganisationDatasetMetadata",
     # Transmodel
     "TransmodelBankHolidays",
     "TransmodelBookingArrangements",
@@ -114,4 +123,10 @@ __all__ = [
     "DataQualitySchemaViolation",
     "DataQualityPostSchemaViolation",
     "DataQualityPTIObservation",
+    # Fares
+    "FaresDataCatalogueMetadata",
+    "FaresMetadata",
+    "FaresMetadataStops",
+    "FaresValidation",
+    "FaresValidationResult",
 ]

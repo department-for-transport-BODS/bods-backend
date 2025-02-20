@@ -2,9 +2,10 @@
 SQLAlchemy Models for tables prepended ui_ 
 """
 
-from common_layer.database.models.common import BaseSQLModel
 from sqlalchemy import Integer, Text
 from sqlalchemy.orm import Mapped, mapped_column
+
+from .common import BaseSQLModel
 
 
 class UiLta(BaseSQLModel):
