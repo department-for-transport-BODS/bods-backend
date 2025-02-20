@@ -68,7 +68,7 @@ class DQSTaskResults(BaseSQLModel):
         )
     )
 
-    dqs_report_id: Mapped[int | None] = mapped_column(
+    dataquality_report_id: Mapped[int | None] = mapped_column(
         Integer,
         ForeignKey(
             "dqs_report.id", deferrable=True, initially="DEFERRED", ondelete="cascade"
@@ -76,7 +76,7 @@ class DQSTaskResults(BaseSQLModel):
         nullable=True,
     )
 
-    dqs_report: Mapped[DQSReport] = relationship(
+    dataquality_report: Mapped[DQSReport] = relationship(
         DQSReport,
         back_populates="dqs_task_results",
         cascade="all, delete",  # Automatically delete dependent records

@@ -39,8 +39,8 @@ class DQSTaskResultsFactory(factory.Factory):
     transmodel_txcfileattributes_id = None
     transmodel_txcfileattributes = None
 
-    dqs_report_id = None
-    dqs_report = None
+    dataquality_report_id = None
+    dataquality_report = None
 
     @classmethod
     def create_with_id(cls, id_number: int, **kwargs) -> DQSTaskResults:
