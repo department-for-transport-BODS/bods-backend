@@ -19,8 +19,14 @@ class TransmodelServiceServicePattern(BaseSQLModel):
     __tablename__ = "transmodel_service_service_patterns"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
-    service_id: Mapped[int] = mapped_column(Integer, nullable=False)
-    servicepattern_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    service_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("transmodel_service.id", ondelete="CASCADE"), nullable=False
+    )
+    servicepattern_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("transmodel_servicepattern.id", ondelete="CASCADE"),
+        nullable=False,
+    )
 
 
 class TransmodelServicePatternLocality(BaseSQLModel):
@@ -33,7 +39,11 @@ class TransmodelServicePatternLocality(BaseSQLModel):
     __tablename__ = "transmodel_servicepattern_localities"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
-    servicepattern_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    servicepattern_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("transmodel_servicepattern.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     locality_id: Mapped[str] = mapped_column(String(8), nullable=False)
 
 
@@ -47,7 +57,11 @@ class TransmodelServicePatternAdminAreas(BaseSQLModel):
     __tablename__ = "transmodel_servicepattern_admin_areas"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
-    servicepattern_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    servicepattern_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("transmodel_servicepattern.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     adminarea_id: Mapped[int] = mapped_column(Integer, nullable=False)
 
 

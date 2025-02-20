@@ -26,6 +26,7 @@ from .common import BaseSQLModel
 if TYPE_CHECKING:
     from .model_organisation import OrganisationTXCFileAttributes
     from .model_transmodel_flexible import TransmodelBookingArrangements
+    from .model_transmodel_vehicle_journey import TransmodelVehicleJourney
 
 
 class TransmodelService(BaseSQLModel):
@@ -68,6 +69,14 @@ class TransmodelService(BaseSQLModel):
         init=False,
     )
 
+    service_patterns: Mapped[list["TransmodelServicePattern"]] = relationship(
+        "TransmodelServicePattern",
+        secondary="transmodel_service_service_patterns",
+        back_populates="services",
+        cascade="all, delete",
+        init=False,
+    )
+
 
 class TransmodelServicePattern(BaseSQLModel):
     """
@@ -89,6 +98,19 @@ class TransmodelServicePattern(BaseSQLModel):
     revision_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     line_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
+    services: Mapped[list["TransmodelService"]] = relationship(
+        "TransmodelService",
+        secondary="transmodel_service_service_patterns",
+        back_populates="service_patterns",
+        init=False,
+    )
+
+    vehicle_journeys: Mapped[list["TransmodelVehicleJourney"]] = relationship(
+        "TransmodelVehicleJourney",
+        back_populates="servicepattern",
+        cascade="all, delete",
+    )
+
 
 class TransmodelServicePatternStop(BaseSQLModel):
     """
@@ -102,7 +124,11 @@ class TransmodelServicePatternStop(BaseSQLModel):
     sequence_number: Mapped[int] = mapped_column(Integer, nullable=False)
     atco_code: Mapped[str] = mapped_column(String(255), nullable=False)
     naptan_stop_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    service_pattern_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    servicepattern_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("transmodel_servicepattern.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     departure_time: Mapped[time | None] = mapped_column(Time, nullable=True)
     is_timing_point: Mapped[bool] = mapped_column(Boolean, nullable=False)
     txc_common_name: Mapped[str | None] = mapped_column(String(255), nullable=True)

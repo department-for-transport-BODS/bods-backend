@@ -4,11 +4,15 @@ TM Vehicle Journey Models
 
 from datetime import date, time
 from enum import Enum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Date, ForeignKey, Integer, String, Time
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .common import BaseSQLModel
+
+if TYPE_CHECKING:
+    from .model_transmodel import TransmodelServicePattern
 
 
 class TMDayOfWeek(str, Enum):
@@ -39,7 +43,20 @@ class TransmodelVehicleJourney(BaseSQLModel):
     journey_code: Mapped[str | None] = mapped_column(String(255), nullable=True)
     line_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
     departure_day_shift: Mapped[bool] = mapped_column(Boolean, nullable=False)
-    service_pattern_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    servicepattern_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey(
+            "transmodel_servicepattern.id", ondelete="CASCADE"
+        ),  # Ensure cascading delete
+        nullable=True,
+    )
+    servicepattern: Mapped["TransmodelServicePattern"] = relationship(
+        "TransmodelServicePattern",
+        back_populates="vehicle_journeys",
+        cascade="all, delete",
+        init=False,
+    )
     block_number: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
 
