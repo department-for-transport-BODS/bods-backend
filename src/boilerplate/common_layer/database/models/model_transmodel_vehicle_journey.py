@@ -44,14 +44,14 @@ class TransmodelVehicleJourney(BaseSQLModel):
     line_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
     departure_day_shift: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
-    servicepattern_id: Mapped[int | None] = mapped_column(
+    service_pattern_id: Mapped[int | None] = mapped_column(
         Integer,
         ForeignKey(
             "transmodel_servicepattern.id", ondelete="CASCADE"
         ),  # Ensure cascading delete
         nullable=True,
     )
-    servicepattern: Mapped["TransmodelServicePattern"] = relationship(
+    service_pattern: Mapped["TransmodelServicePattern"] = relationship(
         "TransmodelServicePattern",
         back_populates="vehicle_journeys",
         cascade="all, delete",

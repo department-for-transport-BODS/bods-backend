@@ -107,8 +107,9 @@ class TransmodelServicePattern(BaseSQLModel):
 
     vehicle_journeys: Mapped[list["TransmodelVehicleJourney"]] = relationship(
         "TransmodelVehicleJourney",
-        back_populates="servicepattern",
+        back_populates="service_pattern",
         cascade="all, delete",
+        init=False,
     )
 
 
