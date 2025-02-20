@@ -27,10 +27,20 @@ def get_pattern_stops(
     """
     stops: list[NaptanStopPoint] = []
 
-    for jps_id in jp.JourneyPatternSectionRefs:
+    for i, jps_id in enumerate(jp.JourneyPatternSectionRefs):
         jps = get_jps_by_id(jps_id, journey_pattern_sections)
         stop_refs = get_stops_from_journey_pattern_section(jps)
+
         for stop_ref in stop_refs:
+            # If this is a connecting section, skip the first stop as it's the same as
+            # the last stop of the previous section
+            if (
+                i > 0
+                and stop_ref == stops[-1].atco_code
+                and stop_refs.index(stop_ref) == 0
+            ):
+                continue
+
             stop_data = atco_location_mapping[stop_ref]
             if isinstance(stop_data, NonExistentNaptanStop):
                 log.warning(
