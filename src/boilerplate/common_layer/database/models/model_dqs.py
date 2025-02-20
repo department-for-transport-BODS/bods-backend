@@ -34,7 +34,7 @@ class DQSReport(BaseSQLModel):
 
     dqs_task_results: Mapped[list["DQSTaskResults"]] = relationship(
         "DQSTaskResults",
-        back_populates="dqs_report",
+        back_populates="dataquality_report",
         init=False,
     )
 
