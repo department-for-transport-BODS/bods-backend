@@ -3,11 +3,15 @@ Transmodel Tables for handling Flexible Services
 """
 
 from datetime import datetime, time
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, Time
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .common import BaseSQLModel
+
+if TYPE_CHECKING:
+    from .model_transmodel import TransmodelService
 
 
 class TransmodelFlexibleServiceOperationPeriod(BaseSQLModel):
@@ -39,4 +43,8 @@ class TransmodelBookingArrangements(BaseSQLModel):
     )
     service_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("transmodel_service.id"), nullable=False
+    )
+
+    service: Mapped["TransmodelService"] = relationship(
+        "TransmodelService", back_populates="booking_arrangements", init=False
     )

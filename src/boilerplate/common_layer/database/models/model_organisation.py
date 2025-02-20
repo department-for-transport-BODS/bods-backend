@@ -24,6 +24,7 @@ from .common import BaseSQLModel, TimeStampedMixin
 
 if TYPE_CHECKING:
     from .model_dqs import DQSTaskResults
+    from .model_transmodel import TransmodelService
 
 
 class OrganisationDataset(TimeStampedMixin, BaseSQLModel):
@@ -191,6 +192,12 @@ class OrganisationTXCFileAttributes(BaseSQLModel):
     dqs_task_results: Mapped[list["DQSTaskResults"]] = relationship(
         "DQSTaskResults",
         back_populates="transmodel_txcfileattributes",
+        cascade="all, delete",
+        init=False,
+    )
+    transmodel_services: Mapped[list["TransmodelService"]] = relationship(
+        "TransmodelService",
+        back_populates="txcfileattributes",
         cascade="all, delete",
         init=False,
     )

@@ -5,14 +5,27 @@ SQL Alchemy models for tables starting with transmodel_
 from __future__ import annotations
 
 from datetime import date, time
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from geoalchemy2 import Geometry, WKBElement
-from sqlalchemy import Boolean, Date, Integer, String, Text, Time, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    Date,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    Time,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import ARRAY
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .common import BaseSQLModel
+
+if TYPE_CHECKING:
+    from .model_organisation import OrganisationTXCFileAttributes
+    from .model_transmodel_flexible import TransmodelBookingArrangements
 
 
 class TransmodelService(BaseSQLModel):
@@ -34,7 +47,26 @@ class TransmodelService(BaseSQLModel):
     )
     end_date: Mapped[date | None] = mapped_column(Date)
     revision_id: Mapped[int | None] = mapped_column(Integer)
-    txcfileattributes_id: Mapped[int | None] = mapped_column(Integer)
+
+    txcfileattributes_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("organisation_txcfileattributes.id", ondelete="CASCADE"),
+        nullable=True,
+    )
+
+    txcfileattributes: Mapped["OrganisationTXCFileAttributes"] = relationship(
+        "OrganisationTXCFileAttributes",
+        back_populates="transmodel_services",
+        cascade="all, delete",
+        init=False,
+    )
+
+    booking_arrangements: Mapped[list["TransmodelBookingArrangements"]] = relationship(
+        "TransmodelBookingArrangements",
+        back_populates="service",
+        cascade="all, delete",
+        init=False,
+    )
 
 
 class TransmodelServicePattern(BaseSQLModel):
