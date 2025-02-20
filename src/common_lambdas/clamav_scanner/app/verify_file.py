@@ -5,9 +5,8 @@ Functions to Verify the Zip meets ingest Requirements
 import zipfile
 from pathlib import Path
 
+from common_layer.exceptions.zip_file_exceptions import NestedZipForbidden, ZipTooLarge
 from structlog.stdlib import get_logger
-
-from .exceptions import NestedZipForbidden, ZipTooLarge
 
 log = get_logger()
 
@@ -71,17 +70,20 @@ def check_zip_uncompressed_size(
         return False, 0
 
 
-def verify_zip_file(path: Path) -> None:
+def verify_zip_file(path: Path, filename: str) -> None:
     """
     Verify that the Zip file meets requirements
+
+    :param path: The downloaded S3 file path
+    :param filename: The filename for error reporting
     """
     nested_zip_result, _ = check_for_nested_zips(path)
     if nested_zip_result:
-        raise NestedZipForbidden
+        raise NestedZipForbidden(filename)
 
     uncompressed_size_result, total_size = check_zip_uncompressed_size(path)
     if not uncompressed_size_result:
-        raise ZipTooLarge
+        raise ZipTooLarge(filename)
     log.info(
         "Zip File Verification Passed", path=path, total_uncompressed_size=total_size
     )

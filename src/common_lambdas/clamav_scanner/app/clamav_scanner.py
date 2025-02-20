@@ -3,6 +3,7 @@ Description: Module to scan incoming s3 file object for vulnerabilities.
 Lambda handle is triggered by S3 event
 """
 
+import json
 import shutil
 from pathlib import Path
 from typing import Any
@@ -12,7 +13,9 @@ from common_layer.database.client import SqlDB
 from common_layer.database.repos.repo_etl_task import ETLTaskResultRepo
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
+from common_layer.exceptions.file_exceptions import ValidationException
 from common_layer.s3 import S3
+from common_layer.s3.utils import get_filename_from_object_key
 from structlog.stdlib import get_logger
 
 from .av_scan import av_scan_file, get_clamav_config
@@ -68,13 +71,13 @@ def download_and_verify_s3_file(
 
 
 def verify_and_extract(
-    s3_handler: S3, downloaded_file_path: Path, request_id: str
+    s3_handler: S3, downloaded_file_path: Path, filename: str, request_id: str
 ) -> str:
     """
     Scan and extract eh files
     """
     if downloaded_file_path.suffix.lower() == ".zip":
-        verify_zip_file(downloaded_file_path)
+        verify_zip_file(downloaded_file_path, filename)
     s3_output_folder = make_output_folder_name(downloaded_file_path, request_id)
     generated_prefix = unzip_and_upload_files(
         s3_handler, downloaded_file_path, s3_output_folder
@@ -101,8 +104,14 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
         calculate_and_update_file_hash(db, input_data, downloaded_file_path)
         av_scan_file(clam_av_config, downloaded_file_path)
 
+        filename = get_filename_from_object_key(input_data.s3_file_key)
+        if not filename:
+            msg = "Could not extract filename from s3_file_key"
+            log.error(msg, object_key=input_data.s3_file_key)
+            raise ValueError(msg)
+
         generated_prefix = verify_and_extract(
-            s3_handler, downloaded_file_path, context.aws_request_id
+            s3_handler, downloaded_file_path, filename, context.aws_request_id
         )
 
         msg = (
@@ -120,6 +129,13 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
                 "generatedPrefix": generated_prefix,
             },
         }
+
+    except ValidationException as e:
+        log.error(
+            "Validation error occurred", error_message=e.message, error_code=e.code
+        )
+        # Raise formatted exception with the correct structure
+        raise Exception(json.dumps(e.to_dict()))
 
     finally:
         # Clean up the temp file
