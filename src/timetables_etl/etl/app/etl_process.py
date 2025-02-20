@@ -24,7 +24,8 @@ from common_layer.xml.txc.parser.parser_txc import load_xml_data, parse_txc_from
 from lxml.etree import _Element
 from structlog.stdlib import get_logger
 
-from .models import ETLInputData, ETLProcessStats, TaskData
+from .metrics import create_datadog_metrics
+from .models import ETLInputData, TaskData
 from .pipeline import transform_data
 
 log = get_logger()
@@ -88,22 +89,6 @@ def extract_txc_data(s3_bucket: str, s3_key: str) -> TXCData:
     return txc_data
 
 
-def create_datadog_metrics(stats: ETLProcessStats) -> None:
-    """
-    Send Metrics
-    """
-    metrics.add_metric(name="ProcessedCountServices", value=stats.services)
-    metrics.add_metric(
-        name="ProcessedCountBookingArrangements", value=stats.booking_arrangements
-    )
-    metrics.add_metric(
-        name="ProcessedCountServicePatterns", value=stats.booking_arrangements
-    )
-    metrics.add_metric(
-        name="ProcessedCountVehicleJourneys", value=stats.pattern_stats.vehicle_journeys
-    )
-
-
 @metrics.log_metrics
 @file_processing_result_to_db(step_name=StepName.ETL_PROCESS)
 def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, Any]:
@@ -118,5 +103,5 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, 
 
     task_data = get_task_data(input_data, db)
     stats = transform_data(txc_data, task_data, db, stop_point_client)
-    create_datadog_metrics(stats)
+    create_datadog_metrics(metrics, stats)
     return {"status_code": 200, "message": "ETL Completed", "stats": stats.model_dump()}
