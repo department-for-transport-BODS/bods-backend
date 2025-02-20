@@ -93,7 +93,7 @@ def handle_error(
     revision = fetch_revision(db, task_result.revision_id)
 
     updated_task = update_failure_state(
-        task_result, event_data.cause.error_message, error_code=event_data.error_code, step_name
+        task_result, event_data.cause.error_message, error_code=event_data.error_code
     )
 
     if updated_task.status == TaskState.FAILURE:
