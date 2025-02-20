@@ -18,7 +18,7 @@ from .load import (
     process_booking_arrangements,
 )
 from .load.servicepatterns import load_transmodel_service_patterns
-from .models import TaskData
+from .models import ETLProcessStats, TaskData
 from .transform.stop_points import (
     create_stop_point_location_mapping,
     get_naptan_stops_from_dynamo,
@@ -61,17 +61,24 @@ def transform_data(
     task_data: TaskData,
     db: SqlDB,
     stop_point_client: NaptanStopPointDynamoDBClient,
-):
+) -> ETLProcessStats:
     """
     Transform Parsed TXC XML Data into SQLAlchmeny Database Models to apply
     """
-
+    stats = ETLProcessStats()
     reference_data = build_lookup_data(txc, db, stop_point_client)
     for service in txc.Services:
 
         tm_service = load_transmodel_service(service, task_data, db)
-        process_booking_arrangements(service, tm_service, db)
-        service_patterns = load_transmodel_service_patterns(
+        booking_arrangements = process_booking_arrangements(service, tm_service, db)
+        service_patterns, pattern_stats = load_transmodel_service_patterns(
             service, txc, task_data, reference_data, db
         )
         link_service_to_service_patterns(tm_service, service_patterns, db)
+        stats.services += 1
+        stats.booking_arrangements += len(booking_arrangements)
+        stats.service_patterns += len(service_patterns)
+        stats.pattern_stats += pattern_stats
+
+    log.info("ETL Process Completed", stats=stats)
+    return stats

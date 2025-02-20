@@ -3,10 +3,11 @@ Convertion of Pydantic TXC Models to transmodel_bookingarrangements
 """
 
 from common_layer.database.client import SqlDB
-from common_layer.database.models import TransmodelService
-from common_layer.database.repos.repo_transmodel_flexible import (
-    TransmodelBookingArrangementsRepo,
+from common_layer.database.models import (
+    TransmodelBookingArrangements,
+    TransmodelService,
 )
+from common_layer.database.repos import TransmodelBookingArrangementsRepo
 from common_layer.xml.txc.models import TXCService
 from structlog.stdlib import get_logger
 
@@ -19,7 +20,7 @@ def process_booking_arrangements(
     txc_service: TXCService,
     tm_service: TransmodelService,
     db: SqlDB,
-):
+) -> list[TransmodelBookingArrangements]:
     """
     Process TXC Booking Arrangements
     """
