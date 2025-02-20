@@ -18,7 +18,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .common import BaseSQLModel
+from .common import BaseSQLModel, CreatedTimeStampMixin
 
 
 class FaresMetadata(BaseSQLModel):
@@ -139,7 +139,7 @@ class FaresValidation(BaseSQLModel):
     )
 
 
-class FaresValidationResult(BaseSQLModel):
+class FaresValidationResult(CreatedTimeStampMixin, BaseSQLModel):
     """Fares Validation Result Table"""
 
     __tablename__ = "fares_validator_faresvalidationresult"
@@ -151,7 +151,6 @@ class FaresValidationResult(BaseSQLModel):
     )
     count: Mapped[int] = mapped_column(Integer, nullable=False)
     report_file_name: Mapped[str] = mapped_column(String(256), nullable=False)
-    created: Mapped[date] = mapped_column(Date, nullable=False)
     organisation_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("organisation_organisation.id"),

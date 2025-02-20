@@ -1,3 +1,7 @@
+"""
+SQL Alchemy Repos for Tables prefixed with fares_
+"""
+
 from ..models import (
     FaresDataCatalogueMetadata,
     FaresMetadata,

@@ -118,8 +118,8 @@ class OrganisationDatasetMetadata(BaseSQLModel):
     revision_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("organisation_datasetrevision.id"),
-        nullable=False,
         unique=True,
+        nullable=False,
     )
 
 
