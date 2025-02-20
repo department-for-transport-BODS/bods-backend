@@ -3,7 +3,6 @@ Description: Module to scan incoming s3 file object for vulnerabilities.
 Lambda handle is triggered by S3 event
 """
 
-import json
 import shutil
 from pathlib import Path
 from typing import Any
@@ -13,7 +12,6 @@ from common_layer.database.client import SqlDB
 from common_layer.database.repos.repo_etl_task import ETLTaskResultRepo
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
-from common_layer.exceptions.file_exceptions import ValidationException
 from common_layer.s3 import S3
 from common_layer.s3.utils import get_filename_from_object_key
 from structlog.stdlib import get_logger
@@ -129,13 +127,6 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
                 "generatedPrefix": generated_prefix,
             },
         }
-
-    except ValidationException as e:
-        log.error(
-            "Validation error occurred", error_message=e.message, error_code=e.code
-        )
-        # Raise formatted exception with the correct structure
-        raise Exception(json.dumps(e.to_dict()))
 
     finally:
         # Clean up the temp file

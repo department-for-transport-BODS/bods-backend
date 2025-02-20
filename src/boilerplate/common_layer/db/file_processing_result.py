@@ -258,7 +258,7 @@ def file_processing_result_to_db(step_name: StepName):
             except ValidationException as validation_error:
                 handle_lambda_error(step_name, processing_context, validation_error)
                 # Convert ValidationException so `Error` and `Cause` are correctly formatted
-                raise Exception(
+                raise Exception(  # pylint: disable=broad-exception-raised
                     json.dumps(validation_error.to_dict())
                 ) from validation_error
 
