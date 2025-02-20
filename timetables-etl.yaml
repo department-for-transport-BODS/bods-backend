@@ -173,9 +173,9 @@ Resources:
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-clamav-scanner-lambda'
-      Description: Timetables ETL - Antivirus and Extract Files to S3 for Individual File Processing
+      Description: Timetables / Fares ETL - Antivirus and Extract Files to S3 for Individual File Processing
       Role: !GetAtt CommonLambdaExecutionRole.Arn
-      CodeUri: ./src/timetables_etl/clamav_scanner
+      CodeUri: ./src/common_lambdas/clamav_scanner
       Handler: app.clamav_scanner.lambda_handler
       Layers:
         - !Ref BoilerplateLambdaLayerArn
@@ -222,17 +222,14 @@ Resources:
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-schema-check-lambda'
-      Description: Timetables ETL - FileProcessing - Validation Against TXC XSD Schema
+      Description: Timetables / Fares ETL - FileProcessing - Validation Against TXC XSD Schema
       Role: !GetAtt CommonLambdaExecutionRole.Arn
-      CodeUri: ./src/timetables_etl/schema_check
+      CodeUri: ./src/common_lambdas/schema_check
       Handler: app.schema_check.lambda_handler
       Timeout: 600
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       MemorySize: 768
-      Environment:
-        Variables:
-          TXC_XSD_PATH: 'TransXChange_general.xsd'
       LoggingConfig:
         LogGroup: !Ref SchemaCheckLambdaLogGroup
 
