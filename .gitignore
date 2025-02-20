@@ -68,6 +68,7 @@ venv.bak/
 src/timetables_etl/**/requirements.txt
 src/periodic_tasks/**/requirements.txt
 src/boilerplate/**/requirements.txt
+src/common_lambdas/**/requirements.txt
 
 # Ignore Generated CSVs from db_viewer
 data/
