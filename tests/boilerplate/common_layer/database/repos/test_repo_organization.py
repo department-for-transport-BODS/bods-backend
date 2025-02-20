@@ -115,7 +115,7 @@ def test_delete_by_revision_id(test_db):
             dqs_report = DQSReportFactory.create(revision_id=revision_id)
             dqs_reports.append(dqs_report)
             task_result = DQSTaskResultsFactory.create(
-                transmodel_txcfileattributes=txc, dqs_report=dqs_report
+                transmodel_txcfileattributes=txc, dataquality_report=dqs_report
             )
             dqs_task_results.append(task_result)
 
