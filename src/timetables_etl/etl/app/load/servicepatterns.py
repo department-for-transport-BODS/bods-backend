@@ -19,7 +19,7 @@ from common_layer.xml.txc.models import (
 from structlog.stdlib import get_logger
 
 from ..helpers import ReferenceDataLookups, StopsLookup
-from ..models import TaskData
+from ..models import PatternCommonStats, TaskData
 from ..transform.service_patterns import create_service_pattern
 from ..transform.utils_stops import get_pattern_stops
 from .models_context import ProcessPatternCommonContext
@@ -72,11 +72,12 @@ def process_standard_service_patterns(
     task_data: TaskData,
     lookups: ReferenceDataLookups,
     db: SqlDB,
-) -> list[TransmodelServicePattern]:
+) -> tuple[list[TransmodelServicePattern], PatternCommonStats]:
     """Process patterns for standard services"""
     patterns: list[TransmodelServicePattern] = []
+    stats = PatternCommonStats()
     if not service.StandardService:
-        return []
+        return [], stats
 
     service_pattern_context = ProcessServicePatternContext(
         revision=task_data.revision,
@@ -101,10 +102,10 @@ def process_standard_service_patterns(
             lookups=lookups,
         )
 
-        process_pattern_common(service, txc_jp, common_context)
+        stats += process_pattern_common(service, txc_jp, common_context)
         patterns.append(service_pattern)
 
-    return patterns
+    return patterns, stats
 
 
 def load_transmodel_service_patterns(
@@ -113,23 +114,25 @@ def load_transmodel_service_patterns(
     task_data: TaskData,
     lookups: ReferenceDataLookups,
     db: SqlDB,
-) -> list[TransmodelServicePattern]:
+) -> tuple[list[TransmodelServicePattern], PatternCommonStats]:
     """
     Generate and load transmodel service patterns for both standard and flexible services
     """
     patterns: list[TransmodelServicePattern] = []
-
+    stats = PatternCommonStats()
     if service.StandardService:
         log.info("Processing StandardService data", service_code=service.ServiceCode)
-        patterns.extend(
-            process_standard_service_patterns(service, txc, task_data, lookups, db)
+        service_patterns, stats = process_standard_service_patterns(
+            service, txc, task_data, lookups, db
         )
+        patterns.extend(service_patterns)
 
     if service.FlexibleService:
         log.info("Processing FlexibleService Data", service_code=service.ServiceCode)
-        patterns.extend(
-            process_flexible_service_patterns(service, txc, task_data, lookups, db)
+        service_patterns, stats = process_flexible_service_patterns(
+            service, txc, task_data, lookups, db
         )
+        patterns.extend(service_patterns)
 
     if not patterns:
         log.warning(
@@ -138,11 +141,11 @@ def load_transmodel_service_patterns(
             has_standard=service.StandardService is not None,
             has_flexible=service.FlexibleService is not None,
         )
-        return patterns
+        return patterns, stats
 
     log.info(
         "Loaded all Service Patterns",
         count=len(patterns),
         txc_service_code=service.ServiceCode,
     )
-    return patterns
+    return patterns, stats
