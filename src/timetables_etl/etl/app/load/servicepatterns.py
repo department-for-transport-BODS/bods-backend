@@ -59,8 +59,8 @@ def process_service_pattern(
 
     log.info(
         "Saved service pattern",
-        pattern_id=saved_pattern.service_pattern_id,
         db_id=saved_pattern.id,
+        pattern_id=saved_pattern.service_pattern_id,
     )
 
     return saved_pattern
