@@ -59,6 +59,13 @@ class TransmodelVehicleJourney(BaseSQLModel):
     )
     block_number: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
+    operating_profiles: Mapped[list["TransmodelOperatingProfile"]] = relationship(
+        "TransmodelOperatingProfile",
+        back_populates="vehicle_journey",
+        cascade="all, delete",
+        init=False,
+    )
+
 
 class TransmodelOperatingProfile(BaseSQLModel):
     """Transmodel Operating Profile Table"""
@@ -67,8 +74,16 @@ class TransmodelOperatingProfile(BaseSQLModel):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
     day_of_week: Mapped[TMDayOfWeek] = mapped_column(String(20), nullable=False)
-    vehicle_journey_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("transmodel_vehiclejourney.id"), nullable=False
+    vehicle_journey_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("transmodel_vehiclejourney.id", ondelete="CASCADE"),
+        nullable=True,
+    )
+    vehicle_journey: Mapped["TransmodelVehicleJourney"] = relationship(
+        "TransmodelVehicleJourney",
+        back_populates="operating_profiles",
+        cascade="all, delete",
+        init=False,
     )
 
 
