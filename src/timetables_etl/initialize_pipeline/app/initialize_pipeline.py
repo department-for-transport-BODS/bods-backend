@@ -36,49 +36,6 @@ class InitializePipelineEvent(BaseModel):
     DatasetRevisionId: int
 
 
-def get_and_validate_revision(
-    db: SqlDB, revision_id: int
-) -> OrganisationDatasetRevision:
-    """
-    Retrieves and validates the existence of a dataset revision.
-    """
-    revision_repo = OrganisationDatasetRevisionRepo(db)
-    revision = revision_repo.get_by_id(revision_id)
-    if revision is None:
-        raise PipelineException(f"DatasetRevision with id {revision_id} not found.")
-    return revision
-
-
-def update_revision_status(db: SqlDB, revision: OrganisationDatasetRevision) -> None:
-    """
-    Updates the revision status to indexing.
-    """
-    logger.debug(
-        "Setting OrganisationDatasetRevision Status to indexing",
-        dataset_revision_id=revision.id,
-    )
-    revision_repo = OrganisationDatasetRevisionRepo(db)
-    revision.transxchange_version = "2.4"
-    revision.status = FeedStatus.INDEXING.value
-    revision_repo.update(revision)
-
-
-def create_task_result(db: SqlDB, revision_id: int) -> DatasetETLTaskResult:
-    """
-    Creates a new ETL task result entry.
-    Returns:
-        ID of the created task result
-    """
-    task_result_repo = ETLTaskResultRepo(db)
-    task_result = DatasetETLTaskResult(
-        revision_id=revision_id,
-        status=TaskState.STARTED,
-        task_id=str(uuid4()),
-    )
-    created_task_result = task_result_repo.insert(task_result)
-    return created_task_result
-
-
 def initialize_pipeline(
     db: SqlDB, dynamodb: DynamoDBCache, event: InitializePipelineEvent
 ) -> DatasetETLTaskResult:

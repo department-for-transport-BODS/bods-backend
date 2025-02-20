@@ -51,6 +51,7 @@ def update_revision_status(db: SqlDB, revision: OrganisationDatasetRevision) -> 
         dataset_revision_id=revision.id,
     )
     revision_repo = OrganisationDatasetRevisionRepo(db)
+    revision.transxchange_version = "2.4"
     revision.status = FeedStatus.INDEXING.value
     revision_repo.update(revision)
 
