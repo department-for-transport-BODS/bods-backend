@@ -1,5 +1,5 @@
 """
-Tests for the Schema Check ETL
+Tests for Schema Check logic
 """
 
 from datetime import UTC, datetime
@@ -8,9 +8,12 @@ from unittest.mock import Mock
 import pytest
 from freezegun import freeze_time
 from lxml import etree
-from schema_check.app.schema_check import (
+
+from common_lambdas.schema_check.app.constants import XMLDataType, XMLSchemaType
+from common_lambdas.schema_check.app.schema_check import (
     create_violation_from_error,
     get_schema_violations,
+    validate_schema_type,
 )
 
 
@@ -145,3 +148,43 @@ def test_schema_validation(schema, revision_id, test_xml, expected_violations):
         assert violation.details == expected["details"]
         assert violation.revision_id == revision_id
         assert violation.created == frozen_time
+
+
+@pytest.mark.parametrize(
+    "data_type,detected_schema_type,expected_is_valid",
+    [
+        pytest.param(
+            XMLDataType.TIMETABLES,
+            XMLSchemaType.TRANSXCHANGE,
+            True,
+            id="Valid Timetables Schema",
+        ),
+        pytest.param(
+            XMLDataType.TIMETABLES,
+            XMLSchemaType.NETEX,
+            False,
+            id="Invalid Timetables Schema: NeTEx for Timetables not supported",
+        ),
+        pytest.param(
+            XMLDataType.FARES,
+            XMLSchemaType.NETEX,
+            True,
+            id="Valid Fares Schema",
+        ),
+        pytest.param(
+            XMLDataType.FARES,
+            XMLSchemaType.TRANSXCHANGE,
+            False,
+            id="Invalid Fares Schema: TransXChange for Fares not supported",
+        ),
+    ],
+)
+def test_validate_schema_type(data_type, detected_schema_type, expected_is_valid):
+    """
+    Test schema type validation
+    """
+    if expected_is_valid:
+        validate_schema_type(data_type, detected_schema_type)
+    else:
+        with pytest.raises(ValueError):
+            validate_schema_type(data_type, detected_schema_type)
