@@ -13,7 +13,6 @@ from structlog.stdlib import get_logger
 
 from src.common_lambdas.schema_check.app.schema_check import (
     SchemaCheckInputData,
-    SchemaCheckSettings,
     process_schema_check,
 )
 from tools.common.db_tools import dotenv_loader
@@ -71,12 +70,11 @@ def validate(
     if use_dotenv:
         dotenv_loader()
 
-    settings = SchemaCheckSettings()
     log.info(
-        "Running schema check for XML DATA TYPE:", data_type=settings.XML_DATA_TYPE
+        "Running schema check for XML DATA TYPE:",
     )
 
-    input = SchemaCheckInputData(
+    input_data = SchemaCheckInputData(
         DatasetRevisionId=revision_id,
         Bucket="dummy",
         ObjectKey="dummy",
@@ -89,7 +87,7 @@ def validate(
             "src.common_lambdas.schema_check.app.schema_check.parse_xml_from_s3",
             return_value=xml_doc,
         ):
-            violations = process_schema_check(input)
+            violations = process_schema_check(input_data)
 
         # Output results
         violation_count = len(violations)
