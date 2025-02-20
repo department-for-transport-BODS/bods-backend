@@ -93,7 +93,9 @@ def handle_error(
     revision = fetch_revision(db, task_result.revision_id)
 
     updated_task = update_failure_state(
-        task_result, event_data.cause.error_message, error_code=event_data.error_code
+        task_result,
+        event_data.cause.extracted_message,
+        error_code=event_data.cause.error_code,
     )
 
     if updated_task.status == TaskState.FAILURE:
@@ -113,7 +115,6 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
     parsed_event = ExceptionHandlerInputData(**event)
     log.error(
         parsed_event.cause.error_message,
-        error_code=parsed_event.error,
         error_details=parsed_event.cause,
     )
 

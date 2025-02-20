@@ -27,7 +27,7 @@ class ValidationException(Exception):
 
     def to_dict(self):
         """Convert the exception details to a dictionary for Step Functions."""
-        return {"Error": self.code, "Cause": self.message}
+        return {"ErrorCode": self.code, "Cause": self.message}
 
 
 class AntiVirusError(ValidationException):
