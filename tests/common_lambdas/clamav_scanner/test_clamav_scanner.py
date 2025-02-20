@@ -5,10 +5,11 @@ Clam AV Scanner Lambda Tests
 from unittest.mock import MagicMock, patch
 
 import pytest
-from clamav_scanner.app.av_scan import FileScanner, get_clamav_config
-from clamav_scanner.app.models import ClamAVConfig
-from clamav_scanner.app.s3_upload import process_file_to_s3
 from common_layer.exceptions.file_exceptions import SuspiciousFile
+
+from common_lambdas.clamav_scanner.app.av_scan import FileScanner, get_clamav_config
+from common_lambdas.clamav_scanner.app.models import ClamAVConfig
+from common_lambdas.clamav_scanner.app.s3_upload import process_file_to_s3
 
 
 @pytest.mark.parametrize(
@@ -102,7 +103,8 @@ def test_scan_file_no_threats_found(tmp_path):
     mock_clamav.instream.return_value = {"stream": ("OK", None)}
 
     with patch(
-        "clamav_scanner.app.av_scan.ClamdNetworkSocket", return_value=mock_clamav
+        "common_lambdas.clamav_scanner.app.av_scan.ClamdNetworkSocket",
+        return_value=mock_clamav,
     ):
         scanner = FileScanner(clamav_config)
         scanner.scan(test_file)
@@ -118,7 +120,8 @@ def test_scan_file_threats_found(tmp_path):
     mock_clamav.instream.return_value = {"stream": ("FOUND", "Eicar-Test-Signature")}
 
     with patch(
-        "clamav_scanner.app.av_scan.ClamdNetworkSocket", return_value=mock_clamav
+        "common_lambdas.clamav_scanner.app.av_scan.ClamdNetworkSocket",
+        return_value=mock_clamav,
     ):
         scanner = FileScanner(clamav_config)
         with pytest.raises(SuspiciousFile) as exc_info:

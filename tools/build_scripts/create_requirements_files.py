@@ -12,7 +12,11 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 PYPROJECT_PATH = ROOT_DIR / "pyproject.toml"
-LAMBDA_BASE_DIRS = [ROOT_DIR / "src/timetables_etl", ROOT_DIR / "src/periodic_tasks"]
+LAMBDA_BASE_DIRS = [
+    ROOT_DIR / "src/timetables_etl",
+    ROOT_DIR / "src/periodic_tasks",
+    ROOT_DIR / "src/common_lambdas",
+]
 BOILERPLATE_LAYER_DIR = ROOT_DIR / "src/boilerplate"
 
 
