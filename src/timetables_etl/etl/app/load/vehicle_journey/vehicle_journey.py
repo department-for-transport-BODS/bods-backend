@@ -4,7 +4,10 @@ Transmodel Vehicle Journeys
 
 from typing import TypeGuard
 
-from common_layer.database.models import TransmodelVehicleJourney
+from common_layer.database.models import (
+    TransmodelServicePatternStop,
+    TransmodelVehicleJourney,
+)
 from common_layer.database.repos import (
     TransmodelFlexibleServiceOperationPeriodRepo,
     TransmodelVehicleJourneyRepo,
@@ -136,7 +139,7 @@ def process_service_pattern_vehicle_journeys(
     txc: TXCData,
     txc_jp: TXCJourneyPattern | TXCFlexibleJourneyPattern,
     context: ServicePatternVehicleJourneyContext,
-) -> list[TransmodelVehicleJourney]:
+) -> tuple[list[TransmodelVehicleJourney], list[TransmodelServicePatternStop]]:
     """
     Generate and save to DB Transmodel Vehicle Journeys for a Service Pattern
     """
@@ -148,6 +151,7 @@ def process_service_pattern_vehicle_journeys(
         ),
         tm_service_pattern_id=context.service_pattern.id,
     )
+    pattern_stops: list[TransmodelServicePatternStop] = []
 
     vehicle_journeys = [
         vj for vj in txc.VehicleJourneys if vj.JourneyPatternRef == txc_jp.id
@@ -177,12 +181,14 @@ def process_service_pattern_vehicle_journeys(
                     )
                     continue
 
-                process_flexible_pattern_stops(
-                    context.service_pattern,
-                    tm_vj,
-                    txc_jp,
-                    context.stops,
-                    context.db,
+                pattern_stops.extend(
+                    process_flexible_pattern_stops(
+                        context.service_pattern,
+                        tm_vj,
+                        txc_jp,
+                        context.stops,
+                        context.db,
+                    )
                 )
             case TXCJourneyPattern():
                 if not is_standard_vehicle_journey(txc_vj):
@@ -199,13 +205,15 @@ def process_service_pattern_vehicle_journeys(
                     if section.id in txc_jp.JourneyPatternSectionRefs
                 ]
 
-                process_pattern_stops(
-                    tm_service_pattern=context.service_pattern,
-                    tm_vehicle_journey=tm_vj,
-                    txc_vehicle_journey=txc_vj,
-                    context=ProcessPatternStopsContext(
-                        jp_sections, context.stops, context.db
-                    ),
+                pattern_stops.extend(
+                    process_pattern_stops(
+                        tm_service_pattern=context.service_pattern,
+                        tm_vehicle_journey=tm_vj,
+                        txc_vehicle_journey=txc_vj,
+                        context=ProcessPatternStopsContext(
+                            jp_sections, context.stops, context.db
+                        ),
+                    )
                 )
             case _:
                 raise ValueError(f"Unknown journey pattern type: {type(txc_jp)}")
@@ -219,4 +227,4 @@ def process_service_pattern_vehicle_journeys(
         ),
         tm_service_pattern_id=context.service_pattern.id,
     )
-    return tm_vjs
+    return tm_vjs, pattern_stops

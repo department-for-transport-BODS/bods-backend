@@ -41,8 +41,8 @@ class SchemaCheckInputData(BaseModel):
 
 
 def get_schema_violations(
-    txc_schema: XMLSchema,
-    txc_file: _Element,
+    schema: XMLSchema,
+    file: _Element,
     revision_id: int,
     filename: str,
 ) -> list[DataQualitySchemaViolation]:
@@ -50,11 +50,11 @@ def get_schema_violations(
     Validate parsed XML document against schema and collect any violations
     """
     violations: list[DataQualitySchemaViolation] = []
-    log.info("Validating TXC File Against Schema")
-    is_valid = txc_schema.validate(txc_file)
+    log.info("Validating File Against Schema")
+    is_valid = schema.validate(file)
 
     if not is_valid:
-        for error in txc_schema.error_log:
+        for error in schema.error_log:
             violation = create_violation_from_error(error, revision_id, filename)
             violations.append(violation)
     if violations:
@@ -72,11 +72,11 @@ def parse_xml_from_s3(input_data: SchemaCheckInputData) -> _Element:
     """
     s3_client = S3(bucket_name=input_data.s3_bucket_name)
     try:
-        log.info("Downloading TXC XML from S3", s3_key=input_data.s3_file_key)
+        log.info("Downloading XML from S3", s3_key=input_data.s3_file_key)
         streaming_body = s3_client.get_object(input_data.s3_file_key)
-        txc_data = parse(streaming_body).getroot()
-        log.info("Successfully Parsed TXC Data as LXML _Element")
-        return txc_data
+        data = parse(streaming_body).getroot()
+        log.info("Successfully Parsed Data as LXML _Element")
+        return data
     except (ClientError, BotoCoreError):
         log.error("S3 Operation Failed", s3_key=input_data.s3_file_key, exc_info=True)
         raise

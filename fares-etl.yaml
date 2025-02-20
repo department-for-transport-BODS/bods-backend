@@ -149,6 +149,7 @@ Resources:
           Fn::ImportValue: !Sub '${ProjectName}-${Environment}-generate-output-zip-lambda-arn'
         ExceptionHandlerLambdaArn:
           Fn::ImportValue: !Sub '${ProjectName}-${Environment}-exception-handler-lambda-arn'
+        DefaultS3BucketName: !Sub 'bodds-${Environment}'
 
   ##########################
   #### LAMBDA FUNCTIONS ####

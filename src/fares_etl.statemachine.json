@@ -113,6 +113,7 @@
       "ItemSelector": {
         "mapS3Object": "{% $states.context.Map.Item.Value.Key %}",
         "mapDatasetRevisionId": "{% $datasetRevisionId %}",
+        "datasetType": "{% $datasetType %}",
         "mapS3Bucket": "{% $s3Bucket %}",
         "mapDatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}"
       },
@@ -144,6 +145,7 @@
               "Bucket": "{% $states.input.mapS3Bucket %}",
               "ObjectKey": "{% $states.input.mapS3Object %}",
               "DatasetRevisionId": "{% $states.input.mapDatasetRevisionId %}",
+              "DatasetType": "{% $states.input.datasetType %}",
               "datasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}"
             }
           },
@@ -177,7 +179,8 @@
             "Arguments": {
               "Bucket": "{% $Bucket %}",
               "ObjectKey": "{% $ObjectKey %}",
-              "DatasetRevisionId": "{% $DatasetRevisionId %}"
+              "DatasetRevisionId": "{% $DatasetRevisionId %}",
+              "DatasetType": "{% $DatasetType %}"
             },
             "Output": {
               "schemaCheck": "{% $states.result %}"

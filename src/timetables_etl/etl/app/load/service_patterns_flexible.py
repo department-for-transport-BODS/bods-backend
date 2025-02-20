@@ -12,7 +12,7 @@ from common_layer.xml.txc.models import TXCData, TXCFlexibleJourneyPattern, TXCS
 from structlog.stdlib import get_logger
 
 from ..helpers import ReferenceDataLookups, StopsLookup
-from ..models import TaskData
+from ..models import PatternCommonStats, TaskData
 from ..transform.service_patterns_flexible import create_flexible_service_pattern
 from ..transform.utils_stops_flexible import get_flexible_pattern_stops
 from .models_context import ProcessPatternCommonContext
@@ -47,11 +47,12 @@ def process_flexible_service_patterns(
     task_data: TaskData,
     lookups: ReferenceDataLookups,
     db: SqlDB,
-) -> list[TransmodelServicePattern]:
+) -> tuple[list[TransmodelServicePattern], PatternCommonStats]:
     """Process patterns for flexible services"""
     patterns: list[TransmodelServicePattern] = []
+    stats = PatternCommonStats()
     if not service.FlexibleService:
-        return []
+        return [], stats
 
     for flexible_jp in service.FlexibleService.FlexibleJourneyPattern:
         service_pattern = process_flexible_service_pattern(
@@ -71,8 +72,8 @@ def process_flexible_service_patterns(
             db=db,
         )
 
-        process_pattern_common(service, flexible_jp, context)
+        stats += process_pattern_common(service, flexible_jp, context)
         patterns.append(service_pattern)
 
     log.info("Flexible Service Patterns Created", count=len(patterns))
-    return patterns
+    return patterns, stats

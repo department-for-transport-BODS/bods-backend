@@ -13,6 +13,13 @@ from .repo_etl_task import (
     FileProcessingResultRepo,
     PipelineErrorCodeRepository,
 )
+from .repo_fares import (
+    FaresDataCatalogueMetadataRepo,
+    FaresMetadataRepo,
+    FaresMetadataStopsRepo,
+    FaresValidationRepo,
+    FaresValidationResultRepo,
+)
 from .repo_junction import (
     TransmodelServicePatternAdminAreaRepo,
     TransmodelServicePatternLocalityRepo,
@@ -89,4 +96,10 @@ __all__ = [
     "DataQualitySchemaViolationRepo",
     "DataQualityPostSchemaViolationRepo",
     "DataQualityPTIObservationRepo",
+    # Fares,
+    "FaresDataCatalogueMetadataRepo",
+    "FaresMetadataRepo",
+    "FaresMetadataStopsRepo",
+    "FaresValidationRepo",
+    "FaresValidationResultRepo",
 ]
