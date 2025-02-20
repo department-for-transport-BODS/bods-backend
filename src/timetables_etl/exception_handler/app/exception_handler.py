@@ -49,7 +49,10 @@ def fetch_revision(db: SqlDB, revision_id: int) -> OrganisationDatasetRevision:
 
 
 def update_failure_state(
-    task_result: DatasetETLTaskResult, error_message: str, step_name: str = "unknown"
+    task_result: DatasetETLTaskResult,
+    error_message: str,
+    error_code: ETLErrorCode = ETLErrorCode.SYSTEM_ERROR,
+    step_name: str = "unknown",
 ) -> DatasetETLTaskResult:
     """
     Update task result with failure information
@@ -61,7 +64,7 @@ def update_failure_state(
     task_result.status = TaskState.FAILURE
     task_result.completed = datetime.now(UTC)
     task_result.task_name_failed = step_name
-    task_result.error_code = ETLErrorCode.SYSTEM_ERROR
+    task_result.error_code = error_code
     task_result.additional_info = error_message
 
     return task_result
@@ -89,7 +92,9 @@ def handle_error(
     task_result = fetch_task_result(db, event_data.dataset_etl_task_result_id)
     revision = fetch_revision(db, task_result.revision_id)
 
-    updated_task = update_failure_state(task_result, event_data.cause.error_message)
+    updated_task = update_failure_state(
+        task_result, event_data.cause.error_message, error_code=event_data.error_code, step_name
+    )
 
     if updated_task.status == TaskState.FAILURE:
         revision.status = FeedStatus.ERROR
@@ -108,6 +113,7 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
     parsed_event = ExceptionHandlerInputData(**event)
     log.error(
         parsed_event.cause.error_message,
+        error_code=parsed_event.error,
         error_details=parsed_event.cause,
     )
 

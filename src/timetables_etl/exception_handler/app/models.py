@@ -4,6 +4,7 @@ Exception Handler Pydantic models and Dataclasses
 
 from typing import Annotated
 
+from common_layer.database.models.model_pipelines import ETLErrorCode
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -30,3 +31,12 @@ class ExceptionHandlerInputData(BaseModel):
     error: str = Field(alias="Error")
     cause: Annotated[ErrorCause, Field(alias="Cause")]
     dataset_etl_task_result_id: int = Field(alias="DatasetEtlTaskResultId")
+
+    @property
+    def error_code(self) -> ETLErrorCode:
+        """Converts the error string into an ETLErrorCode enum."""
+        return (
+            ETLErrorCode[self.error]
+            if self.error in ETLErrorCode.__members__
+            else ETLErrorCode.SYSTEM_ERROR
+        )
