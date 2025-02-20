@@ -229,12 +229,6 @@ def create_pattern_stop(
     Create a new service pattern stop if appropriate.
     """
     if stop := create_stop(stop_data, stop_context, activity_map):
-        # log.debug(
-        #     "Created new pattern stop",
-        #     atco_code=stop.atco_code,
-        #     sequence=stop.auto_sequence_number,
-        #     departure_time=stop.departure_time,
-        # )
         return stop
     return None
 
