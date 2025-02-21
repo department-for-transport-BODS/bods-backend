@@ -25,7 +25,7 @@
         "Bucket": "{% $s3Bucket %}",
         "ObjectKey": "{% $s3Object %}",
         "DatasetRevisionId": "{% $datasetRevisionId %}",
-        "DatasetEtlTaskResultId": "{% $datasetETLTaskResultId %}"
+        "DatasetETLTaskResultId": "{% $datasetETLTaskResultId %}"
       },
       "Assign": {
         "DatasetEtlTaskResultId": "{% $states.result.DatasetEtlTaskResultId %}"
