@@ -119,7 +119,22 @@ def test_create_task_result():
         assert inserted_task.status == TaskState.STARTED
 
 
-def test_initialize_pipeline(mock_revision_repo):
+@pytest.mark.parametrize(
+    "event_data, should_create_task_result",
+    [
+        pytest.param(
+            {"DatasetRevisionId": 42},
+            True,
+            id="Only DatasetRevisionId - Create new task",
+        ),
+        pytest.param(
+            {"DatasetRevisionId": 42, "DatasetETLTaskResultId": 321},
+            False,
+            id="DatasetETLTaskResultId provided - Don't create new task",
+        ),
+    ],
+)
+def test_initialize_pipeline(mock_revision_repo, event_data, should_create_task_result):
     """
     Test initializing the pipeline
     """
@@ -135,13 +150,16 @@ def test_initialize_pipeline(mock_revision_repo):
     mock_revision_repo.get_by_id.return_value = revision
 
     mock_task_repo = create_autospec(ETLTaskResultRepo, instance=True)
-    task_result = DatasetETLTaskResultFactory.create_with_id(
-        id_number=task_result_id,
-        revision_id=revision_id,
-        status=TaskState.STARTED,
-        task_id=str(uuid4()),
+    mock_task_repo.insert.return_value = (
+        DatasetETLTaskResultFactory.create_with_id(
+            id_number=task_result_id,
+            revision_id=revision_id,
+            status=TaskState.STARTED,
+            task_id=str(uuid4()),
+        )
+        if should_create_task_result
+        else None
     )
-    mock_task_repo.insert.return_value = task_result
 
     mock_dynamodb = create_autospec(
         "common_layer.dynamodb.client.DynamoDBCache", instance=True
@@ -149,7 +167,7 @@ def test_initialize_pipeline(mock_revision_repo):
     mock_data_manager = create_autospec(FileProcessingDataManager, instance=True)
     mock_data_manager.prefetch_and_cache_data.return_value = None
 
-    event = InitializePipelineEvent(DatasetRevisionId=revision_id)
+    event = InitializePipelineEvent(**event_data)
 
     with patch.multiple(
         "initialize_pipeline.app.initialize_pipeline",
@@ -160,6 +178,12 @@ def test_initialize_pipeline(mock_revision_repo):
         result = initialize_pipeline(Mock(), mock_dynamodb, event)
 
         assert result == task_result_id
+
+        if should_create_task_result:
+            mock_task_repo.insert.assert_called_once()
+        else:
+            mock_task_repo.insert.assert_not_called()
+
         assert revision.status == FeedStatus.INDEXING.value
         mock_revision_repo.update.assert_called_once_with(revision)
         mock_data_manager.prefetch_and_cache_data.assert_called_once_with(revision)
