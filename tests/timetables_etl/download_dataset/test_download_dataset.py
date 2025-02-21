@@ -23,7 +23,6 @@ TEST_ENV_VAR = {
     "POSTGRES_PORT": "1234",
     "POSTGRES_USER": "sample_user",
     "POSTGRES_PASSWORD": "<PASSWORD>",
-    "TXC_XSD_PATH": "TransXChange_general.xsd",
     "POSTGRES_DB": "test_db",
 }
 

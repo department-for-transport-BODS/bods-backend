@@ -5,9 +5,10 @@ SQLAlchemy Models for Tables prepended otc_
 import datetime
 from datetime import date, datetime
 
-from common_layer.database.models.common import BaseSQLModel
 from sqlalchemy import Boolean, Date, DateTime, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
+
+from .common import BaseSQLModel
 
 
 class OtcService(BaseSQLModel):

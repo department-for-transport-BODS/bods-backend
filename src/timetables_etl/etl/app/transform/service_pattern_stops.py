@@ -200,6 +200,39 @@ def get_pattern_timing(
             )
 
 
+def is_duplicate_stop(
+    current_stop_ref: str,
+    current_sequence: int,
+    previous_stop: TransmodelServicePatternStop | None,
+) -> bool:
+    """
+    Determine if a stop would be a duplicate at a section boundary.
+    This happens when:
+        - There are multiple JourneyPatternSectionRefs for a Journey Pattern
+    Meaning that the last stop of the JPS is the first stop of the next JPS
+    """
+    if not previous_stop or previous_stop.auto_sequence_number is None:
+        return False
+
+    return (
+        previous_stop.atco_code == current_stop_ref
+        and current_sequence == previous_stop.auto_sequence_number + 1
+    )
+
+
+def create_pattern_stop(
+    stop_data: StopData,
+    stop_context: StopContext,
+    activity_map: dict[str, TransmodelStopActivity],
+) -> TransmodelServicePatternStop | None:
+    """
+    Create a new service pattern stop if appropriate.
+    """
+    if stop := create_stop(stop_data, stop_context, activity_map):
+        return stop
+    return None
+
+
 def process_journey_pattern_section(
     section: TXCJourneyPatternSection,
     state: SectionProcessingState,
@@ -208,24 +241,36 @@ def process_journey_pattern_section(
     """Process a single journey pattern section"""
     for link in section.JourneyPatternTimingLink:
         # Handle 'From' stop
-        stop_context = StopContext(
-            service_pattern=context.service_pattern,
-            vehicle_journey=context.vehicle_journey,
-            auto_sequence=state.auto_sequence,
-            departure_time=state.current_time,
-        )
-
-        stop_data = StopData(
-            stop_usage=link.From,
-            naptan_stop=state.naptan_stop,
-        )
-
-        if stop := create_stop(
-            stop_data, stop_context, context.pattern_context.activity_map
+        if not is_duplicate_stop(
+            current_stop_ref=link.From.StopPointRef,
+            current_sequence=state.auto_sequence,
+            previous_stop=state.pattern_stops[-1] if state.pattern_stops else None,
         ):
-            state.pattern_stops.append(stop)
-            state.auto_sequence += 1
+            stop_context = StopContext(
+                service_pattern=context.service_pattern,
+                vehicle_journey=context.vehicle_journey,
+                auto_sequence=state.auto_sequence,
+                departure_time=state.current_time,
+            )
 
+            stop_data = StopData(
+                stop_usage=link.From,
+                naptan_stop=state.naptan_stop,
+            )
+
+            if stop := create_pattern_stop(
+                stop_data, stop_context, context.pattern_context.activity_map
+            ):
+                state.pattern_stops.append(stop)
+                state.auto_sequence += 1
+        else:
+            log.debug(
+                "Skipping duplicate stop at section boundary",
+                atco_code=link.From.StopPointRef,
+                sequence=state.auto_sequence,
+            )
+
+        # Handle timing updates
         runtime, wait_time = get_pattern_timing(
             context.txc_vehicle_journey,
             link.id,
@@ -258,7 +303,7 @@ def process_journey_pattern_section(
                 naptan_stop=state.naptan_stop,
             )
 
-            if stop := create_stop(
+            if stop := create_pattern_stop(
                 stop_data, stop_context, context.pattern_context.activity_map
             ):
                 state.pattern_stops.append(stop)
@@ -317,4 +362,5 @@ def generate_pattern_stops(
         tm_service_pattern=service_pattern.id,
         stop_count=len(state.pattern_stops),
     )
+
     return state.pattern_stops

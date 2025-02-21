@@ -1,0 +1,363 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform:
+  - AWS::Serverless-2016-10-31
+  - Name: DatadogServerless
+    Parameters:
+      stackName: !Ref 'AWS::StackName'
+      apiKeySecretArn: arn:aws:secretsmanager:eu-west-2:228266753808:secret:DD_API_KEY_ALL_ENV-WDa721
+      pythonLayerVersion: 105
+      extensionLayerVersion: 69
+      site: datadoghq.eu
+      service: !Sub '${ProjectName}-fares-etl'
+      env: !Ref Environment
+      version: !Ref Version
+      gitData: !Ref DDGitData
+      enableDDTracing: true
+      captureLambdaPayload: true
+      enableProfiling: false
+Description: Supporting services for the execution of the fares ETL process
+
+Parameters:
+  Environment:
+    Type: String
+    Description: The environment into which the stack is being deployed
+  ProjectName:
+    Description: The name of the project
+    Type: String
+  SubFunction:
+    Description: The sub-fuction that each resource relates to
+    Type: String
+    Default: 'fares'
+  RdsDbHostAddr:
+    Type: String
+    Default: ''
+  RdsDbPort:
+    Type: Number
+  RdsDbName:
+    Type: String
+    Description: Database name for local development
+    Default: 'postgres'
+  RdsDbUsername:
+    Type: String
+    Description: User name for local development
+    Default: 'bodds_rw'
+  BoilerplateLambdaLayerArn:
+    Type: String
+  DDGitData:
+    Type: String
+    Default: ''
+    Description: 'The output of $(git rev-parse HEAD),$(git config --get remote.origin.url). Used for Datadog Source Code Integration tagging'
+  Version:
+    Type: String
+    Default: 'unknown'
+    Description: 'Version to pass to Datadog APM'
+Conditions:
+  IsNotLocal: !Not [!Equals [!Ref Environment, 'local']]
+  IsNotProd: !Not [!Equals [!Ref Environment, 'prod']]
+  IsNotTemp: ## TODO: Remove condition and references to it once isolated testing is completed and ETL is fully integrated into BODS
+    !Not [!Equals [!Select ['2', !Split ['-', !Ref 'AWS::StackName']], 'temp']]
+
+Globals:
+  Function:
+    Architectures:
+      - x86_64
+    Runtime: python3.11
+    Timeout: 300
+    MemorySize: 256
+    Layers:
+      - !Sub arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV3-python311-x86_64:5
+      - !Sub 'arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:53'
+    LoggingConfig:
+      LogFormat: JSON
+    Tracing: Active
+    PropagateTags: true
+    KmsKeyArn: !If
+      - IsNotLocal
+      - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+      - !Ref AWS::NoValue
+    VpcConfig: !If
+      - IsNotLocal
+      - SubnetIds:
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-0}}'
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-1}}'
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/private-subnet-2}}'
+        SecurityGroupIds:
+          - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-common-lambda-sg-id'
+      - !Ref AWS::NoValue
+    Environment:
+      Variables:
+        POWERTOOLS_METRICS_NAMESPACE: bods
+        POWERTOOLS_SERVICE_NAME: fares-etl
+        HTTPS_PROXY: !If
+          - IsNotLocal
+          - !Sub 'http://squid.bodds.${Environment}:3128'
+          - !Ref AWS::NoValue
+        PROJECT_ENV: !Ref Environment
+        PROJECT_NAME: !Ref ProjectName
+        POSTGRES_HOST: !If
+          - IsNotLocal
+          - !If ## Remove condition once isolated testing is completed and ETL is fully integrated into BODS
+            - IsNotTemp
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-endpoint}}'
+          - !Ref RdsDbHostAddr
+        POSTGRES_PORT: !Ref RdsDbPort
+        POSTGRES_DB: !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
+          - !Ref RdsDbName
+        POSTGRES_USER: !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
+          - !Ref RdsDbUsername
+        DD_MERGE_XRAY_TRACES: true
+        DD_RUNTIME_METRICS_ENABLED: true
+        DD_DBM_PROPAGATION_MODE: full
+        DD_EXTENSION_VERSION: compatibility
+
+Resources:
+  #######################
+  #### STATE MACHINE ####
+  #######################
+  FaresStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Name: !Sub '${ProjectName}-${Environment}-${SubFunction}-sm'
+      Role: !GetAtt FaresStateMachineRole.Arn
+      DefinitionUri: './src/fares_etl.statemachine.json'
+      Logging:
+        Level: ALL
+        IncludeExecutionData: true
+        Destinations:
+          - CloudWatchLogsLogGroup:
+              LogGroupArn: !GetAtt FaresStateMachineLogGroup.Arn
+      PropagateTags: true
+      Tracing:
+        Enabled: True
+      DefinitionSubstitutions:
+        InitializePipelineLambdaArn:
+          Fn::ImportValue: !Sub '${ProjectName}-${Environment}-initialize-pipeline-lambda-arn'
+        ClamAvScannerLambdaArn:
+          Fn::ImportValue: !Sub '${ProjectName}-${Environment}-clamav-scanner-lambda-arn'
+        DownloadDatasetLambdaArn:
+          Fn::ImportValue: !Sub '${ProjectName}-${Environment}-download-dataset-lambda-arn'
+        FileValidationLambdaArn:
+          Fn::ImportValue: !Sub '${ProjectName}-${Environment}-file-validation-lambda-arn'
+        SchemaCheckLambdaArn:
+          Fn::ImportValue: !Sub '${ProjectName}-${Environment}-schema-check-lambda-arn'
+        GenerateOutputZipLambdaArn:
+          Fn::ImportValue: !Sub '${ProjectName}-${Environment}-generate-output-zip-lambda-arn'
+        ExceptionHandlerLambdaArn:
+          Fn::ImportValue: !Sub '${ProjectName}-${Environment}-exception-handler-lambda-arn'
+        DefaultS3BucketName: !Sub 'bodds-${Environment}'
+
+  ##########################
+  #### LAMBDA FUNCTIONS ####
+  ##########################
+  PlaceholderLambda:
+    Type: AWS::Serverless::Function
+    ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-placeholder-lambda'
+      Description: Fares ETL - Placeholder
+      Role: !GetAtt CommonLambdaExecutionRole.Arn
+      CodeUri: ./src/fares_etl/placeholder
+      Handler: app.placeholder.lambda_handler
+      Layers:
+        - !Ref BoilerplateLambdaLayerArn
+      MemorySize: 512
+      Timeout: 300
+      Environment:
+        Variables:
+          PLACEHOLDER_VAR: 'dummy'
+      LoggingConfig:
+        LogGroup: !Ref PlaceholderLambdaLogGroup
+
+  ###################
+  #### IAM ROLES ####
+  ###################
+  CommonLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-${Environment}-${SubFunction}-common-lambda-execution-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+        - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
+        - !If
+          - IsNotLocal
+          - !If ## Remove condition once isolated testing is completed and ETL is fully integrated into BODS
+            - IsNotTemp
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-rw-user-access-policy-arn}}'
+          - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess'
+        - !If
+          - IsNotLocal
+          - !If ## Remove condition once isolated testing is completed and ETL is fully integrated into BODS
+            - IsNotTemp
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-ro-user-access-policy-arn}}'
+          - 'arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess'
+      Policies:
+        - PolicyName: S3AccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !If
+                  - IsNotLocal
+                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/app/arn}}'
+                  - '*'
+              - Effect: Allow
+                Action:
+                  - s3:GetObject*
+                  - s3:PutObject*
+                Resource: !If
+                  - IsNotLocal
+                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/app/arn}}/*'
+                  - '*'
+        - PolicyName: KMSAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kms:GenerateDataKey
+                  - kms:Decrypt
+                  - kms:Encrypt
+                Resource: !If
+                  - IsNotLocal
+                  - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+                  - '*'
+        - PolicyName: DataDogAPIAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: arn:aws:secretsmanager:eu-west-2:228266753808:secret:DD_API_KEY_ALL_ENV-WDa721
+
+  FaresStateMachineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-${Environment}-${SubFunction}-sm-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: states.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+      Policies:
+        - PolicyName: StateMachineSfInvokePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: states:StartExecution
+                Resource:
+                  - !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${ProjectName}-${Environment}-${SubFunction}-sm'
+        - PolicyName: StateMachineLambdaInvokePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource:
+                  - !GetAtt PlaceholderLambda.Arn
+                  - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-initialize-pipeline-lambda-arn'
+                  - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-clamav-scanner-lambda-arn'
+                  - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-download-dataset-lambda-arn'
+                  - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-file-validation-lambda-arn'
+                  - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-schema-check-lambda-arn'
+                  - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-generate-output-zip-lambda-arn'
+                  - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-exception-handler-lambda-arn'
+        - PolicyName: S3BucketAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !If
+                  - IsNotLocal
+                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/app/arn}}'
+                  - '*'
+              - Effect: Allow
+                Action:
+                  - s3:GetObject*
+                  - s3:PutObject*
+                  - s3:ListMultipartUploadParts
+                  - s3:AbortMultipartUpload
+                Resource: !If
+                  - IsNotLocal
+                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/app/arn}}/*'
+                  - '*'
+        - PolicyName: KMSAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kms:GenerateDataKey
+                  - kms:Decrypt
+                  - kms:Encrypt
+                Resource: !If
+                  - IsNotLocal
+                  - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+                  - '*'
+        - PolicyName: CloudWatchLogsPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogDelivery
+                  - logs:GetLogDelivery
+                  - logs:UpdateLogDelivery
+                  - logs:DeleteLogDelivery
+                  - logs:ListLogDeliveries
+                  - logs:PutResourcePolicy
+                  - logs:DescribeResourcePolicies
+                  - logs:DescribeLogGroups
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-sm:*'
+                  - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-sm'
+
+  ####################
+  #### LOG GROUPS ####
+  ####################
+  FaresStateMachineLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-sm'
+      KmsKeyId: !If
+        - IsNotLocal
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Ref AWS::NoValue
+      RetentionInDays: 30
+
+  PlaceholderLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-placeholder-lambda'
+      KmsKeyId: !If
+        - IsNotLocal
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Ref AWS::NoValue
+      RetentionInDays: 30

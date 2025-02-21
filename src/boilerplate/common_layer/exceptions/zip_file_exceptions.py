@@ -1,22 +1,34 @@
+"""
+Common exceptions for Zip Files
+"""
+
+from common_layer.database.models.model_pipelines import ETLErrorCode
+
 from .file_exceptions import ValidationException
 
 
-# Exception for Zip File processing
-class ZipValidationException(ValidationException):
-    code = "ZIP_VALIDATION_FAILED"
-    message_template = "Unable to validate zip {filename}."
+class NestedZipForbidden(ValidationException):
+    """
+    Exception for Nested Zips inside of Zip file
+    """
 
-
-class NestedZipForbidden(ZipValidationException):
-    code = "NESTED_ZIP_FORBIDDEN"
+    code = ETLErrorCode.NESTED_ZIP_FORBIDDEN
     message_template = "Zip file {filename} contains another zip file."
 
 
-class ZipTooLarge(ZipValidationException):
-    code = "ZIP_TOO_LARGE"
+class ZipTooLarge(ValidationException):
+    """
+    Exception for Zip file exceeding maximum allowed size
+    """
+
+    code = ETLErrorCode.ZIP_TOO_LARGE
     message_template = "Zip file {filename} is too large."
 
 
-class NoDataFound(ZipValidationException):
+class NoDataFound(ValidationException):
+    """
+    Exception for NoDataFound in Zip file
+    """
+
     message_template = "Zip file {filename} contains no data files"
-    code = "NO_DATA_FOUND"
+    code = ETLErrorCode.NO_DATA_FOUND

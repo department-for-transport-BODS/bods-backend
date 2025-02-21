@@ -7,29 +7,18 @@ from unittest.mock import MagicMock, patch
 from uuid import UUID
 
 import pytest
-from common_layer.database.models.model_pipelines import (
-    ETLErrorCode,
-    PipelineErrorCode,
-    PipelineProcessingStep,
-    TaskState,
-)
+from common_layer.database.models.model_pipelines import ETLErrorCode, TaskState
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import (
     file_processing_result_to_db,
     get_dataset_type,
-    get_file_processing_error_code,
-    get_or_create_step,
     handle_lambda_error,
     handle_lambda_success,
     initialize_processing,
     map_exception_to_error_code,
-    write_error_to_db,
 )
 
-from tests.factories.database.pipelines import (
-    FileProcessingResultFactory,
-    PipelineErrorCodeFactory,
-)
+from tests.factories.database.pipelines import FileProcessingResultFactory
 
 
 @pytest.mark.parametrize(
@@ -209,7 +198,7 @@ def test_handle_lambda_error(exception_type, has_db_connection):
     )
     error = type(exception_type, (Exception,), {})()
 
-    handle_lambda_error(context, error)
+    handle_lambda_error(StepName.DOWNLOAD_DATASET, context, error)
 
     if has_db_connection:
         assert context.processing_result.status == TaskState.FAILURE

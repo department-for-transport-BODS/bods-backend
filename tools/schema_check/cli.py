@@ -3,6 +3,7 @@ Run a Schema Check Against a TXC file
 """
 
 from pathlib import Path
+from unittest.mock import patch
 
 import structlog
 import typer
@@ -10,10 +11,11 @@ from common_layer.json_logging import configure_logging
 from lxml import etree
 from structlog.stdlib import get_logger
 
-from src.timetables_etl.schema_check.app.schema_check import (
-    get_schema_violations,
-    load_txc_schema,
+from src.common_lambdas.schema_check.app.schema_check import (
+    SchemaCheckInputData,
+    process_schema_check,
 )
+from tools.common.db_tools import dotenv_loader
 
 structlog.configure(
     processors=[
@@ -50,6 +52,11 @@ def validate(
         "-r",
         help="Optional revision ID for tracking violations (defaults to 1)",
     ),
+    use_dotenv: bool = typer.Option(
+        False,
+        "--use-dotenv",
+        help="Load configuration from .env file",
+    ),
     log_json: bool = typer.Option(
         False,
         "--log-json",
@@ -60,13 +67,27 @@ def validate(
     if log_json:
         configure_logging()
 
-    try:
-        # Load schema and parse XML
-        schema = load_txc_schema()
-        xml_doc = parse_xml_from_file(xml_file)
+    if use_dotenv:
+        dotenv_loader()
 
-        # Validate and get violations
-        violations = get_schema_violations(schema, xml_doc, revision_id, str(xml_file))
+    log.info(
+        "Running schema check for XML DATA TYPE:",
+    )
+
+    input_data = SchemaCheckInputData(
+        DatasetRevisionId=revision_id,
+        Bucket="dummy",
+        ObjectKey="dummy",
+    )
+
+    try:
+        # Parse XML doc from file instead of S3
+        xml_doc = parse_xml_from_file(xml_file)
+        with patch(
+            "src.common_lambdas.schema_check.app.schema_check.parse_xml_from_s3",
+            return_value=xml_doc,
+        ):
+            violations = process_schema_check(input_data)
 
         # Output results
         violation_count = len(violations)

@@ -147,7 +147,6 @@
               "datasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}"
             }
           },
-
           "FileValidation": {
             "Type": "Task",
             "Next": "SchemaCheck",
@@ -188,8 +187,7 @@
                 "ErrorEquals": ["States.ALL"],
                 "Next": "ExceptionHandler",
                 "Output": {
-                  "Error": "{% $states.errorOutput %}",
-                  "Cause": "{% $states.errorOutput %}"
+                  "errorInfo": "{% $states.errorOutput %}"
                 }
               }
             ]

@@ -3,6 +3,7 @@ Description: Module contains the database functionality for
              FileProcessingResult table
 """
 
+import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, Callable, Literal, TypeVar
@@ -23,6 +24,7 @@ from common_layer.database.repos.repo_etl_task import (
     PipelineProcessingStepRepository,
 )
 from common_layer.db.constants import StepName
+from common_layer.exceptions.file_exceptions import ValidationException
 from common_layer.json_logging import configure_logging
 from structlog.stdlib import get_logger
 
@@ -191,8 +193,21 @@ def handle_lambda_success(context: ProcessingContext) -> None:
             )
 
 
-def handle_lambda_error(context: ProcessingContext, error: Exception) -> None:
+def handle_lambda_error(
+    step_name: StepName, context: ProcessingContext, error: Exception
+) -> None:
     """Handle lambda execution failure by updating database"""
+
+    log.error(
+        "Lambda Execution Failed",
+        error_type=error.__class__.__name__,
+        error_message=str(error),
+        step_name=step_name.value,
+        task_id=str(context.task_id),
+        exc_info=True,
+    )
+
+    # Only attempt to write error to DB if connection exists
     if context.db is not None and context.processing_result is not None:
         try:
             write_error_to_db(context.db, context.processing_result, error)
@@ -205,6 +220,10 @@ def handle_lambda_error(context: ProcessingContext, error: Exception) -> None:
                 task_id=str(context.task_id),
                 exc_info=True,
             )
+    else:
+        log.warning(
+            "Database Connection not available, cannot update FileProcessingResult"
+        )
 
 
 def file_processing_result_to_db(step_name: StepName):
@@ -236,25 +255,15 @@ def file_processing_result_to_db(step_name: StepName):
                     )
                 return result
 
+            except ValidationException as validation_error:
+                handle_lambda_error(step_name, processing_context, validation_error)
+                # Convert ValidationException so `Error` and `Cause` are correctly formatted
+                raise Exception(  # pylint: disable=broad-exception-raised
+                    json.dumps(validation_error.to_dict())
+                ) from validation_error
+
             except Exception as lambda_error:  # pylint: disable=broad-exception-caught
-                log.error(
-                    "Lambda Execution Failed",
-                    error_type=lambda_error.__class__.__name__,
-                    error_message=str(lambda_error),
-                    step_name=step_name.value,
-                    task_id=str(processing_context.task_id),
-                    exc_info=True,
-                )
-                # Only attempt to write error to DB if connection exists
-                if (
-                    processing_context.db is not None
-                    and processing_context.processing_result is not None
-                ):
-                    handle_lambda_error(processing_context, lambda_error)
-                else:
-                    log.warning(
-                        "Database Connection not available, cannot update FileProcessingResult"
-                    )
+                handle_lambda_error(step_name, processing_context, lambda_error)
                 raise
 
         return wrapper

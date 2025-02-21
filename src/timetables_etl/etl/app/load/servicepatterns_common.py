@@ -23,6 +23,7 @@ from common_layer.xml.txc.models import (
 )
 from structlog.stdlib import get_logger
 
+from ..models import PatternCommonStats
 from ..transform.service_pattern_associations import (
     generate_pattern_admin_areas,
     generate_pattern_localities,
@@ -84,7 +85,7 @@ def process_pattern_common(
     service: TXCService,
     journey_pattern: TXCJourneyPattern | TXCFlexibleJourneyPattern,
     context: ProcessPatternCommonContext,
-) -> None:
+) -> PatternCommonStats:
     """
     Process common elements for both standard and flexible service patterns
     """
@@ -92,8 +93,12 @@ def process_pattern_common(
         "Processing Localities, Admin Areas and Bank Holidays",
         service_code=service.ServiceCode,
     )
-    process_pattern_localities(context.service_pattern, context.stops, context.db)
-    process_pattern_admin_areas(context.service_pattern, context.stops, context.db)
+    localities = process_pattern_localities(
+        context.service_pattern, context.stops, context.db
+    )
+    admin_areas = process_pattern_admin_areas(
+        context.service_pattern, context.stops, context.db
+    )
 
     bank_holidays = TransmodelBankHolidaysRepo(context.db).get_bank_holidays_lookup(
         service.StartDate, service.EndDate
@@ -107,12 +112,20 @@ def process_pattern_common(
         db=context.db,
     )
 
-    tm_vjs = process_service_pattern_vehicle_journeys(
+    tm_vjs, tm_pattern_stops = process_service_pattern_vehicle_journeys(
         context.txc,
         journey_pattern,
         vj_context,
     )
 
-    load_vehicle_journey_tracks(
+    tracks = load_vehicle_journey_tracks(
         journey_pattern, tm_vjs, context.lookups.tracks, context.txc, context.db
+    )
+
+    return PatternCommonStats(
+        localities=len(localities),
+        admin_areas=len(admin_areas),
+        vehicle_journeys=len(tm_vjs),
+        pattern_stops=len(tm_pattern_stops),
+        tracks=len(tracks),
     )
