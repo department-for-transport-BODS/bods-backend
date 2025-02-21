@@ -25,6 +25,10 @@ class ValidationException(Exception):
             f"(File: {self.filename}, Line: {self.line})"
         )
 
+    def to_dict(self):
+        """Convert the exception details to a dictionary for Step Functions."""
+        return {"ErrorCode": self.code, "Cause": self.message}
+
 
 class AntiVirusError(ValidationException):
     """Base exception for antivirus scans."""
