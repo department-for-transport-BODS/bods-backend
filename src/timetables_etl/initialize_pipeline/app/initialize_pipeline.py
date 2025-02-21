@@ -36,6 +36,7 @@ class InitializePipelineEvent(BaseModel):
     """
 
     DatasetRevisionId: int
+    DatasetETLTaskResultId: int | None = None
 
 
 def get_and_validate_revision(
@@ -65,7 +66,7 @@ def update_revision_status(db: SqlDB, revision: OrganisationDatasetRevision) -> 
     revision_repo.update(revision)
 
 
-def create_task_result(db: SqlDB, revision_id: int) -> DatasetETLTaskResult:
+def create_task_result(db: SqlDB, revision_id: int) -> int:
     """
     Creates a new ETL task result entry.
     Returns:
@@ -78,14 +79,16 @@ def create_task_result(db: SqlDB, revision_id: int) -> DatasetETLTaskResult:
         task_id=str(uuid4()),
     )
     created_task_result = task_result_repo.insert(task_result)
-    return created_task_result
+    return created_task_result.id
 
 
 def initialize_pipeline(
     db: SqlDB, dynamodb: DynamoDBCache, event: InitializePipelineEvent
-) -> DatasetETLTaskResult:
+) -> int:
     """
     Initializes the pipeline for dataset processing.
+
+    Returns: DatasetETLTaskResult ID
     """
     logger.info(
         "Initializing pipeline for DatasetRevision",
@@ -96,7 +99,14 @@ def initialize_pipeline(
 
     update_revision_status(db, revision)
 
-    task_result = create_task_result(db, revision.id)
+    # If a DatasetETLTaskResultId is provided, use it, otherwise create one
+    # E2E bods will always provide the ID
+    # This is to allow us run the statemachine in isolation
+    task_result_id = (
+        create_task_result(db, revision.id)
+        if not event.DatasetETLTaskResultId
+        else event.DatasetETLTaskResultId
+    )
 
     logger.info(
         "Pre-fetching data for file-level processing", dataset_revision_id=revision.id
@@ -106,9 +116,9 @@ def initialize_pipeline(
 
     logger.info(
         "Pipeline initialized with DatasetETLTaskResult",
-        dataset_etl_task_result_id=task_result.id,
+        dataset_etl_task_result_id=task_result_id,
     )
-    return task_result
+    return task_result_id
 
 
 @metrics.log_metrics
@@ -121,11 +131,11 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
 
     db = SqlDB()
     dynamodb = DynamoDBCache()
-    created_task_result = initialize_pipeline(db, dynamodb, parsed_event)
+    task_result_id = initialize_pipeline(db, dynamodb, parsed_event)
     metrics.add_metric(name="PipelineStarts", unit=MetricUnit.Count, value=1)
-    ETLTaskResultRepo(db).update_progress(created_task_result.id, 10)
+    ETLTaskResultRepo(db).update_progress(task_result_id, 10)
     return {
         "status_code": 200,
         "message": "Pipeline Initialized",
-        "DatasetEtlTaskResultId": created_task_result.id,
+        "DatasetEtlTaskResultId": task_result_id,
     }
