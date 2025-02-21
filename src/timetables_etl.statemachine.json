@@ -13,7 +13,8 @@
         "s3Bucket": "{% $exists($states.input.s3.bucket) ? $states.input.s3.bucket : '${DefaultS3BucketName}' %}",
         "s3Object": "{% $exists($states.input.s3.object) ? $states.input.s3.object : null %}",
         "publishDatasetRevision": "{% $exists($states.input.publishDatasetRevision) ? $states.input.publishDatasetRevision : false %}",
-        "overwriteInputDataset": "{% $exists($states.input.overwriteInputDataset) ? $states.input.overwriteInputDataset : true %}"
+        "overwriteInputDataset": "{% $exists($states.input.overwriteInputDataset) ? $states.input.overwriteInputDataset : true %}",
+        "datasetETLTaskResultId": "{% $exists($states.input.datasetETLTaskResultId) ? $states.input.datasetETLTaskResultId : null %}"
       }
     },
     "InitializePipeline": {
@@ -23,7 +24,8 @@
       "Arguments": {
         "Bucket": "{% $s3Bucket %}",
         "ObjectKey": "{% $s3Object %}",
-        "DatasetRevisionId": "{% $datasetRevisionId %}"
+        "DatasetRevisionId": "{% $datasetRevisionId %}",
+        "DatasetEtlTaskResultId": "{% $datasetETLTaskResultId %}"
       },
       "Assign": {
         "DatasetEtlTaskResultId": "{% $states.result.DatasetEtlTaskResultId %}"
