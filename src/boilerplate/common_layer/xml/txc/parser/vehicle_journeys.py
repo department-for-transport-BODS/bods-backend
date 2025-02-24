@@ -9,6 +9,7 @@ from structlog.stdlib import get_logger
 
 from ...utils import (
     find_section,
+    get_element_int,
     get_element_text,
     get_element_texts,
     parse_creation_datetime,
@@ -225,9 +226,6 @@ def parse_vehicle_journey(vehicle_journey_xml: _Element) -> TXCVehicleJourney | 
         else None
     )
 
-    departure_day_shift = get_element_text(vehicle_journey_xml, "DepartureDayShift")
-    departure_day_shift = departure_day_shift if departure_day_shift == "+1" else None
-
     return TXCVehicleJourney(
         CreationDateTime=parse_creation_datetime(vehicle_journey_xml),
         ModificationDateTime=parse_modification_datetime(vehicle_journey_xml),
@@ -250,7 +248,7 @@ def parse_vehicle_journey(vehicle_journey_xml: _Element) -> TXCVehicleJourney | 
         VehicleJourneyRef=get_element_text(vehicle_journey_xml, "VehicleJourneyRef"),
         Note=get_element_text(vehicle_journey_xml, "Note"),
         DepartureTime=departure_time,
-        DepartureDayShift=departure_day_shift,
+        DepartureDayShift=get_element_int(vehicle_journey_xml, "DepartureDayShift"),
         VehicleJourneyTimingLink=parse_vehicle_journey_timing_links(
             vehicle_journey_xml
         ),
