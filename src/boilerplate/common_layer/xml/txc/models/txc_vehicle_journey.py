@@ -160,8 +160,9 @@ class TXCVehicleJourney(BaseModel):
     )
     Note: str | None = Field(default=None, description="")
     DepartureTime: str = Field(..., description="Departure Time")
-    DepartureDayShift: Literal["+1"] | None = Field(
-        default=None, description="If present, shall be +1"
+    DepartureDayShift: int | None = Field(
+        default=None,
+        description="PTI only allows +1, TXC Allows any positive / negative int",
     )
     Frequency: TXCFrequency | None = Field(default=None, description="")
     VehicleJourneyTimingLink: list[TXCVehicleJourneyTimingLink] = Field(

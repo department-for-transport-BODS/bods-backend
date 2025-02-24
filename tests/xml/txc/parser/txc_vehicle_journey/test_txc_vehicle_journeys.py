@@ -192,11 +192,86 @@ def test_parse_layover_point(xml_string, expected_result):
                 DestinationDisplay="Destination",
                 CommercialBasis="contracted",
                 DepartureTime="11:00:00",
-                DepartureDayShift="+1",
+                DepartureDayShift=1,
                 VehicleJourneyRef="VJ1",
                 VehicleJourneyCode="VJ2",
             ),
             id="Valid: With optional fields",
+        ),
+        pytest.param(
+            """
+            <VehicleJourney>
+                <VehicleJourneyCode>VJ2</VehicleJourneyCode>
+                <OperatorRef>OP2</OperatorRef>
+                <PrivateCode>PC1</PrivateCode>
+                <DestinationDisplay>Destination</DestinationDisplay>
+                <CommercialBasis>contracted</CommercialBasis>
+                <DepartureTime>11:00:00</DepartureTime>
+                <DepartureDayShift>+1</DepartureDayShift>
+                <VehicleJourneyRef>VJ1</VehicleJourneyRef>
+            </VehicleJourney>
+            """,
+            TXCVehicleJourney(
+                OperatorRef="OP2",
+                PrivateCode="PC1",
+                DestinationDisplay="Destination",
+                CommercialBasis="contracted",
+                DepartureTime="11:00:00",
+                DepartureDayShift=1,
+                VehicleJourneyRef="VJ1",
+                VehicleJourneyCode="VJ2",
+            ),
+            id="Valid: With positive day shift",
+        ),
+        pytest.param(
+            """
+            <VehicleJourney>
+                <VehicleJourneyCode>VJ3</VehicleJourneyCode>
+                <OperatorRef>OP2</OperatorRef>
+                <PrivateCode>PC1</PrivateCode>
+                <DestinationDisplay>Destination</DestinationDisplay>
+                <CommercialBasis>contracted</CommercialBasis>
+                <DepartureTime>23:00:00</DepartureTime>
+                <DepartureDayShift>-1</DepartureDayShift>
+                <VehicleJourneyRef>VJ1</VehicleJourneyRef>
+            </VehicleJourney>
+            """,
+            TXCVehicleJourney(
+                OperatorRef="OP2",
+                PrivateCode="PC1",
+                DestinationDisplay="Destination",
+                CommercialBasis="contracted",
+                DepartureTime="23:00:00",
+                DepartureDayShift=-1,
+                VehicleJourneyRef="VJ1",
+                VehicleJourneyCode="VJ3",
+            ),
+            id="Valid: With negative day shift",
+        ),
+        pytest.param(
+            """
+            <VehicleJourney>
+                <VehicleJourneyCode>VJ4</VehicleJourneyCode>
+                <OperatorRef>OP2</OperatorRef>
+                <PrivateCode>PC1</PrivateCode>
+                <DestinationDisplay>Destination</DestinationDisplay>
+                <CommercialBasis>contracted</CommercialBasis>
+                <DepartureTime>12:00:00</DepartureTime>
+                <DepartureDayShift>0</DepartureDayShift>
+                <VehicleJourneyRef>VJ1</VehicleJourneyRef>
+            </VehicleJourney>
+            """,
+            TXCVehicleJourney(
+                OperatorRef="OP2",
+                PrivateCode="PC1",
+                DestinationDisplay="Destination",
+                CommercialBasis="contracted",
+                DepartureTime="12:00:00",
+                DepartureDayShift=0,
+                VehicleJourneyRef="VJ1",
+                VehicleJourneyCode="VJ4",
+            ),
+            id="Valid: With zero day shift",
         ),
         pytest.param(
             """
