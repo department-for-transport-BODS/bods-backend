@@ -38,6 +38,15 @@ class JSONFile(StringIO):
         self.name = "pti_schema.json"
 
 
+def setup_stop_point_client() -> MagicMock:
+    m_stop_point_client = MagicMock(spec=NaptanStopPointDynamoDBClient)
+    m_stop_point_client.get_by_atco_codes.return_value = (
+        [],
+        [],
+    )
+    return m_stop_point_client
+
+
 def create_validator(
     filename: str,
     data_dir: Path,
@@ -51,9 +60,8 @@ def create_validator(
     observations = [o for o in schema.observations if o.number == observation_id]
     schema.observations = observations
     json_file = JSONFile(schema.model_dump_json())
-    stop_point_client = naptan_stop_point_client or MagicMock(
-        spec=NaptanStopPointDynamoDBClient
-    )
+
+    stop_point_client = naptan_stop_point_client or setup_stop_point_client()
     db_clients = DbClients(
         sql_db=MagicMock(spec=SqlDB),
         dynamodb=MagicMock(spec=DynamoDBCache),
