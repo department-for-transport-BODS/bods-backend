@@ -10,6 +10,7 @@ from common_layer.xml.txc.models.txc_data import TXCData
 from pti.app.constants import PTI_SCHEMA_PATH
 from pti.app.models.models_pti import PtiJsonSchema
 from pti.app.models.models_pti_task import DbClients
+from pti.app.pti_validation import get_txc_data
 from pti.app.validators.pti import PTIValidator
 
 from tests.timetables_etl.pti.validators.constants import TXC_END, TXC_START
@@ -47,12 +48,24 @@ def setup_stop_point_client() -> MagicMock:
     return m_stop_point_client
 
 
-def create_validator(
-    filename: str,
+def load_txc_data_from_fixture(
     data_dir: Path,
+    filename: str,
+) -> TXCData:
+
+    fixture_path = data_dir / filename
+    with open(fixture_path, "rb") as test_file:
+        test_file_bytes = BytesIO(test_file.read())
+        txc_data = get_txc_data(test_file_bytes)
+        return txc_data
+
+
+def create_validator(
+    filename: str | None,
+    data_dir: Path | None,
     observation_id: int,
     naptan_stop_point_client: NaptanStopPointDynamoDBClient | None = None,
-) -> tuple[PTIValidator, Path]:
+) -> PTIValidator:
     """
     Helper function to create PTIValidator instance and file path
     """
@@ -67,12 +80,19 @@ def create_validator(
         dynamodb=MagicMock(spec=DynamoDBCache),
         stop_point_client=stop_point_client,
     )
+
+    txc_data = (
+        load_txc_data_from_fixture(data_dir, filename)
+        if (filename and data_dir)
+        else TXCData.model_construct()
+    )
+
     pti = PTIValidator(
         json_file,
         db_clients,
-        TXCData.model_construct(),
+        txc_data,
     )
-    return pti, data_dir / filename
+    return pti
 
 
 def run_validation(
@@ -86,9 +106,8 @@ def run_validation(
 
     Returns whether it was successful
     """
-    pti, txc_path = create_validator(
-        filename, data_dir, observation_id, naptan_stop_point_client
-    )
+    pti = create_validator(filename, data_dir, observation_id, naptan_stop_point_client)
+    txc_path = data_dir / filename
     with txc_path.open("rb") as f:
         content = BytesIO(f.read())
         return pti.is_valid(content)
@@ -104,7 +123,8 @@ def run_validation_with_exception(
     """
     Run PTI validation on a file, expecting an exception
     """
-    pti, txc_path = create_validator(filename, data_dir, observation_id)
+    pti = create_validator(filename, data_dir, observation_id, None)
+    txc_path = data_dir / filename
     with txc_path.open("rb") as f:
         content = BytesIO(f.read())
         with pytest.raises(expected_exception, match=match):
