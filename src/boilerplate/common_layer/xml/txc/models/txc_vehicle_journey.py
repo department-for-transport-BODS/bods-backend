@@ -4,7 +4,6 @@ VehicleJourney
 """
 
 from datetime import datetime
-from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 from structlog.stdlib import get_logger
