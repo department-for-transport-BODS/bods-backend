@@ -199,39 +199,6 @@ def test_get_stop_point_ref_from_journey_pattern_ref(m_root):
 
 
 @pytest.mark.parametrize(
-    "ref, expected_locality_name",
-    [
-        ("12345", "TestLocality"),  # Valid reference
-        ("67890", "AnotherLocality"),  # Another valid reference
-        ("99999", None),  # Invalid reference, no match
-    ],
-)
-def test_get_locality_name_from_annotated_stop_point_ref(ref, expected_locality_name):
-    """
-    Test the `get_locality_name_from_annotated_stop_point_ref` method with multiple cases.
-    """
-    xml_content = """
-    <StopPoints xmlns="http://www.example.com">
-        <AnnotatedStopPointRef>
-            <StopPointRef>12345</StopPointRef>
-            <LocalityName>TestLocality</LocalityName>
-        </AnnotatedStopPointRef>
-        <AnnotatedStopPointRef>
-            <StopPointRef>67890</StopPointRef>
-            <LocalityName>AnotherLocality</LocalityName>
-        </AnnotatedStopPointRef>
-    </StopPoints>
-    """
-
-    root = etree.fromstring(xml_content)
-    validator = BaseValidator(root)
-
-    locality_name = validator.get_locality_name_from_annotated_stop_point_ref(ref)
-
-    assert locality_name == expected_locality_name
-
-
-@pytest.mark.parametrize(
     "ref, xml_content, expected_section_refs",
     [
         pytest.param(

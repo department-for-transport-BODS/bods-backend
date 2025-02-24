@@ -7,8 +7,6 @@ import pytest
 
 from tests.timetables_etl.pti.validators.conftest import TXCFile, create_validator
 
-from .conftest import DATA_DIR
-
 OBSERVATION_ID = 17
 
 
@@ -46,7 +44,7 @@ def test_start_date_provisional_invalid(no_of_services: int, expected: bool):
     )
     xml = f"<Services>{services}</Services>"
 
-    pti, _ = create_validator("dummy.xml", DATA_DIR, OBSERVATION_ID)
+    pti = create_validator(None, None, OBSERVATION_ID)
     is_valid = pti.is_valid(TXCFile(xml))
     assert is_valid == expected
 
@@ -83,6 +81,6 @@ def test_start_date_provisional_valid(_no_of_services: int, expected: bool):
     services = "\n".join([service_template.format(service_code)])
     xml = f"<Services>{services}</Services>"
 
-    pti, _ = create_validator("dummy.xml", DATA_DIR, OBSERVATION_ID)
+    pti = create_validator(None, None, OBSERVATION_ID)
     is_valid = pti.is_valid(TXCFile(xml))
     assert is_valid == expected

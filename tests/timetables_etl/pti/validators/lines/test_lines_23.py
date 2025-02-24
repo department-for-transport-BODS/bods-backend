@@ -2,9 +2,13 @@
 Lines PTI Tests
 """
 
-from unittest.mock import patch
+from unittest.mock import create_autospec, patch
 
 import pytest
+from common_layer.dynamodb.client.naptan_stop_points import (
+    NaptanStopPointDynamoDBClient,
+)
+from common_layer.xml.txc.models.txc_stoppoint.txc_stoppoint import TXCStopPoint
 
 from tests.timetables_etl.pti.validators.conftest import TXCFile
 
@@ -12,15 +16,6 @@ from ..conftest import create_validator, run_validation
 from .conftest import DATA_DIR
 
 OBSERVATION_ID = 23
-
-
-@pytest.fixture(autouse=True, scope="module")
-def m_stop_point_client():
-    """
-    Patched Naptan Stop Point DynamoDB client
-    """
-    with patch("pti.app.validators.lines.NaptanStopPointDynamoDBClient") as m_client:
-        yield m_client
 
 
 def test_validate_less_than_two_lines():
@@ -37,7 +32,7 @@ def test_validate_less_than_two_lines():
     """
     xml = f"<Services>{service}</Services>"
 
-    pti, _ = create_validator("dummy.xml", DATA_DIR, OBSERVATION_ID)
+    pti = create_validator(None, None, OBSERVATION_ID)
     is_valid = pti.is_valid(TXCFile(xml))
     assert is_valid
 
@@ -61,7 +56,7 @@ def test_related_lines(filename: str, expected: bool):
     assert is_valid == expected
 
 
-def test_non_related_with_stop_areas(m_stop_point_client):
+def test_non_related_with_stop_areas():
     """
     Test validation of non-related lines with matching stop areas
     The following atco codes come from nonrelatedlines.xml one stop in each line
@@ -69,10 +64,19 @@ def test_non_related_with_stop_areas(m_stop_point_client):
     l1stop = "9990000001"
     l1_n_stop = "9990000026"
     stop_areas_in_common = ["match"]
-    m_stop_point_client.get_stop_area_map.return_value = {
-        l1stop: stop_areas_in_common,
-        l1_n_stop: stop_areas_in_common,
-    }
+
+    m_stop_point_client = create_autospec(spec=NaptanStopPointDynamoDBClient)
+    m_stop_point_client.get_by_atco_codes.return_value = (
+        [
+            TXCStopPoint.model_construct(
+                AtcoCode=l1stop, StopAreas=stop_areas_in_common
+            ),
+            TXCStopPoint.model_construct(
+                AtcoCode=l1_n_stop, StopAreas=stop_areas_in_common
+            ),
+        ],
+        [],
+    )
 
     is_valid = run_validation(
         "nonrelatedlines.xml", DATA_DIR, OBSERVATION_ID, m_stop_point_client

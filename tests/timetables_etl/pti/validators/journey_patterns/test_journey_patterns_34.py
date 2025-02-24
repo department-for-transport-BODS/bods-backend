@@ -7,8 +7,6 @@ import pytest
 
 from tests.timetables_etl.pti.validators.conftest import TXCFile, create_validator
 
-from .conftest import DATA_DIR
-
 OBSERVATION_ID = 34
 
 
@@ -119,6 +117,6 @@ def test_run_time_validation(
    </VehicleJourneys>
    """
 
-    pti, _ = create_validator("dummy.xml", DATA_DIR, OBSERVATION_ID)
+    pti = create_validator(None, None, OBSERVATION_ID)
     is_valid = pti.is_valid(TXCFile(xml))
     assert is_valid == expected
