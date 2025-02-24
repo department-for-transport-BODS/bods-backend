@@ -73,6 +73,6 @@ def test_line_descriptions(xml: str, expected: bool):
     Test validation of line descriptions
     Validates that lines have proper inbound or outbound descriptions
     """
-    pti, _ = create_validator("dummy.xml", DATA_DIR, OBSERVATION_ID)
+    pti = create_validator(None, None, OBSERVATION_ID)
     is_valid = pti.is_valid(TXCFile(xml))
     assert is_valid if expected else not is_valid
