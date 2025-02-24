@@ -89,7 +89,6 @@ class LinesValidator(BaseValidator):
                 line_to_stops[line.ref] += stops
 
         combinations = itertools.combinations(line_to_stops.keys(), 2)
-        combos_checked = 0
         for line1, line2 in combinations:
             line1_stops = line_to_stops.get(line1, [])
             line2_stops = line_to_stops.get(line2, [])
@@ -111,15 +110,9 @@ class LinesValidator(BaseValidator):
             line2_localities = [name for name in line2_localities if name]
             disjointed_localities = set(line1_localities).isdisjoint(line2_localities)
 
-            combos_checked += 1
-
             if all([disjointed_stop_areas, disjointed_stops, disjointed_localities]):
-                log.info(
-                    f"VIOLATION FOUND AFTER CHECKING {combos_checked} COMBINATIONS"
-                )
                 return False
 
-        log.info(f"NO VIOLATION FOUND AFTER CHECKING {combos_checked} COMBINATIONS")
         return True
 
     def validate(self) -> bool:
