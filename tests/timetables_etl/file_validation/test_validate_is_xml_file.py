@@ -4,7 +4,7 @@ Test whether a file is an XML
 
 import pytest
 from common_layer.exceptions.xml_file_exceptions import FileNotXML
-from file_validation.app.xml_checks import is_xml_file
+from file_validation.app.xml_checks import validate_is_xml_file
 
 
 @pytest.mark.parametrize(
@@ -37,7 +37,7 @@ def test_valid_xml_filenames(file_name: str) -> None:
     Test that valid XML filenames are correctly identified.
     Tests various patterns of valid .xml extensions.
     """
-    assert is_xml_file(file_name) is True
+    assert validate_is_xml_file(file_name) is True
 
 
 @pytest.mark.parametrize(
@@ -71,4 +71,4 @@ def test_invalid_xml_filenames(file_name: str) -> None:
     Tests various patterns of invalid or missing .xml extensions.
     """
     with pytest.raises(FileNotXML):
-        is_xml_file(file_name)
+        validate_is_xml_file(file_name)
