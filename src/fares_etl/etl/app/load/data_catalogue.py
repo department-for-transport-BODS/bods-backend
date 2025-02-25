@@ -1,3 +1,7 @@
+"""
+Load fares data catalogue metadata into database
+"""
+
 from common_layer.database.client import SqlDB
 from common_layer.database.repos.repo_fares import FaresDataCatalogueMetadataRepo
 from common_layer.xml.netex.models.netex_publication_delivery import (

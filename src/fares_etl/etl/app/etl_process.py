@@ -105,14 +105,3 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext):
     )
 
     return {"status_code": 200, "message": "ETL Completed"}
-
-
-def main():
-    lambda_handler(
-        {
-            "task_id": 3800,
-            "s3_bucket_name": "fares-serverless-test-data-lj",
-            "s3_file_key": "ACYM_B0G8_Inbound_ADRTN_NoTicketValidityPeriod_638724195899622062_lYc9HrK.xml",
-        },
-        {},  # type: ignore
-    )

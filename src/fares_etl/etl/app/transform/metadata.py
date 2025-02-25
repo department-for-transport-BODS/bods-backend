@@ -2,7 +2,6 @@
 Create fares metadata
 """
 
-from common_layer.database.client import SqlDB
 from common_layer.database.models.model_fares import FaresMetadata
 from common_layer.database.repos.repo_naptan import NaptanStopPointRepo
 from common_layer.xml.netex.helpers.helpers_counts import (
@@ -57,11 +56,12 @@ def create_metadata(
     )
 
 
-def get_stop_ids(netex: PublicationDeliveryStructure, db: SqlDB) -> list[int]:
+def get_stop_ids(
+    netex: PublicationDeliveryStructure, naptan_stop_point_repo: NaptanStopPointRepo
+) -> list[int]:
     """
     Create FaresMetadataStops
     """
-    naptan_stop_points_repo = NaptanStopPointRepo(db)
     sorted_frames = sort_frames(netex.dataObjects)
     stop_point_refs = get_scheduled_stop_point_refs(sorted_frames.fare_frames)
 
@@ -75,9 +75,11 @@ def get_stop_ids(netex: PublicationDeliveryStructure, db: SqlDB) -> list[int]:
         if stop.naptan_code:
             naptan_ids.add(stop.naptan_code)
 
-    stops_from_atco_ids = naptan_stop_points_repo.get_by_atco_codes(list(atco_ids))[0]
-    stops_from_naptan_ids = naptan_stop_points_repo.get_by_naptan_codes(
-        list(naptan_ids)
+    stops_from_atco_ids = naptan_stop_point_repo.get_by_atco_codes(
+        sorted(list(atco_ids))
+    )[0]
+    stops_from_naptan_ids = naptan_stop_point_repo.get_by_naptan_codes(
+        sorted(list(naptan_ids))
     )[0]
 
     stops = stops_from_atco_ids + stops_from_naptan_ids

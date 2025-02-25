@@ -149,29 +149,27 @@ Resources:
           Fn::ImportValue: !Sub '${ProjectName}-${Environment}-generate-output-zip-lambda-arn'
         ExceptionHandlerLambdaArn:
           Fn::ImportValue: !Sub '${ProjectName}-${Environment}-exception-handler-lambda-arn'
+        EtlProcessLambdaArn: !GetAtt  EtlProcessLambda.Arn
         DefaultS3BucketName: !Sub 'bodds-${Environment}'
 
   ##########################
   #### LAMBDA FUNCTIONS ####
   ##########################
-  PlaceholderLambda:
+  EtlProcessLambda:
     Type: AWS::Serverless::Function
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-placeholder-lambda'
-      Description: Fares ETL - Placeholder
+      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-etl-process-lambda'
+      Description: Fares ETL - FileProcessing - Extracts NeTEx metadata and data catalogue info to database
       Role: !GetAtt CommonLambdaExecutionRole.Arn
-      CodeUri: ./src/fares_etl/placeholder
-      Handler: app.placeholder.lambda_handler
+      CodeUri: ./src/fares_etl/etl
+      Handler: app.etl_process.lambda_handler
+      Timeout: 900
+      MemorySize: 1024
       Layers:
         - !Ref BoilerplateLambdaLayerArn
-      MemorySize: 512
-      Timeout: 300
-      Environment:
-        Variables:
-          PLACEHOLDER_VAR: 'dummy'
       LoggingConfig:
-        LogGroup: !Ref PlaceholderLambdaLogGroup
+        LogGroup: !Ref EtlProcessLambdaLogGroup
 
   ###################
   #### IAM ROLES ####
@@ -275,7 +273,7 @@ Resources:
               - Effect: Allow
                 Action: lambda:InvokeFunction
                 Resource:
-                  - !GetAtt PlaceholderLambda.Arn
+                  - !GetAtt EtlProcessLambda.Arn
                   - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-initialize-pipeline-lambda-arn'
                   - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-clamav-scanner-lambda-arn'
                   - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-download-dataset-lambda-arn'
@@ -352,10 +350,10 @@ Resources:
         - !Ref AWS::NoValue
       RetentionInDays: 30
 
-  PlaceholderLambdaLogGroup:
+  EtlProcessLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-placeholder-lambda'
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-etl-process-lambda'
       KmsKeyId: !If
         - IsNotLocal
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'

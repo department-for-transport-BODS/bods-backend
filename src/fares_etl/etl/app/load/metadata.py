@@ -1,9 +1,14 @@
+"""
+Load fares metadata into database
+"""
+
 from common_layer.database.client import SqlDB
 from common_layer.database.models.model_fares import FaresMetadataStop
 from common_layer.database.repos.repo_fares import (
     FaresMetadataRepo,
     FaresMetadataStopsRepo,
 )
+from common_layer.database.repos.repo_naptan import NaptanStopPointRepo
 from common_layer.xml.netex.models.netex_publication_delivery import (
     PublicationDeliveryStructure,
 )
@@ -18,9 +23,10 @@ def load_metadata(
     Load metadata
     """
     fares_metadata_repo = FaresMetadataRepo(db)
+    naptan_stop_point_repo = NaptanStopPointRepo(db)
 
     metadata = create_metadata(netex_data, metadata_dataset_id)
-    stop_ids = get_stop_ids(netex_data, db)
+    stop_ids = get_stop_ids(netex_data, naptan_stop_point_repo)
 
     metadata_id = fares_metadata_repo.insert(metadata).datasetmetadata_ptr_id
 
