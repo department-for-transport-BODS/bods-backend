@@ -20,6 +20,7 @@ from structlog.stdlib import get_logger
 
 from ..helpers import ReferenceDataLookups, StopsLookup
 from ..models import PatternCommonStats, TaskData
+from ..transform.service_pattern_mapping import map_unique_journey_patterns
 from ..transform.service_patterns import create_service_pattern
 from ..transform.utils_stops import get_pattern_stops
 from .models_context import ProcessPatternCommonContext
@@ -84,6 +85,12 @@ def process_standard_service_patterns(
         journey_pattern_sections=txc.JourneyPatternSections,
         stop_mapping=lookups.stops,
         db=db,
+    )
+
+    service_pattern_mapping = map_unique_journey_patterns(txc, lookups)
+    log.critical(
+        "Service Pattern Mapping Created",
+        service_pattern_mapping=service_pattern_mapping,
     )
 
     for txc_jp in service.StandardService.JourneyPattern:
