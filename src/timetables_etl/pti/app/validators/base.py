@@ -195,16 +195,3 @@ class BaseValidator:
             all_stop_refs += stop_refs
 
         return list(set(all_stop_refs))
-
-    def get_locality_name_from_annotated_stop_point_ref(self, ref: str) -> str | None:
-        """
-        Get the LocalityName of an AnnotatedStopPointRef from its StopPointRef.
-        """
-        xpath = (
-            "//x:StopPoints//x:AnnotatedStopPointRef[string(x:StopPointRef)"
-            f" = '{ref}']/x:LocalityName/text()"
-        )
-        names = self.root.xpath(xpath, namespaces=self.namespaces)
-        if names:
-            return names[0]
-        return None

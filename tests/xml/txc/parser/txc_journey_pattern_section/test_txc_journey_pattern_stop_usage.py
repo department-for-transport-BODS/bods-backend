@@ -41,6 +41,23 @@ from lxml import etree
         ),
         pytest.param(
             """
+            <JourneyPatternStopUsage id="su1" SequenceNumber="5">
+                <Activity>pickUpAndSetDown</Activity>
+                <StopPointRef>sp1</StopPointRef>
+                <TimingStatus>principalTimingPoint</TimingStatus>
+            </JourneyPatternStopUsage>
+            """,
+            TXCJourneyPatternStopUsage(
+                id="su1",
+                Activity="pickUpAndSetDown",
+                StopPointRef="sp1",
+                TimingStatus="principalTimingPoint",
+                SequenceNumber="5",
+            ),
+            id="Sequence number",
+        ),
+        pytest.param(
+            """
             <JourneyPatternStopUsage id="su1">
                 <SequenceNumber>1</SequenceNumber>
                 <WaitTime>PT1M</WaitTime>

@@ -8,7 +8,13 @@ from typing import cast, get_args
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
-from ...utils import find_section, get_element_bool, get_element_int, get_element_text
+from ...utils import (
+    find_section,
+    get_element_bool,
+    get_element_int,
+    get_element_text,
+    parse_xml_attribute,
+)
 from ..models import (
     ActivityT,
     TimingStatusT,
@@ -73,6 +79,7 @@ def parse_journey_pattern_stop_usage(
         TimingStatus=timing_status,
         FareStageNumber=fare_stage_number,
         FareStage=fare_stage,
+        SequenceNumber=parse_xml_attribute(stop_usage_xml, "SequenceNumber"),
     )
 
 
