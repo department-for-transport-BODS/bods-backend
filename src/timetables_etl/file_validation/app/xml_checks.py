@@ -43,11 +43,10 @@ def dangerous_xml_check(file_object: BytesIO, file_name: str) -> ElementTree:
         raise DangerousXML(file_name, message=err) from err
 
 
-def is_xml_file(file_name: str) -> bool:
+def validate_is_xml_file(file_name: str) -> None:
     """
     Check file extension ends in .xml
     """
     if not file_name.lower().endswith(".xml"):
         log.error("File is not a xml file", file_name=file_name)
         raise FileNotXML(file_name)
-    return True
