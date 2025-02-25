@@ -37,7 +37,7 @@ def test_valid_xml_filenames(file_name: str) -> None:
     Test that valid XML filenames are correctly identified.
     Tests various patterns of valid .xml extensions.
     """
-    assert validate_is_xml_file(file_name) is True
+    validate_is_xml_file(file_name)
 
 
 @pytest.mark.parametrize(
