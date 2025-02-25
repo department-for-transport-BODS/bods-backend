@@ -91,9 +91,14 @@ def parse_composite_frame(elem: _Element) -> CompositeFrame:
     responsibility_set_ref = parse_xml_attribute(elem, "responsibilitySetRef")
     if responsibility_set_ref is None:
         raise ValueError("Missing Responisilbity set ref")
-    valid_between = FromToDate(
-        FromDate=parse_timestamp(elem, "FromDate"),
-        ToDate=parse_timestamp(elem, "ToDate"),
+    valid_between_elem = get_netex_element(elem, "ValidBetween")
+    valid_between = (
+        FromToDate(
+            FromDate=parse_timestamp(valid_between_elem, "FromDate"),
+            ToDate=parse_timestamp(valid_between_elem, "ToDate"),
+        )
+        if valid_between_elem
+        else None
     )
 
     name = parse_multilingual_string(elem, "Name")

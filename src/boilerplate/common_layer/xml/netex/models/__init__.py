@@ -38,6 +38,7 @@ from .fare_frame import (
 from .fare_frame.netex_fare_zone import FareZone
 from .fare_frame.netex_frame_defaults import FrameDefaultsStructure
 from .fare_frame.netex_price_group import GeographicalIntervalPrice, PriceGroup
+from .fare_frame.netex_sales_offer_package import SalesOfferPackage
 from .netex_publication_delivery import PublicationDeliveryStructure
 from .netex_publication_request import (
     NetworkFrameRequestPolicyStructure,

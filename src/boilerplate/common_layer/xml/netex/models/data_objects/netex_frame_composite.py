@@ -28,7 +28,7 @@ class CompositeFrame(BaseModel):
     responsibilitySetRef: Annotated[str, Field(description="Id")]
 
     # Children
-    ValidBetween: Annotated[FromToDate, Field(description="Validity")]
+    ValidBetween: Annotated[FromToDate | None, Field(description="Validity")]
     Name: Annotated[MultilingualString | str, Field(description="Name of the frame")]
     Description: Annotated[
         MultilingualString | str | None,

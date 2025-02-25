@@ -26,3 +26,4 @@ from .netex_frame_fare import (
     TypeOfTravelDocument,
 )
 from .netex_price_group import GeographicalIntervalPrice, PriceGroup
+from .netex_sales_offer_package import SalesOfferPackage

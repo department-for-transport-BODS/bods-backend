@@ -70,7 +70,7 @@ def parse_scheduled_stop_point(elem: _Element) -> ScheduledStopPoint | None:
     """
     Parse a single ScheduledStopPoint element
     """
-    stop_id, stop_version = parse_version_and_id(elem)
+    stop_version, stop_id = parse_version_and_id(elem)
     name = parse_multilingual_string(elem, "Name")
 
     if not stop_id or not stop_version:

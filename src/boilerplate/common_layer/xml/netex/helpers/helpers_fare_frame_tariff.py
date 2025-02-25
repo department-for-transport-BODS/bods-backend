@@ -23,11 +23,11 @@ def get_tariff_basis(tariffs: list[Tariff]) -> list[TariffBasisT]:
     """
     Get Tariff Basis
     """
-    tariff_basis_list: list[TariffBasisT] = []
+    tariff_basis_list: set[TariffBasisT] = set()
     for tariff in tariffs:
         if tariff.TariffBasis is not None:
-            tariff_basis_list.append(tariff.TariffBasis)
-    return tariff_basis_list
+            tariff_basis_list.add(tariff.TariffBasis)
+    return list(tariff_basis_list)
 
 
 def earliest_tariff_from_date(tariffs: list[Tariff]) -> datetime | None:
@@ -70,7 +70,7 @@ def latest_tariff_to_date(tariffs: list[Tariff]) -> datetime | None:
     return max(to_dates)
 
 
-def get_user_types(tariffs: list[Tariff]) -> list[UserTypeT] | None:
+def get_user_types(tariffs: list[Tariff]) -> list[UserTypeT]:
     """
     Extract user types from tariff fare structures.
     Returns a list of UserTypeT if found, None otherwise.
@@ -85,4 +85,4 @@ def get_user_types(tariffs: list[Tariff]) -> list[UserTypeT] | None:
         if isinstance(limitation, UserProfile) and limitation.UserType
     ]
 
-    return user_types or None
+    return user_types

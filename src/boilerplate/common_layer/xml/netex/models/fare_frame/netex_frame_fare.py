@@ -8,6 +8,9 @@ from typing import Annotated
 
 from common_layer.xml.netex.models.fare_frame.netex_fare_zone import FareZone
 from common_layer.xml.netex.models.fare_frame.netex_price_group import PriceGroup
+from common_layer.xml.netex.models.fare_frame.netex_sales_offer_package import (
+    SalesOfferPackage,
+)
 from pydantic import BaseModel, Field
 
 from ..data_objects.netex_data_object_profiles import UserProfile
@@ -190,4 +193,8 @@ class FareFrame(BaseModel):
     ]
     fareTables: Annotated[
         list[FareTable] | None, Field(description="list of fare tables", default=None)
+    ]
+    salesOfferPackages: Annotated[
+        list[SalesOfferPackage] | None,
+        Field(description="list of sales offer packages", default=None),
     ]

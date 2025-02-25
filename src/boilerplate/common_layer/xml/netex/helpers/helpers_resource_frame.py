@@ -9,18 +9,19 @@ from ..models import ResourceFrame
 log = get_logger()
 
 
-def get_national_operator_codes(frame: ResourceFrame) -> list[str]:
+def get_national_operator_codes(frames: list[ResourceFrame]) -> list[str]:
     """
     Get List of National Operator Codes
     """
-    operator_codes: list[str] = []
+    operator_codes: set[str] = set()
 
-    for operator in frame.organisations:
+    for frame in frames:
+        for operator in frame.organisations:
+            public_code = operator.PublicCode
 
-        public_code = operator.PublicCode
-        if public_code is not None:
-            operator_codes.append(public_code)
-        else:
-            log.info("Operator Missing PublicCode", operator_id=operator.id)
+            if public_code is not None:
+                operator_codes.add(public_code)
+            else:
+                log.info("Operator Missing PublicCode", operator_id=operator.id)
 
-    return operator_codes
+    return list(operator_codes)

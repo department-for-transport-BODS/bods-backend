@@ -100,7 +100,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pylint.MAIN]
-source-roots = ["./src/timetables_etl", "./src/boilerplate"]
+source-roots = ["./src/timetables_etl", "./src/fares_etl", "./src/common_lambdas", "./src/boilerplate"]
 extension-pkg-allow-list = ["lxml", "pydantic", "pydantic_core"]
 [tool.pylint."MESSAGES CONTROL"]
 disable = ["too-few-public-methods"]
@@ -112,13 +112,14 @@ extraPaths = [
   "src",
   "src/boilerplate",
   "src/timetables_etl",
+  "src/fares_etl",
   "src/common_lambdas",
 ]
 reportMissingImports = "error"
 reportMissingTypeStubs = false
 strict = [
   "src/boilerplate/common_layer/txc/**",
-  "src/timetables_etl/schema_check/**",
+  "src/common_lambdas/schema_check/**",
   "src/timetables_etl/generate_output_zip/**",
 ]
 
@@ -126,6 +127,7 @@ strict = [
 pythonpath = [
   "./src",
   "./src/timetables_etl",
+  "./src/fares_etl",
   "./tests",
   "./src/boilerplate",
   "./src/common_lambdas",

@@ -10,6 +10,12 @@ from common_layer.xml.netex.models.fare_frame.netex_frame_defaults import (
 from common_layer.xml.netex.models.fare_frame.netex_frame_fare import (
     PricingParameterSet,
 )
+from common_layer.xml.netex.models.fare_frame.netex_sales_offer_package import (
+    SalesOfferPackage,
+)
+from common_layer.xml.netex.parser.fare_frame.netex_fare_sales_offer_package import (
+    parse_sales_offer_packages,
+)
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
@@ -70,6 +76,7 @@ class FareFrameContent:
     fare_products: list[PreassignedFareProduct]
     tariffs: list[Tariff]
     fare_zones: list[FareZone]
+    sales_offer_packages: list[SalesOfferPackage]
 
 
 def parse_fare_frame_core_attributes(elem: _Element) -> FareFrameCoreAttributes:
@@ -91,6 +98,7 @@ def parse_fare_frame_content(elem: _Element) -> FareFrameContent:
         fare_products=[],
         tariffs=[],
         fare_zones=[],
+        sales_offer_packages=[],
     )
 
     for child in elem:
@@ -108,6 +116,8 @@ def parse_fare_frame_content(elem: _Element) -> FareFrameContent:
                 content.tariffs = parse_tariffs(child)
             case "fareZones":
                 content.fare_zones = parse_fare_zones(child)
+            case "salesOfferPackages":
+                content.sales_offer_packages = parse_sales_offer_packages(child)
             case "Name" | "Description" | "TypeOfFrameRef" | "dataSourceRef":
                 pass  # These are handled in core attributes
             case _:
@@ -143,4 +153,7 @@ def parse_fare_frame(elem: _Element) -> FareFrame:
         fulfilmentMethods=None,
         typesOfTravelDocuments=None,
         priceGroups=None,
+        salesOfferPackages=(
+            content.sales_offer_packages if content.sales_offer_packages else None
+        ),
     )

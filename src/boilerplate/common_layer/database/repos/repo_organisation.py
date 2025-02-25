@@ -11,6 +11,7 @@ from structlog.stdlib import get_logger
 from ..client import SqlDB
 from ..models import (
     OrganisationDataset,
+    OrganisationDatasetMetadata,
     OrganisationDatasetRevision,
     OrganisationOrganisation,
     OrganisationTXCFileAttributes,
@@ -41,6 +42,26 @@ class OrganisationDatasetRepo(BaseRepositoryWithId[OrganisationDataset]):
             self._model.live_revision_id.in_(live_revision_ids)
         )
         return self._fetch_all(statement)
+
+
+class OrganisationDatasetMetdataRepo(BaseRepositoryWithId[OrganisationDatasetMetadata]):
+    """
+    Repository for managing OrganisationDatasetMetadata entities
+    Table: organisation_datasetmetadata
+    """
+
+    def __init__(self, db: SqlDB):
+        super().__init__(db, OrganisationDatasetMetadata)
+
+    @handle_repository_errors
+    def get_by_revision_id(
+        self, revision_id: int
+    ) -> OrganisationDatasetMetadata | None:
+        """
+        Get all metadata for a revision id
+        """
+        statement = self._build_query().where(self._model.revision_id == revision_id)
+        return self._fetch_one(statement)
 
 
 class OrganisationDatasetRevisionRepo(
