@@ -17,7 +17,6 @@ from common_layer.xml.netex.parser import (
     parse_network_filter_by_value,
     parse_network_frame_topic,
 )
-from common_layer.xml.netex.parser.netex_references import parse_object_references
 
 from tests.xml.conftest import assert_model_equal
 from tests.xml.netex.conftest import parse_xml_str_as_netex

@@ -79,7 +79,7 @@ def parse_preassigned_product_attributes(elem: _Element) -> tuple[str, str]:
 
 def parse_preassigned_product_refs(
     elem: _Element,
-) -> tuple[VersionedRef, VersionedRef, VersionedRef]:
+) -> tuple[VersionedRef, VersionedRef, VersionedRef | None]:
     """Parse required references"""
     charging_moment_ref = parse_versioned_ref(elem, "ChargingMomentRef")
     if charging_moment_ref is None:
@@ -92,8 +92,6 @@ def parse_preassigned_product_refs(
         )
 
     operator_ref = parse_versioned_ref(elem, "OperatorRef")
-    if operator_ref is None:
-        raise ValueError("Missing required OperatorRef in PreassignedFareProduct")
 
     return charging_moment_ref, type_of_fare_product_ref, operator_ref
 
@@ -164,9 +162,6 @@ def parse_preassigned_fare_product(elem: _Element) -> PreassignedFareProduct:
             case _:
                 log.warning("Unknown PreassignedFareProduct tag", tag=tag)
         child.clear()
-
-    if condition_summary is None:
-        raise ValueError("Missing required ConditionSummary in PreassignedFareProduct")
 
     return PreassignedFareProduct(
         id=product_id,

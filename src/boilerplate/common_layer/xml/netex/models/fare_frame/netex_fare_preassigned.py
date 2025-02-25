@@ -61,9 +61,11 @@ class PreassignedFareProduct(BaseModel):
     TypeOfFareProductRef: Annotated[
         VersionedRef, Field(description="Reference to product type")
     ]
-    OperatorRef: Annotated[VersionedRef, Field(description="Reference to operator")]
+    OperatorRef: Annotated[
+        VersionedRef | None, Field(description="Reference to operator")
+    ]
     ConditionSummary: Annotated[
-        ConditionSummary, Field(description="Summary of conditions")
+        ConditionSummary | None, Field(description="Summary of conditions")
     ]
     validableElements: Annotated[
         list[ValidableElement], Field(description="list of validable elements")

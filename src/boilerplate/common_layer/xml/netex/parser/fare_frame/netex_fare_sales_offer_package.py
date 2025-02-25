@@ -8,7 +8,7 @@ from structlog import get_logger
 log = get_logger()
 
 
-def parse_sales_offer_package(elem: _Element) -> SalesOfferPackage | None:
+def parse_sales_offer_package(elem: _Element) -> SalesOfferPackage:
     """
     Parse a single SalesOfferPackage element
     """
@@ -21,7 +21,7 @@ def parse_sales_offer_package(elem: _Element) -> SalesOfferPackage | None:
             id=sales_offer_package_id,
             version=sales_offer_package_version,
         )
-        return None
+        raise ValueError("Missing required id or version in sales offer package")
 
     return SalesOfferPackage(
         id=sales_offer_package_id, version=sales_offer_package_version

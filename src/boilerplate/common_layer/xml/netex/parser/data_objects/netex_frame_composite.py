@@ -8,6 +8,9 @@ from common_layer.xml.netex.models import (
     ResourceFrame,
     ServiceFrame,
 )
+from common_layer.xml.netex.parser.netex_constants import (
+    NETEX_METADATA_FRAME_IDENTIFIER,
+)
 from common_layer.xml.utils import get_tag_name
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
@@ -65,7 +68,9 @@ def parse_frames(
         tag = get_tag_name(child)
         match tag:
             case "CompositeFrame":
-                frames.append(parse_composite_frame(child))
+                _, frame_id = parse_version_and_id(child)
+                if NETEX_METADATA_FRAME_IDENTIFIER not in frame_id:
+                    frames.append(parse_composite_frame(child))
             case "ResourceFrame":
                 frames.append(parse_resource_frame(child))
             case "ServiceFrame":

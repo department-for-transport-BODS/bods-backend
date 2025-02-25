@@ -23,6 +23,7 @@ class SortedFrames(BaseModel):
     service_frames: list[ServiceFrame] = []
     resource_frames: list[ResourceFrame] = []
     fare_frames: list[FareFrame] = []
+    composite_frames: list[CompositeFrame] = []
 
 
 def sort_frames(
@@ -40,6 +41,7 @@ def sort_frames(
         match frame:
             case CompositeFrame():
                 frames_to_process.extend(frame.frames)
+                sorted_frames.composite_frames.append(frame)
             case ServiceFrame():
                 sorted_frames.service_frames.append(frame)
             case ResourceFrame():
@@ -63,13 +65,6 @@ def number_of_fare_zones(frames: list[FareFrame]) -> int:
     Number of Fare Zones
     """
     return len(get_fare_zones(frames))
-
-
-def number_of_fare_products(fare_products: list[PreassignedFareProduct]) -> int:
-    """
-    Number of Fare Products
-    """
-    return len(fare_products)
 
 
 def number_of_pass_fare_products(fare_products: list[PreassignedFareProduct]) -> int:

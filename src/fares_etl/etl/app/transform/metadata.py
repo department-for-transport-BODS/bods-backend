@@ -7,7 +7,6 @@ from common_layer.database.models.model_fares import FaresMetadata
 from common_layer.database.repos.repo_naptan import NaptanStopPointRepo
 from common_layer.xml.netex.helpers.helpers_counts import (
     number_of_distinct_user_profiles,
-    number_of_fare_products,
     number_of_fare_zones,
     number_of_lines,
     number_of_pass_fare_products,
@@ -49,7 +48,7 @@ def create_metadata(
         num_of_sales_offer_packages=number_of_sales_offer_packages(
             sorted_frames.fare_frames
         ),
-        num_of_fare_products=number_of_fare_products(fare_products),
+        num_of_fare_products=len(fare_products),
         num_of_user_profiles=number_of_distinct_user_profiles(tariffs),
         num_of_pass_products=number_of_pass_fare_products(fare_products),
         num_of_trip_products=number_of_trip_fare_products(fare_products),
