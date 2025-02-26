@@ -141,9 +141,7 @@ class PipelineErrorCodeRepository(BaseRepositoryWithId[PipelineErrorCode]):
         statement = self._build_query().where(self._model.error == error)
         return self._fetch_one(statement)
 
-    def get_or_create_by_error_code(
-        self, status: ETLErrorCode
-    ) -> PipelineErrorCode | None:
+    def get_or_create_by_error_code(self, status: ETLErrorCode) -> PipelineErrorCode:
         """
         Retrieves the pipeline error code object for a given task state.
         Creates a new pipeline error if it doesn't exist.
