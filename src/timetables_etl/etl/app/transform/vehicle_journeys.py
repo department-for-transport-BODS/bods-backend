@@ -42,7 +42,10 @@ def create_vehicle_journey(
     match vehicle_journey:
         case TXCVehicleJourney():
             departure_time = cast(time, vehicle_journey.DepartureTime)
-            departure_day_shift = bool(vehicle_journey.DepartureDayShift)
+            # Technically if DepartureDayShift is 0 it should be False
+            # However it is a change in BODS behaviour
+            # `and vehicle_journey.DepartureDayShift != 0`
+            departure_day_shift = vehicle_journey.DepartureDayShift is not None
         case TXCFlexibleVehicleJourney():
             departure_time = None
             departure_day_shift = False

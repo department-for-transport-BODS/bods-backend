@@ -6,7 +6,6 @@ Mandatory elements incorrect in VehicleJourney field
 import pytest
 
 from ..conftest import TXCFile, create_validator
-from .conftest import DATA_DIR
 
 OBSERVATION_ID = 39
 
@@ -52,6 +51,6 @@ def test_validate_vehicle_journey_ref(
     )
 
     xml = vehicle_journey.format(vj_ref, profile)
-    pti, _ = create_validator("dummy.xml", DATA_DIR, OBSERVATION_ID)
+    pti = create_validator(None, None, OBSERVATION_ID)
     is_valid = pti.is_valid(TXCFile(xml))
     assert is_valid == expected

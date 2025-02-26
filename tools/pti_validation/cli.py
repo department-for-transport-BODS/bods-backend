@@ -2,8 +2,9 @@
 Runs PTI Validation against specified database
 """
 
-from io import BytesIO
 import os
+from io import BytesIO
+
 import boto3
 import typer
 from common_layer.database.client import ProjectEnvironment
@@ -64,6 +65,12 @@ def main(
 ):
     """Run PTI Validation on given TXC XML files for testing"""
 
+    if log_json:
+        configure_logging()
+
+    if use_dotenv:
+        dotenv_loader()
+
     # Check if all variables are set
     missing_vars = [var for var in DYNAMODB_ENVS if not os.getenv(var)]
 
@@ -71,12 +78,6 @@ def main(
         raise EnvironmentError(
             f"Missing required environment variables: {', '.join(missing_vars)}"
         )
-
-    if log_json:
-        configure_logging()
-
-    if use_dotenv:
-        dotenv_loader()
 
     try:
         db_config = create_db_config(use_dotenv=use_dotenv)

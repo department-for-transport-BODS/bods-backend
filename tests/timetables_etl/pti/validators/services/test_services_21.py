@@ -7,8 +7,6 @@ import pytest
 
 from tests.timetables_etl.pti.validators.conftest import TXCFile, create_validator
 
-from .conftest import DATA_DIR
-
 OBSERVATION_ID = 21
 
 
@@ -53,6 +51,6 @@ def test_service_has_journey_pattern(journey_ids: list[str], expected: bool):
    """
     xml = service_template.format(patterns)
 
-    pti, _ = create_validator("dummy.xml", DATA_DIR, OBSERVATION_ID)
+    pti = create_validator(None, None, OBSERVATION_ID)
     is_valid = pti.is_valid(TXCFile(xml))
     assert is_valid == expected

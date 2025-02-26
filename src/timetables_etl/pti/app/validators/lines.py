@@ -5,8 +5,12 @@ Validations related to Lines
 import itertools
 from collections import defaultdict
 
+from attr import dataclass
 from common_layer.dynamodb.client import NaptanStopPointDynamoDBClient
 from common_layer.xml.txc.models import TXCData, TXCStopPoint
+from common_layer.xml.txc.models.txc_stoppoint.txc_stoppoint import (
+    AnnotatedStopPointRef,
+)
 from lxml import etree
 from structlog.stdlib import get_logger
 
@@ -15,22 +19,33 @@ from .base import BaseValidator
 log = get_logger()
 
 
+@dataclass
+class StopInfo:
+    """
+    Model containing the StopInfo required for PTI line validation
+    """
+
+    stop_areas: list[str] = []
+    locality_name: str | None = None
+
+
 class LinesValidator(BaseValidator):
     """
     Class for running Line validations
     """
 
-    def __init__(self, *args, stop_area_map: dict[str, list[str]], **kwargs):
-        self._stop_area_map = stop_area_map
+    def __init__(self, *args, stop_info_map: dict[str, StopInfo], **kwargs):
+        self._stop_info_map = stop_info_map
         super().__init__(*args, **kwargs)
 
     def _flatten_stop_areas(self, stops: list[str]) -> set[str]:
         """
-        Given list of stops, returns flattened set
+        Given list of stops, returns flattened set of stop areas
         """
         stop_areas = []
         for stop in stops:
-            stop_areas += self._stop_area_map.get(stop, [])
+            stop_info = self._stop_info_map.get(stop, None)
+            stop_areas += stop_info.stop_areas if stop_info else []
         return set(stop_areas)
 
     def check_for_common_journey_patterns(self) -> bool:
@@ -51,6 +66,15 @@ class LinesValidator(BaseValidator):
             if set(line1_refs).isdisjoint(line2_refs):  # pyright: ignore
                 return False
         return True
+
+    def get_locality_name_from_annotated_stop_point_ref(self, ref: str) -> str | None:
+        """
+        Get the LocalityName of an AnnotatedStopPointRef from its StopPointRef.
+        """
+        stop_info = self._stop_info_map.get(ref)
+        if stop_info and stop_info.locality_name:
+            return stop_info.locality_name
+        return None
 
     def check_for_common_stops_points(self) -> bool:
         # pylint: disable=too-many-locals
@@ -108,11 +132,14 @@ class LinesValidator(BaseValidator):
         return False
 
 
-def get_lines_validator(
+def get_stop_info_map(
     naptan_client: NaptanStopPointDynamoDBClient, txc_data: TXCData
-):
+) -> dict[str, StopInfo]:
     """
-    Creates and returns a validator function for NAPTAN lines XML elements.
+    Build a map between atco codes and StopInfo required for line validation
+
+    Returns:
+        Dict of {AtcoCode: StopInfo}
     """
     atco_codes = [
         (
@@ -122,7 +149,33 @@ def get_lines_validator(
         )
         for stop_point in txc_data.StopPoints
     ]
-    stop_area_map = naptan_client.get_stop_area_map(atco_codes)
+    stop_points, _ = naptan_client.get_by_atco_codes(atco_codes)
+
+    # Populate map with StopAreas for all stops fetched from Naptan
+    stop_info_map: dict[str, StopInfo] = {
+        stop_point.AtcoCode: StopInfo(stop_areas=stop_point.StopAreas or [])
+        for stop_point in stop_points
+    }
+
+    # Populate map with LocalityName for AnnotetedStopPointRefs
+    for stop in txc_data.StopPoints:
+        if isinstance(stop, AnnotatedStopPointRef):
+            stop_ref = stop.StopPointRef
+            if stop_ref in stop_info_map:
+                stop_info_map[stop_ref].locality_name = stop.LocalityName
+            else:
+                stop_info_map[stop_ref] = StopInfo(locality_name=stop.LocalityName)
+
+    return stop_info_map
+
+
+def get_lines_validator(
+    naptan_client: NaptanStopPointDynamoDBClient, txc_data: TXCData
+):
+    """
+    Creates and returns a validator function for NAPTAN lines XML elements.
+    """
+    stop_info_map = get_stop_info_map(naptan_client, txc_data)
 
     def validate_lines(_context, lines_list: list[etree._Element]) -> bool:
         """
@@ -133,7 +186,7 @@ def get_lines_validator(
             lines_count=len(lines_list),
         )
         lines = lines_list[0]
-        validator = LinesValidator(lines, stop_area_map=stop_area_map)
+        validator = LinesValidator(lines, stop_info_map=stop_info_map)
         return validator.validate()
 
     return validate_lines
