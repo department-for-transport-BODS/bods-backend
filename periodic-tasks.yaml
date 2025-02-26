@@ -17,8 +17,6 @@ Parameters:
     Type: String
   CavlConsumerUrl:
     Type: String
-  GtfsApiBaseUrl:
-    Type: String
   RdsDbHostAddr:
     Type: String
     Default: ''
@@ -161,7 +159,8 @@ Resources:
       Environment:
         Variables:
           CAVL_CONSUMER_URL: !Ref CavlConsumerUrl
-          GTFS_API_BASE_URL: !Ref GtfsApiBaseUrl
+          GTFS_API_BASE_URL: !Ref AvlConsumerApiBaseUrl
+          GTFS_API_ACTIVE: 'True'
           AWS_SIRIVM_STORAGE_BUCKET_NAME: !If
             - IsNotLocal
             - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/sirivm/name}}'
