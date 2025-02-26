@@ -116,7 +116,10 @@ class NoMatchingJourneyPatternsForServicePattern(Exception):
         self.service_code = service_code
         self.service_pattern_id = service_pattern_id
         self.jp_ids = jp_ids
-        message = f"No matching journey patterns found for service pattern {service_pattern_id} in service {service_code}"
+        message = (
+            "No JourneyPatterns found on service pattern"
+            f"{service_pattern_id} service {service_code}"
+        )
         super().__init__(message)
 
 
@@ -181,6 +184,8 @@ def process_pattern_common(
         stops=sp_data.stop_sequence,
         bank_holidays=bank_holidays,
         serviced_orgs=context.lookups.serviced_orgs,
+        service_pattern_mapping=context.service_pattern_mapping,
+        sp_data=sp_data,
         db=context.db,
     )
 

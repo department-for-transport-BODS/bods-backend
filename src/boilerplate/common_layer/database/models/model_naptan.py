@@ -77,6 +77,7 @@ class NaptanStopPoint(BaseSQLModel):
         """
         Custom representation that shows shape coordinates instead of WKBElement
         when the object is printed
+        Allows for easier debugging
         """
         try:
             attributes = []
@@ -93,6 +94,6 @@ class NaptanStopPoint(BaseSQLModel):
                         attributes.append(f"{key}={value_str}")
 
             return f"NaptanStopPoint({', '.join(attributes)})"
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             # Fall back to default representation if there's an error
             return super().__repr__()

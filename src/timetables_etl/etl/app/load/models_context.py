@@ -22,7 +22,10 @@ from common_layer.xml.txc.models import (
 from ..helpers import StopsLookup
 from ..helpers.dataclasses import ReferenceDataLookups
 from ..helpers.types import ServicedOrgLookup
-from ..transform.service_pattern_mapping import ServicePatternMapping
+from ..transform.service_pattern_mapping import (
+    ServicePatternMapping,
+    ServicePatternMetadata,
+)
 
 
 @dataclass
@@ -45,6 +48,8 @@ class ServicePatternVehicleJourneyContext:
     bank_holidays: dict[str, list[date]]
     serviced_orgs: ServicedOrgLookup
     db: SqlDB
+    service_pattern_mapping: ServicePatternMapping
+    sp_data: ServicePatternMetadata
 
 
 @dataclass
