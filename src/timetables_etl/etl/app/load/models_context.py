@@ -6,8 +6,12 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Sequence
 
-from common_layer.database.client import SqlDB
-from common_layer.database.models import NaptanStopPoint, TransmodelServicePattern
+from common_layer.database import SqlDB
+from common_layer.database.models import (
+    NaptanStopPoint,
+    OrganisationDatasetRevision,
+    TransmodelServicePattern,
+)
 from common_layer.xml.txc.models import (
     TXCData,
     TXCJourneyPatternSection,
@@ -15,8 +19,10 @@ from common_layer.xml.txc.models import (
     TXCServicedOrganisation,
 )
 
+from ..helpers import StopsLookup
 from ..helpers.dataclasses import ReferenceDataLookups
 from ..helpers.types import ServicedOrgLookup
+from ..transform.service_pattern_mapping import ServicePatternMapping
 
 
 @dataclass
@@ -25,7 +31,7 @@ class ProcessPatternCommonContext:
 
     txc: TXCData
     service_pattern: TransmodelServicePattern
-    stops: Sequence[NaptanStopPoint]
+    service_pattern_mapping: ServicePatternMapping
     lookups: ReferenceDataLookups
     db: SqlDB
 
@@ -72,4 +78,14 @@ class OperatingProfileProcessingContext:
     tm_serviced_orgs: ServicedOrgLookup
     txc_serviced_orgs_dict: dict[str, TXCServicedOrganisation]
     txc_services: list[TXCService]
+    db: SqlDB
+
+
+@dataclass
+class ProcessServicePatternContext:
+    """Context for service pattern processing"""
+
+    revision: OrganisationDatasetRevision
+    journey_pattern_sections: list[TXCJourneyPatternSection]
+    stop_mapping: StopsLookup
     db: SqlDB

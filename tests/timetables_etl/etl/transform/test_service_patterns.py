@@ -29,11 +29,11 @@ from tests.timetables_etl.factories.txc import (
     TXCServiceFactory,
 )
 from timetables_etl.etl.app.helpers.types import LookupStopPoint, StopsLookup
-from timetables_etl.etl.app.transform.service_patterns import (
-    create_service_pattern,
+from timetables_etl.etl.app.transform.service_pattern_geom import (
     generate_service_pattern_geometry,
     get_valid_route_points,
 )
+from timetables_etl.etl.app.transform.service_patterns import create_service_pattern
 
 
 @pytest.mark.parametrize(

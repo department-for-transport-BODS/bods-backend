@@ -5,11 +5,17 @@ Creating a JourneyPattern mapping to allow for deduplication of ServicePatterns
 from dataclasses import dataclass, field
 from typing import Sequence
 
-from common_layer.database.models.model_naptan import NaptanStopPoint
+from common_layer.database.models import NaptanStopPoint
+from common_layer.xml.txc.helpers import (
+    make_line_mapping,
+    map_vehicle_journeys_to_lines,
+)
 from common_layer.xml.txc.models import (
+    JourneyPatternVehicleDirectionT,
     TXCData,
     TXCJourneyPattern,
     TXCJourneyPatternSection,
+    TXCLine,
 )
 from structlog.stdlib import get_logger
 
@@ -39,6 +45,14 @@ class ServicePatternMetadata:
             "description": "Ordered sequence of NaptanStopPoint objects in this service pattern"
         },
     )
+    direction: JourneyPatternVehicleDirectionT = field(
+        default="inherit",
+        metadata={"description": "Direction of travel for this service pattern"},
+    )
+    line_id: str = field(
+        default="",
+        metadata={"description": "Line ID associated with this service pattern"},
+    )
 
 
 @dataclass
@@ -50,6 +64,7 @@ class ServicePatternMappingStats:
     service_patterns_count: int = 0
     journey_patterns_count: int = 0
     vehicle_journey_count: int = 0
+    line_count: int = 0
 
 
 @dataclass
@@ -67,6 +82,14 @@ class ServicePatternMapping:
     service_pattern_metadata: dict[str, ServicePatternMetadata] = field(
         default_factory=dict,
         metadata={"description": "Metadata about each service pattern"},
+    )
+    line_to_txc_line: dict[str, TXCLine] = field(
+        default_factory=dict,
+        metadata={"description": "Maps line ID to TXCLine object"},
+    )
+    line_to_vehicle_journeys: dict[str, list[str]] = field(
+        default_factory=dict,
+        metadata={"description": "Maps line ID to list of vehicle journey codes"},
     )
     stats: ServicePatternMappingStats = field(
         default_factory=ServicePatternMappingStats,
@@ -96,6 +119,125 @@ class ServicePatternCollections:
         default_factory=dict,
         metadata={"description": "Maps service pattern ID to sequence of stops"},
     )
+
+
+def validate_and_set_directions(
+    txc: TXCData,
+    service_pattern_to_journey_patterns: dict[str, list[str]],
+    service_pattern_metadata: dict[str, ServicePatternMetadata],
+) -> None:
+    """
+    Validate that all journey patterns mapping to the same service pattern have the same
+    direction and set the direction in the service pattern metadata.
+    If directions differ, log a warning and use the most common direction.
+
+    """
+    # Create a lookup from journey pattern ID to the actual journey pattern object
+    journey_pattern_lookup = {
+        jp.id: jp
+        for service in txc.Services
+        if service.StandardService
+        for jp in service.StandardService.JourneyPattern
+    }
+
+    for sp_id, jp_ids in service_pattern_to_journey_patterns.items():
+        direction_counts: dict[JourneyPatternVehicleDirectionT, int] = {}
+
+        # Count the occurrence of each direction
+        for jp_id in jp_ids:
+            if jp_id in journey_pattern_lookup:
+                jp = journey_pattern_lookup[jp_id]
+                direction = jp.Direction
+                direction_counts[direction] = direction_counts.get(direction, 0) + 1
+
+        if not direction_counts:
+            log.warning(
+                "No valid journey patterns found for service pattern",
+                service_pattern_id=sp_id,
+            )
+            continue
+
+        # Check if all journey patterns have the same direction
+        if len(direction_counts) > 1:
+            # Find the most common direction
+            most_common_direction = max(direction_counts.items(), key=lambda x: x[1])
+
+            log.warning(
+                "Journey patterns with different directions mapped to the same service pattern",
+                service_pattern_id=sp_id,
+                direction_counts=direction_counts,
+                selected_direction=most_common_direction[0],
+            )
+
+            # Set the most common direction
+            if sp_id in service_pattern_metadata:
+                service_pattern_metadata[sp_id].direction = most_common_direction[0]
+        else:
+            # All journey patterns have the same direction
+            direction = next(iter(direction_counts.keys()))
+            if sp_id in service_pattern_metadata:
+                service_pattern_metadata[sp_id].direction = direction
+
+
+def validate_and_set_line_ids(
+    service_pattern_metadata: dict[str, ServicePatternMetadata],
+    vehicle_journey_to_service_pattern: dict[str, str],
+    line_to_vehicle_journeys: dict[str, list[str]],
+) -> None:
+    """
+    Validate that all vehicle journeys mapping to the same service pattern have the same
+    line ID and set the line ID in the service pattern metadata.
+    If line IDs differ, log a warning and use the most common line ID.
+    """
+    # Create a lookup from vehicle journey to line ID
+    vehicle_journey_to_line_id: dict[str, str] = {}
+    for line_id, vj_codes in line_to_vehicle_journeys.items():
+        for vj_code in vj_codes:
+            vehicle_journey_to_line_id[vj_code] = line_id
+
+    # Group vehicle journeys by service pattern
+    service_pattern_to_vehicle_journeys: dict[str, list[str]] = {}
+    for vj_code, sp_id in vehicle_journey_to_service_pattern.items():
+        if sp_id not in service_pattern_to_vehicle_journeys:
+            service_pattern_to_vehicle_journeys[sp_id] = []
+        service_pattern_to_vehicle_journeys[sp_id].append(vj_code)
+
+    # Check line IDs for each service pattern
+    for sp_id, vj_codes in service_pattern_to_vehicle_journeys.items():
+        line_id_counts: dict[str, int] = {}
+
+        # Count the occurrence of each line ID
+        for vj_code in vj_codes:
+            if vj_code in vehicle_journey_to_line_id:
+                line_id = vehicle_journey_to_line_id[vj_code]
+                line_id_counts[line_id] = line_id_counts.get(line_id, 0) + 1
+
+        if not line_id_counts:
+            log.warning(
+                "No valid line IDs found for service pattern", service_pattern_id=sp_id
+            )
+            continue
+
+        # Check if all vehicle journeys have the same line ID
+        if len(line_id_counts) > 1:
+            # Find the most common line ID
+            most_common_line_id = max(line_id_counts.items(), key=lambda x: x[1])
+
+            log.warning(
+                "Vehicle journeys with different line IDs mapped to the same service pattern",
+                service_pattern_id=sp_id,
+                line_id_counts=line_id_counts,
+                selected_line_id=most_common_line_id[0],
+            )
+
+            # Set the most common line ID
+            if sp_id in service_pattern_metadata:
+                service_pattern_metadata[sp_id].line_id = most_common_line_id[0]
+        else:
+            # All vehicle journeys have the same line ID
+            line_id = next(iter(line_id_counts.keys()))
+            if sp_id in service_pattern_metadata:
+                service_pattern_metadata[sp_id].line_id = line_id
 
 
 def create_stop_sequence_key(stops: Sequence[NaptanStopPoint]) -> tuple[str, ...]:
@@ -271,6 +413,7 @@ def map_unique_journey_patterns(
     - Identify the unique pattern of stops
     - Map Vehicle Journeys to Journey Patterns
     - Create Mappings
+    - Validate and set directions for service patterns
     """
     collections = identify_unique_patterns(txc, lookups)
 
@@ -283,6 +426,18 @@ def map_unique_journey_patterns(
         collections.service_pattern_to_stops,
     )
 
+    # Validate and set directions for all service patterns
+    validate_and_set_directions(
+        txc, collections.service_pattern_to_journey_patterns, service_pattern_metadata
+    )
+
+    line_to_txc_line = make_line_mapping(txc.Services)
+    line_to_vehicle_journeys = map_vehicle_journeys_to_lines(txc.VehicleJourneys)
+    validate_and_set_line_ids(
+        service_pattern_metadata,
+        vehicle_journey_to_service_pattern,
+        line_to_vehicle_journeys,
+    )
     log.info(
         "Created unique service patterns from journey patterns.",
         unique_service_pattern_count=len(collections.stop_sequence_to_service_pattern),
@@ -294,11 +449,14 @@ def map_unique_journey_patterns(
         service_patterns_count=len(collections.stop_sequence_to_service_pattern),
         journey_patterns_count=len(collections.journey_pattern_to_service_pattern),
         vehicle_journey_count=len(vehicle_journey_to_service_pattern),
+        line_count=len(line_to_txc_line),
     )
 
     return ServicePatternMapping(
         journey_pattern_to_service_pattern=collections.journey_pattern_to_service_pattern,
         vehicle_journey_to_service_pattern=vehicle_journey_to_service_pattern,
         service_pattern_metadata=service_pattern_metadata,
+        line_to_txc_line=line_to_txc_line,
+        line_to_vehicle_journeys=line_to_vehicle_journeys,
         stats=stats,
     )
