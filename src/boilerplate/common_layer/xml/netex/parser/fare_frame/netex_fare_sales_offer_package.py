@@ -1,3 +1,7 @@
+"""
+SalesOfferPackage
+"""
+
 from common_layer.xml.netex.models.fare_frame.netex_sales_offer_package import (
     SalesOfferPackage,
 )

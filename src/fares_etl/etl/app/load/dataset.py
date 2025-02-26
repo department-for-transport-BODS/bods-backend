@@ -29,9 +29,9 @@ def load_dataset(task_data: TaskData, schema_version: str, db: SqlDB) -> int:
     metadata_id = dataset_metadata.id if dataset_metadata else None
 
     if metadata_id:
-        fares_metadata_repo.delete_by_metadata_id(metadata_id)
-        fares_metadata_stops_repo.delete_by_metadata_id(metadata_id)
         fares_data_catalogue_repo.delete_by_metadata_id(metadata_id)
+        fares_metadata_stops_repo.delete_by_metadata_id(metadata_id)
+        fares_metadata_repo.delete_by_metadata_id(metadata_id)
     else:
         metadata_id = dataset_metadata_repo.insert(
             OrganisationDatasetMetadata(
