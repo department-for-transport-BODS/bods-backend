@@ -5,7 +5,7 @@ SQLAlchemy Organisation Repos
 from datetime import UTC, datetime
 
 from common_layer.enums import FeedStatus
-from sqlalchemy import and_
+from sqlalchemy import and_, update
 from structlog.stdlib import get_logger
 
 from ..client import SqlDB
@@ -62,6 +62,21 @@ class OrganisationDatasetMetdataRepo(BaseRepositoryWithId[OrganisationDatasetMet
         """
         statement = self._build_query().where(self._model.revision_id == revision_id)
         return self._fetch_one(statement)
+
+    @handle_repository_errors
+    def update_min_schema_version(self, schema_version: str, revision_id: int) -> None:
+        """
+        Update schema version if lower than saved version
+        """
+        with self._db.session_scope() as session:
+            statement = (
+                update(OrganisationDatasetMetadata)
+                .where(OrganisationDatasetMetadata.schema_version > schema_version)
+                .where(OrganisationDatasetMetadata.revision_id == revision_id)
+                .values(schema_version=schema_version)
+            )
+
+            session.execute(statement)
 
 
 class OrganisationDatasetRevisionRepo(
