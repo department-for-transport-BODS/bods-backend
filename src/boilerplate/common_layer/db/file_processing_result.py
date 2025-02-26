@@ -59,7 +59,7 @@ def get_file_processing_error_code(
     """
     Retrieves the error code object for a given status.
     """
-    return PipelineErrorCodeRepository(db).get_by_error_code(status)
+    return PipelineErrorCodeRepository(db).get_or_create_by_error_code(status)
 
 
 def get_or_create_step(db: SqlDB, name: str, category: str) -> PipelineProcessingStep:
