@@ -68,10 +68,6 @@ def process_standard_service_patterns(
     )
 
     service_pattern_mapping = map_unique_journey_patterns(txc, lookups)
-    log.critical(
-        "Service Pattern Mapping Created",
-        service_pattern_mapping=service_pattern_mapping,
-    )
 
     for service_pattern_id in service_pattern_mapping.service_pattern_metadata:
         service_pattern = process_service_pattern(

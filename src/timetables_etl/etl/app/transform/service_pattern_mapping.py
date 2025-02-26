@@ -443,6 +443,7 @@ def map_unique_journey_patterns(
         unique_service_pattern_count=len(collections.stop_sequence_to_service_pattern),
         journey_pattern_count=len(collections.journey_pattern_to_service_pattern),
         vehicle_journey_count=len(vehicle_journey_to_service_pattern),
+        line_count=len(line_to_txc_line),
     )
 
     stats = ServicePatternMappingStats(

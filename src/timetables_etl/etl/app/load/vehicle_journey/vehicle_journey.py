@@ -174,7 +174,6 @@ def find_service_pattern_vehicle_journeys(
         if vj.VehicleJourneyCode is None:
             continue
 
-        # Check if this vehicle journey maps to our service pattern
         if (
             vj.VehicleJourneyCode
             in service_pattern_mapping.vehicle_journey_to_service_pattern
@@ -234,9 +233,7 @@ def process_journey_pattern_vehicle_journeys(
 
     pattern_stops: list[TransmodelServicePatternStop] = []
 
-    # Process stops for each vehicle journey
     for tm_vj in tm_vjs:
-        # Get a TXC vehicle journey to use for processing
         if not vjs:
             continue
 
