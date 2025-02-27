@@ -85,6 +85,16 @@ LicenceClassificationT = Literal[
     "communityBusPermit",
 ]
 
+JourneyPatternVehicleDirectionT = Literal[
+    "inbound",
+    "outbound",
+    "inboundAndOutbound",
+    "circular",
+    "clockwise",
+    "antiClockwise",
+    # Inherit is default specified in TXC XSD
+    "inherit",
+]
 DirectionT = Literal["inbound", "outbound", "clockwise", "anticlockwise"]
 
 # Mappings

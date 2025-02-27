@@ -5,6 +5,7 @@ Meta Data Extraction
 from dataclasses import dataclass
 from uuid import uuid4
 
+from common_layer.database.models.model_naptan import NaptanStopPoint
 from common_layer.xml.txc.models import (
     TXCFlexibleJourneyPattern,
     TXCJourneyPattern,
@@ -16,6 +17,7 @@ from structlog.stdlib import get_logger
 
 from ..helpers import StopsLookup
 from ..transform.utils_stops import get_first_last_stops
+from .service_pattern_mapping import ServicePatternMetadata
 
 log = get_logger()
 
@@ -47,6 +49,58 @@ class PatternMetadata:
             description="unknown",
             line_name=line_name,
         )
+
+
+def get_first_and_last_stops(
+    stop_sequence: list[NaptanStopPoint],
+) -> tuple[NaptanStopPoint | None, NaptanStopPoint | None]:
+    """
+    Safely get the first and last stops from a sequence.
+
+    """
+    if not stop_sequence:
+        return None, None
+
+    first_stop = stop_sequence[0]
+    last_stop = stop_sequence[-1]
+
+    return first_stop, last_stop
+
+
+def make_metadata(
+    sp_data: ServicePatternMetadata, line_to_txc_line: dict[str, TXCLine]
+):
+    """
+    Generate the metadata
+    """
+    first_stop, last_stop = get_first_and_last_stops(sp_data.stop_sequence)
+
+    origin = first_stop.common_name if first_stop else "unknown"
+    destination = last_stop.common_name if last_stop else "unknown"
+    line_name = "unknown"
+    description = "unknown"
+
+    line = line_to_txc_line.get(sp_data.line_id)
+    if line:
+        line_name = line.LineName
+
+        if sp_data.direction == "inbound" and line.InboundDescription:
+            description = line.InboundDescription.Description or "unknown"
+        elif sp_data.direction == "outbound" and line.OutboundDescription:
+            description = line.OutboundDescription.Description or "unknown"
+        elif sp_data.direction not in ["inbound", "outbound"]:
+            log.warning(
+                "Unexpected direction value for service pattern",
+                line_id=sp_data.line_id,
+                direction=sp_data.direction,
+                journey_pattern_ids=sp_data.journey_pattern_ids,
+            )
+    return PatternMetadata(
+        origin=origin,
+        destination=destination,
+        description=description,
+        line_name=line_name,
+    )
 
 
 def get_line_description(line: TXCLine, direction: str) -> LineDescription | None:
