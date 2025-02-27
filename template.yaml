@@ -15,9 +15,6 @@ Parameters:
   CavlConsumerUrl:
     Type: String
     Default: 'https://api-consumer-cavl-internal.dev.itoworld.com'
-  GtfsApiBaseUrl:
-    Type: String
-    Default: 'https://gtfs.test.integrated-data.dft-create-data.com'
   RdsDbHostAddr:
     Type: String
     Default: ''
@@ -50,7 +47,6 @@ Resources:
         ProjectName: !Ref ProjectName
         AvlConsumerApiBaseUrl: !Ref AvlConsumerApiBaseUrl
         CavlConsumerUrl: !Ref CavlConsumerUrl
-        GtfsApiBaseUrl: !Ref GtfsApiBaseUrl
         RdsDbHostAddr: !Ref RdsDbHostAddr
         RdsDbPort: !Ref RdsDbPort
         BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
