@@ -17,7 +17,6 @@ def test_fares_metadata_delete_by_metadata_id(test_db):
     repo = FaresMetadataRepo(test_db)
 
     record = FaresMetadata(
-        datasetmetadata_ptr_id=999,
         num_of_fare_products=2,
         num_of_fare_zones=1,
         num_of_lines=1,
@@ -28,6 +27,8 @@ def test_fares_metadata_delete_by_metadata_id(test_db):
         valid_from=None,
         valid_to=None,
     )
+    record.datasetmetadata_ptr_id = 999
+
     inserted_record = repo.insert(record)
 
     with test_db.session_scope() as session:
@@ -112,8 +113,10 @@ def test_fares_data_catalogue_metadata_delete_by_metadata_id(test_db):
         valid_from=None,
         valid_to=None,
         xml_file_name="test.xml",
-        fares_metadata_id=metadata_id,
     )
+
+    record.fares_metadata_id = metadata_id
+
     inserted_record = repo.insert(record)
 
     with test_db.session_scope() as session:

@@ -79,7 +79,7 @@
     },
     "ClamAvScanner": {
       "Type": "Task",
-      "Next": "SetupMetadataTables",
+      "Next": "FileLevelProcessing",
       "Resource": "${ClamAvScannerLambdaArn}",
       "Arguments": {
         "Bucket": "{% $s3Bucket %}",
@@ -102,26 +102,6 @@
         }
       ]
     },
-    "SetupMetadataTables": {
-      "Type": "Task",
-      "Next": "FileLevelProcessing",
-      "Resource": "${SetupMetadataTablesLambdaArn}",
-      "Arguments": {
-        "DatasetRevisionId": "{% $datasetRevisionId %}"
-      },
-      "Assign": {
-        "MetadataId": "{% $states.result.body.metadataId %}"
-      },
-      "Catch": [
-        {
-          "ErrorEquals": ["States.ALL"],
-          "Next": "ParentExceptionHandler",
-          "Output": {
-            "errorInfo": "{% $states.errorOutput %}"
-          }
-        }
-      ]
-    },
     "FileLevelProcessing": {
       "Type": "Map",
       "Next": "GenerateOutputZip",
@@ -133,10 +113,9 @@
       "ItemSelector": {
         "mapS3Object": "{% $states.context.Map.Item.Value.Key %}",
         "mapDatasetRevisionId": "{% $datasetRevisionId %}",
-        "mapDatasetType": "{% $datasetType %}",
+        "datasetType": "{% $datasetType %}",
         "mapS3Bucket": "{% $s3Bucket %}",
-        "mapDatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}",
-        "mapMetadataId": "{% $MetadataId %}}"
+        "mapDatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}"
       },
       "ItemReader": {
         "Resource": "arn:aws:states:::s3:listObjectsV2",
@@ -166,8 +145,7 @@
               "Bucket": "{% $states.input.mapS3Bucket %}",
               "ObjectKey": "{% $states.input.mapS3Object %}",
               "DatasetRevisionId": "{% $states.input.mapDatasetRevisionId %}",
-              "DatasetType": "{% $states.input.mapDatasetType %}",
-              "MetadataId": "{% $states.input.mapMetadataId %}",
+              "DatasetType": "{% $states.input.datasetType %}",
               "datasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}"
             }
           },
@@ -225,8 +203,7 @@
             "Arguments": {
               "Bucket": "{% $Bucket %}",
               "ObjectKey": "{% $ObjectKey %}",
-              "DatasetRevisionId": "{% $DatasetRevisionId %}",
-              "MetadataId": "{% $MetadataId %}"
+              "DatasetRevisionId": "{% $DatasetRevisionId %}"
             },
             "Output": {
               "etlProcess": "{% $states.result %}"

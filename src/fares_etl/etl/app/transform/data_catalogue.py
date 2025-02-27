@@ -34,7 +34,6 @@ from common_layer.xml.netex.models.netex_publication_delivery import (
 def create_data_catalogue(
     netex: PublicationDeliveryStructure,
     file_name: str,
-    metadata_id: int,
 ):
     """
     Create FaresDataCatalogueMetadata
@@ -62,5 +61,4 @@ def create_data_catalogue(
         tariff_basis=get_tariff_basis(tariffs),
         user_type=get_user_types(tariffs),
         xml_file_name=file_name,
-        fares_metadata_id=metadata_id,
     )

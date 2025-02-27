@@ -16,7 +16,6 @@ from fares_etl.etl.app.transform.metadata import create_metadata, get_stop_ids
         pytest.param(
             "netex1.xml",
             FaresMetadata(
-                datasetmetadata_ptr_id=123,
                 num_of_fare_products=1,
                 num_of_fare_zones=28,
                 num_of_lines=1,
@@ -31,7 +30,6 @@ from fares_etl.etl.app.transform.metadata import create_metadata, get_stop_ids
         pytest.param(
             "netex2.xml",
             FaresMetadata(
-                datasetmetadata_ptr_id=123,
                 num_of_fare_products=1,
                 num_of_fare_zones=8,
                 num_of_lines=1,
@@ -53,7 +51,7 @@ def test_extract_metadata(
         Path(os.path.dirname(__file__) + "/../../test_data/" + netex_file)
     )
 
-    data_catalogue = create_metadata(netex, 123)
+    data_catalogue = create_metadata(netex)
 
     assert data_catalogue == expected_metadata
 

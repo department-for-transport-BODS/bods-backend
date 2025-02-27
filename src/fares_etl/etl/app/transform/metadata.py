@@ -29,9 +29,7 @@ from common_layer.xml.netex.models.netex_publication_delivery import (
 )
 
 
-def create_metadata(
-    netex: PublicationDeliveryStructure, metadata_dataset_id: int
-) -> FaresMetadata:
+def create_metadata(netex: PublicationDeliveryStructure) -> FaresMetadata:
     """
     Create FaresMetadata
     """
@@ -41,7 +39,6 @@ def create_metadata(
     fare_products = get_fare_products(sorted_frames.fare_frames)
 
     return FaresMetadata(
-        datasetmetadata_ptr_id=metadata_dataset_id,
         num_of_lines=number_of_lines(sorted_frames.service_frames),
         num_of_fare_zones=number_of_fare_zones(sorted_frames.fare_frames),
         num_of_sales_offer_packages=number_of_sales_offer_packages(

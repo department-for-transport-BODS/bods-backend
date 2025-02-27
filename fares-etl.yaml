@@ -151,7 +151,6 @@ Resources:
         ExceptionHandlerLambdaArn:
           Fn::ImportValue: !Sub '${ProjectName}-${Environment}-exception-handler-lambda-arn'
         EtlProcessLambdaArn: !GetAtt  EtlProcessLambda.Arn
-        SetupMetadataTablesLambdaArn: !GetAtt SetupMetadataTablesLambda.Arn
         DefaultS3BucketName: !Sub 'bodds-${Environment}'
 
   ##########################
@@ -172,22 +171,45 @@ Resources:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
         LogGroup: !Ref EtlProcessLambdaLogGroup
+      Environment:
+        Variables:
+             DYNAMODB_FARES_METADATA_TABLE_NAME: !Ref FaresMetadataTable
 
-  SetupMetadataTablesLambda:
-    Type: AWS::Serverless::Function
-    ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
+
+  ##################
+  #### DYNAMODB ####
+  ##################
+  FaresMetadataTable:
+    Type: AWS::DynamoDB::Table
+    ## checkov:skip=CKV_AWS_28:Ensure DynamoDB point in time recovery (backup) is enabled
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-setup-metadata-tables-lambda'
-      Description: Fares ETL - Sets up metadata tables ahead of importing fares data
-      Role: !GetAtt CommonLambdaExecutionRole.Arn
-      CodeUri: ./src/fares_etl/setup_metadata_tables
-      Handler: app.setup_metadata_tables.lambda_handler
-      Timeout: 60
-      MemorySize: 512
-      Layers:
-        - !Ref BoilerplateLambdaLayerArn
-      LoggingConfig:
-        LogGroup: !Ref SetupMetadataTablesLambdaLogGroup
+      TableName: !Sub '${ProjectName}-${Environment}-${SubFunction}-metadata'
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: !If
+          - IsNotProd
+          - false
+          - true
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: 'KMS'
+        KMSMasterKeyId: !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+          - !Ref AWS::NoValue
 
   ###################
   #### IAM ROLES ####
@@ -254,6 +276,15 @@ Resources:
                   - IsNotLocal
                   - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
                   - '*'
+        - PolicyName: DynamoDBAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                Resource: !GetAtt FaresMetadataTable.Arn
         - PolicyName: DataDogAPIAccess
           PolicyDocument:
             Version: '2012-10-17'
@@ -292,7 +323,6 @@ Resources:
                 Action: lambda:InvokeFunction
                 Resource:
                   - !GetAtt EtlProcessLambda.Arn
-                  - !GetAtt SetupMetadataTablesLambda.Arn
                   - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-initialize-pipeline-lambda-arn'
                   - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-clamav-scanner-lambda-arn'
                   - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-download-dataset-lambda-arn'
@@ -373,16 +403,6 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-etl-process-lambda'
-      KmsKeyId: !If
-        - IsNotLocal
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-        - !Ref AWS::NoValue
-      RetentionInDays: 30
-
-  SetupMetadataTablesLambdaLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-setup-metadata-tables-lambda'
       KmsKeyId: !If
         - IsNotLocal
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'

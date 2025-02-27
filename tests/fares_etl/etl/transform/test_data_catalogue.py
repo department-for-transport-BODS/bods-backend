@@ -26,7 +26,6 @@ from fares_etl.etl.app.transform.data_catalogue import create_data_catalogue
                 product_type=["dayReturnTrip"],
                 product_name=["AD RTN"],
                 user_type=["adult"],
-                fares_metadata_id=123,
             ),
         ),
         pytest.param(
@@ -43,7 +42,6 @@ from fares_etl.etl.app.transform.data_catalogue import create_data_catalogue
                 product_type=["singleTrip"],
                 product_name=["Adult Standard single"],
                 user_type=["adult"],
-                fares_metadata_id=123,
             ),
         ),
     ],
@@ -56,6 +54,6 @@ def test_extract_data_catalogue(
         Path(os.path.dirname(__file__) + "/../../test_data/" + netex_file)
     )
 
-    data_catalogue = create_data_catalogue(netex, netex_file, 123)
+    data_catalogue = create_data_catalogue(netex, netex_file)
 
     assert data_catalogue == expected_data_catalogue

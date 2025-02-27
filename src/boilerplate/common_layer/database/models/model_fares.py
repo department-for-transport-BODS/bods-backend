@@ -35,7 +35,7 @@ class FaresMetadata(BaseSQLModel):
         Integer,
         ForeignKey("organisation_datasetmetadata.id"),
         primary_key=True,
-        init=True,
+        init=False,
         autoincrement=False,
     )
     num_of_fare_zones: Mapped[int] = mapped_column(
@@ -127,6 +127,7 @@ class FaresDataCatalogueMetadata(BaseSQLModel):
         ForeignKey("fares_faresmetadata.datasetmetadata_ptr_id"),
         nullable=False,
         index=True,
+        init=False,
     )
 
 

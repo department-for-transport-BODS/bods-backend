@@ -17,8 +17,7 @@ from common_layer.xml.netex.models.netex_publication_delivery import (
 from common_layer.xml.netex.parser.netex_publication_delivery import parse_netex
 from structlog.stdlib import get_logger
 
-from .load.data_catalogue import load_data_catalogue
-from .load.metadata import load_metadata
+from .load.metadata import load_metadata_into_dynamodb
 from .models import ETLInputData
 
 log = get_logger()
@@ -52,15 +51,9 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext):
         input_data.s3_file_key,
     )
 
-    load_metadata(
+    load_metadata_into_dynamodb(
         netex_data,
-        input_data.revision_id,
-        input_data.metadata_id,
-        db,
-    )
-    load_data_catalogue(
-        netex_data,
-        input_data.metadata_id,
+        input_data.task_id,
         os.path.basename(input_data.s3_file_key),
         db,
     )
