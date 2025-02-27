@@ -35,7 +35,7 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
         db = SqlDB()
         archived_file_name = process_archive(db, gtfsrt_zip)
     except Exception as _err:
-        log.error("Archiving gtfstr data failed", exc_info=True)
+        log.error("Archiving gtfsrt data failed", exc_info=True)
         raise _err
     finally:
         clear_contextvars()
