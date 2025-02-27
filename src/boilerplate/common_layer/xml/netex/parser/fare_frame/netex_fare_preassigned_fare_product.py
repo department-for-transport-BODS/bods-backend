@@ -35,9 +35,6 @@ def parse_condition_summary(elem: _Element) -> ConditionSummary:
     tariff_basis = parse_tariff_basis_type(elem)
     is_personal = get_netex_bool(elem, "IsPersonal")
 
-    if fare_structure_type is None or tariff_basis is None or is_personal is None:
-        raise ValueError("Missing required fields in ConditionSummary")
-
     return ConditionSummary(
         FareStructureType=fare_structure_type,
         TariffBasis=tariff_basis,
@@ -55,8 +52,6 @@ def parse_access_right_in_product(elem: _Element) -> AccessRightInProduct:
         raise ValueError("Missing required attributes in AccessRightInProduct")
 
     validable_element_ref = parse_versioned_ref(elem, "ValidableElementRef")
-    if validable_element_ref is None:
-        raise ValueError("Missing required ValidableElementRef in AccessRightInProduct")
 
     return AccessRightInProduct(
         id=access_right_id,
@@ -79,17 +74,11 @@ def parse_preassigned_product_attributes(elem: _Element) -> tuple[str, str]:
 
 def parse_preassigned_product_refs(
     elem: _Element,
-) -> tuple[VersionedRef, VersionedRef, VersionedRef | None]:
+) -> tuple[VersionedRef | None, VersionedRef | None, VersionedRef | None]:
     """Parse required references"""
     charging_moment_ref = parse_versioned_ref(elem, "ChargingMomentRef")
-    if charging_moment_ref is None:
-        raise ValueError("Missing required ChargingMomentRef in PreassignedFareProduct")
 
     type_of_fare_product_ref = parse_versioned_ref(elem, "TypeOfFareProductRef")
-    if type_of_fare_product_ref is None:
-        raise ValueError(
-            "Missing required TypeOfFareProductRef in PreassignedFareProduct"
-        )
 
     operator_ref = parse_versioned_ref(elem, "OperatorRef")
 

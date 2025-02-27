@@ -102,11 +102,14 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
       - name: Setup Python
+        id: python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install poetry
         run: pipx install poetry
+        env:
+          PIPX_DEFAULT_PYTHON: ${{ steps.python.outputs.python-path }}
       - name: Cache Poetry dependencies
         uses: actions/cache@v4
         with:

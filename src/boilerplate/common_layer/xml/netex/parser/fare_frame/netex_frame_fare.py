@@ -40,13 +40,13 @@ from .netex_pricing_parameter_set import parse_pricing_parameter_set
 log = get_logger()
 
 
-def parse_fare_frame_attributes(elem: _Element) -> tuple[str, str, str]:
+def parse_fare_frame_attributes(elem: _Element) -> tuple[str, str, str | None]:
     """Parse required FareFrame attributes"""
     frame_id = elem.get("id")
     version = elem.get("version")
     responsibility_set_ref = elem.get("responsibilitySetRef")
 
-    if not frame_id or not version or not responsibility_set_ref:
+    if not frame_id or not version:
         raise ValueError("Missing required attributes in FareFrame")
 
     return frame_id, version, responsibility_set_ref

@@ -24,12 +24,14 @@ class CompositeFrame(BaseModel):
     # Attributes
     version: Annotated[str, Field(description="Version")]
     id: Annotated[str, Field(description="Id")]
-    dataSourceRef: Annotated[str, Field(description="Id")]
-    responsibilitySetRef: Annotated[str, Field(description="Id")]
+    dataSourceRef: Annotated[str | None, Field(description="Id")]
+    responsibilitySetRef: Annotated[str | None, Field(description="Id")]
 
     # Children
     ValidBetween: Annotated[FromToDate | None, Field(description="Validity")]
-    Name: Annotated[MultilingualString | str, Field(description="Name of the frame")]
+    Name: Annotated[
+        MultilingualString | str | None, Field(description="Name of the frame")
+    ]
     Description: Annotated[
         MultilingualString | str | None,
         Field(description="Description of the frame", default=None),

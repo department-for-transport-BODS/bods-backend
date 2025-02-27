@@ -4,7 +4,7 @@ SQL Alchemy models for tables starting with fares_
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 
 from common_layer.xml.netex.models.netex_types import (
     PreassignedFareProductTypeT,
@@ -16,6 +16,7 @@ from sqlalchemy import (
     BigInteger,
     CheckConstraint,
     Date,
+    DateTime,
     ForeignKey,
     Integer,
     String,
@@ -53,8 +54,8 @@ class FaresMetadata(BaseSQLModel):
     num_of_user_profiles: Mapped[int] = mapped_column(
         Integer, CheckConstraint("num_of_user_profiles >= 0"), nullable=False
     )
-    valid_from: Mapped[date | None] = mapped_column(Date, nullable=True)
-    valid_to: Mapped[date | None] = mapped_column(Date, nullable=True)
+    valid_from: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    valid_to: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     num_of_pass_products: Mapped[int | None] = mapped_column(
         Integer, CheckConstraint("num_of_pass_products >= 0"), nullable=True
     )
