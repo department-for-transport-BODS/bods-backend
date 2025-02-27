@@ -103,6 +103,8 @@ def journey_pattern_timing_link_detail_table() -> DataTable:
             "Run Time",
             "From Wait Time",
             "Distance",
+            "From Stop Atco",
+            "To Stop Atco",
         ],
         min_height=3,
         height=3,

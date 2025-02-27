@@ -479,6 +479,8 @@ class VehicleJourneysTab(Container):
                         if hasattr(jptl, "Distance") and jptl.Distance
                         else ""
                     ),
+                    from_stop.StopPointRef if from_stop else "",
+                    to_stop.StopPointRef if to_stop else "",
                 )
 
         jptl_detail_container.mount(ScrollableContainer(new_table))
