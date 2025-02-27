@@ -46,12 +46,12 @@ def parse_publication_request(elem: _Element) -> PublicationRequestStructure:
         topics = parse_topics(topics_xml)
     request_policy = get_netex_element(elem, "RequestPolicy")
     if request_policy:
-        log.error("Parsing Network Frame Subscription Policy not implemented")
+        log.debug("Parsing Network Frame Subscription Policy not implemented")
         request_policy = None
     subscription_policy = get_netex_element(elem, "SubscriptionPolicy")
     if subscription_policy:
-        log.error("Parsing Network Frame Subscription Policy not implemented")
-        raise ValueError("Error")
+        log.debug("Parsing Network Frame Subscription Policy not implemented")
+        subscription_policy = None
 
     return PublicationRequestStructure(
         version=version,

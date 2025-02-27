@@ -51,7 +51,7 @@ class ResourceFrame(BaseModel):
 
     # Children
     Name: Annotated[
-        MultilingualString | str, Field(description="Name of the resource frame")
+        MultilingualString | str | None, Field(description="Name of the resource frame")
     ]
     TypeOfFrameRef: Annotated[
         VersionedRef | None, Field(description="Reference to the type of frame")

@@ -2,7 +2,7 @@
 Common
 """
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from sqlalchemy import DateTime
 from sqlalchemy.ext.declarative import declared_attr
@@ -13,6 +13,17 @@ class BaseSQLModel(MappedAsDataclass, DeclarativeBase):
     """
     Base Class for SQL Models enabling Declarative declaration and usage as python dataclass
     """
+
+    def as_dict(self):
+        def serialize_value(value):
+            if isinstance(value, (date, datetime)):
+                return value.isoformat()
+            return value
+
+        return {
+            column.name: serialize_value(getattr(self, column.name))
+            for column in self.__table__.columns
+        }
 
 
 class CreatedTimeStampMixin(MappedAsDataclass):

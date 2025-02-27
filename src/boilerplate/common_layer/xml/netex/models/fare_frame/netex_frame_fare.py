@@ -41,9 +41,11 @@ class PriceUnit(BaseModel):
 
     id: Annotated[str, Field(description="Price unit identifier")]
     version: Annotated[str, Field(description="Version")]
-    Name: Annotated[MultilingualString, Field(description="Name of the price unit")]
-    PrivateCode: Annotated[str, Field(description="Currency symbol")]
-    Precision: Annotated[int, Field(description="Decimal precision")]
+    Name: Annotated[
+        MultilingualString | None, Field(description="Name of the price unit")
+    ]
+    PrivateCode: Annotated[str | None, Field(description="Currency symbol")]
+    Precision: Annotated[int | None, Field(description="Decimal precision")]
 
 
 class PricingParameterSet(BaseModel):
@@ -130,7 +132,7 @@ class FareFrame(BaseModel):
     id: Annotated[str, Field(description="Frame identifier")]
     version: Annotated[str, Field(description="Version")]
     responsibilitySetRef: Annotated[
-        str, Field(description="Responsibility set reference")
+        str | None, Field(description="Responsibility set reference")
     ]
 
     # Optional core attributes

@@ -34,7 +34,7 @@ class UserProfile(BaseModel):
 
     id: Annotated[str, Field(description="Profile identifier")]
     version: Annotated[str, Field(description="Version")]
-    Name: Annotated[MultilingualString, Field(description="Name of the profile")]
+    Name: Annotated[MultilingualString | None, Field(description="Name of the profile")]
     Description: Annotated[
         MultilingualString | None,
         Field(description="Description of the profile", default=None),

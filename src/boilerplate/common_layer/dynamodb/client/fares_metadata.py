@@ -61,8 +61,8 @@ class DynamoDBFaresMetadata(DynamoDB):
             Item={
                 "PK": self._serializer.serialize(task_id),
                 "SK": self._serializer.serialize(file_name),
-                "Metadata": self._serializer.serialize(metadata),
+                "Metadata": self._serializer.serialize(metadata.as_dict()),
                 "StopIds": self._serializer.serialize(stop_ids),
-                "DataCatalogue": self._serializer.serialize(data_catalogue),
+                "DataCatalogue": self._serializer.serialize(data_catalogue.as_dict()),
             },
         )

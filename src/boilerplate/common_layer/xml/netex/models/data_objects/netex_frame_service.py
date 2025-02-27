@@ -112,7 +112,7 @@ class ServiceFrame(BaseModel):
         Field(description="Description of the service frame", default=None),
     ]
     TypeOfFrameRef: Annotated[
-        VersionedRef, Field(description="Reference to the type of frame")
+        VersionedRef | None, Field(description="Reference to the type of frame")
     ]
 
     lines: Annotated[list[Line], Field(description="List of lines in the service")]

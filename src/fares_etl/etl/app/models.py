@@ -2,10 +2,6 @@
 Pydantic Models 
 """
 
-from common_layer.database.models import (
-    DatasetETLTaskResult,
-    OrganisationDatasetRevision,
-)
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -19,15 +15,3 @@ class ETLInputData(BaseModel):
     task_id: int = Field(alias="DatasetEtlTaskResultId")
     s3_bucket_name: str = Field(alias="Bucket")
     s3_file_key: str = Field(alias="ObjectKey")
-
-
-class TaskData(BaseModel):
-    """
-    Task information to be passed around
-    """
-
-    model_config = ConfigDict(frozen=True)
-
-    etl_task: DatasetETLTaskResult
-    revision: OrganisationDatasetRevision
-    input_data: ETLInputData
