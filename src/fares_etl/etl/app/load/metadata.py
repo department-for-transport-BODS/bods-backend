@@ -8,8 +8,8 @@ from common_layer.dynamodb.client.fares_metadata import DynamoDBFaresMetadata
 from common_layer.xml.netex.models.netex_publication_delivery import (
     PublicationDeliveryStructure,
 )
-from etl.app.transform.data_catalogue import create_data_catalogue
 
+from ..transform.data_catalogue import create_data_catalogue
 from ..transform.metadata import create_metadata, get_stop_ids
 
 

@@ -91,11 +91,7 @@ def parse_composite_frame(elem: _Element) -> CompositeFrame:
     # Parse attributes
     version, frame_id = parse_version_and_id(elem)
     data_source_ref = parse_xml_attribute(elem, "dataSourceRef")
-    if data_source_ref is None:
-        raise ValueError("Missing DatasourceRef")
     responsibility_set_ref = parse_xml_attribute(elem, "responsibilitySetRef")
-    if responsibility_set_ref is None:
-        raise ValueError("Missing Responisilbity set ref")
     valid_between_elem = get_netex_element(elem, "ValidBetween")
     valid_between = (
         FromToDate(
@@ -107,8 +103,6 @@ def parse_composite_frame(elem: _Element) -> CompositeFrame:
     )
 
     name = parse_multilingual_string(elem, "Name")
-    if name is None:
-        raise ValueError("Missing Name")
 
     # Parse FrameDefaults
     frame_defaults = None

@@ -161,7 +161,7 @@ Resources:
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-etl-process-lambda'
-      Description: Fares ETL - FileProcessing - Extracts NeTEx metadata and data catalogue info to database
+      Description: Fares ETL - FileProcessing - Extracts NeTEx metadata and data catalogue info to dynamodb table
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/fares_etl/etl
       Handler: app.etl_process.lambda_handler

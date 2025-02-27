@@ -15,7 +15,7 @@ class NetworkFilterByValueStructure(BaseModel):
     """Structure for network filter by value"""
 
     objectReferences: Annotated[
-        ObjectReferences, Field(description="References to objects to filter by")
+        ObjectReferences | None, Field(description="References to objects to filter by")
     ]
 
 

@@ -74,9 +74,6 @@ def parse_user_profile(elem: _Element) -> UserProfile:
     if not profile_id or not version:
         raise ValueError("Missing required id or version in UserProfile")
 
-    if not name:
-        raise ValueError("Missing Name")
-
     return UserProfile(
         id=profile_id,
         version=version,

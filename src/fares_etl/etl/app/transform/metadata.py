@@ -75,6 +75,7 @@ def get_stop_ids(
     stops_from_atco_ids = naptan_stop_point_repo.get_by_atco_codes(
         sorted(list(atco_ids))
     )[0]
+
     stops_from_naptan_ids = naptan_stop_point_repo.get_by_naptan_codes(
         sorted(list(naptan_ids))
     )[0]

@@ -28,16 +28,8 @@ def parse_price_unit(elem: _Element) -> PriceUnit:
         raise ValueError("Missing required id or version in PriceUnit")
 
     name = parse_multilingual_string(elem, "Name")
-    if name is None:
-        raise ValueError("Missing required Name in PriceUnit")
-
     private_code = get_netex_text(elem, "PrivateCode")
-    if private_code is None:
-        raise ValueError("Missing required PrivateCode in PriceUnit")
-
     precision = get_netex_int(elem, "Precision")
-    if precision is None:
-        raise ValueError("Missing required Precision in PriceUnit")
 
     return PriceUnit(
         id=unit_id,
