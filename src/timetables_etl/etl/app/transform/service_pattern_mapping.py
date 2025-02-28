@@ -336,9 +336,12 @@ def map_direct_journey_patterns(
     First pass: map all vehicle journeys that directly reference a journey pattern
 
     Returns:
-        - vehicle_journey_to_service_pattern: Mapping from vehicle journey code to service pattern ID
-        - vehicle_journey_code_to_service_pattern: Helper mapping for resolving references
-        - service_pattern_to_vehicle_journeys: Mapping from service pattern ID to list of vehicle journey codes
+        - vehicle_journey_to_service_pattern
+            - Mapping from vehicle journey code to service pattern ID
+        - vehicle_journey_code_to_service_pattern
+            - Helper mapping for resolving references
+        - service_pattern_to_vehicle_journeys
+            - Mapping from service pattern ID to list of vehicle journey codes
     """
     vehicle_journey_to_service_pattern: dict[str, str] = {}
     vehicle_journey_code_to_service_pattern: dict[str, str] = {}
