@@ -19,6 +19,7 @@ from structlog.stdlib import get_logger
 
 from .db_operations import (
     publish_revision,
+    update_live_revision,
     update_revision_hash,
     update_task_and_revision_status,
 )
@@ -165,6 +166,7 @@ def process_map_results(
 
     if input_data.publish_dataset_revision:
         publish_revision(db, revision)
+        update_live_revision(db, revision)
 
     return processing_result
 
