@@ -1,3 +1,7 @@
+"""
+Aggregates metadata from dynamodb and stores it in primary database
+"""
+
 from typing import Any
 
 from aws_lambda_powertools.utilities.typing import LambdaContext

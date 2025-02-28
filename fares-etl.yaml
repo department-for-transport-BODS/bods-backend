@@ -151,6 +151,7 @@ Resources:
         ExceptionHandlerLambdaArn:
           Fn::ImportValue: !Sub '${ProjectName}-${Environment}-exception-handler-lambda-arn'
         EtlProcessLambdaArn: !GetAtt  EtlProcessLambda.Arn
+        MetadataAggregationLambdaArn: !GetAtt FaresMetadataAggregationLambda.Arn
         DefaultS3BucketName: !Sub 'bodds-${Environment}'
 
   ##########################
@@ -171,6 +172,25 @@ Resources:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
         LogGroup: !Ref EtlProcessLambdaLogGroup
+      Environment:
+        Variables:
+             DYNAMODB_FARES_METADATA_TABLE_NAME: !Ref FaresMetadataTable
+
+  FaresMetadataAggregationLambda:
+    Type: AWS::Serverless::Function
+    ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-metadata-aggregation-lambda'
+      Description: Fares ETL - Aggregates metadata and saves to database
+      Role: !GetAtt CommonLambdaExecutionRole.Arn
+      CodeUri: ./src/fares_etl/metadata_aggregation
+      Handler: app.metadata_aggregation.lambda_handler
+      Timeout: 900
+      MemorySize: 1024
+      Layers:
+        - !Ref BoilerplateLambdaLayerArn
+      LoggingConfig:
+        LogGroup: !Ref MetadataAggregationLambdaLogGroup
       Environment:
         Variables:
              DYNAMODB_FARES_METADATA_TABLE_NAME: !Ref FaresMetadataTable
@@ -403,6 +423,16 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-etl-process-lambda'
+      KmsKeyId: !If
+        - IsNotLocal
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Ref AWS::NoValue
+      RetentionInDays: 30
+
+  MetadataAggregationLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-metadata-aggregation-lambda'
       KmsKeyId: !If
         - IsNotLocal
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
