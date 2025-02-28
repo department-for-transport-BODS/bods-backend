@@ -72,3 +72,28 @@ class NaptanStopPoint(BaseSQLModel):
         Cached to avoid repeated conversions of the same geometry.
         """
         return cast(Point, to_shape(self.location))
+
+    def __repr__(self) -> str:
+        """
+        Custom representation that shows shape coordinates instead of WKBElement
+        when the object is printed
+        Allows for easier debugging
+        """
+        try:
+            attributes = []
+            for key, value in self.__dict__.items():
+                if not key.startswith("_"):  # Skip SQLAlchemy internal attributes
+                    if key == "location":
+                        shape = self.shape
+                        value_str = f"({shape.x:.6f},{shape.y:.6f})"
+                        attributes.append(f"{key}={value_str}")
+                    elif key == "shape":
+                        pass
+                    else:
+                        value_str = repr(value)
+                        attributes.append(f"{key}={value_str}")
+
+            return f"NaptanStopPoint({', '.join(attributes)})"
+        except Exception:  # pylint: disable=broad-exception-caught
+            # Fall back to default representation if there's an error
+            return super().__repr__()

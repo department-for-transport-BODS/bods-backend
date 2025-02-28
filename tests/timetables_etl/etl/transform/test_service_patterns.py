@@ -2,38 +2,47 @@
 Test Generating Transmodel Service Patterns
 """
 
-from typing import Callable
+from unittest.mock import MagicMock
 
 import pytest
-from common_layer.database.models import TransmodelServicePattern
-from common_layer.database.models.model_naptan import NaptanStopPoint
+from common_layer.database.models import (
+    NaptanStopPoint,
+    OrganisationDatasetRevision,
+    TransmodelServicePattern,
+)
 from common_layer.xml.txc.models import (
+    JourneyPatternVehicleDirectionT,
     TXCJourneyPattern,
     TXCJourneyPatternSection,
-    TXCService,
+)
+from etl.app.load.models_context import ProcessServicePatternContext
+from etl.app.transform.service_pattern_mapping import (
+    ServicePatternMapping,
+    ServicePatternMappingStats,
+    ServicePatternMetadata,
 )
 from geoalchemy2 import WKBElement
-from geoalchemy2.shape import to_shape
+from geoalchemy2.shape import from_shape, to_shape
 from shapely import Point
 from shapely.geometry import LineString
 
-from tests.factories.database import (
-    NaptanStopPointFactory,
-    OrganisationDatasetRevisionFactory,
-)
+from tests.factories.database import NaptanStopPointFactory
 from tests.timetables_etl.factories.txc import (
     TXCJourneyPatternFactory,
     TXCJourneyPatternSectionFactory,
     TXCJourneyPatternStopUsageFactory,
     TXCJourneyPatternTimingLinkFactory,
-    TXCServiceFactory,
 )
-from timetables_etl.etl.app.helpers.types import LookupStopPoint, StopsLookup
-from timetables_etl.etl.app.transform.service_patterns import (
-    create_service_pattern,
+from tests.timetables_etl.factories.txc.factory_txc_service import (
+    TXCLineDescriptionFactory,
+    TXCLineFactory,
+)
+from timetables_etl.etl.app.helpers.types import LookupStopPoint
+from timetables_etl.etl.app.transform.service_pattern_geom import (
     generate_service_pattern_geometry,
     get_valid_route_points,
 )
+from timetables_etl.etl.app.transform.service_patterns import create_service_pattern
 
 
 @pytest.mark.parametrize(
@@ -230,146 +239,97 @@ def test_generate_service_pattern_geometry(
 
 
 @pytest.mark.parametrize(
-    "service,journey_pattern,sections,stop_mapping,expected_pattern",
+    "direction,expected_description",
     [
-        pytest.param(
-            TXCServiceFactory.create(with_standard_line=True),
-            TXCJourneyPatternFactory.create(
-                id="JP1",
-                Direction="outbound",
-                DestinationDisplay="Victoria - Plymouth",
-                JourneyPatternSectionRefs=["JPS1"],
-            ),
-            [
-                TXCJourneyPatternSectionFactory.create(
-                    id="JPS1",
-                    JourneyPatternTimingLink=[
-                        TXCJourneyPatternTimingLinkFactory.create(
-                            id="JPTL1",
-                            From=TXCJourneyPatternStopUsageFactory.create(
-                                id="JPSU1",
-                                Activity="pickUp",
-                                StopPointRef="490014051VC",
-                            ),
-                            To=TXCJourneyPatternStopUsageFactory.create(
-                                id="JPSU2",
-                                Activity="setDown",
-                                StopPointRef="118000037",
-                            ),
-                            RouteLinkRef="RL1",
-                        ),
-                    ],
-                ),
-            ],
-            NaptanStopPointFactory.create_mapping_with_locations(
-                [
-                    ("490014051VC", "Victoria Coach Station", (51.4945, -0.1447)),
-                    ("118000037", "Plymouth Coach Station", (50.3754, -4.1426)),
-                ]
-            ),
-            lambda pattern: TransmodelServicePattern(
-                service_pattern_id=pattern.service_pattern_id,
-                origin="London",
-                destination="Plymouth",
-                description="London - Plymouth",
-                revision_id=pattern.revision_id,
-                line_name="UK045",
-                geom=pattern.geom,
-            ),
-            id="Valid Service Pattern with Line Description",
-        ),
-        pytest.param(
-            TXCServiceFactory.create(no_lines=True),
-            TXCJourneyPatternFactory.create(
-                id="JP1",
-                Direction="outbound",
-                DestinationDisplay="Victoria - Plymouth",
-                JourneyPatternSectionRefs=["JPS1"],
-            ),
-            [
-                TXCJourneyPatternSectionFactory.create(
-                    id="JPS1",
-                    JourneyPatternTimingLink=[
-                        TXCJourneyPatternTimingLinkFactory.create(
-                            id="JPTL1",
-                            From=TXCJourneyPatternStopUsageFactory.create(
-                                id="JPSU1",
-                                Activity="pickUp",
-                                StopPointRef="490014051VC",
-                            ),
-                            To=TXCJourneyPatternStopUsageFactory.create(
-                                id="JPSU2",
-                                Activity="setDown",
-                                StopPointRef="118000037",
-                            ),
-                            RouteLinkRef="RL1",
-                        ),
-                    ],
-                ),
-            ],
-            NaptanStopPointFactory.create_mapping_with_locations(
-                [
-                    ("490014051VC", "Victoria Coach Station", (51.4945, -0.1447)),
-                    ("118000037", "Plymouth Coach Station", (50.3754, -4.1426)),
-                ]
-            ),
-            lambda pattern: TransmodelServicePattern(
-                service_pattern_id=pattern.service_pattern_id,
-                origin="Victoria Coach Station",
-                destination="Plymouth Coach Station",
-                description="Victoria Coach Station - Plymouth Coach Station",
-                revision_id=pattern.revision_id,
-                line_name="unknown",
-                geom=pattern.geom,
-            ),
-            id="Service Pattern without Lines using Stop Names",
-        ),
+        pytest.param("inbound", "Inbound Test Description", id="Inbound Direction"),
+        pytest.param("outbound", "Outbound Test Description", id="Outbound Direction"),
     ],
 )
 def test_create_service_pattern(
-    service: TXCService,
-    journey_pattern: TXCJourneyPattern,
-    sections: list[TXCJourneyPatternSection],
-    stop_mapping: StopsLookup,
-    expected_pattern: Callable[[TransmodelServicePattern], TransmodelServicePattern],
-) -> None:
-    """
-    Test creating a TransmodelServicePattern from TXC data.
+    direction: JourneyPatternVehicleDirectionT, expected_description: str
+):
+    """Test creating a service pattern with different directions"""
+    # Create service pattern ID
+    service_pattern_id = "SP-TEST-123456"
 
-    """
-    organisation_dataset_revision = OrganisationDatasetRevisionFactory.create_with_id(1)
-    result = create_service_pattern(
-        service,
-        journey_pattern,
-        organisation_dataset_revision,
-        sections,
-        stop_mapping,
+    # Create stops with proper location data
+    stops: list[NaptanStopPoint] = [
+        NaptanStopPointFactory.create(
+            atco_code="490001",
+            common_name="Origin Stop",
+            location=from_shape(Point(-1.0, 51.0), srid=4326),
+        ),
+        NaptanStopPointFactory.create(
+            atco_code="490002",
+            common_name="Middle Stop",
+            location=from_shape(Point(-1.1, 51.1), srid=4326),
+        ),
+        NaptanStopPointFactory.create(
+            atco_code="490003",
+            common_name="Destination Stop",
+            location=from_shape(Point(-1.2, 51.2), srid=4326),
+        ),
+    ]
+
+    # Create a TXCLine
+    line = TXCLineFactory.create(
+        id="LINE:123",
+        LineName="Test Line 123",
+        InboundDescription=TXCLineDescriptionFactory.create(
+            Description="Inbound Test Description"
+        ),
+        OutboundDescription=TXCLineDescriptionFactory.create(
+            Description="Outbound Test Description"
+        ),
     )
 
-    expected = expected_pattern(result)
+    # Create the service pattern metadata
+    sp_metadata = ServicePatternMetadata(
+        journey_pattern_ids=["JP-1", "JP-2"],
+        num_stops=len(stops),
+        stop_sequence=stops,
+        direction=direction,
+        line_id="LINE:123",
+    )
+
+    # Create the service pattern mapping
+    mapping = ServicePatternMapping(
+        journey_pattern_to_service_pattern={
+            "JP-1": service_pattern_id,
+            "JP-2": service_pattern_id,
+        },
+        vehicle_journey_to_service_pattern={"VJ-1": service_pattern_id},
+        service_pattern_metadata={service_pattern_id: sp_metadata},
+        line_to_txc_line={"LINE:123": line},
+        line_to_vehicle_journeys={"LINE:123": ["VJ-1"]},
+        stats=ServicePatternMappingStats(
+            service_patterns_count=1,
+            journey_patterns_count=2,
+            vehicle_journey_count=1,
+            line_count=1,
+        ),
+    )
+
+    # Create the context with a mock OrganisationDatasetRevision
+    revision = MagicMock(spec=OrganisationDatasetRevision)
+    revision.id = 42
+
+    context = ProcessServicePatternContext(
+        revision=revision,
+        journey_pattern_sections=[],
+        stop_mapping={},
+        db=MagicMock(),
+    )
+
+    # Call the function
+    result = create_service_pattern(service_pattern_id, mapping, context)
+
+    # Verify the result
     assert isinstance(result, TransmodelServicePattern)
-    assert result.origin == expected.origin
-    assert result.destination == expected.destination
-    assert result.description == expected.description
-    assert result.line_name == expected.line_name
-    assert result.revision_id == organisation_dataset_revision.id
-
-    # Validate geometry
-    assert isinstance(result.geom, WKBElement)
-    result_line = to_shape(result.geom)
-
-    expected_stops_mapping = {
-        atco_code: stop
-        for atco_code, stop in stop_mapping.items()
-        if isinstance(stop, NaptanStopPoint)
-    }
-    expected_line = LineString(
-        [
-            Point(
-                to_shape(expected_stops_mapping[stop.StopPointRef].location).coords[0]
-            )
-            for link in sections[0].JourneyPatternTimingLink
-            for stop in [link.From, link.To]
-        ]
-    )
-    assert list(result_line.coords) == list(expected_line.coords)
+    assert result.service_pattern_id == service_pattern_id
+    assert result.origin == "Origin Stop"
+    assert result.destination == "Destination Stop"
+    assert result.description == expected_description
+    assert result.line_name == "Test Line 123"
+    assert result.revision_id == 42
+    assert result.geom is not None  #

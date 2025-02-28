@@ -81,9 +81,77 @@ def process_pattern_localities(
     return results
 
 
+def get_matching_journey_patterns(
+    service: TXCService,
+    jp_ids: list[str],
+) -> list[TXCJourneyPattern | TXCFlexibleJourneyPattern]:
+    """
+    Get journey patterns from a service that match the provided journey pattern IDs.
+    """
+    all_journey_patterns = []
+
+    if service.StandardService is not None:
+        all_journey_patterns.extend(service.StandardService.JourneyPattern)
+
+    if service.FlexibleService is not None:
+        all_journey_patterns.extend(service.FlexibleService.FlexibleJourneyPattern)
+
+    # Find matching patterns
+    matching_patterns = [jp for jp in all_journey_patterns if jp.id in jp_ids]
+
+    if not matching_patterns and all_journey_patterns:
+        log.error(
+            "No matching journey patterns found",
+            journey_pattern_ids=jp_ids,
+            available_ids=[jp.id for jp in all_journey_patterns],
+        )
+
+    return matching_patterns
+
+
+class NoMatchingJourneyPatternsForServicePattern(Exception):
+    """Exception raised when no matching journey patterns are found for a service pattern."""
+
+    def __init__(self, service_code: str, service_pattern_id: str, jp_ids: list[str]):
+        self.service_code = service_code
+        self.service_pattern_id = service_pattern_id
+        self.jp_ids = jp_ids
+        message = (
+            "No JourneyPatterns found on service pattern"
+            f"{service_pattern_id} service {service_code}"
+        )
+        super().__init__(message)
+
+
+def get_reference_journey_pattern(
+    service: TXCService, sp_id: str, journey_pattern_ids: list[str]
+) -> TXCJourneyPattern | TXCFlexibleJourneyPattern:
+    """
+    Get the first journey pattern that matches one of the provided journey pattern IDs.
+
+    """
+    matching_journey_patterns = get_matching_journey_patterns(
+        service, journey_pattern_ids
+    )
+
+    if not matching_journey_patterns:
+        log.error(
+            "No reference journey pattern found for service pattern",
+            service_code=service.ServiceCode,
+            service_pattern_id=sp_id,
+            journey_pattern_ids=journey_pattern_ids,
+        )
+        raise NoMatchingJourneyPatternsForServicePattern(
+            service_code=service.ServiceCode,
+            service_pattern_id=sp_id,
+            jp_ids=journey_pattern_ids,
+        )
+
+    return matching_journey_patterns[0]
+
+
 def process_pattern_common(
     service: TXCService,
-    journey_pattern: TXCJourneyPattern | TXCFlexibleJourneyPattern,
     context: ProcessPatternCommonContext,
 ) -> PatternCommonStats:
     """
@@ -93,33 +161,46 @@ def process_pattern_common(
         "Processing Localities, Admin Areas and Bank Holidays",
         service_code=service.ServiceCode,
     )
+
+    sp_data = context.service_pattern_mapping.service_pattern_metadata[
+        context.service_pattern.service_pattern_id
+    ]
     localities = process_pattern_localities(
-        context.service_pattern, context.stops, context.db
+        context.service_pattern, sp_data.stop_sequence, context.db
     )
     admin_areas = process_pattern_admin_areas(
-        context.service_pattern, context.stops, context.db
+        context.service_pattern, sp_data.stop_sequence, context.db
     )
 
+    reference_journey_pattern = get_reference_journey_pattern(
+        service, context.service_pattern.service_pattern_id, sp_data.journey_pattern_ids
+    )
     bank_holidays = TransmodelBankHolidaysRepo(context.db).get_bank_holidays_lookup(
         service.StartDate, service.EndDate
     )
 
     vj_context = ServicePatternVehicleJourneyContext(
         service_pattern=context.service_pattern,
-        stops=context.stops,
+        stops=sp_data.stop_sequence,
         bank_holidays=bank_holidays,
         serviced_orgs=context.lookups.serviced_orgs,
+        service_pattern_mapping=context.service_pattern_mapping,
+        sp_data=sp_data,
         db=context.db,
     )
 
     tm_vjs, tm_pattern_stops = process_service_pattern_vehicle_journeys(
         context.txc,
-        journey_pattern,
+        reference_journey_pattern,
         vj_context,
     )
 
     tracks = load_vehicle_journey_tracks(
-        journey_pattern, tm_vjs, context.lookups.tracks, context.txc, context.db
+        reference_journey_pattern,
+        tm_vjs,
+        context.lookups.tracks,
+        context.txc,
+        context.db,
     )
 
     return PatternCommonStats(

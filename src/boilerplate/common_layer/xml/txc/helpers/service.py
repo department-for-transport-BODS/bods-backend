@@ -14,6 +14,7 @@ from ..models import (
     TXCFlexibleStopUsage,
     TXCJourneyPattern,
     TXCJourneyPatternSection,
+    TXCLine,
     TXCService,
 )
 from .stops import get_stops_from_sections
@@ -39,6 +40,20 @@ def get_all_line_names(services: list[TXCService]) -> list[str]:
         log.warning("No line names found across services")
 
     return line_names
+
+
+def make_line_mapping(services: list[TXCService]) -> dict[str, TXCLine]:
+    """
+    Create a mapping between line IDs and TXCLine
+    """
+    line_mapping: dict[str, TXCLine] = {}
+
+    for service in services:
+        for line in service.Lines:
+            if line.id:
+                line_mapping[line.id] = line
+
+    return line_mapping
 
 
 def get_service_start_dates(services: list[TXCService]) -> list[date]:
