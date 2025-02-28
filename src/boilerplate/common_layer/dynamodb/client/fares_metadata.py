@@ -51,6 +51,7 @@ class DynamoDBFaresMetadata(DynamoDB):
         metadata: FaresMetadata,
         stop_ids: list[int],
         data_catalogue: FaresDataCatalogueMetadata,
+        netex_schema_version: str,
     ):
         """
         Put metadata into dynamodb
@@ -64,5 +65,33 @@ class DynamoDBFaresMetadata(DynamoDB):
                 "Metadata": self._serializer.serialize(metadata.as_dict()),
                 "StopIds": self._serializer.serialize(stop_ids),
                 "DataCatalogue": self._serializer.serialize(data_catalogue.as_dict()),
+                "NetexSchemaVersion": self._serializer.serialize(netex_schema_version),
             },
         )
+
+    def get_metadata(
+        self,
+        task_id: int,
+    ) -> list[dict]:
+        """
+        Get metadata from dynamodb
+        """
+        query_params = {
+            "TableName": self._settings.DYNAMODB_TABLE_NAME,
+            "KeyConditionExpression": "PK = :task_id",
+            "ExpressionAttributeValues": {
+                ":task_id": self._serializer.serialize(task_id)
+            },
+        }
+
+        metadata_items = []
+        metadata_response = self._client.query(**query_params)
+        metadata_items.extend(metadata_response.get("Items", []))
+
+        while "LastEvaluatedKey" in metadata_response:
+            query_params["ExclusiveStartKey"] = metadata_response["LastEvaluatedKey"]
+            metadata_response = self._client.query(**query_params)
+
+            metadata_items.extend(metadata_response.get("Items", []))
+
+        return metadata_items

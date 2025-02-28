@@ -84,6 +84,7 @@ class FaresMetadataStop(BaseSQLModel):
         ForeignKey("fares_faresmetadata.datasetmetadata_ptr_id"),
         nullable=False,
         index=True,
+        init=False,
     )
     stoppoint_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("naptan_stoppoint.id"), nullable=False, index=True

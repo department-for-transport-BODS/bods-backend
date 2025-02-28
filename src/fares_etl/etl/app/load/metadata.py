@@ -28,6 +28,7 @@ def load_metadata_into_dynamodb(
     metadata = create_metadata(netex)
     stop_ids = get_stop_ids(netex, naptan_stop_point_repo)
     data_catalogue = create_data_catalogue(netex, file_name)
+    netex_schema_version = netex.version
 
     dynamodb_fares_metadata_repo.put_metadata(
         task_id,
@@ -35,4 +36,5 @@ def load_metadata_into_dynamodb(
         metadata,
         stop_ids,
         data_catalogue,
+        netex_schema_version,
     )
