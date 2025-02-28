@@ -217,8 +217,9 @@ def process_journey_pattern_vehicle_journeys(
 ) -> tuple[list[TransmodelVehicleJourney], list[TransmodelServicePatternStop]]:
     """
     Process vehicle journeys for a specific journey pattern.
+    Each vehicle journey should have its own stops generated.
     """
-    vj_context: VehicleJourneyProcessingContext = VehicleJourneyProcessingContext(
+    vj_context = VehicleJourneyProcessingContext(
         service_pattern=context.service_pattern,
         bank_holidays=context.bank_holidays,
         tm_serviced_orgs=context.serviced_orgs,
@@ -234,12 +235,7 @@ def process_journey_pattern_vehicle_journeys(
 
     pattern_stops: list[TransmodelServicePatternStop] = []
 
-    for tm_vj in tm_vjs:
-        if not vjs:
-            continue
-
-        txc_vj: TXCVehicleJourney | TXCFlexibleVehicleJourney = vjs[0]
-
+    for tm_vj, txc_vj in zip(tm_vjs, vjs):
         if isinstance(txc_jp, TXCFlexibleJourneyPattern):
             if not is_flexible_vehicle_journey(txc_vj):
                 log.error(
@@ -266,12 +262,14 @@ def process_journey_pattern_vehicle_journeys(
                 )
                 continue
 
+            # Get the journey pattern sections
             jp_sections: list[TXCJourneyPatternSection] = [
                 section
                 for section in txc.JourneyPatternSections
                 if section.id in txc_jp.JourneyPatternSectionRefs
             ]
 
+            # Generate stops for this vehicle journey
             stops = process_pattern_stops(
                 tm_service_pattern=context.service_pattern,
                 tm_vehicle_journey=tm_vj,
