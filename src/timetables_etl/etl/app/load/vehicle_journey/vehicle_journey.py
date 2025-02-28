@@ -310,14 +310,9 @@ def process_service_pattern_vehicle_journeys(
     jp_lookup = get_journey_pattern_lookup(txc)
 
     # Find and group vehicle journeys by journey pattern
-    vjs_by_journey_pattern = group_vehicle_journeys_by_pattern(
-        find_service_pattern_vehicle_journeys(
-            txc,
-            context.service_pattern.service_pattern_id,
-            context.service_pattern_mapping,
-        )
-    )
+    vjs_by_journey_pattern = group_vehicle_journeys_by_pattern(context.vehicle_journeys)
 
+    # Process vehicle journeys for each journey pattern
     results = [
         process_journey_pattern_vehicle_journeys(vjs, jp_lookup[jp_id], txc, context)
         for jp_id, vjs in vjs_by_journey_pattern.items()
