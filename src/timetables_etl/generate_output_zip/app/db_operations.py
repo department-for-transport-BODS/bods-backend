@@ -165,6 +165,7 @@ def update_live_revision(db: SqlDB, revision: OrganisationDatasetRevision):
         repo.update_live_revision(revision.dataset_id, revision.id)
     else:
         log.info(
-            "Skipping setting live_revision_id because revision status is not live and is not published",
+            "Skipping setting live_revision_id because revision \
+            status is not live and is not published",
             revision_status=revision.status,
         )
