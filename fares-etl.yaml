@@ -206,7 +206,7 @@ Resources:
       TableName: !Sub '${ProjectName}-${Environment}-${SubFunction}-metadata'
       AttributeDefinitions:
         - AttributeName: PK
-          AttributeType: S
+          AttributeType: N
         - AttributeName: SK
           AttributeType: S
       KeySchema:

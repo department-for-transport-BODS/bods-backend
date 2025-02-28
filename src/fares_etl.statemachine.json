@@ -203,7 +203,8 @@
             "Arguments": {
               "Bucket": "{% $Bucket %}",
               "ObjectKey": "{% $ObjectKey %}",
-              "DatasetRevisionId": "{% $DatasetRevisionId %}"
+              "DatasetRevisionId": "{% $DatasetRevisionId %}",
+              "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}"
             },
             "Output": {
               "etlProcess": "{% $states.result %}"

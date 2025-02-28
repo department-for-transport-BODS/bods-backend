@@ -2,6 +2,8 @@
 DynamoDB Cache Client
 """
 
+from typing import Any
+
 from common_layer.database.models.model_fares import (
     FaresDataCatalogueMetadata,
     FaresMetadata,
@@ -82,11 +84,11 @@ class DynamoDBFaresMetadata(DynamoDB):
     def get_metadata(
         self,
         task_id: int,
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         """
         Get metadata from dynamodb
         """
-        query_params = {
+        query_params: dict[str, Any] = {
             "TableName": self._settings.DYNAMODB_TABLE_NAME,
             "KeyConditionExpression": "PK = :task_id",
             "ExpressionAttributeValues": {
@@ -94,7 +96,7 @@ class DynamoDBFaresMetadata(DynamoDB):
             },
         }
 
-        metadata_items = []
+        metadata_items: list[dict[str, Any]] = []
         metadata_response = self._client.query(**query_params)
         metadata_items.extend(metadata_response.get("Items", []))
 

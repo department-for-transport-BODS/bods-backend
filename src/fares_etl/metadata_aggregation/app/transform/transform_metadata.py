@@ -2,6 +2,8 @@
 Transform fares metadata items
 """
 
+from typing import Any
+
 from boto3.dynamodb.types import TypeDeserializer
 from common_layer.database.models.model_fares import (
     FaresDataCatalogueMetadata,
@@ -64,7 +66,7 @@ def aggregate_metadata(metadata_items: list[FaresMetadata]) -> FaresMetadata:
     return aggregated_metadata
 
 
-def map_metadata(metadata_items: list[dict]):
+def map_metadata(metadata_items: list[dict[str, Any]]):
     """
     Map dynamo response to Fares Models
     """
