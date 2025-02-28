@@ -5,7 +5,7 @@ Processing for transmodel_servicepatternstop
 import re
 from dataclasses import dataclass
 from datetime import datetime, time, timedelta
-from typing import Iterator, Sequence
+from typing import Sequence
 
 from common_layer.database.models import (
     NaptanStopPoint,

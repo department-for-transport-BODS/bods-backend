@@ -92,7 +92,7 @@ def get_matching_journey_patterns(
     """
     Get journey patterns from a service that match the provided journey pattern IDs.
     """
-    all_journey_patterns = []
+    all_journey_patterns: list[TXCJourneyPattern | TXCFlexibleJourneyPattern] = []
 
     if service.StandardService is not None:
         all_journey_patterns.extend(service.StandardService.JourneyPattern)

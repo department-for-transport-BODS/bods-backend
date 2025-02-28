@@ -17,7 +17,6 @@ from common_layer.xml.txc.models import (
     TXCFlexibleJourneyPattern,
     TXCFlexibleVehicleJourney,
     TXCJourneyPattern,
-    TXCJourneyPatternSection,
     TXCVehicleJourney,
 )
 from structlog.stdlib import get_logger
