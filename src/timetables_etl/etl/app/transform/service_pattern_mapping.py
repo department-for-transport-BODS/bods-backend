@@ -36,6 +36,12 @@ class ServicePatternMetadata:
             "description": "list of journey pattern IDs that map to this service pattern"
         },
     )
+    vehicle_journey_ids: list[str] = field(
+        default_factory=list,
+        metadata={
+            "description": "list of vehicle journey IDs that map to this service pattern"
+        },
+    )
     num_stops: int = field(
         default=0, metadata={"description": "Number of stops in this service pattern"}
     )
@@ -323,22 +329,25 @@ def identify_unique_patterns(
     return collections
 
 
-def resolve_vehicle_journey_patterns(
+def map_direct_journey_patterns(
     txc: TXCData, journey_pattern_to_service_pattern: dict[str, str]
-) -> dict[str, str]:
+) -> tuple[dict[str, str], dict[str, str], dict[str, list[str]]]:
     """
-    Resolve VehicleJourneyRefs (if any) to determine the service pattern for each vehicle journey
+    First pass: map all vehicle journeys that directly reference a journey pattern
 
-    VJs can reference other VJs which will then have the JourneyPatternRef we need
+    Returns:
+        - vehicle_journey_to_service_pattern: Mapping from vehicle journey code to service pattern ID
+        - vehicle_journey_code_to_service_pattern: Helper mapping for resolving references
+        - service_pattern_to_vehicle_journeys: Mapping from service pattern ID to list of vehicle journey codes
     """
     vehicle_journey_to_service_pattern: dict[str, str] = {}
-
-    # First pass - map all vehicle journeys that directly reference a journey pattern
     vehicle_journey_code_to_service_pattern: dict[str, str] = {}
+    service_pattern_to_vehicle_journeys: dict[str, list[str]] = {}
 
     for vj in txc.VehicleJourneys:
         if vj.VehicleJourneyCode is None:
             continue
+
         if vj.JourneyPatternRef:
             jp_id = vj.JourneyPatternRef
             if jp_id in journey_pattern_to_service_pattern:
@@ -347,6 +356,14 @@ def resolve_vehicle_journey_patterns(
                     service_pattern_id
                 )
 
+                # Add to the service_pattern_to_vehicle_journeys mapping
+                if service_pattern_id not in service_pattern_to_vehicle_journeys:
+                    service_pattern_to_vehicle_journeys[service_pattern_id] = []
+                service_pattern_to_vehicle_journeys[service_pattern_id].append(
+                    vj.VehicleJourneyCode
+                )
+
+                # Store for reference resolution in the second pass
                 if vj.VehicleJourneyCode:
                     vehicle_journey_code_to_service_pattern[vj.VehicleJourneyCode] = (
                         service_pattern_id
@@ -358,7 +375,26 @@ def resolve_vehicle_journey_patterns(
                     vehicle_journey_id=vj.VehicleJourneyCode,
                 )
 
-    # Second pass - resolve vehicle journeys that reference other vehicle journeys
+    return (
+        vehicle_journey_to_service_pattern,
+        vehicle_journey_code_to_service_pattern,
+        service_pattern_to_vehicle_journeys,
+    )
+
+
+def resolve_journey_references(
+    txc: TXCData,
+    vehicle_journey_to_service_pattern: dict[str, str],
+    vehicle_journey_code_to_service_pattern: dict[str, str],
+    service_pattern_to_vehicle_journeys: dict[str, list[str]],
+) -> tuple[dict[str, str], dict[str, list[str]]]:
+    """
+    Second pass: resolve vehicle journeys that reference other vehicle journeys
+
+    Returns:
+        - Updated vehicle_journey_to_service_pattern mapping
+        - Updated service_pattern_to_vehicle_journeys mapping
+    """
     for vj in txc.VehicleJourneys:
         if vj.VehicleJourneyCode is None:
             continue
@@ -370,8 +406,18 @@ def resolve_vehicle_journey_patterns(
             referenced_vj_code = vj.VehicleJourneyRef
 
             if referenced_vj_code in vehicle_journey_code_to_service_pattern:
+                service_pattern_id = vehicle_journey_code_to_service_pattern[
+                    referenced_vj_code
+                ]
                 vehicle_journey_to_service_pattern[vj.VehicleJourneyCode] = (
-                    vehicle_journey_code_to_service_pattern[referenced_vj_code]
+                    service_pattern_id
+                )
+
+                # Add to the service_pattern_to_vehicle_journeys mapping
+                if service_pattern_id not in service_pattern_to_vehicle_journeys:
+                    service_pattern_to_vehicle_journeys[service_pattern_id] = []
+                service_pattern_to_vehicle_journeys[service_pattern_id].append(
+                    vj.VehicleJourneyCode
                 )
             else:
                 log.warning(
@@ -380,12 +426,46 @@ def resolve_vehicle_journey_patterns(
                     vehicle_journey_id=vj.VehicleJourneyCode,
                 )
 
-    return vehicle_journey_to_service_pattern
+    return vehicle_journey_to_service_pattern, service_pattern_to_vehicle_journeys
+
+
+def resolve_vehicle_journey_patterns(
+    txc: TXCData, journey_pattern_to_service_pattern: dict[str, str]
+) -> tuple[dict[str, str], dict[str, list[str]]]:
+    """
+    Resolve VehicleJourneyRefs (if any) to determine the service pattern for each vehicle journey
+
+    VJs can reference other VJs which will then have the JourneyPatternRef we need
+
+    Returns:
+        A tuple containing:
+        - Dictionary mapping vehicle journey codes to service pattern IDs
+        - Dictionary mapping service pattern IDs to lists of vehicle journey codes
+    """
+    # First pass: Map direct journey patterns
+    (
+        vehicle_journey_to_service_pattern,
+        vehicle_journey_code_to_service_pattern,
+        service_pattern_to_vehicle_journeys,
+    ) = map_direct_journey_patterns(txc, journey_pattern_to_service_pattern)
+
+    # Second pass: Resolve references to other vehicle journeys
+    vehicle_journey_to_service_pattern, service_pattern_to_vehicle_journeys = (
+        resolve_journey_references(
+            txc,
+            vehicle_journey_to_service_pattern,
+            vehicle_journey_code_to_service_pattern,
+            service_pattern_to_vehicle_journeys,
+        )
+    )
+
+    return vehicle_journey_to_service_pattern, service_pattern_to_vehicle_journeys
 
 
 def create_service_pattern_metadata(
     service_pattern_to_journey_patterns: dict[str, list[str]],
     service_pattern_to_stops: dict[str, Sequence[NaptanStopPoint]],
+    service_pattern_to_vehicle_journeys: dict[str, list[str]],
 ) -> dict[str, ServicePatternMetadata]:
     """
     Create metadata about each service pattern
@@ -396,11 +476,22 @@ def create_service_pattern_metadata(
         # Get the NaptanStopPoint objects for this service pattern
         stops = service_pattern_to_stops.get(sp_id, [])
 
-        # Create the metadata with the actual NaptanStopPoint objects
-        service_pattern_metadata[sp_id] = ServicePatternMetadata(
-            journey_pattern_ids=jp_ids, num_stops=len(stops), stop_sequence=list(stops)
-        )
+        # Get the vehicle journey IDs for this service pattern
+        vj_ids = service_pattern_to_vehicle_journeys.get(sp_id, [])
 
+        # Create the metadata with the actual NaptanStopPoint objects and vehicle journey IDs
+        service_pattern_metadata[sp_id] = ServicePatternMetadata(
+            journey_pattern_ids=jp_ids,
+            vehicle_journey_ids=vj_ids,
+            num_stops=len(stops),
+            stop_sequence=list(stops),
+        )
+        log.debug(
+            "Stops List",
+            stops=[stop.common_name for stop in stops],
+            count=len(stops),
+            service_pattern_id=sp_id,
+        )
     return service_pattern_metadata
 
 
@@ -417,13 +508,18 @@ def map_unique_journey_patterns(
     """
     collections = identify_unique_patterns(txc, lookups)
 
-    vehicle_journey_to_service_pattern = resolve_vehicle_journey_patterns(
-        txc, collections.journey_pattern_to_service_pattern
+    # Get both mappings now
+    vehicle_journey_to_service_pattern, service_pattern_to_vehicle_journeys = (
+        resolve_vehicle_journey_patterns(
+            txc, collections.journey_pattern_to_service_pattern
+        )
     )
 
+    # Pass the vehicle journey mapping to create_service_pattern_metadata
     service_pattern_metadata = create_service_pattern_metadata(
         collections.service_pattern_to_journey_patterns,
         collections.service_pattern_to_stops,
+        service_pattern_to_vehicle_journeys,
     )
 
     # Validate and set directions for all service patterns
@@ -452,7 +548,6 @@ def map_unique_journey_patterns(
         vehicle_journey_count=len(vehicle_journey_to_service_pattern),
         line_count=len(line_to_txc_line),
     )
-
     return ServicePatternMapping(
         journey_pattern_to_service_pattern=collections.journey_pattern_to_service_pattern,
         vehicle_journey_to_service_pattern=vehicle_journey_to_service_pattern,
