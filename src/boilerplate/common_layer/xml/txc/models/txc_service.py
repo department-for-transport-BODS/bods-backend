@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 from .txc_operating_profile import TXCOperatingProfile
 from .txc_service_flexible import TXCFlexibleService
-from .txc_types import TransportModeT
+from .txc_types import JourneyPatternVehicleDirectionT, TransportModeT
 
 
 class TXCJourneyPattern(BaseModel):
@@ -16,7 +16,6 @@ class TXCJourneyPattern(BaseModel):
     Describes a possible bus route of a StandardService as a sequence of timing
     links between stops that a vehicle will traverse in a particular order
     representing the pattern of working for vehicles of the service
-
     """
 
     id: str
@@ -30,7 +29,7 @@ class TXCJourneyPattern(BaseModel):
     OperatorRef: str | None = Field(
         default=None, description="Reference to a defined operator."
     )
-    Direction: str = Field(
+    Direction: JourneyPatternVehicleDirectionT = Field(
         ...,
         description="Direction of travel, represented by an enumeration.",
     )

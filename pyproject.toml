@@ -29,6 +29,7 @@ download-dataset = "tools.download_dataset.cli:app"
 txc-tools = "tools.txc_tools.cli:cli"
 etl-state-machine = "tools.state_runner.cli:app"
 create-requirements-files = "tools.build_scripts.create_requirements_files:main"
+file-viewer = "tools.file_viewer.cli:run_cli"
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -94,6 +95,7 @@ python-dotenv = "^1.0.1"
 typer = "^0.15.1"
 aws-lambda-powertools = { extras = ["all"], version = "^3.4.0" }
 pytest-mock = "^3.11.1"
+textual = "^2.1.2"
 
 [build-system]
 requires = ["poetry-core"]
@@ -121,6 +123,7 @@ strict = [
   "src/timetables_etl/schema_check/**",
   "src/timetables_etl/generate_output_zip/**",
 ]
+typeCheckingMode = "strict"
 
 [tool.pytest.ini_options]
 pythonpath = [

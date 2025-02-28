@@ -27,6 +27,7 @@ from ..models import (
 )
 from .operating_profile import parse_operating_profile
 from .services_flexible import parse_flexible_service
+from .txc_types import parse_jp_direction
 
 log = get_logger()
 
@@ -99,7 +100,7 @@ def parse_journey_pattern(journey_pattern_xml: _Element) -> TXCJourneyPattern | 
     private_code = get_element_text(journey_pattern_xml, "PrivateCode")
     destination_display = get_element_text(journey_pattern_xml, "DestinationDisplay")
     operator_ref = get_element_text(journey_pattern_xml, "OperatorRef")
-    direction = get_element_text(journey_pattern_xml, "Direction")
+    direction = parse_jp_direction(journey_pattern_xml)
     route_ref = get_element_text(journey_pattern_xml, "RouteRef")
     journey_pattern_section_refs = get_element_texts(
         journey_pattern_xml, "JourneyPatternSectionRefs"
