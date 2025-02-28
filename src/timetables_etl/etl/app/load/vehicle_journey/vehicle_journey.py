@@ -225,6 +225,7 @@ def process_journey_pattern_vehicle_journeys(
         txc_serviced_orgs=txc.ServicedOrganisations,
         txc_services=txc.Services,
         db=context.db,
+        naptan_stops_lookup=context.naptan_stops_lookup,
     )
 
     tm_vjs: list[TransmodelVehicleJourney] = process_vehicle_journeys(
@@ -276,7 +277,7 @@ def process_journey_pattern_vehicle_journeys(
                 tm_vehicle_journey=tm_vj,
                 txc_vehicle_journey=txc_vj,
                 context=ProcessPatternStopsContext(
-                    jp_sections, context.stops, context.db
+                    jp_sections, context.stops, context.db, context.naptan_stops_lookup
                 ),
             )
             pattern_stops.extend(stops)
