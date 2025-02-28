@@ -60,9 +60,6 @@ from tests.timetables_etl.factories.txc.factory_txc_journey_pattern_section impo
                 current_time=time(9, 0),
                 auto_sequence=0,
                 pattern_stops=[],
-                naptan_stop=NaptanStopPointFactory.create(
-                    atco_code="2400A001", common_name="First Stop"
-                ),
             ),
             JourneySectionContext(
                 service_pattern=TransmodelServicePattern(
@@ -106,14 +103,23 @@ from tests.timetables_etl.factories.txc.factory_txc_journey_pattern_section impo
                             is_driverrequest=False,
                         )
                     },
-                ),
-                stop_iter=iter(
-                    [
-                        NaptanStopPointFactory.create(
+                    naptan_stops_lookup={
+                        "2400A001": NaptanStopPointFactory.create(
+                            atco_code="2400A001", common_name="First Stop"
+                        ),
+                        "2400A002": NaptanStopPointFactory.create(
                             atco_code="2400A002", common_name="Second Stop"
                         ),
-                    ]
+                    },
                 ),
+                naptan_stops_lookup={
+                    "2400A001": NaptanStopPointFactory.create(
+                        atco_code="2400A001", common_name="First Stop"
+                    ),
+                    "2400A002": NaptanStopPointFactory.create(
+                        atco_code="2400A002", common_name="Second Stop"
+                    ),
+                },
             ),
             [
                 {
@@ -156,9 +162,6 @@ from tests.timetables_etl.factories.txc.factory_txc_journey_pattern_section impo
                 current_time=time(9, 0),
                 auto_sequence=0,
                 pattern_stops=[],
-                naptan_stop=NaptanStopPointFactory.create(
-                    atco_code="2400A001", common_name="First Stop"
-                ),
             ),
             JourneySectionContext(
                 service_pattern=TransmodelServicePattern(
@@ -212,14 +215,23 @@ from tests.timetables_etl.factories.txc.factory_txc_journey_pattern_section impo
                             is_driverrequest=False,
                         )
                     },
-                ),
-                stop_iter=iter(
-                    [
-                        NaptanStopPointFactory.create(
+                    naptan_stops_lookup={
+                        "2400A001": NaptanStopPointFactory.create(
+                            atco_code="2400A001", common_name="First Stop"
+                        ),
+                        "2400A002": NaptanStopPointFactory.create(
                             atco_code="2400A002", common_name="Second Stop"
                         ),
-                    ]
+                    },
                 ),
+                naptan_stops_lookup={
+                    "2400A001": NaptanStopPointFactory.create(
+                        atco_code="2400A001", common_name="First Stop"
+                    ),
+                    "2400A002": NaptanStopPointFactory.create(
+                        atco_code="2400A002", common_name="Second Stop"
+                    ),
+                },
             ),
             [
                 {
