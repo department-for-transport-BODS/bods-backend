@@ -203,7 +203,7 @@ Resources:
     Type: AWS::DynamoDB::Table
     ## checkov:skip=CKV_AWS_28:Ensure DynamoDB point in time recovery (backup) is enabled
     Properties:
-      TableName: !Sub '${ProjectName}-${Environment}-${SubFunction}-metadata'
+      TableName: !Sub '${ProjectName}-${Environment}-${SubFunction}-metadata-table'
       AttributeDefinitions:
         - AttributeName: PK
           AttributeType: N
