@@ -22,6 +22,8 @@ from common_layer.xml.txc.models import (
 )
 from structlog.stdlib import get_logger
 
+from ..helpers.types import LookupStopPoint, StopsLookup
+
 log = get_logger()
 
 
@@ -40,7 +42,7 @@ class StopData:
     """Data for a service pattern stop"""
 
     stop_usage: TXCJourneyPatternStopUsage
-    naptan_stop: NaptanStopPoint
+    naptan_stop: LookupStopPoint
 
 
 @dataclass
@@ -50,6 +52,7 @@ class GeneratePatternStopsContext:
     jp_sections: list[TXCJourneyPatternSection]
     stop_sequence: Sequence[NaptanStopPoint]
     activity_map: dict[str, TransmodelStopActivity]
+    naptan_stops_lookup: StopsLookup
 
 
 @dataclass
@@ -61,6 +64,7 @@ class JourneySectionContext:
     txc_vehicle_journey: TXCVehicleJourney | TXCFlexibleVehicleJourney
     pattern_context: GeneratePatternStopsContext
     stop_iter: Iterator[NaptanStopPoint]
+    naptan_stops_lookup: StopsLookup
 
 
 @dataclass
@@ -134,12 +138,17 @@ def create_stop(
         )
         return None
 
+    naptan_stop_id = (
+        stop_data.naptan_stop.id
+        if isinstance(stop_data.naptan_stop, NaptanStopPoint)
+        else None
+    )
     return TransmodelServicePatternStop(
         sequence_number=int(
             stop_data.stop_usage.SequenceNumber or context.auto_sequence
         ),
         atco_code=stop_data.stop_usage.StopPointRef,
-        naptan_stop_id=stop_data.naptan_stop.id if stop_data.naptan_stop else None,
+        naptan_stop_id=naptan_stop_id,
         service_pattern_id=context.service_pattern.id,
         departure_time=context.departure_time,
         is_timing_point=stop_data.stop_usage.TimingStatus == "principalTimingPoint",
@@ -239,7 +248,11 @@ def process_journey_pattern_section(
     context: JourneySectionContext,
 ) -> tuple[bool, SectionProcessingState]:
     """Process a single journey pattern section"""
+    log.info(f"Processing section {section.id}")
     for link in section.JourneyPatternTimingLink:
+        log.info(
+            f"Handling link From {link.From.StopPointRef} to {link.To.StopPointRef}"
+        )
         # Handle 'From' stop
         if not is_duplicate_stop(
             current_stop_ref=link.From.StopPointRef,
@@ -253,9 +266,10 @@ def process_journey_pattern_section(
                 departure_time=state.current_time,
             )
 
+            naptan_stop = context.naptan_stops_lookup[link.From.StopPointRef]
             stop_data = StopData(
                 stop_usage=link.From,
-                naptan_stop=state.naptan_stop,
+                naptan_stop=naptan_stop,
             )
 
             if stop := create_pattern_stop(
@@ -279,7 +293,13 @@ def process_journey_pattern_section(
         state.current_time = calculate_next_time(state.current_time, runtime, wait_time)
 
         try:
+            log.info(
+                f"Before next(stop_iter), current stop: {state.naptan_stop.atco_code} - {state.naptan_stop.common_name}"
+            )
             state.naptan_stop = next(context.stop_iter)
+            log.info(
+                f"After next(stop_iter), assigned stop: {state.naptan_stop.atco_code} - {state.naptan_stop.common_name}"
+            )
         except StopIteration:
             log.error(
                 "Ran out of stops before finishing pattern",
@@ -297,10 +317,10 @@ def process_journey_pattern_section(
                 auto_sequence=state.auto_sequence,
                 departure_time=state.current_time,
             )
-
+            naptan_stop = context.naptan_stops_lookup[link.To.StopPointRef]
             stop_data = StopData(
                 stop_usage=link.To,
-                naptan_stop=state.naptan_stop,
+                naptan_stop=naptan_stop,
             )
 
             if stop := create_pattern_stop(
@@ -330,7 +350,8 @@ def generate_pattern_stops(
         vehicle_journey=txc_vehicle_journey.VehicleJourneyCode,
     )
 
-    stop_iter = iter(context.stop_sequence)
+    fresh_stop_sequence = list(context.stop_sequence)
+    stop_iter = iter(fresh_stop_sequence)
     state = SectionProcessingState(
         current_time=vehicle_journey.start_time,
         auto_sequence=0,
@@ -344,6 +365,7 @@ def generate_pattern_stops(
         txc_vehicle_journey=txc_vehicle_journey,
         pattern_context=context,
         stop_iter=stop_iter,
+        naptan_stops_lookup=context.naptan_stops_lookup,
     )
 
     for section in context.jp_sections:

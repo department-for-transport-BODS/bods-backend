@@ -50,6 +50,7 @@ class ServicePatternVehicleJourneyContext:
     db: SqlDB
     service_pattern_mapping: ServicePatternMapping
     sp_data: ServicePatternMetadata
+    naptan_stops_lookup: StopsLookup
 
 
 @dataclass
@@ -59,6 +60,7 @@ class ProcessPatternStopsContext:
     jp_sections: list[TXCJourneyPatternSection]
     stop_sequence: Sequence[NaptanStopPoint]
     db: SqlDB
+    naptan_stops_lookup: StopsLookup
 
 
 @dataclass
@@ -71,6 +73,7 @@ class VehicleJourneyProcessingContext:
     txc_serviced_orgs: list[TXCServicedOrganisation]
     txc_services: list[TXCService]
     db: SqlDB
+    naptan_stops_lookup: StopsLookup
 
 
 @dataclass

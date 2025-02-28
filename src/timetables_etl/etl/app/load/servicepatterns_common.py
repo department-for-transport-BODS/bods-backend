@@ -182,6 +182,7 @@ def process_pattern_common(
     vj_context = ServicePatternVehicleJourneyContext(
         service_pattern=context.service_pattern,
         stops=sp_data.stop_sequence,
+        naptan_stops_lookup=context.lookups.stops,
         bank_holidays=bank_holidays,
         serviced_orgs=context.lookups.serviced_orgs,
         service_pattern_mapping=context.service_pattern_mapping,
