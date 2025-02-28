@@ -9,7 +9,10 @@ from common_layer.database.models.model_fares import (
     FaresDataCatalogueMetadata,
     FaresMetadata,
 )
-from common_layer.dynamodb.client.fares_metadata import DynamoDBFaresMetadata
+from common_layer.dynamodb.client.fares_metadata import (
+    DynamoDBFaresMetadata,
+    FaresDynamoDBMetadataInput,
+)
 
 
 def test_put_metadata(m_boto_client):
@@ -24,34 +27,36 @@ def test_put_metadata(m_boto_client):
     dynamodb._client.put_item = MagicMock()
 
     dynamodb.put_metadata(
-        file_name="test.xml",
-        task_id=123,
-        data_catalogue=FaresDataCatalogueMetadata(
-            atco_area=[123, 456],
-            line_id=["1", "2"],
-            line_name=["line1", "line2"],
-            national_operator_code=["TEST"],
-            product_name=["Product1"],
-            product_type=["dayPass", "dayReturnTrip"],
-            tariff_basis=["flat"],
-            user_type=["adult"],
-            valid_from=date(2025, 2, 27),
-            valid_to=date(2026, 2, 27),
-            xml_file_name="test.xml",
+        123,
+        FaresDynamoDBMetadataInput(
+            file_name="test.xml",
+            data_catalogue=FaresDataCatalogueMetadata(
+                atco_area=[123, 456],
+                line_id=["1", "2"],
+                line_name=["line1", "line2"],
+                national_operator_code=["TEST"],
+                product_name=["Product1"],
+                product_type=["dayPass", "dayReturnTrip"],
+                tariff_basis=["flat"],
+                user_type=["adult"],
+                valid_from=date(2025, 2, 27),
+                valid_to=date(2026, 2, 27),
+                xml_file_name="test.xml",
+            ),
+            metadata=FaresMetadata(
+                num_of_fare_products=2,
+                num_of_fare_zones=1,
+                num_of_lines=4,
+                num_of_pass_products=2,
+                num_of_sales_offer_packages=2,
+                num_of_trip_products=0,
+                num_of_user_profiles=1,
+                valid_from=datetime(2023, 1, 1, 23, 59, 59),
+                valid_to=datetime(2025, 12, 31, 23, 59, 59),
+            ),
+            stop_ids=[1, 2, 3, 4, 5],
+            netex_schema_version="1.1",
         ),
-        metadata=FaresMetadata(
-            num_of_fare_products=2,
-            num_of_fare_zones=1,
-            num_of_lines=4,
-            num_of_pass_products=2,
-            num_of_sales_offer_packages=2,
-            num_of_trip_products=0,
-            num_of_user_profiles=1,
-            valid_from=datetime(2023, 1, 1, 23, 59, 59),
-            valid_to=datetime(2025, 12, 31, 23, 59, 59),
-        ),
-        stop_ids=[1, 2, 3, 4, 5],
-        netex_schema_version="1.1",
     )
 
     # pylint: disable=protected-access

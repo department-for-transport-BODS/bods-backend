@@ -6,7 +6,7 @@ from common_layer.database.models.model_fares import (
     FaresDataCatalogueMetadata,
     FaresMetadata,
 )
-from pydantic import Field
+from pydantic import BaseModel, Field
 from structlog.stdlib import get_logger
 
 from .base import DynamoDB
@@ -24,6 +24,18 @@ class DynamoDbFaresMetadataSettings(DynamoBaseSettings):
         default="",
         description="Table Name for DynamoDB fares metadata table",
     )
+
+
+class FaresDynamoDBMetadataInput(BaseModel):
+    """
+    Inputs for inserting metadata into dynamodb
+    """
+
+    metadata: FaresMetadata
+    data_catalogue: FaresDataCatalogueMetadata
+    stop_ids: list[int]
+    file_name: str
+    netex_schema_version: str
 
 
 class DynamoDBFaresMetadata(DynamoDB):
@@ -44,15 +56,7 @@ class DynamoDBFaresMetadata(DynamoDB):
             )
         )
 
-    def put_metadata(
-        self,
-        task_id: int,
-        file_name: str,
-        metadata: FaresMetadata,
-        stop_ids: list[int],
-        data_catalogue: FaresDataCatalogueMetadata,
-        netex_schema_version: str,
-    ):
+    def put_metadata(self, task_id: int, fares_metadata: FaresDynamoDBMetadataInput):
         """
         Put metadata into dynamodb
         """
@@ -61,11 +65,17 @@ class DynamoDBFaresMetadata(DynamoDB):
             ReturnValues="NONE",
             Item={
                 "PK": self._serializer.serialize(task_id),
-                "SK": self._serializer.serialize(file_name),
-                "Metadata": self._serializer.serialize(metadata.as_dict()),
-                "StopIds": self._serializer.serialize(stop_ids),
-                "DataCatalogue": self._serializer.serialize(data_catalogue.as_dict()),
-                "NetexSchemaVersion": self._serializer.serialize(netex_schema_version),
+                "SK": self._serializer.serialize(fares_metadata.file_name),
+                "Metadata": self._serializer.serialize(
+                    fares_metadata.metadata.as_dict()
+                ),
+                "StopIds": self._serializer.serialize(fares_metadata.stop_ids),
+                "DataCatalogue": self._serializer.serialize(
+                    fares_metadata.data_catalogue.as_dict()
+                ),
+                "NetexSchemaVersion": self._serializer.serialize(
+                    fares_metadata.netex_schema_version
+                ),
             },
         )
 
