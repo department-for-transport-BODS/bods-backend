@@ -343,6 +343,7 @@ Resources:
                 Action: lambda:InvokeFunction
                 Resource:
                   - !GetAtt EtlProcessLambda.Arn
+                  - !GetAtt FaresMetadataAggregationLambda.Arn
                   - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-initialize-pipeline-lambda-arn'
                   - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-clamav-scanner-lambda-arn'
                   - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-download-dataset-lambda-arn'

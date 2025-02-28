@@ -66,7 +66,12 @@ def aggregate_metadata(metadata_items: list[FaresMetadata]) -> FaresMetadata:
     return aggregated_metadata
 
 
-def map_metadata(metadata_items: list[dict[str, Any]]):
+def map_metadata(metadata_items: list[dict[str, Any]]) -> tuple[
+    list[FaresMetadata],
+    list[FaresDataCatalogueMetadata],
+    list[FaresMetadataStop],
+    list[str],
+]:
     """
     Map dynamo response to Fares Models
     """
@@ -78,11 +83,11 @@ def map_metadata(metadata_items: list[dict[str, Any]]):
 
     for item in metadata_items:
         metadata_item = type_deserializer.deserialize(item["Metadata"])
-        metadata_item.pop("datasetmetadata_ptr_id")
+        metadata_item.pop("datasetmetadata_ptr_id", None)
 
         data_catalogue_item = type_deserializer.deserialize(item["DataCatalogue"])
-        data_catalogue_item.pop("fares_metadata_id")
-        data_catalogue_item.pop("id")
+        data_catalogue_item.pop("fares_metadata_id", None)
+        data_catalogue_item.pop("id", None)
 
         netex_schema_version = type_deserializer.deserialize(
             item.get("NetexSchemaVersion", {"S": "1.1"})
