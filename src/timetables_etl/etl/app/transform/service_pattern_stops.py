@@ -63,7 +63,6 @@ class JourneySectionContext:
     vehicle_journey: TransmodelVehicleJourney
     txc_vehicle_journey: TXCVehicleJourney | TXCFlexibleVehicleJourney
     pattern_context: GeneratePatternStopsContext
-    stop_iter: Iterator[NaptanStopPoint]
     naptan_stops_lookup: StopsLookup
 
 
@@ -74,7 +73,6 @@ class SectionProcessingState:
     current_time: time | None
     auto_sequence: int
     pattern_stops: list[TransmodelServicePatternStop]
-    naptan_stop: NaptanStopPoint
 
 
 def parse_duration(duration: str | None) -> timedelta:
@@ -292,23 +290,6 @@ def process_journey_pattern_section(
         )
         state.current_time = calculate_next_time(state.current_time, runtime, wait_time)
 
-        try:
-            log.info(
-                f"Before next(stop_iter), current stop: {state.naptan_stop.atco_code} - {state.naptan_stop.common_name}"
-            )
-            state.naptan_stop = next(context.stop_iter)
-            log.info(
-                f"After next(stop_iter), assigned stop: {state.naptan_stop.atco_code} - {state.naptan_stop.common_name}"
-            )
-        except StopIteration:
-            log.error(
-                "Ran out of stops before finishing pattern",
-                section_id=section.id,
-                link_id=link.id,
-                pattern_id=context.service_pattern.id,
-            )
-            return False, state
-
         # Handle 'To' stop if it's the last link
         if link == section.JourneyPatternTimingLink[-1]:
             stop_context = StopContext(
@@ -350,13 +331,10 @@ def generate_pattern_stops(
         vehicle_journey=txc_vehicle_journey.VehicleJourneyCode,
     )
 
-    fresh_stop_sequence = list(context.stop_sequence)
-    stop_iter = iter(fresh_stop_sequence)
     state = SectionProcessingState(
         current_time=vehicle_journey.start_time,
         auto_sequence=0,
         pattern_stops=[],
-        naptan_stop=next(stop_iter),
     )
 
     journey_context = JourneySectionContext(
@@ -364,7 +342,6 @@ def generate_pattern_stops(
         vehicle_journey=vehicle_journey,
         txc_vehicle_journey=txc_vehicle_journey,
         pattern_context=context,
-        stop_iter=stop_iter,
         naptan_stops_lookup=context.naptan_stops_lookup,
     )
 
