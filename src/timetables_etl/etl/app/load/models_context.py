@@ -43,6 +43,7 @@ class ProcessPatternCommonContext:
     db: SqlDB
 
 
+# pylint: disable=too-many-instance-attributes
 @dataclass
 class ServicePatternVehicleJourneyContext:
     """Context for vehicle journey processing"""
