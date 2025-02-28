@@ -234,7 +234,6 @@ def process_journey_pattern_vehicle_journeys(
     )
 
     pattern_stops: list[TransmodelServicePatternStop] = []
-
     for tm_vj, txc_vj in zip(tm_vjs, vjs):
         if isinstance(txc_jp, TXCFlexibleJourneyPattern):
             if not is_flexible_vehicle_journey(txc_vj):
@@ -262,11 +261,13 @@ def process_journey_pattern_vehicle_journeys(
                 )
                 continue
 
-            # Get the journey pattern sections
-            jp_sections: list[TXCJourneyPatternSection] = [
+            # Get the journey pattern sections,
+            # respecting the order defined in JourneyPatternSectionRefs
+            jp_sections = [
                 section
+                for ref in txc_jp.JourneyPatternSectionRefs
                 for section in txc.JourneyPatternSections
-                if section.id in txc_jp.JourneyPatternSectionRefs
+                if section.id == ref
             ]
 
             # Generate stops for this vehicle journey
