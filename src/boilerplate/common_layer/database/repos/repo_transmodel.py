@@ -171,7 +171,7 @@ class TransmodelBankHolidaysRepo(BaseRepository[TransmodelBankHolidays]):
         return dict(holiday_lookup)
 
 
-class TransmodelTrackRepo(BaseRepository[TransmodelTracks]):
+class TransmodelTrackRepo(BaseRepositoryWithId[TransmodelTracks]):
     """Repository for managing Track entities"""
 
     def __init__(self, db: SqlDB):
