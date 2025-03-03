@@ -15,6 +15,8 @@ from common_layer.database.models import (
     TransmodelServicePatternStop,
     TransmodelServiceServicePattern,
     TransmodelStopActivity,
+    TransmodelTracks,
+    TransmodelTracksVehicleJourney,
 )
 from common_layer.database.models.model_transmodel_vehicle_journey import (
     TransmodelVehicleJourney,
@@ -32,6 +34,8 @@ from common_layer.database.repos import (
     TransmodelServiceRepo,
     TransmodelServiceServicePatternRepo,
     TransmodelStopActivityRepo,
+    TransmodelTrackRepo,
+    TransmodelTracksVehicleJourneyRepo,
     TransmodelVehicleJourneyRepo,
 )
 from structlog.stdlib import get_logger
@@ -202,9 +206,30 @@ def extract_servicedorganisationworkingdays(
     db: SqlDB, serviced_organisation_vehicle_journey_ids: list[int]
 ) -> list[TransmodelServicedOrganisationWorkingDays]:
     """
-    Extract serviced organisation working days daetails from DB.
+    Extract serviced organisation working days details from DB.
     """
     repo = TransmodelServicedOrganisationWorkingDaysRepo(db)
     return repo.get_by_serviced_organisation_vehicle_journey_id(
         serviced_organisation_vehicle_journey_ids
     )
+
+
+@csv_extractor()
+def extract_tracksvehiclejourney(
+    db: SqlDB, vehicle_journey_ids: list[int]
+) -> list[TransmodelTracksVehicleJourney]:
+    """
+    Extract Vehicle Journey Details from db
+    """
+    repo = TransmodelTracksVehicleJourneyRepo(db)
+    return repo.get_by_vehicle_journey_ids(vehicle_journey_ids)
+
+
+@csv_extractor()
+def extract_tracks(db: SqlDB, track_ids: list[int]) -> list[TransmodelTracks]:
+    """
+    Get Tracks
+    """
+
+    repo = TransmodelTrackRepo(db)
+    return repo.get_by_ids(track_ids)
