@@ -55,7 +55,7 @@ def create_vehicle_journey(
     return TransmodelVehicleJourney(
         start_time=departure_time,
         direction=jp.Direction,
-        journey_code=ticket_machine.JourneyCode if ticket_machine else None,
+        journey_code=ticket_machine.JourneyCode if ticket_machine else "",
         line_ref=vehicle_journey.LineRef,
         departure_day_shift=departure_day_shift,
         service_pattern_id=pattern.id,

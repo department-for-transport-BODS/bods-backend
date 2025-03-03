@@ -12,7 +12,7 @@ from common_layer.s3 import S3
 from structlog.stdlib import get_logger
 
 from .models import FileValidationInputData
-from .xml_checks import dangerous_xml_check, is_xml_file
+from .xml_checks import dangerous_xml_check, validate_is_xml_file
 
 log = get_logger()
 
@@ -36,7 +36,7 @@ def process_file_validation(input_data: FileValidationInputData) -> None:
     Process the file validation
     """
     log.info("Processing file validation", file_name=input_data.s3_file_key)
-    is_xml_file(input_data.s3_file_key)
+    validate_is_xml_file(input_data.s3_file_key)
     xml_file_data = get_xml_file_object(
         input_data.s3_bucket_name, input_data.s3_file_key
     )

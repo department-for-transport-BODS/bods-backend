@@ -2,116 +2,37 @@
 Make Transmodel Service Patterns
 """
 
-from common_layer.database.models import (
-    OrganisationDatasetRevision,
-    TransmodelServicePattern,
-)
-from common_layer.xml.txc.helpers import get_stops_from_sections
-from common_layer.xml.txc.models import (
-    TXCJourneyPattern,
-    TXCJourneyPatternSection,
-    TXCService,
-)
-from geoalchemy2 import WKBElement
-from geoalchemy2.shape import from_shape
-from shapely import Point
-from shapely.geometry import LineString
+from common_layer.database.models import TransmodelServicePattern
 from structlog.stdlib import get_logger
 
-from ..helpers import NonExistentNaptanStop, StopsLookup
-from ..transform.service_pattern_metadata import (
-    extract_pattern_metadata,
-    make_service_pattern_id,
-)
+from ..load.models_context import ProcessServicePatternContext
+from ..transform.service_pattern_metadata import make_metadata
+from .service_pattern_geom import generate_service_pattern_geometry_from_list
+from .service_pattern_mapping import ServicePatternMapping
 
 log = get_logger()
 
 
-def get_valid_route_points(
-    jp: TXCJourneyPattern,
-    journey_pattern_sections: list[TXCJourneyPatternSection],
-    atco_location_mapping: StopsLookup,
-) -> list[Point]:
-    """
-    Get valid route points from journey pattern sections.
-    Logs warnings for any stops not found in the mapping.
-    """
-    stops_refs: list[str] = get_stops_from_sections(
-        jp.JourneyPatternSectionRefs, journey_pattern_sections
-    )
-    route_points: list[Point] = []
-
-    for stop_ref in stops_refs:
-        if not stop_ref in atco_location_mapping:
-            msg = "Stop referenced in JourneyPatternSections not found in stop map"
-            log.error(msg, stop_id=stop_ref)
-            raise ValueError(msg)
-
-        stop_data = atco_location_mapping[stop_ref]
-        if isinstance(stop_data, NonExistentNaptanStop):
-            log.warning(
-                "Skipping NonExistentNaptanStop",
-                stop_id=stop_ref,
-                journey_pattern_id=jp.id,
-            )
-            continue
-        route_points.append(stop_data.shape)
-
-    return route_points
-
-
-def generate_service_pattern_geometry(
-    jp: TXCJourneyPattern,
-    journey_pattern_sections: list[TXCJourneyPatternSection],
-    atco_location_mapping: StopsLookup,
-) -> WKBElement | None:
-    """
-    Generate the Stop Linestring for a JourneyPattern.
-    SRID 4326 (WGS84) which is Longitude / Latitude.
-
-    Returns:
-        WKBElement: The geometry of the journey pattern
-        None: If insufficient valid stops are found to create a linestring
-    """
-    route_points = get_valid_route_points(
-        jp, journey_pattern_sections, atco_location_mapping
-    )
-
-    if len(route_points) <= 1:
-        log.warning(
-            "Not enough valid stops to create service pattern",
-            journey_pattern_id=jp.id,
-            valid_stops_count=len(route_points),
-        )
-        return None
-
-    return from_shape(LineString(route_points), srid=4326)
-
-
 def create_service_pattern(
-    service: TXCService,
-    jp: TXCJourneyPattern,
-    revision: OrganisationDatasetRevision,
-    journey_pattern_sections: list[TXCJourneyPatternSection],
-    stop_mapping: StopsLookup,
+    service_pattern_id: str,
+    service_pattern_mapping: ServicePatternMapping,
+    context: ProcessServicePatternContext,
 ) -> TransmodelServicePattern:
     """
     Create a single TransmodelServicePattern from a TXC journey pattern
     """
-    metadata = extract_pattern_metadata(
-        service, jp, journey_pattern_sections, stop_mapping
-    )
+
+    data = service_pattern_mapping.service_pattern_metadata[service_pattern_id]
+    metadata = make_metadata(data, service_pattern_mapping.line_to_txc_line)
 
     pattern = TransmodelServicePattern(
-        service_pattern_id=make_service_pattern_id(service, jp),
+        service_pattern_id=service_pattern_id,
         description=metadata.description,
         origin=metadata.origin,
         destination=metadata.destination,
         line_name=metadata.line_name,
-        revision_id=revision.id,
-        geom=generate_service_pattern_geometry(
-            jp, journey_pattern_sections, stop_mapping
-        ),
+        revision_id=context.revision.id,
+        geom=generate_service_pattern_geometry_from_list(data.stop_sequence),
     )
 
     log.info(

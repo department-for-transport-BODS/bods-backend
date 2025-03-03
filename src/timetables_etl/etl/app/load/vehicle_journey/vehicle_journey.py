@@ -25,6 +25,7 @@ from ...load.service_pattern_stop import (
     process_flexible_pattern_stops,
     process_pattern_stops,
 )
+from ...transform.service_pattern_mapping import ServicePatternMapping
 from ...transform.vehicle_journeys import (
     generate_flexible_service_operation_period,
     generate_pattern_vehicle_journeys,
@@ -135,28 +136,88 @@ def process_vehicle_journeys(
     return results
 
 
-def process_service_pattern_vehicle_journeys(
+def make_vj_list() -> list[TXCVehicleJourney | TXCFlexibleVehicleJourney]:
+    """
+    Create list of VJ for a Service Pattern
+    """
+    vehicle_journeys: list[TXCVehicleJourney | TXCFlexibleVehicleJourney] = []
+    return vehicle_journeys
+
+
+def get_journey_pattern_lookup(
     txc: TXCData,
+) -> dict[str, TXCJourneyPattern | TXCFlexibleJourneyPattern]:
+    """
+    Create a lookup dictionary mapping journey pattern IDs to their objects.
+    """
+    jp_lookup: dict[str, TXCJourneyPattern | TXCFlexibleJourneyPattern] = {}
+    for service in txc.Services:
+        if service.StandardService:
+            for jp in service.StandardService.JourneyPattern:
+                jp_lookup[jp.id] = jp
+    return jp_lookup
+
+
+def find_service_pattern_vehicle_journeys(
+    txc: TXCData,
+    service_pattern_id: str,
+    service_pattern_mapping: ServicePatternMapping,
+) -> list[TXCVehicleJourney | TXCFlexibleVehicleJourney]:
+    """
+    Find all vehicle journeys that map to a specific service pattern.
+
+    """
+    service_pattern_vjs: list[TXCVehicleJourney | TXCFlexibleVehicleJourney] = []
+
+    for vj in txc.VehicleJourneys:
+        if vj.VehicleJourneyCode is None:
+            continue
+
+        if (
+            vj.VehicleJourneyCode
+            in service_pattern_mapping.vehicle_journey_to_service_pattern
+        ):
+            mapped_sp_id: str = (
+                service_pattern_mapping.vehicle_journey_to_service_pattern[
+                    vj.VehicleJourneyCode
+                ]
+            )
+            if mapped_sp_id == service_pattern_id:
+                service_pattern_vjs.append(vj)
+
+    return service_pattern_vjs
+
+
+def group_vehicle_journeys_by_pattern(
+    vehicle_journeys: list[TXCVehicleJourney | TXCFlexibleVehicleJourney],
+) -> dict[str, list[TXCVehicleJourney | TXCFlexibleVehicleJourney]]:
+    """
+    Group vehicle journeys by their journey pattern reference.
+    """
+    vjs_by_journey_pattern: dict[
+        str, list[TXCVehicleJourney | TXCFlexibleVehicleJourney]
+    ] = {}
+
+    for vj in vehicle_journeys:
+        if vj.JourneyPatternRef:
+            jp_id: str = vj.JourneyPatternRef
+            if jp_id not in vjs_by_journey_pattern:
+                vjs_by_journey_pattern[jp_id] = []
+            vjs_by_journey_pattern[jp_id].append(vj)
+
+    return vjs_by_journey_pattern
+
+
+def process_journey_pattern_vehicle_journeys(
+    vjs: list[TXCVehicleJourney | TXCFlexibleVehicleJourney],
     txc_jp: TXCJourneyPattern | TXCFlexibleJourneyPattern,
+    txc: TXCData,
     context: ServicePatternVehicleJourneyContext,
 ) -> tuple[list[TransmodelVehicleJourney], list[TransmodelServicePatternStop]]:
     """
-    Generate and save to DB Transmodel Vehicle Journeys for a Service Pattern
+    Process vehicle journeys for a specific journey pattern.
+    Each vehicle journey should have its own stops generated.
     """
-    log.info(
-        "Generating Transmodel Vehicle Journeys for Service Pattern",
-        txc_jp_id=txc_jp.id,
-        pattern_type=(
-            "flexible" if isinstance(txc_jp, TXCFlexibleJourneyPattern) else "standard"
-        ),
-        tm_service_pattern_id=context.service_pattern.id,
-    )
-    pattern_stops: list[TransmodelServicePatternStop] = []
-
-    vehicle_journeys = [
-        vj for vj in txc.VehicleJourneys if vj.JourneyPatternRef == txc_jp.id
-    ]
-
     vj_context = VehicleJourneyProcessingContext(
         service_pattern=context.service_pattern,
         bank_holidays=context.bank_holidays,
@@ -164,67 +225,111 @@ def process_service_pattern_vehicle_journeys(
         txc_serviced_orgs=txc.ServicedOrganisations,
         txc_services=txc.Services,
         db=context.db,
+        naptan_stops_lookup=context.naptan_stops_lookup,
     )
 
-    tm_vjs = process_vehicle_journeys(vehicle_journeys, txc_jp, vj_context)
+    tm_vjs: list[TransmodelVehicleJourney] = process_vehicle_journeys(
+        vjs, txc_jp, vj_context
+    )
 
-    for tm_vj in tm_vjs:
-        txc_vj = next(j for j in vehicle_journeys if j.JourneyPatternRef == txc_jp.id)
-
-        match txc_jp:
-            case TXCFlexibleJourneyPattern():
-                if not is_flexible_vehicle_journey(txc_vj):
-                    log.error(
-                        "Expected flexible vehicle journey",
-                        pattern_id=txc_jp.id,
-                        journey_type=type(txc_vj),
-                    )
-                    continue
-
-                pattern_stops.extend(
-                    process_flexible_pattern_stops(
-                        context.service_pattern,
-                        tm_vj,
-                        txc_jp,
-                        context.stops,
-                        context.db,
-                    )
+    pattern_stops: list[TransmodelServicePatternStop] = []
+    for tm_vj, txc_vj in zip(tm_vjs, vjs):
+        if isinstance(txc_jp, TXCFlexibleJourneyPattern):
+            if not is_flexible_vehicle_journey(txc_vj):
+                log.error(
+                    "Expected flexible vehicle journey",
+                    pattern_id=txc_jp.id,
+                    journey_type=type(txc_vj),
                 )
-            case TXCJourneyPattern():
-                if not is_standard_vehicle_journey(txc_vj):
-                    log.error(
-                        "Expected standard vehicle journey",
-                        pattern_id=txc_jp.id,
-                        journey_type=type(txc_vj),
-                    )
-                    continue
+                continue
 
-                jp_sections = [
-                    section
-                    for section in txc.JourneyPatternSections
-                    if section.id in txc_jp.JourneyPatternSectionRefs
-                ]
-
-                pattern_stops.extend(
-                    process_pattern_stops(
-                        tm_service_pattern=context.service_pattern,
-                        tm_vehicle_journey=tm_vj,
-                        txc_vehicle_journey=txc_vj,
-                        context=ProcessPatternStopsContext(
-                            jp_sections, context.stops, context.db
-                        ),
-                    )
+            stops = process_flexible_pattern_stops(
+                context.service_pattern,
+                tm_vj,
+                txc_jp,
+                context.stops,
+                context.db,
+            )
+            pattern_stops.extend(stops)
+        else:  # TXCJourneyPattern
+            if not is_standard_vehicle_journey(txc_vj):
+                log.error(
+                    "Expected standard vehicle journey",
+                    pattern_id=txc_jp.id,
+                    journey_type=type(txc_vj),
                 )
-            case _:
-                raise ValueError(f"Unknown journey pattern type: {type(txc_jp)}")
+                continue
 
+            # Get the journey pattern sections,
+            # respecting the order defined in JourneyPatternSectionRefs
+            jp_sections = [
+                section
+                for ref in txc_jp.JourneyPatternSectionRefs
+                for section in txc.JourneyPatternSections
+                if section.id == ref
+            ]
+
+            # Generate stops for this vehicle journey
+            stops = process_pattern_stops(
+                tm_service_pattern=context.service_pattern,
+                tm_vehicle_journey=tm_vj,
+                txc_vehicle_journey=txc_vj,
+                context=ProcessPatternStopsContext(
+                    jp_sections, context.stops, context.db, context.naptan_stops_lookup
+                ),
+            )
+            pattern_stops.extend(stops)
+
+    return tm_vjs, pattern_stops
+
+
+def process_service_pattern_vehicle_journeys(
+    txc: TXCData,
+    reference_journey_pattern: TXCJourneyPattern | TXCFlexibleJourneyPattern,
+    context: ServicePatternVehicleJourneyContext,
+) -> tuple[list[TransmodelVehicleJourney], list[TransmodelServicePatternStop]]:
+    """
+    Generate and save to DB Transmodel Vehicle Journeys for a Service Pattern
+
+    Instead of processing a single journey pattern, this processes all vehicle journeys
+    that map to the same service pattern, using the reference journey pattern for
+    initial processing context.
+    """
+    # Log initial information about the processing task
     log.info(
-        "Generated Transmodel Vehicle Journeys for Service Pattern",
-        tm_vjs=len(tm_vjs),
-        txc_jp_id=txc_jp.id,
-        pattern_type=(
-            "flexible" if isinstance(txc_jp, TXCFlexibleJourneyPattern) else "standard"
-        ),
+        "Generating Transmodel Vehicle Journeys for Service Pattern",
+        service_pattern_id=context.service_pattern.service_pattern_id,
+        journey_pattern_count=len(context.sp_data.journey_pattern_ids),
+        reference_journey_pattern_id=reference_journey_pattern.id,
         tm_service_pattern_id=context.service_pattern.id,
     )
-    return tm_vjs, pattern_stops
+
+    # Get journey pattern lookup
+    jp_lookup = get_journey_pattern_lookup(txc)
+
+    # Find and group vehicle journeys by journey pattern
+    vjs_by_journey_pattern = group_vehicle_journeys_by_pattern(context.vehicle_journeys)
+
+    # Process vehicle journeys for each journey pattern
+    results = [
+        process_journey_pattern_vehicle_journeys(vjs, jp_lookup[jp_id], txc, context)
+        for jp_id, vjs in vjs_by_journey_pattern.items()
+        if jp_id in jp_lookup
+    ]
+
+    all_tm_vjs = [vj for vjs, _ in results for vj in vjs]
+    all_pattern_stops = [stop for _, stops in results for stop in stops]
+
+    # Log results
+    log.info(
+        "Generated Transmodel Vehicle Journeys for Service Pattern",
+        tm_vjs=len(all_tm_vjs),
+        journey_patterns_processed=len(results),
+        total_vehicle_journeys=sum(
+            len(vjs) for _, vjs in vjs_by_journey_pattern.items()
+        ),
+        service_pattern_id=context.service_pattern.service_pattern_id,
+        tm_service_pattern_id=context.service_pattern.id,
+    )
+
+    return all_tm_vjs, all_pattern_stops
