@@ -50,7 +50,10 @@ def process_pattern_stops(
         tm_vehicle_journey,
         txc_vehicle_journey,
         GeneratePatternStopsContext(
-            context.jp_sections, context.stop_sequence, activity_map
+            context.jp_sections,
+            context.stop_sequence,
+            activity_map,
+            context.naptan_stops_lookup,
         ),
     )
 

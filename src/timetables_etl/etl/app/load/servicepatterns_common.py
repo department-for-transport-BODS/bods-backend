@@ -21,6 +21,10 @@ from common_layer.xml.txc.models import (
     TXCJourneyPattern,
     TXCService,
 )
+from common_layer.xml.txc.models.txc_vehicle_journey import TXCVehicleJourney
+from common_layer.xml.txc.models.txc_vehicle_journey_flexible import (
+    TXCFlexibleVehicleJourney,
+)
 from structlog.stdlib import get_logger
 
 from ..models import PatternCommonStats
@@ -88,7 +92,7 @@ def get_matching_journey_patterns(
     """
     Get journey patterns from a service that match the provided journey pattern IDs.
     """
-    all_journey_patterns = []
+    all_journey_patterns: list[TXCJourneyPattern | TXCFlexibleJourneyPattern] = []
 
     if service.StandardService is not None:
         all_journey_patterns.extend(service.StandardService.JourneyPattern)
@@ -150,6 +154,25 @@ def get_reference_journey_pattern(
     return matching_journey_patterns[0]
 
 
+def filter_vehicle_journeys(
+    vehicle_journeys: list[TXCVehicleJourney | TXCFlexibleVehicleJourney],
+    vehicle_journey_codes: list[str],
+) -> list[TXCVehicleJourney | TXCFlexibleVehicleJourney]:
+    """
+    Filters a list of VehicleJourney objects to only include those with VehicleJourneyCode
+
+    """
+    vehicle_journey_id_set = set(vehicle_journey_codes)
+
+    filtered_journeys: list[TXCVehicleJourney | TXCFlexibleVehicleJourney] = [
+        journey
+        for journey in vehicle_journeys
+        if journey.VehicleJourneyCode in vehicle_journey_id_set
+    ]
+
+    return filtered_journeys
+
+
 def process_pattern_common(
     service: TXCService,
     context: ProcessPatternCommonContext,
@@ -179,14 +202,22 @@ def process_pattern_common(
         service.StartDate, service.EndDate
     )
 
+    # Get the vehicle journeys for this ServicePattern
+    filtered_vehicle_journeys = filter_vehicle_journeys(
+        context.txc.VehicleJourneys,
+        sp_data.vehicle_journey_ids,
+    )
+
     vj_context = ServicePatternVehicleJourneyContext(
         service_pattern=context.service_pattern,
         stops=sp_data.stop_sequence,
+        naptan_stops_lookup=context.lookups.stops,
         bank_holidays=bank_holidays,
         serviced_orgs=context.lookups.serviced_orgs,
         service_pattern_mapping=context.service_pattern_mapping,
         sp_data=sp_data,
         db=context.db,
+        vehicle_journeys=filtered_vehicle_journeys,
     )
 
     tm_vjs, tm_pattern_stops = process_service_pattern_vehicle_journeys(
