@@ -156,10 +156,11 @@ def publish_revision(db: SqlDB, revision: OrganisationDatasetRevision):
         )
 
 
-def update_live_revision(db: SqlDB, revision: OrganisationDatasetRevision):
+def update_live_revision(db: SqlDB, revision_id: int):
     """
     Link published revision to a dataset
     """
+    revision = fetch_revision(db, revision_id)
     if revision.is_published is True and revision.status == FeedStatus.LIVE:
         repo = OrganisationDatasetRepo(db)
         repo.update_live_revision(revision.dataset_id, revision.id)
