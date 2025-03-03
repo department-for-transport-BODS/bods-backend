@@ -8,8 +8,6 @@ from typing import cast
 from common_layer.database.models import (
     TransmodelFlexibleServiceOperationPeriod,
     TransmodelServicePattern,
-)
-from common_layer.database.models.model_transmodel_vehicle_journey import (
     TransmodelVehicleJourney,
 )
 from common_layer.xml.txc.models import (
