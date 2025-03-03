@@ -148,4 +148,6 @@ def generate_flexible_service_operation_period(
                     raise ValueError(
                         f"Wrong time format in ServicePeriod: {period.StartTime} - {period.EndTime}"
                     ) from e
+            case _:
+                raise ValueError(f"Unknown ServiceTyime type: {type(service_time)}")
     return operation_periods
