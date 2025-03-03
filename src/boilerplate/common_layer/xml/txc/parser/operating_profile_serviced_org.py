@@ -7,7 +7,7 @@ from common_layer.xml.txc.models import (
     TXCServicedOrganisationDayType,
 )
 from common_layer.xml.utils import get_element_texts
-from lxml.etree import _Element
+from lxml.etree import _Element  # type: ignore
 
 
 def parse_serviced_organisation_day_element(
