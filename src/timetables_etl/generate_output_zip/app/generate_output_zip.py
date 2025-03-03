@@ -166,7 +166,7 @@ def process_map_results(
 
     if input_data.publish_dataset_revision:
         publish_revision(db, revision)
-        update_live_revision(db, revision)
+        update_live_revision(db, revision.id)
 
     return processing_result
 
