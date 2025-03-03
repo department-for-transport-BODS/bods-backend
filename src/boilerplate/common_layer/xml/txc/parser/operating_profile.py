@@ -15,9 +15,9 @@ from ..models import (
     TXCDaysOfWeek,
     TXCOperatingProfile,
     TXCPeriodicDayType,
-    TXCServicedOrganisationDayType,
     TXCSpecialDaysOperation,
 )
+from .operating_profile_serviced_org import parse_serviced_organisation_days
 
 log = get_logger()
 
@@ -223,40 +223,6 @@ def parse_periodic_days(periodic_day_type_xml: _Element) -> TXCPeriodicDayType:
     )
 
 
-def parse_serviced_organisation_days(
-    serviced_organisation_xml: _Element,
-) -> TXCServicedOrganisationDayType | None:
-    """
-    VehicleJourney -> OperatingProfile -> ServicedOrganisationDayType
-    """
-
-    days_of_operation = serviced_organisation_xml.find("DaysOfOperation")
-    if days_of_operation is None:
-        return None
-
-    working_days_xml = days_of_operation.find("WorkingDays")
-    holidays_xml = days_of_operation.find("Holidays")
-
-    working_days = (
-        get_element_texts(working_days_xml, "ServicedOrganisationRef")
-        if working_days_xml is not None
-        else None
-    )
-    holidays = (
-        get_element_texts(holidays_xml, "ServicedOrganisationRef")
-        if holidays_xml is not None
-        else None
-    )
-
-    if not working_days and not holidays:
-        return None
-
-    return TXCServicedOrganisationDayType(
-        WorkingDays=working_days,
-        Holidays=holidays,
-    )
-
-
 def parse_operating_profile(
     operating_profile_xml: _Element,
 ) -> TXCOperatingProfile | None:
@@ -279,6 +245,7 @@ def parse_operating_profile(
         periodic_day_type = parse_periodic_days(periodic_day_type_xml)
 
     special_days_operation_xml = operating_profile_xml.find("SpecialDaysOperation")
+
     special_days_operation = (
         parse_special_days_operation(special_days_operation_xml)
         if special_days_operation_xml is not None
@@ -295,6 +262,7 @@ def parse_operating_profile(
     serviced_organisation_day_type_xml = operating_profile_xml.find(
         "ServicedOrganisationDayType"
     )
+
     serviced_organisation_day_type = (
         parse_serviced_organisation_days(serviced_organisation_day_type_xml)
         if serviced_organisation_day_type_xml is not None
