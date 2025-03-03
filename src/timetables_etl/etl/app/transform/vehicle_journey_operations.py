@@ -264,7 +264,6 @@ def create_vehicle_journey_operations(
             tm_vj,
         )
     )
-    log.critical("OperatingProfile", operating_profile=operating_profile)
     serviced_org_vehicle_journeys, working_days_patterns = (
         create_serviced_organisation_vehicle_journeys(
             operating_profile.ServicedOrganisationDayType,
