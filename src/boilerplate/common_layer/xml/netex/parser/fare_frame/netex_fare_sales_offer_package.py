@@ -2,12 +2,11 @@
 SalesOfferPackage
 """
 
-from common_layer.xml.netex.models.fare_frame.netex_sales_offer_package import (
-    SalesOfferPackage,
-)
-from common_layer.xml.utils.xml_utils_tags import get_tag_name
-from lxml.etree import _Element
+from lxml.etree import _Element  # type: ignore
 from structlog import get_logger
+
+from ....utils import get_tag_name
+from ...models import SalesOfferPackage
 
 log = get_logger()
 

@@ -3,7 +3,6 @@ Tables prefixed with naptan_
 """
 
 from common_layer.exceptions.pipeline_exceptions import PipelineException
-from sqlalchemy import Select, select
 from structlog import get_logger
 
 from ..models.model_naptan import NaptanAdminArea, NaptanLocality, NaptanStopPoint
@@ -18,12 +17,8 @@ class NaptanStopPointRepo(BaseRepository[NaptanStopPoint]):
     Repository for managing StopPoint entities
     """
 
-    def __init__(self, db: SqlDB):
+    def __init__(self, db: SqlDB) -> None:
         super().__init__(db, NaptanStopPoint)
-
-    def _build_query(self) -> Select:
-        """Build base query with common joins"""
-        return select(self._model).order_by(self._model.atco_code)
 
     @handle_repository_errors
     def get_by_id(self, table_id: str) -> NaptanStopPoint | None:
@@ -109,7 +104,9 @@ class NaptanStopPointRepo(BaseRepository[NaptanStopPoint]):
         statement = self._build_query().where(self._model.locality_id.in_(locality_ids))
         return self._fetch_all(statement)
 
-    def get_count(self, atco_codes: list[str], **filter_kwargs) -> int:
+    def get_count(
+        self, atco_codes: list[str], **filter_kwargs: str | bool | int | None
+    ) -> int:
         """
         Get number of Stop Points in the DB by atco_code
         """

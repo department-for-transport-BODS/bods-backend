@@ -2,8 +2,8 @@
 Create fares metadata
 """
 
-from common_layer.database.models.model_fares import FaresMetadata
-from common_layer.database.repos.repo_naptan import NaptanStopPointRepo
+from common_layer.database.models import FaresMetadata
+from common_layer.database.repos import NaptanStopPointRepo
 from common_layer.xml.netex.helpers.helpers_counts import (
     number_of_distinct_user_profiles,
     number_of_fare_zones,
@@ -24,9 +24,7 @@ from common_layer.xml.netex.helpers.helpers_fare_frame_tariff import (
 from common_layer.xml.netex.helpers.helpers_fare_frame_zones import (
     get_scheduled_stop_point_refs,
 )
-from common_layer.xml.netex.models.netex_publication_delivery import (
-    PublicationDeliveryStructure,
-)
+from common_layer.xml.netex.models import PublicationDeliveryStructure
 
 
 def create_metadata(netex: PublicationDeliveryStructure) -> FaresMetadata:
@@ -62,8 +60,8 @@ def get_stop_ids(
     sorted_frames = sort_frames(netex.dataObjects)
     stop_point_refs = get_scheduled_stop_point_refs(sorted_frames.fare_frames)
 
-    naptan_ids = set()
-    atco_ids = set()
+    naptan_ids: set[str] = set()
+    atco_ids: set[str] = set()
 
     for stop in stop_point_refs:
         if stop.atco_code:

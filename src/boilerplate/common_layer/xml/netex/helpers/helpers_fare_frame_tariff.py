@@ -37,7 +37,7 @@ def earliest_tariff_from_date(tariffs: list[Tariff]) -> datetime | None:
     from_dates: list[datetime] = []
 
     for tariff in tariffs:
-        if tariff.validityConditions is None:
+        if not tariff.validityConditions:
             continue
 
         for validity_condition in tariff.validityConditions:
@@ -57,7 +57,7 @@ def latest_tariff_to_date(tariffs: list[Tariff]) -> datetime | None:
     to_dates: list[datetime] = []
 
     for tariff in tariffs:
-        if tariff.validityConditions is None:
+        if not tariff.validityConditions:
             continue
 
         for validity_condition in tariff.validityConditions:
