@@ -2,6 +2,8 @@
 DynamoDB Cache Client
 """
 
+from typing import Any
+
 from common_layer.database.models.model_fares import (
     FaresDataCatalogueMetadata,
     FaresMetadata,
@@ -35,6 +37,7 @@ class FaresDynamoDBMetadataInput(BaseModel):
     data_catalogue: FaresDataCatalogueMetadata
     stop_ids: list[int]
     file_name: str
+    netex_schema_version: str
 
 
 class DynamoDBFaresMetadata(DynamoDB):
@@ -72,5 +75,35 @@ class DynamoDBFaresMetadata(DynamoDB):
                 "DataCatalogue": self._serializer.serialize(
                     fares_metadata.data_catalogue.as_dict()
                 ),
+                "NetexSchemaVersion": self._serializer.serialize(
+                    fares_metadata.netex_schema_version
+                ),
             },
         )
+
+    def get_metadata(
+        self,
+        task_id: int,
+    ) -> list[dict[str, Any]]:
+        """
+        Get metadata from dynamodb
+        """
+        query_params: dict[str, Any] = {
+            "TableName": self._settings.DYNAMODB_TABLE_NAME,
+            "KeyConditionExpression": "PK = :task_id",
+            "ExpressionAttributeValues": {
+                ":task_id": self._serializer.serialize(task_id)
+            },
+        }
+
+        metadata_items: list[dict[str, Any]] = []
+        metadata_response = self._client.query(**query_params)
+        metadata_items.extend(metadata_response.get("Items", []))
+
+        while "LastEvaluatedKey" in metadata_response:
+            query_params["ExclusiveStartKey"] = metadata_response["LastEvaluatedKey"]
+            metadata_response = self._client.query(**query_params)
+
+            metadata_items.extend(metadata_response.get("Items", []))
+
+        return metadata_items

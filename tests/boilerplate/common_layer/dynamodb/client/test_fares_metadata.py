@@ -55,6 +55,7 @@ def test_put_metadata(m_boto_client):
                 valid_to=datetime(2025, 12, 31, 23, 59, 59),
             ),
             stop_ids=[1, 2, 3, 4, 5],
+            netex_schema_version="1.1",
         ),
     )
 
@@ -182,6 +183,7 @@ def test_put_metadata(m_boto_client):
                     },
                 },
             },
+            "NetexSchemaVersion": {"S": "1.1"},
             "PK": {
                 "N": "123",
             },

@@ -104,7 +104,7 @@
     },
     "FileLevelProcessing": {
       "Type": "Map",
-      "Next": "GenerateOutputZip",
+      "Next": "MetadataAggregation",
       "MaxConcurrency": 1000,
       "ToleratedFailurePercentage": 100,
       "Output": {
@@ -203,7 +203,8 @@
             "Arguments": {
               "Bucket": "{% $Bucket %}",
               "ObjectKey": "{% $ObjectKey %}",
-              "DatasetRevisionId": "{% $DatasetRevisionId %}"
+              "DatasetRevisionId": "{% $DatasetRevisionId %}",
+              "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}"
             },
             "Output": {
               "etlProcess": "{% $states.result %}"
@@ -231,6 +232,24 @@
           }
         }
       }
+    },
+    "MetadataAggregation": {
+      "Type": "Task",
+      "Next": "GenerateOutputZip",
+      "Resource": "${MetadataAggregationLambdaArn}",
+      "Arguments": {
+        "DatasetRevisionId": "{% $datasetRevisionId %}",
+        "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}"
+      },
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "ParentExceptionHandler",
+          "Output": {
+            "errorInfo": "{% $states.errorOutput %}"
+          }
+        }
+      ]
     },
     "GenerateOutputZip": {
       "Type": "Task",
