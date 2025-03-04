@@ -46,5 +46,4 @@ def parse_codespaces(elem: _Element) -> list[CodespaceRef | Codespace]:
                 )
             case _:
                 log.warning("Not a CodespaceRef or Codespace in Codespaces Section")
-                pass
     return codespaces

@@ -1,5 +1,5 @@
 """
-Pydantic Models 
+Pydantic Models
 """
 
 from pydantic import BaseModel, ConfigDict, Field
