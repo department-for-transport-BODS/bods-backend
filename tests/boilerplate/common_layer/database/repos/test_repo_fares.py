@@ -1,16 +1,21 @@
-from common_layer.database.models import FaresMetadata
-from common_layer.database.models.model_fares import (
+"""
+Fares Repo Tests against test DB
+"""
+
+from common_layer.database.client import SqlDB
+from common_layer.database.models import (
     FaresDataCatalogueMetadata,
+    FaresMetadata,
     FaresMetadataStop,
 )
-from common_layer.database.repos.repo_fares import (
+from common_layer.database.repos import (
     FaresDataCatalogueMetadataRepo,
     FaresMetadataRepo,
     FaresMetadataStopsRepo,
 )
 
 
-def test_fares_metadata_delete_by_metadata_id(test_db):
+def test_fares_metadata_delete_by_metadata_id(test_db: SqlDB):
     """
     Test deleting fares metadata by id
     """
@@ -55,7 +60,7 @@ def test_fares_metadata_delete_by_metadata_id(test_db):
         ), "Record should not exist after calling delete_by_id"
 
 
-def test_fares_metadata_stops_delete_by_metadata_id(test_db):
+def test_fares_metadata_stops_delete_by_metadata_id(test_db: SqlDB):
     """
     Test deleting fares metadata stop by id
     """
@@ -64,9 +69,9 @@ def test_fares_metadata_stops_delete_by_metadata_id(test_db):
     metadata_id = 12
 
     record = FaresMetadataStop(
-        faresmetadata_id=metadata_id,
         stoppoint_id=1234,
     )
+    record.faresmetadata_id = metadata_id
     inserted_record = repo.insert(record)
 
     with test_db.session_scope() as session:
@@ -93,7 +98,7 @@ def test_fares_metadata_stops_delete_by_metadata_id(test_db):
         ), "Record should not exist after calling delete_by_id"
 
 
-def test_fares_data_catalogue_metadata_delete_by_metadata_id(test_db):
+def test_fares_data_catalogue_metadata_delete_by_metadata_id(test_db: SqlDB):
     """
     Test deleting fares data catalogue metadata by metadata id
     """
