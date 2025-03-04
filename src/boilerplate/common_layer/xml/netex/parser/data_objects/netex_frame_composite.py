@@ -98,7 +98,7 @@ def parse_composite_frame(elem: _Element) -> CompositeFrame:
             FromDate=parse_timestamp(valid_between_elem, "FromDate"),
             ToDate=parse_timestamp(valid_between_elem, "ToDate"),
         )
-        if valid_between_elem
+        if valid_between_elem is not None
         else None
     )
 
