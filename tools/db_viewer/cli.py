@@ -39,6 +39,8 @@ from .transmodel import (
     extract_servicepatternstop,
     extract_services_by_revision_id,
     extract_stopactivity,
+    extract_tracks,
+    extract_tracksvehiclejourney,
     extract_vehiclejourney,
 )
 from .utils import csv_extractor
@@ -87,6 +89,13 @@ def process_vehicle_journeys(
         [it.id for it in serviced_org_vj],
         output_path=output_path,
     )
+    tracks_vj = extract_tracksvehiclejourney(
+        db,
+        vehicle_journey_ids,
+        output_path=output_path,
+    )
+    track_ids = {track.tracks_id for track in tracks_vj}
+    extract_tracks(db, track_ids, output_path=output_path)
 
 
 def process_service_patterns(

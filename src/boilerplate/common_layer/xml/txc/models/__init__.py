@@ -15,6 +15,7 @@ from .txc_operating_profile import (
     TXCDaysOfWeek,
     TXCOperatingProfile,
     TXCPeriodicDayType,
+    TXCServicedOrganisationDays,
     TXCServicedOrganisationDayType,
     TXCSpecialDaysOperation,
 )
@@ -174,6 +175,7 @@ __all__ = [
     "TXCOperatingProfile",
     "TXCPeriodicDayType",
     "TXCServicedOrganisationDayType",
+    "TXCServicedOrganisationDays",
     "TXCSpecialDaysOperation",
     "TXCVehicleJourney",
     "TXCVehicleJourneyStopUsageStructure",

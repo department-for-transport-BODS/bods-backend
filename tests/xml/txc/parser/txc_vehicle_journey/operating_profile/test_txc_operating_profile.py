@@ -5,13 +5,14 @@ Operating Profile Tests for Vehicle Journeys
 from datetime import date
 
 import pytest
-from common_layer.xml.txc.models.txc_operating_profile import (
+from common_layer.xml.txc.models import (
     TXCBankHolidayDays,
     TXCBankHolidayOperation,
     TXCDateRange,
     TXCDaysOfWeek,
     TXCOperatingProfile,
     TXCPeriodicDayType,
+    TXCServicedOrganisationDays,
     TXCServicedOrganisationDayType,
     TXCSpecialDaysOperation,
 )
@@ -161,11 +162,109 @@ from lxml import etree
                     HolidaysOnly=False,
                 ),
                 ServicedOrganisationDayType=TXCServicedOrganisationDayType(
-                    WorkingDays=["School1"],
-                    Holidays=["Holiday1"],
+                    DaysOfOperation=[
+                        TXCServicedOrganisationDays(
+                            WorkingDays=["School1"],
+                            Holidays=["Holiday1"],
+                        )
+                    ],
+                    DaysOfNonOperation=[],
                 ),
             ),
             id="Operating profile with serviced organisation",
+        ),
+        pytest.param(
+            """
+            <OperatingProfile>
+                <RegularDayType>
+                    <DaysOfWeek>
+                        <Monday/>
+                    </DaysOfWeek>
+                </RegularDayType>
+                <ServicedOrganisationDayType>
+                    <DaysOfNonOperation>
+                        <WorkingDays>
+                            <ServicedOrganisationRef>MVSERVLESS</ServicedOrganisationRef>
+                        </WorkingDays>
+                    </DaysOfNonOperation>
+                </ServicedOrganisationDayType>
+            </OperatingProfile>
+            """,
+            TXCOperatingProfile(
+                RegularDayType=TXCDaysOfWeek(
+                    Monday=True,
+                    Tuesday=False,
+                    Wednesday=False,
+                    Thursday=False,
+                    Friday=False,
+                    Saturday=False,
+                    Sunday=False,
+                    HolidaysOnly=False,
+                ),
+                ServicedOrganisationDayType=TXCServicedOrganisationDayType(
+                    DaysOfOperation=[],
+                    DaysOfNonOperation=[
+                        TXCServicedOrganisationDays(
+                            WorkingDays=["MVSERVLESS"],
+                            Holidays=[],
+                        )
+                    ],
+                ),
+            ),
+            id="Operating profile with days of non-operation",
+        ),
+        pytest.param(
+            """
+            <OperatingProfile>
+                <RegularDayType>
+                    <DaysOfWeek>
+                        <Friday/>
+                    </DaysOfWeek>
+                </RegularDayType>
+                <ServicedOrganisationDayType>
+                    <DaysOfOperation>
+                        <WorkingDays>
+                            <ServicedOrganisationRef>School1</ServicedOrganisationRef>
+                        </WorkingDays>
+                    </DaysOfOperation>
+                    <DaysOfNonOperation>
+                        <WorkingDays>
+                            <ServicedOrganisationRef>MVSERVLESS</ServicedOrganisationRef>
+                        </WorkingDays>
+                        <Holidays>
+                            <ServicedOrganisationRef>HolidayExcluded</ServicedOrganisationRef>
+                        </Holidays>
+                    </DaysOfNonOperation>
+                </ServicedOrganisationDayType>
+            </OperatingProfile>
+            """,
+            TXCOperatingProfile(
+                RegularDayType=TXCDaysOfWeek(
+                    Monday=False,
+                    Tuesday=False,
+                    Wednesday=False,
+                    Thursday=False,
+                    Friday=True,
+                    Saturday=False,
+                    Sunday=False,
+                    HolidaysOnly=False,
+                ),
+                ServicedOrganisationDayType=TXCServicedOrganisationDayType(
+                    DaysOfOperation=[
+                        TXCServicedOrganisationDays(
+                            WorkingDays=["School1"],
+                            Holidays=[],
+                        )
+                    ],
+                    DaysOfNonOperation=[
+                        TXCServicedOrganisationDays(
+                            WorkingDays=["MVSERVLESS"],
+                            Holidays=["HolidayExcluded"],
+                        )
+                    ],
+                ),
+            ),
+            id="Operating profile with both operation and non-operation days",
         ),
         pytest.param(
             """
