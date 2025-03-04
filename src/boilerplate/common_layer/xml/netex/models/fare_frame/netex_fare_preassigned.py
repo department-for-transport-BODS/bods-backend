@@ -28,7 +28,7 @@ class AccessRightInProduct(BaseModel):
     version: Annotated[str, Field(description="Version")]
     order: Annotated[str, Field(description="Order")]
     ValidableElementRef: Annotated[
-        VersionedRef, Field(description="Reference to validable element")
+        VersionedRef | None, Field(description="Reference to validable element")
     ]
 
 
@@ -38,7 +38,7 @@ class ConditionSummary(BaseModel):
     FareStructureType: Annotated[
         str | None, Field(description="Type of fare structure")
     ]
-    TariffBasis: Annotated[TariffBasisT, Field(description="Basis of tariff")]
+    TariffBasis: Annotated[TariffBasisT | None, Field(description="Basis of tariff")]
     IsPersonal: Annotated[
         bool | None, Field(description="Whether the fare is personal")
     ]
@@ -53,17 +53,19 @@ class PreassignedFareProduct(BaseModel):
         MultilingualString | None, Field(description="Name of the product")
     ] = None
     ChargingMomentRef: Annotated[
-        VersionedRef, Field(description="Reference to charging moment")
+        VersionedRef | None, Field(description="Reference to charging moment")
     ]
     ChargingMomentType: Annotated[
         ChargingMomentTypeT | None, Field(description="Type of charging moment")
     ] = None
     TypeOfFareProductRef: Annotated[
-        VersionedRef, Field(description="Reference to product type")
+        VersionedRef | None, Field(description="Reference to product type")
     ]
-    OperatorRef: Annotated[VersionedRef, Field(description="Reference to operator")]
+    OperatorRef: Annotated[
+        VersionedRef | None, Field(description="Reference to operator")
+    ]
     ConditionSummary: Annotated[
-        ConditionSummary, Field(description="Summary of conditions")
+        ConditionSummary | None, Field(description="Summary of conditions")
     ]
     validableElements: Annotated[
         list[ValidableElement], Field(description="list of validable elements")

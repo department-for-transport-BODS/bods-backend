@@ -92,6 +92,7 @@ Globals:
           - IsNotLocal
           - !Sub 'http://squid.bodds.${Environment}:3128'
           - !Ref AWS::NoValue
+        NO_PROXY: 'localhost,127.0.0.1,secretsmanager.eu-west-2.amazonaws.com,s3.eu-west-2.amazonaws.com'
         PROJECT_ENV: !Ref Environment
         PROJECT_NAME: !Ref ProjectName
         POSTGRES_HOST: !If
@@ -149,29 +150,86 @@ Resources:
           Fn::ImportValue: !Sub '${ProjectName}-${Environment}-generate-output-zip-lambda-arn'
         ExceptionHandlerLambdaArn:
           Fn::ImportValue: !Sub '${ProjectName}-${Environment}-exception-handler-lambda-arn'
+        EtlProcessLambdaArn: !GetAtt  EtlProcessLambda.Arn
+        MetadataAggregationLambdaArn: !GetAtt FaresMetadataAggregationLambda.Arn
         DefaultS3BucketName: !Sub 'bodds-${Environment}'
 
   ##########################
   #### LAMBDA FUNCTIONS ####
   ##########################
-  PlaceholderLambda:
+  EtlProcessLambda:
     Type: AWS::Serverless::Function
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-placeholder-lambda'
-      Description: Fares ETL - Placeholder
+      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-etl-process-lambda'
+      Description: Fares ETL - FileProcessing - Extracts NeTEx metadata and data catalogue info to dynamodb table
       Role: !GetAtt CommonLambdaExecutionRole.Arn
-      CodeUri: ./src/fares_etl/placeholder
-      Handler: app.placeholder.lambda_handler
+      CodeUri: ./src/fares_etl/etl
+      Handler: app.etl_process.lambda_handler
+      Timeout: 900
+      MemorySize: 1024
       Layers:
         - !Ref BoilerplateLambdaLayerArn
-      MemorySize: 512
-      Timeout: 300
+      LoggingConfig:
+        LogGroup: !Ref EtlProcessLambdaLogGroup
       Environment:
         Variables:
-          PLACEHOLDER_VAR: 'dummy'
+             DYNAMODB_FARES_METADATA_TABLE_NAME: !Ref FaresMetadataTable
+
+  FaresMetadataAggregationLambda:
+    Type: AWS::Serverless::Function
+    ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-metadata-aggregation-lambda'
+      Description: Fares ETL - Aggregates metadata and saves to database
+      Role: !GetAtt CommonLambdaExecutionRole.Arn
+      CodeUri: ./src/fares_etl/metadata_aggregation
+      Handler: app.metadata_aggregation.lambda_handler
+      Timeout: 900
+      MemorySize: 1024
+      Layers:
+        - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
-        LogGroup: !Ref PlaceholderLambdaLogGroup
+        LogGroup: !Ref MetadataAggregationLambdaLogGroup
+      Environment:
+        Variables:
+             DYNAMODB_FARES_METADATA_TABLE_NAME: !Ref FaresMetadataTable
+
+
+  ##################
+  #### DYNAMODB ####
+  ##################
+  FaresMetadataTable:
+    Type: AWS::DynamoDB::Table
+    ## checkov:skip=CKV_AWS_28:Ensure DynamoDB point in time recovery (backup) is enabled
+    Properties:
+      TableName: !Sub '${ProjectName}-${Environment}-${SubFunction}-metadata-table'
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: N
+        - AttributeName: SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: !If
+          - IsNotProd
+          - false
+          - true
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: 'KMS'
+        KMSMasterKeyId: !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+          - !Ref AWS::NoValue
 
   ###################
   #### IAM ROLES ####
@@ -238,6 +296,15 @@ Resources:
                   - IsNotLocal
                   - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
                   - '*'
+        - PolicyName: DynamoDBAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                Resource: !GetAtt FaresMetadataTable.Arn
         - PolicyName: DataDogAPIAccess
           PolicyDocument:
             Version: '2012-10-17'
@@ -275,7 +342,8 @@ Resources:
               - Effect: Allow
                 Action: lambda:InvokeFunction
                 Resource:
-                  - !GetAtt PlaceholderLambda.Arn
+                  - !GetAtt EtlProcessLambda.Arn
+                  - !GetAtt FaresMetadataAggregationLambda.Arn
                   - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-initialize-pipeline-lambda-arn'
                   - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-clamav-scanner-lambda-arn'
                   - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-download-dataset-lambda-arn'
@@ -352,10 +420,20 @@ Resources:
         - !Ref AWS::NoValue
       RetentionInDays: 30
 
-  PlaceholderLambdaLogGroup:
+  EtlProcessLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-placeholder-lambda'
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-etl-process-lambda'
+      KmsKeyId: !If
+        - IsNotLocal
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Ref AWS::NoValue
+      RetentionInDays: 30
+
+  MetadataAggregationLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-metadata-aggregation-lambda'
       KmsKeyId: !If
         - IsNotLocal
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'

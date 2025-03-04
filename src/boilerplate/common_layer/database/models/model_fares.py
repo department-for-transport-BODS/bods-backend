@@ -4,13 +4,19 @@ SQL Alchemy models for tables starting with fares_
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 
+from common_layer.xml.netex.models.netex_types import (
+    PreassignedFareProductTypeT,
+    TariffBasisT,
+    UserTypeT,
+)
 from sqlalchemy import (
     ARRAY,
     BigInteger,
     CheckConstraint,
     Date,
+    DateTime,
     ForeignKey,
     Integer,
     String,
@@ -31,6 +37,7 @@ class FaresMetadata(BaseSQLModel):
         ForeignKey("organisation_datasetmetadata.id"),
         primary_key=True,
         init=False,
+        autoincrement=False,
     )
     num_of_fare_zones: Mapped[int] = mapped_column(
         Integer, CheckConstraint("num_of_fare_zones >= 0"), nullable=False
@@ -47,17 +54,17 @@ class FaresMetadata(BaseSQLModel):
     num_of_user_profiles: Mapped[int] = mapped_column(
         Integer, CheckConstraint("num_of_user_profiles >= 0"), nullable=False
     )
-    valid_from: Mapped[date] = mapped_column(Date, nullable=True)
-    valid_to: Mapped[date] = mapped_column(Date, nullable=True)
-    num_of_pass_products: Mapped[int] = mapped_column(
+    valid_from: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    valid_to: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    num_of_pass_products: Mapped[int | None] = mapped_column(
         Integer, CheckConstraint("num_of_pass_products >= 0"), nullable=True
     )
-    num_of_trip_products: Mapped[int] = mapped_column(
+    num_of_trip_products: Mapped[int | None] = mapped_column(
         Integer, CheckConstraint("num_of_trip_products >= 0"), nullable=True
     )
 
 
-class FaresMetadataStops(BaseSQLModel):
+class FaresMetadataStop(BaseSQLModel):
     """Fares Metadata Stops Table"""
 
     __tablename__ = "fares_faresmetadata_stops"
@@ -73,7 +80,11 @@ class FaresMetadataStops(BaseSQLModel):
         init=False,
     )
     faresmetadata_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("fares_faresmetadata.id"), nullable=False, index=True
+        Integer,
+        ForeignKey("fares_faresmetadata.datasetmetadata_ptr_id"),
+        nullable=False,
+        index=True,
+        init=False,
     )
     stoppoint_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("naptan_stoppoint.id"), nullable=False, index=True
@@ -91,20 +102,34 @@ class FaresDataCatalogueMetadata(BaseSQLModel):
         init=False,
     )
     xml_file_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    valid_from: Mapped[date] = mapped_column(Date, nullable=True)
-    valid_to: Mapped[date] = mapped_column(Date, nullable=True)
+    valid_from: Mapped[date | None] = mapped_column(Date, nullable=True)
+    valid_to: Mapped[date | None] = mapped_column(Date, nullable=True)
     national_operator_code: Mapped[list[str]] = mapped_column(
         ARRAY(String(255)), nullable=True
     )
-    line_id: Mapped[list[str]] = mapped_column(ARRAY(String(100)), nullable=True)
-    line_name: Mapped[list[str]] = mapped_column(ARRAY(String(100)), nullable=True)
-    atco_area: Mapped[list[int]] = mapped_column(ARRAY(Integer), nullable=True)
-    tariff_basis: Mapped[list[str]] = mapped_column(ARRAY(String(100)), nullable=True)
-    product_type: Mapped[list[str]] = mapped_column(ARRAY(String(100)), nullable=True)
-    product_name: Mapped[list[str]] = mapped_column(ARRAY(String(100)), nullable=True)
-    user_type: Mapped[list[str]] = mapped_column(ARRAY(String(100)), nullable=True)
+    line_id: Mapped[list[str] | None] = mapped_column(ARRAY(String(100)), nullable=True)
+    line_name: Mapped[list[str] | None] = mapped_column(
+        ARRAY(String(100)), nullable=True
+    )
+    atco_area: Mapped[list[int] | None] = mapped_column(ARRAY(Integer), nullable=True)
+    tariff_basis: Mapped[list[TariffBasisT] | None] = mapped_column(
+        ARRAY(String(100)), nullable=True
+    )
+    product_type: Mapped[list[PreassignedFareProductTypeT] | None] = mapped_column(
+        ARRAY(String(100)), nullable=True
+    )
+    product_name: Mapped[list[str] | None] = mapped_column(
+        ARRAY(String(100)), nullable=True
+    )
+    user_type: Mapped[list[UserTypeT] | None] = mapped_column(
+        ARRAY(String(100)), nullable=True
+    )
     fares_metadata_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("fares_faresmetadata.id"), nullable=False, index=True
+        Integer,
+        ForeignKey("fares_faresmetadata.datasetmetadata_ptr_id"),
+        nullable=False,
+        index=True,
+        init=False,
     )
 
 

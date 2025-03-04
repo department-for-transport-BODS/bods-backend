@@ -12,7 +12,7 @@ from .model_data_quality import (
 from .model_fares import (
     FaresDataCatalogueMetadata,
     FaresMetadata,
-    FaresMetadataStops,
+    FaresMetadataStop,
     FaresValidation,
     FaresValidationResult,
 )
@@ -126,7 +126,7 @@ __all__ = [
     # Fares
     "FaresDataCatalogueMetadata",
     "FaresMetadata",
-    "FaresMetadataStops",
+    "FaresMetadataStop",
     "FaresValidation",
     "FaresValidationResult",
 ]

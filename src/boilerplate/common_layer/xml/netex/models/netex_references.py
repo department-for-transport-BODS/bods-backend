@@ -2,7 +2,7 @@
 Models for lists of different reference types
 """
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -50,20 +50,20 @@ class ScheduledStopPointReference(VersionedRef):
 
     Name: str | None = None
     atco_code: str | None = None
+    naptan_code: str | None = None
 
     @model_validator(mode="before")
     @classmethod
-    def _populate_atco_code(cls, data):
-        if not isinstance(data, dict):
-            return data
+    def _populate_atco_code(cls, data: dict[str, str]) -> dict[str, Any]:
 
         if "ref" in data:
             ref_parts = data["ref"].split(":")
 
-            if len(ref_parts) == 2 and ref_parts[0] == "atco":
-                data["atco_code"] = ref_parts[1]
-            else:
-                data["atco_code"] = None
+            if len(ref_parts) == 2:
+                if ref_parts[0] == "atco" or ref_parts[0] == "naptan":
+                    data["atco_code"] = ref_parts[1]
+                else:
+                    data["naptan_code"] = ref_parts[1]
 
         return data
 

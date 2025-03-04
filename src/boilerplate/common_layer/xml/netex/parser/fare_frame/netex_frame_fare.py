@@ -4,21 +4,22 @@ FareFrame
 
 from dataclasses import dataclass
 
-from common_layer.xml.netex.models.fare_frame.netex_frame_defaults import (
-    FrameDefaultsStructure,
-)
-from common_layer.xml.netex.models.fare_frame.netex_frame_fare import (
-    PricingParameterSet,
-)
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 from ....utils import get_tag_name
-from ...models import FareFrame
-from ...models.fare_frame import FareTable, Tariff
-from ...models.fare_frame.netex_fare_preassigned import PreassignedFareProduct
-from ...models.fare_frame.netex_fare_zone import FareZone
-from ...models.netex_utility import MultilingualString, VersionedRef
+from ...models import (
+    FareFrame,
+    FareTable,
+    FareZone,
+    FrameDefaultsStructure,
+    MultilingualString,
+    PreassignedFareProduct,
+    PricingParameterSet,
+    SalesOfferPackage,
+    Tariff,
+    VersionedRef,
+)
 from ...parser.fare_frame.netex_fare_table import parse_fare_tables
 from ..data_objects.netex_frame_defaults import parse_frame_defaults
 from ..netex_utility import (
@@ -27,6 +28,7 @@ from ..netex_utility import (
     parse_versioned_ref,
 )
 from .netex_fare_preassigned_fare_product import parse_preassigned_fare_products
+from .netex_fare_sales_offer_package import parse_sales_offer_packages
 from .netex_fare_tariff import parse_tariffs
 from .netex_fare_zone import parse_fare_zones
 from .netex_pricing_parameter_set import parse_pricing_parameter_set
@@ -34,13 +36,13 @@ from .netex_pricing_parameter_set import parse_pricing_parameter_set
 log = get_logger()
 
 
-def parse_fare_frame_attributes(elem: _Element) -> tuple[str, str, str]:
+def parse_fare_frame_attributes(elem: _Element) -> tuple[str, str, str | None]:
     """Parse required FareFrame attributes"""
     frame_id = elem.get("id")
     version = elem.get("version")
     responsibility_set_ref = elem.get("responsibilitySetRef")
 
-    if not frame_id or not version or not responsibility_set_ref:
+    if not frame_id or not version:
         raise ValueError("Missing required attributes in FareFrame")
 
     return frame_id, version, responsibility_set_ref
@@ -70,6 +72,7 @@ class FareFrameContent:
     fare_products: list[PreassignedFareProduct]
     tariffs: list[Tariff]
     fare_zones: list[FareZone]
+    sales_offer_packages: list[SalesOfferPackage]
 
 
 def parse_fare_frame_core_attributes(elem: _Element) -> FareFrameCoreAttributes:
@@ -91,6 +94,7 @@ def parse_fare_frame_content(elem: _Element) -> FareFrameContent:
         fare_products=[],
         tariffs=[],
         fare_zones=[],
+        sales_offer_packages=[],
     )
 
     for child in elem:
@@ -108,6 +112,8 @@ def parse_fare_frame_content(elem: _Element) -> FareFrameContent:
                 content.tariffs = parse_tariffs(child)
             case "fareZones":
                 content.fare_zones = parse_fare_zones(child)
+            case "salesOfferPackages":
+                content.sales_offer_packages = parse_sales_offer_packages(child)
             case "Name" | "Description" | "TypeOfFrameRef" | "dataSourceRef":
                 pass  # These are handled in core attributes
             case _:
@@ -143,4 +149,7 @@ def parse_fare_frame(elem: _Element) -> FareFrame:
         fulfilmentMethods=None,
         typesOfTravelDocuments=None,
         priceGroups=None,
+        salesOfferPackages=(
+            content.sales_offer_packages if content.sales_offer_packages else None
+        ),
     )

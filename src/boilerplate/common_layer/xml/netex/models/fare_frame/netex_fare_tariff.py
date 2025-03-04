@@ -19,11 +19,15 @@ class Tariff(BaseModel):
     validityConditions: Annotated[
         list[FromToDate], Field(description="Validity conditions")
     ]
-    Name: Annotated[MultilingualString | str, Field(description="Name of the tariff")]
-    OperatorRef: Annotated[VersionedRef, Field(description="Reference to operator")]
-    LineRef: Annotated[VersionedRef, Field(description="Reference to line")]
+    Name: Annotated[
+        MultilingualString | str | None, Field(description="Name of the tariff")
+    ]
+    OperatorRef: Annotated[
+        VersionedRef | None, Field(description="Reference to operator")
+    ]
+    LineRef: Annotated[VersionedRef | None, Field(description="Reference to line")]
     TypeOfTariffRef: Annotated[
-        VersionedRef, Field(description="Reference to tariff type")
+        VersionedRef | None, Field(description="Reference to tariff type")
     ]
     TariffBasis: Annotated[
         TariffBasisT | None, Field(description="Basis of tariff")

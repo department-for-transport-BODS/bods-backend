@@ -28,9 +28,6 @@ def parse_network_filter_by_value(elem: _Element) -> NetworkFilterByValueStructu
             object_refs = parse_object_references(child)
         child.clear()
 
-    if not object_refs:
-        raise ValueError("Missing objectReferences in NetworkFilterByValue")
-
     return NetworkFilterByValueStructure(objectReferences=object_refs)
 
 

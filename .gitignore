@@ -66,6 +66,7 @@ venv.bak/
 
 # Ignore requirement.txt generated at build time
 src/timetables_etl/**/requirements.txt
+src/fares_etl/**/requirements.txt
 src/periodic_tasks/**/requirements.txt
 src/boilerplate/**/requirements.txt
 src/common_lambdas/**/requirements.txt

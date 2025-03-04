@@ -109,7 +109,7 @@ def parse_preassigned_fare_product_type(
     """
     Parse a PreassignedFareProduct type from a NeTEx XML element
     """
-    text = get_netex_text(elem, "PreassignedFareProduct")
+    text = get_netex_text(elem, "ProductType")
     if text in get_args(PreassignedFareProductTypeT):
         return cast(PreassignedFareProductTypeT, text)
     log.warning("Unknown Preassigned Fare Product type", text=text)
@@ -120,7 +120,7 @@ def parse_charging_moment_type(elem: _Element) -> ChargingMomentTypeT | None:
     """
     Parse a ChargingMomentType from a NeTEx XML element
     """
-    text = get_netex_text(elem, "ChargingMoment")
+    text = get_netex_text(elem, "ChargingMomentType")
     if text in get_args(ChargingMomentTypeT):
         return cast(ChargingMomentTypeT, text)
     log.warning("Unknown Charging Moment type", text=text)

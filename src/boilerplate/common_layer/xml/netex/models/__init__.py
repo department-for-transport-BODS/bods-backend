@@ -38,6 +38,7 @@ from .fare_frame import (
 from .fare_frame.netex_fare_zone import FareZone
 from .fare_frame.netex_frame_defaults import FrameDefaultsStructure
 from .fare_frame.netex_price_group import GeographicalIntervalPrice, PriceGroup
+from .fare_frame.netex_sales_offer_package import SalesOfferPackage
 from .netex_publication_delivery import PublicationDeliveryStructure
 from .netex_publication_request import (
     NetworkFrameRequestPolicyStructure,
@@ -124,4 +125,26 @@ __all__ = [
     "ObjectReferences",
     "PricableObjectRefs",
     "PointRefs",
+    "ScheduledStopPointReference",
+    # Fare Frame
+    "AccessRightInProduct",
+    "Cell",
+    "ConditionSummary",
+    "DistanceMatrixElementPrice",
+    "FareFrame",
+    "FareTable",
+    "FareTableColumn",
+    "FareTableRow",
+    "FulfilmentMethod",
+    "GeographicalUnit",
+    "PreassignedFareProduct",
+    "PriceUnit",
+    "PricingParameterSet",
+    "Tariff",
+    "TypeOfTravelDocument",
+    "ValidableElement",
+    "FareZone",
+    "GeographicalIntervalPrice",
+    "PriceGroup",
+    "SalesOfferPackage",
 ]
