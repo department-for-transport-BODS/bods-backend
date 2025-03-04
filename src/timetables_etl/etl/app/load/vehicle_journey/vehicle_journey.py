@@ -17,7 +17,6 @@ from common_layer.xml.txc.models import (
     TXCFlexibleJourneyPattern,
     TXCFlexibleVehicleJourney,
     TXCJourneyPattern,
-    TXCJourneyPatternSection,
     TXCVehicleJourney,
 )
 from structlog.stdlib import get_logger
@@ -217,14 +216,16 @@ def process_journey_pattern_vehicle_journeys(
 ) -> tuple[list[TransmodelVehicleJourney], list[TransmodelServicePatternStop]]:
     """
     Process vehicle journeys for a specific journey pattern.
+    Each vehicle journey should have its own stops generated.
     """
-    vj_context: VehicleJourneyProcessingContext = VehicleJourneyProcessingContext(
+    vj_context = VehicleJourneyProcessingContext(
         service_pattern=context.service_pattern,
         bank_holidays=context.bank_holidays,
         tm_serviced_orgs=context.serviced_orgs,
         txc_serviced_orgs=txc.ServicedOrganisations,
         txc_services=txc.Services,
         db=context.db,
+        naptan_stops_lookup=context.naptan_stops_lookup,
     )
 
     tm_vjs: list[TransmodelVehicleJourney] = process_vehicle_journeys(
@@ -232,13 +233,7 @@ def process_journey_pattern_vehicle_journeys(
     )
 
     pattern_stops: list[TransmodelServicePatternStop] = []
-
-    for tm_vj in tm_vjs:
-        if not vjs:
-            continue
-
-        txc_vj: TXCVehicleJourney | TXCFlexibleVehicleJourney = vjs[0]
-
+    for tm_vj, txc_vj in zip(tm_vjs, vjs):
         if isinstance(txc_jp, TXCFlexibleJourneyPattern):
             if not is_flexible_vehicle_journey(txc_vj):
                 log.error(
@@ -265,18 +260,22 @@ def process_journey_pattern_vehicle_journeys(
                 )
                 continue
 
-            jp_sections: list[TXCJourneyPatternSection] = [
+            # Get the journey pattern sections,
+            # respecting the order defined in JourneyPatternSectionRefs
+            jp_sections = [
                 section
+                for ref in txc_jp.JourneyPatternSectionRefs
                 for section in txc.JourneyPatternSections
-                if section.id in txc_jp.JourneyPatternSectionRefs
+                if section.id == ref
             ]
 
+            # Generate stops for this vehicle journey
             stops = process_pattern_stops(
                 tm_service_pattern=context.service_pattern,
                 tm_vehicle_journey=tm_vj,
                 txc_vehicle_journey=txc_vj,
                 context=ProcessPatternStopsContext(
-                    jp_sections, context.stops, context.db
+                    jp_sections, context.stops, context.db, context.naptan_stops_lookup
                 ),
             )
             pattern_stops.extend(stops)
@@ -309,14 +308,9 @@ def process_service_pattern_vehicle_journeys(
     jp_lookup = get_journey_pattern_lookup(txc)
 
     # Find and group vehicle journeys by journey pattern
-    vjs_by_journey_pattern = group_vehicle_journeys_by_pattern(
-        find_service_pattern_vehicle_journeys(
-            txc,
-            context.service_pattern.service_pattern_id,
-            context.service_pattern_mapping,
-        )
-    )
+    vjs_by_journey_pattern = group_vehicle_journeys_by_pattern(context.vehicle_journeys)
 
+    # Process vehicle journeys for each journey pattern
     results = [
         process_journey_pattern_vehicle_journeys(vjs, jp_lookup[jp_id], txc, context)
         for jp_id, vjs in vjs_by_journey_pattern.items()

@@ -24,16 +24,29 @@ class TXCDateRange(BaseModel):
     Note: str | None = Field(default=None, description="Description of the range")
 
 
+class TXCServicedOrganisationDays(BaseModel):
+    """
+    Days of Operation for a ServicedOrganisation
+    """
+
+    WorkingDays: list[str] = Field(
+        default=[], description="List of ServicedOrganisationRef"
+    )
+    Holidays: list[str] = Field(
+        default=[], description="List of ServicedOrganisationRef"
+    )
+
+
 class TXCServicedOrganisationDayType(BaseModel):
     """
     Serviced Organisation Day Type
     """
 
-    WorkingDays: list[str] | None = Field(
-        default=None, description="List of ServicedOrganisationRef"
+    DaysOfOperation: list[TXCServicedOrganisationDays] = Field(
+        default=[], description="Ranges where the service operates for an org"
     )
-    Holidays: list[str] | None = Field(
-        default=None, description="List of ServicedOrganisationRef"
+    DaysOfNonOperation: list[TXCServicedOrganisationDays] = Field(
+        default=[], description="Ranges where the service doesn't operate for an org"
     )
 
 

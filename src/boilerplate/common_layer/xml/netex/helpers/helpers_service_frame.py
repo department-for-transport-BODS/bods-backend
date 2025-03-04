@@ -24,10 +24,7 @@ def get_line_public_codes_from_service_frames(frames: list[ServiceFrame]) -> lis
     Get Line Public Codes
     """
     return [
-        line.PublicCode
-        for frame in frames
-        for line in frame.lines
-        if line.PublicCode and line.PublicCode is not None
+        line.PublicCode for frame in frames for line in frame.lines if line.PublicCode
     ]
 
 

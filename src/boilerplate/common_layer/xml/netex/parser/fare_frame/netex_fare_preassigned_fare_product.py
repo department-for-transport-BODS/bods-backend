@@ -2,16 +2,16 @@
 Parsing a Preassigned Fare Product
 """
 
-from common_layer.xml.netex.models.netex_utility import VersionedRef
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 from ....utils import get_tag_name
-from ...models.fare_frame.netex_fare_preassigned import (
+from ...models import (
     AccessRightInProduct,
     ConditionSummary,
     PreassignedFareProduct,
     ValidableElement,
+    VersionedRef,
 )
 from ..netex_types import (
     parse_charging_moment_type,
@@ -173,8 +173,7 @@ def parse_preassigned_fare_products(elem: _Element) -> list[PreassignedFareProdu
     for product in elem:
         if get_tag_name(product) == "PreassignedFareProduct":
             fare_product = parse_preassigned_fare_product(product)
-            if fare_product is not None:
-                fare_products.append(fare_product)
+            fare_products.append(fare_product)
         else:
             log.warning("Unknown fareProducts tag", tag=get_tag_name(product))
     return fare_products

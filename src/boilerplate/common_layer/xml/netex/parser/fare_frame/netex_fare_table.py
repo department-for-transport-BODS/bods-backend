@@ -24,13 +24,15 @@ def parse_used_in(elem: _Element) -> dict[str, VersionedRef]:
     """
     Parse usedIn references from a FareTable element
     """
-    used_in = {}
+    used_in: dict[str, VersionedRef] = {}
     used_in_elem = get_netex_element(elem, "usedIn")
     if used_in_elem is not None:
         for ref_elem in used_in_elem:
             ref = parse_versioned_ref(ref_elem, "")
             if ref:
-                used_in[get_tag_name(ref_elem)] = ref
+                tag_name = get_tag_name(ref_elem)
+                if tag_name:
+                    used_in[tag_name] = ref
     return used_in
 
 
@@ -38,13 +40,15 @@ def parse_specifics(elem: _Element) -> dict[str, VersionedRef]:
     """
     Parse specifics references from a FareTable element
     """
-    specifics = {}
+    specifics: dict[str, VersionedRef] = {}
     specifics_elem = get_netex_element(elem, "specifics")
     if specifics_elem is not None:
         for ref_elem in specifics_elem:
             ref = parse_versioned_ref(ref_elem, "")
             if ref:
-                specifics[get_tag_name(ref_elem)] = ref
+                tag_name = get_tag_name(ref_elem)
+                if tag_name:
+                    specifics[tag_name] = ref
     return specifics
 
 

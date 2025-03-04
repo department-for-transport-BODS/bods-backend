@@ -27,7 +27,7 @@ class ScheduledStopPoint(BaseModel):
         Extracts the full ATCO code (everything after 'atco:').
         Returns None if the ID is invalid or doesn't follow the expected format.
         """
-        if not isinstance(self.id, str):
+        if not self.id:
             return None
 
         if not self.id.startswith("atco:"):

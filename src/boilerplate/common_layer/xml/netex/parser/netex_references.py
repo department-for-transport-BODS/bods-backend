@@ -2,7 +2,7 @@
 Object References
 """
 
-from lxml.etree import _Element
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 from ...utils import get_tag_name

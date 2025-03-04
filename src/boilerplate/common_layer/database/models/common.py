@@ -3,6 +3,7 @@ Common
 """
 
 from datetime import UTC, date, datetime
+from typing import Any
 
 from sqlalchemy import DateTime
 from sqlalchemy.ext.declarative import declared_attr
@@ -15,7 +16,13 @@ class BaseSQLModel(MappedAsDataclass, DeclarativeBase):
     """
 
     def as_dict(self):
-        def serialize_value(value):
+        """
+        Convert the model instance to a dictionary.
+        Converts all column values of the model instance to a dictionary.
+        Date and datetime objects are serialized to ISO format strings.
+        """
+
+        def serialize_value(value: Any) -> Any:
             if isinstance(value, (date, datetime)):
                 return value.isoformat()
             return value

@@ -18,6 +18,10 @@ from common_layer.xml.txc.models import (
     TXCService,
     TXCServicedOrganisation,
 )
+from common_layer.xml.txc.models.txc_vehicle_journey import TXCVehicleJourney
+from common_layer.xml.txc.models.txc_vehicle_journey_flexible import (
+    TXCFlexibleVehicleJourney,
+)
 
 from ..helpers import StopsLookup
 from ..helpers.dataclasses import ReferenceDataLookups
@@ -39,6 +43,7 @@ class ProcessPatternCommonContext:
     db: SqlDB
 
 
+# pylint: disable=too-many-instance-attributes
 @dataclass
 class ServicePatternVehicleJourneyContext:
     """Context for vehicle journey processing"""
@@ -50,6 +55,8 @@ class ServicePatternVehicleJourneyContext:
     db: SqlDB
     service_pattern_mapping: ServicePatternMapping
     sp_data: ServicePatternMetadata
+    naptan_stops_lookup: StopsLookup
+    vehicle_journeys: list[TXCVehicleJourney | TXCFlexibleVehicleJourney]
 
 
 @dataclass
@@ -59,6 +66,7 @@ class ProcessPatternStopsContext:
     jp_sections: list[TXCJourneyPatternSection]
     stop_sequence: Sequence[NaptanStopPoint]
     db: SqlDB
+    naptan_stops_lookup: StopsLookup
 
 
 @dataclass
@@ -71,6 +79,7 @@ class VehicleJourneyProcessingContext:
     txc_serviced_orgs: list[TXCServicedOrganisation]
     txc_services: list[TXCService]
     db: SqlDB
+    naptan_stops_lookup: StopsLookup
 
 
 @dataclass

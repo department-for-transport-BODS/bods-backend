@@ -16,9 +16,9 @@ from common_layer.database.repos import (
 from common_layer.xml.txc.models import TXCVehicleJourney
 from structlog.stdlib import get_logger
 
-from ...transform.vehicle_journey_operations import (
+from ...transform.vehicle_journey_operations import create_vehicle_journey_operations
+from ...transform.vehicle_journey_operations_serviced_org import (
     create_serviced_organisation_working_days,
-    create_vehicle_journey_operations,
 )
 from ..models_context import OperatingProfileProcessingContext
 

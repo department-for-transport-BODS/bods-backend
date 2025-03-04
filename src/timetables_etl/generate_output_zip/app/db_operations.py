@@ -13,6 +13,7 @@ from common_layer.database.models.model_pipelines import (
 )
 from common_layer.database.repos import OrganisationDatasetRevisionRepo
 from common_layer.database.repos.repo_etl_task import ETLTaskResultRepo
+from common_layer.database.repos.repo_organisation import OrganisationDatasetRepo
 from common_layer.enums import FeedStatus
 from structlog.stdlib import get_logger
 
@@ -151,5 +152,21 @@ def publish_revision(db: SqlDB, revision: OrganisationDatasetRevision):
     else:
         log.info(
             "Skipping publishing because revision status is not success",
+            revision_status=revision.status,
+        )
+
+
+def update_live_revision(db: SqlDB, revision_id: int):
+    """
+    Link published revision to a dataset
+    """
+    revision = fetch_revision(db, revision_id)
+    if revision.is_published is True and revision.status == FeedStatus.LIVE:
+        repo = OrganisationDatasetRepo(db)
+        repo.update_live_revision(revision.dataset_id, revision.id)
+    else:
+        log.info(
+            "Skipping setting live_revision_id because revision \
+            status is not live and is not published",
             revision_status=revision.status,
         )
