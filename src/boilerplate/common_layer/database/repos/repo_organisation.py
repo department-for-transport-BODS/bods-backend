@@ -43,6 +43,18 @@ class OrganisationDatasetRepo(BaseRepositoryWithId[OrganisationDataset]):
         )
         return self._fetch_all(statement)
 
+    @handle_repository_errors
+    def update_live_revision(self, dataset_id: int, new_live_revision_id: int) -> None:
+        """
+        Update live revision id
+        """
+        statement = self._build_query().where(self._model.id == dataset_id)
+
+        def update_live_revision(record: OrganisationDataset) -> None:
+            record.live_revision_id = new_live_revision_id
+
+        self._execute_update(update_live_revision, statement)
+
 
 class OrganisationDatasetMetdataRepo(BaseRepositoryWithId[OrganisationDatasetMetadata]):
     """

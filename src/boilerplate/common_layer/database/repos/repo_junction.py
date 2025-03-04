@@ -176,3 +176,17 @@ class TransmodelTracksVehicleJourneyRepo(
 
     def __init__(self, db: SqlDB):
         super().__init__(db, TransmodelTracksVehicleJourney)
+
+    @handle_repository_errors
+    def get_by_vehicle_journey_ids(
+        self, vehicle_journey_ids: list[int]
+    ) -> list[TransmodelTracksVehicleJourney]:
+        """
+        Get TransmodelTracksVehicleJourney by Vehicle Journey Ids
+        """
+        if not vehicle_journey_ids:
+            return []
+        statement = self._build_query().where(
+            self._model.vehicle_journey_id.in_(vehicle_journey_ids)
+        )
+        return self._fetch_all(statement)

@@ -8,8 +8,6 @@ from typing import cast
 from common_layer.database.models import (
     TransmodelFlexibleServiceOperationPeriod,
     TransmodelServicePattern,
-)
-from common_layer.database.models.model_transmodel_vehicle_journey import (
     TransmodelVehicleJourney,
 )
 from common_layer.xml.txc.models import (
@@ -150,4 +148,6 @@ def generate_flexible_service_operation_period(
                     raise ValueError(
                         f"Wrong time format in ServicePeriod: {period.StartTime} - {period.EndTime}"
                     ) from e
+            case _:
+                raise ValueError(f"Unknown ServiceTyime type: {type(service_time)}")
     return operation_periods

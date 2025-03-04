@@ -12,7 +12,6 @@ from common_layer.database.models import (
     TransmodelOperatingDatesExceptions,
     TransmodelOperatingProfile,
     TransmodelServicedOrganisationVehicleJourney,
-    TransmodelServicedOrganisationWorkingDays,
     TransmodelVehicleJourney,
 )
 from common_layer.xml.txc.models import (
@@ -22,16 +21,16 @@ from common_layer.xml.txc.models import (
     TXCDaysOfWeek,
     TXCOperatingProfile,
     TXCService,
-    TXCServicedOrganisation,
     TXCServicedOrganisationDatePattern,
-    TXCServicedOrganisationDayType,
     TXCSpecialDaysOperation,
     TXCVehicleJourney,
 )
 from structlog.stdlib import get_logger
 
-from ..helpers import ServicedOrgLookup
 from ..load.models_context import OperatingProfileProcessingContext
+from .vehicle_journey_operations_serviced_org import (
+    create_serviced_organisation_vehicle_journeys,
+)
 
 log = get_logger()
 
@@ -202,147 +201,6 @@ def process_bank_holidays(
     return tm_operating_dates, tm_non_operating_dates
 
 
-def create_serviced_organisation_working_days(
-    so_vj: TransmodelServicedOrganisationVehicleJourney,
-    working_day_patterns: list[TXCServicedOrganisationDatePattern],
-) -> list[TransmodelServicedOrganisationWorkingDays]:
-    """
-    Create working days records for a serviced organisation vehicle journey
-    """
-    working_days_records: list[TransmodelServicedOrganisationWorkingDays] = []
-
-    for date_pattern in working_day_patterns:
-        working_days_records.append(
-            TransmodelServicedOrganisationWorkingDays(
-                start_date=date_pattern.StartDate,
-                end_date=date_pattern.EndDate,
-                serviced_organisation_vehicle_journey_id=so_vj.id,
-            )
-        )
-
-    log.debug(
-        "Generated working days records for serviced organisation",
-        record_count=len(working_days_records),
-        date_patterns=len(working_day_patterns),
-        so_vj_id=so_vj.id,
-    )
-
-    return working_days_records
-
-
-def create_serviced_org_vehicle_journey(
-    org_ref: str,
-    operating_on_working_days: bool,
-    vehicle_journey: TransmodelVehicleJourney,
-    serviced_orgs: ServicedOrgLookup,
-) -> TransmodelServicedOrganisationVehicleJourney:
-    """
-    Create a single serviced organisation vehicle journey record
-    """
-    return TransmodelServicedOrganisationVehicleJourney(
-        operating_on_working_days=operating_on_working_days,
-        serviced_organisation_id=serviced_orgs[org_ref].id,
-        vehicle_journey_id=vehicle_journey.id,
-    )
-
-
-def create_serviced_organisation_vehicle_journeys(
-    serviced_org_day_type: TXCServicedOrganisationDayType | None,
-    vehicle_journey: TransmodelVehicleJourney,
-    serviced_orgs: ServicedOrgLookup,
-    txc_serviced_orgs: dict[str, TXCServicedOrganisation],
-) -> tuple[
-    list[TransmodelServicedOrganisationVehicleJourney],
-    list[
-        tuple[
-            TransmodelServicedOrganisationVehicleJourney,
-            list[TXCServicedOrganisationDatePattern],
-        ]
-    ],
-]:
-    """
-    Create serviced organisation vehicle journey records and collect working day patterns to process
-    Returns vehicle journey records and a mapping of vehicle journeys to their working day patterns
-    """
-    if not serviced_org_day_type:
-        return [], []
-
-    vehicle_journey_records: list[TransmodelServicedOrganisationVehicleJourney] = []
-    working_days_patterns: list[
-        tuple[
-            TransmodelServicedOrganisationVehicleJourney,
-            list[TXCServicedOrganisationDatePattern],
-        ]
-    ] = []
-
-    if serviced_org_day_type.WorkingDays or serviced_org_day_type.Holidays:
-        log.debug(
-            "Processing serviced organisation refs",
-            working_day_refs=serviced_org_day_type.WorkingDays,
-            holiday_refs=serviced_org_day_type.Holidays,
-        )
-
-    # Handle working days
-    if serviced_org_day_type.WorkingDays:
-        for org_ref in serviced_org_day_type.WorkingDays:
-            tm_org = serviced_orgs.get(org_ref)
-            txc_org = txc_serviced_orgs.get(org_ref)
-
-            if not tm_org or not txc_org:
-                log.warning(
-                    "Serviced organisation ref not found in lookup tables",
-                    org_ref=org_ref,
-                    in_tm=org_ref in serviced_orgs,
-                    in_txc=org_ref in txc_serviced_orgs,
-                    vehicle_journey_id=vehicle_journey.id,
-                )
-                continue
-
-            so_vj = create_serviced_org_vehicle_journey(
-                org_ref=org_ref,
-                operating_on_working_days=True,
-                vehicle_journey=vehicle_journey,
-                serviced_orgs=serviced_orgs,
-            )
-            vehicle_journey_records.append(so_vj)
-
-            if txc_org.WorkingDays:
-                working_days_patterns.append((so_vj, txc_org.WorkingDays))
-
-    # Handle holidays
-    if serviced_org_day_type.Holidays:
-        for org_ref in serviced_org_day_type.Holidays:
-            tm_org = serviced_orgs.get(org_ref)
-            txc_org = txc_serviced_orgs.get(org_ref)
-
-            if not tm_org or not txc_org:
-                log.warning(
-                    "Serviced organisation ref not found in lookup tables",
-                    org_ref=org_ref,
-                    in_tm=org_ref in serviced_orgs,
-                    in_txc=org_ref in txc_serviced_orgs,
-                    vehicle_journey_id=vehicle_journey.id,
-                )
-                continue
-
-            so_vj = create_serviced_org_vehicle_journey(
-                org_ref=org_ref,
-                operating_on_working_days=False,
-                vehicle_journey=vehicle_journey,
-                serviced_orgs=serviced_orgs,
-            )
-            vehicle_journey_records.append(so_vj)
-
-    log.info(
-        "Generated Serviced Organisation records",
-        vehicle_journey_records=len(vehicle_journey_records),
-        working_days_patterns=len(working_days_patterns),
-        vehicle_journey_id=vehicle_journey.id,
-    )
-
-    return vehicle_journey_records, working_days_patterns
-
-
 def get_operating_profile(
     txc_vj: TXCVehicleJourney, txc_services: list[TXCService]
 ) -> TXCOperatingProfile | None:
@@ -406,7 +264,6 @@ def create_vehicle_journey_operations(
             tm_vj,
         )
     )
-
     serviced_org_vehicle_journeys, working_days_patterns = (
         create_serviced_organisation_vehicle_journeys(
             operating_profile.ServicedOrganisationDayType,
