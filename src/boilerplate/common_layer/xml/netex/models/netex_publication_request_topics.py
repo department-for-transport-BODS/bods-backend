@@ -4,9 +4,9 @@ PublicationDelivery -> PublicationRequest -> topics
 
 from typing import Annotated
 
-from common_layer.xml.netex.models.netex_references import ObjectReferences
 from pydantic import BaseModel, Field
 
+from .netex_references import ObjectReferences
 from .netex_selection_validity import SelectionValidityConditions
 from .netex_utility import VersionedRef
 

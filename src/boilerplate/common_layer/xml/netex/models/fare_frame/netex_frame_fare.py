@@ -6,11 +6,6 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from common_layer.xml.netex.models.fare_frame.netex_fare_zone import FareZone
-from common_layer.xml.netex.models.fare_frame.netex_price_group import PriceGroup
-from common_layer.xml.netex.models.fare_frame.netex_sales_offer_package import (
-    SalesOfferPackage,
-)
 from pydantic import BaseModel, Field
 
 from ..data_objects.netex_data_object_profiles import UserProfile
@@ -18,7 +13,10 @@ from ..netex_utility import MultilingualString, VersionedRef
 from .netex_fare_preassigned import PreassignedFareProduct
 from .netex_fare_table import FareTable
 from .netex_fare_tariff import Tariff
+from .netex_fare_zone import FareZone
 from .netex_frame_defaults import FrameDefaultsStructure
+from .netex_price_group import PriceGroup
+from .netex_sales_offer_package import SalesOfferPackage
 
 
 class DistributionAssignment(BaseModel):
