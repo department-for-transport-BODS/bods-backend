@@ -20,7 +20,9 @@ from textual.css.query import NoMatches
 from textual.reactive import Reactive, reactive
 from textual.widgets import DataTable, Static
 
-from src.timetables_etl.etl.app.transform.service_pattern_stops import parse_duration
+from src.timetables_etl.etl.app.transform.service_pattern_stops_durations import (
+    parse_duration,
+)
 
 from ...utils_stoppoints import StopPointDetails, get_stop_point_details
 from .tab_vehicle_journeys_tables import (

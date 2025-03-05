@@ -2,10 +2,7 @@
 Processing for transmodel_servicepatternstop
 """
 
-import re
-from dataclasses import dataclass
 from datetime import datetime, time, timedelta
-from typing import Sequence
 
 from common_layer.database.models import (
     NaptanStopPoint,
@@ -17,78 +14,21 @@ from common_layer.database.models import (
 from common_layer.xml.txc.models import (
     TXCFlexibleVehicleJourney,
     TXCJourneyPatternSection,
-    TXCJourneyPatternStopUsage,
     TXCVehicleJourney,
 )
 from structlog.stdlib import get_logger
 
-from ..helpers.types import LookupStopPoint, StopsLookup
+from .models_context import (
+    GeneratePatternStopsContext,
+    JourneySectionContext,
+    LinkContext,
+    SectionProcessingState,
+    StopContext,
+    StopData,
+)
+from .service_pattern_stops_durations import get_pattern_timing
 
 log = get_logger()
-
-
-@dataclass
-class StopContext:
-    """Context for creating a service pattern stop"""
-
-    auto_sequence: int
-    service_pattern: TransmodelServicePattern
-    vehicle_journey: TransmodelVehicleJourney
-    departure_time: time | None
-
-
-@dataclass
-class StopData:
-    """Data for a service pattern stop"""
-
-    stop_usage: TXCJourneyPatternStopUsage
-    naptan_stop: LookupStopPoint
-
-
-@dataclass
-class GeneratePatternStopsContext:
-    """Context for generating pattern stops"""
-
-    jp_sections: list[TXCJourneyPatternSection]
-    stop_sequence: Sequence[NaptanStopPoint]
-    activity_map: dict[str, TransmodelStopActivity]
-    naptan_stops_lookup: StopsLookup
-
-
-@dataclass
-class JourneySectionContext:
-    """Context for journey section processing"""
-
-    service_pattern: TransmodelServicePattern
-    vehicle_journey: TransmodelVehicleJourney
-    txc_vehicle_journey: TXCVehicleJourney | TXCFlexibleVehicleJourney
-    pattern_context: GeneratePatternStopsContext
-    naptan_stops_lookup: StopsLookup
-
-
-@dataclass
-class SectionProcessingState:
-    """State for processing journey pattern sections"""
-
-    current_time: time | None
-    auto_sequence: int
-    pattern_stops: list[TransmodelServicePatternStop]
-
-
-def parse_duration(duration: str | None) -> timedelta:
-    """Convert ISO 8601 duration to timedelta, returns 0 if None"""
-    if not duration:
-        return timedelta(0)
-
-    match = re.match(r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?", duration)
-    if not match:
-        return timedelta(0)
-
-    hours = int(match.group(1) or 0)
-    minutes = int(match.group(2) or 0)
-    seconds = int(match.group(3) or 0)
-
-    return timedelta(hours=hours, minutes=minutes, seconds=seconds)
 
 
 def parse_time(time_value: str | time | None) -> time | None:
@@ -157,56 +97,6 @@ def create_stop(
     )
 
 
-def get_pattern_timing(
-    txc_vehicle_journey: TXCVehicleJourney | TXCFlexibleVehicleJourney,
-    link_id: str,
-    base_link_runtime: str,
-) -> tuple[timedelta, timedelta]:
-    """
-    Get runtime and wait time, handling both vehicle journey types
-    VehicleJourneyTimingLink override the JourneyPatternSectionTimingLinks
-    """
-    default_timing = (parse_duration(base_link_runtime), timedelta(0))
-
-    match txc_vehicle_journey:
-        case TXCFlexibleVehicleJourney():
-            return default_timing
-
-        case TXCVehicleJourney() if not txc_vehicle_journey.VehicleJourneyTimingLink:
-            return default_timing
-
-        case TXCVehicleJourney():
-            if vj_link := next(
-                (
-                    vl
-                    for vl in txc_vehicle_journey.VehicleJourneyTimingLink
-                    if vl.JourneyPatternTimingLinkRef == link_id
-                ),
-                None,
-            ):
-                return (
-                    parse_duration(vj_link.RunTime),
-                    parse_duration(vj_link.From.WaitTime if vj_link.From else None),
-                )
-
-            # Link not found, log warning
-            log.warning(
-                "Missing timing link in vehicle journey - using base runtime",
-                vehicle_journey_id=txc_vehicle_journey.VehicleJourneyCode,
-                requested_link=link_id,
-                available_links=[
-                    vl.JourneyPatternTimingLinkRef
-                    for vl in txc_vehicle_journey.VehicleJourneyTimingLink
-                ],
-            )
-            return default_timing
-
-        case _:
-            raise ValueError(
-                f"Unknown vehicle journey type: {type(txc_vehicle_journey)}"
-            )
-
-
 def is_duplicate_stop(
     current_stop_ref: str,
     current_sequence: int,
@@ -245,33 +135,45 @@ def process_journey_pattern_section(
     state: SectionProcessingState,
     context: JourneySectionContext,
 ) -> tuple[bool, SectionProcessingState]:
-    """Process a single journey pattern section"""
-    log.info(f"Processing section {section.id}")
-    for link in section.JourneyPatternTimingLink:
-        log.info(
-            f"Handling link From {link.From.StopPointRef} to {link.To.StopPointRef}"
-        )
+    """
+    Process a single journey pattern section with enhanced wait time handling
+
+    This implementation uses the custom wait time selection logic:
+    1. Add WaitTime either from the From or the To depending on where it is present
+    2. If both From and To are present, pick the <To> WaitTime
+    3. The first stop will always take the <From> WaitTime
+    4. The last stop will not take the <To> WaitTime
+    5. If a waittime is <WaitTime>PT0S</WaitTime> we consider that not present
+    """
+    log.info("Processing section", section_id=section.id)
+
+    # Get all links in the section for easier access to next links
+    links = section.JourneyPatternTimingLink
+    total_links = len(links)
+
+    for i, link in enumerate(links):
+        # Determine if this is the first stop in the overall journey
+        is_first_stop = state.auto_sequence == 0
+        next_link = links[i + 1] if i < total_links - 1 else None
+
         # Handle 'From' stop
         if not is_duplicate_stop(
             current_stop_ref=link.From.StopPointRef,
             current_sequence=state.auto_sequence,
             previous_stop=state.pattern_stops[-1] if state.pattern_stops else None,
         ):
-            stop_context = StopContext(
-                service_pattern=context.service_pattern,
-                vehicle_journey=context.vehicle_journey,
-                auto_sequence=state.auto_sequence,
-                departure_time=state.current_time,
-            )
-
-            naptan_stop = context.naptan_stops_lookup[link.From.StopPointRef]
-            stop_data = StopData(
-                stop_usage=link.From,
-                naptan_stop=naptan_stop,
-            )
-
             if stop := create_pattern_stop(
-                stop_data, stop_context, context.pattern_context.activity_map
+                StopData(
+                    stop_usage=link.From,
+                    naptan_stop=context.naptan_stops_lookup[link.From.StopPointRef],
+                ),
+                StopContext(
+                    service_pattern=context.service_pattern,
+                    vehicle_journey=context.vehicle_journey,
+                    auto_sequence=state.auto_sequence,
+                    departure_time=state.current_time,
+                ),
+                context.pattern_context.activity_map,
             ):
                 state.pattern_stops.append(stop)
                 state.auto_sequence += 1
@@ -282,30 +184,36 @@ def process_journey_pattern_section(
                 sequence=state.auto_sequence,
             )
 
-        # Handle timing updates
+        # Handle timing updates with our enhanced wait time logic
+        link_context = LinkContext(
+            current_link=link,
+            next_link=next_link,
+            is_first_stop=is_first_stop,
+            is_last_stop=False,  # This is not the last stop since we're processing a From
+        )
+
         runtime, wait_time = get_pattern_timing(
-            context.txc_vehicle_journey,
-            link.id,
-            link.RunTime,
+            txc_vehicle_journey=context.txc_vehicle_journey,
+            link_id=link.id,
+            link_context=link_context,
+            base_link_runtime=link.RunTime,
         )
         state.current_time = calculate_next_time(state.current_time, runtime, wait_time)
 
-        # Handle 'To' stop if it's the last link
-        if link == section.JourneyPatternTimingLink[-1]:
-            stop_context = StopContext(
-                service_pattern=context.service_pattern,
-                vehicle_journey=context.vehicle_journey,
-                auto_sequence=state.auto_sequence,
-                departure_time=state.current_time,
-            )
-            naptan_stop = context.naptan_stops_lookup[link.To.StopPointRef]
-            stop_data = StopData(
-                stop_usage=link.To,
-                naptan_stop=naptan_stop,
-            )
-
+        # Handle 'To' stop if it's the last link in the section
+        if i == total_links - 1:
             if stop := create_pattern_stop(
-                stop_data, stop_context, context.pattern_context.activity_map
+                StopData(
+                    stop_usage=link.To,
+                    naptan_stop=context.naptan_stops_lookup[link.To.StopPointRef],
+                ),
+                StopContext(
+                    service_pattern=context.service_pattern,
+                    vehicle_journey=context.vehicle_journey,
+                    auto_sequence=state.auto_sequence,
+                    departure_time=state.current_time,
+                ),
+                context.pattern_context.activity_map,
             ):
                 state.pattern_stops.append(stop)
                 state.auto_sequence += 1
