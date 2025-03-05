@@ -6,6 +6,7 @@
         "--no-cov"
     ],
     "python.analysis.typeCheckingMode": "standard",
+    "python.analysis.languageServerMode": "full",
     "editor.formatOnSave": true,
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter",

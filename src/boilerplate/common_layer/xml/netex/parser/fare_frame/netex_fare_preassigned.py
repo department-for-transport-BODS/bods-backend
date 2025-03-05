@@ -2,7 +2,7 @@
 PreassignedFareProduct
 """
 
-from lxml.etree import _Element
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 from ...models import AccessRightInProduct, VersionedRef

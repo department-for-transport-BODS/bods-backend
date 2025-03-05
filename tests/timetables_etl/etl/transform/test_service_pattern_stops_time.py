@@ -5,11 +5,8 @@ Tests For time based functions
 from datetime import time, timedelta
 
 import pytest
-from etl.app.transform.service_pattern_stops import (
-    calculate_next_time,
-    parse_duration,
-    parse_time,
-)
+from etl.app.transform.service_pattern_stops import calculate_next_time, parse_time
+from etl.app.transform.service_pattern_stops_durations import parse_duration
 
 
 @pytest.mark.parametrize(

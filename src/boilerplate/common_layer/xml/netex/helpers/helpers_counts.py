@@ -5,6 +5,12 @@ Various Counts
 from pydantic import BaseModel
 
 from ..models import CompositeFrame, FareFrame, ResourceFrame, ServiceFrame
+from ..models.fare_frame.netex_fare_preassigned import PreassignedFareProduct
+from ..models.fare_frame.netex_fare_tariff import Tariff
+from ..models.netex_types import PreassignedFareProductTypeT
+from .helpers_fare_frame_fare_products import get_product_types
+from .helpers_fare_frame_sales_offer_packages import get_sales_offer_packages
+from .helpers_fare_frame_tariff import get_user_types
 from .helpers_fare_frame_zones import get_fare_zones
 from .helpers_service_frame import get_lines_from_service_frames
 
@@ -17,6 +23,7 @@ class SortedFrames(BaseModel):
     service_frames: list[ServiceFrame] = []
     resource_frames: list[ResourceFrame] = []
     fare_frames: list[FareFrame] = []
+    composite_frames: list[CompositeFrame] = []
 
 
 def sort_frames(
@@ -34,6 +41,7 @@ def sort_frames(
         match frame:
             case CompositeFrame():
                 frames_to_process.extend(frame.frames)
+                sorted_frames.composite_frames.append(frame)
             case ServiceFrame():
                 sorted_frames.service_frames.append(frame)
             case ResourceFrame():
@@ -57,3 +65,47 @@ def number_of_fare_zones(frames: list[FareFrame]) -> int:
     Number of Fare Zones
     """
     return len(get_fare_zones(frames))
+
+
+def number_of_pass_fare_products(fare_products: list[PreassignedFareProduct]) -> int:
+    """
+    Number of Pass Fare Products
+    """
+    pass_product_values: list[PreassignedFareProductTypeT] = ["dayPass", "periodPass"]
+
+    fare_product_types = get_product_types(fare_products)
+
+    return len([type for type in fare_product_types if type in pass_product_values])
+
+
+def number_of_trip_fare_products(fare_products: list[PreassignedFareProduct]) -> int:
+    """
+    Number of Trip Fare Products
+    """
+    trip_product_values: list[PreassignedFareProductTypeT] = [
+        "singleTrip",
+        "dayReturnTrip",
+        "periodReturnTrip",
+        "timeLimitedSingleTrip",
+        "shortTrip",
+    ]
+
+    fare_product_types = get_product_types(fare_products)
+
+    return len([type for type in fare_product_types if type in trip_product_values])
+
+
+def number_of_distinct_user_profiles(tariffs: list[Tariff]) -> int:
+    """
+    Number of distinct user profiles
+    """
+    distinct_user_profiles = set(get_user_types(tariffs))
+
+    return len(distinct_user_profiles)
+
+
+def number_of_sales_offer_packages(frames: list[FareFrame]) -> int:
+    """
+    Number of sales offer packages
+    """
+    return len(get_sales_offer_packages(frames))

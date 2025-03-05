@@ -24,10 +24,8 @@ from common_layer.xml.txc.models import (
 )
 from structlog.stdlib import get_logger
 
-from ..transform.service_pattern_stops import (
-    GeneratePatternStopsContext,
-    generate_pattern_stops,
-)
+from ..transform.models_context import GeneratePatternStopsContext
+from ..transform.service_pattern_stops import generate_pattern_stops
 from ..transform.service_pattern_stops_flexible import generate_flexible_pattern_stops
 from .models_context import ProcessPatternStopsContext
 

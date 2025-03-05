@@ -2,7 +2,7 @@
 Common Helper Functions
 """
 
-from lxml.etree import _Element
+from lxml.etree import _Element  # type: ignore
 
 from ...utils import parse_xml_attribute
 

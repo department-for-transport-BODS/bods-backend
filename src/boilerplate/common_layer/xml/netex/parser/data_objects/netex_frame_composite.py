@@ -8,6 +8,9 @@ from common_layer.xml.netex.models import (
     ResourceFrame,
     ServiceFrame,
 )
+from common_layer.xml.netex.parser.netex_constants import (
+    NETEX_METADATA_FRAME_IDENTIFIER,
+)
 from common_layer.xml.utils import get_tag_name
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
@@ -65,7 +68,9 @@ def parse_frames(
         tag = get_tag_name(child)
         match tag:
             case "CompositeFrame":
-                frames.append(parse_composite_frame(child))
+                _, frame_id = parse_version_and_id(child)
+                if NETEX_METADATA_FRAME_IDENTIFIER not in frame_id:
+                    frames.append(parse_composite_frame(child))
             case "ResourceFrame":
                 frames.append(parse_resource_frame(child))
             case "ServiceFrame":
@@ -86,19 +91,18 @@ def parse_composite_frame(elem: _Element) -> CompositeFrame:
     # Parse attributes
     version, frame_id = parse_version_and_id(elem)
     data_source_ref = parse_xml_attribute(elem, "dataSourceRef")
-    if data_source_ref is None:
-        raise ValueError("Missing DatasourceRef")
     responsibility_set_ref = parse_xml_attribute(elem, "responsibilitySetRef")
-    if responsibility_set_ref is None:
-        raise ValueError("Missing Responisilbity set ref")
-    valid_between = FromToDate(
-        FromDate=parse_timestamp(elem, "FromDate"),
-        ToDate=parse_timestamp(elem, "ToDate"),
+    valid_between_elem = get_netex_element(elem, "ValidBetween")
+    valid_between = (
+        FromToDate(
+            FromDate=parse_timestamp(valid_between_elem, "FromDate"),
+            ToDate=parse_timestamp(valid_between_elem, "ToDate"),
+        )
+        if valid_between_elem is not None
+        else None
     )
 
     name = parse_multilingual_string(elem, "Name")
-    if name is None:
-        raise ValueError("Missing Name")
 
     # Parse FrameDefaults
     frame_defaults = None

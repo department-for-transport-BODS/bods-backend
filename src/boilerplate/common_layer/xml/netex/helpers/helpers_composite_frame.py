@@ -4,6 +4,9 @@ CompositeFrame Helper Functions
 
 from datetime import datetime
 
+from common_layer.xml.netex.parser.netex_constants import (
+    NETEX_METADATA_FRAME_IDENTIFIER,
+)
 from structlog.stdlib import get_logger
 
 from ..models import CompositeFrame
@@ -21,7 +24,7 @@ def filter_non_metadata_frames(frames: list[CompositeFrame]) -> list[CompositeFr
         return []
 
     filtered_frames = [
-        frame for frame in frames if "UK_PI_METADATA_OFFER" not in frame.id
+        frame for frame in frames if NETEX_METADATA_FRAME_IDENTIFIER not in frame.id
     ]
 
     if not filtered_frames:

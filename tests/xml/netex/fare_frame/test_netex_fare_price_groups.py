@@ -63,18 +63,3 @@ def test_parse_price_groups_refs(xml_str: str, expected: list[VersionedRef]) -> 
 
     for result_ref, expected_ref in zip(result, expected):
         assert_model_equal(result_ref, expected_ref)
-
-
-def test_parse_price_groups_full() -> None:
-    """
-    Test parsing of full price groups (not yet implemented).
-    """
-    xml_str = """
-        <priceGroups>
-            <PriceGroup></PriceGroup>
-        </priceGroups>
-        """
-    elem = parse_xml_str_as_netex(xml_str)
-
-    with pytest.raises(ValueError, match="PriceGroup Parsing not implemented"):
-        parse_price_groups(elem)

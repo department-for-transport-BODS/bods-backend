@@ -2,7 +2,7 @@
 ResourceFrame
 """
 
-from lxml.etree import _Element
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 from ....utils import get_tag_name, parse_xml_attribute
@@ -85,13 +85,9 @@ def parse_resource_frame(elem: _Element) -> ResourceFrame:
     version, frame_id = parse_version_and_id(elem)
 
     data_source_ref = parse_xml_attribute(elem, "dataSourceRef")
-    if data_source_ref is None:
-        raise ValueError("Missing DataSourceRef")
 
     # Parse required children
     name = parse_multilingual_string(elem, "Name")
-    if name is None:
-        raise ValueError("Missing Name")
 
     # Parse lists of resources
     codespaces = parse_codespaces(find_required_netex_element(elem, "codespaces"))

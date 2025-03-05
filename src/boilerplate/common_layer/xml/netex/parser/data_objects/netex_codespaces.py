@@ -2,7 +2,7 @@
 CodeSpace Parsing functions
 """
 
-from lxml.etree import _Element
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 from ....utils import get_tag_name, parse_xml_attribute
@@ -44,5 +44,6 @@ def parse_codespaces(elem: _Element) -> list[CodespaceRef | Codespace]:
                         Description=parse_multilingual_string(child, "Description"),
                     )
                 )
-
+            case _:
+                log.warning("Not a CodespaceRef or Codespace in Codespaces Section")
     return codespaces

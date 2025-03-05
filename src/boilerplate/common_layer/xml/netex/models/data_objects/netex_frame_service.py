@@ -27,7 +27,7 @@ class ScheduledStopPoint(BaseModel):
         Extracts the full ATCO code (everything after 'atco:').
         Returns None if the ID is invalid or doesn't follow the expected format.
         """
-        if not isinstance(self.id, str):
+        if not self.id:
             return None
 
         if not self.id.startswith("atco:"):
@@ -112,7 +112,7 @@ class ServiceFrame(BaseModel):
         Field(description="Description of the service frame", default=None),
     ]
     TypeOfFrameRef: Annotated[
-        VersionedRef, Field(description="Reference to the type of frame")
+        VersionedRef | None, Field(description="Reference to the type of frame")
     ]
 
     lines: Annotated[list[Line], Field(description="List of lines in the service")]

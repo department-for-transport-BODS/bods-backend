@@ -2,16 +2,16 @@
 Parsing a Preassigned Fare Product
 """
 
-from common_layer.xml.netex.models.netex_utility import VersionedRef
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 from ....utils import get_tag_name
-from ...models.fare_frame.netex_fare_preassigned import (
+from ...models import (
     AccessRightInProduct,
     ConditionSummary,
     PreassignedFareProduct,
     ValidableElement,
+    VersionedRef,
 )
 from ..netex_types import (
     parse_charging_moment_type,
@@ -35,9 +35,6 @@ def parse_condition_summary(elem: _Element) -> ConditionSummary:
     tariff_basis = parse_tariff_basis_type(elem)
     is_personal = get_netex_bool(elem, "IsPersonal")
 
-    if fare_structure_type is None or tariff_basis is None or is_personal is None:
-        raise ValueError("Missing required fields in ConditionSummary")
-
     return ConditionSummary(
         FareStructureType=fare_structure_type,
         TariffBasis=tariff_basis,
@@ -55,8 +52,6 @@ def parse_access_right_in_product(elem: _Element) -> AccessRightInProduct:
         raise ValueError("Missing required attributes in AccessRightInProduct")
 
     validable_element_ref = parse_versioned_ref(elem, "ValidableElementRef")
-    if validable_element_ref is None:
-        raise ValueError("Missing required ValidableElementRef in AccessRightInProduct")
 
     return AccessRightInProduct(
         id=access_right_id,
@@ -79,21 +74,13 @@ def parse_preassigned_product_attributes(elem: _Element) -> tuple[str, str]:
 
 def parse_preassigned_product_refs(
     elem: _Element,
-) -> tuple[VersionedRef, VersionedRef, VersionedRef]:
+) -> tuple[VersionedRef | None, VersionedRef | None, VersionedRef | None]:
     """Parse required references"""
     charging_moment_ref = parse_versioned_ref(elem, "ChargingMomentRef")
-    if charging_moment_ref is None:
-        raise ValueError("Missing required ChargingMomentRef in PreassignedFareProduct")
 
     type_of_fare_product_ref = parse_versioned_ref(elem, "TypeOfFareProductRef")
-    if type_of_fare_product_ref is None:
-        raise ValueError(
-            "Missing required TypeOfFareProductRef in PreassignedFareProduct"
-        )
 
     operator_ref = parse_versioned_ref(elem, "OperatorRef")
-    if operator_ref is None:
-        raise ValueError("Missing required OperatorRef in PreassignedFareProduct")
 
     return charging_moment_ref, type_of_fare_product_ref, operator_ref
 
@@ -165,9 +152,6 @@ def parse_preassigned_fare_product(elem: _Element) -> PreassignedFareProduct:
                 log.warning("Unknown PreassignedFareProduct tag", tag=tag)
         child.clear()
 
-    if condition_summary is None:
-        raise ValueError("Missing required ConditionSummary in PreassignedFareProduct")
-
     return PreassignedFareProduct(
         id=product_id,
         version=version,
@@ -189,8 +173,7 @@ def parse_preassigned_fare_products(elem: _Element) -> list[PreassignedFareProdu
     for product in elem:
         if get_tag_name(product) == "PreassignedFareProduct":
             fare_product = parse_preassigned_fare_product(product)
-            if fare_product is not None:
-                fare_products.append(fare_product)
+            fare_products.append(fare_product)
         else:
             log.warning("Unknown fareProducts tag", tag=get_tag_name(product))
     return fare_products

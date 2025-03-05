@@ -24,23 +24,21 @@ def get_line_public_codes_from_service_frames(frames: list[ServiceFrame]) -> lis
     Get Line Public Codes
     """
     return [
-        line.PublicCode
-        for frame in frames
-        for line in frame.lines
-        if line.PublicCode and line.PublicCode is not None
+        line.PublicCode for frame in frames for line in frame.lines if line.PublicCode
     ]
 
 
-def get_atco_area_codes_from_service_frames(frames: list[ServiceFrame]) -> list[str]:
+def get_atco_area_codes_from_service_frames(frames: list[ServiceFrame]) -> list[int]:
     """
     Get the list of three digit Atco Area Cdes from Scheduled StopPoints
     This is the first three digits of the Atco Codes
     """
-    area_codes: list[str] = []
+    area_codes: set[int] = set()
 
     for frame in frames:
         for stop_point in frame.scheduledStopPoints:
             area_code = stop_point.atco_area_code
-            if area_code is not None:
-                area_codes.append(area_code)
-    return area_codes
+            if area_code and area_code.isdigit():
+                area_codes.add(int(area_code))
+
+    return list(area_codes)

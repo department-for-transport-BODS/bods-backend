@@ -46,7 +46,7 @@ class FrequencyOfUse(BaseModel):
 
     id: Annotated[str, Field(description="Frequency identifier")]
     version: Annotated[str, Field(description="Version")]
-    FrequencyOfUseType: Annotated[str, Field(description="Type of frequency")]
+    FrequencyOfUseType: Annotated[str | None, Field(description="Type of frequency")]
 
 
 class RoundTrip(BaseModel):
@@ -54,7 +54,7 @@ class RoundTrip(BaseModel):
 
     id: Annotated[str, Field(description="Round trip identifier")]
     version: Annotated[str, Field(description="Version")]
-    TripType: Annotated[str, Field(description="Type of trip")]
+    TripType: Annotated[str | None, Field(description="Type of trip")]
 
 
 class ValidityParameters(BaseModel):
@@ -72,7 +72,7 @@ class GenericParameterAssignment(BaseModel):
     version: Annotated[str, Field(description="Version")]
     order: Annotated[str, Field(description="Order of assignment")]
     TypeOfAccessRightAssignmentRef: Annotated[
-        VersionedRef, Field(description="Reference to access right type")
+        VersionedRef | None, Field(description="Reference to access right type")
     ]
     ValidityParameterAssignmentType: Annotated[
         str | None,
@@ -102,9 +102,11 @@ class FareStructureElement(BaseModel):
 
     id: Annotated[str, Field(description="Fare structure element identifier")]
     version: Annotated[str, Field(description="Version")]
-    Name: Annotated[MultilingualString | str, Field(description="Name of the element")]
+    Name: Annotated[
+        MultilingualString | str | None, Field(description="Name of the element")
+    ]
     TypeOfFareStructureElementRef: Annotated[
-        VersionedRef, Field(description="Reference to element type")
+        VersionedRef | None, Field(description="Reference to element type")
     ]
     distanceMatrixElements: Annotated[
         list[DistanceMatrixElement] | None,

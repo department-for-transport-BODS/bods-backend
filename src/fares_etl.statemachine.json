@@ -104,7 +104,7 @@
     },
     "FileLevelProcessing": {
       "Type": "Map",
-      "Next": "GenerateOutputZip",
+      "Next": "MetadataAggregation",
       "MaxConcurrency": 1000,
       "ToleratedFailurePercentage": 100,
       "Output": {
@@ -174,7 +174,7 @@
           },
           "SchemaCheck": {
             "Type": "Task",
-            "Next": "Success",
+            "Next": "EtlProcess",
             "Resource": "${SchemaCheckLambdaArn}",
             "Arguments": {
               "Bucket": "{% $Bucket %}",
@@ -186,6 +186,29 @@
               "schemaCheck": "{% $states.result %}"
             },
 
+            "Catch": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "Next": "ExceptionHandler",
+                "Output": {
+                  "errorInfo": "{% $states.errorOutput %}"
+                }
+              }
+            ]
+          },
+          "EtlProcess": {
+            "Type": "Task",
+            "Next": "Success",
+            "Resource": "${EtlProcessLambdaArn}",
+            "Arguments": {
+              "Bucket": "{% $Bucket %}",
+              "ObjectKey": "{% $ObjectKey %}",
+              "DatasetRevisionId": "{% $DatasetRevisionId %}",
+              "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}"
+            },
+            "Output": {
+              "etlProcess": "{% $states.result %}"
+            },
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
@@ -209,6 +232,24 @@
           }
         }
       }
+    },
+    "MetadataAggregation": {
+      "Type": "Task",
+      "Next": "GenerateOutputZip",
+      "Resource": "${MetadataAggregationLambdaArn}",
+      "Arguments": {
+        "DatasetRevisionId": "{% $datasetRevisionId %}",
+        "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}"
+      },
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "ParentExceptionHandler",
+          "Output": {
+            "errorInfo": "{% $states.errorOutput %}"
+          }
+        }
+      ]
     },
     "GenerateOutputZip": {
       "Type": "Task",

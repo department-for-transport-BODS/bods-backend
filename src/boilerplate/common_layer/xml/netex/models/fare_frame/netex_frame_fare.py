@@ -6,8 +6,6 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from common_layer.xml.netex.models.fare_frame.netex_fare_zone import FareZone
-from common_layer.xml.netex.models.fare_frame.netex_price_group import PriceGroup
 from pydantic import BaseModel, Field
 
 from ..data_objects.netex_data_object_profiles import UserProfile
@@ -15,7 +13,10 @@ from ..netex_utility import MultilingualString, VersionedRef
 from .netex_fare_preassigned import PreassignedFareProduct
 from .netex_fare_table import FareTable
 from .netex_fare_tariff import Tariff
+from .netex_fare_zone import FareZone
 from .netex_frame_defaults import FrameDefaultsStructure
+from .netex_price_group import PriceGroup
+from .netex_sales_offer_package import SalesOfferPackage
 
 
 class DistributionAssignment(BaseModel):
@@ -38,9 +39,11 @@ class PriceUnit(BaseModel):
 
     id: Annotated[str, Field(description="Price unit identifier")]
     version: Annotated[str, Field(description="Version")]
-    Name: Annotated[MultilingualString, Field(description="Name of the price unit")]
-    PrivateCode: Annotated[str, Field(description="Currency symbol")]
-    Precision: Annotated[int, Field(description="Decimal precision")]
+    Name: Annotated[
+        MultilingualString | None, Field(description="Name of the price unit")
+    ]
+    PrivateCode: Annotated[str | None, Field(description="Currency symbol")]
+    Precision: Annotated[int | None, Field(description="Decimal precision")]
 
 
 class PricingParameterSet(BaseModel):
@@ -127,7 +130,7 @@ class FareFrame(BaseModel):
     id: Annotated[str, Field(description="Frame identifier")]
     version: Annotated[str, Field(description="Version")]
     responsibilitySetRef: Annotated[
-        str, Field(description="Responsibility set reference")
+        str | None, Field(description="Responsibility set reference")
     ]
 
     # Optional core attributes
@@ -190,4 +193,8 @@ class FareFrame(BaseModel):
     ]
     fareTables: Annotated[
         list[FareTable] | None, Field(description="list of fare tables", default=None)
+    ]
+    salesOfferPackages: Annotated[
+        list[SalesOfferPackage] | None,
+        Field(description="list of sales offer packages", default=None),
     ]

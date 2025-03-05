@@ -46,9 +46,8 @@ from tests.xml.netex.conftest import parse_xml_str_as_netex
             <FrequencyOfUse id="freq1" version="1.0">
             </FrequencyOfUse>
             """,
-            None,
+            FrequencyOfUse(id="freq1", version="1.0", FrequencyOfUseType=None),
             id="Missing frequency type",
-            marks=pytest.mark.xfail(raises=ValueError, strict=True),
         ),
     ],
 )
@@ -76,9 +75,8 @@ def test_parse_frequency_of_use(xml_str: str, expected: FrequencyOfUse) -> None:
             <RoundTrip id="rt1" version="1.0">
             </RoundTrip>
             """,
-            None,
+            RoundTrip(id="rt1", version="1.0", TripType=None),
             id="Missing trip type",
-            marks=pytest.mark.xfail(raises=ValueError, strict=True),
         ),
     ],
 )
@@ -189,9 +187,17 @@ def test_parse_validity_parameters(
             <GenericParameterAssignment id="test" version="1.0" order="1">
             </GenericParameterAssignment>
             """,
-            None,
+            GenericParameterAssignment(
+                id="test",
+                version="1.0",
+                order="1",
+                TypeOfAccessRightAssignmentRef=None,
+                ValidityParameterAssignmentType=None,
+                validityParameters=None,
+                limitations=None,
+                LimitationGroupingType=None,
+            ),
             id="Missing required access right reference",
-            marks=pytest.mark.xfail(raises=ValueError, strict=True),
         ),
     ],
 )
@@ -353,37 +359,6 @@ def test_parse_fare_structure_element_missing_attributes() -> None:
 
     with pytest.raises(
         ValueError, match="Missing required id or version in FareStructureElement"
-    ):
-        parse_fare_structure_element(elem)
-
-
-def test_parse_fare_structure_element_missing_name() -> None:
-    """Test parsing of fare structure element with missing name."""
-    xml_str = """
-        <FareStructureElement id="test" version="1.0">
-            <TypeOfFareStructureElementRef version="1.0" ref="test" />
-        </FareStructureElement>
-        """
-    elem = parse_xml_str_as_netex(xml_str)
-
-    with pytest.raises(
-        ValueError, match="Missing required Name in FareStructureElement"
-    ):
-        parse_fare_structure_element(elem)
-
-
-def test_parse_fare_structure_element_missing_type_ref() -> None:
-    """Test parsing of fare structure element with missing type reference."""
-    xml_str = """
-        <FareStructureElement id="test" version="1.0">
-            <Name>Test Element</Name>
-        </FareStructureElement>
-        """
-    elem = parse_xml_str_as_netex(xml_str)
-
-    with pytest.raises(
-        ValueError,
-        match="Missing required TypeOfFareStructureElementRef in FareStructureElement",
     ):
         parse_fare_structure_element(elem)
 

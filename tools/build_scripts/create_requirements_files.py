@@ -14,6 +14,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 PYPROJECT_PATH = ROOT_DIR / "pyproject.toml"
 LAMBDA_BASE_DIRS = [
     ROOT_DIR / "src/timetables_etl",
+    ROOT_DIR / "src/fares_etl",
     ROOT_DIR / "src/periodic_tasks",
     ROOT_DIR / "src/common_lambdas",
 ]
@@ -70,7 +71,7 @@ def get_boilerplate_layer_dependency_group(poetry_dependency_groups: set[str]) -
 
 def export_requirements_for_lambdas(poetry_dependency_groups: set[str]):
     """
-    Export requirements.txt for all lambdas in both `timetables_etl` and `periodic_tasks`.
+    Export requirements.txt for all lambdas in lambda base directories.
     """
     lambda_groups = get_dependency_groups_for_lambdas(poetry_dependency_groups)
 

@@ -28,7 +28,7 @@ def load_xml_tree(filename: Path | BytesIO) -> _ElementTree:
     """
     Load XML ElementTreee
     """
-    log.info("Opening TXC file", filename=filename)
+    log.info("Opening XML file", filename=filename)
     parser = etree.XMLParser()
     tree = parse(filename, parser=parser)
     return tree

@@ -2,7 +2,7 @@
 Tariff Parsing
 """
 
-from lxml.etree import _Element
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 from ....utils import get_tag_name
@@ -70,20 +70,12 @@ def parse_tariff(elem: _Element) -> Tariff:
     name = parse_multilingual_string(elem, "Name")
     if name is None:
         name = get_netex_text(elem, "Name")
-        if name is None:
-            raise ValueError("Missing required Name in Tariff")
 
     operator_ref = parse_versioned_ref(elem, "OperatorRef")
-    if operator_ref is None:
-        raise ValueError("Missing required OperatorRef in Tariff")
 
     line_ref = parse_versioned_ref(elem, "LineRef")
-    if line_ref is None:
-        raise ValueError("Missing required LineRef in Tariff")
 
     type_of_tariff_ref = parse_versioned_ref(elem, "TypeOfTariffRef")
-    if type_of_tariff_ref is None:
-        raise ValueError("Missing required TypeOfTariffRef in Tariff")
 
     tariff_basis = parse_tariff_basis_type(elem)
     validity_conditions = parse_validity_conditions(elem)

@@ -42,9 +42,6 @@ def parse_price_groups(elem: _Element) -> list[VersionedRef]:
 
     for child in elem:
         tag = get_tag_name(child)
-        if tag == "PriceGroup":
-            log.critical("PriceGroup Parsing not implemented")
-            raise ValueError("PriceGroup Parsing not implemented")
         if tag == "PriceGroupRef":
             if (version := child.get("version")) and (ref := child.get("ref")):
                 refs.append(VersionedRef(version=version, ref=ref))
@@ -124,9 +121,6 @@ def parse_frequency_of_use(elem: _Element) -> FrequencyOfUse:
                 log.warning("Unknown FrequencyOfUse tag", tag=tag)
         child.clear()
 
-    if not frequency_type:
-        raise ValueError("Missing required FrequencyOfUseType in FrequencyOfUse")
-
     return FrequencyOfUse(
         id=frequency_id, version=version, FrequencyOfUseType=frequency_type
     )
@@ -150,9 +144,6 @@ def parse_round_trip(elem: _Element) -> RoundTrip:
             case _:
                 log.warning("Unknown RoundTrip tag", tag=tag)
         child.clear()
-
-    if not trip_type:
-        raise ValueError("Missing required TripType in RoundTrip")
 
     return RoundTrip(id=trip_id, version=version, TripType=trip_type)
 
@@ -209,10 +200,6 @@ def parse_generic_parameter_assignment(elem: _Element) -> GenericParameterAssign
     type_of_access_right_assignment_ref = parse_versioned_ref(
         elem, "TypeOfAccessRightAssignmentRef"
     )
-    if not type_of_access_right_assignment_ref:
-        raise ValueError(
-            "Missing required TypeOfAccessRightAssignmentRef in GenericParameterAssignment"
-        )
 
     # Parse optional elements
     validity_parameter_assignment_type = None
@@ -263,16 +250,10 @@ def parse_fare_structure_element(elem: _Element) -> FareStructureElement:
     name = parse_multilingual_string(elem, "Name")
     if name is None:
         name = get_netex_text(elem, "Name")
-        if name is None:
-            raise ValueError("Missing required Name in FareStructureElement")
 
     type_of_fare_structure_element_ref = parse_versioned_ref(
         elem, "TypeOfFareStructureElementRef"
     )
-    if type_of_fare_structure_element_ref is None:
-        raise ValueError(
-            "Missing required TypeOfFareStructureElementRef in FareStructureElement"
-        )
 
     distance_matrix_elements: list[DistanceMatrixElement] = []
     generic_parameter_assignments: list[GenericParameterAssignment] = []

@@ -2,7 +2,7 @@
 Utility functions for Schema Check
 """
 
-from lxml import etree
+from lxml.etree import _Element  # type: ignore
 from lxml.etree import QName
 from structlog.stdlib import get_logger
 
@@ -23,7 +23,7 @@ def get_tag_string(tag: str | bytes | bytearray | QName) -> str:
     return str(tag)
 
 
-def get_xml_type(xml_root: etree._Element) -> tuple[XMLSchemaType, str]:
+def get_xml_type(xml_root: _Element) -> tuple[XMLSchemaType, str]:
     """
     Determine if XML is NeTEx or TransXChange and return version.
 

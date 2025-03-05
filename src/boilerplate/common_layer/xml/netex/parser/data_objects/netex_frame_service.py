@@ -70,7 +70,7 @@ def parse_scheduled_stop_point(elem: _Element) -> ScheduledStopPoint | None:
     """
     Parse a single ScheduledStopPoint element
     """
-    stop_id, stop_version = parse_version_and_id(elem)
+    stop_version, stop_id = parse_version_and_id(elem)
     name = parse_multilingual_string(elem, "Name")
 
     if not stop_id or not stop_version:
@@ -101,17 +101,11 @@ def parse_service_frame(elem: _Element) -> ServiceFrame:
     # Parse required attributes
     version, frame_id = parse_version_and_id(elem)
     data_source_ref = parse_xml_attribute(elem, "dataSourceRef")
-    if data_source_ref is None:
-        raise ValueError("Missing DataSourceRef")
-
     responsibility_set_ref = parse_xml_attribute(elem, "responsibilitySetRef")
-    if responsibility_set_ref is None:
-        raise ValueError("Missing ResponsibilitySetRef")
 
     # Parse type of frame reference
     type_of_frame_ref = parse_versioned_ref(elem, "TypeOfFrameRef")
-    if type_of_frame_ref is None:
-        raise ValueError("Missing TypeOfFrameRef")
+
     # Parse lists
     lines = parse_lines(find_required_netex_element(elem, "lines"))
     stop_points = parse_scheduled_stop_points(
