@@ -16,7 +16,7 @@ class ValidationException(Exception):
         if message is None:
             self.message = self.message_template.format(filename=filename)
         else:
-            self.message = message
+            self.message = message if isinstance(message, str) else str(message)
         self.line = line
 
     def __str__(self):
