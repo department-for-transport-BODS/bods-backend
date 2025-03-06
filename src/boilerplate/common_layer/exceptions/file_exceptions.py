@@ -2,6 +2,8 @@
 Exception for File Processing
 """
 
+from typing import Any
+
 
 class ValidationException(Exception):
     """
@@ -11,12 +13,14 @@ class ValidationException(Exception):
     code = "VALIDATION_FAILED"
     message_template = "Validation failed for {filename}."
 
-    def __init__(self, filename, line=1, message=None):
+    def __init__(
+        self, filename: str, line: int = 1, message: Any | None = None
+    ) -> None:
         self.filename = filename
         if message is None:
             self.message = self.message_template.format(filename=filename)
         else:
-            self.message = message
+            self.message = message if isinstance(message, str) else str(message)
         self.line = line
 
     def __str__(self):
@@ -62,7 +66,7 @@ class DownloadException(Exception):
     code = "DOWNLOAD_EXCEPTION"
     message_template = "Unable to download data from {url}."
 
-    def __init__(self, url, message=None):
+    def __init__(self, url: str, message: str | None = None) -> None:
         self.url = url
         if message is None:
             self.message = self.message_template.format(url=url)
