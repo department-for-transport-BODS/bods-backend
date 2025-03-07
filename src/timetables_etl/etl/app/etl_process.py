@@ -27,7 +27,7 @@ from .models import ETLInputData, TaskData
 from .pipeline import transform_data
 
 log = get_logger()
-metrics = DatadogMetrics()
+metrics = DatadogMetrics(flush_to_log=True)
 metrics.set_default_tags(function="ETLProcess")  # type: ignore
 
 
