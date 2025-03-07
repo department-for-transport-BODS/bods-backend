@@ -40,3 +40,4 @@ def create_datadog_metrics(metrics: DatadogMetrics, stats: ETLProcessStats) -> N
         name=get_metric_name("stops"), value=stats.pattern_stats.pattern_stops
     )
     metrics.add_metric(name=get_metric_name("tracks"), value=stats.pattern_stats.tracks)
+    metrics.flush_metrics()
