@@ -17,11 +17,11 @@ from ...utils import (
 )
 from ..models import (
     ActivityT,
-    TimingStatusT,
     TXCJourneyPatternSection,
     TXCJourneyPatternStopUsage,
     TXCJourneyPatternTimingLink,
 )
+from .txc_types import parse_timing_status
 
 log = get_logger()
 
@@ -50,22 +50,15 @@ def parse_journey_pattern_stop_usage(
     notes = get_element_text(stop_usage_xml, "Notes")
     stop_point_ref = get_element_text(stop_usage_xml, "StopPointRef")
 
-    timing_status: TimingStatusT = (
-        cast(TimingStatusT, text)
-        if (text := get_element_text(stop_usage_xml, "TimingStatus"))
-        in get_args(TimingStatusT)
-        else "principalTimingPoint"
-    )
     fare_stage_number = get_element_int(stop_usage_xml, "FareStageNumber")
     fare_stage = get_element_bool(stop_usage_xml, "FareStage")
 
-    if not activity or not stop_point_ref or not timing_status:
+    if not activity or not stop_point_ref:
         log.warning(
             "JourneyPatternStopUsage missing required fields. Skipping.",
             id=stop_usage_id,
             Activity=activity,
             StopPointRef=stop_point_ref,
-            TimingStatus=timing_status,
         )
         return None
 
@@ -76,7 +69,7 @@ def parse_journey_pattern_stop_usage(
         DynamicDestinationDisplay=dynamic_destination_display,
         Notes=notes,
         StopPointRef=stop_point_ref,
-        TimingStatus=timing_status,
+        TimingStatus=parse_timing_status(stop_usage_xml),
         FareStageNumber=fare_stage_number,
         FareStage=fare_stage,
         SequenceNumber=parse_xml_attribute(stop_usage_xml, "SequenceNumber"),
