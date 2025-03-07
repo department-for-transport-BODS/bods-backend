@@ -10,8 +10,9 @@ from botocore.exceptions import (
     ProfileNotFound,
 )
 from mypy_boto3_s3 import S3Client
+from structlog.stdlib import get_logger
 
-from .state_machines import logger
+log = get_logger()
 
 
 class SessionCreationError(Exception):
@@ -39,17 +40,17 @@ def create_aws_session(profile: str | None, region: str) -> boto3.Session:
         message = (
             f"Profile '{profile}' not found. Ensure it is configured in your AWS CLI."
         )
-        logger.error(message, exc_info=True)
+        log.error(message, exc_info=True)
         raise SessionCreationError(message) from e
     except NoCredentialsError as e:
         message = (
             "No AWS credentials found. Please configure them with 'aws configure'."
         )
-        logger.error(message, exc_info=True)
+        log.error(message, exc_info=True)
         raise SessionCreationError(message) from e
     except Exception as e:
         message = "An unexpected error occurred while creating the AWS session."
-        logger.error(message, exc_info=True)
+        log.error(message, exc_info=True)
         raise SessionCreationError(message) from e
 
 
@@ -60,29 +61,28 @@ def upload_to_s3(
     Upload a file to an S3 bucket.
     """
     try:
-        logger.info(
+        log.info(
             "Uploading file to s3",
             from_location=file_name,
             bucket=bucket_name,
             key=object_name,
         )
-        # Upload the file
         s3_client.upload_file(file_name, bucket_name, object_name)
-        logger.info("File uploaded successfully!", bucket=bucket_name, key=object_name)
+        log.info("File uploaded successfully!", bucket=bucket_name, key=object_name)
         return True
     except ClientError as e:
         msg = f"Failed to upload file '{file_name}' to bucket '{bucket_name}/{object_name}'"
-        logger.error(msg, exc_info=True)
+        log.error(msg, exc_info=True)
         raise FileUploadError(msg) from e
     except FileNotFoundError as e:
         msg = f"File '{file_name}' not found"
-        logger.error(msg, exc_info=True)
+        log.error(msg, exc_info=True)
         raise FileUploadError(msg) from e
     except BotoCoreError as e:
         msg = "BotoCoreError occurred while uploading the file"
-        logger.error(msg, exc_info=True)
+        log.error(msg, exc_info=True)
         raise FileUploadError(msg) from e
     except Exception as e:
         msg = "Unexpected error while uploading the file"
-        logger.error(msg, exc_info=True)
+        log.error(msg, exc_info=True)
         raise FileUploadError(msg) from e
