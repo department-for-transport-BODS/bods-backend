@@ -1,5 +1,5 @@
 """
-Tool allows to start an AWS Step Functions state machine execution with specified parameters.
+Starts an Timetables AWS Step Functions state machine execution with specified parameters.
 It supports uploading a file to S3 before starting the state machine and provides logging for
 the execution process.
 """
