@@ -99,5 +99,4 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, 
         "status_code": 200,
         "message": "ETL Completed",
         "stats": stats.model_dump(),
-        "task_data": task_data.model_dump(),
     }
