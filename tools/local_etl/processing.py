@@ -14,9 +14,10 @@ from common_layer.dynamodb.client.naptan_stop_points import (
     NaptanDynamoDBSettings,
     NaptanStopPointDynamoDBClient,
 )
-from common_layer.xml.txc.parser.parser_txc import TXCParserConfig, parse_txc_file
+from common_layer.xml.txc.parser.parser_txc import parse_txc_file
 from structlog.stdlib import get_logger
 
+from timetables_etl.etl.app.etl_process import PARSER_CONFIG
 from timetables_etl.etl.app.pipeline import transform_data
 from tools.common.db_tools import setup_db_instance
 from tools.common.models import TestConfig
@@ -24,7 +25,6 @@ from tools.local_etl.make_task_data import create_task_data_from_inputs
 from tools.local_etl.timing import TimingStats, print_timing_report
 
 log = get_logger()
-PARSER_CONFIG = TXCParserConfig(file_hash=True, track_data=True)
 
 
 def process_single_file(config: TestConfig, file_path: Path) -> TimingStats:
@@ -71,7 +71,7 @@ def process_files_sequential(
     files: list[Path], config: TestConfig
 ) -> list[TimingStats]:
     """Process multiple files sequentially"""
-    timing_stats = []
+    timing_stats: list[TimingStats] = []
     setup_db_instance(config.db_config)
 
     log.info("Starting sequential processing", total_files=len(files))
@@ -93,7 +93,7 @@ async def process_files_parallel(
     files: list[Path], config: TestConfig
 ) -> list[TimingStats]:
     """Process multiple files in parallel using ProcessPoolExecutor"""
-    timing_stats = []
+    timing_stats: list[TimingStats] = []
     max_workers = config.max_workers or mp.cpu_count()
     chunk_size = max(1, len(files) // (max_workers * 4))
 
