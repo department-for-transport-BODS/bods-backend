@@ -1,5 +1,5 @@
 """
-Pydantic Models 
+Pydantic Models
 """
 
 from typing import Self
@@ -54,7 +54,8 @@ class PatternCommonStats(BaseModel):
         Add another PatternCommonStats instance to this one in-place.
 
         """
-        if not isinstance(other, PatternCommonStats):
+        # Ignore Type to Prevent other types from being added to it
+        if not isinstance(other, PatternCommonStats):  # type: ignore
             raise TypeError(
                 f"unsupported for +=: '{type(self).__name__}' and '{type(other).__name__}'"
             )
