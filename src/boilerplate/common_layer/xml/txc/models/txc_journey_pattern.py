@@ -37,8 +37,8 @@ class TXCJourneyPatternStopUsage(BaseModel):
         ...,
         description="The AtcoCode or pseudo-AtcoCode of the stop point.",
     )
-    TimingStatus: TimingStatusT = Field(
-        ...,
+    TimingStatus: TimingStatusT | None = Field(
+        default=None,
         description=(
             "Timing Reliability at the stop."
             "TXC-PTI uses words instead of 3 letter codes"

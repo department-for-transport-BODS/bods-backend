@@ -141,7 +141,7 @@ STOP_CLASSIFICATION_STOP_TYPE_MAPPING: dict[str, str] = {
 
 # Correct Spelling Mistakes in Timing Status from older TXC Standards
 # Also conver to full names
-TIMING_STATUS_MAPPING = {
+TIMING_STATUS_MAPPING: dict[str, TimingStatusT] = {
     # Map 3 letters to the new full names
     # TXC has had versions with spelling mistakes that map onto new names
     "PPT": "principalPoint",

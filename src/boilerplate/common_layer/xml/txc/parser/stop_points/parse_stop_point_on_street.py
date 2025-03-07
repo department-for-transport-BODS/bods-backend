@@ -9,13 +9,12 @@ from structlog.stdlib import get_logger
 
 from ....utils import get_element_text
 from ...models import (
-    TIMING_STATUS_MAPPING,
     BusStopStructure,
     BusStopTypeT,
     OnStreetStructure,
     TaxiStopClassificationStructure,
-    TimingStatusT,
 )
+from ..txc_types import parse_timing_status
 from .parse_stop_point_marked import (
     parse_marked_point_structure,
     parse_unmarked_point_structure,
@@ -46,19 +45,14 @@ def parse_bus_stop_structure(bus_xml: _Element) -> BusStopStructure | None:
     )
 
     bus_stop_type = get_element_text(bus_xml, "BusStopType")
-    timing_status_code = get_element_text(bus_xml, "TimingStatus")
 
-    if timing_status_code is not None:
-        timing_status = TIMING_STATUS_MAPPING.get(timing_status_code)
-    else:
-        timing_status = None
+    timing_status = parse_timing_status(bus_xml)
 
     # Validate required fields
     if (
         bus_stop_type is None
         or timing_status is None
         or bus_stop_type not in get_args(BusStopTypeT)
-        or timing_status not in get_args(TimingStatusT)
     ):
         log.warning(
             "Missing Bus Stop Structure Data Returning None",
@@ -76,7 +70,7 @@ def parse_bus_stop_structure(bus_xml: _Element) -> BusStopStructure | None:
 
     return BusStopStructure(
         BusStopType=cast(BusStopTypeT, bus_stop_type),
-        TimingStatus=cast(TimingStatusT, timing_status),
+        TimingStatus=timing_status,
         MarkedPoint=marked_point,
         UnmarkedPoint=unmarked_point,
     )
