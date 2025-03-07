@@ -66,16 +66,7 @@ from timetables_etl.etl.app.transform.vehicle_journey_operations import (
                         non_operating_date=date(2024, 12, 24), vehicle_journey_id=123
                     ),
                     TransmodelNonOperatingDatesExceptions(
-                        non_operating_date=date(2024, 12, 24), vehicle_journey_id=123
-                    ),
-                    TransmodelNonOperatingDatesExceptions(
                         non_operating_date=date(2024, 12, 25), vehicle_journey_id=123
-                    ),
-                    TransmodelNonOperatingDatesExceptions(
-                        non_operating_date=date(2024, 12, 25), vehicle_journey_id=123
-                    ),
-                    TransmodelNonOperatingDatesExceptions(
-                        non_operating_date=date(2024, 12, 26), vehicle_journey_id=123
                     ),
                     TransmodelNonOperatingDatesExceptions(
                         non_operating_date=date(2024, 12, 26), vehicle_journey_id=123
@@ -84,16 +75,7 @@ from timetables_etl.etl.app.transform.vehicle_journey_operations import (
                         non_operating_date=date(2024, 12, 31), vehicle_journey_id=123
                     ),
                     TransmodelNonOperatingDatesExceptions(
-                        non_operating_date=date(2024, 12, 31), vehicle_journey_id=123
-                    ),
-                    TransmodelNonOperatingDatesExceptions(
                         non_operating_date=date(2025, 1, 1), vehicle_journey_id=123
-                    ),
-                    TransmodelNonOperatingDatesExceptions(
-                        non_operating_date=date(2025, 1, 1), vehicle_journey_id=123
-                    ),
-                    TransmodelNonOperatingDatesExceptions(
-                        non_operating_date=date(2025, 4, 18), vehicle_journey_id=123
                     ),
                     TransmodelNonOperatingDatesExceptions(
                         non_operating_date=date(2025, 4, 18), vehicle_journey_id=123
@@ -103,12 +85,6 @@ from timetables_etl.etl.app.transform.vehicle_journey_operations import (
                     ),
                     TransmodelNonOperatingDatesExceptions(
                         non_operating_date=date(2025, 5, 5), vehicle_journey_id=123
-                    ),
-                    TransmodelNonOperatingDatesExceptions(
-                        non_operating_date=date(2025, 5, 5), vehicle_journey_id=123
-                    ),
-                    TransmodelNonOperatingDatesExceptions(
-                        non_operating_date=date(2025, 5, 26), vehicle_journey_id=123
                     ),
                     TransmodelNonOperatingDatesExceptions(
                         non_operating_date=date(2025, 5, 26), vehicle_journey_id=123

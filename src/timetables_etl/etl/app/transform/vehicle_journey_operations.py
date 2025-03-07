@@ -127,13 +127,12 @@ def get_bank_holiday_dates(
     """
     Get list of dates for enabled bank holidays
     """
-    dates: list[date] = []
-
+    unique_dates: set[date] = set()
     for holiday_name, is_active in holiday_days:
         if is_active and holiday_name in bank_holidays:
-            dates.extend(bank_holidays[holiday_name])
+            unique_dates.update(bank_holidays[holiday_name])
 
-    return sorted(dates)
+    return sorted(unique_dates)
 
 
 def process_special_operating_days(
