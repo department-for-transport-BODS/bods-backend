@@ -254,8 +254,8 @@ Resources:
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-populate-dynamodb-naptan-cache-lambda'
       Description: Periodic Tasks - Populate the DynamoDB Naptan Cache
-      CodeUri: ./src/periodic_tasks/naptan_cache
-      Handler: app.handler_naptan_cache.lambda_handler
+      CodeUri: ./src/periodic_tasks/naptan_cache_populator
+      Handler: app.handler_naptan_cache_populator.lambda_handler
       Role: !GetAtt NaptanCacheLambdaExecutionRole.Arn
       Layers:
         - !Ref BoilerplateLambdaLayerArn
