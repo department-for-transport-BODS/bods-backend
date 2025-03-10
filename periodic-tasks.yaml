@@ -162,13 +162,20 @@ Resources:
             Type: Task
             Resource: !GetAtt PopulateDynamodbNaptanCacheLambda.Arn
             Parameters:
-              Payload.$: '$'
+              'naptan_url.$': '$.naptan_url'
+              'dynamo_table.$': '$.dynamo_table'
+              'aws_region.$': '$.aws_region'
             ResultPath: '$.populate_result'
+            Catch:
+              - ErrorEquals: ['States.TaskFailed'] # Catches all Lambda failures
+                Next: FailureState
             Next: UpdateIDsDynamodbNaptanCache
           UpdateIDsDynamodbNaptanCache:
             Type: Task
             Resource: !GetAtt UpdateIDsDynamodbNaptanCacheLambda.Arn
             End: true
+          FailureState:
+            Type: Fail
 
   ##########################
   #### LAMBDA FUNCTIONS ####
@@ -263,8 +270,10 @@ Resources:
       CodeUri: ./src/periodic_tasks
       Handler: create_sirivm_tfl_zip.lambda_handler
       Role: !GetAtt GenerateLambdaExecutionRole.Arn
-      Layers:
+      Layers: !If
+        - IsNotLocal
         - !Ref BoilerplateLambdaLayerArn
+        - !Ref AWS::NoValue
       Environment:
         Variables:
           AVL_CONSUMER_API_BASE_URL: !Ref AvlConsumerApiBaseUrl
@@ -310,7 +319,7 @@ Resources:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-update-ids-dynamodb-naptan-cache-lambda'
       Description: Update IDs in the DynamoDB Naptan Cache with IDs from BODS DB
       CodeUri: ./src/periodic_tasks/naptan_cache_id_updater
-      Handler: app.handler_naptan_cache.lambda_handler
+      Handler: app.handler_naptan_cache_id_updater.lambda_handler
       Role: !GetAtt NaptanCacheLambdaExecutionRole.Arn
       Layers:
         - !Ref BoilerplateLambdaLayerArn
