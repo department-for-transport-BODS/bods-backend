@@ -167,7 +167,7 @@ Resources:
               'aws_region.$': '$.aws_region'
             ResultPath: '$.populate_result'
             Catch:
-              - ErrorEquals: ['States.TaskFailed'] # Catches all Lambda failures
+              - ErrorEquals: ['States.TaskFailed']
                 Next: FailureState
             Next: UpdateIDsDynamodbNaptanCache
           UpdateIDsDynamodbNaptanCache:
