@@ -58,6 +58,22 @@ from lxml import etree
         ),
         pytest.param(
             """
+            <JourneyPatternStopUsage id="su1" SequenceNumber="5">
+                <Activity>pickUpAndSetDown</Activity>
+                <StopPointRef>sp1</StopPointRef>
+            </JourneyPatternStopUsage>
+            """,
+            TXCJourneyPatternStopUsage(
+                id="su1",
+                Activity="pickUpAndSetDown",
+                StopPointRef="sp1",
+                TimingStatus=None,
+                SequenceNumber="5",
+            ),
+            id="Missing TimingStatus number",
+        ),
+        pytest.param(
+            """
             <JourneyPatternStopUsage id="su1">
                 <SequenceNumber>1</SequenceNumber>
                 <WaitTime>PT1M</WaitTime>
@@ -74,7 +90,9 @@ from lxml import etree
         ),
     ],
 )
-def test_parse_journey_pattern_stop_usage(xml_string, expected_result):
+def test_parse_journey_pattern_stop_usage(
+    xml_string: str, expected_result: TXCJourneyPatternStopUsage | None
+):
     """
     Parse JPTS
     TODO: Parse Stop Usage
@@ -92,21 +110,6 @@ def test_parse_journey_pattern_stop_usage(xml_string, expected_result):
             <JourneyPatternStopUsage id="su1">
                 <SequenceNumber>1</SequenceNumber>
                 <WaitTime>PT1M</WaitTime>
-                <Activity>pickUpAndSetDown</Activity>
-                <DynamicDestinationDisplay>Destination</DynamicDestinationDisplay>
-                <Notes>Test notes</Notes>
-                <StopPointRef>sp1</StopPointRef>
-                <FareStageNumber>1</FareStageNumber>
-                <FareStage>true</FareStage>
-            </JourneyPatternStopUsage>
-            """,
-            id="JourneyPatternStopUsage missing required TimingStatus",
-        ),
-        pytest.param(
-            """
-            <JourneyPatternStopUsage id="su1">
-                <SequenceNumber>1</SequenceNumber>
-                <WaitTime>PT1M</WaitTime>
                 <DynamicDestinationDisplay>Destination</DynamicDestinationDisplay>
                 <Notes>Test notes</Notes>
                 <StopPointRef>sp1</StopPointRef>
@@ -115,16 +118,15 @@ def test_parse_journey_pattern_stop_usage(xml_string, expected_result):
                 <FareStage>true</FareStage>
             </JourneyPatternStopUsage>
             """,
-            id="JourneyPatternStopUsage missing required Activity",
+            id="JourneyPatternStopUsage missing Activity defaults to pickUpAndSetDown",
         ),
     ],
 )
-def test_parse_journey_pattern_stop_usage_except(xml_string):
+def test_parse_journey_pattern_stop_usage_defaults(xml_string: str):
     """
-    Default setting test
+    Scenarios where it should return None
     """
     xml_element = etree.fromstring(xml_string)
     parsed = parse_journey_pattern_stop_usage(xml_element)
     if parsed is not None:
         assert parsed.Activity == "pickUpAndSetDown"
-        assert parsed.TimingStatus == "principalTimingPoint"

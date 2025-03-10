@@ -15,13 +15,11 @@ from common_layer.database.repos import (
 )
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
+from common_layer.download import download_and_parse_txc
 from common_layer.dynamodb.client.naptan_stop_points import (
     NaptanStopPointDynamoDBClient,
 )
-from common_layer.s3 import S3
-from common_layer.xml.txc.models import TXCData
-from common_layer.xml.txc.parser.parser_txc import load_xml_data, parse_txc_from_element
-from lxml.etree import _Element
+from common_layer.xml.txc.parser.parser_txc import TXCParserConfig
 from structlog.stdlib import get_logger
 
 from .metrics import create_datadog_metrics
@@ -29,20 +27,23 @@ from .models import ETLInputData, TaskData
 from .pipeline import transform_data
 
 log = get_logger()
-metrics = DatadogMetrics()
-metrics.set_default_tags(function="ETLProcess")
+metrics = DatadogMetrics(flush_to_log=True)
+metrics.set_default_tags(function="ETLProcess")  # type: ignore
 
 
-def get_txc_xml(s3_bucket_name: str, s3_file_key: str) -> _Element:
-    """
-    Get the TXC XML Data from S3
-    """
-    s3_client = S3(s3_bucket_name)
-    file_data = s3_client.download_fileobj(s3_file_key)
-    log.info("Downloaded S3 data", bucket=s3_bucket_name, key=s3_file_key)
-    xml = load_xml_data(file_data)
-    log.info("Parsed XML data")
-    return xml
+PARSER_CONFIG = TXCParserConfig(
+    metadata=True,
+    services=True,
+    operators=True,
+    file_hash=True,
+    serviced_organisations=True,
+    stop_points=True,
+    route_sections=True,
+    routes=True,
+    journey_pattern_sections=True,
+    vehicle_journeys=True,
+    track_data=True,
+)
 
 
 def get_task_data(input_data: ETLInputData, db: SqlDB) -> TaskData:
@@ -78,17 +79,6 @@ def get_task_data(input_data: ETLInputData, db: SqlDB) -> TaskData:
     )
 
 
-def extract_txc_data(s3_bucket: str, s3_key: str) -> TXCData:
-    """
-    Parse and return Pydantic model of TXC Data to process
-    """
-    xml = get_txc_xml(s3_bucket, s3_key)
-
-    txc_data = parse_txc_from_element(xml)
-    log.info("Parsed TXC XML into Pydantic Models")
-    return txc_data
-
-
 @metrics.log_metrics
 @file_processing_result_to_db(step_name=StepName.ETL_PROCESS)
 def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, Any]:
@@ -99,9 +89,14 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, 
     input_data = ETLInputData(**event)
     db = SqlDB()
     stop_point_client = NaptanStopPointDynamoDBClient()
-    txc_data = extract_txc_data(input_data.s3_bucket_name, input_data.s3_file_key)
-
+    txc_data = download_and_parse_txc(
+        input_data.s3_bucket_name, input_data.s3_file_key, PARSER_CONFIG
+    )
     task_data = get_task_data(input_data, db)
     stats = transform_data(txc_data, task_data, db, stop_point_client)
     create_datadog_metrics(metrics, stats)
-    return {"status_code": 200, "message": "ETL Completed", "stats": stats.model_dump()}
+    return {
+        "status_code": 200,
+        "message": "ETL Completed",
+        "stats": stats.model_dump(),
+    }

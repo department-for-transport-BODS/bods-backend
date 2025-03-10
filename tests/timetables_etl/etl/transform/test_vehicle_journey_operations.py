@@ -32,7 +32,10 @@ from timetables_etl.etl.app.transform.vehicle_journey_operations import (
         ),
         pytest.param(
             TXCBankHolidayDays(ChristmasDay=True, BoxingDay=True),
-            {"ChristmasDay": [date(2024, 12, 25)], "BoxingDay": [date(2024, 12, 26)]},
+            {
+                "ChristmasDay": [date(2024, 12, 25), date(2024, 12, 25)],
+                "BoxingDay": [date(2024, 12, 26)],
+            },
             [date(2024, 12, 25), date(2024, 12, 26)],
             id="Multiple holidays enabled",
         ),
@@ -64,8 +67,8 @@ from timetables_etl.etl.app.transform.vehicle_journey_operations import (
             TXCBankHolidayDays(ChristmasDay=True, BoxingDay=False, NewYearsDay=True),
             {
                 "ChristmasDay": [date(2024, 12, 25)],
-                "BoxingDay": [date(2024, 12, 26)],
-                "NewYearsDay": [date(2025, 1, 1)],
+                "BoxingDay": [date(2024, 12, 26), date(2024, 12, 26)],
+                "NewYearsDay": [date(2025, 1, 1), date(2025, 1, 1)],
             },
             [date(2024, 12, 25), date(2025, 1, 1)],
             id="Mix of enabled and disabled holidays",

@@ -10,7 +10,7 @@ from common_layer.database.models.model_transmodel import TransmodelTracks
 from common_layer.xml.txc.models import TXCTrack
 from common_layer.xml.txc.models.txc_route import TXCRouteSection
 from geoalchemy2 import WKBElement
-from geoalchemy2.shape import from_shape
+from geoalchemy2.shape import from_shape  # type: ignore
 from shapely import LineString, Point
 from structlog.stdlib import get_logger
 
@@ -90,10 +90,15 @@ def process_track_geometry(track: TXCTrack) -> TrackGeometry | None:
     Returns None if track has no valid mapping data.
     """
     if not track or not track.Mapping or not track.Mapping.Location:
+        log.warning("Track or Track.Mapping or track.Mapping.Location Missing")
         return None
 
     # Need at least 2 points to make a line
     if len(track.Mapping.Location) < 2:
+        log.warning(
+            "At least two points are required to make a LineString",
+            point_count=track.Mapping.Location,
+        )
         return None
 
     try:
@@ -117,25 +122,53 @@ def process_track_geometry(track: TXCTrack) -> TrackGeometry | None:
         return None
 
 
+def create_track_mapping(
+    route_sections: list[TXCRouteSection],
+) -> dict[tuple[str, str], tuple[TXCTrack, int | None]]:
+    """
+    Create a mapping from (from_code, to_code) pairs to their corresponding
+    Track and Distance information.
+    """
+    all_route_links = [
+        route_link for section in route_sections for route_link in section.RouteLink
+    ]
+
+    total_links = len(all_route_links)
+    links_with_track = sum(1 for route_link in all_route_links if route_link.Track)
+    links_without_track = total_links - links_with_track
+
+    track_mapping: dict[tuple[str, str], tuple[TXCTrack, int | None]] = {}
+    for route_link in all_route_links:
+        if route_link.Track:
+            track_mapping[(route_link.From, route_link.To)] = (
+                route_link.Track,
+                route_link.Distance,
+            )
+
+    log.info(
+        "Created track mapping",
+        total_route_links=total_links,
+        links_with_track=links_with_track,
+        links_without_track=links_without_track,
+        total_mappings=len(track_mapping),
+        duplicate_pairs_with_track=links_with_track - len(track_mapping),
+    )
+
+    return track_mapping
+
+
 def create_new_tracks(
     pairs: list[tuple[str, str]], route_sections: list[TXCRouteSection]
 ) -> list[TransmodelTracks]:
     """
     Create new TransmodelTrack objects with geometry and distance where available.
     """
-    track_mapping: dict[tuple[str, str], tuple[TXCTrack, int | None]] = {}
-    for section in route_sections:
-        for route_link in section.RouteLink:
-            if route_link.Track:
-                track_mapping[(route_link.From, route_link.To)] = (
-                    route_link.Track,
-                    route_link.Distance,
-                )
+    log.debug("Creating New Tracks for Tracks not in DB", new_atco_pairs=pairs)
+    track_mapping = create_track_mapping(route_sections)
 
     new_tracks: list[TransmodelTracks] = []
     for from_code, to_code in pairs:
         mapping = track_mapping.get((from_code, to_code))
-
         if mapping:
             txc_track, provided_distance = mapping
             track_geom = process_track_geometry(txc_track)
@@ -156,7 +189,13 @@ def create_new_tracks(
                         distance=distance,
                     )
                 )
-
+        else:
+            log.warning(
+                "Track Pair was not Found in Route Link Mapping",
+                from_atco=from_code,
+                to_atco=to_code,
+                track_mapping_keys=track_mapping.keys(),
+            )
     log.info(
         "Created new tracks",
         total_tracks=len(new_tracks),
