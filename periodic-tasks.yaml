@@ -169,6 +169,9 @@ Resources:
           UpdateIDsDynamodbNaptanCache:
             Type: Task
             Resource: !GetAtt UpdateIDsDynamodbNaptanCacheLambda.Arn
+            Catch:
+              - ErrorEquals: ['States.TaskFailed']
+                Next: FailureState
             End: true
           FailureState:
             Type: Fail
