@@ -137,11 +137,7 @@ Resources:
     Type: AWS::Serverless::StateMachine
     Properties:
       Name: !Sub '${ProjectName}-${Environment}-${SubFunction}-naptan-cache-sm'
-      Policies:
-        - LambdaInvokePolicy:
-            FunctionName: !Ref PopulateDynamodbNaptanCacheLambda
-        - LambdaInvokePolicy:
-            FunctionName: !Ref UpdateIDsDynamodbNaptanCacheLambda
+      Role: !GetAtt NaptanCacheStateMachineRole.Arn
       Events:
         DailySchedule:
           Type: Schedule
@@ -445,6 +441,41 @@ Resources:
                   - !GetAtt GenerateSiriVmLambda.Arn
                   - !GetAtt GenerateSiriVmTflLambda.Arn
 
+NaptanCacheStateMachineRole:
+  Type: AWS::IAM::Role
+  Properties:
+    RoleName: !Sub '${ProjectName}-${Environment}-${SubFunction}-naptan-cache-sm-role'
+    AssumeRolePolicyDocument:
+      Version: '2012-10-17'
+      Statement:
+        - Effect: Allow
+          Principal:
+            Service: states.amazonaws.com
+          Action: sts:AssumeRole
+    ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+    Policies:
+      - PolicyName: StateMachineLambdaInvokePolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action: lambda:InvokeFunction
+              Resource:
+                - !GetAtt PopulateDynamodbNaptanCacheLambda.Arn
+                - !GetAtt UpdateIDsDynamodbNaptanCacheLambda.Arn
+      - PolicyName: CloudWatchLogsPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource:
+                - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-naptan-cache-sm:*'
+                - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-naptan-cache-sm'
+
   NaptanCacheLambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -563,6 +594,15 @@ Resources:
         - IsNotLocal
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
         - !Ref AWS::NoValue
+      RetentionInDays: 30
+
+  NaptanCacheStateMachineLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-naptan-cache-sm'
+      KmsKeyId: !If
+        - IsNotLocal
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
       RetentionInDays: 30
 
   PopulateDynamodbNaptanCacheLogGroup:
