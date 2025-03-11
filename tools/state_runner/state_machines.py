@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 
 import structlog
 from botocore.exceptions import BotoCoreError, ClientError
+from mypy_boto3_stepfunctions import SFNClient
 from structlog.stdlib import get_logger
 
 from .models import (
@@ -26,7 +27,7 @@ structlog.configure(
     ]
 )
 
-logger = get_logger()
+log = get_logger()
 
 
 class StateMachineExecutionError(Exception):
@@ -45,7 +46,7 @@ def clean_name(name: str) -> str:
     """
     cleaned = re.sub(r"[^a-zA-Z0-9\-_]", "", name)
     if cleaned != name:
-        logger.warning(f"Name contained invalid characters: '{name}' -> '{cleaned}'")
+        log.warning(f"Name contained invalid characters: '{name}' -> '{cleaned}'")
     return cleaned
 
 
@@ -61,7 +62,7 @@ def create_event_payload(  # pylint: disable=too-many-arguments, too-many-positi
     """
     Creates event payload for state machine execution.
     """
-    logger.info(
+    log.info(
         "Creating event payload",
         data_source=data_source,
         key=object_key,
@@ -88,33 +89,33 @@ def create_event_payload(  # pylint: disable=too-many-arguments, too-many-positi
     )
 
 
-def get_state_machine_arn(client, state_machine_name) -> str:
+def get_state_machine_arn(client: SFNClient, state_machine_name: str) -> str:
     """
     Retrieve the ARN of a state machine by its name
     """
     try:
-        logger.info(
+        log.info(
             "Getting statemachine ARN from statemachine name", name=state_machine_name
         )
         client_response = client.list_state_machines()
         for state_machine in client_response["stateMachines"]:
             if state_machine["name"] == state_machine_name:
-                logger.info("Found state machine", details=state_machine)
+                log.info("Found state machine", details=state_machine)
                 return state_machine["stateMachineArn"]
         message = f"Could not find the matching state machine '{state_machine_name}'"
-        logger.error(message)
+        log.error(message)
         raise StateMachinesListError(message)
     except ClientError as e:
         message = f"Failed to list state machines in region '{client.meta.region_name}'"
-        logger.error(message, exc_info=True)
+        log.error(message, exc_info=True)
         raise StateMachinesListError(message) from e
     except BotoCoreError as e:
         message = "A BotoCoreError occurred while listing state machines"
-        logger.error(message, exc_info=True)
+        log.error(message, exc_info=True)
         raise StateMachinesListError(message) from e
     except Exception as e:
         message = "An unexpected error occurred"
-        logger.error(message, exc_info=True)
+        log.error(message, exc_info=True)
         raise StateMachinesListError(message) from e
 
 
@@ -135,12 +136,12 @@ def generate_step_name(event: StateMachineS3Payload | StateMachineURLPayload) ->
         f"{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}-{ext}-{revision_id}-{key_name}"
     )
     step_name = clean_name(step_name)[:80]
-    logger.info("Generate step name", step_name=step_name)
+    log.info("Generate step name", step_name=step_name)
     return step_name
 
 
 def start_execution(
-    client,
+    client: SFNClient,
     state_machine_arn: str,
     event: StateMachineS3Payload | StateMachineURLPayload,
 ) -> str:
@@ -148,17 +149,13 @@ def start_execution(
     Execute statemachine with payload
     """
     try:
-        logger.info(
-            "Starting statemachine execution", state_machine_arn=state_machine_arn
-        )
+        log.info("Starting statemachine execution", state_machine_arn=state_machine_arn)
         client_response = client.start_execution(
             stateMachineArn=state_machine_arn,
             name=generate_step_name(event),
             input=json.dumps(event.model_dump()),
         )
-        logger.info(
-            "Statemachine execution started successfully!", arn=state_machine_arn
-        )
+        log.info("Statemachine execution started successfully!", arn=state_machine_arn)
         region = client.meta.region_name
         exec_arn = client_response["executionArn"]
         return (
@@ -169,13 +166,13 @@ def start_execution(
         message = (
             "Failed to start state machine execution for ARN '{state_machine_arn}'"
         )
-        logger.error(message, exc_info=True)
+        log.error(message, exc_info=True)
         raise StateMachineExecutionError(message) from e
     except BotoCoreError as e:
         message = "A BotoCoreError occurred while starting the state machine execution"
-        logger.error(message, exc_info=True)
+        log.error(message, exc_info=True)
         raise StateMachineExecutionError(message) from e
     except Exception as e:
         message = "An unexpected error occurred"
-        logger.error(message, exc_info=True)
+        log.error(message, exc_info=True)
         raise StateMachineExecutionError(message) from e
