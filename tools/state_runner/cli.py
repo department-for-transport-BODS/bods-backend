@@ -1,21 +1,18 @@
 """
-Tool allows to start an AWS Step Functions state machine execution with specified parameters. 
-It supports uploading a file to S3 before starting the state machine and provides logging for 
+Starts an Timetables AWS Step Functions state machine execution with specified parameters.
+It supports uploading a file to S3 before starting the state machine and provides logging for
 the execution process.
 """
 
 from typing import Optional
 
 import typer
+from structlog.stdlib import get_logger
 
 from .s3_uploads import create_aws_session, upload_to_s3
-from .state_machines import (
-    create_event_payload,
-    get_state_machine_arn,
-    logger,
-    start_execution,
-)
+from .state_machines import create_event_payload, get_state_machine_arn, start_execution
 
+log = get_logger()
 app = typer.Typer()
 
 
@@ -38,11 +35,6 @@ def start_state_machine(  # pylint: disable=too-many-arguments, too-many-positio
         None,
         "--upload-file",
         help="Source file to be uploaded to the s3 key given in object-key",
-    ),
-    data_source: str = typer.Option(
-        "URL_DOWNLOAD",
-        "--data-source",
-        help="Data source from s3 or download from url. One of S3_FILE or URL_DOWNLOAD",
     ),
     revision_id: str = typer.Option(
         "3989", "--revision-id", help="Dataset revision ID"
@@ -74,21 +66,24 @@ def start_state_machine(  # pylint: disable=too-many-arguments, too-many-positio
     3. Now run this tool passing the parameters to start_state_machine
     """
     try:
-        logger.info(
+        log.info(
             "Starting state machine execution", state_machine_name=state_machine_name
         )
 
         if object_key and url:
             raise ValueError("Object key and url cannot be set at the same time")
-
+        if url:
+            data_source = "URL_DOWNLOAD"
+        else:
+            data_source = "S3_FILE"
         # Create AWS session
         session = create_aws_session(profile, region)
 
         # Upload file to s3
         if upload_file:
-            client = session.client("s3")
+            s3_client = session.client("s3")  # type: ignore
             upload_to_s3(
-                s3_client=client,
+                s3_client=s3_client,
                 file_name=upload_file,
                 bucket_name=bucket_name,
                 object_name=object_key,
@@ -106,23 +101,23 @@ def start_state_machine(  # pylint: disable=too-many-arguments, too-many-positio
         )
 
         # Get statemachine ARN
-        client = session.client("stepfunctions")
-        state_machine_arn = get_state_machine_arn(client, state_machine_name)
+        sfn_client = session.client("stepfunctions")  # type: ignore
+        state_machine_arn = get_state_machine_arn(sfn_client, state_machine_name)
 
         # Start execution
         if state_machine_arn:
             console_link = start_execution(
-                client=client, state_machine_arn=state_machine_arn, event=event
+                client=sfn_client, state_machine_arn=state_machine_arn, event=event
             )
-            logger.info(
+            log.info(
                 "AWS console link for running statemachine", console_link=console_link
             )
-        logger.info(
+        log.info(
             "State machine execution started successfully!",
             state_machine_name=state_machine_name,
         )
     except Exception as e:
-        logger.error("An unexpected error occurred", error=str(e))
+        log.error("An unexpected error occurred", error=str(e))
         raise typer.Exit(1)
 
 
