@@ -154,13 +154,14 @@ def get_bank_holiday_non_operating_dates(
     Get list of dates for enabled bank holidays
     """
     unique_dates: set[date] = set()
-    for holiday_name, is_active in holiday_days:
+    for holiday_name in holiday_days.model_fields.keys():
+        is_active: bool = getattr(holiday_days, holiday_name)
         if is_active and holiday_name in bank_holidays:
             dates_list = bank_holidays[holiday_name]
             for holiday_date in dates_list:
                 day_of_week = holiday_date.strftime("%A")
                 if getattr(days_of_operation, day_of_week, False):
-                    unique_dates.update(bank_holidays[holiday_name])
+                    unique_dates.update([holiday_date])
 
     return sorted(unique_dates)
 
@@ -174,12 +175,14 @@ def get_bank_holiday_operating_dates(
     Get list of dates for enabled bank holidays
     """
     unique_dates: set[date] = set()
-    for holiday_name, is_active in holiday_days:
+    for holiday_name in holiday_days.model_fields.keys():
+        is_active: bool = getattr(holiday_days, holiday_name)
         if is_active and holiday_name in bank_holidays:
-            date_obj = bank_holidays[holiday_name]
-            day_of_week = date_obj[0].strftime("%A")
-            if not getattr(days_of_operation, day_of_week, False):
-                unique_dates.update(bank_holidays[holiday_name])
+            dates_list = bank_holidays[holiday_name]
+            for holiday_date in dates_list:
+                day_of_week = holiday_date.strftime("%A")
+                if not getattr(days_of_operation, day_of_week, False):
+                    unique_dates.update([holiday_date])
 
     return sorted(unique_dates)
 
