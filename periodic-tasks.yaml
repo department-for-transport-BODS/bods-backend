@@ -603,6 +603,7 @@ Resources:
       KmsKeyId: !If
         - IsNotLocal
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Ref AWS::NoValue
       RetentionInDays: 30
 
   PopulateDynamodbNaptanCacheLogGroup:
