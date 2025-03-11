@@ -274,7 +274,7 @@
       "Output": "{% $states.result.Payload %}",
       "Arguments": {},
       "Assign": {
-        "JsonArray": "{% $states.result.body.outputObject %}"
+        "EtlFileListJson": "{% $states.result.body.outputObject %}"
       },
       "Catch": [
         {
@@ -308,7 +308,7 @@
         },
         "Arguments": {
           "Bucket": "{% $s3Bucket %}",
-          "Key": "{% $JsonArray %}"
+          "Key": "{% $EtlFileListJson %}"
         }
       },
       "ItemProcessor": {
