@@ -211,7 +211,7 @@ class SqlDB:
             if not self._settings.postgres.AWS_REGION:
                 raise ValueError("AWS_REGION is required for IAM authentication")
 
-            rds_client = boto3.session.Session().client( # type: ignore
+            rds_client = boto3.session.Session().client(  # type: ignore
                 "rds", region_name=self._settings.postgres.AWS_REGION
             )
             host = self._settings.postgres.POSTGRES_HOST
