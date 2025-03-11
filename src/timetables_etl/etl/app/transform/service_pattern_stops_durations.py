@@ -89,7 +89,6 @@ def determine_wait_time(
     Returns:
         The WaitTime to use (string format like 'PT20M') or None if no wait time should be applied
     """
-    # Extract wait times from JourneyPatternTimingLink
     from_wait = current_link.From.WaitTime if current_link.From else None
     to_wait = current_link.To.WaitTime if current_link.To else None
     next_from_wait = next_link.From.WaitTime if next_link and next_link.From else None
@@ -114,7 +113,6 @@ def determine_vehicle_journey_wait_time(
     if not matching_link:
         return None
 
-    # Extract wait times from VehicleJourneyTimingLink
     from_wait = matching_link.From.WaitTime if matching_link.From else None
     to_wait = matching_link.To.WaitTime if matching_link.To else None
     next_from_wait = next_link.From.WaitTime if next_link and next_link.From else None
