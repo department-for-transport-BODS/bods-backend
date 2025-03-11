@@ -22,7 +22,10 @@ def load_transmodel_service(
     """
 
     transmodel_service = make_transmodel_service(
-        service, task_data.revision, task_data.file_attributes
+        service,
+        task_data.revision,
+        task_data.file_attributes,
+        task_data.input_data.superseded_timetable,
     )
     repo = TransmodelServiceRepo(db)
     result = repo.insert(transmodel_service)
