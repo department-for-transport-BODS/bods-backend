@@ -34,7 +34,6 @@ class ProjectEnvironment(str, Enum):
     TEST = "test"
     UAT = "uat"
     PRODUCTION = "prod"
-    STANDALONE = "standalone"
 
 
 class PostgresSettings(BaseSettings):

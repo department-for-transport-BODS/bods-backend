@@ -145,10 +145,11 @@ Resources:
         SchemaCheckLambdaArn: !GetAtt SchemaCheckLambda.Arn
         PostSchemaCheckLambdaArn: !GetAtt PostSchemaCheckLambda.Arn
         FileAttributesEtlLambdaArn: !GetAtt FileAttributesEtlLambda.Arn
+        CollateFilesLambdaArn: !GetAtt CollateFilesLambda.Arn
         PtiValidationLambdaArn: !GetAtt PtiValidationLambda.Arn
-        ExceptionHandlerLambdaArn: !GetAtt ExceptionHandlerLambda.Arn
         EtlProcessLambdaArn: !GetAtt EtlProcessLambda.Arn
         GenerateOutputZipLambdaArn: !GetAtt GenerateOutputZipLambda.Arn
+        ExceptionHandlerLambdaArn: !GetAtt ExceptionHandlerLambda.Arn
         DefaultS3BucketName: !Sub 'bodds-${Environment}'
         DqsStateMachineArn: !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:dqs-${Environment}-sm'
 
@@ -267,6 +268,22 @@ Resources:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
         LogGroup: !Ref FileAttributesEtlLambdaLogGroup
+
+  CollateFilesLambda:
+    Type: AWS::Serverless::Function
+    ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-collate-files-lambda'
+      Description: Timetables ETL - Collates a list of files and designates as new/deprecated for post processing
+      Role: !GetAtt CommonLambdaExecutionRole.Arn
+      CodeUri: ./src/timetables_etl/pti
+      Handler: app.collate_files.lambda_handler
+      MemorySize: 1024
+      Timeout: 900
+      Layers:
+        - !Ref BoilerplateLambdaLayerArn
+      LoggingConfig:
+        LogGroup: !Ref CollateFilesLambdaLogGroup
 
   PtiValidationLambda:
     Type: AWS::Serverless::Function
@@ -653,6 +670,16 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-file-attributes-etl-lambda'
+      KmsKeyId: !If
+        - IsNotLocal
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Ref AWS::NoValue
+      RetentionInDays: 30
+
+  CollateFilesLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-collate-files-lambda'
       KmsKeyId: !If
         - IsNotLocal
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
