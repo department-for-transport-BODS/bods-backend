@@ -137,7 +137,7 @@ def lambda_handler(event: Dict[str, Any], context: LambdaContext) -> Dict[str, A
         table_name=input_data.dynamo_table,
         region=input_data.aws_region,
         partition_key="AtcoCode",
-        max_concurrent_batches=100,
+        max_concurrent_batches=250,
     )
     db = SqlDB()
     naptan_repo = NaptanStopPointRepo(db)
