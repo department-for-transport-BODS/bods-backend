@@ -504,6 +504,7 @@ Resources:
                   - !GetAtt SchemaCheckLambda.Arn
                   - !GetAtt PostSchemaCheckLambda.Arn
                   - !GetAtt FileAttributesEtlLambda.Arn
+                  - !GetAtt CollateFilesLambda.Arn
                   - !GetAtt PtiValidationLambda.Arn
                   - !GetAtt EtlProcessLambda.Arn
                   - !GetAtt ExceptionHandlerLambda.Arn
