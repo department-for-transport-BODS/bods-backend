@@ -19,7 +19,7 @@ from common_layer.aws.step import (
 
 def create_map_input(
     bucket: str | None = None, key: str | None = None, revision_id: int | None = None
-) -> "MapInputData":
+) -> MapInputData:
     """Create a MapInputData object for testing"""
     return MapInputData(
         Bucket=bucket,
@@ -34,7 +34,7 @@ def create_map_execution_succeeded(
     bucket: str | None = None,
     key: str | None = None,
     revision_id: int | None = None,
-) -> "MapExecutionSucceeded":
+) -> MapExecutionSucceeded:
     """Create a MapExecutionSucceeded object for testing"""
 
     input_data = create_map_input(bucket, key, revision_id)
@@ -51,7 +51,7 @@ def create_map_execution_succeeded(
     # Create a map execution with parsed input
     execution = MapExecutionSucceeded(
         ExecutionArn=execution_arn,
-        Input=input_json,  # Use the valid JSON here
+        Input=input_json,
         InputDetails={},
         Name="test-execution",
         OutputDetails={},
@@ -72,7 +72,7 @@ def create_map_execution_succeeded(
 def create_map_results(
     successful_executions: list[MapExecutionSucceeded] | None = None,
     failed_executions: list[MapExecutionFailed] | None = None,
-) -> "MapResults":
+) -> MapResults:
     """Create a MapResults object for testing"""
     return MapResults(
         succeeded=successful_executions or [], failed=failed_executions or []
@@ -81,7 +81,7 @@ def create_map_results(
 
 def create_s3_file_reference(
     bucket: str, object_key: str, superceded: bool, etl_id: int
-) -> "S3FileReference":
+) -> S3FileReference:
     """Create an S3FileReference object for testing"""
     return S3FileReference(
         bucket=bucket,

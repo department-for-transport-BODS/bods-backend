@@ -166,7 +166,7 @@ def create_etl_map_inputs(
     s3_references: list[S3FileReference] = []
 
     for file in all_files:
-        # Determine if this file was filtered out (superceded)
+        # Determine if this file was filtered out (superseded)
         is_superceded = file.id not in filtered_file_ids
 
         map_result = filename_map.get(file.filename)

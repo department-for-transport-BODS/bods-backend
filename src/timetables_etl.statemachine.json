@@ -206,7 +206,7 @@
           },
           "FileAttributesEtl": {
             "Type": "Task",
-            "Next": "Success",
+            "Next": "Validation Success",
             "Resource": "${FileAttributesEtlLambdaArn}",
             "Arguments": {
               "Bucket": "{% $Bucket %}",
@@ -229,14 +229,14 @@
               }
             ]
           },
-          "Success": {
+          "Validation Success": {
             "Type": "Succeed"
           },
           "FileExceptionHandler": {
             "Type": "Pass",
-            "Next": "Fail"
+            "Next": "Validation Failed"
           },
-          "Fail": {
+          "Validation Failed": {
             "Type": "Fail",
             "Comment": "Processing Single File in ETL Failed"
           }
@@ -345,7 +345,7 @@
 
           "EtlProcess": {
             "Type": "Task",
-            "Next": "Success",
+            "Next": "PTI and ETL Success",
             "Resource": "${EtlProcessLambdaArn}",
             "Arguments": {
               "Bucket": "{% $Bucket %}",
@@ -368,14 +368,14 @@
               }
             ]
           },
-          "Success": {
+          "PTI and ETL Success": {
             "Type": "Succeed"
           },
           "PostExceptionHandler": {
             "Type": "Pass",
-            "Next": "Fail"
+            "Next": "PTI and ETL Failed"
           },
-          "Fail": {
+          "PTI and ETL Failed": {
             "Type": "Fail"
           }
         }
