@@ -18,9 +18,10 @@ class CollateFilesInputData(BaseModel):
     revision_id: int = Field(alias="DatasetRevisionId")
 
 
-class S3FileReference(BaseModel):
+class ETLMapInputData(BaseModel):
     """
-    Reference to a file in S3 with metadata
+    A PTI / ETL Map input data set
+    A list of these are generated as a JSON for the input step
     """
 
     model_config = ConfigDict(populate_by_name=True)

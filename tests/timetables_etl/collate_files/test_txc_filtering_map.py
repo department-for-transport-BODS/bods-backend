@@ -6,7 +6,7 @@ import json
 from datetime import datetime
 
 import pytest
-from collate_files.app.collate_files import S3FileReference
+from collate_files.app.collate_files import ETLMapInputData
 from collate_files.app.txc_filtering import build_filename_map
 from common_layer.aws.step import (
     MapExecutionFailed,
@@ -81,9 +81,9 @@ def create_map_results(
 
 def create_s3_file_reference(
     bucket: str, object_key: str, superceded: bool, etl_id: int
-) -> S3FileReference:
+) -> ETLMapInputData:
     """Create an S3FileReference object for testing"""
-    return S3FileReference(
+    return ETLMapInputData(
         bucket=bucket,
         object=object_key,
         superceded_file=superceded,

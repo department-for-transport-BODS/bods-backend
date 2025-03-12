@@ -1,8 +1,8 @@
 {
-  "StartAt": "ProcessInput",
+  "StartAt": "Process Input",
   "QueryLanguage": "JSONata",
   "States": {
-    "ProcessInput": {
+    "Process Input": {
       "Type": "Pass",
       "Next": "Initialize Pipeline",
       "Assign": {
@@ -33,7 +33,7 @@
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
-          "Next": "ParentExceptionHandler",
+          "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"
           }
@@ -72,7 +72,7 @@
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
-          "Next": "ParentExceptionHandler",
+          "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"
           }
@@ -96,7 +96,7 @@
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
-          "Next": "ParentExceptionHandler",
+          "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"
           }
@@ -105,7 +105,7 @@
     },
     "Validation and File Attributes": {
       "Type": "Map",
-      "Next": "CollateFiles",
+      "Next": "Collate Files",
       "MaxConcurrency": 1000,
       "ToleratedFailurePercentage": 100,
       "ItemSelector": {
@@ -153,7 +153,7 @@
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
-                "Next": "FileExceptionHandler",
+                "Next": "Validation Exception Handler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
                 }
@@ -175,7 +175,7 @@
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
-                "Next": "FileExceptionHandler",
+                "Next": "Validation Exception Handler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
                 }
@@ -197,7 +197,7 @@
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
-                "Next": "FileExceptionHandler",
+                "Next": "Validation Exception Handler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
                 }
@@ -222,7 +222,7 @@
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
-                "Next": "FileExceptionHandler",
+                "Next": "Validation Exception Handler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
                 }
@@ -232,7 +232,7 @@
           "Validation Success": {
             "Type": "Succeed"
           },
-          "FileExceptionHandler": {
+          "Validation Exception Handler": {
             "Type": "Pass",
             "Next": "Validation Failed"
           },
@@ -253,7 +253,7 @@
         }
       }
     },
-    "CollateFiles": {
+    "Collate Files": {
       "Type": "Task",
       "Next": "PTI and ETL",
       "Resource": "${CollateFilesLambdaArn}",
@@ -270,7 +270,7 @@
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
-          "Next": "ParentExceptionHandler",
+          "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"
           }
@@ -305,11 +305,11 @@
           "Mode": "DISTRIBUTED",
           "ExecutionType": "STANDARD"
         },
-        "StartAt": "ProcessMapInput",
+        "StartAt": "Process ETL Map Input",
         "States": {
-          "ProcessMapInput": {
+          "Process ETL Map Input": {
             "Type": "Pass",
-            "Next": "PtiValidation",
+            "Next": "PTI Validation",
             "Assign": {
               "Bucket": "{% $states.input.mapS3Bucket %}",
               "ObjectKey": "{% $states.input.mapS3Object %}",
@@ -319,7 +319,7 @@
               "FileAttributesEtl": "{% $states.input.mapDatasetFileAttributesEtl %}"
             }
           },
-          "PtiValidation": {
+          "PTI Validation": {
             "Type": "Task",
             "Next": "Timetables ETL",
             "Resource": "${PtiValidationLambdaArn}",
@@ -335,7 +335,7 @@
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
-                "Next": "PostExceptionHandler",
+                "Next": "ETL Exception Handler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
                 }
@@ -361,7 +361,7 @@
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
-                "Next": "PostExceptionHandler",
+                "Next": "ETL Exception Handler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
                 }
@@ -371,7 +371,7 @@
           "PTI and ETL Success": {
             "Type": "Succeed"
           },
-          "PostExceptionHandler": {
+          "ETL Exception Handler": {
             "Type": "Pass",
             "Next": "PTI and ETL Failed"
           },
@@ -406,7 +406,7 @@
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
-          "Next": "ParentExceptionHandler",
+          "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"
           }
@@ -424,7 +424,7 @@
         }
       }
     },
-    "ParentExceptionHandler": {
+    "Parent Exception Handler": {
       "Type": "Task",
       "Next": "ParentFail",
       "Resource": "${ExceptionHandlerLambdaArn}",

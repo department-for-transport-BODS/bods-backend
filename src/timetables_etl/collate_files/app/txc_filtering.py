@@ -21,7 +21,7 @@ from datetime import date
 from common_layer.aws.step import MapExecutionSucceeded, MapResults
 from common_layer.database.models import OrganisationTXCFileAttributes
 
-from .models import S3FileReference
+from .models import ETLMapInputData
 
 
 def group_files_by_service_code(
@@ -156,14 +156,14 @@ def create_etl_map_inputs(
     filtered_files: list[OrganisationTXCFileAttributes],
     filename_map: dict[str, MapExecutionSucceeded],
     revision_id: int,
-) -> list[S3FileReference]:
+) -> list[ETLMapInputData]:
     """
     Create S3FileReference objects for files,
     marking those not in filtered_files as superceded
     """
     filtered_file_ids = {file.id for file in filtered_files}
 
-    s3_references: list[S3FileReference] = []
+    s3_references: list[ETLMapInputData] = []
 
     for file in all_files:
         # Determine if this file was filtered out (superseded)
@@ -174,7 +174,7 @@ def create_etl_map_inputs(
         if map_result and map_result.parsed_input:
             # Only create reference if we have valid bucket and key
             if map_result.parsed_input.Bucket and map_result.parsed_input.Key:
-                s3_reference = S3FileReference(
+                s3_reference = ETLMapInputData(
                     bucket=map_result.parsed_input.Bucket,
                     object=map_result.parsed_input.Key,
                     superceded_file=is_superceded,
@@ -191,7 +191,7 @@ def create_etl_inputs_from_map_results(
     filtered_files: list[OrganisationTXCFileAttributes],
     map_results: MapResults,
     revision_id: int,
-) -> list[S3FileReference]:
+) -> list[ETLMapInputData]:
     """
     For each successful file build a list of Map inputs checking whether to supercede
     """

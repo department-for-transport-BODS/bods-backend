@@ -7,7 +7,6 @@ from io import BytesIO
 from typing import Any, Counter
 
 from aws_lambda_powertools.utilities.typing import LambdaContext
-from collate_files.app.models import S3FileReference
 from common_layer.aws.step import get_map_processing_results, get_map_run_base_path
 from common_layer.database import SqlDB
 from common_layer.database.models import OrganisationTXCFileAttributes
@@ -18,7 +17,7 @@ from common_layer.s3 import S3
 from pydantic import RootModel
 from structlog.stdlib import get_logger
 
-from .models import CollateFilesInputData
+from .models import CollateFilesInputData, ETLMapInputData
 from .txc_filtering import (
     create_etl_inputs_from_map_results,
     filter_txc_files_by_service_code,
@@ -46,7 +45,7 @@ def get_file_attributes(
 
 
 def count_and_log_file_status(
-    map_inputs: list[S3FileReference],
+    map_inputs: list[ETLMapInputData],
 ) -> tuple[int, int]:
     """
     Count superceded and active files in map inputs and log the results.
@@ -66,13 +65,13 @@ def count_and_log_file_status(
 
 
 def upload_map_input_to_s3(
-    s3: S3, output_prefix: str, map_inputs: list[S3FileReference]
+    s3: S3, output_prefix: str, map_inputs: list[ETLMapInputData]
 ) -> str:
     """
     Upload the map input to S3
     """
     output_key = f"{output_prefix}collated_files.json"
-    root_model = RootModel[list[S3FileReference]](map_inputs)
+    root_model = RootModel[list[ETLMapInputData]](map_inputs)
     map_inputs_json = root_model.model_dump_json(indent=2)
     try:
         fileobj = BytesIO(map_inputs_json.encode("utf-8"))
@@ -96,7 +95,7 @@ def upload_map_input_to_s3(
 
 def collate_files(
     input_data: CollateFilesInputData, db: SqlDB, s3: S3
-) -> tuple[list[S3FileReference], str]:
+) -> tuple[list[ETLMapInputData], str]:
     """
     - Get the File Attributes for the Revision ID
     - Get the Map Processing Results from S3
@@ -126,7 +125,7 @@ def collate_files(
 
 
 def generate_response(
-    map_inputs: list[S3FileReference], s3_object_key: str
+    map_inputs: list[ETLMapInputData], s3_object_key: str
 ) -> dict[str, str | int | dict[str, int]]:
     """
     Generate Lambda Response with Stats
