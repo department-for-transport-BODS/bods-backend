@@ -16,7 +16,7 @@ from structlog.stdlib import get_logger
 tracer = Tracer()
 log = get_logger()
 
-BATCH_SIZE = 5000  # Adjust if necessary for performance tuning
+BATCH_SIZE = 20000  # Adjust if necessary for performance tuning
 
 
 async def process_batch(
