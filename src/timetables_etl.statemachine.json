@@ -257,7 +257,6 @@
       "Type": "Task",
       "Next": "PTI and ETL",
       "Resource": "${CollateFilesLambdaArn}",
-      "Output": "{% $states.result.Payload %}",
       "Arguments": {
         "MapRunArn": "{% $states.input.mapResults.MapRunArn %}",
         "MapRunPrefix": "tt-file-attributes-map-results",
@@ -430,7 +429,7 @@
       "Resource": "${ExceptionHandlerLambdaArn}",
       "Arguments": {
         "Error": "{% $states.input.errorInfo.Error %}",
-        "Cause": "{% $try($parse($states.input.errorInfo.Cause), $states.input.errorInfo.Cause) %}",
+        "Cause": "{% $parse($states.input.errorInfo.Cause) %}",
         "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}"
       }
     },
