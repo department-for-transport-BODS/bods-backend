@@ -4,12 +4,12 @@ Associations for a Service Pattern
 
 from typing import Sequence
 
-from common_layer.database.models.model_junction import (
+from common_layer.database.models import (
+    NaptanStopPoint,
+    TransmodelServicePattern,
     TransmodelServicePatternAdminAreas,
     TransmodelServicePatternLocality,
 )
-from common_layer.database.models.model_naptan import NaptanStopPoint
-from common_layer.database.models.model_transmodel import TransmodelServicePattern
 from structlog.stdlib import get_logger
 
 log = get_logger()

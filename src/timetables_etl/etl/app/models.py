@@ -2,7 +2,7 @@
 Pydantic Models
 """
 
-from typing import Self
+from typing import Annotated, Self
 
 from common_layer.database.models import (
     DatasetETLTaskResult,
@@ -19,10 +19,13 @@ class ETLInputData(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    task_id: int = Field(alias="DatasetEtlTaskResultId")
-    file_attributes_id: int = Field(alias="fileAttributesId")
-    s3_bucket_name: str = Field(alias="Bucket")
-    s3_file_key: str = Field(alias="ObjectKey")
+    task_id: Annotated[int, Field(alias="DatasetEtlTaskResultId")]
+    file_attributes_id: Annotated[int, Field(alias="fileAttributesId")]
+    s3_bucket_name: Annotated[str, Field(alias="Bucket")]
+    s3_file_key: Annotated[str, Field(alias="ObjectKey")]
+    superseded_timetable: Annotated[
+        bool, Field(alias="supersededTimetable", default=False)
+    ]
 
 
 class TaskData(BaseModel):

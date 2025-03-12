@@ -70,15 +70,22 @@ def transform_data(
     for service in txc.Services:
 
         tm_service = load_transmodel_service(service, task_data, db)
-        booking_arrangements = process_booking_arrangements(service, tm_service, db)
-        service_patterns, pattern_stats = load_transmodel_service_patterns(
-            service, txc, task_data, reference_data, db
-        )
-        link_service_to_service_patterns(tm_service, service_patterns, db)
         stats.services += 1
-        stats.booking_arrangements += len(booking_arrangements)
-        stats.service_patterns += len(service_patterns)
-        stats.pattern_stats += pattern_stats
-
+        if not task_data.input_data.superseded_timetable:
+            booking_arrangements = process_booking_arrangements(service, tm_service, db)
+            service_patterns, pattern_stats = load_transmodel_service_patterns(
+                service, txc, task_data, reference_data, db
+            )
+            link_service_to_service_patterns(tm_service, service_patterns, db)
+            stats.booking_arrangements += len(booking_arrangements)
+            stats.service_patterns += len(service_patterns)
+            stats.pattern_stats += pattern_stats
+        else:
+            log.info(
+                "Timetable is superceded. Only adding TransmodelService to DB",
+                tm_service_id=tm_service.id,
+                service_code=tm_service.service_code,
+                service_name=tm_service.name,
+            )
     log.info("ETL Process Completed", stats=stats)
     return stats
