@@ -2,6 +2,7 @@
 DynamoDB Cache Client
 """
 
+import time
 from typing import Any
 
 from common_layer.database.models.model_fares import (
@@ -11,6 +12,7 @@ from common_layer.database.models.model_fares import (
 from pydantic import BaseModel, Field
 from structlog.stdlib import get_logger
 
+from ..models import FaresViolation
 from .base import DynamoDB
 from .settings import DynamoBaseSettings, DynamoDBSettings
 
@@ -58,6 +60,12 @@ class DynamoDBFaresMetadata(DynamoDB):
             )
         )
 
+    def get_one_day_ttl(self):
+        """
+        Gets TTL definition for 1 day
+        """
+        return {"N": str(int(time.time()) + (60 * 60 * 24))}
+
     def put_metadata(self, task_id: int, fares_metadata: FaresDynamoDBMetadataInput):
         """
         Put metadata into dynamodb
@@ -67,7 +75,9 @@ class DynamoDBFaresMetadata(DynamoDB):
             ReturnValues="NONE",
             Item={
                 "PK": self._serializer.serialize(task_id),
-                "SK": self._serializer.serialize(fares_metadata.file_name),
+                "SK": self._serializer.serialize(
+                    f"METADATA#{fares_metadata.file_name}"
+                ),
                 "Metadata": self._serializer.serialize(
                     fares_metadata.metadata.as_dict()
                 ),
@@ -78,15 +88,35 @@ class DynamoDBFaresMetadata(DynamoDB):
                 "NetexSchemaVersion": self._serializer.serialize(
                     fares_metadata.netex_schema_version
                 ),
+                "ttl": self.get_one_day_ttl(),
             },
         )
 
-    def get_metadata(
+    def put_violations(
+        self, task_id: int, file_name: str, violations: list[FaresViolation]
+    ):
+        """
+        Put metadata into dynamodb
+        """
+        self._client.put_item(
+            TableName=self._settings.DYNAMODB_TABLE_NAME,
+            ReturnValues="NONE",
+            Item={
+                "PK": self._serializer.serialize(task_id),
+                "SK": self._serializer.serialize(f"VIOLATION#{file_name}"),
+                "Violations": self._serializer.serialize(
+                    [violation.__dict__ for violation in violations]
+                ),
+                "ttl": self.get_one_day_ttl(),
+            },
+        )
+
+    def get_all_data_for_task(
         self,
         task_id: int,
     ) -> list[dict[str, Any]]:
         """
-        Get metadata from dynamodb
+        Get data for given task id from dynamodb
         """
         query_params: dict[str, Any] = {
             "TableName": self._settings.DYNAMODB_TABLE_NAME,
@@ -96,14 +126,14 @@ class DynamoDBFaresMetadata(DynamoDB):
             },
         }
 
-        metadata_items: list[dict[str, Any]] = []
-        metadata_response = self._client.query(**query_params)
-        metadata_items.extend(metadata_response.get("Items", []))
+        items: list[dict[str, Any]] = []
+        response = self._client.query(**query_params)
+        items.extend(response.get("Items", []))
 
-        while "LastEvaluatedKey" in metadata_response:
-            query_params["ExclusiveStartKey"] = metadata_response["LastEvaluatedKey"]
-            metadata_response = self._client.query(**query_params)
+        while "LastEvaluatedKey" in response:
+            query_params["ExclusiveStartKey"] = response["LastEvaluatedKey"]
+            response = self._client.query(**query_params)
 
-            metadata_items.extend(metadata_response.get("Items", []))
+            items.extend(response.get("Items", []))
 
-        return metadata_items
+        return items

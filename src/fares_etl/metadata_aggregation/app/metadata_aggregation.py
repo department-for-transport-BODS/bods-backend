@@ -40,7 +40,13 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext):
 
     dynamodb_fares_metadata_repo = DynamoDBFaresMetadata()
 
-    dynamo_db_metadata = dynamodb_fares_metadata_repo.get_metadata(input_data.task_id)
+    dynamo_db_data = dynamodb_fares_metadata_repo.get_all_data_for_task(
+        input_data.task_id
+    )
+
+    dynamo_db_metadata = [
+        item for item in dynamo_db_data if item["SK"].startswith("METADATA")
+    ]
 
     fares_metadata, data_catalogues, stops, schema_versions = map_metadata(
         dynamo_db_metadata

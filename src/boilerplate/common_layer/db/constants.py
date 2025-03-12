@@ -14,6 +14,7 @@ class StepName(str, Enum):
     TIMETABLE_SCHEMA_CHECK = "Timetable Schema Check"
     TIMETABLE_POST_SCHEMA_CHECK = "Timetable Post Schema Check"
     TXC_FILE_VALIDATOR = "TxC File Validator"
+    NETEX_FILE_VALIDATOR = "NeTEx File Validator"
     TXC_ATTRIBUTE_EXTRACTION = "TxC attributes extraction"
     PTI_VALIDATION = "PTI Validation"
     DOWNLOAD_DATASET = "Download Dataset"
