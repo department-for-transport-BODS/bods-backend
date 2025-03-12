@@ -276,7 +276,7 @@ Resources:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-collate-files-lambda'
       Description: Timetables ETL - Collates a list of files and designates as new/deprecated for post processing
       Role: !GetAtt CommonLambdaExecutionRole.Arn
-      CodeUri: ./src/timetables_etl/pti
+      CodeUri: ./src/timetables_etl/collate_files
       Handler: app.collate_files.lambda_handler
       MemorySize: 1024
       Timeout: 900

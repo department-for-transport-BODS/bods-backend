@@ -4,7 +4,7 @@
   "States": {
     "ProcessInput": {
       "Type": "Pass",
-      "Next": "InitializePipeline",
+      "Next": "Initialize Pipeline",
       "Assign": {
         "inputDataSource": "{% $states.input.inputDataSource %}",
         "datasetRevisionId": "{% $states.input.datasetRevisionId %}",
@@ -17,9 +17,9 @@
         "datasetETLTaskResultId": "{% $exists($states.input.datasetETLTaskResultId) ? $states.input.datasetETLTaskResultId : null %}"
       }
     },
-    "InitializePipeline": {
+    "Initialize Pipeline": {
       "Type": "Task",
-      "Next": "RouteByInputType",
+      "Next": "Route By Input Type",
       "Resource": "${InitializePipelineLambdaArn}",
       "Arguments": {
         "Bucket": "{% $s3Bucket %}",
@@ -40,23 +40,23 @@
         }
       ]
     },
-    "RouteByInputType": {
+    "Route By Input Type": {
       "Type": "Choice",
       "Default": "ParentFail",
       "Choices": [
         {
           "Condition": "{% $inputDataSource = 'URL_DOWNLOAD' and $url != null %}",
-          "Next": "DownloadDataset"
+          "Next": "Download Dataset"
         },
         {
           "Condition": "{% $inputDataSource = 'S3_FILE' and $s3Bucket != null and $s3Object != null %}",
-          "Next": "ClamAvScanner"
+          "Next": "ClamAV and Extraction"
         }
       ]
     },
-    "DownloadDataset": {
+    "Download Dataset": {
       "Type": "Task",
-      "Next": "ClamAvScanner",
+      "Next": "ClamAV and Extraction",
       "Resource": "${DownloadDatasetLambdaArn}",
       "Arguments": {
         "Url": "{% $url %}",
@@ -79,7 +79,7 @@
         }
       ]
     },
-    "ClamAvScanner": {
+    "ClamAV and Extraction": {
       "Type": "Task",
       "Next": "Validation and File Attributes",
       "Resource": "${ClamAvScannerLambdaArn}",
@@ -130,7 +130,7 @@
         "States": {
           "Process Validation Map Input": {
             "Type": "Pass",
-            "Next": "FileValidation",
+            "Next": "File Validation",
             "Assign": {
               "Bucket": "{% $states.input.mapS3Bucket %}",
               "ObjectKey": "{% $states.input.mapS3Object %}",
@@ -138,9 +138,9 @@
               "datasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}"
             }
           },
-          "FileValidation": {
+          "File Validation": {
             "Type": "Task",
-            "Next": "SchemaCheck",
+            "Next": "XSD Schema Check",
             "Resource": "${FileValidationLambdaArn}",
             "Arguments": {
               "Bucket": "{% $Bucket %}",
@@ -160,9 +160,9 @@
               }
             ]
           },
-          "SchemaCheck": {
+          "XSD Schema Check": {
             "Type": "Task",
-            "Next": "PostSchemaCheck",
+            "Next": "Post Schema Check",
             "Resource": "${SchemaCheckLambdaArn}",
             "Arguments": {
               "Bucket": "{% $Bucket %}",
@@ -182,9 +182,9 @@
               }
             ]
           },
-          "PostSchemaCheck": {
+          "Post Schema Check": {
             "Type": "Task",
-            "Next": "FileAttributesEtl",
+            "Next": "FileAttributes ETL",
             "Resource": "${PostSchemaCheckLambdaArn}",
             "Arguments": {
               "Bucket": "{% $Bucket %}",
@@ -204,7 +204,7 @@
               }
             ]
           },
-          "FileAttributesEtl": {
+          "FileAttributes ETL": {
             "Type": "Task",
             "Next": "Validation Success",
             "Resource": "${FileAttributesEtlLambdaArn}",
@@ -321,7 +321,7 @@
           },
           "PtiValidation": {
             "Type": "Task",
-            "Next": "EtlProcess",
+            "Next": "Timetables ETL",
             "Resource": "${PtiValidationLambdaArn}",
             "Arguments": {
               "Bucket": "{% $Bucket %}",
@@ -343,7 +343,7 @@
             ]
           },
 
-          "EtlProcess": {
+          "Timetables ETL": {
             "Type": "Task",
             "Next": "PTI and ETL Success",
             "Resource": "${EtlProcessLambdaArn}",
@@ -430,7 +430,7 @@
       "Resource": "${ExceptionHandlerLambdaArn}",
       "Arguments": {
         "Error": "{% $states.input.errorInfo.Error %}",
-        "Cause": "{% $parse($states.input.errorInfo.Cause) %}",
+        "Cause": "{% $try($parse($states.input.errorInfo.Cause), $states.input.errorInfo.Cause) %}",
         "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}"
       }
     },
