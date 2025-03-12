@@ -1,6 +1,6 @@
 from lxml import etree
 
-from fares_etl.validation.app.xml_functions import NAMESPACE
+from fares_etl.validation.app.constants import NAMESPACE
 
 
 def get_lxml_element(xpath: str, string_xml: str):

@@ -3,7 +3,10 @@ Test Service Pattern Stop Wait Time / Duration Calculations
 """
 
 import pytest
-from etl.app.transform.service_pattern_stops_durations import apply_wait_time_rules
+
+from timetables_etl.etl.app.transform.service_pattern_stops_durations import (
+    apply_wait_time_rules,
+)
 
 
 @pytest.mark.parametrize(

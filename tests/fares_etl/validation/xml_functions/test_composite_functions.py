@@ -9,7 +9,6 @@ from fares_etl.validation.app.xml_functions.composite_frame import (
 
 from ..helpers import get_lxml_element
 
-NAMESPACE = {"x": "http://www.netex.org.uk/netex"}
 X_PATH = "//x:dataObjects/x:CompositeFrame"
 
 

@@ -32,14 +32,14 @@ def _get_fare_structure_time_intervals(element: _Element):
         response = response_details.__list__()
         return response
 
-    for element in time_intervals:
+    for interval in time_intervals:
         xpath = "x:TimeIntervalRef"
-        time_interval_ref = element.xpath(xpath, namespaces=NAMESPACE)
+        time_interval_ref = interval.xpath(xpath, namespaces=NAMESPACE)
 
         if time_interval_ref:
             continue
 
-        sourceline = element.sourceline
+        sourceline = interval.sourceline
         response_details = XMLViolationDetail(
             sourceline,
             ErrorMessages.MESSAGE_OBSERVATION_TIME_INTERVAL_REF_MISSING,

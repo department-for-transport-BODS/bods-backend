@@ -6,12 +6,14 @@ import pytest
 from common_layer.xml.txc.models.txc_operating_profile import TXCOperatingProfile
 from common_layer.xml.txc.models.txc_service import TXCService
 from common_layer.xml.txc.models.txc_vehicle_journey import TXCVehicleJourney
-from etl.app.transform.vehicle_journey_operations import get_operating_profile
 
 from tests.timetables_etl.factories.txc.factory_txc_service import TXCServiceFactory
 from tests.timetables_etl.factories.txc.factory_vehicle_journey import (
     TXCOperatingProfileFactory,
     TXCVehicleJourneyFactory,
+)
+from timetables_etl.etl.app.transform.vehicle_journey_operations import (
+    get_operating_profile,
 )
 
 

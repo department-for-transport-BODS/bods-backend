@@ -105,7 +105,7 @@ class DynamoDBFaresMetadata(DynamoDB):
                 "PK": self._serializer.serialize(task_id),
                 "SK": self._serializer.serialize(f"VIOLATION#{file_name}"),
                 "Violations": self._serializer.serialize(
-                    [violation.__dict__ for violation in violations]
+                    [vars(violation) for violation in violations]
                 ),
                 "ttl": self.get_one_day_ttl(),
             },
