@@ -1,3 +1,9 @@
+# pylint: disable=too-many-return-statements,too-many-locals,duplicate-code
+
+"""
+Fare Frame Fare Products
+"""
+
 from lxml.etree import _Element  # type: ignore
 
 from ..constants import (

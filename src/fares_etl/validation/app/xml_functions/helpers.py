@@ -1,3 +1,7 @@
+"""
+XML Helper Functions
+"""
+
 from lxml.etree import _Element  # type: ignore
 
 from ..types import XMLViolationDetail

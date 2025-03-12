@@ -1,3 +1,9 @@
+# pylint: disable=too-many-locals,duplicate-code
+
+"""
+Fare Frame Fare Structure Elements
+"""
+
 from lxml.etree import _Element  # type: ignore
 
 from ..constants import (

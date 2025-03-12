@@ -1,3 +1,9 @@
+# pylint: disable=too-many-return-statements
+
+"""
+Capping Rules Validation
+"""
+
 from lxml.etree import _Element  # type: ignore
 
 from ..constants import (

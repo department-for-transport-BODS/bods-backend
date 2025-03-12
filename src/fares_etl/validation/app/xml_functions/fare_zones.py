@@ -1,3 +1,7 @@
+"""
+Fare Zones
+"""
+
 from lxml.etree import _Element  # type: ignore
 
 from ..constants import (

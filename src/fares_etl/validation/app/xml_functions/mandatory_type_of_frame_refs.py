@@ -1,3 +1,9 @@
+# pylint: disable=too-many-return-statements,duplicate-code
+
+"""
+Type of Frame Refs
+"""
+
 from lxml.etree import _Element  # type: ignore
 
 from ..constants import (

@@ -3,7 +3,7 @@ DynamoDB cache tests
 """
 
 from datetime import date, datetime
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from common_layer.database.models.model_fares import (
     FaresDataCatalogueMetadata,
@@ -15,6 +15,7 @@ from common_layer.dynamodb.client.fares_metadata import (
 )
 
 
+@patch("time.time", MagicMock(return_value=1741892041))
 def test_put_metadata(m_boto_client):
     """
     Test DynamoDB Put Metadata
@@ -188,7 +189,7 @@ def test_put_metadata(m_boto_client):
                 "N": "123",
             },
             "SK": {
-                "S": "test.xml",
+                "S": "METADATA#test.xml",
             },
             "StopIds": {
                 "L": [
@@ -209,6 +210,7 @@ def test_put_metadata(m_boto_client):
                     },
                 ],
             },
+            "ttl": {"N": "1741978441"},
         },
         ReturnValues="NONE",
         TableName="",

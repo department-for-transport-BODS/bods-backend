@@ -1,3 +1,9 @@
+# pylint: disable=too-many-return-statements,too-many-locals,duplicate-code
+
+"""
+Composite Frame
+"""
+
 from lxml.etree import _Element  # type: ignore
 
 from ..constants import (

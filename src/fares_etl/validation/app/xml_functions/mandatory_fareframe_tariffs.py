@@ -1,3 +1,10 @@
+# pylint: disable=duplicate-code
+
+
+"""
+Fare Frame Tariffs
+"""
+
 from lxml.etree import _Element  # type: ignore
 
 from ..constants import (
