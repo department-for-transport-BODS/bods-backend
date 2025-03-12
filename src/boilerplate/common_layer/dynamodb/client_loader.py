@@ -110,7 +110,7 @@ class DynamoDBLoader:
         self.partition_key = partition_key
         self.max_concurrent_batches = max_concurrent_batches
         self.semaphore = asyncio.Semaphore(max_concurrent_batches)
-        self.semaphore_single_updates = asyncio.Semaphore(500)
+        self.semaphore_single_updates = asyncio.Semaphore(1000)
 
     def prepare_put_requests(
         self, items: list[dict[str, Any]]
