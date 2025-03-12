@@ -126,9 +126,9 @@
           "Mode": "DISTRIBUTED",
           "ExecutionType": "STANDARD"
         },
-        "StartAt": "ProcessMapInput",
+        "StartAt": "Process Validation Map Input",
         "States": {
-          "ProcessMapInput": {
+          "Process Validation Map Input": {
             "Type": "Pass",
             "Next": "FileValidation",
             "Assign": {
