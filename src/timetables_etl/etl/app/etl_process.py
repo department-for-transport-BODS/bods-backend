@@ -85,7 +85,6 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, 
     """
     Timetable ETL
     """
-    log.debug("Input Data", data=event)
     input_data = ETLInputData(**event)
     db = SqlDB()
     stop_point_client = NaptanStopPointDynamoDBClient()

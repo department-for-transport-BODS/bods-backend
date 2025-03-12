@@ -78,6 +78,7 @@ class ETLProcessStats(BaseModel):
     """
 
     services: int = 0
+    superseded_timetables: int = 0
     booking_arrangements: int = 0
     service_patterns: int = 0
     pattern_stats: PatternCommonStats = PatternCommonStats()
