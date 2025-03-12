@@ -3,7 +3,7 @@ Tests for parsing Manifest.json into Pydantic Models
 """
 
 import pytest
-from generate_output_zip.app.models import (
+from common_layer.aws.step import (
     ManifestResultFile,
     ManifestResultFilesStatus,
     MapResultManifest,

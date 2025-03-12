@@ -12,7 +12,11 @@ from .map_results import (
     get_map_run_manifest_path,
     load_map_results,
 )
-from .map_results_manifest import MapResultManifest
+from .map_results_manifest import (
+    ManifestResultFile,
+    ManifestResultFilesStatus,
+    MapResultManifest,
+)
 from .map_results_models import MapExecutionFailed, MapExecutionSucceeded
 
 __all__ = [
@@ -26,6 +30,8 @@ __all__ = [
     "MapResults",
     "MapExecutionFailed",
     "MapExecutionSucceeded",
-    # map_results_models
+    # map_results_manifest
     "MapResultManifest",
+    "ManifestResultFile",
+    "ManifestResultFilesStatus",
 ]
