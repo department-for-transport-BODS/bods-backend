@@ -1,5 +1,6 @@
 import asyncio
 import json
+import time
 from typing import Any, Dict
 
 from aws_lambda_powertools import Tracer
@@ -15,51 +16,36 @@ from structlog.stdlib import get_logger
 tracer = Tracer()
 log = get_logger()
 
-BATCH_SIZE = 15000  # Adjust if necessary for performance tuning
+BATCH_SIZE = 10000  # Adjust if necessary for performance tuning
 
 
 async def process_batch(
-    atco_codes: list[str], dynamo_loader: DynamoDBLoader, repo: NaptanStopPointRepo
+    atco_code_id_map: dict[str, int],
+    dynamo_loader: DynamoDBLoader,
+    repo: NaptanStopPointRepo,
 ) -> tuple[int, int]:
     """Fetch corresponding IDs from Postgres and update in DynamoDB."""
-    if not atco_codes:
-        return 0, 0
-
-    log.info("Fetching IDs from Postgres", batch_size=len(atco_codes))
-
-    # Fetch ID mappings from Bods DB
-    atco_code_id_map = repo.get_ids_by_atco(atco_codes)
-
     if not atco_code_id_map:
-        log.warning("No matching IDs found for batch", batch_size=len(atco_codes))
+        log.warning("atco_code_id_map empty")
         return 0, 0
-
-    if len(atco_code_id_map) != len(atco_codes):
-        missing_stop_points = [
-            atco_code for atco_code in atco_codes if atco_code not in atco_code_id_map
-        ]
-        log.warning(
-            "Not all Stop Points were found in Bods DB",
-            missing_stop_points=missing_stop_points,
-        )
-
     log.info("Updating DynamoDB records", batch_size=len(atco_code_id_map))
-
     return await dynamo_loader.async_update_private_codes(atco_code_id_map)
 
 
 async def process_private_code_updates(
     dynamo_loader: DynamoDBLoader, naptan_repo: NaptanStopPointRepo
 ) -> tuple[int, int]:
-    """Process AtcoCodes in batches using async DynamoDB updates."""
+    """Process AtcoCodes in batches using async DynamoDB updates with controlled concurrency."""
     total_processed = 0
     total_errors = 0
     active_tasks: list[asyncio.Task[tuple[int, int]]] = []
+    last_log_time = time.time()
 
     async def wait_for_slot() -> None:
         """Wait for a task slot to become available and process completed tasks."""
-        nonlocal total_processed, total_errors, active_tasks
+        nonlocal total_processed, total_errors, active_tasks, last_log_time
 
+        # Wait for at least one task to complete if the limit is reached
         done, pending = await asyncio.wait(
             active_tasks, return_when=asyncio.FIRST_COMPLETED
         )
@@ -85,21 +71,21 @@ async def process_private_code_updates(
         active_tasks = list(pending)
 
     try:
-        async for atco_batch in dynamo_loader.stream_atco_codes(batch_size=BATCH_SIZE):
+        async for atco_batch in naptan_repo.stream_naptan_ids(batch_size=BATCH_SIZE):
+            log.info("Processing atco batch from Bods DB", batch_size=len(atco_batch))
             if not atco_batch:
                 continue
 
-            # Wait for a slot if we're at max concurrency
+            # Ensure we do not exceed max_concurrent_batches
             while len(active_tasks) >= dynamo_loader.max_concurrent_batches:
                 await wait_for_slot()
 
-            # Create new processing task
             task = asyncio.create_task(
                 process_batch(atco_batch, dynamo_loader, naptan_repo)
             )
             active_tasks.append(task)
 
-        # Process remaining tasks
+        # Process any remaining active tasks
         while active_tasks:
             await wait_for_slot()
 

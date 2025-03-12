@@ -5,7 +5,7 @@ DynamoDB Data Loader Client
 import asyncio
 import random
 import time
-from typing import Any, AsyncIterator, Literal, NotRequired, TypedDict
+from typing import Any, AsyncIterator, Coroutine, Literal, NotRequired, TypedDict
 
 import boto3
 from boto3.dynamodb.types import TypeDeserializer
@@ -360,45 +360,12 @@ class DynamoDBLoader:
 
         return processed_count, error_count
 
-    async def stream_atco_codes(
-        self, batch_size: int = 1000
-    ) -> AsyncIterator[list[str]]:
-        """
-        Asynchronously fetch AtcoCodes from DynamoDB in batches using scan.
-        Yields lists of AtcoCodes.
-        """
-        last_evaluated_key: dict[str, str] | None = None
-
-        while True:
-            scan_params = {
-                "ProjectionExpression": "AtcoCode",
-                "Limit": batch_size,
-            }
-            if last_evaluated_key:
-                scan_params["ExclusiveStartKey"] = last_evaluated_key  # type: ignore
-
-            response = self.table.scan(**scan_params)  # type: ignore
-            batch = [item["AtcoCode"] for item in response.get("Items", [])]
-
-            if batch:
-                yield batch  # type: ignore
-
-            last_evaluated_key = response.get("LastEvaluatedKey")  # type: ignore
-            if not last_evaluated_key:
-                break  # No more items to process
-
     async def update_private_code(self, atco_code: str, private_code: str) -> bool:
-        """
-        Updates the PrivateCode for a single AtcoCode in DynamoDB.
-        Implements retry logic with exponential backoff.
-
-        Returns:
-        - True if update was successful
-        - False if update failed after all retries
-        """
+        """Updates the PrivateCode for a single AtcoCode in DynamoDB."""
         max_retries = 5
         retry_count = 0
-        backoff = 0.1  # Initial backoff time
+        backoff = 0.1
+
         async with self.semaphore:
             while retry_count < max_retries:
                 try:
@@ -413,7 +380,7 @@ class DynamoDBLoader:
                     )
 
                     if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
-                        return True  # Update successful
+                        return True
 
                 except ClientError as e:
                     error_code = e.response.get("Error", {}).get("Code", "")
@@ -425,7 +392,7 @@ class DynamoDBLoader:
                         )
                         retry_count += 1
                         await asyncio.sleep(backoff + (random.random() * 0.1))
-                        backoff *= 2  # Exponential backoff
+                        backoff *= 2
                     else:
                         self.log.error(
                             "Failed to update item", atco_code=atco_code, error=str(e)
@@ -452,28 +419,25 @@ class DynamoDBLoader:
         if not updates:
             return 0, 0
 
-        batches = [
-            dict(list(updates.items())[i : i + self.batch_size])
-            for i in range(0, len(updates), self.batch_size)
-        ]
-
         processed_count = 0
         failed_count = 0
+        start_time = time.time()
 
-        for batch in batches:
-            tasks = [
-                self.update_private_code(atco, str(private))
-                for atco, private in batch.items()
-            ]
-            results = await asyncio.gather(*tasks)
+        tasks = [
+            asyncio.create_task(self.update_private_code(atco, str(private)))
+            for atco, private in updates.items()
+        ]
+        results = await asyncio.gather(*tasks)
 
-            processed_count += sum(1 for success in results if success)
-            failed_count += sum(1 for success in results if not success)
+        processed_count = sum(1 for success in results if success)
+        failed_count = len(results) - processed_count
 
+        total_time = time.time() - start_time
         self.log.info(
             "Completed batch operation",
             processed_count=processed_count,
             error_count=failed_count,
+            total_time=f"{total_time:.2f}s",
         )
 
         return processed_count, failed_count
