@@ -32,9 +32,7 @@
       },
       "Catch": [
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "Next": "ParentExceptionHandler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"
@@ -73,9 +71,7 @@
       },
       "Catch": [
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "Next": "ParentExceptionHandler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"
@@ -85,7 +81,7 @@
     },
     "ClamAvScanner": {
       "Type": "Task",
-      "Next": "FileLevelProcessing",
+      "Next": "Validation and File Attributes",
       "Resource": "${ClamAvScannerLambdaArn}",
       "Arguments": {
         "Bucket": "{% $s3Bucket %}",
@@ -99,9 +95,7 @@
       },
       "Catch": [
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "Next": "ParentExceptionHandler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"
@@ -109,7 +103,7 @@
         }
       ]
     },
-    "FileLevelProcessing": {
+    "Validation and File Attributes": {
       "Type": "Map",
       "Next": "CollateFiles",
       "MaxConcurrency": 1000,
@@ -158,9 +152,7 @@
             },
             "Catch": [
               {
-                "ErrorEquals": [
-                  "States.ALL"
-                ],
+                "ErrorEquals": ["States.ALL"],
                 "Next": "FileExceptionHandler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
@@ -182,9 +174,7 @@
             },
             "Catch": [
               {
-                "ErrorEquals": [
-                  "States.ALL"
-                ],
+                "ErrorEquals": ["States.ALL"],
                 "Next": "FileExceptionHandler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
@@ -206,9 +196,7 @@
             },
             "Catch": [
               {
-                "ErrorEquals": [
-                  "States.ALL"
-                ],
+                "ErrorEquals": ["States.ALL"],
                 "Next": "FileExceptionHandler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
@@ -233,9 +221,7 @@
             },
             "Catch": [
               {
-                "ErrorEquals": [
-                  "States.ALL"
-                ],
+                "ErrorEquals": ["States.ALL"],
                 "Next": "FileExceptionHandler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
@@ -263,24 +249,27 @@
         "Resource": "arn:aws:states:::s3:putObject",
         "Arguments": {
           "Bucket": "{% $s3Bucket %}",
-          "Prefix": "tt-etl-map-results"
+          "Prefix": "tt-file-attributes-map-results"
         }
       }
     },
     "CollateFiles": {
       "Type": "Task",
-      "Next": "PostProcessing",
+      "Next": "PTI and ETL",
       "Resource": "${CollateFilesLambdaArn}",
       "Output": "{% $states.result.Payload %}",
-      "Arguments": {},
+      "Arguments": {
+        "MapRunArn": "{% $states.input.mapResults.MapRunArn %}",
+        "MapRunPrefix": "tt-file-attributes-map-results",
+        "Bucket": "{% $s3Bucket %}",
+        "DatasetRevisionId": "{% $datasetRevisionId %}"
+      },
       "Assign": {
         "EtlFileListJson": "{% $states.result.body.outputObject %}"
       },
       "Catch": [
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "Next": "ParentExceptionHandler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"
@@ -288,7 +277,7 @@
         }
       ]
     },
-    "PostProcessing": {
+    "PTI and ETL": {
       "Type": "Map",
       "Next": "GenerateOutputZip",
       "MaxConcurrency": 1000,
@@ -345,9 +334,7 @@
             },
             "Catch": [
               {
-                "ErrorEquals": [
-                  "States.ALL"
-                ],
+                "ErrorEquals": ["States.ALL"],
                 "Next": "PostExceptionHandler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
@@ -370,11 +357,10 @@
             "Output": {
               "etlProcess": "{% $states.result %}"
             },
+
             "Catch": [
               {
-                "ErrorEquals": [
-                  "States.ALL"
-                ],
+                "ErrorEquals": ["States.ALL"],
                 "Next": "PostExceptionHandler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
@@ -393,6 +379,13 @@
             "Type": "Fail"
           }
         }
+      },
+      "ResultWriter": {
+        "Resource": "arn:aws:states:::s3:putObject",
+        "Arguments": {
+          "Bucket": "{% $s3Bucket %}",
+          "Prefix": "tt-etl-map-results"
+        }
       }
     },
     "GenerateOutputZip": {
@@ -401,6 +394,7 @@
       "Resource": "${GenerateOutputZipLambdaArn}",
       "Arguments": {
         "MapRunArn": "{% $states.input.mapResults.MapRunArn %}",
+        "MapRunPrefix": "tt-etl-map-results",
         "DestinationBucket": "{% $s3Bucket %}",
         "OutputPrefix": "{% $ExtractedSubFolder %}",
         "DatasetRevisionId": "{% $datasetRevisionId %}",
@@ -411,9 +405,7 @@
       },
       "Catch": [
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "Next": "ParentExceptionHandler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"

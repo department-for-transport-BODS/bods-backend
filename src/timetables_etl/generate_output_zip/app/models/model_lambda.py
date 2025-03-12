@@ -13,6 +13,7 @@ class GenerateOutputZipInputData(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     map_run_arn: str = Field(alias="MapRunArn")
+    map_run_prefix: str = Field(alias="MapRunPrefix")
     destination_bucket: str = Field(alias="DestinationBucket")
     output_prefix: str = Field(alias="OutputPrefix")
     original_object_key: str = Field(alias="OriginalObjectKey")
