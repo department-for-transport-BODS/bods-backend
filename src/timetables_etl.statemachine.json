@@ -283,10 +283,10 @@
       "ToleratedFailurePercentage": 100,
       "ItemSelector": {
         "mapS3Bucket": "{% $states.context.Map.Item.Value.bucket %}",
-        "mapS3Object": "{% $states.context.Map.Item.Value.key %}",
-        "mapDatasetDeprecatedFile": "{% $states.context.Map.Item.Value.deprecatedFile %}",
+        "mapS3Object": "{% $states.context.Map.Item.Value.object %}",
+        "mapDatasetSupersededTimetable": "{% $states.context.Map.Item.Value.SupersededTimetable %}",
         "mapDatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}",
-        "mapDatasetFileAttributesEtl": "{% $states.context.Map.Item.Value.fileAttributesEtl %}",
+        "mapDatasetFileAttributesEtl": "{% $states.context.Map.Item.Value.TxcFileAttributesId %}",
         "mapDatasetRevisionId": "{% $datasetRevisionId %}"
       },
       "ItemReader": {
@@ -312,7 +312,7 @@
             "Assign": {
               "Bucket": "{% $states.input.mapS3Bucket %}",
               "ObjectKey": "{% $states.input.mapS3Object %}",
-              "DatasetDeprecatedFile": "{% $states.input.mapDatasetDeprecatedFile %}",
+              "SupersededTimetable": "{% $states.input.SupersededTimetable %}",
               "datasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}",
               "DatasetRevisionId": "{% $states.input.mapDatasetRevisionId %}",
               "FileAttributesEtl": "{% $states.input.mapDatasetFileAttributesEtl %}"
@@ -350,7 +350,8 @@
               "Bucket": "{% $Bucket %}",
               "ObjectKey": "{% $ObjectKey %}",
               "DatasetRevisionId": "{% $DatasetRevisionId %}",
-              "fileAttributesId": "{% $FileAttributesEtl %}",
+              "TxcFileAttributesId": "{% $FileAttributesEtl %}",
+              "SupersededTimetable:": "{% $SupersededTimetable %}",
               "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}"
             },
             "Output": {

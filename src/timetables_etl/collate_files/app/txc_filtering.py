@@ -155,7 +155,6 @@ def create_etl_map_inputs(
     all_files: list[OrganisationTXCFileAttributes],
     filtered_files: list[OrganisationTXCFileAttributes],
     filename_map: dict[str, MapExecutionSucceeded],
-    revision_id: int,
 ) -> list[ETLMapInputData]:
     """
     Create S3FileReference objects for files,
@@ -175,10 +174,10 @@ def create_etl_map_inputs(
             # Only create reference if we have valid bucket and key
             if map_result.parsed_input.Bucket and map_result.parsed_input.Key:
                 s3_reference = ETLMapInputData(
-                    bucket=map_result.parsed_input.Bucket,
-                    object=map_result.parsed_input.Key,
-                    superceded_file=is_superceded,
-                    fileAttributesEtl=revision_id,
+                    s3_bucket_name=map_result.parsed_input.Bucket,
+                    s3_file_key=map_result.parsed_input.Key,
+                    superseded_timetable=is_superceded,
+                    file_attributes_id=file.id,
                 )
 
                 s3_references.append(s3_reference)
@@ -190,11 +189,10 @@ def create_etl_inputs_from_map_results(
     all_files: list[OrganisationTXCFileAttributes],
     filtered_files: list[OrganisationTXCFileAttributes],
     map_results: MapResults,
-    revision_id: int,
 ) -> list[ETLMapInputData]:
     """
     For each successful file build a list of Map inputs checking whether to supercede
     """
     filename_map = build_filename_map(map_results)
 
-    return create_etl_map_inputs(all_files, filtered_files, filename_map, revision_id)
+    return create_etl_map_inputs(all_files, filtered_files, filename_map)

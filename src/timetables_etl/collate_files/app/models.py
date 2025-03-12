@@ -2,6 +2,8 @@
 Collete Files Models
 """
 
+from typing import Annotated
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -26,7 +28,9 @@ class ETLMapInputData(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    bucket: str
-    object: str
-    superceded_file: bool
-    fileAttributesEtl: int
+    s3_bucket_name: Annotated[str, Field(alias="Bucket")]
+    s3_file_key: Annotated[str, Field(alias="ObjectKey")]
+    superseded_timetable: Annotated[
+        bool, Field(alias="SupersededTimetable", default=False)
+    ]
+    file_attributes_id: Annotated[int, Field(alias="TxcFileAttributesId")]

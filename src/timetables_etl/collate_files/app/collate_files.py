@@ -50,7 +50,7 @@ def count_and_log_file_status(
     """
     Count superceded and active files in map inputs and log the results.
     """
-    counts = Counter(input_file.superceded_file for input_file in map_inputs)
+    counts = Counter(input_file.superseded_timetable for input_file in map_inputs)
     superceded_count = counts.get(True, 0)
     active_count = counts.get(False, 0)
 
@@ -72,7 +72,7 @@ def upload_map_input_to_s3(
     """
     output_key = f"{output_prefix}collated_files.json"
     root_model = RootModel[list[ETLMapInputData]](map_inputs)
-    map_inputs_json = root_model.model_dump_json(indent=2)
+    map_inputs_json = root_model.model_dump_json(indent=2, by_alias=True)
     try:
         fileobj = BytesIO(map_inputs_json.encode("utf-8"))
 
@@ -113,7 +113,6 @@ def collate_files(
         all_files=file_attributes,
         filtered_files=filtered_files,
         map_results=map_results,
-        revision_id=input_data.revision_id,
     )
     count_and_log_file_status(map_inputs)
 
