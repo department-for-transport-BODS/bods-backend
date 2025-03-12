@@ -312,7 +312,7 @@
             "Assign": {
               "Bucket": "{% $states.input.mapS3Bucket %}",
               "ObjectKey": "{% $states.input.mapS3Object %}",
-              "SupersededTimetable": "{% $states.input.SupersededTimetable %}",
+              "SupersededTimetable": "{% $states.input.mapDatasetSupersededTimetable %}",
               "datasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}",
               "DatasetRevisionId": "{% $states.input.mapDatasetRevisionId %}",
               "FileAttributesEtl": "{% $states.input.mapDatasetFileAttributesEtl %}"
