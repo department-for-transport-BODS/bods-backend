@@ -110,6 +110,7 @@ class DynamoDBLoader:
         self.partition_key = partition_key
         self.max_concurrent_batches = max_concurrent_batches
         self.semaphore = asyncio.Semaphore(max_concurrent_batches)
+        self.semaphore_single_updates = asyncio.Semaphore(200)
 
     def prepare_put_requests(
         self, items: list[dict[str, Any]]
@@ -366,7 +367,7 @@ class DynamoDBLoader:
         retry_count = 0
         backoff = 0.1
 
-        async with self.semaphore:
+        async with self.semaphore_single_updates:
             while retry_count < max_retries:
                 try:
                     loop = asyncio.get_event_loop()
