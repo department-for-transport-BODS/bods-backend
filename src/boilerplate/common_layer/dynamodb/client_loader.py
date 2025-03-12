@@ -5,7 +5,7 @@ DynamoDB Data Loader Client
 import asyncio
 import random
 import time
-from typing import Any, Literal, NotRequired, TypedDict
+from typing import Any, AsyncIterator, Literal, NotRequired, TypedDict
 
 import boto3
 from boto3.dynamodb.types import TypeDeserializer
@@ -359,3 +359,121 @@ class DynamoDBLoader:
         )
 
         return processed_count, error_count
+
+    async def stream_atco_codes(
+        self, batch_size: int = 1000
+    ) -> AsyncIterator[list[str]]:
+        """
+        Asynchronously fetch AtcoCodes from DynamoDB in batches using scan.
+        Yields lists of AtcoCodes.
+        """
+        last_evaluated_key: dict[str, str] | None = None
+
+        while True:
+            scan_params = {
+                "ProjectionExpression": "AtcoCode",
+                "Limit": batch_size,
+            }
+            if last_evaluated_key:
+                scan_params["ExclusiveStartKey"] = last_evaluated_key  # type: ignore
+
+            response = self.table.scan(**scan_params)  # type: ignore
+            batch = [item["AtcoCode"] for item in response.get("Items", [])]
+
+            if batch:
+                yield batch  # type: ignore
+
+            last_evaluated_key = response.get("LastEvaluatedKey")  # type: ignore
+            if not last_evaluated_key:
+                break  # No more items to process
+
+    async def update_private_code(self, atco_code: str, private_code: str) -> bool:
+        """
+        Updates the PrivateCode for a single AtcoCode in DynamoDB.
+        Implements retry logic with exponential backoff.
+
+        Returns:
+        - True if update was successful
+        - False if update failed after all retries
+        """
+        max_retries = 5
+        retry_count = 0
+        backoff = 0.1  # Initial backoff time
+        async with self.semaphore:
+            while retry_count < max_retries:
+                try:
+                    loop = asyncio.get_event_loop()
+                    response = await loop.run_in_executor(
+                        None,
+                        lambda: self.table.update_item(
+                            Key={self.partition_key: atco_code},
+                            UpdateExpression="SET PrivateCode = :private_code",
+                            ExpressionAttributeValues={":private_code": private_code},
+                        ),
+                    )
+
+                    if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
+                        return True  # Update successful
+
+                except ClientError as e:
+                    error_code = e.response.get("Error", {}).get("Code", "")
+                    if error_code == "ProvisionedThroughputExceededException":
+                        self.log.warning(
+                            "DynamoDB throttled request, retrying...",
+                            attempt=retry_count + 1,
+                            atco_code=atco_code,
+                        )
+                        retry_count += 1
+                        await asyncio.sleep(backoff + (random.random() * 0.1))
+                        backoff *= 2  # Exponential backoff
+                    else:
+                        self.log.error(
+                            "Failed to update item", atco_code=atco_code, error=str(e)
+                        )
+                        return False
+
+                self.log.warning(
+                    "Retrying unprocessed update",
+                    attempt=retry_count,
+                    atco_code=atco_code,
+                )
+
+            return False
+
+    async def async_update_private_codes(
+        self, updates: dict[str, int]
+    ) -> tuple[int, int]:
+        """
+        Asynchronously update PrivateCode for multiple AtcoCodes using controlled concurrency.
+        Returns:
+        - processed_count: Number of successfully updated items
+        - failed_count: Number of items that failed
+        """
+        if not updates:
+            return 0, 0
+
+        batches = [
+            dict(list(updates.items())[i : i + self.batch_size])
+            for i in range(0, len(updates), self.batch_size)
+        ]
+
+        processed_count = 0
+        failed_count = 0
+
+        for batch in batches:
+            tasks = [
+                self.update_private_code(atco, str(private))
+                for atco, private in batch.items()
+            ]
+            results = await asyncio.gather(*tasks)
+
+            processed_count += sum(1 for success in results if success)
+            failed_count += sum(1 for success in results if not success)
+
+        self.log.info(
+            "Completed batch operation",
+            processed_count=processed_count,
+            error_count=failed_count,
+        )
+
+        return processed_count, failed_count
