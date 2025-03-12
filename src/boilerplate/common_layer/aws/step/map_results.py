@@ -142,10 +142,50 @@ def extract_map_run_id(map_run_arn: str) -> str:
     Extract the Map Run Id from the ARN
     Example ARN: arn:aws:states:region:account:mapRun:state-machine-name/execution-id:map-run-id
     Returns: map-run-id
+
+    Raises:
+        ValueError: If the ARN format is invalid or missing required components
     """
+    if not map_run_arn:
+        log.error("Empty ARN provided", map_run_arn=map_run_arn)
+        raise ValueError("Invalid Map Run ARN: ARN cannot be empty")
+
+    if not map_run_arn.startswith("arn:aws:states:"):
+        log.error("Invalid ARN format", map_run_arn=map_run_arn)
+        raise ValueError(f"Invalid Map Run ARN format: {map_run_arn}")
+
     try:
-        return map_run_arn.split("/")[-1].split(":")[-1]
+        if "/" not in map_run_arn:
+            log.error(
+                "ARN missing execution ID section (missing '/')",
+                map_run_arn=map_run_arn,
+            )
+            raise ValueError(
+                f"Invalid Map Run ARN: missing execution ID section: {map_run_arn}"
+            )
+
+        execution_part = map_run_arn.split("/")[-1]
+
+        if ":" not in execution_part:
+            log.error(
+                "ARN missing map run ID section (missing ':')", map_run_arn=map_run_arn
+            )
+            raise ValueError(
+                f"Invalid Map Run ARN: missing map run ID section: {map_run_arn}"
+            )
+
+        map_run_id = execution_part.split(":")[-1]
+
+        if not map_run_id:
+            log.error("Empty map run ID extracted", map_run_arn=map_run_arn)
+            raise ValueError(f"Invalid Map Run ARN: empty map run ID: {map_run_arn}")
+
+        return map_run_id
+
     except Exception as exc:
+        if isinstance(exc, ValueError):
+            raise
+
         log.error(
             "Failed to extract Map Run Id from ARN",
             map_run_arn=map_run_arn,
@@ -159,7 +199,9 @@ def get_map_run_base_path(map_run_arn: str, map_run_prefix: str) -> str:
     Generate the base S3 path for a Map Run
     """
     run_id = extract_map_run_id(map_run_arn)
-    base_path = f"{map_run_prefix}/{run_id}/"
+    # Remove trailing slash from prefix if present
+    prefix = map_run_prefix.rstrip("/")
+    base_path = f"{prefix}/{run_id}/"
     return base_path
 
 
