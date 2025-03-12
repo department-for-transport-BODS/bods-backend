@@ -169,6 +169,9 @@ Resources:
           UpdateIDsDynamodbNaptanCache:
             Type: Task
             Resource: !GetAtt UpdateIDsDynamodbNaptanCacheLambda.Arn
+            Parameters:
+              'dynamo_table.$': '$.dynamo_table'
+              'aws_region.$': '$.aws_region'
             Catch:
               - ErrorEquals: ['States.TaskFailed']
                 Next: FailureState
