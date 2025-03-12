@@ -1,9 +1,13 @@
+"""
+DB Operations Tests
+"""
+
 from datetime import UTC, datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from common_layer.aws.step.map_results_models import MapResults
 from common_layer.database.client import SqlDB
-from common_layer.database.models import model_transmodel_serviced_organisations
 from common_layer.database.models.model_pipelines import ETLErrorCode, TaskState
 from common_layer.enums import FeedStatus
 from freezegun import freeze_time
@@ -13,7 +17,6 @@ from tests.factories.database.pipelines import DatasetETLTaskResultFactory
 from timetables_etl.generate_output_zip.app.db_operations import (
     update_task_and_revision_status,
 )
-from timetables_etl.generate_output_zip.app.models.model_results import MapResults
 from timetables_etl.generate_output_zip.app.models.model_zip_processing import (
     ProcessingResult,
 )
@@ -45,7 +48,9 @@ def assert_expected_repo_calls(m_task_repo, m_revision_repo, task_result, revisi
     m_revision_repo.return_value.update.assert_called_once_with(revision)
 
 
-def test_update_task_and_revision_status_success(m_task_repo, m_revision_repo):
+def test_update_task_and_revision_status_success(
+    m_task_repo: MagicMock | AsyncMock, m_revision_repo: MagicMock | AsyncMock
+):
     """
     Test that when both map results and processing results are succuessful
     the task and revision are updated with the expected success states

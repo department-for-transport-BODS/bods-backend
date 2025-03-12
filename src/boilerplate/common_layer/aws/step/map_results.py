@@ -154,12 +154,21 @@ def extract_map_run_id(map_run_arn: str) -> str:
         raise ValueError(f"Invalid Map Run ARN format: {map_run_arn}") from exc
 
 
+def get_map_run_base_path(map_run_arn: str, map_run_prefix: str) -> str:
+    """
+    Generate the base S3 path for a Map Run
+    """
+    run_id = extract_map_run_id(map_run_arn)
+    base_path = f"{map_run_prefix}/{run_id}/"
+    return base_path
+
+
 def get_map_run_manifest_path(map_run_arn: str, map_run_prefix: str) -> str:
     """
     Generate the S3 Object Path for a Map Run ResultWriter manifest.json
     """
-    run_id = extract_map_run_id(map_run_arn)
-    manifest_key = f"{map_run_prefix}/{run_id}/manifest.json"
+    base_path = get_map_run_base_path(map_run_arn, map_run_prefix)
+    manifest_key = f"{base_path}manifest.json"
     log.debug("Generated Manifest Key", manifest_key=manifest_key)
     return manifest_key
 

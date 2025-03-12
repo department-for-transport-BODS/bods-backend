@@ -3,17 +3,19 @@ Lambda: CollateFiles
 Process the results
 """
 
+from io import BytesIO
 from typing import Any, Counter
 
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from collate_files.app.models import S3FileReference
-from common_layer.aws.step import get_map_processing_results
+from common_layer.aws.step import get_map_processing_results, get_map_run_base_path
 from common_layer.database import SqlDB
 from common_layer.database.models import OrganisationTXCFileAttributes
 from common_layer.database.repos import OrganisationTXCFileAttributesRepo
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.s3 import S3
+from pydantic import RootModel
 from structlog.stdlib import get_logger
 
 from .models import CollateFilesInputData
@@ -63,11 +65,44 @@ def count_and_log_file_status(
     return superceded_count, active_count
 
 
+def upload_map_input_to_s3(
+    s3: S3, output_prefix: str, map_inputs: list[S3FileReference]
+) -> str:
+    """
+    Upload the map input to S3
+    """
+    output_key = f"{output_prefix}collated_files.json"
+    root_model = RootModel[list[S3FileReference]](map_inputs)
+    map_inputs_json = root_model.model_dump_json(indent=2)
+    try:
+        fileobj = BytesIO(map_inputs_json.encode("utf-8"))
+
+        s3.upload_fileobj_streaming(
+            fileobj=fileobj, file_path=output_key, content_type="application/json"
+        )
+
+        log.info(
+            "Successfully uploaded map inputs to S3",
+            output_key=output_key,
+            file_count=len(map_inputs),
+        )
+        return output_key
+    except Exception:
+        log.error(
+            "Failed to upload map inputs to S3", output_key=output_key, exc_info=True
+        )
+        raise
+
+
 def collate_files(
     input_data: CollateFilesInputData, db: SqlDB, s3: S3
-) -> list[S3FileReference]:
+) -> tuple[list[S3FileReference], str]:
     """
-    Collate the files
+    - Get the File Attributes for the Revision ID
+    - Get the Map Processing Results from S3
+    - Process using the BODs filtering logic by Service ID / Start Date
+    - Generate the PTI+ETL Map Input Data
+    - Upload to S3 and return Object Key
     """
     file_attributes = get_file_attributes(db, input_data.revision_id)
     map_results = get_map_processing_results(
@@ -83,10 +118,16 @@ def collate_files(
     )
     count_and_log_file_status(map_inputs)
 
-    return map_inputs
+    output_prefix = get_map_run_base_path(
+        input_data.map_run_arn, input_data.map_run_prefix
+    )
+    object_key = upload_map_input_to_s3(s3, output_prefix, map_inputs)
+    return map_inputs, object_key
 
 
-def generate_response(map_inputs: list[S3FileReference]) -> dict[str, str | int]:
+def generate_response(
+    map_inputs: list[S3FileReference], s3_object_key: str
+) -> dict[str, str | int | dict[str, int]]:
     """
     Generate Lambda Response with Stats
     """
@@ -101,10 +142,13 @@ def generate_response(map_inputs: list[S3FileReference]) -> dict[str, str | int]
         )
 
     return {
-        "status_code": 200,
+        "statusCode": 200,
         "message": message,
-        "active_files": active,
-        "superceded": superseded,
+        "stats": {
+            "activeFiles": active,
+            "supercededFiles": superseded,
+        },
+        "EtlFileListJsonS3ObjectKey": s3_object_key,
     }
 
 
@@ -116,6 +160,6 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, 
     input_data = CollateFilesInputData(**event)
     db = SqlDB()
     s3 = S3(input_data.s3_bucket_name)
-    map_inputs = collate_files(input_data, db, s3)
+    map_inputs, s3_object_key = collate_files(input_data, db, s3)
 
-    return generate_response(map_inputs)
+    return generate_response(map_inputs, s3_object_key)

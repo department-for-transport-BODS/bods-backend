@@ -265,7 +265,7 @@
         "DatasetRevisionId": "{% $datasetRevisionId %}"
       },
       "Assign": {
-        "EtlFileListJson": "{% $states.result.body.outputObject %}"
+        "EtlFileListJson": "{% $states.result.EtlFileListJsonS3ObjectKey %}"
       },
       "Catch": [
         {
