@@ -18,10 +18,11 @@ from timetables_etl.etl.app.transform.services import make_transmodel_service
 
 
 @pytest.mark.parametrize(
-    "service,expected_service",
+    "service,superceded_timetable,expected_service",
     [
         pytest.param(
             TXCServiceFactory.create(with_standard_line=True),
+            False,
             lambda revision_id, file_attrs_id: TransmodelService(
                 service_code="UZ000FLIX:UK045",
                 name="UK045",
@@ -36,6 +37,7 @@ from timetables_etl.etl.app.transform.services import make_transmodel_service
         ),
         pytest.param(
             TXCServiceFactory.create(flexible=True),
+            False,
             lambda revision_id, file_attrs_id: TransmodelService(
                 service_code="PB0002032:467",
                 name="53M",
@@ -48,10 +50,26 @@ from timetables_etl.etl.app.transform.services import make_transmodel_service
             ),
             id="Flexible Service",
         ),
+        pytest.param(
+            TXCServiceFactory.create(flexible=True),
+            True,
+            lambda revision_id, file_attrs_id: TransmodelService(
+                service_code="PB0002032:467",
+                name="53M",
+                other_names=[],
+                start_date=date(2022, 1, 1),
+                end_date=None,
+                service_type="flexible",
+                revision_id=revision_id,
+                txcfileattributes_id=None,
+            ),
+            id="Flexible Service",
+        ),
     ],
 )
 def test_make_transmodel_service(
     service: TXCService,
+    superceded_timetable: bool,
     expected_service: Callable[[int, int], TransmodelService],
 ) -> None:
     """
@@ -61,7 +79,9 @@ def test_make_transmodel_service(
     org_revision = OrganisationDatasetRevisionFactory.create_with_id(1234)
     org_file_attrs = OrganisationTXCFileAttributesFactory.create_with_id(5678)
 
-    result = make_transmodel_service(service, org_revision, org_file_attrs)
+    result = make_transmodel_service(
+        service, org_revision, org_file_attrs, superceded_timetable
+    )
     expected = expected_service(org_revision.id, org_file_attrs.id)
 
     assert isinstance(result, TransmodelService)

@@ -11,7 +11,7 @@ from common_layer.database.models import (
 from common_layer.xml.txc.helpers.service import extract_flexible_pattern_stop_refs
 from common_layer.xml.txc.models import TXCFlexibleJourneyPattern, TXCService
 from geoalchemy2 import WKBElement
-from geoalchemy2.shape import from_shape
+from geoalchemy2.shape import from_shape  # type: ignore
 from shapely import LineString, Point
 from structlog.stdlib import get_logger
 
