@@ -282,8 +282,8 @@
       "MaxConcurrency": 1000,
       "ToleratedFailurePercentage": 100,
       "ItemSelector": {
-        "mapS3Bucket": "{% $states.context.Map.Item.Value.bucket %}",
-        "mapS3Object": "{% $states.context.Map.Item.Value.object %}",
+        "mapS3Bucket": "{% $states.context.Map.Item.Value.Bucket %}",
+        "mapS3Object": "{% $states.context.Map.Item.Value.Object %}",
         "mapDatasetSupersededTimetable": "{% $states.context.Map.Item.Value.SupersededTimetable %}",
         "mapDatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}",
         "mapDatasetFileAttributesEtl": "{% $states.context.Map.Item.Value.TxcFileAttributesId %}",
