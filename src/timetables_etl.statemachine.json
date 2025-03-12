@@ -283,7 +283,7 @@
       "ToleratedFailurePercentage": 100,
       "ItemSelector": {
         "mapS3Bucket": "{% $states.context.Map.Item.Value.Bucket %}",
-        "mapS3Object": "{% $states.context.Map.Item.Value.Object %}",
+        "mapS3Object": "{% $states.context.Map.Item.Value.ObjectKey %}",
         "mapDatasetSupersededTimetable": "{% $states.context.Map.Item.Value.SupersededTimetable %}",
         "mapDatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}",
         "mapDatasetFileAttributesEtl": "{% $states.context.Map.Item.Value.TxcFileAttributesId %}",
