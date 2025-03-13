@@ -52,9 +52,6 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
             "body": json.dumps({"message": "Invalid input data", "errors": e.errors()}),
         }
 
-    log.info("Event Parsed")
-    return {"statusCode": 200}
-
     dynamo_loader = DynamoDBLoader(
         table_name=input_data.dynamo_table,
         region=input_data.aws_region,
