@@ -367,46 +367,45 @@ class DynamoDBLoader:
         retry_count = 0
         backoff = 0.1
 
-        async with self.semaphore_single_updates:
-            while retry_count < max_retries:
-                try:
-                    loop = asyncio.get_event_loop()
-                    response = await loop.run_in_executor(
-                        None,
-                        lambda: self.table.update_item(
-                            Key={self.partition_key: atco_code},
-                            UpdateExpression="SET PrivateCode = :private_code",
-                            ExpressionAttributeValues={":private_code": private_code},
-                        ),
-                    )
-
-                    if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
-                        return True
-
-                except ClientError as e:
-                    error_code = e.response.get("Error", {}).get("Code", "")
-                    if error_code == "ProvisionedThroughputExceededException":
-                        self.log.warning(
-                            "DynamoDB throttled request, retrying...",
-                            attempt=retry_count + 1,
-                            atco_code=atco_code,
-                        )
-                        retry_count += 1
-                        await asyncio.sleep(backoff + (random.random() * 0.1))
-                        backoff *= 2
-                    else:
-                        self.log.error(
-                            "Failed to update item", atco_code=atco_code, error=str(e)
-                        )
-                        return False
-
-                self.log.warning(
-                    "Retrying unprocessed update",
-                    attempt=retry_count,
-                    atco_code=atco_code,
+        while retry_count < max_retries:
+            try:
+                loop = asyncio.get_event_loop()
+                response = await loop.run_in_executor(
+                    None,
+                    lambda: self.table.update_item(
+                        Key={self.partition_key: atco_code},
+                        UpdateExpression="SET PrivateCode = :private_code",
+                        ExpressionAttributeValues={":private_code": private_code},
+                    ),
                 )
 
-            return False
+                if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
+                    return True
+
+            except ClientError as e:
+                error_code = e.response.get("Error", {}).get("Code", "")
+                if error_code == "ProvisionedThroughputExceededException":
+                    self.log.warning(
+                        "DynamoDB throttled request, retrying...",
+                        attempt=retry_count + 1,
+                        atco_code=atco_code,
+                    )
+                    retry_count += 1
+                    await asyncio.sleep(backoff + (random.random() * 0.1))
+                    backoff *= 2
+                else:
+                    self.log.error(
+                        "Failed to update item", atco_code=atco_code, error=str(e)
+                    )
+                    return False
+
+            self.log.warning(
+                "Retrying unprocessed update",
+                attempt=retry_count,
+                atco_code=atco_code,
+            )
+
+        return False
 
     async def async_update_private_codes(
         self, updates: dict[str, int]
