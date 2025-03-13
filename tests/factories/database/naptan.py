@@ -2,6 +2,8 @@
 Factories for Naptan Database Data
 """
 
+from typing import Any
+
 import factory
 from common_layer.database.models.model_naptan import NaptanAdminArea, NaptanStopPoint
 from factory.fuzzy import FuzzyChoice
@@ -31,6 +33,13 @@ class NaptanStopPointFactory(factory.Factory):
     stop_areas = factory.List([])
     bus_stop_type = None
     stop_type = None
+
+    @classmethod
+    def create_with_id(cls, id_number: int, **kwargs: Any) -> NaptanStopPoint:
+        """Creates a revision with a specific ID"""
+        stop_point: NaptanStopPoint = cls.create(**kwargs)
+        stop_point.id = id_number
+        return stop_point
 
     @classmethod
     def create_mapping(cls, stop_data: list[tuple[str, str]]) -> StopsLookup:

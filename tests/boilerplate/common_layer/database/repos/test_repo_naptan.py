@@ -70,3 +70,35 @@ def test_get_count_exception(test_db):
 
         with pytest.raises(PipelineException):
             repo.get_count(atco_codes=[])
+
+
+def test_stream_naptan_ids(test_db):
+
+    # Create 5 stop points
+    stop_points = [
+        NaptanStopPointFactory.create_with_id(atco_code=f"atco{i}", id_number=i)
+        for i in range(1, 6)
+    ]
+
+    with test_db.session_scope() as session:
+        session.bulk_save_objects(stop_points)
+        session.commit()
+
+    repo = NaptanStopPointRepo(test_db)
+
+    # Test with batch_size = 2
+    expected = {f"atco{i}": i for i in range(1, 6)}
+    all_results: dict[str, int] = {}
+
+    batch_size = 2
+    for idx, results in enumerate(repo.stream_naptan_ids(batch_size=batch_size)):
+        # Expecting 3 batches of size 2, 2, and 1
+        if idx < 2:
+            assert len(results) == batch_size
+        else:
+            assert len(results) == 1
+
+        all_results.update(results)
+
+    # Check all stop points are returned
+    assert all_results == expected
