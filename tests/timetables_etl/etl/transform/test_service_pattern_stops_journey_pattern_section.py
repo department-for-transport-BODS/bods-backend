@@ -99,10 +99,10 @@ def naptan_stop_lookup() -> dict[str, NaptanStopPoint]:
             atco_code="2400A001", common_name="First Stop", id_number=123
         ),
         "2400A002": NaptanStopPointFactory.create_with_id(
-            atco_code="2400A002", common_name="Second Stop", id_number=321
+            atco_code="2400A002", common_name="Second Stop", id_number=456
         ),
-        "2400A003": NaptanStopPointFactory.create(
-            atco_code="2400A003", common_name="Third Stop"
+        "2400A003": NaptanStopPointFactory.create_with_id(
+            atco_code="2400A003", common_name="Third Stop", id_number=789
         ),
     }
     return stops
@@ -199,13 +199,14 @@ def journey_context(
                     "sequence_number": 1,
                     "departure_time": time(9, 21),
                     "is_timing_point": False,
+                    "naptan_stop_id": 456,
                 },
                 {
                     "atco_code": "2400A003",
                     "sequence_number": 2,
                     "departure_time": time(9, 23),
                     "is_timing_point": False,
-                    "naptan_stop_id": 321,
+                    "naptan_stop_id": 789,
                 },
             ],
             id="Basic single link section with timing",
