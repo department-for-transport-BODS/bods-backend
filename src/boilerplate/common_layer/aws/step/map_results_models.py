@@ -1,17 +1,12 @@
 """
-Models for State Machine Results files
-
-- SUCCEEDED_n.json
-- FAILED_n.json
-Note: There is a PENDING_0.json unimplemented
+Models for Parsing Map Results
 """
 
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum, StrEnum
+from enum import StrEnum
 from typing import Annotated, Callable, Literal
 
-import pydantic_core
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -21,12 +16,24 @@ from pydantic import (
     ValidationInfo,
     WrapValidator,
 )
+from pydantic_core import PydanticUseDefault
 from structlog.stdlib import get_logger
 
 log = get_logger()
 
 
-class ParsedInputData(BaseModel):
+class MapRunExecutionStatus(StrEnum):
+    """Status values for map run executions"""
+
+    RUNNING = "RUNNING"
+    SUCCEEDED = "SUCCEEDED"
+    FAILED = "FAILED"
+    TIMED_OUT = "TIMED_OUT"
+    ABORTED = "ABORTED"
+    PENDING_REDRIVE = "PENDING_REDRIVE"
+
+
+class MapInputData(BaseModel):
     """
     Parsed Input object
     The Input field is a string of json with the Map instance input for the task
@@ -45,24 +52,13 @@ class ParsedInputData(BaseModel):
     mapDatasetEtlTaskResultId: int | None = None
 
 
-class MapRunExecutionStatus(StrEnum):
-    """Status values for map run executions"""
-
-    RUNNING = "RUNNING"
-    SUCCEEDED = "SUCCEEDED"
-    FAILED = "FAILED"
-    TIMED_OUT = "TIMED_OUT"
-    ABORTED = "ABORTED"
-    PENDING_REDRIVE = "PENDING_REDRIVE"
-
-
-def default_on_json_error(v: str, handler: Callable[[str], ParsedInputData]):
+def default_on_json_error(v: str, handler: Callable[[str], MapInputData]):
     """Handle JSON parsing errors by returning None and warning"""
     try:
         return handler(v)
     except Exception as e:
         log.warn(f"Failed to parse JSON field: {str(e)}")
-        raise pydantic_core.PydanticUseDefault()
+        raise PydanticUseDefault() from e
 
 
 class MapExecutionBase(BaseModel):
@@ -81,13 +77,13 @@ class MapExecutionBase(BaseModel):
     StopDate: datetime
     # Custom Fields
     parsed_input: Annotated[
-        ParsedInputData | None, WrapValidator(default_on_json_error)
+        MapInputData | None, WrapValidator(default_on_json_error)
     ] = None
 
     def model_post_init(self, __context: ValidationInfo) -> None:
         """Parse Input JSON after initialization"""
         try:
-            self.parsed_input = ParsedInputData.model_validate_json(
+            self.parsed_input = MapInputData.model_validate_json(
                 self.Input,
                 strict=False,
                 context={"log_errors": True},
@@ -130,11 +126,3 @@ class MapResults:
 
     succeeded: list[MapExecutionSucceeded]
     failed: list[MapExecutionFailed]
-
-
-class ResultType(str, Enum):
-    """Valid result types for Step Functions Map state"""
-
-    SUCCEEDED = "SUCCEEDED"
-    FAILED = "FAILED"
-    PENDING = "PENDING"

@@ -38,7 +38,7 @@ Conditions:
 Resources:
   PeriodicTasks:
     Type: AWS::Serverless::Application
-    ## Revert back to `IsNotStandalone` once isolated testing is completed and ETL is fully integrated into BODS
+    ## Remove once isolated testing is completed and ETL is fully integrated into BODS
     Condition: IsNotTemp
     Properties:
       Location: './periodic-tasks.yaml'

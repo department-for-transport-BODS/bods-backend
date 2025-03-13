@@ -20,11 +20,11 @@ class ETLInputData(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     task_id: Annotated[int, Field(alias="DatasetEtlTaskResultId")]
-    file_attributes_id: Annotated[int, Field(alias="fileAttributesId")]
+    file_attributes_id: Annotated[int, Field(alias="TxcFileAttributesId")]
     s3_bucket_name: Annotated[str, Field(alias="Bucket")]
     s3_file_key: Annotated[str, Field(alias="ObjectKey")]
     superseded_timetable: Annotated[
-        bool, Field(alias="supersededTimetable", default=False)
+        bool, Field(alias="SupersededTimetable", default=False)
     ]
 
 
@@ -78,6 +78,7 @@ class ETLProcessStats(BaseModel):
     """
 
     services: int = 0
+    superseded_timetables: int = 0
     booking_arrangements: int = 0
     service_patterns: int = 0
     pattern_stats: PatternCommonStats = PatternCommonStats()

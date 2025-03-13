@@ -25,8 +25,8 @@ from .process_txc import make_txc_file_attributes
 log = get_logger()
 
 PARSER_CONFIG = TXCParserConfig(
-    metadata=True,
     services=True,
+    metadata=True,
     operators=True,
     file_hash=True,
     serviced_organisations=False,
@@ -98,8 +98,47 @@ def process_file_attributes(
     return OrganisationTXCFileAttributesRepo(db).insert(file_attributes_data)
 
 
+def generate_response(
+    attrs: OrganisationTXCFileAttributes,
+) -> dict[str, int | str | None | list[str] | bool]:
+    """
+    Generate Lambda Response
+    """
+
+    return {
+        "message": "Sucessfully processed TXC File Attributes",
+        "id": attrs.id,
+        "service_code": attrs.service_code,
+        "hash": attrs.hash,
+        "licence_number": attrs.licence_number,
+        "modification": attrs.modification,
+        "origin": attrs.origin,
+        "destination": attrs.destination,
+        "service_mode": attrs.service_mode,
+        "national_operator_code": attrs.national_operator_code,
+        "revision_number": attrs.revision_number,
+        "filename": attrs.filename,
+        "modification_datetime": attrs.modification_datetime.isoformat(),
+        "operating_period_start_date": (
+            attrs.operating_period_start_date.isoformat()
+            if attrs.operating_period_start_date
+            else None
+        ),
+        "operating_period_end_date": (
+            attrs.operating_period_end_date.isoformat()
+            if attrs.operating_period_end_date
+            else None
+        ),
+        "line_names": attrs.line_names,
+        "public_use": attrs.public_use,
+        "revision_id": attrs.revision_id,
+    }
+
+
 @file_processing_result_to_db(StepName.TXC_ATTRIBUTE_EXTRACTION)
-def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, int]:
+def lambda_handler(
+    event: dict[str, Any], _context: LambdaContext
+) -> dict[str, int | str | None | list[str] | bool]:
     """
     Main lambda handler
     """
@@ -110,4 +149,4 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, 
     db = SqlDB()
     inserted_data = process_file_attributes(input_data, txc_data, db)
     log.info("TXC File Attributes added to database", inserted_data=inserted_data)
-    return {"id": inserted_data.id}
+    return generate_response(inserted_data)

@@ -87,5 +87,6 @@ def transform_data(
                 service_code=tm_service.service_code,
                 service_name=tm_service.name,
             )
+            stats.superseded_timetables += 1
     log.info("ETL Process Completed", stats=stats)
     return stats

@@ -11,7 +11,7 @@ from uuid import uuid4
 
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.database.client import SqlDB
-from common_layer.database.models.model_pipelines import (
+from common_layer.database.models import (
     ETLErrorCode,
     FileProcessingResult,
     PipelineErrorCode,
@@ -31,11 +31,11 @@ from structlog.stdlib import get_logger
 log = get_logger()
 
 
-def map_exception_to_error_code(exception) -> ETLErrorCode:
+def map_exception_to_error_code(exception: Exception) -> ETLErrorCode:
     """
     Maps exceptions to corresponding ETL error codes.
     """
-    exception_mapping = {
+    exception_mapping: dict[str, ETLErrorCode] = {
         "ClamConnectionError": ETLErrorCode.AV_CONNECTION_ERROR,
         "SuspiciousFile": ETLErrorCode.SUSPICIOUS_FILE,
         "AntiVirusError": ETLErrorCode.ANTIVIRUS_FAILURE,
@@ -70,7 +70,7 @@ def get_or_create_step(db: SqlDB, name: str, category: str) -> PipelineProcessin
     return repo.get_or_create_by_name_and_category(name, category)
 
 
-def get_dataset_type(event: dict) -> Literal["TIMETABLES", "FARES"]:
+def get_dataset_type(event: dict[str, str]) -> Literal["TIMETABLES", "FARES"]:
     """
     Get the type of dataset from the event
     """
@@ -156,7 +156,9 @@ def initialize_processing(
     return context
 
 
-def write_error_to_db(db: SqlDB, processing_result: FileProcessingResult, exception):
+def write_error_to_db(
+    db: SqlDB, processing_result: FileProcessingResult, exception: Exception
+):
     """
     Update the FileProcessingResult with the error returned by the lambda
     """
@@ -232,9 +234,9 @@ def file_processing_result_to_db(step_name: StepName):
     """
 
     def decorator(
-        func: Callable[[dict, LambdaContext], T]
-    ) -> Callable[[dict, LambdaContext], T]:
-        def wrapper(event: dict, context: LambdaContext) -> T:
+        func: Callable[[dict[str, Any], LambdaContext], T],
+    ) -> Callable[[dict[str, Any], LambdaContext], T]:
+        def wrapper(event: dict[str, Any], context: LambdaContext) -> T:
             configure_logging(event, context)
             processing_context = initialize_processing(event, step_name)
 

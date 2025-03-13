@@ -2,14 +2,15 @@
 Clam AV Scanner Lambda Tests
 """
 
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 from common_layer.exceptions.file_exceptions import SuspiciousFile
+from common_layer.s3.upload import process_file_to_s3
 
 from common_lambdas.clamav_scanner.app.av_scan import FileScanner, get_clamav_config
 from common_lambdas.clamav_scanner.app.models import ClamAVConfig
-from common_lambdas.clamav_scanner.app.s3_upload import process_file_to_s3
 
 
 @pytest.mark.parametrize(
@@ -23,7 +24,7 @@ from common_lambdas.clamav_scanner.app.s3_upload import process_file_to_s3
         ),
     ],
 )
-def test_get_clamav_config_success(config_scenario):
+def test_get_clamav_config_success(config_scenario: dict[str, dict[str, str]]):
     """Test ClamAV configuration validation"""
     with patch.dict("os.environ", config_scenario["env"], clear=True):
         config = get_clamav_config()
@@ -48,7 +49,7 @@ def test_get_clamav_config_success(config_scenario):
         ),
     ],
 )
-def test_get_clamav_config_exceptions(config_scenario):
+def test_get_clamav_config_exceptions(config_scenario: dict[str, dict[str, str]]):
     """Test ClamAV configuration validation"""
     with patch.dict("os.environ", config_scenario["env"], clear=True):
         with pytest.raises(EnvironmentError):
@@ -76,13 +77,13 @@ def test_get_clamav_config_exceptions(config_scenario):
         ),
     ],
 )
-def test_process_file_to_s3(file_scenario, tmp_path):
+def test_process_file_to_s3(file_scenario: dict[str, str | bytes], tmp_path: Path):
     """Test S3 file processing"""
     test_file = tmp_path / file_scenario["name"]
     test_file.write_bytes(file_scenario["content"])
 
     mock_s3 = MagicMock()
-    result = process_file_to_s3(mock_s3, test_file, "ext/")
+    result, _stats = process_file_to_s3(mock_s3, test_file, "ext/")
 
     assert result.startswith("ext/")
     mock_s3.put_object.assert_called_once()
@@ -90,7 +91,7 @@ def test_process_file_to_s3(file_scenario, tmp_path):
     assert args[0] == file_scenario["prefix"]
 
 
-def test_scan_file_no_threats_found(tmp_path):
+def test_scan_file_no_threats_found(tmp_path: Path):
     """
     Test scanning a file with no threats found.
     No exception should be raised
@@ -110,7 +111,7 @@ def test_scan_file_no_threats_found(tmp_path):
         scanner.scan(test_file)
 
 
-def test_scan_file_threats_found(tmp_path):
+def test_scan_file_threats_found(tmp_path: Path):
     """Test scanning a file with threats found."""
     test_file = tmp_path / "infected_file.txt"
     test_file.write_text("This file contains a virus")

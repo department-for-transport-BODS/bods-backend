@@ -5,7 +5,7 @@ Meta Data Extraction
 from dataclasses import dataclass
 from uuid import uuid4
 
-from common_layer.database.models.model_naptan import NaptanStopPoint
+from common_layer.database.models import NaptanStopPoint
 from common_layer.xml.txc.models import (
     TXCFlexibleJourneyPattern,
     TXCJourneyPattern,
