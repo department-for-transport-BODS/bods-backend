@@ -1,10 +1,10 @@
 {
-  "StartAt": "ProcessInput",
+  "StartAt": "Process Input",
   "QueryLanguage": "JSONata",
   "States": {
-    "ProcessInput": {
+    "Process Input": {
       "Type": "Pass",
-      "Next": "InitializePipeline",
+      "Next": "Initialize Pipeline",
       "Assign": {
         "inputDataSource": "{% $states.input.inputDataSource %}",
         "datasetRevisionId": "{% $states.input.datasetRevisionId %}",
@@ -17,9 +17,9 @@
         "datasetETLTaskResultId": "{% $exists($states.input.datasetETLTaskResultId) ? $states.input.datasetETLTaskResultId : null %}"
       }
     },
-    "InitializePipeline": {
+    "Initialize Pipeline": {
       "Type": "Task",
-      "Next": "RouteByInputType",
+      "Next": "Route By Input Type",
       "Resource": "${InitializePipelineLambdaArn}",
       "Arguments": {
         "Bucket": "{% $s3Bucket %}",
@@ -33,30 +33,30 @@
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
-          "Next": "ParentExceptionHandler",
+          "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"
           }
         }
       ]
     },
-    "RouteByInputType": {
+    "Route By Input Type": {
       "Type": "Choice",
-      "Default": "ParentFail",
+      "Default": "Overall State Machine Failed",
       "Choices": [
         {
           "Condition": "{% $inputDataSource = 'URL_DOWNLOAD' and $url != null %}",
-          "Next": "DownloadDataset"
+          "Next": "Download Dataset"
         },
         {
           "Condition": "{% $inputDataSource = 'S3_FILE' and $s3Bucket != null and $s3Object != null %}",
-          "Next": "ClamAvScanner"
+          "Next": "ClamAV and Extraction"
         }
       ]
     },
-    "DownloadDataset": {
+    "Download Dataset": {
       "Type": "Task",
-      "Next": "ClamAvScanner",
+      "Next": "ClamAV and Extraction",
       "Resource": "${DownloadDatasetLambdaArn}",
       "Arguments": {
         "Url": "{% $url %}",
@@ -72,16 +72,16 @@
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
-          "Next": "ParentExceptionHandler",
+          "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"
           }
         }
       ]
     },
-    "ClamAvScanner": {
+    "ClamAV and Extraction": {
       "Type": "Task",
-      "Next": "FileLevelProcessing",
+      "Next": "Validation and File Attributes",
       "Resource": "${ClamAvScannerLambdaArn}",
       "Arguments": {
         "Bucket": "{% $s3Bucket %}",
@@ -93,29 +93,25 @@
       "Assign": {
         "ExtractedSubFolder": "{% $states.result.body.generatedPrefix %}"
       },
-
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
-          "Next": "ParentExceptionHandler",
+          "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"
           }
         }
       ]
     },
-    "FileLevelProcessing": {
+    "Validation and File Attributes": {
       "Type": "Map",
-      "Next": "GenerateOutputZip",
+      "Next": "Collate Files",
       "MaxConcurrency": 1000,
       "ToleratedFailurePercentage": 100,
-      "Output": {
-        "mapResults": "{% $states.result %}"
-      },
       "ItemSelector": {
+        "mapS3Bucket": "{% $s3Bucket %}",
         "mapS3Object": "{% $states.context.Map.Item.Value.Key %}",
         "mapDatasetRevisionId": "{% $datasetRevisionId %}",
-        "mapS3Bucket": "{% $s3Bucket %}",
         "mapDatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}"
       },
       "ItemReader": {
@@ -125,23 +121,16 @@
           "Prefix": "{% $ExtractedSubFolder %}"
         }
       },
-      "ResultWriter": {
-        "Resource": "arn:aws:states:::s3:putObject",
-        "Arguments": {
-          "Bucket": "{% $s3Bucket %}",
-          "Prefix": "tt-etl-map-results"
-        }
-      },
       "ItemProcessor": {
         "ProcessorConfig": {
           "Mode": "DISTRIBUTED",
           "ExecutionType": "STANDARD"
         },
-        "StartAt": "ProcessMapInput",
+        "StartAt": "Process Validation Map Input",
         "States": {
-          "ProcessMapInput": {
+          "Process Validation Map Input": {
             "Type": "Pass",
-            "Next": "FileValidation",
+            "Next": "File Validation",
             "Assign": {
               "Bucket": "{% $states.input.mapS3Bucket %}",
               "ObjectKey": "{% $states.input.mapS3Object %}",
@@ -149,9 +138,9 @@
               "datasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}"
             }
           },
-          "FileValidation": {
+          "File Validation": {
             "Type": "Task",
-            "Next": "SchemaCheck",
+            "Next": "XSD Schema Check",
             "Resource": "${FileValidationLambdaArn}",
             "Arguments": {
               "Bucket": "{% $Bucket %}",
@@ -164,16 +153,16 @@
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
-                "Next": "ExceptionHandler",
+                "Next": "Validation Exception Handler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
                 }
               }
             ]
           },
-          "SchemaCheck": {
+          "XSD Schema Check": {
             "Type": "Task",
-            "Next": "PostSchemaCheck",
+            "Next": "Post Schema Check",
             "Resource": "${SchemaCheckLambdaArn}",
             "Arguments": {
               "Bucket": "{% $Bucket %}",
@@ -183,20 +172,19 @@
             "Output": {
               "schemaCheck": "{% $states.result %}"
             },
-
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
-                "Next": "ExceptionHandler",
+                "Next": "Validation Exception Handler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
                 }
               }
             ]
           },
-          "PostSchemaCheck": {
+          "Post Schema Check": {
             "Type": "Task",
-            "Next": "FileAttributesEtl",
+            "Next": "FileAttributes ETL",
             "Resource": "${PostSchemaCheckLambdaArn}",
             "Arguments": {
               "Bucket": "{% $Bucket %}",
@@ -209,16 +197,16 @@
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
-                "Next": "ExceptionHandler",
+                "Next": "Validation Exception Handler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
                 }
               }
             ]
           },
-          "FileAttributesEtl": {
+          "FileAttributes ETL": {
             "Type": "Task",
-            "Next": "PtiValidation",
+            "Next": "Validation Success",
             "Resource": "${FileAttributesEtlLambdaArn}",
             "Arguments": {
               "Bucket": "{% $Bucket %}",
@@ -228,88 +216,185 @@
             "Assign": {
               "fileAttributesEtl": "{% $states.result.id %}"
             },
-            "Output": {
-              "fileAttributesEtl": "{% $states.result.id %}"
-            },
-
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
-                "Next": "ExceptionHandler",
+                "Next": "Validation Exception Handler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
                 }
               }
             ]
           },
-          "PtiValidation": {
+          "Validation Success": {
+            "Type": "Succeed"
+          },
+          "Validation Exception Handler": {
+            "Type": "Pass",
+            "Next": "Validation Failed"
+          },
+          "Validation Failed": {
+            "Type": "Fail",
+            "Comment": "Processing Single File in ETL Failed"
+          }
+        }
+      },
+      "Output": {
+        "validationMapResults": "{% $states.result %}"
+      },
+      "ResultWriter": {
+        "Resource": "arn:aws:states:::s3:putObject",
+        "Arguments": {
+          "Bucket": "{% $s3Bucket %}",
+          "Prefix": "tt-file-attributes-map-results"
+        }
+      }
+    },
+    "Collate Files": {
+      "Type": "Task",
+      "Next": "PTI and ETL",
+      "Resource": "${CollateFilesLambdaArn}",
+      "Arguments": {
+        "MapRunArn": "{% $states.input.validationMapResults.MapRunArn %}",
+        "MapRunPrefix": "tt-file-attributes-map-results",
+        "Bucket": "{% $s3Bucket %}",
+        "DatasetRevisionId": "{% $datasetRevisionId %}"
+      },
+      "Assign": {
+        "EtlFileListJson": "{% $states.result.EtlFileListJsonS3ObjectKey %}"
+      },
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "Parent Exception Handler",
+          "Output": {
+            "errorInfo": "{% $states.errorOutput %}"
+          }
+        }
+      ]
+    },
+    "PTI and ETL": {
+      "Type": "Map",
+      "Next": "Generate Output Zip and Update Status",
+      "MaxConcurrency": 1000,
+      "ToleratedFailurePercentage": 100,
+      "ItemSelector": {
+        "mapS3Bucket": "{% $states.context.Map.Item.Value.Bucket %}",
+        "mapS3Object": "{% $states.context.Map.Item.Value.ObjectKey %}",
+        "mapDatasetSupersededTimetable": "{% $states.context.Map.Item.Value.SupersededTimetable %}",
+        "mapDatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}",
+        "mapDatasetFileAttributesEtl": "{% $states.context.Map.Item.Value.TxcFileAttributesId %}",
+        "mapDatasetRevisionId": "{% $datasetRevisionId %}"
+      },
+      "ItemReader": {
+        "Resource": "arn:aws:states:::s3:getObject",
+        "ReaderConfig": {
+          "InputType": "JSON"
+        },
+        "Arguments": {
+          "Bucket": "{% $s3Bucket %}",
+          "Key": "{% $EtlFileListJson %}"
+        }
+      },
+      "ItemProcessor": {
+        "ProcessorConfig": {
+          "Mode": "DISTRIBUTED",
+          "ExecutionType": "STANDARD"
+        },
+        "StartAt": "Process ETL Map Input",
+        "States": {
+          "Process ETL Map Input": {
+            "Type": "Pass",
+            "Next": "PTI Validation",
+            "Assign": {
+              "Bucket": "{% $states.input.mapS3Bucket %}",
+              "ObjectKey": "{% $states.input.mapS3Object %}",
+              "SupersededTimetable": "{% $states.input.mapDatasetSupersededTimetable %}",
+              "datasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}",
+              "DatasetRevisionId": "{% $states.input.mapDatasetRevisionId %}",
+              "FileAttributesEtl": "{% $states.input.mapDatasetFileAttributesEtl %}"
+            }
+          },
+          "PTI Validation": {
             "Type": "Task",
-            "Next": "EtlProcess",
+            "Next": "Timetables ETL",
             "Resource": "${PtiValidationLambdaArn}",
             "Arguments": {
               "Bucket": "{% $Bucket %}",
               "ObjectKey": "{% $ObjectKey %}",
               "DatasetRevisionId": "{% $DatasetRevisionId %}",
-              "TxcFileAttributesId": "{% $fileAttributesEtl %}"
+              "TxcFileAttributesId": "{% $FileAttributesEtl %}"
             },
             "Output": {
               "ptiValidation": "{% $states.result %}"
             },
-
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
-                "Next": "ExceptionHandler",
+                "Next": "ETL Exception Handler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
                 }
               }
             ]
           },
-          "EtlProcess": {
+
+          "Timetables ETL": {
             "Type": "Task",
-            "Next": "Success",
+            "Next": "PTI and ETL Success",
             "Resource": "${EtlProcessLambdaArn}",
             "Arguments": {
               "Bucket": "{% $Bucket %}",
               "ObjectKey": "{% $ObjectKey %}",
               "DatasetRevisionId": "{% $DatasetRevisionId %}",
-              "fileAttributesId": "{% $fileAttributesEtl %}",
+              "TxcFileAttributesId": "{% $FileAttributesEtl %}",
+              "SupersededTimetable": "{% $SupersededTimetable %}",
               "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}"
             },
             "Output": {
               "etlProcess": "{% $states.result %}"
             },
+
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
-                "Next": "ExceptionHandler",
+                "Next": "ETL Exception Handler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
                 }
               }
             ]
           },
-          "Success": {
+          "PTI and ETL Success": {
             "Type": "Succeed"
           },
-          "ExceptionHandler": {
+          "ETL Exception Handler": {
             "Type": "Pass",
-            "Next": "Fail"
+            "Next": "PTI and ETL Failed"
           },
-          "Fail": {
-            "Type": "Fail",
-            "Comment": "Processing Single File in ETL Failed"
+          "PTI and ETL Failed": {
+            "Type": "Fail"
           }
+        }
+      },
+      "Output": {
+        "etlMapResults": "{% $states.result %}"
+      },
+      "ResultWriter": {
+        "Resource": "arn:aws:states:::s3:putObject",
+        "Arguments": {
+          "Bucket": "{% $s3Bucket %}",
+          "Prefix": "tt-etl-map-results"
         }
       }
     },
-    "GenerateOutputZip": {
+    "Generate Output Zip and Update Status": {
       "Type": "Task",
-      "Next": "DqsTrigger",
+      "Next": "Trigger DQS State Machine",
       "Resource": "${GenerateOutputZipLambdaArn}",
       "Arguments": {
-        "MapRunArn": "{% $states.input.mapResults.MapRunArn %}",
+        "MapRunArn": "{% $states.input.etlMapResults.MapRunArn %}",
+        "MapRunPrefix": "tt-etl-map-results",
         "DestinationBucket": "{% $s3Bucket %}",
         "OutputPrefix": "{% $ExtractedSubFolder %}",
         "DatasetRevisionId": "{% $datasetRevisionId %}",
@@ -321,14 +406,14 @@
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
-          "Next": "ParentExceptionHandler",
+          "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"
           }
         }
       ]
     },
-    "DqsTrigger": {
+    "Trigger DQS State Machine": {
       "Type": "Task",
       "Next": "Completed",
       "Resource": "arn:aws:states:::states:startExecution",
@@ -339,9 +424,9 @@
         }
       }
     },
-    "ParentExceptionHandler": {
+    "Parent Exception Handler": {
       "Type": "Task",
-      "Next": "ParentFail",
+      "Next": "Overall State Machine Failed",
       "Resource": "${ExceptionHandlerLambdaArn}",
       "Arguments": {
         "Error": "{% $states.input.errorInfo.Error %}",
@@ -349,7 +434,7 @@
         "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}"
       }
     },
-    "ParentFail": {
+    "Overall State Machine Failed": {
       "Type": "Fail",
       "Comment": "Entire ETL Pipeline Failed"
     },

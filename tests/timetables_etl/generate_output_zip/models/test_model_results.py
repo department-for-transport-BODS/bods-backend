@@ -1,17 +1,15 @@
-"""
-
-"""
+""" """
 
 from datetime import UTC, datetime
 
 import pytest
-from generate_output_zip.app.models.model_results import (
+from common_layer.aws.step.map_results_models import (
     MapExecutionFailed,
     MapExecutionSucceeded,
+    MapInputData,
     MapResultFailed,
     MapResultSucceeded,
     MapRunExecutionStatus,
-    ParsedInputData,
 )
 
 
@@ -177,7 +175,7 @@ def test_failed_parsing_valid(json_str: str, expected_model: MapResultFailed) ->
                 "Status": "SUCCEEDED",
                 "StopDate": "2025-01-09T18:14:18.554Z"
             }]""",
-            ParsedInputData(
+            MapInputData(
                 Bucket="test-bucket",
                 Key="test/key.xml",
                 DatasetRevisionId=123,
@@ -201,7 +199,7 @@ def test_failed_parsing_valid(json_str: str, expected_model: MapResultFailed) ->
                 "Status": "SUCCEEDED",
                 "StopDate": "2025-01-09T18:14:18.554Z"
             }]""",
-            ParsedInputData(
+            MapInputData(
                 Bucket="test-bucket",
                 Key="test/key.xml",
                 DatasetRevisionId=123,
@@ -231,7 +229,7 @@ def test_failed_parsing_valid(json_str: str, expected_model: MapResultFailed) ->
     ],
 )
 def test_parsed_input_field(
-    json_str: str, expected_parsed_input: ParsedInputData | None
+    json_str: str, expected_parsed_input: MapInputData | None
 ) -> None:
     """Test the parsed_input field is correctly populated from Input JSON"""
     result = MapResultSucceeded.model_validate_json(json_str)

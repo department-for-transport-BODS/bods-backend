@@ -26,7 +26,7 @@ def create_route_section_hashes(
     jp_sections["route_section_hash"]
     Based on the timing_links
     """
-    route_section_hashes = {}
+    route_section_hashes: dict[str, str] = {}
     for section in journey_pattern_sections:
         route_link_refs = [
             link.RouteLinkRef for link in section.JourneyPatternTimingLink

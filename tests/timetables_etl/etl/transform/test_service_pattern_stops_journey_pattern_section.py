@@ -15,7 +15,11 @@ from common_layer.database.models.model_transmodel_vehicle_journey import (
     TransmodelVehicleJourney,
 )
 from common_layer.xml.txc.models.txc_journey_pattern import TXCJourneyPatternSection
-from common_layer.xml.txc.models.txc_vehicle_journey import TXCVehicleJourney
+from common_layer.xml.txc.models.txc_vehicle_journey import (
+    TXCVehicleJourney,
+    TXCVehicleJourneyStopUsageStructure,
+    TXCVehicleJourneyTimingLink,
+)
 
 from tests.factories.database.naptan import NaptanStopPointFactory
 from tests.timetables_etl.factories.txc.factory_txc_journey_pattern_section import (
@@ -68,6 +72,24 @@ def txc_vehicle_journey() -> TXCVehicleJourney:
         VehicleJourneyCode="VJ1",
         JourneyPatternRef="JP1",
         DepartureTime="9:00",
+        VehicleJourneyTimingLink=[
+            TXCVehicleJourneyTimingLink(
+                id="VJTL1",
+                JourneyPatternTimingLinkRef="1_1",
+                VehicleJourneyRef="VJ1",
+                RunTime="PT4M",
+                From=TXCVehicleJourneyStopUsageStructure(WaitTime="PT17M0S"),
+                To=TXCVehicleJourneyStopUsageStructure(),
+            ),
+            TXCVehicleJourneyTimingLink(
+                id="VJTL2",
+                JourneyPatternTimingLinkRef="1_2",
+                VehicleJourneyRef="VJ2",
+                RunTime="PT2M",
+                From=TXCVehicleJourneyStopUsageStructure(),
+                To=TXCVehicleJourneyStopUsageStructure(),
+            ),
+        ],
     )
 
 
@@ -75,11 +97,14 @@ def txc_vehicle_journey() -> TXCVehicleJourney:
 def naptan_stop_lookup() -> dict[str, NaptanStopPoint]:
     """Fixture for creating a stop lookup dictionary"""
     stops: dict[str, NaptanStopPoint] = {
-        "2400A001": NaptanStopPointFactory.create(
-            atco_code="2400A001", common_name="First Stop"
+        "2400A001": NaptanStopPointFactory.create_with_id(
+            atco_code="2400A001", common_name="First Stop", id_number=123
         ),
-        "2400A002": NaptanStopPointFactory.create(
-            atco_code="2400A002", common_name="Second Stop"
+        "2400A002": NaptanStopPointFactory.create_with_id(
+            atco_code="2400A002", common_name="Second Stop", id_number=456
+        ),
+        "2400A003": NaptanStopPointFactory.create_with_id(
+            atco_code="2400A003", common_name="Third Stop", id_number=789
         ),
     }
     return stops
@@ -142,6 +167,20 @@ def journey_context(
                         ),
                         RunTime="PT5M",
                     ),
+                    TXCJourneyPatternTimingLinkFactory(
+                        id="1_2",
+                        From=TXCJourneyPatternStopUsageFactory(
+                            StopPointRef="2400A002",
+                            SequenceNumber="1",
+                            TimingStatus="otherPoint",
+                        ),
+                        To=TXCJourneyPatternStopUsageFactory(
+                            StopPointRef="2400A003",
+                            SequenceNumber="2",
+                            TimingStatus="otherPoint",
+                        ),
+                        RunTime="PT2M",
+                    ),
                 ],
             ),
             SectionProcessingState(
@@ -153,14 +192,23 @@ def journey_context(
                 {
                     "atco_code": "2400A001",
                     "sequence_number": 0,
-                    "departure_time": time(9, 0),
+                    "departure_time": time(9, 17),
                     "is_timing_point": True,
+                    "naptan_stop_id": 123,
                 },
                 {
                     "atco_code": "2400A002",
                     "sequence_number": 1,
-                    "departure_time": time(9, 5),
+                    "departure_time": time(9, 21),
                     "is_timing_point": False,
+                    "naptan_stop_id": 456,
+                },
+                {
+                    "atco_code": "2400A003",
+                    "sequence_number": 2,
+                    "departure_time": time(9, 23),
+                    "is_timing_point": False,
+                    "naptan_stop_id": 789,
                 },
             ],
             id="Basic single link section with timing",
@@ -187,3 +235,4 @@ def test_process_journey_pattern_section(
         assert actual.sequence_number == expected["sequence_number"]
         assert actual.departure_time == expected["departure_time"]
         assert actual.is_timing_point == expected["is_timing_point"]
+        assert actual.naptan_stop_id == expected["naptan_stop_id"]
