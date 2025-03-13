@@ -379,7 +379,8 @@ class DynamoDBLoader:
         processed_count = 0
         error_count = 0
         start_time = time.time()
-        batch_size = 100  # transact_write_items can handle up to 100 updates at a time
+        # Dynamo transact_write_items can handle up to 100 updates at a time
+        batch_size = 100
 
         batches = [
             dict(list(updates.items())[i : i + batch_size])
