@@ -42,7 +42,7 @@
     },
     "Route By Input Type": {
       "Type": "Choice",
-      "Default": "ParentFail",
+      "Default": "Overall State Machine Failed",
       "Choices": [
         {
           "Condition": "{% $inputDataSource = 'URL_DOWNLOAD' and $url != null %}",
