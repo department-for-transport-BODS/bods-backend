@@ -25,8 +25,8 @@ from .process_txc import make_txc_file_attributes
 log = get_logger()
 
 PARSER_CONFIG = TXCParserConfig(
-    metadata=True,
     services=True,
+    metadata=True,
     operators=True,
     file_hash=True,
     serviced_organisations=False,
