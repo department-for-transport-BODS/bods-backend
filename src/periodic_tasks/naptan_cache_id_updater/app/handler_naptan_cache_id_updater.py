@@ -1,5 +1,5 @@
 """
-Lambda handler for updating the PrivateCodes in the
+Lambda handler for updating the PrivateCodes in the 
 Naptan StopPoints DynamoDB table with IDs from Bods DB.
 """
 
@@ -22,6 +22,7 @@ tracer = Tracer()
 log = get_logger()
 
 
+# pylint: disable=R0801
 class NaptanProcessingInput(BaseModel):
     """Input schema for NaPTAN processing Lambda."""
 

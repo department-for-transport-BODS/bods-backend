@@ -37,6 +37,7 @@ async def process_private_code_updates(
     total_errors = 0
     active_tasks: list[asyncio.Task[tuple[int, int]]] = []
 
+    # pylint: disable=R0801
     async def wait_for_slot() -> None:
         """Wait for a task slot to become available and process completed tasks."""
         nonlocal total_processed, total_errors, active_tasks

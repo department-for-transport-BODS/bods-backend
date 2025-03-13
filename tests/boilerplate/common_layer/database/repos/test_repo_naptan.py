@@ -86,7 +86,6 @@ def test_stream_naptan_ids(test_db):
 
     repo = NaptanStopPointRepo(test_db)
 
-    # Test with batch_size = 2
     expected = {f"atco{i}": i for i in range(1, 6)}
     all_results: dict[str, int] = {}
 
