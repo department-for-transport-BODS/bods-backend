@@ -348,7 +348,7 @@
               "ObjectKey": "{% $ObjectKey %}",
               "DatasetRevisionId": "{% $DatasetRevisionId %}",
               "TxcFileAttributesId": "{% $FileAttributesEtl %}",
-              "SupersededTimetable:": "{% $SupersededTimetable %}",
+              "SupersededTimetable": "{% $SupersededTimetable %}",
               "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}"
             },
             "Output": {
