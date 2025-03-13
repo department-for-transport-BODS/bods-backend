@@ -95,11 +95,11 @@ def txc_vehicle_journey() -> TXCVehicleJourney:
 def naptan_stop_lookup() -> dict[str, NaptanStopPoint]:
     """Fixture for creating a stop lookup dictionary"""
     stops: dict[str, NaptanStopPoint] = {
-        "2400A001": NaptanStopPointFactory.create(
-            atco_code="2400A001", common_name="First Stop"
+        "2400A001": NaptanStopPointFactory.create_with_id(
+            atco_code="2400A001", common_name="First Stop", id_number=123
         ),
-        "2400A002": NaptanStopPointFactory.create(
-            atco_code="2400A002", common_name="Second Stop"
+        "2400A002": NaptanStopPointFactory.create_with_id(
+            atco_code="2400A002", common_name="Second Stop", id_number=321
         ),
         "2400A003": NaptanStopPointFactory.create(
             atco_code="2400A003", common_name="Third Stop"
@@ -192,6 +192,7 @@ def journey_context(
                     "sequence_number": 0,
                     "departure_time": time(9, 17),
                     "is_timing_point": True,
+                    "naptan_stop_id": 123,
                 },
                 {
                     "atco_code": "2400A002",
@@ -204,6 +205,7 @@ def journey_context(
                     "sequence_number": 2,
                     "departure_time": time(9, 23),
                     "is_timing_point": False,
+                    "naptan_stop_id": 321,
                 },
             ],
             id="Basic single link section with timing",
@@ -230,3 +232,4 @@ def test_process_journey_pattern_section(
         assert actual.sequence_number == expected["sequence_number"]
         assert actual.departure_time == expected["departure_time"]
         assert actual.is_timing_point == expected["is_timing_point"]
+        assert actual.naptan_stop_id == expected["naptan_stop_id"]
