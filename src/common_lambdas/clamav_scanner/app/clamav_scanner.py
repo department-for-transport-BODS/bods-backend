@@ -95,7 +95,7 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
             "body": {
                 "message": msg,
                 "generatedPrefix": generated_prefix,
-                "stats": stats.model_dump_json(),
+                "stats": stats.model_dump(),
             },
         }
 

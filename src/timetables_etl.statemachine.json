@@ -216,9 +216,6 @@
             "Assign": {
               "fileAttributesEtl": "{% $states.result.id %}"
             },
-            "Output": {
-              "fileAttributesEtl": "{% $states.result.id %}"
-            },
             "Catch": [
               {
                 "ErrorEquals": ["States.ALL"],
