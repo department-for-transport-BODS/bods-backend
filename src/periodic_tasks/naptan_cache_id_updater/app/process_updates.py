@@ -76,9 +76,7 @@ async def process_private_code_updates(
             while len(active_tasks) >= dynamo_loader.max_concurrent_batches:
                 await wait_for_slot()
 
-            task = asyncio.create_task(
-                process_batch(atco_batch, dynamo_loader, naptan_repo)
-            )
+            task = asyncio.create_task(process_batch(atco_batch, dynamo_loader))
             active_tasks.append(task)
 
         # Process any remaining active tasks
