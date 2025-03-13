@@ -49,7 +49,7 @@ def create_custom_stop_point_data(stop: TXCStopPoint) -> NaptanStopPoint:
         else None
     )
 
-    return NaptanStopPoint(
+    stop_point = NaptanStopPoint(
         atco_code=stop.AtcoCode,
         naptan_code=stop.NaptanCode,
         common_name=stop.Descriptor.CommonName,
@@ -62,6 +62,10 @@ def create_custom_stop_point_data(stop: TXCStopPoint) -> NaptanStopPoint:
         bus_stop_type=bus_stop_type,
         locality_id=stop.Place.NptgLocalityRef,
     )
+    if stop.PrivateCode:
+        stop_point.id = int(stop.PrivateCode)
+
+    return stop_point
 
 
 def create_non_existent_stop_point_data(

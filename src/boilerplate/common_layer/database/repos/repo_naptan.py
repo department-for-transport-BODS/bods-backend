@@ -2,7 +2,10 @@
 Tables prefixed with naptan_
 """
 
+from typing import Iterator
+
 from common_layer.exceptions.pipeline_exceptions import PipelineException
+from sqlalchemy import select
 from structlog import get_logger
 
 from ..models.model_naptan import NaptanAdminArea, NaptanLocality, NaptanStopPoint
@@ -51,6 +54,25 @@ class NaptanStopPointRepo(BaseRepository[NaptanStopPoint]):
         ]
 
         return found_stops, missing_atco_codes
+
+    @handle_repository_errors
+    def stream_naptan_ids(self, batch_size: int = 1000) -> Iterator[dict[str, int]]:
+        """Fetch NaPTAN stop point IDs in batches."""
+        offset = 0
+        while True:
+            with self._db.session_scope() as session:
+                results = session.execute(
+                    select(self._model.atco_code, self._model.id)
+                    .order_by(self._model.atco_code)
+                    .offset(offset)
+                    .limit(batch_size)
+                ).all()
+
+                if not results:
+                    break  # No more data
+
+                yield {row[0]: row[1] for row in results}
+                offset += batch_size
 
     @handle_repository_errors
     def get_by_naptan_codes(
