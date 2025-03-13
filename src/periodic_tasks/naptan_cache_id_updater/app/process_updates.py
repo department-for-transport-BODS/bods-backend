@@ -1,3 +1,7 @@
+"""
+Async logic for processing NaPTAN Stop Point Private Code (ID) updates
+"""
+
 import asyncio
 
 from botocore.exceptions import ClientError
@@ -15,7 +19,6 @@ log = get_logger()
 async def process_batch(
     atco_code_id_map: dict[str, int],
     dynamo_loader: DynamoDBLoader,
-    repo: NaptanStopPointRepo,
 ) -> tuple[int, int]:
     """Fetch corresponding IDs from Postgres and update in DynamoDB."""
     if not atco_code_id_map:
@@ -28,7 +31,7 @@ async def process_private_code_updates(
     dynamo_loader: DynamoDBLoader, naptan_repo: NaptanStopPointRepo
 ) -> tuple[int, int]:
     """
-    Update the PrivateCodes for StopPoints in batches using async DynamoDB updates with controlled concurrency.
+    Update the PrivateCodes for StopPoints in batches with controlled concurrency.
     """
     total_processed = 0
     total_errors = 0

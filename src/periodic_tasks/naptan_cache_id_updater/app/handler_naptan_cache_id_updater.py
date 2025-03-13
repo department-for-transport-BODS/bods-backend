@@ -1,3 +1,8 @@
+"""
+Lambda handler for updating the PrivateCodes in the 
+Naptan StopPoints DynamoDB table with IDs from Bods DB.
+"""
+
 import asyncio
 import json
 from typing import Any, Dict
