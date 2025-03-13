@@ -110,7 +110,6 @@ class DynamoDBLoader:
         self.partition_key = partition_key
         self.max_concurrent_batches = max_concurrent_batches
         self.semaphore = asyncio.Semaphore(max_concurrent_batches)
-        self.semaphore_single_updates = asyncio.Semaphore(1500)
 
     def prepare_put_requests(
         self, items: list[dict[str, Any]]
@@ -423,21 +422,106 @@ class DynamoDBLoader:
         failed_count = 0
         start_time = time.time()
 
-        tasks = [
-            asyncio.create_task(self.update_private_code(atco, str(private)))
-            for atco, private in updates.items()
+        batches = [
+            dict(list(updates.items())[i : i + 100])
+            for i in range(0, len(updates), 100)
         ]
+
+        tasks = [self.update_private_codes_batch(batch) for batch in batches]
         results = await asyncio.gather(*tasks)
 
-        processed_count = sum(1 for success in results if success)
-        failed_count = len(results) - processed_count
+        processed_count = sum(
+            len(batch) for batch, success in zip(batches, results) if success
+        )
+        failed_count = sum(
+            len(batch) for batch, success in zip(batches, results) if not success
+        )
 
         total_time = time.time() - start_time
         self.log.info(
-            "Completed batch operation",
+            "Completed all batch operation",
             processed_count=processed_count,
             error_count=failed_count,
             total_time=f"{total_time:.2f}s",
         )
 
         return processed_count, failed_count
+
+    async def update_private_codes_batch(self, batch: dict[str, int]) -> bool:
+        """
+        Updates multiple AtcoCodes in DynamoDB using transact_write_items with retries.
+        Each batch contains up to 100 updates. If a batch fails, it retries with exponential backoff.
+
+        Returns:
+        - True if update was successful after all retries
+        - False if update failed after max retries
+        """
+        if not batch:
+            return False
+
+        transact_items = [
+            {
+                "Update": {
+                    "TableName": self.table_name,
+                    "Key": {self.partition_key: atco_code},
+                    "UpdateExpression": "SET PrivateCode = :private_code",
+                    "ExpressionAttributeValues": {":private_code": str(private_code)},
+                }
+            }
+            for atco_code, private_code in batch.items()
+        ]
+
+        max_retries = 5
+        retry_count = 0
+        backoff = 0.1
+
+        async with self.semaphore:
+            while retry_count < max_retries:
+                if retry_count > 0:
+                    wait_time = backoff + (random.random() * 0.1)
+                    self.log.warning(
+                        "Retrying transact_write_items due to failure",
+                        retry_attempt=retry_count,
+                        wait_time=f"{wait_time:.2f}s",
+                    )
+                    await asyncio.sleep(wait_time)
+                    backoff *= 2
+
+                try:
+                    loop = asyncio.get_event_loop()
+                    await loop.run_in_executor(
+                        None,
+                        lambda: self.dynamodb.meta.client.transact_write_items(
+                            TransactItems=transact_items  # type: ignore
+                        ),
+                    )
+                    self.log.info(
+                        "Completed batch update operations",
+                        processed_count=len(batch),
+                    )
+                    return True
+
+                except ClientError as e:
+                    error_response: _ClientErrorResponseTypeDef = e.response
+                    error_message = error_response.get("Error", {}).get("Message", "")
+                    error_code = error_response.get("Error", {}).get("Code", "")
+                    self.log.error(
+                        "Failed to execute batch write operation",
+                        error_code=error_code,
+                        retry_count=retry_count,
+                        error_message=error_message,
+                    )
+                    if error_code in [
+                        "ProvisionedThroughputExceededException",
+                        "RequestLimitExceeded",
+                    ]:
+                        retry_count += 1
+                        continue
+
+                    self.log.error(
+                        "Failed to update batch", error_code=error_code, error=str(e)
+                    )
+                    return False
+
+        self.log.error("Max retries reached for batch update")
+        return False

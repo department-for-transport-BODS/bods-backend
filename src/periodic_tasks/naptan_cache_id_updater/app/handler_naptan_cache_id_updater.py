@@ -16,7 +16,7 @@ from structlog.stdlib import get_logger
 tracer = Tracer()
 log = get_logger()
 
-BATCH_SIZE = 20000  # Adjust if necessary for performance tuning
+BATCH_SIZE = 10000  # Adjust if necessary for performance tuning
 
 
 async def process_batch(
@@ -137,7 +137,6 @@ def lambda_handler(event: Dict[str, Any], context: LambdaContext) -> Dict[str, A
         table_name=input_data.dynamo_table,
         region=input_data.aws_region,
         partition_key="AtcoCode",
-        max_concurrent_batches=250,
     )
     db = SqlDB()
     naptan_repo = NaptanStopPointRepo(db)
