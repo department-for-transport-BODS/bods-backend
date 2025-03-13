@@ -275,7 +275,7 @@
     },
     "PTI and ETL": {
       "Type": "Map",
-      "Next": "GenerateOutputZip",
+      "Next": "Generate Output Zip and Update Status",
       "MaxConcurrency": 1000,
       "ToleratedFailurePercentage": 100,
       "ItemSelector": {
@@ -388,9 +388,9 @@
         }
       }
     },
-    "GenerateOutputZip": {
+    "Generate Output Zip and Update Status": {
       "Type": "Task",
-      "Next": "DqsTrigger",
+      "Next": "Trigger DQS State Machine",
       "Resource": "${GenerateOutputZipLambdaArn}",
       "Arguments": {
         "MapRunArn": "{% $states.input.etlMapResults.MapRunArn %}",
@@ -413,7 +413,7 @@
         }
       ]
     },
-    "DqsTrigger": {
+    "Trigger DQS State Machine": {
       "Type": "Task",
       "Next": "Completed",
       "Resource": "arn:aws:states:::states:startExecution",
@@ -426,7 +426,7 @@
     },
     "Parent Exception Handler": {
       "Type": "Task",
-      "Next": "ParentFail",
+      "Next": "Overall State Machine Failed",
       "Resource": "${ExceptionHandlerLambdaArn}",
       "Arguments": {
         "Error": "{% $states.input.errorInfo.Error %}",
@@ -434,7 +434,7 @@
         "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}"
       }
     },
-    "ParentFail": {
+    "Overall State Machine Failed": {
       "Type": "Fail",
       "Comment": "Entire ETL Pipeline Failed"
     },
