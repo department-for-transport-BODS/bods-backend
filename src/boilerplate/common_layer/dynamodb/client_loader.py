@@ -5,7 +5,7 @@ DynamoDB Data Loader Client
 import asyncio
 import random
 import time
-from typing import Any, AsyncIterator, Coroutine, Literal, NotRequired, TypedDict
+from typing import Any, Literal, NotRequired, TypedDict
 
 import boto3
 from boto3.dynamodb.types import TypeDeserializer
@@ -378,7 +378,6 @@ class DynamoDBLoader:
 
         processed_count = 0
         error_count = 0
-        start_time = time.time()
         # Dynamo transact_write_items can handle up to 100 updates at a time
         batch_size = 100
 
@@ -386,9 +385,11 @@ class DynamoDBLoader:
             dict(list(updates.items())[i : i + batch_size])
             for i in range(0, len(updates), batch_size)
         ]
-
         tasks = [self.update_private_codes_batch(batch) for batch in batches]
+
+        start_time = time.time()
         results = await asyncio.gather(*tasks)
+        total_time = time.time() - start_time
 
         processed_count = sum(
             len(batch) for batch, success in zip(batches, results) if success
@@ -397,7 +398,6 @@ class DynamoDBLoader:
             len(batch) for batch, success in zip(batches, results) if not success
         )
 
-        total_time = time.time() - start_time
         self.log.info(
             "Completed batch update operations",
             processed_count=processed_count,
@@ -410,7 +410,8 @@ class DynamoDBLoader:
     async def update_private_codes_batch(self, batch: dict[str, int]) -> bool:
         """
         Updates multiple AtcoCodes in DynamoDB using transact_write_items with retries.
-        Each batch can contain up to 100 updates. If a batch fails, it retries with exponential backoff.
+        Each batch can contain up to 100 updates.
+        If a batch fails, it retries with exponential backoff.
 
         Returns:
         - True if update was successful after all retries
