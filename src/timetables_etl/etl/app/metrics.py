@@ -3,15 +3,9 @@ Datadog Metrics for Serverless ETL
 """
 
 from aws_lambda_powertools.metrics.provider.datadog import DatadogMetrics
+from common_layer.aws.metrics import get_metric_name
 
 from .models import ETLProcessStats
-
-
-def get_metric_name(metric: str) -> str:
-    """
-    Get metric name in standard format.
-    """
-    return f"timetables.etl.{metric}"
 
 
 def create_datadog_metrics(metrics: DatadogMetrics, stats: ETLProcessStats) -> None:
@@ -40,4 +34,6 @@ def create_datadog_metrics(metrics: DatadogMetrics, stats: ETLProcessStats) -> N
         name=get_metric_name("stops"), value=stats.pattern_stats.pattern_stops
     )
     metrics.add_metric(name=get_metric_name("tracks"), value=stats.pattern_stats.tracks)
-    metrics.flush_metrics()
+    metrics.add_metric(
+        name=get_metric_name("superseded_timetables"), value=stats.superseded_timetables
+    )

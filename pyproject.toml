@@ -145,11 +145,6 @@ testpaths = ["./tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
 
-[tool.coverage.run]
-omit = [
-  "src/standalone/**/*", # Standalone Deployment Scripts
-]
-
 [tool.black]
 line-length = 88
 include = '\.pyi?$'

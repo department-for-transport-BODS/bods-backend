@@ -8,11 +8,11 @@ from botocore.exceptions import BotoCoreError, ClientError
 from common_layer.s3 import S3
 from structlog.stdlib import get_logger
 
-from .models import (
+from .map_results_manifest import MapResultManifest
+from .map_results_models import (
     MapExecutionFailed,
     MapExecutionSucceeded,
     MapResultFailed,
-    MapResultManifest,
     MapResults,
     MapResultSucceeded,
 )
@@ -64,13 +64,8 @@ def load_result_file(
         raise
 
 
-def load_manifest(
-    s3_client: S3, output_prefix: str, map_run_id: str
-) -> MapResultManifest:
+def load_manifest(s3_client: S3, manifest_key: str) -> MapResultManifest:
     """Load and parse the manifest.json file"""
-    output_prefix = output_prefix.rstrip("/")
-
-    manifest_key = f"tt-etl-map-results/{map_run_id}/manifest.json"
 
     try:
         with s3_client.get_object(manifest_key) as file_content:
@@ -101,13 +96,12 @@ def load_manifest(
 
 def load_map_results(
     s3_client: S3,
-    output_prefix: str,
     map_run_id: str,
 ) -> MapResults:
     """
     Load both succeeded and failed results using manifest.json to locate files
     """
-    manifest = load_manifest(s3_client, output_prefix, map_run_id)
+    manifest = load_manifest(s3_client, map_run_id)
 
     log.info("Loading Successful Results")
     succeeded_results: list[MapExecutionSucceeded] = []
@@ -141,3 +135,97 @@ def load_map_results(
         succeeded=succeeded_results,
         failed=failed_results,
     )
+
+
+def extract_map_run_id(map_run_arn: str) -> str:
+    """
+    Extract the Map Run Id from the ARN
+    Example ARN: arn:aws:states:region:account:mapRun:state-machine-name/execution-id:map-run-id
+    Returns: map-run-id
+
+    Raises:
+        ValueError: If the ARN format is invalid or missing required components
+    """
+    if not map_run_arn:
+        log.error("Empty ARN provided", map_run_arn=map_run_arn)
+        raise ValueError("Invalid Map Run ARN: ARN cannot be empty")
+
+    if not map_run_arn.startswith("arn:aws:states:"):
+        log.error("Invalid ARN format", map_run_arn=map_run_arn)
+        raise ValueError(f"Invalid Map Run ARN format: {map_run_arn}")
+
+    try:
+        if "/" not in map_run_arn:
+            log.error(
+                "ARN missing execution ID section (missing '/')",
+                map_run_arn=map_run_arn,
+            )
+            raise ValueError(
+                f"Invalid Map Run ARN: missing execution ID section: {map_run_arn}"
+            )
+
+        execution_part = map_run_arn.split("/")[-1]
+
+        if ":" not in execution_part:
+            log.error(
+                "ARN missing map run ID section (missing ':')", map_run_arn=map_run_arn
+            )
+            raise ValueError(
+                f"Invalid Map Run ARN: missing map run ID section: {map_run_arn}"
+            )
+
+        map_run_id = execution_part.split(":")[-1]
+
+        if not map_run_id:
+            log.error("Empty map run ID extracted", map_run_arn=map_run_arn)
+            raise ValueError(f"Invalid Map Run ARN: empty map run ID: {map_run_arn}")
+
+        return map_run_id
+
+    except Exception as exc:
+        if isinstance(exc, ValueError):
+            raise
+
+        log.error(
+            "Failed to extract Map Run Id from ARN",
+            map_run_arn=map_run_arn,
+            exc_info=True,
+        )
+        raise ValueError(f"Invalid Map Run ARN format: {map_run_arn}") from exc
+
+
+def get_map_run_base_path(map_run_arn: str, map_run_prefix: str) -> str:
+    """
+    Generate the base S3 path for a Map Run
+    """
+    run_id = extract_map_run_id(map_run_arn)
+    # Remove trailing slash from prefix if present
+    prefix = map_run_prefix.rstrip("/")
+    base_path = f"{prefix}/{run_id}/"
+    return base_path
+
+
+def get_map_run_manifest_path(map_run_arn: str, map_run_prefix: str) -> str:
+    """
+    Generate the S3 Object Path for a Map Run ResultWriter manifest.json
+    """
+    base_path = get_map_run_base_path(map_run_arn, map_run_prefix)
+    manifest_key = f"{base_path}manifest.json"
+    log.debug("Generated Manifest Key", manifest_key=manifest_key)
+    return manifest_key
+
+
+def get_map_processing_results(
+    s3_client: S3, map_run_arn: str, map_run_prefix: str
+) -> MapResults:
+    """
+    Get the Processing Results
+    """
+    manifest_path = get_map_run_manifest_path(map_run_arn, map_run_prefix)
+    map_results = load_map_results(s3_client, manifest_path)
+    if map_results.failed:
+        log.error(
+            "Failed Files in Map",
+            failed_files=[f.Name for f in map_results.failed],
+        )
+    return map_results

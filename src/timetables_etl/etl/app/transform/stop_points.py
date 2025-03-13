@@ -12,7 +12,7 @@ from common_layer.xml.txc.models import (
     LocationStructure,
     TXCStopPoint,
 )
-from geoalchemy2.shape import from_shape
+from geoalchemy2.shape import from_shape  # type: ignore
 from shapely.geometry import Point
 from structlog.stdlib import get_logger
 

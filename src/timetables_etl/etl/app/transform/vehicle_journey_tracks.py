@@ -2,8 +2,8 @@
 Vehicle Journey Tracks Generation
 """
 
-from common_layer.database.models import TransmodelTracksVehicleJourney
-from common_layer.database.models.model_transmodel_vehicle_journey import (
+from common_layer.database.models import (
+    TransmodelTracksVehicleJourney,
     TransmodelVehicleJourney,
 )
 from common_layer.xml.txc.helpers.routes import extract_stop_point_pairs

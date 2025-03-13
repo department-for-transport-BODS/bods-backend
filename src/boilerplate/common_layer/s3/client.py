@@ -16,6 +16,8 @@ from botocore.exceptions import BotoCoreError, ClientError
 from botocore.response import StreamingBody
 from structlog.stdlib import get_logger
 
+from .models import ListObjectsV2OutputTypeDef
+
 logger = get_logger()
 
 
@@ -43,7 +45,7 @@ class S3:
         """
         if os.environ.get("PROJECT_ENV") == "local":
             logger.info("Using LocalStack for S3 (local environment)")
-            return boto3.client(
+            return boto3.client(  # type: ignore
                 "s3",
                 endpoint_url="http://host.docker.internal:4566",
                 aws_access_key_id="dummy",
@@ -51,7 +53,7 @@ class S3:
             )
         logger.info("Using AWS S3 (production or non-local environment)")
         config = botocore.config.Config(proxies={})
-        return boto3.client("s3", config=config)
+        return boto3.client("s3", config=config)  # type: ignore
 
     def _get_content_type(self, file_path: str) -> str:
         """
@@ -130,7 +132,7 @@ class S3:
             )
             raise err
 
-    def get_list_objects_v2(self, prefix: str) -> Iterator:
+    def get_list_objects_v2(self, prefix: str) -> Iterator[ListObjectsV2OutputTypeDef]:
         """
         Return the ListObjectsV2PaginatorOutput as an Iterator
         """

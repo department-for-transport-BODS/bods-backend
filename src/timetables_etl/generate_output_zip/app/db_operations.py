@@ -4,21 +4,23 @@ Updating the DB Revision Hash
 
 from datetime import UTC, datetime
 
+from common_layer.aws.step.map_results_models import MapResults
 from common_layer.database import SqlDB
-from common_layer.database.models.model_organisation import OrganisationDatasetRevision
-from common_layer.database.models.model_pipelines import (
+from common_layer.database.models import (
     DatasetETLTaskResult,
     ETLErrorCode,
+    OrganisationDatasetRevision,
     TaskState,
 )
-from common_layer.database.repos import OrganisationDatasetRevisionRepo
-from common_layer.database.repos.repo_etl_task import ETLTaskResultRepo
-from common_layer.database.repos.repo_organisation import OrganisationDatasetRepo
+from common_layer.database.repos import (
+    ETLTaskResultRepo,
+    OrganisationDatasetRepo,
+    OrganisationDatasetRevisionRepo,
+)
 from common_layer.enums import FeedStatus
 from structlog.stdlib import get_logger
 
-from .models.model_results import MapResults
-from .models.model_zip_processing import ProcessingResult
+from .models import ProcessingResult
 
 log = get_logger()
 
