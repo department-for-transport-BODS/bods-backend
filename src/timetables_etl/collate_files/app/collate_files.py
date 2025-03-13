@@ -20,6 +20,7 @@ from structlog.stdlib import get_logger
 from .models import CollateFilesInputData, ETLMapInputData
 from .txc_filtering import (
     create_etl_inputs_from_map_results,
+    deduplicate_file_attributes_by_filename,
     filter_txc_files_by_service_code,
 )
 
@@ -41,6 +42,7 @@ def get_file_attributes(
         file_attributes_ids=[file.id for file in file_attributes],
         revision_id=revision_id,
     )
+    file_attributes = deduplicate_file_attributes_by_filename(file_attributes)
     return file_attributes
 
 

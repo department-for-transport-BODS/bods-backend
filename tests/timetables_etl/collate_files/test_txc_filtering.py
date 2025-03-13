@@ -6,6 +6,7 @@ from datetime import date, datetime
 
 import pytest
 from collate_files.app.txc_filtering import (
+    deduplicate_file_attributes_by_filename,
     filter_txc_files_by_service_code,
     find_highest_revision_in_group,
     find_latest_start_date_file,
@@ -20,6 +21,7 @@ def create_txc_file_attrs(
     service_code: str,
     revision_number: int,
     operating_period_start_date: date | None = None,
+    filename: str = "file.xml",
 ) -> OrganisationTXCFileAttributes:
     """Create a test TXC file with the specified attributes"""
     attr = OrganisationTXCFileAttributes(
@@ -27,7 +29,7 @@ def create_txc_file_attrs(
         revision_number=revision_number,
         creation_datetime=datetime.now(),
         modification_datetime=datetime.now(),
-        filename=f"file_{id}.xml",
+        filename=filename,
         service_code=service_code,
         revision_id=100,
         modification="TEST",
@@ -39,7 +41,7 @@ def create_txc_file_attrs(
         line_names=["Test Line"],
         destination="Test Destination",
         origin="Test Origin",
-        hash=f"hash{id}",
+        hash=f"hash{attr_id}",
         service_mode="bus",
     )
     attr.id = attr_id
@@ -303,5 +305,60 @@ def test_filter_txc_files_by_service_code(
     result = filter_txc_files_by_service_code(files)
 
     # Check IDs match
+    result_ids = [file.id for file in result]
+    assert sorted(result_ids) == sorted(expected_ids)
+
+
+@pytest.mark.parametrize(
+    "files, expected_ids",
+    [
+        pytest.param(
+            [
+                create_txc_file_attrs(1, "SC001", 1, date(2023, 1, 1), "file1.xml"),
+                create_txc_file_attrs(2, "SC001", 1, date(2023, 1, 1), "file1.xml"),
+                create_txc_file_attrs(3, "SC002", 1, date(2023, 1, 1), "file2.xml"),
+            ],
+            [2, 3],
+            id="Deduplicate by filename - higher id wins",
+        ),
+        pytest.param(
+            [
+                create_txc_file_attrs(1, "SC001", 1, date(2023, 1, 1), "file1.xml"),
+                create_txc_file_attrs(5, "SC001", 2, date(2023, 2, 1), "file1.xml"),
+                create_txc_file_attrs(3, "SC001", 3, date(2023, 3, 1), "file1.xml"),
+                create_txc_file_attrs(4, "SC002", 1, date(2023, 1, 1), "file2.xml"),
+            ],
+            [5, 4],
+            id="Multiple duplicates - highest id selected",
+        ),
+        pytest.param(
+            [
+                create_txc_file_attrs(1, "SC001", 1, date(2023, 1, 1), "file1.xml"),
+                create_txc_file_attrs(2, "SC001", 2, date(2023, 2, 1), "file2.xml"),
+                create_txc_file_attrs(3, "SC002", 1, date(2023, 1, 1), "file3.xml"),
+            ],
+            [1, 2, 3],
+            id="No duplicates - return all files",
+        ),
+        pytest.param(
+            [],
+            [],
+            id="Empty list - return empty list",
+        ),
+    ],
+)
+def test_deduplicate_file_attributes_by_filename(
+    files: list[OrganisationTXCFileAttributes],
+    expected_ids: list[int],
+):
+    """
+    Test deduplicating file attributes by filename
+    """
+    result = deduplicate_file_attributes_by_filename(files)
+
+    # Check the correct number of files was returned
+    assert len(result) == len(expected_ids)
+
+    # Check that the returned files have the expected IDs
     result_ids = [file.id for file in result]
     assert sorted(result_ids) == sorted(expected_ids)

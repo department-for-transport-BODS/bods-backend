@@ -84,10 +84,10 @@ def create_s3_file_reference(
 ) -> ETLMapInputData:
     """Create an S3FileReference object for testing"""
     return ETLMapInputData(
-        bucket=bucket,
-        object=object_key,
-        superceded_file=superceded,
-        fileAttributesEtl=etl_id,
+        s3_bucket_name=bucket,
+        s3_file_key=object_key,
+        superseded_timetable=superceded,
+        file_attributes_id=etl_id,
     )
 
 

@@ -20,8 +20,11 @@ from datetime import date
 
 from common_layer.aws.step import MapExecutionSucceeded, MapResults
 from common_layer.database.models import OrganisationTXCFileAttributes
+from structlog.stdlib import get_logger
 
 from .models import ETLMapInputData
+
+log = get_logger()
 
 
 def group_files_by_service_code(
@@ -98,6 +101,56 @@ def get_earlier_start_date_files(
             result.append(file)
 
     return result
+
+
+def deduplicate_file_attributes_by_filename(
+    file_attributes: list[OrganisationTXCFileAttributes],
+) -> list[OrganisationTXCFileAttributes]:
+    """
+    Deduplicate file attributes by filename, keeping the one with the highest id
+    for each unique filename.
+    This scenario should only happen when developing / testing
+    When calling the State Machine directly multiple times against a revision
+    """
+    # Group file attributes by filename
+    filename_groups: dict[str, list[OrganisationTXCFileAttributes]] = {}
+    for file in file_attributes:
+        if file.filename not in filename_groups:
+            filename_groups[file.filename] = []
+        filename_groups[file.filename].append(file)
+
+    # For each group, select the file attribute with the highest id
+    deduplicated_files: list[OrganisationTXCFileAttributes] = []
+
+    for filename, files in filename_groups.items():
+        if len(files) > 1:
+            # Multiple files with the same filename found
+            file_ids = [file.id for file in files]
+            files_sorted_by_id = sorted(files, key=lambda x: x.id, reverse=True)
+            selected_file = files_sorted_by_id[0]
+
+            log.info(
+                "Multiple OrganisationTXCFileAttributes found for filename",
+                filename=filename,
+                file_attribute_ids=file_ids,
+                selected_id=selected_file.id,
+                total_duplicates=len(files),
+            )
+
+            deduplicated_files.append(selected_file)
+        else:
+            # Only one file with this filename
+            deduplicated_files.append(files[0])
+
+    if len(file_attributes) != len(deduplicated_files):
+        log.info(
+            "File Attributes Deduplicated",
+            original_count=len(file_attributes),
+            deduplicated_count=len(deduplicated_files),
+            duplicate_count=len(file_attributes) - len(deduplicated_files),
+        )
+
+    return deduplicated_files
 
 
 def filter_txc_files_by_service_code(
