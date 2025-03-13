@@ -10,9 +10,10 @@ from typing import Generator
 from zipfile import BadZipFile, ZipFile
 
 from botocore.exceptions import ClientError
-from common_layer.s3 import S3
 from pydantic import BaseModel
 from structlog.stdlib import get_logger
+
+from .client import S3
 
 log = get_logger()
 
