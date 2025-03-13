@@ -15,7 +15,11 @@ from common_layer.database.models.model_transmodel_vehicle_journey import (
     TransmodelVehicleJourney,
 )
 from common_layer.xml.txc.models.txc_journey_pattern import TXCJourneyPatternSection
-from common_layer.xml.txc.models.txc_vehicle_journey import TXCVehicleJourney
+from common_layer.xml.txc.models.txc_vehicle_journey import (
+    TXCVehicleJourney,
+    TXCVehicleJourneyStopUsageStructure,
+    TXCVehicleJourneyTimingLink,
+)
 from etl.app.transform.models_context import (
     GeneratePatternStopsContext,
     JourneySectionContext,
@@ -66,6 +70,24 @@ def txc_vehicle_journey() -> TXCVehicleJourney:
         VehicleJourneyCode="VJ1",
         JourneyPatternRef="JP1",
         DepartureTime="9:00",
+        VehicleJourneyTimingLink=[
+            TXCVehicleJourneyTimingLink(
+                id="VJTL1",
+                JourneyPatternTimingLinkRef="1_1",
+                VehicleJourneyRef="VJ1",
+                RunTime="PT4M",
+                From=TXCVehicleJourneyStopUsageStructure(WaitTime="PT17M0S"),
+                To=TXCVehicleJourneyStopUsageStructure(),
+            ),
+            TXCVehicleJourneyTimingLink(
+                id="VJTL2",
+                JourneyPatternTimingLinkRef="1_2",
+                VehicleJourneyRef="VJ2",
+                RunTime="PT2M",
+                From=TXCVehicleJourneyStopUsageStructure(),
+                To=TXCVehicleJourneyStopUsageStructure(),
+            ),
+        ],
     )
 
 
@@ -78,6 +100,9 @@ def naptan_stop_lookup() -> dict[str, NaptanStopPoint]:
         ),
         "2400A002": NaptanStopPointFactory.create(
             atco_code="2400A002", common_name="Second Stop"
+        ),
+        "2400A003": NaptanStopPointFactory.create(
+            atco_code="2400A003", common_name="Third Stop"
         ),
     }
     return stops
@@ -140,6 +165,20 @@ def journey_context(
                         ),
                         RunTime="PT5M",
                     ),
+                    TXCJourneyPatternTimingLinkFactory(
+                        id="1_2",
+                        From=TXCJourneyPatternStopUsageFactory(
+                            StopPointRef="2400A002",
+                            SequenceNumber="1",
+                            TimingStatus="otherPoint",
+                        ),
+                        To=TXCJourneyPatternStopUsageFactory(
+                            StopPointRef="2400A003",
+                            SequenceNumber="2",
+                            TimingStatus="otherPoint",
+                        ),
+                        RunTime="PT2M",
+                    ),
                 ],
             ),
             SectionProcessingState(
@@ -151,13 +190,19 @@ def journey_context(
                 {
                     "atco_code": "2400A001",
                     "sequence_number": 0,
-                    "departure_time": time(9, 0),
+                    "departure_time": time(9, 17),
                     "is_timing_point": True,
                 },
                 {
                     "atco_code": "2400A002",
                     "sequence_number": 1,
-                    "departure_time": time(9, 5),
+                    "departure_time": time(9, 21),
+                    "is_timing_point": False,
+                },
+                {
+                    "atco_code": "2400A003",
+                    "sequence_number": 2,
+                    "departure_time": time(9, 23),
                     "is_timing_point": False,
                 },
             ],
