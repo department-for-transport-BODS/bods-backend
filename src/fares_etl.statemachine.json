@@ -174,7 +174,7 @@
           },
           "SchemaCheck": {
             "Type": "Task",
-            "Next": "EtlProcess",
+            "Next": "FaresValidation",
             "Resource": "${SchemaCheckLambdaArn}",
             "Arguments": {
               "Bucket": "{% $Bucket %}",
@@ -184,6 +184,30 @@
             },
             "Output": {
               "schemaCheck": "{% $states.result %}"
+            },
+
+            "Catch": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "Next": "ExceptionHandler",
+                "Output": {
+                  "errorInfo": "{% $states.errorOutput %}"
+                }
+              }
+            ]
+          },
+          "FaresValidation": {
+            "Type": "Task",
+            "Next": "EtlProcess",
+            "Resource": "${SchemaCheckLambdaArn}",
+            "Arguments": {
+              "Bucket": "{% $Bucket %}",
+              "ObjectKey": "{% $ObjectKey %}",
+              "DatasetRevisionId": "{% $DatasetRevisionId %}",
+              "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}"
+            },
+            "Output": {
+              "faresValidation": "{% $states.result %}"
             },
 
             "Catch": [

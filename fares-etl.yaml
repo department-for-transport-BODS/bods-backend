@@ -151,12 +151,32 @@ Resources:
         ExceptionHandlerLambdaArn:
           Fn::ImportValue: !Sub '${ProjectName}-${Environment}-exception-handler-lambda-arn'
         EtlProcessLambdaArn: !GetAtt  EtlProcessLambda.Arn
+        FaresValidationLambdaArn: !GetAtt  FaresValidationLambda.Arn
         MetadataAggregationLambdaArn: !GetAtt FaresMetadataAggregationLambda.Arn
         DefaultS3BucketName: !Sub 'bodds-${Environment}'
 
   ##########################
   #### LAMBDA FUNCTIONS ####
   ##########################
+  FaresValidationLambda:
+    Type: AWS::Serverless::Function
+    ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-validation-lambda'
+      Description: Fares ETL - FileProcessing - Validates NeTEx data against JSON schema
+      Role: !GetAtt CommonLambdaExecutionRole.Arn
+      CodeUri: ./src/fares_etl/validation
+      Handler: app.validation.lambda_handler
+      Timeout: 300
+      MemorySize: 1024
+      Layers:
+        - !Ref BoilerplateLambdaLayerArn
+      LoggingConfig:
+        LogGroup: !Ref FaresValidationLambdaLogGroup
+      Environment:
+        Variables:
+             DYNAMODB_FARES_METADATA_TABLE_NAME: !Ref FaresMetadataTable
+
   EtlProcessLambda:
     Type: AWS::Serverless::Function
     ## checkov:skip=CKV_AWS_115:Ensure that AWS Lambda function is configured for function-level concurrent execution limit
@@ -414,6 +434,16 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-sm'
+      KmsKeyId: !If
+        - IsNotLocal
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Ref AWS::NoValue
+      RetentionInDays: 30
+
+  FaresValidationLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-validation-lambda'
       KmsKeyId: !If
         - IsNotLocal
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
