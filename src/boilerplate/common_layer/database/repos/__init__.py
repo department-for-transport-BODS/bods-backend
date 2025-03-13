@@ -12,6 +12,7 @@ from .repo_etl_task import (
     ETLTaskResultRepo,
     FileProcessingResultRepo,
     PipelineErrorCodeRepository,
+    PipelineProcessingStepRepository,
 )
 from .repo_fares import (
     FaresDataCatalogueMetadataRepo,
@@ -59,47 +60,57 @@ from .repo_transmodel_vehicle_journey import (
 )
 
 __all__ = [
+    # AVL
     "AvlCavlDataArchiveRepo",
-    "OrganisationDatasetRepo",
-    "OrganisationDatasetRevisionRepo",
-    "OrganisationOrganisationRepo",
-    "OrganisationTXCFileAttributesRepo",
-    "OtcServiceRepo",
-    "TransmodelServicedOrganisationsRepo",
-    "TransmodelVehicleJourneyRepo",
-    "TransmodelFlexibleServiceOperationPeriodRepo",
-    "TransmodelOperatingProfileRepo",
-    "TransmodelOperatingDatesExceptionsRepo",
-    "TransmodelNonOperatingDatesExceptionsRepo",
-    "TransmodelServicedOrganisationVehicleJourneyRepo",
-    "TransmodelServicePatternStopRepo",
-    "TransmodelServicedOrganisationWorkingDaysRepo",
-    "TransmodelServiceRepo",
-    "TransmodelBookingArrangementsRepo",
-    "TransmodelServicePatternRepo",
-    "ETLTaskResultRepo",
-    "NaptanAdminAreaRepo",
-    "NaptanLocalityRepo",
-    "NaptanStopPointRepo",
-    "TransmodelServiceServicePatternRepo",
-    "NaptanLocalityRepo",
-    "TransmodelServiceServicePatternRepo",
-    "TransmodelServicePatternAdminAreaRepo",
-    "TransmodelServicePatternLocalityRepo",
-    "TransmodelStopActivityRepo",
-    "TransmodelBankHolidaysRepo",
-    "TransmodelTracksVehicleJourneyRepo",
-    "TransmodelTrackRepo",
-    "FileProcessingResultRepo",
-    "PipelineErrorCodeRepository",
     # Data Quality
     "DataQualitySchemaViolationRepo",
     "DataQualityPostSchemaViolationRepo",
     "DataQualityPTIObservationRepo",
+    # ETL Task
+    "ETLTaskResultRepo",
+    "FileProcessingResultRepo",
+    "PipelineProcessingStepRepository",
+    "PipelineErrorCodeRepository",
     # Fares,
     "FaresDataCatalogueMetadataRepo",
     "FaresMetadataRepo",
     "FaresMetadataStopsRepo",
     "FaresValidationRepo",
     "FaresValidationResultRepo",
+    # Junction
+    "TransmodelServiceServicePatternRepo",
+    "TransmodelServiceServicePatternRepo",
+    "TransmodelServicePatternAdminAreaRepo",
+    "TransmodelServicePatternLocalityRepo",
+    # Naptan
+    "NaptanAdminAreaRepo",
+    "NaptanStopPointRepo",
+    "NaptanLocalityRepo",
+    # Organisation
+    "OrganisationDatasetRepo",
+    "OrganisationDatasetRevisionRepo",
+    "OrganisationOrganisationRepo",
+    "OrganisationTXCFileAttributesRepo",
+    # Otc
+    "OtcServiceRepo",
+    # Transmodel
+    "TransmodelBankHolidaysRepo",
+    "TransmodelServicePatternRepo",
+    "TransmodelServicePatternStopRepo",
+    "TransmodelServiceRepo",
+    "TransmodelStopActivityRepo",
+    "TransmodelTracksVehicleJourneyRepo",
+    "TransmodelTrackRepo",
+    # Transmodel Flexible
+    "TransmodelBookingArrangementsRepo",
+    "TransmodelFlexibleServiceOperationPeriodRepo",
+    # Transmodel Serviced Organisations
+    "TransmodelServicedOrganisationsRepo",
+    "TransmodelServicedOrganisationVehicleJourneyRepo",
+    "TransmodelServicedOrganisationWorkingDaysRepo",
+    # Transmodel Vehicle Journey
+    "TransmodelNonOperatingDatesExceptionsRepo",
+    "TransmodelOperatingDatesExceptionsRepo",
+    "TransmodelOperatingProfileRepo",
+    "TransmodelVehicleJourneyRepo",
 ]

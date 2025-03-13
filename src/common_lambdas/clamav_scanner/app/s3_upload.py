@@ -4,57 +4,46 @@ Post ClamAV Scan, upload files to S3
 
 from pathlib import Path
 
-from common_layer.s3 import S3
-from common_layer.zip import process_zip_to_s3
+from common_layer.s3 import S3, ProcessingStats, process_file_to_s3, process_zip_to_s3
 from structlog.stdlib import get_logger
+
+from .verify_file import verify_zip_file
 
 log = get_logger()
 
 
-def process_file_to_s3(s3_client: S3, file_path: Path, destination_prefix: str) -> str:
+def make_output_folder_name(
+    file_path: Path,
+    request_id: str,
+) -> str:
     """
-    Copy a single file and upload it to S3 in a dedicated folder.
-    State Machine Map does not work on single files, requires a folder
+    Generate a folder structure based on filename and request ID for easy lookup
+    of multiple runs of the same file.
+    filename/request_id/
     """
-    file_name = file_path.name
-    s3_key = f"{destination_prefix}{file_name}"
+    file_stem = file_path.stem
 
-    log.info(
-        "Copying single file into a new folder",
-        file_path=str(file_path),
-        destination=destination_prefix,
+    return f"{file_stem}/{request_id}/"
+
+
+def verify_and_extract(
+    s3_handler: S3, downloaded_file_path: Path, filename: str, request_id: str
+) -> tuple[str, ProcessingStats]:
+    """
+    Scan and extract eh files
+    """
+    if downloaded_file_path.suffix.lower() == ".zip":
+        verify_zip_file(downloaded_file_path, filename)
+    s3_output_folder = make_output_folder_name(downloaded_file_path, request_id)
+    generated_prefix = unzip_and_upload_files(
+        s3_handler, downloaded_file_path, s3_output_folder
     )
-
-    try:
-        with open(file_path, "rb") as file:
-            s3_client.put_object(s3_key, file.read())
-            log.debug(
-                "Successfully uploaded file to new location",
-                filename=file_name,
-                s3_key=s3_key,
-            )
-
-        log.info(
-            "Completed file processing",
-            file_path=str(file_path),
-            destination=destination_prefix,
-        )
-
-        return destination_prefix
-
-    except Exception:
-        log.error(
-            "Failed to copy file to new location",
-            file_path=str(file_path),
-            s3_key=s3_key,
-            exc_info=True,
-        )
-        raise
+    return generated_prefix
 
 
 def unzip_and_upload_files(
     s3_handler: S3, file_path: Path, s3_output_folder: str
-) -> str:
+) -> tuple[str, ProcessingStats]:
     """
     If the file is a zip, unzip and upload its contents to S3.
     Otherwise, copy the single file to a new folder and return that folder path.

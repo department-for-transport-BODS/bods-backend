@@ -5,20 +5,20 @@ Zip Handling Utilities
 import os
 import shutil
 import tempfile
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Generator
 from zipfile import BadZipFile, ZipFile
 
 from botocore.exceptions import ClientError
-from common_layer.s3 import S3
+from pydantic import BaseModel
 from structlog.stdlib import get_logger
+
+from .client import S3
 
 log = get_logger()
 
 
-@dataclass
-class ProcessingStats:
+class ProcessingStats(BaseModel):
     """
     Zip Extract and Upload to S3 Stats
     """
@@ -95,7 +95,9 @@ def is_xml_file(file_path: str) -> bool:
     return Path(file_path).suffix.lower() == ".xml"
 
 
-def process_zip_to_s3(s3_client: "S3", zip_path: Path, destination_prefix: str) -> str:
+def process_zip_to_s3(
+    s3_client: "S3", zip_path: Path, destination_prefix: str
+) -> tuple[str, ProcessingStats]:
     """Process a zip file and upload its contents to S3."""
     stats = ProcessingStats()
 
@@ -139,7 +141,7 @@ def process_zip_to_s3(s3_client: "S3", zip_path: Path, destination_prefix: str) 
             files_skipped=stats.skip_count,
         )
 
-        return destination_prefix
+        return destination_prefix, stats
 
     except (OSError, BadZipFile):
         log.error(
@@ -147,4 +149,54 @@ def process_zip_to_s3(s3_client: "S3", zip_path: Path, destination_prefix: str) 
             zip_path=str(zip_path),
             exc_info=True,
         )
+        raise
+
+
+def process_file_to_s3(
+    s3_client: S3, file_path: Path, destination_prefix: str
+) -> tuple[str, ProcessingStats]:
+    """
+    Copy a single file and upload it to S3 in a dedicated folder.
+    State Machine Map does not work on single files, requires a folder
+    """
+    stats = ProcessingStats()
+    file_name = file_path.name
+    s3_key = f"{destination_prefix}{file_name}"
+
+    log.info(
+        "Copying single file into a new folder",
+        file_path=str(file_path),
+        destination=destination_prefix,
+    )
+
+    try:
+        with open(file_path, "rb") as file:
+            s3_client.put_object(s3_key, file.read())
+            log.debug(
+                "Successfully uploaded file to new location",
+                filename=file_name,
+                s3_key=s3_key,
+            )
+
+        stats.success_count += 1
+
+        log.info(
+            "Completed file processing",
+            file_path=str(file_path),
+            destination=destination_prefix,
+            files_processed=stats.success_count,
+            files_failed=stats.fail_count,
+            files_skipped=stats.skip_count,
+        )
+
+        return destination_prefix, stats
+
+    except Exception:
+        log.error(
+            "Failed to copy file to new location",
+            file_path=str(file_path),
+            s3_key=s3_key,
+            exc_info=True,
+        )
+        stats.fail_count += 1
         raise

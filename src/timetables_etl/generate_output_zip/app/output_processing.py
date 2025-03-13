@@ -1,14 +1,13 @@
 """
-Functions to Create and upload zip 
+Functions to Create and upload zip
 """
 
 import zipfile
 from io import BytesIO
 
+from common_layer.aws.step import MapExecutionSucceeded
 from common_layer.s3 import S3
 from structlog.stdlib import get_logger
-
-from .models import MapExecutionSucceeded
 
 log = get_logger()
 

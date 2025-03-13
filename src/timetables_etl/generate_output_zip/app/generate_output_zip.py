@@ -9,8 +9,9 @@ from pathlib import Path
 from typing import Any
 
 from aws_lambda_powertools.utilities.typing import LambdaContext
+from common_layer.aws.step import MapExecutionSucceeded, get_map_processing_results
 from common_layer.database.client import SqlDB
-from common_layer.database.repos.repo_etl_task import ETLTaskResultRepo
+from common_layer.database.repos import ETLTaskResultRepo
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.s3 import S3
@@ -23,33 +24,10 @@ from .db_operations import (
     update_revision_hash,
     update_task_and_revision_status,
 )
-from .map_results import load_map_results
-from .models import (
-    GenerateOutputZipInputData,
-    MapExecutionFailed,
-    MapExecutionSucceeded,
-    ProcessingResult,
-)
+from .models import GenerateOutputZipInputData, ProcessingResult
 from .output_processing import process_files
 
 log = get_logger()
-
-
-def extract_map_run_id(map_run_arn: str) -> str:
-    """
-    Extract the Map Run Id from the ARN
-    Example ARN: arn:aws:states:region:account:mapRun:state-machine-name/execution-id:map-run-id
-    Returns: map-run-id
-    """
-    try:
-        return map_run_arn.split("/")[-1].split(":")[-1]
-    except Exception as exc:
-        log.error(
-            "Failed to extract Map Run Id from ARN",
-            map_run_arn=map_run_arn,
-            exc_info=True,
-        )
-        raise ValueError(f"Invalid Map Run ARN format: {map_run_arn}") from exc
 
 
 def upload_output_to_s3(
@@ -90,17 +68,6 @@ def process_and_upload_successful_files(
     )
 
 
-def log_failed_files(failed_files: list[MapExecutionFailed]):
-    """
-    Log the Failed Files
-    """
-    if failed_files:
-        log.error(
-            "Failed Files in Map",
-            failed_files=[f.Name for f in failed_files],
-        )
-
-
 def construct_output_path(
     original_path: str, overwrite_input_dataset: bool = True
 ) -> str:
@@ -139,12 +106,9 @@ def process_map_results(
     and update task/revision statuses
     """
     s3_client = S3(input_data.destination_bucket)
-
-    map_run_id = extract_map_run_id(input_data.map_run_arn)
-    log.info("Processing map results", map_run_id=map_run_id)
-
-    map_results = load_map_results(s3_client, input_data.output_prefix, map_run_id)
-    log_failed_files(map_results.failed)
+    map_results = get_map_processing_results(
+        s3_client, input_data.map_run_arn, input_data.map_run_prefix
+    )
 
     output_key_base = construct_output_path(
         input_data.original_object_key, input_data.overwrite_input_dataset

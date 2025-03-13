@@ -2,11 +2,11 @@
 Service Pattern Geometry Calculation
 """
 
-from common_layer.database.models.model_naptan import NaptanStopPoint
+from common_layer.database.models import NaptanStopPoint
 from common_layer.xml.txc.helpers import get_stops_from_sections
 from common_layer.xml.txc.models import TXCJourneyPattern, TXCJourneyPatternSection
 from geoalchemy2 import WKBElement
-from geoalchemy2.shape import from_shape
+from geoalchemy2.shape import from_shape  # type: ignore
 from shapely import Point
 from shapely.geometry import LineString
 from structlog.stdlib import get_logger

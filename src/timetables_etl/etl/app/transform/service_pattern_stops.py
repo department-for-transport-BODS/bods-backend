@@ -156,6 +156,35 @@ def process_journey_pattern_section(
         is_first_stop = state.auto_sequence == 0
         next_link = links[i + 1] if i < total_links - 1 else None
 
+        # Handle timing updates with our enhanced wait time logic
+        link_context = LinkContext(
+            current_link=link,
+            next_link=next_link,
+            is_first_stop=is_first_stop,
+            is_last_stop=False,  # This is not the last stop since we're processing a From
+        )
+
+        runtime, wait_time = get_pattern_timing(
+            txc_vehicle_journey=context.txc_vehicle_journey,
+            link_id=link.id,
+            link_context=link_context,
+            base_link_runtime=link.RunTime,
+        )
+        if is_first_stop:
+            state.current_time = calculate_next_time(
+                state.current_time,
+                timedelta(
+                    days=0,
+                    seconds=0,
+                    microseconds=0,
+                    milliseconds=0,
+                    minutes=0,
+                    hours=0,
+                    weeks=0,
+                ),
+                wait_time,
+            )
+
         # Handle 'From' stop
         if not is_duplicate_stop(
             current_stop_ref=link.From.StopPointRef,
@@ -184,21 +213,24 @@ def process_journey_pattern_section(
                 sequence=state.auto_sequence,
             )
 
-        # Handle timing updates with our enhanced wait time logic
-        link_context = LinkContext(
-            current_link=link,
-            next_link=next_link,
-            is_first_stop=is_first_stop,
-            is_last_stop=False,  # This is not the last stop since we're processing a From
-        )
-
-        runtime, wait_time = get_pattern_timing(
-            txc_vehicle_journey=context.txc_vehicle_journey,
-            link_id=link.id,
-            link_context=link_context,
-            base_link_runtime=link.RunTime,
-        )
-        state.current_time = calculate_next_time(state.current_time, runtime, wait_time)
+        if is_first_stop:
+            state.current_time = calculate_next_time(
+                state.current_time,
+                runtime,
+                timedelta(
+                    days=0,
+                    seconds=0,
+                    microseconds=0,
+                    milliseconds=0,
+                    minutes=0,
+                    hours=0,
+                    weeks=0,
+                ),
+            )
+        else:
+            state.current_time = calculate_next_time(
+                state.current_time, runtime, wait_time
+            )
 
         # Handle 'To' stop if it's the last link in the section
         if i == total_links - 1:

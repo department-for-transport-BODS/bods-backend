@@ -130,6 +130,55 @@ Resources:
               intervals.$: $.config.intervals
             End: true
 
+  ###################################
+  #### NAPTAN CACHE STATE MACHINE ####
+  ###################################
+  NaptanCacheStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Name: !Sub '${ProjectName}-${Environment}-${SubFunction}-naptan-cache-sm'
+      Role: !GetAtt NaptanCacheStateMachineRole.Arn
+      Events:
+        DailySchedule:
+          Type: Schedule
+          Properties:
+            Name: !Sub '${ProjectName}-${Environment}-${SubFunction}-naptan-cache-sm-daily'
+            Description: 'Trigger Naptan cache update state machine every 24 hours'
+            Schedule: 'rate(24 hours)'
+            Input: !Sub |
+              {
+                "naptan_url": "https://naptan.api.dft.gov.uk/v1/access-nodes?dataFormat=xml",
+                "dynamo_table": "${ProjectName}-${Environment}-naptan-stop-points-table",
+                "aws_region": "${AWS::Region}"
+              }
+      Definition:
+        StartAt: PopulateDynamodbNaptanCache
+        States:
+          PopulateDynamodbNaptanCache:
+            Type: Task
+            Resource: !GetAtt PopulateDynamodbNaptanCacheLambda.Arn
+            Parameters:
+              'naptan_url.$': '$.naptan_url'
+              'dynamo_table.$': '$.dynamo_table'
+              'aws_region.$': '$.aws_region'
+            ResultPath: '$.populate_result'
+            Catch:
+              - ErrorEquals: ['States.TaskFailed']
+                Next: FailureState
+            Next: UpdateIDsDynamodbNaptanCache
+          UpdateIDsDynamodbNaptanCache:
+            Type: Task
+            Resource: !GetAtt UpdateIDsDynamodbNaptanCacheLambda.Arn
+            Parameters:
+              'dynamo_table.$': '$.dynamo_table'
+              'aws_region.$': '$.aws_region'
+            Catch:
+              - ErrorEquals: ['States.TaskFailed']
+                Next: FailureState
+            End: true
+          FailureState:
+            Type: Fail
+
   ##########################
   #### LAMBDA FUNCTIONS ####
   ##########################
@@ -254,8 +303,8 @@ Resources:
     Properties:
       FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-populate-dynamodb-naptan-cache-lambda'
       Description: Periodic Tasks - Populate the DynamoDB Naptan Cache
-      CodeUri: ./src/periodic_tasks/naptan_cache
-      Handler: app.handler_naptan_cache.lambda_handler
+      CodeUri: ./src/periodic_tasks/naptan_cache_populator
+      Handler: app.handler_naptan_cache_populator.lambda_handler
       Role: !GetAtt NaptanCacheLambdaExecutionRole.Arn
       Layers:
         - !Ref BoilerplateLambdaLayerArn
@@ -263,19 +312,34 @@ Resources:
       MemorySize: 1280
       EphemeralStorage:
         Size: 1024
-      Events:
-        DailySchedule:
-          Type: Schedule
-          Properties:
-            Name: !Sub '${ProjectName}-${Environment}-${SubFunction}-naptan-stoppoint-cache-daily'
-            Description: 'Trigger Naptan cache update every 24 hours'
-            Schedule: 'rate(24 hours)'
-            Input: !Sub |
-              {
-                "naptan_url": "https://naptan.api.dft.gov.uk/v1/access-nodes?dataFormat=xml",
-                "dynamo_table": "${ProjectName}-${Environment}-naptan-stop-points-table",
-                "aws_region": "${AWS::Region}"
-              }
+
+  UpdateIDsDynamodbNaptanCacheLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-update-ids-dynamodb-naptan-cache-lambda'
+      Description: Update IDs in the DynamoDB Naptan Cache with IDs from BODS DB
+      CodeUri: ./src/periodic_tasks/naptan_cache_id_updater
+      Handler: app.handler_naptan_cache_id_updater.lambda_handler
+      Role: !GetAtt NaptanCacheLambdaExecutionRole.Arn
+      Layers:
+        - !Ref BoilerplateLambdaLayerArn
+      Environment:
+        Variables:
+          POSTGRES_HOST: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
+            - !Ref RdsDbHostAddr
+          POSTGRES_PORT: !Ref RdsDbPort
+          POSTGRES_DB: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
+            - !Ref RdsDbName
+          POSTGRES_USER: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
+            - !Ref RdsDbUsername
+      Timeout: 900
+      MemorySize: 1280
 
   #########################
   #### DYNAMODB TABLES ####
@@ -383,6 +447,41 @@ Resources:
                   - !GetAtt GenerateSiriVmLambda.Arn
                   - !GetAtt GenerateSiriVmTflLambda.Arn
 
+  NaptanCacheStateMachineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-${Environment}-${SubFunction}-naptan-cache-sm-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: states.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+      Policies:
+        - PolicyName: StateMachineLambdaInvokePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource:
+                  - !GetAtt PopulateDynamodbNaptanCacheLambda.Arn
+                  - !GetAtt UpdateIDsDynamodbNaptanCacheLambda.Arn
+        - PolicyName: CloudWatchLogsPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-naptan-cache-sm:*'
+                  - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-naptan-cache-sm'
+
   NaptanCacheLambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -400,6 +499,10 @@ Resources:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
         - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
         - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
+        - !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
+          - arn:aws:iam::aws:policy/AmazonRDSFullAccess
       Policies:
         - PolicyName: DynamoDBAccessPolicy
           PolicyDocument:
@@ -407,6 +510,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
+                  - dynamodb:Scan
                   - dynamodb:GetItem
                   - dynamodb:PutItem
                   - dynamodb:UpdateItem
@@ -503,10 +607,30 @@ Resources:
         - !Ref AWS::NoValue
       RetentionInDays: 30
 
+  NaptanCacheStateMachineLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-naptan-cache-sm'
+      KmsKeyId: !If
+        - IsNotLocal
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Ref AWS::NoValue
+      RetentionInDays: 30
+
   PopulateDynamodbNaptanCacheLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-populate-dynamodb-naptan-cache-lambda'
+      KmsKeyId: !If
+        - IsNotLocal
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Ref AWS::NoValue
+      RetentionInDays: 30
+
+  UpdateIDsDynamodbNaptanCacheLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-update-ids-dynamodb-naptan-cache-lambda'
       KmsKeyId: !If
         - IsNotLocal
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
