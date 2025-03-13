@@ -2,7 +2,7 @@
 Tables prefixed with naptan_
 """
 
-from typing import AsyncIterator, Iterator
+from typing import Iterator
 
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 from sqlalchemy import select
@@ -54,21 +54,6 @@ class NaptanStopPointRepo(BaseRepository[NaptanStopPoint]):
         ]
 
         return found_stops, missing_atco_codes
-
-    def get_ids_by_atco(self, atco_codes: list[str]) -> dict[str, int]:
-        """
-        Get the IDs (PKs) of NaPTAN stop points given a list of AtcoCodes.
-
-        Returns dict[str, int] mapping AtcoCode -> ID in the database.
-        """
-        if not atco_codes:
-            return {}
-        statement = select(self._model.atco_code, self._model.id).where(
-            self._model.atco_code.in_(atco_codes)
-        )
-        with self._db.session_scope() as session:
-            results = list(session.execute(statement).all())
-            return {row[0]: row[1] for row in results}
 
     @handle_repository_errors
     def stream_naptan_ids(self, batch_size: int = 1000) -> Iterator[dict[str, int]]:
