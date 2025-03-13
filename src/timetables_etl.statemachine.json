@@ -243,7 +243,7 @@
         }
       },
       "Output": {
-        "mapResults": "{% $states.result %}"
+        "validationMapResults": "{% $states.result %}"
       },
       "ResultWriter": {
         "Resource": "arn:aws:states:::s3:putObject",
@@ -258,7 +258,7 @@
       "Next": "PTI and ETL",
       "Resource": "${CollateFilesLambdaArn}",
       "Arguments": {
-        "MapRunArn": "{% $states.input.mapResults.MapRunArn %}",
+        "MapRunArn": "{% $states.input.validationMapResults.MapRunArn %}",
         "MapRunPrefix": "tt-file-attributes-map-results",
         "Bucket": "{% $s3Bucket %}",
         "DatasetRevisionId": "{% $datasetRevisionId %}"
@@ -380,6 +380,9 @@
           }
         }
       },
+      "Output": {
+        "etlMapResults": "{% $states.result %}"
+      },
       "ResultWriter": {
         "Resource": "arn:aws:states:::s3:putObject",
         "Arguments": {
@@ -393,7 +396,7 @@
       "Next": "DqsTrigger",
       "Resource": "${GenerateOutputZipLambdaArn}",
       "Arguments": {
-        "MapRunArn": "{% $states.input.mapResults.MapRunArn %}",
+        "MapRunArn": "{% $states.input.etlMapResults.MapRunArn %}",
         "MapRunPrefix": "tt-etl-map-results",
         "DestinationBucket": "{% $s3Bucket %}",
         "OutputPrefix": "{% $ExtractedSubFolder %}",
