@@ -2,7 +2,7 @@
 Tables prefixed with naptan_
 """
 
-from typing import AsyncIterator
+from typing import AsyncIterator, Iterator
 
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 from sqlalchemy import select
@@ -70,9 +70,7 @@ class NaptanStopPointRepo(BaseRepository[NaptanStopPoint]):
             results = list(session.execute(statement).all())
             return {row[0]: row[1] for row in results}
 
-    async def stream_naptan_ids(
-        self, batch_size: int = 1000
-    ) -> AsyncIterator[dict[str, int]]:
+    def stream_naptan_ids(self, batch_size: int = 1000) -> Iterator[dict[str, int]]:
         """Fetch NaPTAN stop point IDs in batches."""
         offset = 0
         while True:

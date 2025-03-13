@@ -418,13 +418,18 @@ class DynamoDBLoader:
         if not updates:
             return 0, 0
 
+        self.log.info(
+            "Updating PrivateCodes for DynamoDB records", batch_size=len(updates)
+        )
+
         processed_count = 0
-        failed_count = 0
+        error_count = 0
         start_time = time.time()
+        batch_size = 100  # transact_write_items can handle up to 100 updates at a time
 
         batches = [
-            dict(list(updates.items())[i : i + 100])
-            for i in range(0, len(updates), 100)
+            dict(list(updates.items())[i : i + batch_size])
+            for i in range(0, len(updates), batch_size)
         ]
 
         tasks = [self.update_private_codes_batch(batch) for batch in batches]
@@ -433,24 +438,24 @@ class DynamoDBLoader:
         processed_count = sum(
             len(batch) for batch, success in zip(batches, results) if success
         )
-        failed_count = sum(
+        error_count = sum(
             len(batch) for batch, success in zip(batches, results) if not success
         )
 
         total_time = time.time() - start_time
         self.log.info(
-            "Completed all batch operation",
+            "Completed batch update operations",
             processed_count=processed_count,
-            error_count=failed_count,
+            error_count=error_count,
             total_time=f"{total_time:.2f}s",
         )
 
-        return processed_count, failed_count
+        return processed_count, error_count
 
     async def update_private_codes_batch(self, batch: dict[str, int]) -> bool:
         """
         Updates multiple AtcoCodes in DynamoDB using transact_write_items with retries.
-        Each batch contains up to 100 updates. If a batch fails, it retries with exponential backoff.
+        Each batch can contain up to 100 updates. If a batch fails, it retries with exponential backoff.
 
         Returns:
         - True if update was successful after all retries
@@ -473,19 +478,17 @@ class DynamoDBLoader:
 
         max_retries = 5
         retry_count = 0
-        backoff = 0.1
 
         async with self.semaphore:
             while retry_count < max_retries:
                 if retry_count > 0:
-                    wait_time = backoff + (random.random() * 0.1)
+                    wait_time = (2**retry_count) * 0.1 + (random.random() * 0.1)
                     self.log.warning(
                         "Retrying transact_write_items due to failure",
                         retry_attempt=retry_count,
                         wait_time=f"{wait_time:.2f}s",
                     )
                     await asyncio.sleep(wait_time)
-                    backoff *= 2
 
                 try:
                     loop = asyncio.get_event_loop()
@@ -494,10 +497,6 @@ class DynamoDBLoader:
                         lambda: self.dynamodb.meta.client.transact_write_items(
                             TransactItems=transact_items  # type: ignore
                         ),
-                    )
-                    self.log.info(
-                        "Completed batch update operations",
-                        processed_count=len(batch),
                     )
                     return True
 
