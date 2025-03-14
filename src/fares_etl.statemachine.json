@@ -199,7 +199,7 @@
           "FaresValidation": {
             "Type": "Task",
             "Next": "EtlProcess",
-            "Resource": "${SchemaCheckLambdaArn}",
+            "Resource": "${FaresValidationLambdaArn}",
             "Arguments": {
               "Bucket": "{% $Bucket %}",
               "ObjectKey": "{% $ObjectKey %}",

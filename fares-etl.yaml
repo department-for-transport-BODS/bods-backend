@@ -362,6 +362,7 @@ Resources:
               - Effect: Allow
                 Action: lambda:InvokeFunction
                 Resource:
+                  - !GetAtt FaresValidationLambda.Arn
                   - !GetAtt EtlProcessLambda.Arn
                   - !GetAtt FaresMetadataAggregationLambda.Arn
                   - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-initialize-pipeline-lambda-arn'
