@@ -9,15 +9,14 @@ from typing import Any
 
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.database.client import SqlDB
-from common_layer.database.repos.repo_etl_task import ETLTaskResultRepo
+from common_layer.database.repos import ETLTaskResultRepo
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
-from common_layer.s3 import S3
-from common_layer.s3.utils import get_filename_from_object_key
+from common_layer.exceptions import S3FileTooLargeError
+from common_layer.s3 import S3, get_filename_from_object_key_except
 from structlog.stdlib import get_logger
 
 from .av_scan import av_scan_file, get_clamav_config
-from .exceptions import S3FileTooLargeError
 from .hashing import calculate_and_update_file_hash
 from .models import ClamAVScannerInputData
 from .s3_upload import verify_and_extract
@@ -40,7 +39,7 @@ def download_and_verify_s3_file(
             file_size=file_size,
             max_size=max_size_bytes,
         )
-        raise S3FileTooLargeError("S3 File exceeds maximum allowed size")
+        raise S3FileTooLargeError(file_size=file_size, max_size=max_size_bytes)
 
     log.info(
         "File Size Check Passed",
@@ -72,11 +71,7 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
         calculate_and_update_file_hash(db, input_data, downloaded_file_path)
         av_scan_file(clam_av_config, downloaded_file_path)
 
-        filename = get_filename_from_object_key(input_data.s3_file_key)
-        if not filename:
-            msg = "Could not extract filename from s3_file_key"
-            log.error(msg, object_key=input_data.s3_file_key)
-            raise ValueError(msg)
+        filename = get_filename_from_object_key_except(input_data.s3_file_key)
 
         generated_prefix, stats = verify_and_extract(
             s3_handler, downloaded_file_path, filename, context.aws_request_id

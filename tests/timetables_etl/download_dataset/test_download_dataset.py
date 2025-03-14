@@ -3,18 +3,13 @@ Tests for DownloadDataset Lambda
 """
 
 from pathlib import Path
+from typing import Literal
 from unittest.mock import MagicMock, patch
 
-import boto3
 import pytest
-from botocore.stub import Stubber
-from common_layer.exceptions.file_exceptions import UnknownFileType
+from common_layer.exceptions import UnknownFileType
+from download_dataset.app.file_download import FileDownloader
 from download_dataset.app.models import DownloadResult
-
-from timetables_etl.download_dataset.app.download_dataset import (
-    lambda_handler,
-    upload_file_to_s3,
-)
 
 DT_FORMAT = "%Y-%m-%d_%H-%M-%S"
 TEST_ENV_VAR = {
@@ -45,7 +40,10 @@ TEST_ENV_VAR = {
     ],
 )
 def test_get_no_exception(
-    mock_file_downloader, content_type, content: bytes, expected_filetype: str
+    mock_file_downloader: FileDownloader,
+    content_type: str,
+    content: bytes,
+    expected_filetype: str,
 ):
     """
     Test the FileDownloader for valid file responses.
@@ -74,7 +72,11 @@ def test_get_no_exception(
         ),
     ],
 )
-def test_get_exception(mock_file_downloader, content_type, content):
+def test_get_exception(
+    mock_file_downloader: FileDownloader,
+    content_type: str,
+    content: str,
+):
     """
     Test the FileDownloader for unknown file responses (raises exception).
     """

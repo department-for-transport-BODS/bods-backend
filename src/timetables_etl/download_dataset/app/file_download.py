@@ -9,9 +9,10 @@ from zipfile import is_zipfile
 
 import requests
 from common_layer.database.models import OrganisationDatasetRevision
-from common_layer.exceptions.file_exceptions import (
+from common_layer.exceptions import (
     DownloadException,
     DownloadTimeout,
+    PermissionDenied,
     UnknownFileType,
 )
 from pydantic import AnyUrl
@@ -83,10 +84,27 @@ class FileDownloader:
 
         except requests.Timeout as exc:
             self._cleanup_on_error(temp_file, url_str)
-            raise DownloadTimeout(url_str) from exc
+            raise DownloadTimeout(
+                url=url_str,
+                timeout=self.timeout,
+            ) from exc
+        except requests.HTTPError as exc:
+            if exc.response.status_code == 403:
+                self._cleanup_on_error(temp_file, url_str)
+                raise PermissionDenied(
+                    url=url_str,
+                ) from exc
+            self._cleanup_on_error(temp_file, url_str)
+            raise DownloadException(
+                url=url_str,
+                reason=exc.response.reason,
+                status_code=exc.response.status_code,
+            ) from exc
         except RequestException as exc:
             self._cleanup_on_error(temp_file, url_str)
-            raise DownloadException(url_str) from exc
+            raise DownloadException(
+                url=url_str,
+            ) from exc
 
     def _save_to_file(self, response: requests.Response, path: Path) -> int:
         """Save response content to file and return size."""

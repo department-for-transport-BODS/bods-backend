@@ -5,11 +5,7 @@ XML Checks
 from io import BytesIO
 from xml.etree.ElementTree import ElementTree, ParseError
 
-from common_layer.exceptions.xml_file_exceptions import (
-    DangerousXML,
-    FileNotXML,
-    XMLSyntaxError,
-)
+from common_layer.exceptions import DangerousXML, FileNotXML, XMLSyntaxError
 from defusedxml import DefusedXmlException
 from defusedxml import ElementTree as detree
 from structlog.stdlib import get_logger
@@ -27,7 +23,7 @@ def dangerous_xml_check(file_object: BytesIO, file_name: str) -> ElementTree:
     We also are disallowing Document Type Definitions
     """
     try:
-        parsed_xml = detree.parse(
+        parsed_xml = detree.parse(  # type: ignore
             file_object, forbid_dtd=True, forbid_entities=True, forbid_external=True
         )
         log.info(
@@ -37,10 +33,10 @@ def dangerous_xml_check(file_object: BytesIO, file_name: str) -> ElementTree:
     except (detree.ParseError, ParseError) as err:
         error_message = str(err)
         log.error("XML syntax error", error_message=error_message)
-        raise XMLSyntaxError(file_name, message=err.msg) from err
+        raise XMLSyntaxError(file_name=file_name) from err
     except DefusedXmlException as err:
         log.error("Dangerous XML", exc_info=True)
-        raise DangerousXML(file_name, message=err) from err
+        raise DangerousXML(file_name=file_name) from err
 
 
 def validate_is_xml_file(file_name: str) -> None:

@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-from common_layer.exceptions.file_exceptions import SuspiciousFile
+from common_layer.exceptions.exceptions_download import SuspiciousFile
 from common_layer.s3.upload import process_file_to_s3
 
 from common_lambdas.clamav_scanner.app.av_scan import FileScanner, get_clamav_config

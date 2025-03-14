@@ -24,7 +24,7 @@ from common_layer.database.repos.repo_etl_task import (
     PipelineProcessingStepRepository,
 )
 from common_layer.db.constants import StepName
-from common_layer.exceptions.file_exceptions import ValidationException
+from common_layer.exceptions import ETLException
 from common_layer.json_logging import configure_logging
 from structlog.stdlib import get_logger
 
@@ -41,7 +41,7 @@ def map_exception_to_error_code(exception: Exception) -> ETLErrorCode:
         "AntiVirusError": ETLErrorCode.ANTIVIRUS_FAILURE,
         "NestedZipForbidden": ETLErrorCode.NESTED_ZIP_FORBIDDEN,
         "ZipTooLarge": ETLErrorCode.ZIP_TOO_LARGE,
-        "NoDataFound": ETLErrorCode.NO_DATA_FOUND,
+        "ZipNoDataFound": ETLErrorCode.NO_DATA_FOUND,
         "FileTooLarge": ETLErrorCode.FILE_TOO_LARGE,
         "XMLSyntaxError": ETLErrorCode.XML_SYNTAX_ERROR,
         "DangerousXML": ETLErrorCode.DANGEROUS_XML_ERROR,
@@ -257,7 +257,7 @@ def file_processing_result_to_db(step_name: StepName):
                     )
                 return result
 
-            except ValidationException as validation_error:
+            except ETLException as validation_error:
                 handle_lambda_error(step_name, processing_context, validation_error)
                 # Convert ValidationException so `Error` and `Cause` are correctly formatted
                 raise Exception(  # pylint: disable=broad-exception-raised
