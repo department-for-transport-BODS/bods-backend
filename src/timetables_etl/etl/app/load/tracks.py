@@ -4,7 +4,9 @@ Tracks Generation
 
 from common_layer.database import SqlDB
 from common_layer.database.repos import TransmodelTrackRepo
-from common_layer.xml.txc.helpers.routes import extract_stop_point_pairs
+from common_layer.xml.txc.helpers.routes import (
+    extract_stop_point_pairs_from_route_sections,
+)
 from common_layer.xml.txc.models import TXCRouteSection
 from structlog.stdlib import get_logger
 
@@ -21,7 +23,7 @@ def load_tracks(route_sections: list[TXCRouteSection], db: SqlDB) -> TrackLookup
     """
     log_ctx = log.bind()
     track_repo = TransmodelTrackRepo(db)
-    route_pairs = extract_stop_point_pairs(route_sections)
+    route_pairs = extract_stop_point_pairs_from_route_sections(route_sections)
 
     existing_tracks = track_repo.get_by_stop_pairs(route_pairs)
     analysis = analyze_track_pairs(route_pairs, existing_tracks)
