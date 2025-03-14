@@ -45,8 +45,12 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext):
     )
 
     dynamo_db_metadata = [
-        item for item in dynamo_db_data if item["SK"].startswith("METADATA")
+        item for item in dynamo_db_data if item["SK"]["S"].startswith("METADATA")
     ]
+
+    if len(dynamo_db_metadata) == 0:
+        log.error(f"No data found in dynamodb for task: {input_data.task_id}")
+        raise ValueError("No data found in dynamodb")
 
     fares_metadata, data_catalogues, stops, schema_versions = map_metadata(
         dynamo_db_metadata

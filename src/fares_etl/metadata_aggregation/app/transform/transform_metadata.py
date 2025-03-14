@@ -16,6 +16,9 @@ def get_min_schema_version(schema_versions: list[str]) -> str:
     """
     Returns the lowest schema version in list
     """
+    if len(schema_versions) == 0:
+        return "1.1"
+
     return min(schema_versions)
 
 
