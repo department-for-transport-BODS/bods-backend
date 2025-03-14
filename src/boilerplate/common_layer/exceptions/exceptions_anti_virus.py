@@ -18,15 +18,14 @@ class SuspiciousFile(ETLException):
     """
 
     code = "SUSPICIOUS_FILE"
-    message_template = "Anti-virus alert triggered for file {filename}."
+    message_template = "Anti-virus alert triggered for file."
 
 
 class ClamConnectionError(ETLException):
     """Exception for when we can't connect to the ClamAV server."""
 
     code = "AV_CONNECTION_ERROR"
-    message_template = "Could not connect to Clam daemon when \
-                        testing {filename}."
+    message_template = "Could not connect to Clam daemon"
 
 
 class ClamAVScanFailed(ETLException):
@@ -35,5 +34,4 @@ class ClamAVScanFailed(ETLException):
     """
 
     code = "AV_CONNECTION_ERROR"
-    message_template = "Could not connect to Clam daemon when \
-                        testing {filename}."
+    message_template = "ClamAV reported file failed to scan"
