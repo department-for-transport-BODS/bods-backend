@@ -104,6 +104,7 @@ class DynamoDBFaresMetadata(DynamoDB):
             Item={
                 "PK": self._serializer.serialize(task_id),
                 "SK": self._serializer.serialize(f"VIOLATION#{file_name}"),
+                "FileName": self._serializer.serialize(file_name),
                 "Violations": self._serializer.serialize(
                     [vars(violation) for violation in violations]
                 ),

@@ -234,15 +234,16 @@ def test_put_violations(m_boto_client):
         123,
         "test.xml",
         [
-            FaresViolation(
-                category="test", filename="test.xml", line=1, observation="test"
-            ),
+            FaresViolation(category="test", line=1, observation="test"),
         ],
     )
 
     # pylint: disable=protected-access
     dynamodb._client.put_item.assert_called_once_with(
         Item={
+            "FileName": {
+                "S": "test.xml",
+            },
             "PK": {
                 "N": "123",
             },
@@ -255,9 +256,6 @@ def test_put_violations(m_boto_client):
                         "M": {
                             "category": {
                                 "S": "test",
-                            },
-                            "filename": {
-                                "S": "test.xml",
                             },
                             "line": {
                                 "N": "1",

@@ -47,6 +47,5 @@ class FaresViolation:
     """
 
     line: int | None
-    filename: str
     observation: str
     category: str

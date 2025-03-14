@@ -26,6 +26,7 @@ def parse_used_in(elem: _Element) -> dict[str, VersionedRef]:
     """
     used_in: dict[str, VersionedRef] = {}
     used_in_elem = get_netex_element(elem, "usedIn")
+
     if used_in_elem is not None:
         for ref_elem in used_in_elem:
             ref = parse_versioned_ref(ref_elem, "")

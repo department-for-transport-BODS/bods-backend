@@ -5,7 +5,6 @@ Fares Validator
 import os
 from pathlib import Path
 from typing import Any, Callable
-from urllib.parse import unquote
 
 from common_layer.dynamodb.models import FaresViolation
 from lxml import etree
@@ -245,7 +244,6 @@ class FaresValidator:
 
                 violation = FaresViolation(
                     line=line,
-                    filename=unquote(Path(element.base or "").name),
                     observation=result[1],
                     category=observation.category,
                 )

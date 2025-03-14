@@ -25,7 +25,6 @@ def test_fares_validator_with_violations():
         assert result == [
             FaresViolation(
                 line=1819,
-                filename="fares_test_xml_fail.xml",
                 observation="Element 'TripType' is missing within 'RoundTrip'",
                 category="Conditions",
             ),
