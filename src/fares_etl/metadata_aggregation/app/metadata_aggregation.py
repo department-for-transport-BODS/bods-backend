@@ -7,6 +7,7 @@ from typing import Any
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.database.client import SqlDB
 from common_layer.dynamodb.client.fares_metadata import DynamoDBFaresMetadata
+from common_layer.json_logging import configure_logging
 from pydantic import BaseModel, Field
 from structlog import get_logger
 
@@ -30,10 +31,12 @@ class MetadataAggregationInputData(BaseModel):
     revision_id: int = Field(alias="DatasetRevisionId")
 
 
-def lambda_handler(event: dict[str, Any], _context: LambdaContext):
+def lambda_handler(event: dict[str, Any], context: LambdaContext):
     """
     Fares Metadata Aggregation
     """
+    configure_logging(event, context)
+
     log.debug("Input Data", data=event)
     input_data = MetadataAggregationInputData(**event)
     db = SqlDB()

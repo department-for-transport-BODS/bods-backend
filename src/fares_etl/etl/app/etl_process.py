@@ -10,6 +10,7 @@ from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.database import SqlDB
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
+from common_layer.json_logging import configure_logging
 from common_layer.s3 import S3
 from common_layer.xml.netex.models.netex_publication_delivery import (
     PublicationDeliveryStructure,
@@ -38,10 +39,12 @@ def get_netex_publication_delivery(
 
 
 @file_processing_result_to_db(step_name=StepName.ETL_PROCESS)
-def lambda_handler(event: dict[str, Any], _context: LambdaContext):
+def lambda_handler(event: dict[str, Any], context: LambdaContext):
     """
     Fares ETL
     """
+    configure_logging(event, context)
+
     log.debug("Input Data", data=event)
     input_data = ETLInputData(**event)
     db = SqlDB()
