@@ -13,7 +13,7 @@ class NestedZipForbidden(ETLException):
     """
 
     code = ETLErrorCode.NESTED_ZIP_FORBIDDEN
-    message_template = "Zip file {filename} contains another zip file."
+    message_template = "Zip file contains one or more zip file(s)."
 
 
 class ZipTooLarge(ETLException):
@@ -22,7 +22,7 @@ class ZipTooLarge(ETLException):
     """
 
     code = ETLErrorCode.ZIP_TOO_LARGE
-    message_template = "Zip file {filename} is too large."
+    message_template = "Zip file is too large."
 
 
 class ZipNoDataFound(ETLException):
@@ -30,5 +30,5 @@ class ZipNoDataFound(ETLException):
     Exception for NoDataFound in Zip file
     """
 
-    message_template = "Zip file {filename} contains no data files"
+    message_template = "Zip file contains no XML files"
     code = ETLErrorCode.NO_DATA_FOUND
