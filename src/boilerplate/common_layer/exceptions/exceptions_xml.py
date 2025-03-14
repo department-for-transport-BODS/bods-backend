@@ -11,7 +11,7 @@ class XMLSyntaxError(ETLException):
     """
 
     code = "XML_SYNTAX_ERROR"
-    message_template = "File {filename} is not valid XML."
+    message_template = "File is not valid XML."
 
 
 class DangerousXML(ETLException):
@@ -20,7 +20,7 @@ class DangerousXML(ETLException):
     """
 
     code = "DANGEROUS_XML_ERROR"
-    message_template = "XML file {filename} contains dangerous XML."
+    message_template = "XML file contains dangerous XML."
 
 
 class FileNotXML(ETLException):
@@ -29,4 +29,4 @@ class FileNotXML(ETLException):
     """
 
     code = "FILE_NOT_XML_ERROR"
-    message_template = "File {filename} is not a XML file."
+    message_template = "File is not a XML file."
