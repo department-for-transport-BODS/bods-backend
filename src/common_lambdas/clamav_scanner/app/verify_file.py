@@ -90,15 +90,15 @@ def verify_zip_file(path: Path, filename: str) -> None:
     """
     nested_zip_result, _ = check_for_nested_zips(path)
     if nested_zip_result:
-        raise NestedZipForbidden(filename=filename)
+        raise NestedZipForbidden(input_file=filename)
 
     uncompressed_size_result, total_size = check_zip_uncompressed_size(path)
     if not uncompressed_size_result:
-        raise ZipTooLarge(filename=filename)
+        raise ZipTooLarge(input_file=filename)
 
     zip_contains_xml_files = check_zip_contains_xml_files(path)
     if not zip_contains_xml_files:
-        raise ZipNoDataFound(filename=filename)
+        raise ZipNoDataFound(input_file=filename)
 
     log.info(
         "Zip File Verification Passed", path=path, total_uncompressed_size=total_size
