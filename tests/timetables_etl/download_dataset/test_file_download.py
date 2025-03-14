@@ -130,7 +130,7 @@ def test_get_content_type(
             id="Connection Error",
         ),
         pytest.param(
-            requests.HTTPError("404 Client Error"),
+            requests.HTTPError(response=requests.Response()),
             id="HTTP Error",
         ),
         pytest.param(

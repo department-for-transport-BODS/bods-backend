@@ -25,7 +25,14 @@ class PermissionDenied(ETLException):
     """A permission denied response was received."""
 
     code = "PERMISSION_DENIED"
-    message_template = "Access denied for file"
+    message_template = "Access denied for file HTTP 403"
+
+
+class FileNotFound(ETLException):
+    """A permission denied response was received."""
+
+    code = "FILE_NOT_FOUND"
+    message_template = "File not found HTTP 404"
 
 
 class UnknownFileType(ETLException):

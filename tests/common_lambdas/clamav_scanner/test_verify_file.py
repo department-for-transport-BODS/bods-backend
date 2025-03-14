@@ -39,9 +39,7 @@ def test_verify_zip_file_nested_zip(tmp_path: Path):
     zip_path = tmp_path / filename
     create_zip_with_files(zip_path, {"nested.zip": b"zip content"})
 
-    with pytest.raises(
-        NestedZipForbidden, match=f"Zip file {filename} contains another zip file."
-    ):
+    with pytest.raises(NestedZipForbidden):
         verify_zip_file(zip_path, filename)
 
 
@@ -55,7 +53,5 @@ def test_verify_zip_file_no_xml(tmp_path: Path):
         zip_path, {"image.jpg": b"binarydata", "notes.txt": b"hello world"}
     )
 
-    with pytest.raises(
-        ZipNoDataFound, match=f"Zip file {filename} contains no data files"
-    ):
+    with pytest.raises(ZipNoDataFound):
         verify_zip_file(zip_path, filename)

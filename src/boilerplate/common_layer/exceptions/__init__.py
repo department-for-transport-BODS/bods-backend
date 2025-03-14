@@ -7,6 +7,7 @@ from .exceptions_common import ETLException
 from .exceptions_download import (
     DownloadException,
     DownloadTimeout,
+    FileNotFound,
     PermissionDenied,
     UnknownFileType,
 )
@@ -27,6 +28,7 @@ __all__ = [
     "DownloadTimeout",
     "PermissionDenied",
     "UnknownFileType",
+    "FileNotFound",
     # S3 exceptions
     "S3FilenameParseFailed",
     "S3FileTooLargeError",

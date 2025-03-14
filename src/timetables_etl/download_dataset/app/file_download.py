@@ -12,6 +12,7 @@ from common_layer.database.models import OrganisationDatasetRevision
 from common_layer.exceptions import (
     DownloadException,
     DownloadTimeout,
+    FileNotFound,
     PermissionDenied,
     UnknownFileType,
 )
@@ -94,6 +95,9 @@ class FileDownloader:
                 raise PermissionDenied(
                     url=url_str,
                 ) from exc
+            if exc.response.status_code == 404:
+                self._cleanup_on_error(temp_file, url_str)
+                raise FileNotFound(url=url_str) from exc
             self._cleanup_on_error(temp_file, url_str)
             raise DownloadException(
                 url=url_str,
