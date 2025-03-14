@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-from common_layer.exceptions.exceptions_download import SuspiciousFile
+from common_layer.exceptions import SuspiciousFile
 from common_layer.s3.upload import process_file_to_s3
 
 from common_lambdas.clamav_scanner.app.av_scan import FileScanner, get_clamav_config
@@ -57,30 +57,28 @@ def test_get_clamav_config_exceptions(config_scenario: dict[str, dict[str, str]]
 
 
 @pytest.mark.parametrize(
-    "file_scenario",
+    "file_name, file_prefix, file_content",
     [
         pytest.param(
-            {
-                "name": "test.xml",
-                "prefix": "ext/test.xml",
-                "content": b"xml content",
-            },
+            "test.xml",
+            "ext/test.xml",
+            b"xml content",
             id="Process XML File",
         ),
         pytest.param(
-            {
-                "name": "data.json",
-                "prefix": "ext/data.json",
-                "content": b"json data",
-            },
+            "data.json",
+            "ext/data.json",
+            b"json data",
             id="Process JSON File",
         ),
     ],
 )
-def test_process_file_to_s3(file_scenario: dict[str, str | bytes], tmp_path: Path):
+def test_process_file_to_s3(
+    file_name: str, file_prefix: str, file_content: bytes, tmp_path: Path
+):
     """Test S3 file processing"""
-    test_file = tmp_path / file_scenario["name"]
-    test_file.write_bytes(file_scenario["content"])
+    test_file = tmp_path / file_name
+    test_file.write_bytes(file_content)
 
     mock_s3 = MagicMock()
     result, _stats = process_file_to_s3(mock_s3, test_file, "ext/")
@@ -88,7 +86,7 @@ def test_process_file_to_s3(file_scenario: dict[str, str | bytes], tmp_path: Pat
     assert result.startswith("ext/")
     mock_s3.put_object.assert_called_once()
     args = mock_s3.put_object.call_args[0]
-    assert args[0] == file_scenario["prefix"]
+    assert args[0] == file_prefix
 
 
 def test_scan_file_no_threats_found(tmp_path: Path):
