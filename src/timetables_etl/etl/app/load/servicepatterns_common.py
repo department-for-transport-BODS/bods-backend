@@ -230,7 +230,7 @@ def process_pattern_common(
         reference_journey_pattern,
         tm_vjs,
         context.lookups.tracks,
-        context.txc,
+        sp_data.stop_sequence,
         context.db,
     )
 

@@ -3,16 +3,12 @@ Process and add Vehicle Journey Tracks to DB
 """
 
 from common_layer.database.client import SqlDB
-from common_layer.database.models import TransmodelTracksVehicleJourney
+from common_layer.database.models import NaptanStopPoint, TransmodelTracksVehicleJourney
 from common_layer.database.models.model_transmodel_vehicle_journey import (
     TransmodelVehicleJourney,
 )
 from common_layer.database.repos import TransmodelTracksVehicleJourneyRepo
-from common_layer.xml.txc.models import (
-    TXCData,
-    TXCFlexibleJourneyPattern,
-    TXCJourneyPattern,
-)
+from common_layer.xml.txc.models import TXCFlexibleJourneyPattern, TXCJourneyPattern
 from structlog.stdlib import get_logger
 
 from ...helpers import TrackLookup
@@ -25,14 +21,14 @@ def load_vehicle_journey_tracks(
     journey_pattern: TXCJourneyPattern | TXCFlexibleJourneyPattern,
     vehicle_journeys: list[TransmodelVehicleJourney],
     track_lookup: TrackLookup,
-    txc: TXCData,
+    stop_sequence: list[NaptanStopPoint],
     db: SqlDB,
 ) -> list[TransmodelTracksVehicleJourney]:
     """
     Generate Vehicle Journey Tracks
     """
     vj_tracks = generate_vehicle_journey_tracks(
-        journey_pattern, vehicle_journeys, track_lookup, txc
+        journey_pattern, vehicle_journeys, track_lookup, stop_sequence
     )
 
     result = TransmodelTracksVehicleJourneyRepo(db).bulk_insert(vj_tracks)
