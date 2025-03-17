@@ -16,10 +16,10 @@ from common_layer.database.repos.repo_fares import (
 
 
 def load_metadata(
+    db: SqlDB,
     metadata: FaresMetadata,
     stops: list[FaresMetadataStop],
     data_catalogues: list[FaresDataCatalogueMetadata],
-    db: SqlDB,
 ) -> None:
     """
     Load metadata

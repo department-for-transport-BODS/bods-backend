@@ -145,11 +145,8 @@ class FaresValidation(BaseSQLModel):
     )
     file_name: Mapped[str] = mapped_column(String(256), nullable=False)
     error_line_no: Mapped[int] = mapped_column(Integer, nullable=False)
-    type_of_observation: Mapped[str] = mapped_column(String(1024), nullable=False)
     category: Mapped[str] = mapped_column(String(1024), nullable=False)
     error: Mapped[str] = mapped_column(String(2000), nullable=False)
-    reference: Mapped[str] = mapped_column(String(1024), nullable=False)
-    important_note: Mapped[str] = mapped_column(String(2000), nullable=False)
     organisation_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("organisation_organisation.id"),
@@ -161,6 +158,19 @@ class FaresValidation(BaseSQLModel):
         ForeignKey("organisation_datasetrevision.id"),
         nullable=False,
         index=True,
+    )
+    type_of_observation: Mapped[str] = mapped_column(
+        String(1024), nullable=False, default="Simple fares validation failure"
+    )
+    reference: Mapped[str] = mapped_column(
+        String(1024),
+        nullable=False,
+        default="Please see BODS Fares Validator Guidance v0.2",
+    )
+    important_note: Mapped[str] = mapped_column(
+        String(2000),
+        nullable=False,
+        default="This is warning only but data containing this failure will eventually be rejected by BODS ",
     )
 
 
