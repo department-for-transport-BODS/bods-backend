@@ -20,7 +20,7 @@ class DangerousXML(ETLException):
     Defused XML Failed
     """
 
-    code = ETLErrorCode.XML_DANGEROUS_CONTENT_FOUND
+    code = ETLErrorCode.DANGEROUS_XML_ERROR
 
 
 class FileNotXML(ETLException):

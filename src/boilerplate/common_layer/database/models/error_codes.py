@@ -13,7 +13,7 @@ class ETLErrorCode(str, Enum):
     EMPTY = ""
 
     # Anti Virus
-    AV_SUSPICIOUS_FILE = "Suspicious file detected."
+    SUSPICIOUS_FILE = "Suspicious file detected."
     AV_FILE_IO = "Antivirus failed to read file"
     AV_CONNECTION_ERROR = "Connection to antivirus service failed."
     AV_SCAN_FAILED = "Antivirus Service Reported Scan Failed"
@@ -39,7 +39,7 @@ class ETLErrorCode(str, Enum):
     # XML
     XML_SYNTAX_ERROR = "XML syntax error."
     XML_FILE_NOT_XML = "Input file is not an XML"
-    XML_DANGEROUS_CONTENT_FOUND = "Dangerous XML content detected."
+    DANGEROUS_XML_ERROR = "Dangerous XML content detected."
 
     # Schema
     SCHEMA_ERROR = "XSD Schema Validation error."

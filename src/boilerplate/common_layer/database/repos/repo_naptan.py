@@ -6,13 +6,13 @@ from typing import Iterator
 
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 from sqlalchemy import select
-from structlog import get_logger
+from structlog.stdlib import get_logger
 
 from ..models.model_naptan import NaptanAdminArea, NaptanLocality, NaptanStopPoint
 from .operation_decorator import handle_repository_errors
 from .repo_common import BaseRepository, BaseRepositoryWithId, SqlDB
 
-logger = get_logger()
+log = get_logger()
 
 
 class NaptanStopPointRepo(BaseRepository[NaptanStopPoint]):
@@ -145,7 +145,7 @@ class NaptanStopPointRepo(BaseRepository[NaptanStopPoint]):
                 f"Exception counting StopPoints with atco_code in {atco_codes} "
                 f"and fields {filter_kwargs}"
             )
-            logger.exception(message, exc_info=True)
+            log.exception(message, exc_info=True)
             raise PipelineException(message) from exc
 
         return result
