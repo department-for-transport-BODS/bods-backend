@@ -50,6 +50,9 @@ class ETLErrorCode(str, Enum):
     POST_SCHEMA_ERROR = "Post-schema validation error."
     DATASET_EXPIRED = "Dataset has expired."
 
+    # PTI
+    PTI_VIOLATION_FOUND = "PTI Failed due to one or more violations"
+
     @property
     def code(self) -> str:
         """Return the enum name (to use as the error code)"""

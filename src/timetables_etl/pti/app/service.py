@@ -10,6 +10,7 @@ from common_layer.database.repos import (
     OrganisationTXCFileAttributesRepo,
 )
 from common_layer.dynamodb.models import TXCFileAttributes
+from common_layer.exceptions import PTIViolationFound
 from common_layer.utils import sha1sum
 from common_layer.xml.txc.models import TXCData
 from structlog.stdlib import get_logger
@@ -108,7 +109,7 @@ class PTIValidationService:
                 )
                 txc_file_attribute_repo.delete_by_id(txc_file_attributes.id)
 
-                raise ValueError(
+                raise PTIViolationFound(
                     f"PTI validation failed due to violations. {','.join(unique_names)}"
                 )
         log.info("Finished PTI Profile validation.")

@@ -11,6 +11,7 @@ from .exceptions_download import (
     PermissionDenied,
     UnknownFileType,
 )
+from .exceptions_pti import PTIViolationFound
 from .exceptions_s3 import S3FilenameParseFailed, S3FileTooLargeError
 from .exceptions_schema import PostSchemaViolationsFound, SchemaViolationsFound
 from .exceptions_xml import DangerousXML, FileNotXML, XMLSyntaxError
@@ -43,4 +44,6 @@ __all__ = [
     "NestedZipForbidden",
     "ZipNoDataFound",
     "ZipTooLarge",
+    # PTI
+    "PTIViolationFound",
 ]
