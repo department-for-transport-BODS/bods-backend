@@ -2,8 +2,9 @@
 TXC Flexible Service Models
 """
 
-from common_layer.xml.txc.models import JourneyPatternVehicleDirectionT
 from pydantic import BaseModel, Field
+
+from .txc_types import JourneyPatternVehicleDirectionT
 
 
 class TXCFlexibleStopUsage(BaseModel):
