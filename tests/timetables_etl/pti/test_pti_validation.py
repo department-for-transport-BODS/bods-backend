@@ -195,7 +195,6 @@ def test_lambda_handler_error(
         revision
     )
 
-    # Fix: Use PipelineException instead of Exception
     mock_imports.OrganisationTXCFileAttributesRepo.return_value.require_by_id.side_effect = PipelineException(
         "Record not found"
     )
