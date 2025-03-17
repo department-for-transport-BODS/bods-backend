@@ -2,6 +2,12 @@
 Exceptions exports
 """
 
-from .exceptions_db import OrganisationDatasetRevisionNotFound
+from .exceptions_db import (
+    OrganisationDatasetRevisionNotFound,
+    OrganisationTXCFileAttributesNotFound,
+)
 
-__all__ = ["OrganisationDatasetRevisionNotFound"]
+__all__ = [
+    "OrganisationDatasetRevisionNotFound",
+    "OrganisationTXCFileAttributesNotFound",
+]

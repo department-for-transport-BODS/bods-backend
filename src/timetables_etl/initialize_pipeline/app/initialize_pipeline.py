@@ -21,7 +21,6 @@ from common_layer.database.repos import (
 from common_layer.dynamodb.client.cache import DynamoDBCache
 from common_layer.dynamodb.data_manager import FileProcessingDataManager
 from common_layer.enums import FeedStatus
-from common_layer.exceptions.pipeline_exceptions import PipelineException
 from common_layer.json_logging import configure_logging
 from pydantic import BaseModel
 from structlog.stdlib import get_logger
@@ -110,7 +109,7 @@ def initialize_pipeline(
     return task_result_id
 
 
-@metrics.log_metrics
+@metrics.log_metrics  # type: ignore
 def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any]:
     """
     Handler for InitializePipeline

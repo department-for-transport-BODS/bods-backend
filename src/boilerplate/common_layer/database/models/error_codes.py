@@ -55,6 +55,9 @@ class ETLErrorCode(str, Enum):
 
     # DB
     ORGANISATION_DATASET_REVISION_NOT_FOUND = "The Revision ID was not found in the DB"
+    ORGANISATION_TXC_FILE_ATTRIBUTES_NOT_FOUND = (
+        "The File Attributes were not found in the DB"
+    )
 
     @property
     def code(self) -> str:

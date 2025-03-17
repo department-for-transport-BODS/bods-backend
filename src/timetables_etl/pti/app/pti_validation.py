@@ -73,19 +73,13 @@ def get_task_data(
     """
     Fetch Required Task Data
     """
-    dataset_revision_repo = OrganisationDatasetRevisionRepo(clients.sql_db)
-    revision = dataset_revision_repo.get_by_id(event.DatasetRevisionId)
-    if not revision:
-        raise PipelineException(f"No revision with id {event.DatasetRevisionId} found")
+    revision = OrganisationDatasetRevisionRepo(clients.sql_db).require_by_id(
+        event.DatasetRevisionId
+    )
 
-    txc_file_attributes_repo = OrganisationTXCFileAttributesRepo(clients.sql_db)
-    txc_file_attributes = txc_file_attributes_repo.get_by_id(event.TxcFileAttributesId)
-    if not txc_file_attributes:
-        message = (
-            f"No TXCFileAttributes to process for DatasetRevision id {revision.id} "
-        )
-        logger.exception(message)
-        raise PipelineException(message)
+    txc_file_attributes = OrganisationTXCFileAttributesRepo(
+        clients.sql_db
+    ).require_by_id(event.TxcFileAttributesId)
 
     data_manager = FileProcessingDataManager(clients.sql_db, clients.dynamodb)
     cached_live_txc_file_attributes = (

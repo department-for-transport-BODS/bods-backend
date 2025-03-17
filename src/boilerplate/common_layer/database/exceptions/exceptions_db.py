@@ -12,3 +12,11 @@ class OrganisationDatasetRevisionNotFound(Exception):
     """
 
     code = ETLErrorCode.ORGANISATION_DATASET_REVISION_NOT_FOUND
+
+
+class OrganisationTXCFileAttributesNotFound(Exception):
+    """
+    Step Requiring the OrganisationDatasetRevision failed to find the referenced one
+    """
+
+    code = ETLErrorCode.ORGANISATION_DATASET_REVISION_NOT_FOUND
