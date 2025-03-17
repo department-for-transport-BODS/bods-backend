@@ -20,12 +20,12 @@ from common_layer.xml.txc.models import (
     TXCLine,
     TXCStandardService,
 )
-from etl.app.transform.utils_stops_flexible import get_flexible_pattern_stops
 from structlog.stdlib import get_logger
 
 from ..helpers.dataclasses.lookups import ReferenceDataLookups
 from ..helpers.types import StopsLookup
 from .utils_stops import get_pattern_stops
+from .utils_stops_flexible import get_flexible_pattern_stops
 
 log = get_logger()
 
