@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Optional
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
@@ -53,7 +52,7 @@ class TaskResult(TimeStampedMixin, BaseSQLModel):
         doc="Current state of the task being run",
     )
 
-    completed: Mapped[Optional[datetime]] = mapped_column(
+    completed: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         index=True,
         default=None,
@@ -100,7 +99,7 @@ class DatasetETLTaskResult(TaskResult):
         doc="The error code returned for the failed task",
     )
 
-    additional_info: Mapped[Optional[str]] = mapped_column(
+    additional_info: Mapped[str | None] = mapped_column(
         String(512), default=None, nullable=True, kw_only=True
     )
 

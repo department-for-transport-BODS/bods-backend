@@ -17,6 +17,7 @@ from common_layer.db.file_processing_result import (
     initialize_processing,
     map_exception_to_error_code,
 )
+from common_layer.exceptions import ClamAVScanFailed, ETLException
 
 from tests.factories.database.pipelines import FileProcessingResultFactory
 
@@ -25,39 +26,30 @@ from tests.factories.database.pipelines import FileProcessingResultFactory
     "exception_class,expected_code",
     [
         pytest.param(
-            "ClamConnectionError",
-            ETLErrorCode.AV_CONNECTION_ERROR,
-            id="Map Antivirus Connection Error",
+            ETLException(),
+            ETLErrorCode.SYSTEM_ERROR,
+            id="Base Class Exception, default SYSTEM_ERROR",
         ),
         pytest.param(
-            "SuspiciousFile",
-            ETLErrorCode.AV_SUSPICIOUS_FILE,
-            id="Map Suspicious File Error",
+            ValueError(),
+            ETLErrorCode.SYSTEM_ERROR,
+            id="Non ETLException should defailt to System Error",
         ),
         pytest.param(
-            "AntiVirusError",
+            ClamAVScanFailed(),
             ETLErrorCode.AV_SCAN_FAILED,
             id="Map Antivirus Failure",
         ),
-        pytest.param(
-            "NestedZipForbidden",
-            ETLErrorCode.NESTED_ZIP_FORBIDDEN,
-            id="Map Nested Zip Error",
-        ),
-        pytest.param(
-            "UnknownError",
-            ETLErrorCode.SUSPICIOUS_FILE,
-            id="Map Unknown Error To Default",
-        ),
     ],
 )
-def test_map_exception_to_error_code(exception_class, expected_code):
+def test_map_exception_to_error_code(
+    exception_class: ETLException | Exception, expected_code: ETLErrorCode
+):
     """
     Map the Python exceptions to the DB Statuses
     """
-    exception = type(exception_class, (Exception,), {})()
 
-    result = map_exception_to_error_code(exception)
+    result = map_exception_to_error_code(exception_class)
 
     assert result == expected_code
 
@@ -87,11 +79,11 @@ def test_map_exception_to_error_code(exception_class, expected_code):
         ),
     ],
 )
-def test_get_dataset_type(dataset_type, expected_category):
+def test_get_dataset_type(dataset_type: str, expected_category: str):
     """
     Get the correct dataset type
     """
-    event = {}
+    event: dict[str, str] = {}
     if dataset_type:
         event["DatasetType"] = dataset_type
 
@@ -147,7 +139,7 @@ def test_initialize_processing_db_failure():
         pytest.param(False, id="Without Database Connection"),
     ],
 )
-def test_handle_lambda_success(has_db_connection):
+def test_handle_lambda_success(has_db_connection: bool):
     """
     Test for sucessfully creating a lambda
     """
@@ -187,7 +179,7 @@ def test_handle_lambda_success(has_db_connection):
         ),
     ],
 )
-def test_handle_lambda_error(exception_type, has_db_connection):
+def test_handle_lambda_error(exception_type: str, has_db_connection):
     db = MagicMock() if has_db_connection else None
     processing_result = FileProcessingResultFactory() if has_db_connection else None
     context = MagicMock(
@@ -214,7 +206,7 @@ def test_handle_lambda_error(exception_type, has_db_connection):
         pytest.param(False, False, id="Failure Without DB"),
     ],
 )
-def test_file_processing_result_to_db_decorator(success, db_available):
+def test_file_processing_result_to_db_decorator(success: bool, db_available: bool):
     """
     Test the decorator
     """
