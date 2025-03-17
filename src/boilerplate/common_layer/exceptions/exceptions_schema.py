@@ -2,6 +2,8 @@
 Exceptions for Schema Checks
 """
 
+from common_layer.database.models import ETLErrorCode
+
 from .exceptions_common import ETLException
 
 
@@ -10,8 +12,7 @@ class SchemaViolationsFound(ETLException):
     Exception raised when schema violation is found
     """
 
-    code = "SCHEMA_ERROR"
-    message_template = "Found XSD Schema Violations"
+    code = ETLErrorCode.SCHEMA_ERROR
 
 
 class PostSchemaViolationsFound(ETLException):
@@ -19,5 +20,4 @@ class PostSchemaViolationsFound(ETLException):
     Exception raised when schema violation is found
     """
 
-    code = "POST_SCHEMA_ERROR"
-    message_template = "Found Post Schema Violations"
+    code = ETLErrorCode.POST_SCHEMA_ERROR

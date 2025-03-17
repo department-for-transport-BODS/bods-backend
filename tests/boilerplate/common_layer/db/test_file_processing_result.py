@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 from uuid import UUID
 
 import pytest
-from common_layer.database.models.model_pipelines import ETLErrorCode, TaskState
+from common_layer.database.models import ETLErrorCode, TaskState
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import (
     file_processing_result_to_db,
@@ -31,12 +31,12 @@ from tests.factories.database.pipelines import FileProcessingResultFactory
         ),
         pytest.param(
             "SuspiciousFile",
-            ETLErrorCode.SUSPICIOUS_FILE,
+            ETLErrorCode.AV_SUSPICIOUS_FILE,
             id="Map Suspicious File Error",
         ),
         pytest.param(
             "AntiVirusError",
-            ETLErrorCode.ANTIVIRUS_FAILURE,
+            ETLErrorCode.AV_SCAN_FAILED,
             id="Map Antivirus Failure",
         ),
         pytest.param(

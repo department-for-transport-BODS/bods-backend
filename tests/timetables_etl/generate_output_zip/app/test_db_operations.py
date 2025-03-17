@@ -6,9 +6,9 @@ from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from common_layer.aws.step.map_results_models import MapResults
+from common_layer.aws.step import MapResults
 from common_layer.database.client import SqlDB
-from common_layer.database.models.model_pipelines import ETLErrorCode, TaskState
+from common_layer.database.models import ETLErrorCode, TaskState
 from common_layer.enums import FeedStatus
 from freezegun import freeze_time
 

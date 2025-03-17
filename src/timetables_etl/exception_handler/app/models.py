@@ -5,7 +5,7 @@ Exception Handler Pydantic models and Dataclasses
 import json
 from typing import Annotated
 
-from common_layer.database.models.model_pipelines import ETLErrorCode
+from common_layer.database.models import ETLErrorCode
 from pydantic import BaseModel, ConfigDict, Field
 
 

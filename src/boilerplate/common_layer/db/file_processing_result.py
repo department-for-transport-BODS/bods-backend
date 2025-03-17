@@ -18,7 +18,7 @@ from common_layer.database.models import (
     PipelineProcessingStep,
     TaskState,
 )
-from common_layer.database.repos.repo_etl_task import (
+from common_layer.database.repos import (
     FileProcessingResultRepo,
     PipelineErrorCodeRepository,
     PipelineProcessingStepRepository,
@@ -35,22 +35,10 @@ def map_exception_to_error_code(exception: Exception) -> ETLErrorCode:
     """
     Maps exceptions to corresponding ETL error codes.
     """
-    exception_mapping: dict[str, ETLErrorCode] = {
-        "ClamConnectionError": ETLErrorCode.AV_CONNECTION_ERROR,
-        "SuspiciousFile": ETLErrorCode.SUSPICIOUS_FILE,
-        "AntiVirusError": ETLErrorCode.ANTIVIRUS_FAILURE,
-        "NestedZipForbidden": ETLErrorCode.NESTED_ZIP_FORBIDDEN,
-        "ZipTooLarge": ETLErrorCode.ZIP_TOO_LARGE,
-        "ZipNoDataFound": ETLErrorCode.NO_DATA_FOUND,
-        "FileTooLarge": ETLErrorCode.FILE_TOO_LARGE,
-        "XMLSyntaxError": ETLErrorCode.XML_SYNTAX_ERROR,
-        "DangerousXML": ETLErrorCode.DANGEROUS_XML_ERROR,
-        "NoSchemaDefinition": ETLErrorCode.SCHEMA_VERSION_MISSING,
-        "NoRowFound": ETLErrorCode.NO_VALID_FILE_TO_PROCESS,
-    }
-    return exception_mapping.get(
-        exception.__class__.__name__, ETLErrorCode.SUSPICIOUS_FILE
-    )
+
+    if isinstance(exception, ETLException):
+        return exception.code
+    return ETLErrorCode.SYSTEM_ERROR
 
 
 def get_file_processing_error_code(

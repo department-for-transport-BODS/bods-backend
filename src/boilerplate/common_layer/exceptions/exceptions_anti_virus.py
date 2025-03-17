@@ -2,14 +2,15 @@
 Anti Virus Scan Exceptions
 """
 
+from common_layer.database.models import ETLErrorCode
+
 from .exceptions_common import ETLException
 
 
 class FileIOError(ETLException):
     """Base exception for antivirus scans."""
 
-    code = "ANTIVIRUS_FAILURE"
-    message_template = "Antivirus failed to read file."
+    code = ETLErrorCode.AV_FILE_IO
 
 
 class SuspiciousFile(ETLException):
@@ -17,15 +18,13 @@ class SuspiciousFile(ETLException):
     Exception for when a suspicious file is found by the Anti-virus Scan
     """
 
-    code = "SUSPICIOUS_FILE"
-    message_template = "Anti-virus alert triggered for file."
+    code = ETLErrorCode.AV_SUSPICIOUS_FILE
 
 
 class ClamConnectionError(ETLException):
     """Exception for when we can't connect to the ClamAV server."""
 
-    code = "AV_CONNECTION_ERROR"
-    message_template = "Could not connect to Clam daemon"
+    code = ETLErrorCode.AV_CONNECTION_ERROR
 
 
 class ClamAVScanFailed(ETLException):
@@ -33,5 +32,4 @@ class ClamAVScanFailed(ETLException):
     Exception when a scan returns failed
     """
 
-    code = "AV_CONNECTION_ERROR"
-    message_template = "ClamAV reported file failed to scan"
+    code = ETLErrorCode.AV_SCAN_FAILED

@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 import factory
-from common_layer.database.models.model_pipelines import (
+from common_layer.database.models import (
     DatasetETLTaskResult,
     ETLErrorCode,
     FileProcessingResult,

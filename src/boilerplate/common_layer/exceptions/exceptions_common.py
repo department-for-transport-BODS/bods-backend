@@ -5,13 +5,15 @@ Common Exception logic
 import inspect
 from typing import Any, TypedDict
 
+from common_layer.database.models import ETLErrorCode
+
 
 class ETLErrorDict(TypedDict):
     """
     ETL Error Dict
     """
 
-    ErrorCode: str
+    ErrorCode: ETLErrorCode
     Cause: str
     Context: dict[str, str | int]
 
@@ -22,8 +24,7 @@ class ETLException(Exception):
     These Exceptions are not program crashes but instead issues with the input data
     """
 
-    code = "SYSTEM_ERROR"
-    message_template = "An error occurred in the ETL process."
+    code: ETLErrorCode = ETLErrorCode.SYSTEM_ERROR
     filename_template = "File: {filename}, Line: {line}"
 
     def __init__(
@@ -32,15 +33,6 @@ class ETLException(Exception):
         context: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> None:
-        """
-        It accepts arbitrary keys like structlog's logger
-        Try to get caller information, but fall back gracefully if it fails
-            - caller information
-            - Additional Context
-            - All the base Exception Class init
-
-
-        """
         try:
             frame_info = inspect.stack()[1]
             self.filename = frame_info.filename
@@ -53,7 +45,7 @@ class ETLException(Exception):
         self.context.update(kwargs)
 
         if message is None:
-            self.message = self.message_template
+            self.message = self.code.value
         else:
             self.message = message if isinstance(message, str) else str(message)
 
@@ -62,18 +54,18 @@ class ETLException(Exception):
     def __str__(self) -> str:
         """Format the exception as a human-readable string."""
         return (
-            f"[{self.code}] {self.message} "
+            f"[{self.code.name}] {self.message} "
             f"({self.filename_template.format(filename=self.filename, line=self.line)})"
         )
 
-    def to_dict(self) -> ETLErrorDict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert the exception details to a dictionary for Step Functions."""
         context_dict: dict[str, Any] = {"File": self.filename, "Line": self.line}
 
         context_dict.update(self.context)
 
         return {
-            "ErrorCode": self.code,
+            "ErrorCode": self.code.name,
             "Cause": self.message,
             "Context": context_dict,
         }
