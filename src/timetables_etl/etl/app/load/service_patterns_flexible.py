@@ -9,11 +9,11 @@ from common_layer.database.models import (
 )
 from common_layer.database.repos import TransmodelServicePatternRepo
 from common_layer.xml.txc.models import TXCData, TXCFlexibleJourneyPattern, TXCService
-from etl.app.load.servicepatterns import map_unique_journey_patterns
 from structlog.stdlib import get_logger
 
 from ..helpers import ReferenceDataLookups, StopsLookup
 from ..models import PatternCommonStats, TaskData
+from ..transform.service_pattern_mapping import map_unique_journey_patterns
 from ..transform.service_patterns_flexible import create_flexible_service_pattern
 from .models_context import ProcessPatternCommonContext
 from .servicepatterns_common import process_pattern_common
