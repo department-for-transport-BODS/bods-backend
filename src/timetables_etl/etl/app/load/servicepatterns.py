@@ -12,6 +12,7 @@ from ..helpers import ReferenceDataLookups
 from ..models import PatternCommonStats, TaskData
 from ..transform.service_pattern_mapping import (
     ServicePatternMapping,
+    get_standard_service_pattern_ids,
     map_unique_journey_patterns,
 )
 from ..transform.service_patterns import create_service_pattern
@@ -68,8 +69,11 @@ def process_standard_service_patterns(
     )
 
     service_pattern_mapping = map_unique_journey_patterns(txc, lookups)
+    standard_service_pattern_ids = get_standard_service_pattern_ids(
+        service.StandardService, service_pattern_mapping
+    )
 
-    for service_pattern_id in service_pattern_mapping.service_pattern_metadata:
+    for service_pattern_id in standard_service_pattern_ids:
         service_pattern = process_service_pattern(
             service_pattern_id, service_pattern_mapping, service_pattern_context
         )

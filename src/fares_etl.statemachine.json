@@ -174,7 +174,7 @@
           },
           "SchemaCheck": {
             "Type": "Task",
-            "Next": "EtlProcess",
+            "Next": "FaresValidation",
             "Resource": "${SchemaCheckLambdaArn}",
             "Arguments": {
               "Bucket": "{% $Bucket %}",
@@ -184,6 +184,30 @@
             },
             "Output": {
               "schemaCheck": "{% $states.result %}"
+            },
+
+            "Catch": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "Next": "ExceptionHandler",
+                "Output": {
+                  "errorInfo": "{% $states.errorOutput %}"
+                }
+              }
+            ]
+          },
+          "FaresValidation": {
+            "Type": "Task",
+            "Next": "EtlProcess",
+            "Resource": "${FaresValidationLambdaArn}",
+            "Arguments": {
+              "Bucket": "{% $Bucket %}",
+              "ObjectKey": "{% $ObjectKey %}",
+              "DatasetRevisionId": "{% $DatasetRevisionId %}",
+              "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}"
+            },
+            "Output": {
+              "faresValidation": "{% $states.result %}"
             },
 
             "Catch": [
@@ -241,6 +265,7 @@
         "DatasetRevisionId": "{% $datasetRevisionId %}",
         "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}"
       },
+      "Output": "{% $states.input %}",
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
@@ -257,6 +282,7 @@
       "Resource": "${GenerateOutputZipLambdaArn}",
       "Arguments": {
         "MapRunArn": "{% $states.input.mapResults.MapRunArn %}",
+        "MapRunPrefix": "fares-etl-map-results",
         "DestinationBucket": "{% $s3Bucket %}",
         "OutputPrefix": "{% $ExtractedSubFolder %}",
         "DatasetRevisionId": "{% $datasetRevisionId %}",

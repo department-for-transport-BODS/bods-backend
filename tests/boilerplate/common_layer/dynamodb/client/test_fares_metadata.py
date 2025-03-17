@@ -3,7 +3,7 @@ DynamoDB cache tests
 """
 
 from datetime import date, datetime
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from common_layer.database.models.model_fares import (
     FaresDataCatalogueMetadata,
@@ -12,9 +12,11 @@ from common_layer.database.models.model_fares import (
 from common_layer.dynamodb.client.fares_metadata import (
     DynamoDBFaresMetadata,
     FaresDynamoDBMetadataInput,
+    FaresViolation,
 )
 
 
+@patch("time.time", MagicMock(return_value=1741892041))
 def test_put_metadata(m_boto_client):
     """
     Test DynamoDB Put Metadata
@@ -188,7 +190,7 @@ def test_put_metadata(m_boto_client):
                 "N": "123",
             },
             "SK": {
-                "S": "test.xml",
+                "S": "METADATA#test.xml",
             },
             "StopIds": {
                 "L": [
@@ -209,6 +211,63 @@ def test_put_metadata(m_boto_client):
                     },
                 ],
             },
+            "ttl": {"N": "1741978441"},
+        },
+        ReturnValues="NONE",
+        TableName="",
+    )
+
+
+@patch("time.time", MagicMock(return_value=1741892041))
+def test_put_violations(m_boto_client):
+    """
+    Test DynamoDB Put Metadata
+    """
+
+    m_boto_client.return_value.put_item.return_value = {}
+
+    dynamodb = DynamoDBFaresMetadata()
+    # pylint: disable=protected-access
+    dynamodb._client.put_item = MagicMock()
+
+    dynamodb.put_violations(
+        123,
+        "test.xml",
+        [
+            FaresViolation(category="test", line=1, observation="test"),
+        ],
+    )
+
+    # pylint: disable=protected-access
+    dynamodb._client.put_item.assert_called_once_with(
+        Item={
+            "FileName": {
+                "S": "test.xml",
+            },
+            "PK": {
+                "N": "123",
+            },
+            "SK": {
+                "S": "VIOLATION#test.xml",
+            },
+            "Violations": {
+                "L": [
+                    {
+                        "M": {
+                            "category": {
+                                "S": "test",
+                            },
+                            "line": {
+                                "N": "1",
+                            },
+                            "observation": {
+                                "S": "test",
+                            },
+                        },
+                    },
+                ],
+            },
+            "ttl": {"N": "1741978441"},
         },
         ReturnValues="NONE",
         TableName="",

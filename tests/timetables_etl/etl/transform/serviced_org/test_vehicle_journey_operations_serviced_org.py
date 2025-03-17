@@ -15,13 +15,13 @@ from common_layer.xml.txc.models import (
     TXCServicedOrganisationDays,
     TXCServicedOrganisationDayType,
 )
-from etl.app.transform.vehicle_journey_operations_serviced_org import (
+
+from tests.factories.database.transmodel import TransmodelVehicleJourneyFactory
+from timetables_etl.etl.app.transform.vehicle_journey_operations_serviced_org import (
     create_serviced_org_vehicle_journey,
     create_serviced_organisation_vehicle_journeys,
     process_org_ref,
 )
-
-from tests.factories.database.transmodel import TransmodelVehicleJourneyFactory
 
 
 @pytest.mark.parametrize(

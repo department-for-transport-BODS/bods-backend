@@ -15,12 +15,6 @@ from common_layer.xml.txc.models import (
     TXCJourneyPattern,
     TXCJourneyPatternSection,
 )
-from etl.app.load.models_context import ProcessServicePatternContext
-from etl.app.transform.service_pattern_mapping import (
-    ServicePatternMapping,
-    ServicePatternMappingStats,
-    ServicePatternMetadata,
-)
 from geoalchemy2 import WKBElement
 from geoalchemy2.shape import from_shape, to_shape
 from shapely import Point
@@ -38,9 +32,15 @@ from tests.timetables_etl.factories.txc.factory_txc_service import (
     TXCLineFactory,
 )
 from timetables_etl.etl.app.helpers.types import LookupStopPoint
+from timetables_etl.etl.app.load.models_context import ProcessServicePatternContext
 from timetables_etl.etl.app.transform.service_pattern_geom import (
     generate_service_pattern_geometry,
     get_valid_route_points,
+)
+from timetables_etl.etl.app.transform.service_pattern_mapping import (
+    ServicePatternMapping,
+    ServicePatternMappingStats,
+    ServicePatternMetadata,
 )
 from timetables_etl.etl.app.transform.service_patterns import create_service_pattern
 
