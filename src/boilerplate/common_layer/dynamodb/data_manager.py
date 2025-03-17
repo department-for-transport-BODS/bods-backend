@@ -1,8 +1,12 @@
+"""
+Caching for File Attributes
+"""
+
 from enum import Enum
 
 from common_layer.database.client import SqlDB
-from common_layer.database.models.model_organisation import OrganisationDatasetRevision
-from common_layer.database.repos.repo_organisation import (
+from common_layer.database.models import OrganisationDatasetRevision
+from common_layer.database.repos import (
     OrganisationDatasetRepo,
     OrganisationTXCFileAttributesRepo,
 )
@@ -10,14 +14,18 @@ from common_layer.dynamodb.client import DynamoDB
 from common_layer.dynamodb.models import TXCFileAttributes
 from common_layer.dynamodb.utils import dataclass_to_dict
 from common_layer.exceptions.pipeline_exceptions import PipelineException
-from structlog import get_logger
+from structlog.stdlib import get_logger
 
 
 class CachedDataType(str, Enum):
+    """
+    Types of Cached Data
+    """
+
     LIVE_TXC_FILE_ATTRIBUTES = "live_txc_file_attributes"
 
 
-logger = get_logger()
+log = get_logger()
 
 
 class FileProcessingDataManager:
@@ -54,8 +62,8 @@ class FileProcessingDataManager:
 
         live_revision_id = dataset.live_revision_id
         if not live_revision_id:
-            logger.info(
-                f"No live revision for Dataset; no TXCFileAttributes to cache",
+            log.info(
+                "No live revision for Dataset; no TXCFileAttributes to cache",
                 dataset_id=dataset.id,
             )
             return
@@ -66,18 +74,20 @@ class FileProcessingDataManager:
             dataclass_to_dict(TXCFileAttributes.from_orm(att))
             for att in live_attributes
         ]
-        logger.info(f"Caching {len(live_attributes_to_cache)} TXCFileAttributes")
+        log.info("Caching TXCFileAttributes", count=len(live_attributes_to_cache))
 
         cache_key = self._generate_cache_key(
             revision.id,
             CachedDataType.LIVE_TXC_FILE_ATTRIBUTES,
         )
-        # TODO: Confirm TTL
         self._dynamodb.put(cache_key, live_attributes_to_cache, ttl=3600)
 
     def get_cached_live_txc_file_attributes(
         self, revision_id: int
     ) -> list[TXCFileAttributes] | None:
+        """
+        Get the Cached Attributes from DynamoDB
+        """
         cache_key = self._generate_cache_key(
             revision_id, CachedDataType.LIVE_TXC_FILE_ATTRIBUTES
         )
