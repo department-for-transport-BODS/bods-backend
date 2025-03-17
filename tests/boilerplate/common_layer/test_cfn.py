@@ -1,5 +1,5 @@
 """
-Tests Cloudformation Response decorator 
+Tests Cloudformation Response decorator
 To ensure that Custom Cloudformation Lambdas correctly return always without causing hangs
 """
 
@@ -8,7 +8,7 @@ from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
-from common_layer.cfn import cloudformation_response
+from common_layer.aws.cfn import cloudformation_response
 
 
 @pytest.fixture

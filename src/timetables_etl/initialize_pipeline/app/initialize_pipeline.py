@@ -39,19 +39,6 @@ class InitializePipelineEvent(BaseModel):
     DatasetETLTaskResultId: int | None = None
 
 
-def get_and_validate_revision(
-    db: SqlDB, revision_id: int
-) -> OrganisationDatasetRevision:
-    """
-    Retrieves and validates the existence of a dataset revision.
-    """
-    revision_repo = OrganisationDatasetRevisionRepo(db)
-    revision = revision_repo.get_by_id(revision_id)
-    if revision is None:
-        raise PipelineException(f"DatasetRevision with id {revision_id} not found.")
-    return revision
-
-
 def update_revision_status(db: SqlDB, revision: OrganisationDatasetRevision) -> None:
     """
     Updates the revision status to indexing.
@@ -95,7 +82,9 @@ def initialize_pipeline(
         dataset_revision_id=event.DatasetRevisionId,
     )
 
-    revision = get_and_validate_revision(db, event.DatasetRevisionId)
+    revision = OrganisationDatasetRevisionRepo(db).require_by_id(
+        event.DatasetRevisionId
+    )
 
     update_revision_status(db, revision)
 

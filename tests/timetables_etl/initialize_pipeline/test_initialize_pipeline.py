@@ -7,62 +7,22 @@ from unittest.mock import Mock, create_autospec, patch
 from uuid import uuid4
 
 import pytest
-from common_layer.database.models.model_pipelines import TaskState
-from common_layer.database.repos.repo_etl_task import ETLTaskResultRepo
+from common_layer.database.models import TaskState
+from common_layer.database.repos import (
+    ETLTaskResultRepo,
+    OrganisationDatasetRevisionRepo,
+)
 from common_layer.dynamodb.data_manager import FileProcessingDataManager
 from common_layer.enums import FeedStatus
-from common_layer.exceptions.pipeline_exceptions import PipelineException
 from initialize_pipeline.app.initialize_pipeline import (
     InitializePipelineEvent,
     create_task_result,
-    get_and_validate_revision,
     initialize_pipeline,
     update_revision_status,
 )
 
 from tests.factories.database.organisation import OrganisationDatasetRevisionFactory
 from tests.factories.database.pipelines import DatasetETLTaskResultFactory
-
-
-def test_get_and_validate_revision_success(mock_revision_repo):
-    """
-    Test successful retrieval of revision
-    """
-    revision_id = 42
-    revision = OrganisationDatasetRevisionFactory.create_with_id(
-        id_number=revision_id,
-        name="Dev Org_Test Upload_1",
-        upload_file="FLIX-FlixBus-UK045-London-Plymouth.xml",
-        status="success",
-    )
-    mock_revision_repo.get_by_id.return_value = revision
-
-    with patch(
-        "initialize_pipeline.app.initialize_pipeline.OrganisationDatasetRevisionRepo",
-        return_value=mock_revision_repo,
-    ):
-        result = get_and_validate_revision(Mock(), revision_id)
-
-        assert result is revision
-        assert result.id == revision_id
-        assert result.upload_file == "FLIX-FlixBus-UK045-London-Plymouth.xml"
-        mock_revision_repo.get_by_id.assert_called_once_with(revision_id)
-
-
-def test_get_and_validate_revision_not_found(mock_revision_repo):
-    """
-    Test exception when revision not found
-    """
-    mock_revision_repo.get_by_id.return_value = None
-
-    with patch(
-        "initialize_pipeline.app.initialize_pipeline.OrganisationDatasetRevisionRepo",
-        return_value=mock_revision_repo,
-    ):
-        with pytest.raises(PipelineException) as exc_info:
-            get_and_validate_revision(Mock(), 99999)
-
-        mock_revision_repo.get_by_id.assert_called_once_with(99999)
 
 
 @pytest.mark.parametrize(
@@ -72,7 +32,9 @@ def test_get_and_validate_revision_not_found(mock_revision_repo):
         pytest.param("error", id="Updates Status From Error To Indexing"),
     ],
 )
-def test_update_revision_status(mock_revision_repo, initial_status: str):
+def test_update_revision_status(
+    mock_revision_repo: OrganisationDatasetRevisionRepo, initial_status: str
+):
     """
     Test revision status update
     """
@@ -134,7 +96,11 @@ def test_create_task_result():
         ),
     ],
 )
-def test_initialize_pipeline(mock_revision_repo, event_data, should_create_task_result):
+def test_initialize_pipeline(
+    mock_revision_repo: OrganisationDatasetRevisionRepo,
+    event_data: dict[str, int],
+    should_create_task_result: bool,
+):
     """
     Test initializing the pipeline
     """

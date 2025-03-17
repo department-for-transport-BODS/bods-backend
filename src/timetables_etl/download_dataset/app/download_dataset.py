@@ -10,13 +10,16 @@ from urllib.parse import unquote
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.database import SqlDB
 from common_layer.database.models import OrganisationDatasetRevision
-from common_layer.database.repos.repo_etl_task import ETLTaskResultRepo
+from common_layer.database.repos import (
+    ETLTaskResultRepo,
+    OrganisationDatasetRevisionRepo,
+)
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.s3 import S3
 from structlog.stdlib import get_logger
 
-from .db_operations import DT_FORMAT, get_and_validate_revision, update_dataset_revision
+from .db_operations import DT_FORMAT, update_dataset_revision
 from .file_download import download_file
 from .models import DownloadDatasetInputData, FileType
 
@@ -55,7 +58,7 @@ def download_and_upload_dataset(db: SqlDB, input_data: DownloadDatasetInputData)
     Template function to download the dataset, upload to S3 and update the database.
     This function downloads the file, uploads it to S3, and updates the revision in the DB.
     """
-    revision = get_and_validate_revision(db, input_data.revision_id)
+    revision = OrganisationDatasetRevisionRepo(db).require_by_id(input_data.revision_id)
 
     result = download_file(input_data.remote_dataset_url_link)
     s3_object_path = make_remote_file_name(revision, result.filetype)

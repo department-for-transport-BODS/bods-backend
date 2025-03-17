@@ -53,6 +53,9 @@ class ETLErrorCode(str, Enum):
     # PTI
     PTI_VIOLATION_FOUND = "PTI Failed due to one or more violations"
 
+    # DB
+    ORGANISATION_DATASET_REVISION_NOT_FOUND = "The Revision ID was not found in the DB"
+
     @property
     def code(self) -> str:
         """Return the enum name (to use as the error code)"""

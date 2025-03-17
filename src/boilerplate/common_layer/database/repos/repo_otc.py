@@ -7,19 +7,20 @@ Note: There's a lot of Any types here that could be narrowed
 from dataclasses import dataclass
 from typing import Any
 
-from common_layer.database.client import SqlDB
-from common_layer.database.models import (
+from common_layer.exceptions.pipeline_exceptions import PipelineException
+from sqlalchemy.orm import Query, Session
+from sqlalchemy.sql import case, func, text
+from sqlalchemy.sql.elements import KeyedColumnElement
+from structlog.stdlib import get_logger
+
+from ..client import SqlDB
+from ..models import (
     NaptanAdminArea,
     OtcLocalAuthority,
     OtcLocalAuthorityRegistrationNumbers,
     OtcService,
     UiLta,
 )
-from common_layer.exceptions.pipeline_exceptions import PipelineException
-from sqlalchemy.orm import Query, Session
-from sqlalchemy.sql import case, func, text
-from sqlalchemy.sql.elements import KeyedColumnElement
-from structlog.stdlib import get_logger
 
 log = get_logger()
 
