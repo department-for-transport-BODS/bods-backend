@@ -113,7 +113,7 @@ def test_initialize_pipeline(
         num_of_timing_points=40,
         transxchange_version="2.4",
     )
-    mock_revision_repo.get_by_id.return_value = revision
+    mock_revision_repo.require_by_id.return_value = revision
 
     mock_task_repo = create_autospec(ETLTaskResultRepo, instance=True)
     mock_task_repo.insert.return_value = (
