@@ -3,9 +3,9 @@ Exception Handler Pydantic models and Dataclasses
 """
 
 import json
-from typing import Annotated
+from typing import Annotated, Any
 
-from common_layer.database.models.model_pipelines import ETLErrorCode
+from common_layer.database.models import ETLErrorCode
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -22,10 +22,10 @@ class ErrorCause(BaseModel):
     stack_trace: Annotated[list[str] | None, Field(alias="stackTrace", default=None)]
 
     @property
-    def extracted_error(self) -> dict | None:
+    def extracted_error(self) -> dict[str, Any] | None:
         """Extracts and parses the original error JSON from error_message."""
         try:
-            return json.loads(self.error_message)  # Parse the JSON string
+            return json.loads(self.error_message)
         except (json.JSONDecodeError, AttributeError):
             return None
 

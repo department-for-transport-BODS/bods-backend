@@ -10,7 +10,8 @@ from common_layer.database.models import DataQualityPostSchemaViolation
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.download import download_and_parse_txc
-from common_layer.s3.utils import get_filename_from_object_key
+from common_layer.exceptions import PostSchemaViolationsFound
+from common_layer.s3 import get_filename_from_object_key_except
 from common_layer.xml.txc.models import TXCData
 from common_layer.xml.txc.parser.parser_txc import TXCParserConfig
 from structlog.stdlib import get_logger
@@ -62,11 +63,8 @@ def process_post_schema_check(
     Process the schema check
     """
     violations = process_txc_data_check(txc_data, db)
-    filename = get_filename_from_object_key(input_data.s3_file_key)
-    if not filename:
-        raise ValueError(
-            f"Unable to parse filename from input_data.s3_file_key: {input_data.s3_file_key}"
-        )
+    filename = get_filename_from_object_key_except(input_data.s3_file_key)
+
     db_violations = create_schema_violations_objects(
         input_data.revision_id, filename, violations
     )
@@ -77,12 +75,6 @@ def process_post_schema_check(
         added_to_db_count=len(db_violations),
     )
     return violations, db_violations
-
-
-class PostSchemaViolationsFound(Exception):
-    """
-    Exception raised when schema violation is found
-    """
 
 
 @file_processing_result_to_db(step_name=StepName.TIMETABLE_POST_SCHEMA_CHECK)
@@ -98,8 +90,10 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, 
     violations, _db_violations = process_post_schema_check(db, input_data, txc_data)
 
     if violations:
-        raise PostSchemaViolationsFound(
-            f"Found {len(violations)} Post Schema Violations"
-        )
+        raise PostSchemaViolationsFound(violations=len(violations))
 
-    return {"statusCode": 200, "body": "Completed Post Schema Check"}
+    return {
+        "statusCode": 200,
+        "message": "Completed Post Schema Check",
+        "violations": len(violations),
+    }

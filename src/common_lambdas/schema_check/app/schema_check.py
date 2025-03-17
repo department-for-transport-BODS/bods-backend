@@ -7,11 +7,11 @@ from typing import Any
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from botocore.exceptions import BotoCoreError, ClientError
 from common_layer.database.client import SqlDB
-from common_layer.database.models.model_data_quality import DataQualitySchemaViolation
+from common_layer.database.models import DataQualitySchemaViolation
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
-from common_layer.s3 import S3
-from common_layer.s3.utils import get_filename_from_object_key
+from common_layer.exceptions import SchemaViolationsFound
+from common_layer.s3 import S3, get_filename_from_object_key_except
 from lxml.etree import _Element  # type: ignore
 from lxml.etree import XMLSchema, XMLSyntaxError, parse
 from pydantic import BaseModel, ConfigDict, Field
@@ -125,19 +125,9 @@ def process_schema_check(
 
     xml_schema = load_schema(schema_type, schema_version)
 
-    filename = get_filename_from_object_key(input_data.s3_file_key)
-    if not filename:
-        raise ValueError(
-            f"Unable to parse filename from input_data.s3_file_key: {input_data.s3_file_key}"
-        )
+    filename = get_filename_from_object_key_except(input_data.s3_file_key)
 
     return get_schema_violations(xml_schema, xml_root, input_data.revision_id, filename)
-
-
-class SchemaViolationsFound(Exception):
-    """
-    Exception raised when schema violation is found
-    """
 
 
 @file_processing_result_to_db(step_name=StepName.TIMETABLE_SCHEMA_CHECK)
@@ -153,7 +143,7 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, 
 
         if violations:
             add_violations_to_db(db, violations)
-            raise SchemaViolationsFound(f"Found {len(violations)} Schema Violations")
+            raise SchemaViolationsFound(violations=len(violations))
     except Exception as e:
         log.error(
             "Error scanning file",
@@ -163,6 +153,8 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, 
         raise e
     return {
         "statusCode": 200,
-        "body": f"Successfully ran the file schema check for file '{input_data.s3_file_key}' "
-        f"from bucket '{input_data.s3_bucket_name}' with {len(violations)} violations",
+        "message": "Successfully ran the file schema check for file",
+        "ObjectKey": input_data.s3_file_key,
+        "Bucket": input_data.s3_bucket_name,
+        "violations": len(violations),
     }
