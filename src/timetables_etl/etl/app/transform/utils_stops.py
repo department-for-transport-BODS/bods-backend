@@ -9,7 +9,11 @@ from common_layer.xml.txc.helpers.jps import (
     get_jps_by_id,
     get_stops_from_journey_pattern_section,
 )
-from common_layer.xml.txc.models import TXCJourneyPattern, TXCJourneyPatternSection
+from common_layer.xml.txc.models import (
+    TXCFlexibleJourneyPattern,
+    TXCJourneyPattern,
+    TXCJourneyPatternSection,
+)
 from structlog.stdlib import get_logger
 
 from ..helpers import LookupStopPoint, NonExistentNaptanStop, StopsLookup
@@ -48,6 +52,25 @@ def get_pattern_stops(
                 )
             else:
                 stops.append(stop_data)
+
+    return stops
+
+
+def get_flexible_journey_stops(
+    jp: TXCFlexibleJourneyPattern,
+    atco_location_mapping: StopsLookup,
+) -> Sequence[NaptanStopPoint]:
+    """
+    Get all NaptanStopPoint DB Models for a journey pattern's stop sequence
+    """
+    stops: list[NaptanStopPoint] = []
+
+    for i, stop_usage in enumerate(jp.StopPointsInSequence):
+        stop_data = atco_location_mapping[stop_usage.StopPointRef]
+        if isinstance(stop_data, NonExistentNaptanStop):
+            log.warning("Skipping NonExistentNaptanStop", stop_ref=stop_data.atco_code)
+        else:
+            stops.append(stop_data)
 
     return stops
 

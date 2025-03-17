@@ -2,6 +2,7 @@
 TXC Flexible Service Models
 """
 
+from common_layer.xml.txc.models import JourneyPatternVehicleDirectionT
 from pydantic import BaseModel, Field
 
 
@@ -48,7 +49,7 @@ class TXCFlexibleJourneyPattern(BaseModel):
     """
 
     id: str
-    Direction: str
+    Direction: JourneyPatternVehicleDirectionT
     StopPointsInSequence: list[TXCFixedStopUsage | TXCFlexibleStopUsage]
     FlexibleZones: list[TXCFlexibleStopUsage] = Field(default=[])
     BookingArrangements: TXCBookingArrangements | None = None
