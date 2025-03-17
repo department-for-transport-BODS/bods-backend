@@ -18,14 +18,14 @@ from common_layer.xml.txc.models import (
     TXCJourneyPattern,
     TXCJourneyPatternSection,
     TXCLine,
-    TXCService,
     TXCStandardService,
 )
+from etl.app.transform.utils_stops_flexible import get_flexible_pattern_stops
 from structlog.stdlib import get_logger
 
 from ..helpers.dataclasses.lookups import ReferenceDataLookups
 from ..helpers.types import StopsLookup
-from .utils_stops import get_flexible_journey_stops, get_pattern_stops
+from .utils_stops import get_pattern_stops
 
 log = get_logger()
 
@@ -298,7 +298,7 @@ def process_journey_pattern(
     stops = (
         get_pattern_stops(txc_jp, jps_list, stops_lookup)
         if isinstance(txc_jp, TXCJourneyPattern)
-        else get_flexible_journey_stops(txc_jp, stops_lookup)
+        else get_flexible_pattern_stops(txc_jp, stops_lookup)
     )
 
     # Create a hashable representation of the stop sequence

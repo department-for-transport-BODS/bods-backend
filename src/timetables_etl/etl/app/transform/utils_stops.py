@@ -56,25 +56,6 @@ def get_pattern_stops(
     return stops
 
 
-def get_flexible_journey_stops(
-    jp: TXCFlexibleJourneyPattern,
-    atco_location_mapping: StopsLookup,
-) -> Sequence[NaptanStopPoint]:
-    """
-    Get all NaptanStopPoint DB Models for a journey pattern's stop sequence
-    """
-    stops: list[NaptanStopPoint] = []
-
-    for i, stop_usage in enumerate(jp.StopPointsInSequence):
-        stop_data = atco_location_mapping[stop_usage.StopPointRef]
-        if isinstance(stop_data, NonExistentNaptanStop):
-            log.warning("Skipping NonExistentNaptanStop", stop_ref=stop_data.atco_code)
-        else:
-            stops.append(stop_data)
-
-    return stops
-
-
 def get_terminal_stop_points(
     jp: TXCJourneyPattern,
     journey_pattern_sections: list[TXCJourneyPatternSection],
