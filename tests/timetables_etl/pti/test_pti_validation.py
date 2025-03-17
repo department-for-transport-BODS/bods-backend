@@ -2,9 +2,12 @@
 Test PTI Validation Handler
 """
 
-from unittest.mock import patch
+from typing import Generator, Protocol
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from aws_lambda_powertools.utilities.typing import LambdaContext
+from botocore.response import StreamingBody
 from common_layer.dynamodb.models import TXCFileAttributes
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 from common_layer.xml.txc.models.txc_data import TXCData
@@ -25,10 +28,32 @@ TEST_ENV_VAR = {
 }
 
 
-@pytest.fixture(autouse=True)
-def mock_imports():
+class MockImports(Protocol):
     """
-    Mock Imports
+    Group up the Mock Imports
+    """
+
+    S3: MagicMock
+    DynamoDBCache: MagicMock
+    NaptanStopPointDynamoDBClient: MagicMock
+    FileProcessingDataManager: MagicMock
+    OrganisationDatasetRevisionRepo: MagicMock
+    OrganisationTXCFileAttributesRepo: MagicMock
+    PTIValidationService: MagicMock
+    file_processing: MagicMock
+    parse_txc_file: MagicMock
+
+
+@pytest.fixture(autouse=True)
+def mock_imports() -> Generator[MockImports, None, None]:
+    """
+    Mock imports for testing.
+
+    While this approach works, a cleaner approach would be to use individual fixtures
+    for each dependency that needs to be mocked rather than a single large fixture.
+
+    Returns:
+        A generator that yields a mock object with all required dependencies
     """
     patches = {
         "S3": patch("pti.app.pti_validation.S3"),
@@ -52,43 +77,53 @@ def mock_imports():
         "parse_txc_file": patch("pti.app.pti_validation.parse_txc_from_element"),
     }
 
-    mocks = {}
+    mocks: dict[str, MagicMock | AsyncMock] = {}
     for name, patcher in patches.items():
         mock = patcher.start()
         if name == "file_processing":
-            mock.side_effect = lambda step_name: lambda func: func
+            mock.side_effect = lambda step_name: lambda func: func  # type: ignore
         mocks[name] = mock
 
-    yield type("Mocks", (), mocks)
+    # Create the mock object with proper typing
+    result = type("Mocks", (), mocks)
+
+    # Type assertion to satisfy the type checker
+    yield result  # type: ignore
 
     for patcher in patches.values():
         patcher.stop()
 
 
 @pytest.mark.parametrize(
-    "test_params",
+    "has_file_attributes, expected_status",
     [
-        pytest.param(
-            {
-                "has_file_attributes": True,
-                "expected_status": 200,
-                "should_raise": False,
-            },
-            id="success_case",
-        ),
-        pytest.param(
-            {"has_file_attributes": False, "should_raise": True}, id="no_valid_files"
-        ),
+        (True, 200),
     ],
+    ids=["Success case"],
 )
 @patch.dict("os.environ", TEST_ENV_VAR)
-def test_lambda_handler(
-    mock_imports, mock_sqldb, s3_file, s3_content, test_params, lambda_context
-):
+def test_lambda_handler_success(
+    mock_imports: MockImports,
+    mock_sqldb: MagicMock | AsyncMock,
+    s3_file: StreamingBody,
+    s3_content: bytes,
+    has_file_attributes: bool,
+    expected_status: int,
+    lambda_context: LambdaContext,
+) -> None:
     """
-    Test Lambda Handler for PTI Validation
+    Test Lambda Handler for PTI Validation - Success Path
+
+    Args:
+        mock_imports: Fixture containing all mocked dependencies
+        mock_sqldb: Mock SQL database connection
+        s3_file: Mock S3 file object
+        s3_content: Mock S3 file content
+        has_file_attributes: Whether the file has attributes
+        expected_status: Expected HTTP status code
+        lambda_context: AWS Lambda context
     """
-    event = {
+    event: dict[str, str | int] = {
         "Bucket": "test-bucket",
         "ObjectKey": "test-key",
         "DatasetRevisionId": 123,
@@ -97,36 +132,76 @@ def test_lambda_handler(
     txc_data = TXCData.model_construct()
 
     revision = OrganisationDatasetRevisionFactory.create_with_id(id_number=123)
-    mock_imports.OrganisationDatasetRevisionRepo.return_value.get_by_id.return_value = (
+    mock_imports.OrganisationDatasetRevisionRepo.return_value.require_by_id.return_value = (
         revision
     )
 
-    if test_params["has_file_attributes"]:
-        file_attrs = OrganisationTXCFileAttributesFactory.create()
-        mock_imports.OrganisationTXCFileAttributesRepo.return_value.get_by_id.return_value = (
-            file_attrs
-        )
-        expected_attrs = TXCFileAttributes.from_orm(file_attrs)
-    else:
-        mock_imports.OrganisationTXCFileAttributesRepo.return_value.get_by_id.return_value = (
-            None
-        )
-        expected_attrs = None
+    file_attrs = OrganisationTXCFileAttributesFactory.create()
+    mock_imports.OrganisationTXCFileAttributesRepo.return_value.require_by_id.return_value = (
+        file_attrs
+    )
+    expected_attrs = TXCFileAttributes.from_orm(file_attrs)
 
     mock_imports.S3.return_value.get_object.return_value = s3_file
     mock_imports.parse_txc_file.return_value = txc_data
 
-    if test_params["should_raise"]:
-        with pytest.raises(PipelineException):
-            lambda_handler(event, lambda_context)
-    else:
-        result = lambda_handler(event, lambda_context)
-        assert result == {"statusCode": test_params["expected_status"]}
+    result = lambda_handler(event, lambda_context)
+    assert result == {"statusCode": expected_status}
 
-        validate_call = (
-            mock_imports.PTIValidationService.return_value.validate.call_args[0]
-        )
-        assert validate_call[0] == revision
-        assert validate_call[1].read() == s3_content
-        assert validate_call[2] == expected_attrs
-        assert validate_call[3] == txc_data
+    validate_call = mock_imports.PTIValidationService.return_value.validate.call_args[0]
+    assert validate_call[0] == revision
+    assert validate_call[1].read() == s3_content
+    assert validate_call[2] == expected_attrs
+    assert validate_call[3] == txc_data
+
+
+@pytest.mark.parametrize(
+    "has_file_attributes",
+    [
+        (False),
+    ],
+    ids=["No valid files"],
+)
+@patch.dict("os.environ", TEST_ENV_VAR)
+def test_lambda_handler_error(
+    mock_imports: MockImports,
+    mock_sqldb: MagicMock | AsyncMock,
+    s3_file: StreamingBody,
+    s3_content: bytes,
+    has_file_attributes: bool,
+    lambda_context: LambdaContext,
+) -> None:
+    """
+    Test Lambda Handler for PTI Validation - Error Path
+
+    Args:
+        mock_imports: Fixture containing all mocked dependencies
+        mock_sqldb: Mock SQL database connection
+        s3_file: Mock S3 file object
+        s3_content: Mock S3 file content
+        has_file_attributes: Whether the file has attributes
+        lambda_context: AWS Lambda context
+    """
+    event: dict[str, str | int] = {
+        "Bucket": "test-bucket",
+        "ObjectKey": "test-key",
+        "DatasetRevisionId": 123,
+        "TxcFileAttributesId": 123,
+    }
+    txc_data = TXCData.model_construct()
+
+    revision = OrganisationDatasetRevisionFactory.create_with_id(id_number=123)
+    mock_imports.OrganisationDatasetRevisionRepo.return_value.require_by_id.return_value = (
+        revision
+    )
+
+    # Fix: Use PipelineException instead of Exception
+    mock_imports.OrganisationTXCFileAttributesRepo.return_value.require_by_id.side_effect = PipelineException(
+        "Record not found"
+    )
+
+    mock_imports.S3.return_value.get_object.return_value = s3_file
+    mock_imports.parse_txc_file.return_value = txc_data
+
+    with pytest.raises(PipelineException):
+        lambda_handler(event, lambda_context)

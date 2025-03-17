@@ -66,7 +66,7 @@ class TestCloudFormationResponseDecorator:
             ),
         ],
     )
-    @patch("common_layer.cfn.http.request")
+    @patch("common_layer.aws.cfn.http.request")
     def test_cloudformation_requests(
         self,
         mock_http_request: Mock,
@@ -144,7 +144,7 @@ class TestCloudFormationResponseDecorator:
         result = test_handler(event_data, mock_context)
         assert result == expected_result
 
-    @patch("common_layer.cfn.http.request")
+    @patch("common_layer.aws.cfn.http.request")
     def test_error_handling(
         self,
         mock_http_request: Mock,
