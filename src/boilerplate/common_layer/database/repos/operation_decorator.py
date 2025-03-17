@@ -33,7 +33,9 @@ class UpdateError(RepositoryError):
 ErrorMapping: TypeAlias = dict[type[Exception], tuple[type[RepositoryError], str]]
 
 
-def get_operation_name(func: Callable, args: tuple[Any, ...]) -> tuple[str | None, str]:
+def get_operation_name(
+    func: Callable[..., Any], args: tuple[Any, ...]
+) -> tuple[str | None, str]:
     """
     Safely extract repository and operation names
     Returns: (repository_name, operation_name)
@@ -65,7 +67,7 @@ def extract_error_details(exc: Exception) -> tuple[str, dict[str, Any]]:
         return f"Error extracting details: {str(e)}", {}
 
 
-def get_operation_logger(instance: Any | None, func: Callable) -> Any:
+def get_operation_logger(instance: Any | None, func: Callable[..., Any]) -> Any:
     """
     Get appropriate logger for repository operation
     Multiple Fallbacks to ensure that it won't cause a crash or None

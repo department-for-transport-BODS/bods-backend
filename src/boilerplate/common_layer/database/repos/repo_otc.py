@@ -1,33 +1,50 @@
-import logging
+"""
+OTC Data
+
+Note: There's a lot of Any types here that could be narrowed
+"""
+
 from dataclasses import dataclass
+from typing import Any
 
 from common_layer.database.client import SqlDB
-from common_layer.database.models import NaptanAdminArea
-from common_layer.database.models.model_otc import (
+from common_layer.database.models import (
+    NaptanAdminArea,
     OtcLocalAuthority,
     OtcLocalAuthorityRegistrationNumbers,
     OtcService,
+    UiLta,
 )
-from common_layer.database.models.model_ui import UiLta
 from common_layer.exceptions.pipeline_exceptions import PipelineException
-
-logger = logging.getLogger(__name__)
-
-
+from sqlalchemy.orm import Query, Session
 from sqlalchemy.sql import case, func, text
+from sqlalchemy.sql.elements import KeyedColumnElement
+from structlog.stdlib import get_logger
+
+log = get_logger()
 
 
 @dataclass
 class ServiceWithRegion:
+    """
+    Service and Traveline Region Map for PTI
+    """
+
     service: OtcService
     traveline_region: str
 
 
 class OtcServiceRepo:
-    def __init__(self, db: SqlDB):
+    """
+    Traveline OTC Service Repo
+    """
+
+    def __init__(self, db: SqlDB) -> None:
         self._db = db
 
-    def _add_traveline_region_weca(self, session, query):
+    def _add_traveline_region_weca(
+        self, session: Session, query: Query[OtcService]
+    ) -> tuple[Query[Any], KeyedColumnElement[Any]]:
         """
         Traveline Region that the UI LTA maps to via the admin area table
         by joining atco code. If Traveline Region value is multiple in the row
@@ -55,7 +72,9 @@ class OtcServiceRepo:
 
         return query_with_weca, column_label
 
-    def _add_traveline_region_otc(self, session, query):
+    def _add_traveline_region_otc(
+        self, session: Session, query: Query[OtcService]
+    ) -> tuple[Query[Any], KeyedColumnElement[Any]]:
         """
         Traveline Region that the UI LTA maps to via LocalAuthority table
         by joining ui lta table and then admin area table via ui lta and
@@ -98,6 +117,9 @@ class OtcServiceRepo:
     def get_service_with_traveline_region(
         self, registration_number: str
     ) -> ServiceWithRegion | None:
+        """
+        Return ServiceWithRegion Dataclass as used by PTI implementation
+        """
         try:
             with self._db.session_scope() as session:
                 # Base service query
@@ -129,7 +151,8 @@ class OtcServiceRepo:
                     )
                 )
 
-                # Result row: [service_obj, traveline_region_weca, travelin_region_otc, traveline_region]
+                # Result row:
+                # [service_obj, traveline_region_weca, travelin_region_otc, traveline_region]
                 result = query_with_traveline_region.first()
                 if result:
                     service = result[0]
@@ -138,6 +161,9 @@ class OtcServiceRepo:
                     return ServiceWithRegion(service, traveline_region)
                 return None
         except Exception as exc:
-            message = f"Error retrieving service with traveline region with registration number {registration_number}."
-            logger.exception(message, exc_info=True)
+            message = (
+                "Error retrieving service with traveline region"
+                f" with registration number {registration_number}."
+            )
+            log.exception(message, exc_info=True)
             raise PipelineException(message) from exc
