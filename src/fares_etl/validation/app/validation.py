@@ -2,6 +2,7 @@
 Fares Validation
 """
 
+import os
 from typing import Any
 
 from aws_lambda_powertools.utilities.typing import LambdaContext
@@ -38,7 +39,7 @@ def save_violations_to_dynamo(
     dynamodb_fares_metadata_repo = DynamoDBFaresMetadata()
 
     dynamodb_fares_metadata_repo.put_violations(
-        input_data.task_id, input_data.s3_file_key, violations
+        input_data.task_id, os.path.basename(input_data.s3_file_key), violations
     )
 
 

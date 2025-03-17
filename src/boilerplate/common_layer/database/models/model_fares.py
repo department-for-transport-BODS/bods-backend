@@ -170,7 +170,9 @@ class FaresValidation(BaseSQLModel):
     important_note: Mapped[str] = mapped_column(
         String(2000),
         nullable=False,
-        default="This is warning only but data containing this failure will eventually be rejected by BODS ",
+        default="""
+        This is warning only but data containing this failure will eventually be rejected by BODS 
+        """,
     )
 
 
