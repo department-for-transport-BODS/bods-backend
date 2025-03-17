@@ -18,7 +18,7 @@ class SuspiciousFile(ETLException):
     Exception for when a suspicious file is found by the Anti-virus Scan
     """
 
-    code = ETLErrorCode.AV_SUSPICIOUS_FILE
+    code = ETLErrorCode.SUSPICIOUS_FILE
 
 
 class ClamConnectionError(ETLException):
