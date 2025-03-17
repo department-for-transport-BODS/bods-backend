@@ -5,8 +5,6 @@ Test Creating Metadata
 import pytest
 from common_layer.database.models.model_naptan import NaptanStopPoint
 from common_layer.xml.txc.models.txc_types import JourneyPatternVehicleDirectionT
-from etl.app.transform.service_pattern_mapping import ServicePatternMetadata
-from etl.app.transform.service_pattern_metadata import PatternMetadata, make_metadata
 from geoalchemy2.shape import from_shape
 from shapely.geometry import Point
 
@@ -14,6 +12,13 @@ from tests.factories.database.naptan import NaptanStopPointFactory
 from tests.timetables_etl.factories.txc.factory_txc_service import (
     TXCLineDescriptionFactory,
     TXCLineFactory,
+)
+from timetables_etl.etl.app.transform.service_pattern_mapping import (
+    ServicePatternMetadata,
+)
+from timetables_etl.etl.app.transform.service_pattern_metadata import (
+    PatternMetadata,
+    make_metadata,
 )
 
 

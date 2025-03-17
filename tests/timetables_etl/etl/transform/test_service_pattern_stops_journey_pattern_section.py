@@ -20,18 +20,20 @@ from common_layer.xml.txc.models.txc_vehicle_journey import (
     TXCVehicleJourneyStopUsageStructure,
     TXCVehicleJourneyTimingLink,
 )
-from etl.app.transform.models_context import (
-    GeneratePatternStopsContext,
-    JourneySectionContext,
-    SectionProcessingState,
-)
-from etl.app.transform.service_pattern_stops import process_journey_pattern_section
 
 from tests.factories.database.naptan import NaptanStopPointFactory
 from tests.timetables_etl.factories.txc.factory_txc_journey_pattern_section import (
     TXCJourneyPatternSectionFactory,
     TXCJourneyPatternStopUsageFactory,
     TXCJourneyPatternTimingLinkFactory,
+)
+from timetables_etl.etl.app.transform.models_context import (
+    GeneratePatternStopsContext,
+    JourneySectionContext,
+    SectionProcessingState,
+)
+from timetables_etl.etl.app.transform.service_pattern_stops import (
+    process_journey_pattern_section,
 )
 
 
