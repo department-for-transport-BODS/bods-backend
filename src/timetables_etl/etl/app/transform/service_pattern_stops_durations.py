@@ -43,7 +43,6 @@ def parse_duration(duration: str | None) -> timedelta:
 def apply_wait_time_rules(
     from_wait: str | None,
     to_wait: str | None,
-    next_from_wait: str | None,
     is_first_stop: bool,
     is_last_stop: bool,
 ) -> str | None:
@@ -72,8 +71,6 @@ def apply_wait_time_rules(
     # Treat PT0S as not present
     if to_wait == "PT0S":
         to_wait = None
-    if next_from_wait == "PT0S":
-        next_from_wait = None
 
     # If both are present, prioritize the To WaitTime
     if to_wait is not None:
@@ -100,11 +97,8 @@ def determine_wait_time(
     """
     from_wait = current_link.From.WaitTime if current_link.From else None
     to_wait = current_link.To.WaitTime if current_link.To else None
-    next_from_wait = next_link.From.WaitTime if next_link and next_link.From else None
 
-    return apply_wait_time_rules(
-        from_wait, to_wait, next_from_wait, is_first_stop, is_last_stop
-    )
+    return apply_wait_time_rules(from_wait, to_wait, is_first_stop, is_last_stop)
 
 
 def determine_vehicle_journey_wait_time(
@@ -124,11 +118,8 @@ def determine_vehicle_journey_wait_time(
 
     from_wait = matching_link.From.WaitTime if matching_link.From else None
     to_wait = matching_link.To.WaitTime if matching_link.To else None
-    next_from_wait = next_link.From.WaitTime if next_link and next_link.From else None
 
-    return apply_wait_time_rules(
-        from_wait, to_wait, next_from_wait, is_first_stop, is_last_stop
-    )
+    return apply_wait_time_rules(from_wait, to_wait, is_first_stop, is_last_stop)
 
 
 def find_vehicle_journey_timing_links(
