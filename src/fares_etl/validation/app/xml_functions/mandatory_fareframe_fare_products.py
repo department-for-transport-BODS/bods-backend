@@ -199,8 +199,12 @@ def check_fare_products(_context: None, fare_frames: _Element):
 
     fare_product_label = FARE_STRUCTURE_PREASSIGNED_LABEL
 
-    if len(fare_products) > 0 and fare_products[0].find(
-        f"x:{FARE_STRUCTURE_AMOUNT_OF_PRICE_UNIT_LABEL}", namespaces=NAMESPACE
+    if (
+        len(fare_products) > 0
+        and fare_products[0].find(
+            f"x:{FARE_STRUCTURE_AMOUNT_OF_PRICE_UNIT_LABEL}", namespaces=NAMESPACE
+        )
+        is not None
     ):
         fare_product_label = FARE_STRUCTURE_AMOUNT_OF_PRICE_UNIT_LABEL
 

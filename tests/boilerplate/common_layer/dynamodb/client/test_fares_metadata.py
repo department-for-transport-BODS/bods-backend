@@ -5,10 +5,7 @@ DynamoDB cache tests
 from datetime import date, datetime
 from unittest.mock import MagicMock, patch
 
-from common_layer.database.models.model_fares import (
-    FaresDataCatalogueMetadata,
-    FaresMetadata,
-)
+from common_layer.database.models import FaresDataCatalogueMetadata, FaresMetadata
 from common_layer.dynamodb.client.fares_metadata import (
     DynamoDBFaresMetadata,
     FaresDynamoDBMetadataInput,

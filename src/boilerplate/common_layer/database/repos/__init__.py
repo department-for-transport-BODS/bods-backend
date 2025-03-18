@@ -29,6 +29,7 @@ from .repo_junction import (
 )
 from .repo_naptan import NaptanAdminAreaRepo, NaptanLocalityRepo, NaptanStopPointRepo
 from .repo_organisation import (
+    OrganisationDatasetMetdataRepo,
     OrganisationDatasetRepo,
     OrganisationDatasetRevisionRepo,
     OrganisationOrganisationRepo,
@@ -91,6 +92,7 @@ __all__ = [
     "OrganisationDatasetRevisionRepo",
     "OrganisationOrganisationRepo",
     "OrganisationTXCFileAttributesRepo",
+    "OrganisationDatasetMetdataRepo",
     # Otc
     "OtcServiceRepo",
     # Transmodel
