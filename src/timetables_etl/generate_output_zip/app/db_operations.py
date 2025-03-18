@@ -75,6 +75,7 @@ def update_task_and_revision_status(
     else:
         log.info("Setting task result and revision to success")
         ETLTaskResultRepo(db).mark_success(task_result.id)
+        revision.status = FeedStatus.SUCCESS
 
     OrganisationDatasetRevisionRepo(db).update(revision)
     return revision
