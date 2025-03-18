@@ -5,6 +5,7 @@ Database Calls
 from datetime import UTC, datetime
 
 from ..client import SqlDB
+from ..exceptions import PipelinesDatasetETLTaskResultNotFound
 from ..models import (
     DatasetETLTaskResult,
     ETLErrorCode,
@@ -14,10 +15,10 @@ from ..models import (
     TaskState,
 )
 from .operation_decorator import handle_repository_errors
-from .repo_common import BaseRepository, BaseRepositoryWithId
+from .repo_common import BaseRepositoryWithId
 
 
-class ETLTaskResultRepo(BaseRepository[DatasetETLTaskResult]):
+class ETLTaskResultRepo(BaseRepositoryWithId[DatasetETLTaskResult]):
     """
     Repository for managing ETLTaskResult entities
     Table: pipelines_datasetetltaskresult
@@ -27,13 +28,14 @@ class ETLTaskResultRepo(BaseRepository[DatasetETLTaskResult]):
         super().__init__(db, DatasetETLTaskResult)
 
     @handle_repository_errors
-    def get_by_id(self, task_id: int) -> DatasetETLTaskResult | None:
+    def require_by_id(self, task_id: int) -> DatasetETLTaskResult:
         """
         Get ETL Task by ID
         """
-        statement = self._build_query().where(self._model.id == task_id)
-        task = self._fetch_one(statement)
-        return task
+        result = self.get_by_id(task_id)
+        if result is None:
+            raise PipelinesDatasetETLTaskResultNotFound(f"ID {task_id} not found")
+        return result
 
     @handle_repository_errors
     def get_by_revision_id(self, revision_id: int) -> list[DatasetETLTaskResult] | None:
