@@ -85,7 +85,6 @@ def apply_wait_time_rules(
 
 def determine_wait_time(
     current_link: TXCJourneyPatternTimingLink,
-    next_link: TXCJourneyPatternTimingLink | None,
     is_first_stop: bool,
     is_last_stop: bool,
 ) -> str | None:
@@ -103,7 +102,6 @@ def determine_wait_time(
 
 def determine_vehicle_journey_wait_time(
     matching_link: TXCVehicleJourneyTimingLink | None,
-    next_link: TXCVehicleJourneyTimingLink | None,
     is_first_stop: bool,
     is_last_stop: bool,
 ) -> str | None:
