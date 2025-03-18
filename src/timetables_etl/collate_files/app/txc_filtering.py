@@ -128,6 +128,8 @@ def filter_txc_files_by_service_code(
     - For each service code:
       - Select all files from the highest revision
       - Also retain files with lower revisions that have earlier start dates than the selected file
+
+    With this logic, we filter out any files from previous revisions that have been superceded
     """
     service_code_groups = group_files_by_service_code(txc_files)
 
