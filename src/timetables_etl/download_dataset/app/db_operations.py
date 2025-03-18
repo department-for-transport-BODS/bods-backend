@@ -5,25 +5,11 @@ DownloadDataset Operations
 from common_layer.database.client import SqlDB
 from common_layer.database.models import OrganisationDatasetRevision
 from common_layer.database.repos import OrganisationDatasetRevisionRepo
-from common_layer.exceptions.pipeline_exceptions import PipelineException
 from structlog.stdlib import get_logger
 
 log = get_logger()
 
 DT_FORMAT = "%Y-%m-%d_%H-%M-%S"
-
-
-def get_and_validate_revision(
-    db: SqlDB, revision_id: int
-) -> OrganisationDatasetRevision:
-    """
-    Retrieves and validates the existence of a dataset revision.
-    """
-    revision_repo = OrganisationDatasetRevisionRepo(db)
-    revision = revision_repo.get_by_id(revision_id)
-    if revision is None:
-        raise PipelineException(f"DatasetRevision with id {revision_id} not found.")
-    return revision
 
 
 def update_dataset_revision(

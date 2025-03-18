@@ -9,9 +9,9 @@ from common_layer.xml.txc.models import (
     TXCJourneyPatternStopUsage,
     TXCJourneyPatternTimingLink,
 )
-from etl.app.helpers.types import StopsLookup
 
 from tests.factories.database.naptan import NaptanStopPointFactory
+from timetables_etl.etl.app.helpers.types import StopsLookup
 from timetables_etl.etl.app.transform.utils_stops import (
     get_first_last_stops,
     get_terminal_stop_points,

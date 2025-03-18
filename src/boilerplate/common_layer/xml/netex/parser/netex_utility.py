@@ -16,7 +16,11 @@ log = get_logger()
 
 def get_netex_element(xml_data: _Element, element_name: str) -> _Element | None:
     """Find element in NeTEx namespace"""
-    return xml_data.find(f"{{{NETEX_NS}}}{element_name}")
+    try:
+        return xml_data.find(f"{{{NETEX_NS}}}{element_name}")
+    except Exception:
+        print(f"Could not find element: {element_name}")
+        raise
 
 
 def get_netex_text(xml_data: _Element, element_name: str) -> str | None:
@@ -117,7 +121,7 @@ def parse_versioned_ref(elem: _Element, element_name: str) -> VersionedRef | Non
     1. `version` attribute
     2. `versionRef` attribute
     """
-    child = get_netex_element(elem, element_name)
+    child = get_netex_element(elem, element_name) if element_name else elem
     if child is None:
         return None
 

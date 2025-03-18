@@ -12,11 +12,11 @@ from common_layer.xml.txc.models import (
     TXCServicedOrganisationDatePattern,
     TXCServicedOrganisationDays,
 )
-from etl.app.transform.vehicle_journey_operations_serviced_org import (
-    process_days_element,
-)
 
 from tests.factories.database.transmodel import TransmodelVehicleJourneyFactory
+from timetables_etl.etl.app.transform.vehicle_journey_operations_serviced_org import (
+    process_days_element,
+)
 
 
 def process_days_element_test_helper(

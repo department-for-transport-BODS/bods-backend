@@ -5,9 +5,7 @@ File Hashing Update Functions
 from pathlib import Path
 
 from common_layer.database.client import SqlDB
-from common_layer.database.repos.repo_organisation import (
-    OrganisationDatasetRevisionRepo,
-)
+from common_layer.database.repos import OrganisationDatasetRevisionRepo
 from common_layer.xml.utils import get_file_hash
 from structlog.stdlib import get_logger
 

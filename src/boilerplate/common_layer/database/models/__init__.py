@@ -3,6 +3,7 @@
 Export models for DB queries
 """
 
+from .error_codes import ETLErrorCode
 from .model_avl import AvlCavlDataArchive
 from .model_data_quality import (
     DataQualityPostSchemaViolation,
@@ -37,7 +38,6 @@ from .model_otc import (
 )
 from .model_pipelines import (
     DatasetETLTaskResult,
-    ETLErrorCode,
     FileProcessingResult,
     PipelineErrorCode,
     PipelineProcessingStep,

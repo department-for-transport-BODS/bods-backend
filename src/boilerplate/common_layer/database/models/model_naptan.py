@@ -80,7 +80,7 @@ class NaptanStopPoint(BaseSQLModel):
         Allows for easier debugging
         """
         try:
-            attributes = []
+            attributes: list[str] = []
             for key, value in self.__dict__.items():
                 if not key.startswith("_"):  # Skip SQLAlchemy internal attributes
                     if key == "location":

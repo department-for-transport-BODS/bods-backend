@@ -2,7 +2,6 @@
 SQL Alchemy Repos for Tables prefixed with fares_
 """
 
-from common_layer.database.repos.operation_decorator import handle_repository_errors
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql import delete
 
@@ -13,6 +12,7 @@ from ..models import (
     FaresValidation,
     FaresValidationResult,
 )
+from .operation_decorator import handle_repository_errors
 from .repo_common import BaseRepository, BaseRepositoryWithId, SqlDB
 
 
@@ -108,6 +108,19 @@ class FaresValidationRepo(BaseRepositoryWithId[FaresValidation]):
     def __init__(self, db: SqlDB):
         super().__init__(db, FaresValidation)
 
+    @handle_repository_errors
+    def delete_by_revision_id(self, revision_id: int) -> bool:
+        """
+        Delete by revision id
+        """
+        with self._db.session_scope() as session:
+            statement = delete(FaresValidation).where(
+                self._model.revision_id == revision_id
+            )
+            result = session.execute(statement)
+
+            return result.rowcount > 0
+
 
 class FaresValidationResultRepo(BaseRepositoryWithId[FaresValidationResult]):
     """
@@ -116,3 +129,16 @@ class FaresValidationResultRepo(BaseRepositoryWithId[FaresValidationResult]):
 
     def __init__(self, db: SqlDB):
         super().__init__(db, FaresValidationResult)
+
+    @handle_repository_errors
+    def delete_by_revision_id(self, revision_id: int) -> bool:
+        """
+        Delete by revision id
+        """
+        with self._db.session_scope() as session:
+            statement = delete(FaresValidationResult).where(
+                self._model.revision_id == revision_id
+            )
+            result = session.execute(statement)
+
+            return result.rowcount > 0

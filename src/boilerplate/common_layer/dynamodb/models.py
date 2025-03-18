@@ -38,3 +38,14 @@ class TXCFileAttributes:
             hash=obj.hash,
             filename=obj.filename,
         )
+
+
+@dataclass
+class FaresViolation:
+    """
+    Fares Violation class used to store violation in dynamo
+    """
+
+    line: int | None
+    observation: str
+    category: str

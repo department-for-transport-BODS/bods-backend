@@ -3,15 +3,17 @@ Test Service Pattern Stop Wait Time / Duration Calculations
 """
 
 import pytest
-from etl.app.transform.service_pattern_stops_durations import apply_wait_time_rules
+
+from timetables_etl.etl.app.transform.service_pattern_stops_durations import (
+    apply_wait_time_rules,
+)
 
 
 @pytest.mark.parametrize(
-    "from_wait,to_wait,next_from_wait,is_first_stop,is_last_stop,expected",
+    "from_wait,to_wait,is_first_stop,is_last_stop,expected",
     [
         pytest.param(
             "PT5M0S",
-            None,
             None,
             True,
             False,
@@ -21,7 +23,6 @@ from etl.app.transform.service_pattern_stops_durations import apply_wait_time_ru
         pytest.param(
             "PT0S",
             None,
-            None,
             True,
             False,
             None,
@@ -30,7 +31,6 @@ from etl.app.transform.service_pattern_stops_durations import apply_wait_time_ru
         pytest.param(
             "PT5M0S",
             "PT10M0S",
-            "PT3M0S",
             False,
             False,
             "PT10M0S",
@@ -39,7 +39,6 @@ from etl.app.transform.service_pattern_stops_durations import apply_wait_time_ru
         pytest.param(
             None,
             "PT10M0S",
-            "PT3M0S",
             False,
             False,
             "PT10M0S",
@@ -48,34 +47,30 @@ from etl.app.transform.service_pattern_stops_durations import apply_wait_time_ru
         pytest.param(
             None,
             None,
-            "PT3M0S",
             False,
             False,
-            "PT3M0S",
-            id="Intermediate stop with no To.WaitTime uses next From.WaitTime",
+            "PT0S",
+            id="Intermediate stop with no To.WaitTime and From.WaitTime returns 0",
         ),
         pytest.param(
             None,
             "PT0S",
-            "PT3M0S",
             False,
             False,
-            "PT3M0S",
+            "PT0S",
             id="PT0S in To.WaitTime is treated as not present",
         ),
         pytest.param(
             None,
             None,
+            False,
+            False,
             "PT0S",
-            False,
-            False,
-            None,
             id="PT0S in next From.WaitTime is treated as not present",
         ),
         pytest.param(
             "PT5M0S",
             "PT10M0S",
-            "PT3M0S",
             False,
             True,
             None,
@@ -84,18 +79,16 @@ from etl.app.transform.service_pattern_stops_durations import apply_wait_time_ru
         pytest.param(
             None,
             None,
-            None,
             False,
             False,
-            None,
-            id="No wait times available returns None",
+            "PT0S",
+            id="No wait times available returns 0s",
         ),
     ],
 )
 def test_apply_wait_time_rules(
     from_wait: str | None,
     to_wait: str | None,
-    next_from_wait: str | None,
     is_first_stop: bool,
     is_last_stop: bool,
     expected: str | None,
@@ -103,7 +96,5 @@ def test_apply_wait_time_rules(
     """
     Test that wait time rules are correctly applied for different scenarios.
     """
-    result = apply_wait_time_rules(
-        from_wait, to_wait, next_from_wait, is_first_stop, is_last_stop
-    )
+    result = apply_wait_time_rules(from_wait, to_wait, is_first_stop, is_last_stop)
     assert result == expected

@@ -8,11 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
-from common_layer.exceptions.file_exceptions import (
-    DownloadException,
-    DownloadTimeout,
-    UnknownFileType,
-)
+from common_layer.exceptions import DownloadException, DownloadTimeout, UnknownFileType
 from download_dataset.app.file_download import (
     FileDownloader,
     download_file,
@@ -134,7 +130,7 @@ def test_get_content_type(
             id="Connection Error",
         ),
         pytest.param(
-            requests.HTTPError("404 Client Error"),
+            requests.HTTPError(response=requests.Response()),
             id="HTTP Error",
         ),
         pytest.param(

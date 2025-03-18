@@ -9,8 +9,9 @@ from typing import Any, Callable
 
 import structlog
 from aws_lambda_powertools.utilities.typing import LambdaContext
-from structlog.processors import _json_fallback_handler
+from structlog.processors import _json_fallback_handler  # type: ignore
 from structlog.types import EventDict
+from structlog.typing import Processor
 
 
 class RequestIdProcessor:
@@ -46,7 +47,7 @@ class AWSCloudWatchLogs:
 
     def __init__(
         self,
-        callouts: list | None = None,
+        callouts: list[str] | None = None,
         serializer: Callable[..., str | bytes] = json.dumps,
         **dumps_kw: Any,
     ) -> None:
@@ -73,11 +74,13 @@ class AWSCloudWatchLogs:
         prefix = f'[{name.upper()}] "{callout_one}" "{callout_two}" '
         serialized = self._dumps(event_dict, **self._dumps_kw)
 
-        if isinstance(serialized, str):
-            return prefix + serialized
-        if isinstance(serialized, bytes):
-            return prefix.encode() + serialized
-        raise TypeError(f"Unexpected type from serializer: {type(serialized)}")
+        match serialized:
+            case str():
+                return prefix + serialized
+            case bytes():
+                return prefix.encode() + serialized
+            case _:
+                raise TypeError(f"Unexpected type from serializer: {type(serialized)}")
 
 
 _NOISY_LOG_SOURCES = (
@@ -91,11 +94,13 @@ _NOISY_LOG_SOURCES = (
 )
 
 
-def get_processors(lambda_context: LambdaContext | None = None) -> tuple:
+def get_processors(
+    lambda_context: LambdaContext | None = None,
+) -> tuple[Processor, ...]:
     """
     Get the list of processors, optionally including request ID processor
     """
-    base_processors = [
+    base_processors: list[Processor] = [
         structlog.stdlib.filter_by_level,
         structlog.stdlib.add_logger_name,
         structlog.stdlib.add_log_level,
