@@ -5,7 +5,7 @@ Database Calls
 from datetime import UTC, datetime
 
 from ..client import SqlDB
-from ..models.model_pipelines import (
+from ..models import (
     DatasetETLTaskResult,
     ETLErrorCode,
     FileProcessingResult,

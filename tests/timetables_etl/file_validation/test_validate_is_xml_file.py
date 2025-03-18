@@ -3,7 +3,7 @@ Test whether a file is an XML
 """
 
 import pytest
-from common_layer.exceptions.xml_file_exceptions import FileNotXML
+from common_layer.exceptions import FileNotXML
 from file_validation.app.xml_checks import validate_is_xml_file
 
 

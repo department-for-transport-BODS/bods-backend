@@ -2,8 +2,6 @@
 PostSchemaCheck Pydantic Models and Dataclasses
 """
 
-from typing import List
-
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -25,7 +23,7 @@ class PublishedDatasetModel(BaseModel):
     """
 
     published_dataset: int
-    service_codes: List[str]
+    service_codes: list[str]
 
 
 class ValidationResult(BaseModel):

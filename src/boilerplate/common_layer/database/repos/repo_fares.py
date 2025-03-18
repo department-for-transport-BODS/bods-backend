@@ -2,7 +2,6 @@
 SQL Alchemy Repos for Tables prefixed with fares_
 """
 
-from common_layer.database.repos.operation_decorator import handle_repository_errors
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql import delete
 
@@ -13,6 +12,7 @@ from ..models import (
     FaresValidation,
     FaresValidationResult,
 )
+from .operation_decorator import handle_repository_errors
 from .repo_common import BaseRepository, BaseRepositoryWithId, SqlDB
 
 

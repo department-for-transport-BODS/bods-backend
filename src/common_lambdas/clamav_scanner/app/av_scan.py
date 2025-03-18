@@ -8,8 +8,8 @@ from typing import BinaryIO
 
 from clamd import BufferTooLongError, ClamdNetworkSocket
 from clamd import ConnectionError as ClamdConnectionError
-from common_layer.exceptions.file_exceptions import (
-    AntiVirusError,
+from common_layer.exceptions import (
+    ClamAVScanFailed,
     ClamConnectionError,
     SuspiciousFile,
 )
@@ -95,7 +95,7 @@ class FileScanner:
 
             if result.status == "ERROR":
                 log.error("Antivirus scan: FAILED", result=result)
-                raise AntiVirusError(filename=str(file_path))
+                raise ClamAVScanFailed(filename=str(file_path))
             if result.status == "FOUND":
                 log.warning("Antivirus scan: FOUND", reason=result.reason)
                 if result.reason:
@@ -109,24 +109,24 @@ class FileScanner:
         except (OSError, IOError) as e:
             msg = f"Failed to read file for virus scan: {e}"
             log.exception(msg)
-            raise AntiVirusError(filename=str(file_path), message=msg) from e
+            raise ClamConnectionError(filename=str(file_path), message=msg) from e
 
     def _perform_scan(self, file_: BinaryIO) -> ScanResult:
         """
         Perform the ClamAV scan on an open file
 
-        Returns:
-            ScanResult with status and optional reason
+        The ClamAV Library was last updated 10 years ago
+        Might be worth reimplementing to get better typing
         """
         try:
-            response = self.clamav.instream(file_)
+            response = self.clamav.instream(file_)  # type: ignore
             if not response:
                 log.info(
                     "ClamAV Did not respond",
                     host=self.config.host,
                     port=self.config.port,
                 )
-                raise AntiVirusError(
+                raise ClamConnectionError(
                     filename=str(file_.name), message="No response received from ClamAV"
                 )
 
@@ -134,10 +134,10 @@ class FileScanner:
             scan_tuple = response.get("stream")
             if (
                 not scan_tuple
-                or not isinstance(scan_tuple, tuple)
+                or not isinstance(scan_tuple, tuple)  # type: ignore
                 or len(scan_tuple) != 2
             ):
-                raise AntiVirusError(
+                raise ClamConnectionError(
                     filename=str(file_.name),
                     message=f"Invalid response format from ClamAV: {response}",
                 )
@@ -150,7 +150,7 @@ class FileScanner:
         except BufferTooLongError as e:
             msg = "Antivirus scan failed due to BufferTooLongError"
             log.exception(msg)
-            raise AntiVirusError(filename=str(file_.name), message=msg) from e
+            raise ClamConnectionError(filename=str(file_.name), message=msg) from e
 
         except ClamdConnectionError as e:
             msg = "Antivirus scan failed due to ConnectionError"

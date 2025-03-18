@@ -6,7 +6,7 @@ The result of the execution needs to be sent to the platform
 
 import functools
 import json
-from typing import Any, Callable
+from typing import Any, Callable, TypeVar, cast
 
 import urllib3
 from structlog.stdlib import get_logger
@@ -14,10 +14,12 @@ from structlog.stdlib import get_logger
 logger = get_logger()
 http = urllib3.PoolManager()
 
+T = TypeVar("T", bound=Callable[[dict[str, Any], Any], dict[str, Any]])
+
 
 def cloudformation_response(
     success_status_code: int = 200, error_status_code: int = 400
-) -> Callable:
+) -> Callable[[T], T]:
     """
     Decorator to handle both CloudFormation custom resource responses and direct Lambda invocations.
 
@@ -26,7 +28,7 @@ def cloudformation_response(
     For direct Lambda invocations, it will log a warning and proceed normally.
     """
 
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: T) -> T:
         @functools.wraps(func)
         def wrapper(event: dict[str, Any], context: Any) -> dict[str, Any]:
             # Check if this is a CloudFormation custom resource call
@@ -124,6 +126,6 @@ def cloudformation_response(
                     send_response("FAILED", {"Error": error_message})
                 raise
 
-        return wrapper
+        return cast(T, wrapper)
 
     return decorator
