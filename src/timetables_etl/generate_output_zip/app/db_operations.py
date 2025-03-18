@@ -35,28 +35,6 @@ def update_revision_hash(db: SqlDB, revision_id: int, file_hash: str):
     log.info("Updated Revision Hash", revision_id=revision_id, file_hash=file_hash)
 
 
-def fetch_task_result(db: SqlDB, task_id: int) -> DatasetETLTaskResult:
-    """
-    Fetch task result from db
-    """
-    task_repo = ETLTaskResultRepo(db)
-    task_result = task_repo.get_by_id(task_id)
-    if task_result is None:
-        raise ValueError("Dataset ETL Task Result Doesn't Exist")
-    return task_result
-
-
-def fetch_revision(db: SqlDB, revision_id: int) -> OrganisationDatasetRevision:
-    """
-    Fetch and validate revision existence
-    """
-    revision_repo = OrganisationDatasetRevisionRepo(db)
-    revision = revision_repo.get_by_id(revision_id)
-    if revision is None:
-        raise ValueError("Cannot find OrganisationDatasetRevision")
-    return revision
-
-
 def update_task_success_state(
     task_result: DatasetETLTaskResult,
 ) -> DatasetETLTaskResult:
@@ -115,9 +93,10 @@ def update_task_and_revision_status(
     Returns:
         revision: The updated DatasetRevision record
     """
-    task_result = fetch_task_result(db, dataset_etl_task_result_id)
-    revision = fetch_revision(db, dataset_revision_id)
 
+    task_result = ETLTaskResultRepo(db).require_by_id(dataset_etl_task_result_id)
+
+    revision = OrganisationDatasetRevisionRepo(db).require_by_id(dataset_revision_id)
     # No succeeded => all files in Map Run failed
     no_valid_files = len(map_results.succeeded) == 0
 
@@ -162,7 +141,7 @@ def update_live_revision(db: SqlDB, revision_id: int):
     """
     Link published revision to a dataset
     """
-    revision = fetch_revision(db, revision_id)
+    revision = OrganisationDatasetRevisionRepo(db).require_by_id(revision_id)
     if revision.is_published is True and revision.status == FeedStatus.LIVE:
         repo = OrganisationDatasetRepo(db)
         repo.update_live_revision(revision.dataset_id, revision.id)

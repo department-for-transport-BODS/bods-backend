@@ -26,28 +26,6 @@ from .models import ExceptionHandlerInputData
 log = get_logger()
 
 
-def fetch_task_result(db: SqlDB, task_id: int) -> DatasetETLTaskResult:
-    """
-    Fetch and validate task result existence
-    """
-    task_repo = ETLTaskResultRepo(db)
-    task_result = task_repo.get_by_id(task_id)
-    if task_result is None:
-        raise ValueError("Dataset ETL Task Result Doesn't Exist")
-    return task_result
-
-
-def fetch_revision(db: SqlDB, revision_id: int) -> OrganisationDatasetRevision:
-    """
-    Fetch and validate revision existence
-    """
-    revision_repo = OrganisationDatasetRevisionRepo(db)
-    revision = revision_repo.get_by_id(revision_id)
-    if revision is None:
-        raise ValueError("Cannot find OrganisationDatasetRevision")
-    return revision
-
-
 def update_failure_state(
     task_result: DatasetETLTaskResult,
     error_message: str,
@@ -89,8 +67,13 @@ def handle_error(
     """
     Core error handling logic
     """
-    task_result = fetch_task_result(db, event_data.dataset_etl_task_result_id)
-    revision = fetch_revision(db, task_result.revision_id)
+    task_result = ETLTaskResultRepo(db).require_by_id(
+        event_data.dataset_etl_task_result_id
+    )
+
+    revision = OrganisationDatasetRevisionRepo(db).require_by_id(
+        task_result.revision_id
+    )
 
     updated_task = update_failure_state(
         task_result,
@@ -119,6 +102,10 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
     )
 
     db = SqlDB()
-    handle_error(db, parsed_event)
+    task_result, revision = handle_error(db, parsed_event)
 
-    return {"statusCode": 200}
+    return {
+        "statusCode": 200,
+        "revision_id": revision.id,
+        "task_result_id": task_result.id,
+    }
