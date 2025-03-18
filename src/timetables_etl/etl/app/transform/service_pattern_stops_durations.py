@@ -135,7 +135,7 @@ def find_vehicle_journey_timing_links(
 
     if isinstance(txc_vehicle_journey, TXCVehicleJourney):
         vj_links = txc_vehicle_journey.VehicleJourneyTimingLink
-        for i, vj_link in enumerate(vj_links):
+        for _i, vj_link in enumerate(vj_links):
             if vj_link.JourneyPatternTimingLinkRef == link_id:
                 matching_link = vj_link
                 runtime = parse_duration(vj_link.RunTime)
