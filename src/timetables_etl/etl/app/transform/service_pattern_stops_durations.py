@@ -123,10 +123,7 @@ def determine_vehicle_journey_wait_time(
 def find_vehicle_journey_timing_links(
     txc_vehicle_journey: TXCVehicleJourney | TXCFlexibleVehicleJourney,
     link_id: str,
-    next_link_id: str | None = None,
-) -> tuple[
-    TXCVehicleJourneyTimingLink | None, TXCVehicleJourneyTimingLink | None, timedelta
-]:
+) -> tuple[TXCVehicleJourneyTimingLink | None, timedelta]:
     """
     Find the matching VehicleJourneyTimingLink and possibly the next one.
 
@@ -134,7 +131,6 @@ def find_vehicle_journey_timing_links(
         tuple: (matching_link, next_link, runtime)
     """
     matching_link: TXCVehicleJourneyTimingLink | None = None
-    next_link: TXCVehicleJourneyTimingLink | None = None
     runtime = timedelta(0)  # Default to 0
 
     if isinstance(txc_vehicle_journey, TXCVehicleJourney):
@@ -143,11 +139,6 @@ def find_vehicle_journey_timing_links(
             if vj_link.JourneyPatternTimingLinkRef == link_id:
                 matching_link = vj_link
                 runtime = parse_duration(vj_link.RunTime)
-
-                # Try to find the next VJ link if this isn't the last one and we have a next_link_id
-                if i < len(vj_links) - 1 and next_link_id:
-                    if vj_links[i + 1].JourneyPatternTimingLinkRef == next_link_id:
-                        next_link = vj_links[i + 1]
                 break
         else:
             if txc_vehicle_journey.VehicleJourneyTimingLink:
@@ -161,7 +152,7 @@ def find_vehicle_journey_timing_links(
                     ],
                 )
 
-    return matching_link, next_link, runtime
+    return matching_link, runtime
 
 
 def get_pattern_timing(
@@ -180,9 +171,8 @@ def get_pattern_timing(
     runtime = parse_duration(base_link_runtime)
 
     # Find matching VehicleJourneyTimingLink and next one if any
-    next_link_id = link_context.next_link.id if link_context.next_link else None
-    matching_vj_link, next_vj_link, vj_runtime = find_vehicle_journey_timing_links(
-        txc_vehicle_journey, link_id, next_link_id
+    matching_vj_link, vj_runtime = find_vehicle_journey_timing_links(
+        txc_vehicle_journey, link_id
     )
 
     # Use runtime from VehicleJourneyTimingLink if found
@@ -192,7 +182,6 @@ def get_pattern_timing(
     # First try to get wait time from VehicleJourneyTimingLink
     wait_time_str = determine_vehicle_journey_wait_time(
         matching_vj_link,
-        next_vj_link,
         link_context.is_first_stop,
         link_context.is_last_stop,
     )
@@ -201,7 +190,6 @@ def get_pattern_timing(
     if wait_time_str is None:
         wait_time_str = determine_wait_time(
             current_link=link_context.current_link,
-            next_link=link_context.next_link,
             is_first_stop=link_context.is_first_stop,
             is_last_stop=link_context.is_last_stop,
         )
