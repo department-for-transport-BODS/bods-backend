@@ -6,10 +6,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from boto3.dynamodb.types import TypeDeserializer
-from common_layer.database.models.model_fares import (
-    FaresValidation,
-    FaresValidationResult,
-)
+from common_layer.database.models import FaresValidation, FaresValidationResult
 
 
 def map_violations(

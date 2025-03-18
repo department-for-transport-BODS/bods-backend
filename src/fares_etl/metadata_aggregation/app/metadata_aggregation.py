@@ -6,12 +6,12 @@ from typing import Any
 
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.database.client import SqlDB
-from common_layer.database.models.model_fares import (
+from common_layer.database.models import (
     FaresDataCatalogueMetadata,
     FaresMetadata,
     FaresMetadataStop,
 )
-from common_layer.database.repos.repo_organisation import (
+from common_layer.database.repos import (
     OrganisationDatasetRepo,
     OrganisationDatasetRevisionRepo,
 )

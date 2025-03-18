@@ -5,10 +5,7 @@ DynamoDB Cache Client
 import time
 from typing import Any
 
-from common_layer.database.models.model_fares import (
-    FaresDataCatalogueMetadata,
-    FaresMetadata,
-)
+from common_layer.database.models import FaresDataCatalogueMetadata, FaresMetadata
 from pydantic import BaseModel, Field
 from structlog.stdlib import get_logger
 

@@ -3,14 +3,8 @@ Load fares metadata into database
 """
 
 from common_layer.database.client import SqlDB
-from common_layer.database.models.model_fares import (
-    FaresValidation,
-    FaresValidationResult,
-)
-from common_layer.database.repos.repo_fares import (
-    FaresValidationRepo,
-    FaresValidationResultRepo,
-)
+from common_layer.database.models import FaresValidation, FaresValidationResult
+from common_layer.database.repos import FaresValidationRepo, FaresValidationResultRepo
 
 
 def load_violations(

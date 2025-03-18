@@ -3,7 +3,7 @@ from datetime import date
 from pathlib import Path
 
 import pytest
-from common_layer.database.models.model_fares import FaresDataCatalogueMetadata
+from common_layer.database.models import FaresDataCatalogueMetadata
 from common_layer.xml.netex.parser.netex_publication_delivery import parse_netex
 
 from fares_etl.etl.app.transform.data_catalogue import create_data_catalogue

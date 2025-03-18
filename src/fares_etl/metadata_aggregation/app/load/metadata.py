@@ -3,12 +3,12 @@ Load fares metadata into database
 """
 
 from common_layer.database.client import SqlDB
-from common_layer.database.models.model_fares import (
+from common_layer.database.models import (
     FaresDataCatalogueMetadata,
     FaresMetadata,
     FaresMetadataStop,
 )
-from common_layer.database.repos.repo_fares import (
+from common_layer.database.repos import (
     FaresDataCatalogueMetadataRepo,
     FaresMetadataRepo,
     FaresMetadataStopsRepo,

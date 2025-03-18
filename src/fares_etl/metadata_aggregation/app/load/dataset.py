@@ -3,15 +3,15 @@ Setup organisation dataset metadata tables
 """
 
 from common_layer.database.client import SqlDB
-from common_layer.database.models.model_organisation import OrganisationDatasetMetadata
-from common_layer.database.repos.repo_fares import (
+from common_layer.database.models import OrganisationDatasetMetadata
+from common_layer.database.repos import (
     FaresDataCatalogueMetadataRepo,
     FaresMetadataRepo,
     FaresMetadataStopsRepo,
     FaresValidationRepo,
     FaresValidationResultRepo,
+    OrganisationDatasetMetdataRepo,
 )
-from common_layer.database.repos.repo_organisation import OrganisationDatasetMetdataRepo
 
 
 def load_dataset(db: SqlDB, revision_id: int, schema_version: str) -> int:

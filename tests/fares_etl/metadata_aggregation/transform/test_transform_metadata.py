@@ -1,7 +1,7 @@
 from datetime import datetime
 
 import pytest
-from common_layer.database.models.model_fares import FaresMetadata
+from common_layer.database.models import FaresMetadata
 
 from fares_etl.metadata_aggregation.app.transform.transform_metadata import (
     aggregate_metadata,

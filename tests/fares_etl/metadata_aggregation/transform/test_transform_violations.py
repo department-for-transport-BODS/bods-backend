@@ -3,10 +3,7 @@ from typing import Any
 from unittest import mock
 
 import pytest
-from common_layer.database.models.model_fares import (
-    FaresValidation,
-    FaresValidationResult,
-)
+from common_layer.database.models import FaresValidation, FaresValidationResult
 
 from fares_etl.metadata_aggregation.app.transform.transform_violations import (
     map_violations,
