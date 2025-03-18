@@ -170,7 +170,7 @@ def process_journey_pattern_section(
             link_context=link_context,
             base_link_runtime=link.RunTime,
         )
-        # Always add wait time before the stop is added
+        # Always add wait time before a stop is added
         state.current_time = calculate_next_time(
             state.current_time,
             timedelta(
@@ -213,7 +213,7 @@ def process_journey_pattern_section(
                 sequence=state.auto_sequence,
             )
 
-        # Add run time after the stop is added to calculate to correct current_time for the next stop
+        # Add runtime after a stop is added to calculate the correct current_time for next stop
         state.current_time = calculate_next_time(
             state.current_time,
             runtime,
