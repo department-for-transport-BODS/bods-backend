@@ -31,7 +31,18 @@ from timetables_etl.etl.app.transform.service_pattern_metadata import (
         pytest.param(
             "outbound", "LINE:123", "Outbound Test Description", id="Outbound with Line"
         ),
-        pytest.param("clockwise", "LINE:123", "unknown", id="Unknown Direction"),
+        pytest.param(
+            "clockwise",
+            "LINE:123",
+            "Outbound Test Description",
+            id="clockwise with Line",
+        ),
+        pytest.param(
+            "antiClockwise",
+            "LINE:123",
+            "Inbound Test Description",
+            id="antiClockwise with Line",
+        ),
         pytest.param("inbound", "NONEXISTENT_LINE", "unknown", id="Missing Line"),
     ],
 )

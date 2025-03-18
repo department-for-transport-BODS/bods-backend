@@ -84,9 +84,14 @@ def make_metadata(
     if line:
         line_name = line.LineName
 
-        if sp_data.direction == "inbound" and line.InboundDescription:
+        if (
+            sp_data.direction in ["inbound", "antiClockwise"]
+            and line.InboundDescription
+        ):
             description = line.InboundDescription.Description or "unknown"
-        elif sp_data.direction == "outbound" and line.OutboundDescription:
+        elif (
+            sp_data.direction in ["outbound", "clockwise"] and line.OutboundDescription
+        ):
             description = line.OutboundDescription.Description or "unknown"
         elif sp_data.direction not in ["inbound", "outbound"]:
             log.warning(
