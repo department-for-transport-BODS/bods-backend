@@ -20,10 +20,9 @@ from common_layer.json_logging import configure_logging
 from pydantic import BaseModel, Field
 from structlog import get_logger
 
-from fares_etl.metadata_aggregation.app.load.violations import load_violations
-
 from .load.dataset import load_dataset
 from .load.metadata import load_metadata
+from .load.violations import load_violations
 from .transform.transform_metadata import (
     aggregate_metadata,
     get_min_schema_version,
