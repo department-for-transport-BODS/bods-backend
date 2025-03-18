@@ -1,5 +1,5 @@
 """
-A set of NeTEx objects as assembled by a publication request or other service. 
+A set of NeTEx objects as assembled by a publication request or other service.
 Provides a general purpose wrapper for NeTEx data content.
 """
 

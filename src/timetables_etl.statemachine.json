@@ -106,7 +106,7 @@
     "Validation and File Attributes": {
       "Type": "Map",
       "Next": "Collate Files",
-      "MaxConcurrency": 1000,
+      "MaxConcurrency": 100,
       "ToleratedFailurePercentage": 100,
       "ItemSelector": {
         "mapS3Bucket": "{% $s3Bucket %}",
@@ -276,7 +276,7 @@
     "PTI and ETL": {
       "Type": "Map",
       "Next": "Generate Output Zip and Update Status",
-      "MaxConcurrency": 1000,
+      "MaxConcurrency": 100,
       "ToleratedFailurePercentage": 100,
       "ItemSelector": {
         "mapS3Bucket": "{% $states.context.Map.Item.Value.Bucket %}",

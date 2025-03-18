@@ -75,6 +75,7 @@ Globals:
       - IsNotLocal
       - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
       - !Ref AWS::NoValue
+    ReservedConcurrentExecutions: 100
     VpcConfig: !If
       - IsNotLocal
       - SubnetIds:
