@@ -2,7 +2,7 @@
 Create fares data catalogue
 """
 
-from common_layer.database.models.model_fares import FaresDataCatalogueMetadata
+from common_layer.database.models import FaresDataCatalogueMetadata
 from common_layer.xml.netex.helpers.helpers_composite_frame import (
     get_composite_frame_valid_from,
     get_composite_frame_valid_to,

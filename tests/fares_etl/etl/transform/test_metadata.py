@@ -4,7 +4,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
-from common_layer.database.models.model_fares import FaresMetadata
+from common_layer.database.models import FaresMetadata
 from common_layer.xml.netex.parser.netex_publication_delivery import parse_netex
 
 from fares_etl.etl.app.transform.metadata import create_metadata, get_stop_ids

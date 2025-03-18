@@ -5,7 +5,7 @@ Transform fares metadata items
 from typing import Any
 
 from boto3.dynamodb.types import TypeDeserializer
-from common_layer.database.models.model_fares import (
+from common_layer.database.models import (
     FaresDataCatalogueMetadata,
     FaresMetadata,
     FaresMetadataStop,
