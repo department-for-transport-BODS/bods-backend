@@ -99,6 +99,9 @@ def find_highest_revision_in_group(files: list[OrganisationTXCFileAttributes]) -
 
 
 def get_max_start_date(files: list[OrganisationTXCFileAttributes]) -> date | None:
+    """
+    Get the latest operating_period_start_date from a group of files
+    """
     return max(
         (
             file.operating_period_start_date
