@@ -62,7 +62,11 @@ class ETLTaskResultRepo(BaseRepositoryWithId[DatasetETLTaskResult]):
 
     @handle_repository_errors
     def mark_error(
-        self, task_id: int, task_name: str, error_code: ETLErrorCode
+        self,
+        task_id: int,
+        task_name: str,
+        error_code: ETLErrorCode,
+        additional_info: str,
     ) -> None:
         """
         Mark task as failed with specific error information
@@ -74,6 +78,7 @@ class ETLTaskResultRepo(BaseRepositoryWithId[DatasetETLTaskResult]):
                 task.completed = datetime.now(UTC)
                 task.task_name_failed = task_name
                 task.error_code = error_code
+                task.additional_info = additional_info
 
         statement = self._build_query().where(self._model.id == task_id)
         self._update_one(statement, update_func)

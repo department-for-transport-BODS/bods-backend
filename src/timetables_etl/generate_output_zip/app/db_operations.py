@@ -2,21 +2,15 @@
 Updating the DB Revision Hash
 """
 
-from datetime import UTC, datetime
-
-from common_layer.aws.step.map_results_models import MapResults
+from common_layer.aws.step import MapResults
 from common_layer.database import SqlDB
-from common_layer.database.models import (
-    DatasetETLTaskResult,
-    ETLErrorCode,
-    OrganisationDatasetRevision,
-    TaskState,
-)
+from common_layer.database.models import ETLErrorCode, OrganisationDatasetRevision
 from common_layer.database.repos import (
     ETLTaskResultRepo,
     OrganisationDatasetRepo,
     OrganisationDatasetRevisionRepo,
 )
+from common_layer.db.constants import StepName
 from common_layer.enums import FeedStatus
 from structlog.stdlib import get_logger
 
@@ -33,50 +27,6 @@ def update_revision_hash(db: SqlDB, revision_id: int, file_hash: str):
         revision_id, file_hash
     )
     log.info("Updated Revision Hash", revision_id=revision_id, file_hash=file_hash)
-
-
-def update_task_success_state(
-    task_result: DatasetETLTaskResult,
-) -> DatasetETLTaskResult:
-    """
-    Update task state to success, resetting any error fields
-    Returns updated task result without saving to DB
-    """
-    task_result.status = TaskState.SUCCESS
-    task_result.completed = datetime.now(UTC)
-    task_result.progress = 100
-
-    # Reset any error fields just in case they were modified elsewhere
-    task_result.task_name_failed = ""
-    task_result.error_code = ETLErrorCode.EMPTY
-
-    return task_result
-
-
-def update_task_error_state(
-    task_result: DatasetETLTaskResult, message: str, error_code: ETLErrorCode
-) -> DatasetETLTaskResult:
-    """
-    Update the task state to error, with the code NO_VALID_FILES_TO_PROCESS
-    """
-    log.warning(message)
-    task_result.status = TaskState.FAILURE
-    task_result.error_code = error_code
-    task_result.additional_info = message
-
-    return task_result
-
-
-def save_changes(
-    db: SqlDB, task_result: DatasetETLTaskResult, revision: OrganisationDatasetRevision
-) -> None:
-    """
-    Save changes to both task result and revision
-    """
-    task_repo = ETLTaskResultRepo(db)
-    revision_repo = OrganisationDatasetRevisionRepo(db)
-    task_repo.update(task_result)
-    revision_repo.update(revision)
 
 
 def update_task_and_revision_status(
@@ -97,29 +47,36 @@ def update_task_and_revision_status(
     task_result = ETLTaskResultRepo(db).require_by_id(dataset_etl_task_result_id)
 
     revision = OrganisationDatasetRevisionRepo(db).require_by_id(dataset_revision_id)
+
     # No succeeded => all files in Map Run failed
-    no_valid_files = len(map_results.succeeded) == 0
-
+    no_valid_files: bool = len(map_results.succeeded) == 0
     # Files succeeded in map run but failed during re-zip
-    failed_rezip_files = not (no_valid_files) and processing_result.failed_files != 0
+    failed_rezip_files: bool = (
+        not (no_valid_files) and processing_result.failed_files != 0
+    )
 
-    if no_valid_files:
-        message = "No valid files to process"
-        error_code = ETLErrorCode.NO_VALID_FILE_TO_PROCESS
-        task_result = update_task_error_state(task_result, message, error_code)
+    has_error: bool = no_valid_files or failed_rezip_files
+
+    if has_error:
+        if no_valid_files:
+            message = "No valid files to process"
+            error_code = ETLErrorCode.NO_VALID_FILE_TO_PROCESS
+        else:
+            message = "Files failed during re-zipping process"
+            error_code = ETLErrorCode.SYSTEM_ERROR
+
         revision.status = FeedStatus.ERROR
-    elif failed_rezip_files:
-        message = "Files failed during re-zipping process"
-        error_code = ETLErrorCode.SYSTEM_ERROR
-        task_result = update_task_error_state(task_result, message, error_code)
-        revision.status = FeedStatus.ERROR
+        ETLTaskResultRepo(db).mark_error(
+            task_id=task_result.id,
+            task_name=StepName.GENERATE_OUTPUT_ZIP.value,
+            error_code=error_code,
+            additional_info=message,
+        )
     else:
         log.info("Setting task result and revision to success")
-        task_result = update_task_success_state(task_result)
-        revision.status = FeedStatus.SUCCESS
+        ETLTaskResultRepo(db).mark_success(task_result.id)
 
-    save_changes(db, task_result, revision)
-
+    OrganisationDatasetRevisionRepo(db).update(revision)
     return revision
 
 
