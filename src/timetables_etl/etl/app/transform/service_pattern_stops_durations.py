@@ -79,8 +79,11 @@ def apply_wait_time_rules(
     if to_wait is not None:
         return to_wait
 
-    # Otherwise, use the From WaitTime of the next link if it exists
-    return next_from_wait
+    if from_wait is not None:
+        return from_wait
+
+    # Otherwise, return PT0S
+    return "PT0S"
 
 
 def determine_wait_time(
