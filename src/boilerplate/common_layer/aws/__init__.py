@@ -1,6 +1,6 @@
 """
 Functions which are AWS Environment Specific
-Like Logging Setups, AWS Metrics etc 
+Like Logging Setups, AWS Metrics etc
 
 Allows importing as:
 

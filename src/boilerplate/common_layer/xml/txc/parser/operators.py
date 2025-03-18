@@ -1,5 +1,5 @@
 """
-Parse Operators TXC XML 
+Parse Operators TXC XML
 """
 
 from typing import cast, get_args

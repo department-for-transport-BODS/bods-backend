@@ -58,6 +58,9 @@ class ETLErrorCode(str, Enum):
     ORGANISATION_TXC_FILE_ATTRIBUTES_NOT_FOUND = (
         "The File Attributes were not found in the DB"
     )
+    PIPELINES_DATASET_ETL_TASK_RESULT_NOT_FOUND = (
+        "The DatasetETLTaskResult was not found in DB"
+    )
 
     @property
     def code(self) -> str:
