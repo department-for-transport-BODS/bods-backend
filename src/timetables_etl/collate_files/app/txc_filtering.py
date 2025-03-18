@@ -1,19 +1,5 @@
 """
 The logic for handling superceded TXC Files
-If there a multiple files per service code (i.e. sharing the same revision number):
-
-- Select the one with the latest operating_period_start_date
-- Retain any files that have an operating_period_start_date earlier
-    - Than the combination of (latest start date AND highest revision)
-
-To Ensure files are kept that represent services starting at different times
-Even if they have lower revision numbers
-
-So a scenario that get filtered out:
-
-Latest revision but start date is earlier than the latest start date
-If there's more than one with the same revision id
-
 """
 
 from datetime import date
