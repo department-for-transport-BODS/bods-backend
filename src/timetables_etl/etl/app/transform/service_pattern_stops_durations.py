@@ -79,8 +79,8 @@ def apply_wait_time_rules(
     if from_wait is not None:
         return from_wait
 
-    # Otherwise, return PT0S
-    return "PT0S"
+    # Otherwise, return None
+    return None
 
 
 def determine_wait_time(
