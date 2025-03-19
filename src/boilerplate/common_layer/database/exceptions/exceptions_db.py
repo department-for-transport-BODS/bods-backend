@@ -3,10 +3,19 @@ Exceptions related to missing DB Data for the ETL Processes
 Rather than faults with the DB Models / Repos etc
 """
 
+from ...exceptions import ETLException
 from ..models import ETLErrorCode
 
 
-class OrganisationDatasetRevisionNotFound(Exception):
+class OrganisationDatasetNotFound(ETLException):
+    """
+    Step Requiring the OrganisationDataset failed to find the referenced one
+    """
+
+    code = ETLErrorCode.ORGANISATION_DATASET_NOT_FOUND
+
+
+class OrganisationDatasetRevisionNotFound(ETLException):
     """
     Step Requiring the OrganisationDatasetRevision failed to find the referenced one
     """
@@ -14,7 +23,7 @@ class OrganisationDatasetRevisionNotFound(Exception):
     code = ETLErrorCode.ORGANISATION_DATASET_REVISION_NOT_FOUND
 
 
-class OrganisationTXCFileAttributesNotFound(Exception):
+class OrganisationTXCFileAttributesNotFound(ETLException):
     """
     Step Requiring the OrganisationDatasetRevision failed to find the referenced one
     """
@@ -22,7 +31,7 @@ class OrganisationTXCFileAttributesNotFound(Exception):
     code = ETLErrorCode.ORGANISATION_TXC_FILE_ATTRIBUTES_NOT_FOUND
 
 
-class PipelinesDatasetETLTaskResultNotFound(Exception):
+class PipelinesDatasetETLTaskResultNotFound(ETLException):
     """
     Step Requiring the OrganisationDatasetRevision failed to find the referenced one
     """
