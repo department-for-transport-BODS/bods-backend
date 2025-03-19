@@ -489,8 +489,9 @@ class DynamoDBLoader:
         self, items: list[dict[str, Any]]
     ) -> tuple[int, int]:
         """
-        Asynchronously write multiple items using TransactWriteItems with dynamic task management.
-        Uses the same pattern as process_stop_points for optimal concurrency.
+        Asynchronously write multiple items using TransactWriteItems.
+        Can handle up to 100 items per transaction (vs 25 for batch_write).
+        All items in a single transaction either succeed or fail together.
 
         Returns:
         tuple[int, int]: (processed_count, error_count)
@@ -498,7 +499,7 @@ class DynamoDBLoader:
         if not items:
             return 0, 0
 
-        await self.log.adebug(
+        await self.log.ainfo(
             "Writing items using TransactWriteItems", item_count=len(items)
         )
 
@@ -512,86 +513,27 @@ class DynamoDBLoader:
             items[i : i + transaction_size]
             for i in range(0, len(items), transaction_size)
         ]
-
-        active_tasks: list[asyncio.Task[bool]] = []
-
-        async def wait_for_slot() -> None:
-            """Wait for at least one task to complete and process its result."""
-            nonlocal processed_count, error_count, active_tasks
-
-            if not active_tasks:
-                return
-
-            done, pending = await asyncio.wait(
-                active_tasks, return_when=asyncio.FIRST_COMPLETED
-            )
-
-            for completed_task in done:
-                try:
-                    result = await completed_task
-                    if result is True:
-                        # Find which batch this task processed
-                        batch_index = active_tasks.index(completed_task)
-                        if batch_index < len(batches):
-                            processed_count += len(batches[batch_index])
-                    else:
-                        # Find which batch this task processed
-                        batch_index = active_tasks.index(completed_task)
-                        if batch_index < len(batches):
-                            error_count += len(batches[batch_index])
-                except Exception:  # pylint: disable=broad-exception-caught
-                    await self.log.aerror("Transaction failed", exc_info=True)
-                    # Without knowing exactly which batch had the error
-                    #  just count based on transaction_size
-                    error_count += transaction_size
-
-            # Update active tasks list
-            active_tasks = list(pending)
+        tasks = [self.transact_write_items_batch(batch) for batch in batches]
 
         start_time = time.time()
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        total_time = time.time() - start_time
 
-        try:
-            # Create initial tasks up to concurrency limit
-            max_concurrent = min(len(batches), self.max_concurrent_batches)
+        for i, result in enumerate(results):
+            if isinstance(result, BaseException):
+                error_count += len(batches[i])
+                await self.log.aerror("Transaction failed", error=str(result))
+            elif result is True:
+                processed_count += len(batches[i])
+            else:
+                error_count += len(batches[i])
 
-            for i in range(min(max_concurrent, len(batches))):
-                task = asyncio.create_task(self.transact_write_items_batch(batches[i]))
-                active_tasks.append(task)
-
-            # Process remaining batches as slots become available
-            next_batch = max_concurrent
-
-            while active_tasks or next_batch < len(batches):
-                # Wait for at least one task to complete
-                if len(active_tasks) >= self.max_concurrent_batches or (
-                    not active_tasks and next_batch >= len(batches)
-                ):
-                    await wait_for_slot()
-
-                # Add new tasks if available and we have capacity
-                while (
-                    next_batch < len(batches)
-                    and len(active_tasks) < self.max_concurrent_batches
-                ):
-                    task = asyncio.create_task(
-                        self.transact_write_items_batch(batches[next_batch])
-                    )
-                    active_tasks.append(task)
-                    next_batch += 1
-
-        finally:
-            # Process any remaining active tasks
-            while active_tasks:
-                await wait_for_slot()
-
-            total_time = time.time() - start_time
-
-            await self.log.ainfo(
-                "Completed transact write operations",
-                processed_count=processed_count,
-                error_count=error_count,
-                total_time=f"{total_time:.2f}s",
-            )
+        await self.log.ainfo(
+            "Completed transact write operations",
+            processed_count=processed_count,
+            error_count=error_count,
+            total_time=f"{total_time:.2f}s",
+        )
 
         return processed_count, error_count
 
