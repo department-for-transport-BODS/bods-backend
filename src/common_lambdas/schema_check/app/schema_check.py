@@ -10,7 +10,8 @@ from common_layer.database.client import SqlDB
 from common_layer.database.models import DataQualitySchemaViolation
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
-from common_layer.exceptions import SchemaViolationsFound
+from common_layer.exceptions import SchemaMismatch, SchemaUnknown, SchemaViolationsFound
+from common_layer.exceptions import XMLSyntaxError as ETLXMLSyntaxError
 from common_layer.s3 import S3, get_filename_from_object_key_except
 from lxml.etree import _Element  # type: ignore
 from lxml.etree import XMLSchema, XMLSyntaxError, parse
@@ -80,9 +81,9 @@ def parse_xml_from_s3(input_data: SchemaCheckInputData) -> _Element:
     except (ClientError, BotoCoreError):
         log.error("S3 Operation Failed", s3_key=input_data.s3_file_key, exc_info=True)
         raise
-    except XMLSyntaxError:
+    except XMLSyntaxError as exc:
         log.error("XML Parsing Failed", s3_key=input_data.s3_file_key, exc_info=True)
-        raise
+        raise ETLXMLSyntaxError from exc
 
 
 def validate_schema_type(data_type: XMLDataType, detected_schema_type: XMLSchemaType):
@@ -98,18 +99,18 @@ def validate_schema_type(data_type: XMLDataType, detected_schema_type: XMLSchema
 
     expected_schema_type = expected_mapping.get(data_type)
     if expected_schema_type is None:
-        raise ValueError(
-            f"SCHEMA_CHECK_XML_DATA_TYPE '{data_type}' not found in mapping"
-        )
+        raise SchemaUnknown(input_data_type=data_type)
 
     if detected_schema_type != expected_schema_type:
-        msg = "XMLSchemaType mismatch: provided XML file does not match expected schema type"
         log.error(
-            msg,
+            "XMLSchemaType mismatch: provided XML file does not match expected schema type",
             exected_schema_type=expected_schema_type,
             detected_schema_type=detected_schema_type,
         )
-        raise ValueError(msg)
+        raise SchemaMismatch(
+            detected_schema_type=detected_schema_type,
+            expected_schema_type=expected_schema_type,
+        )
 
 
 def process_schema_check(
