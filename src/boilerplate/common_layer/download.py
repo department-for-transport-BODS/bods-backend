@@ -10,7 +10,7 @@ from common_layer.xml.txc.parser.parser_txc import (
     parse_txc_from_element,
 )
 from common_layer.xml.utils.hashing import get_bytes_hash
-from lxml.etree import _Element
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 log = get_logger()

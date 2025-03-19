@@ -21,7 +21,6 @@ from common_layer.database.repos import (
 from common_layer.dynamodb.client.cache import DynamoDBCache
 from common_layer.dynamodb.data_manager import FileProcessingDataManager
 from common_layer.enums import FeedStatus
-from common_layer.exceptions.pipeline_exceptions import PipelineException
 from common_layer.json_logging import configure_logging
 from pydantic import BaseModel
 from structlog.stdlib import get_logger
@@ -37,19 +36,6 @@ class InitializePipelineEvent(BaseModel):
 
     DatasetRevisionId: int
     DatasetETLTaskResultId: int | None = None
-
-
-def get_and_validate_revision(
-    db: SqlDB, revision_id: int
-) -> OrganisationDatasetRevision:
-    """
-    Retrieves and validates the existence of a dataset revision.
-    """
-    revision_repo = OrganisationDatasetRevisionRepo(db)
-    revision = revision_repo.get_by_id(revision_id)
-    if revision is None:
-        raise PipelineException(f"DatasetRevision with id {revision_id} not found.")
-    return revision
 
 
 def update_revision_status(db: SqlDB, revision: OrganisationDatasetRevision) -> None:
@@ -95,7 +81,9 @@ def initialize_pipeline(
         dataset_revision_id=event.DatasetRevisionId,
     )
 
-    revision = get_and_validate_revision(db, event.DatasetRevisionId)
+    revision = OrganisationDatasetRevisionRepo(db).require_by_id(
+        event.DatasetRevisionId
+    )
 
     update_revision_status(db, revision)
 
@@ -121,7 +109,7 @@ def initialize_pipeline(
     return task_result_id
 
 
-@metrics.log_metrics
+@metrics.log_metrics  # type: ignore
 def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any]:
     """
     Handler for InitializePipeline

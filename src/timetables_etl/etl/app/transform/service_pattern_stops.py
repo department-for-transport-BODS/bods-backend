@@ -170,20 +170,20 @@ def process_journey_pattern_section(
             link_context=link_context,
             base_link_runtime=link.RunTime,
         )
-        if is_first_stop:
-            state.current_time = calculate_next_time(
-                state.current_time,
-                timedelta(
-                    days=0,
-                    seconds=0,
-                    microseconds=0,
-                    milliseconds=0,
-                    minutes=0,
-                    hours=0,
-                    weeks=0,
-                ),
-                wait_time,
-            )
+        # Always add wait time before a stop is added
+        state.current_time = calculate_next_time(
+            state.current_time,
+            timedelta(
+                days=0,
+                seconds=0,
+                microseconds=0,
+                milliseconds=0,
+                minutes=0,
+                hours=0,
+                weeks=0,
+            ),
+            wait_time,
+        )
 
         # Handle 'From' stop
         if not is_duplicate_stop(
@@ -213,24 +213,20 @@ def process_journey_pattern_section(
                 sequence=state.auto_sequence,
             )
 
-        if is_first_stop:
-            state.current_time = calculate_next_time(
-                state.current_time,
-                runtime,
-                timedelta(
-                    days=0,
-                    seconds=0,
-                    microseconds=0,
-                    milliseconds=0,
-                    minutes=0,
-                    hours=0,
-                    weeks=0,
-                ),
-            )
-        else:
-            state.current_time = calculate_next_time(
-                state.current_time, runtime, wait_time
-            )
+        # Add runtime after a stop is added to calculate the correct current_time for next stop
+        state.current_time = calculate_next_time(
+            state.current_time,
+            runtime,
+            timedelta(
+                days=0,
+                seconds=0,
+                microseconds=0,
+                milliseconds=0,
+                minutes=0,
+                hours=0,
+                weeks=0,
+            ),
+        )
 
         # Handle 'To' stop if it's the last link in the section
         if i == total_links - 1:

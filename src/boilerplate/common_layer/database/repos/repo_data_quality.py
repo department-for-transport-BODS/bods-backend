@@ -5,7 +5,7 @@ SQL Alchemy Repos for Tables prefixed with data_quality_
 from structlog.stdlib import get_logger
 
 from ..client import SqlDB
-from ..models.model_data_quality import (
+from ..models import (
     DataQualityPostSchemaViolation,
     DataQualityPTIObservation,
     DataQualitySchemaViolation,

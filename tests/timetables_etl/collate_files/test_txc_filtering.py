@@ -9,7 +9,6 @@ from collate_files.app.txc_filtering import (
     deduplicate_file_attributes_by_filename,
     filter_txc_files_by_service_code,
     find_highest_revision_in_group,
-    find_latest_start_date_file,
     get_earlier_start_date_files,
     group_files_by_service_code,
 )
@@ -150,63 +149,6 @@ def test_find_highest_revision_in_group(
 
 
 @pytest.mark.parametrize(
-    "files, revision_to_filter_by, expected_id",
-    [
-        pytest.param(
-            [
-                create_txc_file_attrs(1, "SC001", 2, date(2023, 1, 1)),
-                create_txc_file_attrs(2, "SC001", 2, date(2023, 2, 1)),
-                create_txc_file_attrs(3, "SC001", 2, date(2023, 3, 1)),
-            ],
-            2,
-            3,
-            id="Different dates",
-        ),
-        pytest.param(
-            [
-                create_txc_file_attrs(1, "SC001", 2, date(2023, 1, 1)),
-                create_txc_file_attrs(2, "SC001", 2, None),
-                create_txc_file_attrs(3, "SC001", 2, date(2023, 3, 1)),
-            ],
-            2,
-            3,
-            id="Mixed dates with None",
-        ),
-        pytest.param(
-            [
-                create_txc_file_attrs(1, "SC001", 2, None),
-                create_txc_file_attrs(2, "SC001", 2, None),
-            ],
-            2,
-            None,
-            id="All None dates",
-        ),
-        pytest.param(
-            [],
-            2,
-            None,
-            id="Empty list",
-        ),
-    ],
-)
-def test_find_latest_start_date_file(
-    files: list[OrganisationTXCFileAttributes],
-    revision_to_filter_by: int,
-    expected_id: int | None,
-):
-    """
-    Test finding file with latest start date for various scenarios
-    """
-    result = find_latest_start_date_file(files, revision_to_filter_by)
-
-    if expected_id is None:
-        assert result is None
-    else:
-        assert result is not None
-        assert result.id == expected_id
-
-
-@pytest.mark.parametrize(
     "files, reference_date, highest_revision, expected_ids",
     [
         pytest.param(
@@ -241,11 +183,12 @@ def test_find_latest_start_date_file(
         pytest.param(
             [
                 create_txc_file_attrs(1, "SC001", 1, date(2023, 1, 1)),
+                create_txc_file_attrs(2, "SC001", 2, date(2023, 1, 1)),
             ],
             None,
             2,
-            [],
-            id="No reference date",
+            [1],
+            id="No reference date, so just filter by revision ID",
         ),
     ],
 )
@@ -270,20 +213,21 @@ def test_get_earlier_start_date_files(
         pytest.param(
             # Input: Complex scenario
             [
-                # Service Code 1 - Should keep IDs 3 (latest date of highest revision) and 1 (earlier date, lower revision)
+                # Service Code 1 - Should keep all except for ID 2 (lower revision, later than max start date of highest revision)
                 create_txc_file_attrs(1, "SC001", 1, date(2023, 1, 1)),
-                create_txc_file_attrs(2, "SC001", 2, date(2023, 2, 1)),
-                create_txc_file_attrs(3, "SC001", 2, date(2023, 3, 1)),
+                create_txc_file_attrs(2, "SC001", 1, date(2024, 1, 1)),
+                create_txc_file_attrs(3, "SC001", 2, date(2023, 2, 1)),
+                create_txc_file_attrs(4, "SC001", 2, date(2023, 3, 1)),
                 # Service Code 2 - Only one file, should keep it (ID 4)
-                create_txc_file_attrs(4, "SC002", 1, date(2023, 1, 1)),
+                create_txc_file_attrs(5, "SC002", 1, date(2023, 1, 1)),
                 # Service Code 3 - Since highest revision (2) has NULL date, keep all files (IDs 5 and 6)
-                create_txc_file_attrs(5, "SC003", 1, date(2023, 1, 1)),
-                create_txc_file_attrs(6, "SC003", 2, None),
+                create_txc_file_attrs(6, "SC003", 1, date(2023, 1, 1)),
+                create_txc_file_attrs(7, "SC003", 2, None),
                 # Service Code 4 - All null dates. Should keep all (ID 7)
-                create_txc_file_attrs(7, "SC004", 1, None),
+                create_txc_file_attrs(8, "SC004", 1, None),
             ],
             # Expected IDs to keep - now includes ID 6
-            [1, 3, 4, 5, 6, 7],
+            [1, 3, 4, 5, 6, 7, 8],
             id="Complex scenario",
         ),
         pytest.param(

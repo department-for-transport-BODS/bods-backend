@@ -12,6 +12,7 @@ from common_layer.dynamodb.client.naptan_stop_points import (
     NaptanStopPointDynamoDBClient,
 )
 from common_layer.dynamodb.models import TXCFileAttributes
+from common_layer.exceptions import PTIViolationFound
 from common_layer.xml.txc.models.txc_data import TXCData
 from pti.app.models.models_pti import PtiObservation, PtiRule, PtiViolation
 from pti.app.models.models_pti_task import DbClients
@@ -103,7 +104,9 @@ def test_validate(
         live_revision_attributes=[],
     )
 
-    with pytest.raises(ValueError, match="PTI validation failed due to violations"):
+    with pytest.raises(
+        PTIViolationFound, match="PTI validation failed due to violations"
+    ):
         service.validate(
             revision, xml_file, txc_file_attributes, TXCData.model_construct()
         )

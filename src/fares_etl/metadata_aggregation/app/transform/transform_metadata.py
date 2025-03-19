@@ -5,7 +5,7 @@ Transform fares metadata items
 from typing import Any
 
 from boto3.dynamodb.types import TypeDeserializer
-from common_layer.database.models.model_fares import (
+from common_layer.database.models import (
     FaresDataCatalogueMetadata,
     FaresMetadata,
     FaresMetadataStop,
@@ -16,6 +16,9 @@ def get_min_schema_version(schema_versions: list[str]) -> str:
     """
     Returns the lowest schema version in list
     """
+    if len(schema_versions) == 0:
+        return "1.1"
+
     return min(schema_versions)
 
 

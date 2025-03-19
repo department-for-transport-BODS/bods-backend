@@ -8,12 +8,12 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Optional
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .common import BaseSQLModel, TimeStampedMixin
+from .error_codes import ETLErrorCode
 
 
 class TaskState(str, Enum):
@@ -52,7 +52,7 @@ class TaskResult(TimeStampedMixin, BaseSQLModel):
         doc="Current state of the task being run",
     )
 
-    completed: Mapped[Optional[datetime]] = mapped_column(
+    completed: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         index=True,
         default=None,
@@ -70,28 +70,6 @@ class TaskResult(TimeStampedMixin, BaseSQLModel):
         """Mark the task as failed and set completion time"""
         self.status = TaskState.FAILURE
         self.completed = datetime.now(UTC)
-
-
-class ETLErrorCode(str, Enum):
-    """Error codes for ETL tasks"""
-
-    FILE_TOO_LARGE = "FILE_TOO_LARGE"
-    ZIP_TOO_LARGE = "ZIP_TOO_LARGE"
-    NESTED_ZIP_FORBIDDEN = "NESTED_ZIP_FORBIDDEN"
-    NO_DATA_FOUND = "NO_DATA_FOUND"
-    XML_SYNTAX_ERROR = "XML_SYNTAX_ERROR"
-    DANGEROUS_XML_ERROR = "DANGEROUS_XML_ERROR"
-    SCHEMA_VERSION_MISSING = "SCHEMA_VERSION_MISSING"
-    SCHEMA_VERSION_NOT_SUPPORTED = "SCHEMA_VERSION_NOT_SUPPORTED"
-    SCHEMA_ERROR = "SCHEMA_ERROR"
-    POST_SCHEMA_ERROR = "POST_SCHEMA_ERROR"
-    DATASET_EXPIRED = "DATASET_EXPIRED"
-    SUSPICIOUS_FILE = "SUSPICIOUS_FILE"
-    NO_VALID_FILE_TO_PROCESS = "NO_VALID_FILE_TO_PROCESS"
-    ANTIVIRUS_FAILURE = "ANTIVIRUS_FAILURE"
-    AV_CONNECTION_ERROR = "AV_CONNECTION_ERROR"
-    SYSTEM_ERROR = "SYSTEM_ERROR"
-    EMPTY = ""
 
 
 class DatasetETLTaskResult(TaskResult):
@@ -116,12 +94,12 @@ class DatasetETLTaskResult(TaskResult):
         String(50),
         nullable=False,
         index=True,
-        default=ETLErrorCode.EMPTY.value,
+        default="",
         kw_only=True,
         doc="The error code returned for the failed task",
     )
 
-    additional_info: Mapped[Optional[str]] = mapped_column(
+    additional_info: Mapped[str | None] = mapped_column(
         String(512), default=None, nullable=True, kw_only=True
     )
 

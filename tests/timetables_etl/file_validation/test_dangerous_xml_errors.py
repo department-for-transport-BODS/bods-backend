@@ -2,8 +2,11 @@
 Dangerous XML Error Checks
 """
 
+from io import BytesIO
+from typing import Callable
+
 import pytest
-from common_layer.exceptions.xml_file_exceptions import DangerousXML, XMLSyntaxError
+from common_layer.exceptions import DangerousXML, XMLSyntaxError
 from file_validation.app.xml_checks import dangerous_xml_check
 
 
@@ -30,7 +33,9 @@ from file_validation.app.xml_checks import dangerous_xml_check
         ),
     ],
 )
-def test_xml_syntax_errors(create_xml_file, xml_content: bytes) -> None:
+def test_xml_syntax_errors(
+    create_xml_file: Callable[..., BytesIO], xml_content: bytes
+) -> None:
     """
     Test handling of various XML syntax errors.
 
@@ -76,7 +81,9 @@ def test_xml_syntax_errors(create_xml_file, xml_content: bytes) -> None:
         ),
     ],
 )
-def test_dangerous_xml_detection(create_xml_file, xml_content: bytes) -> None:
+def test_dangerous_xml_detection(
+    create_xml_file: Callable[..., BytesIO], xml_content: bytes
+) -> None:
     """
     Test detection of dangerous XML patterns.
     """

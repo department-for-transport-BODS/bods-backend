@@ -1,5 +1,5 @@
 """
-SQLAlchemy Models for tables prepended ui_ 
+SQLAlchemy Models for tables prepended ui_
 """
 
 from sqlalchemy import Integer, Text

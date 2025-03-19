@@ -1,8 +1,12 @@
+"""
+Tests for Verifying a file
+"""
+
 import zipfile
 from pathlib import Path
 
 import pytest
-from common_layer.exceptions.zip_file_exceptions import NestedZipForbidden, NoDataFound
+from common_layer.exceptions import NestedZipForbidden, ZipNoDataFound
 
 from common_lambdas.clamav_scanner.app.verify_file import verify_zip_file
 
@@ -14,7 +18,7 @@ def create_zip_with_files(zip_path: Path, files: dict[str, bytes]):
             zipf.writestr(file_name, content)
 
 
-def test_verify_zip_file_valid(tmp_path):
+def test_verify_zip_file_valid(tmp_path: Path):
     """
     Test valid ZIP file does not raise errors
     """
@@ -27,7 +31,7 @@ def test_verify_zip_file_valid(tmp_path):
     verify_zip_file(zip_path, filename)
 
 
-def test_verify_zip_file_nested_zip(tmp_path):
+def test_verify_zip_file_nested_zip(tmp_path: Path):
     """
     Test ZIP file with a nested ZIP raises NestedZipForbidden
     """
@@ -35,15 +39,13 @@ def test_verify_zip_file_nested_zip(tmp_path):
     zip_path = tmp_path / filename
     create_zip_with_files(zip_path, {"nested.zip": b"zip content"})
 
-    with pytest.raises(
-        NestedZipForbidden, match=f"Zip file {filename} contains another zip file."
-    ):
+    with pytest.raises(NestedZipForbidden):
         verify_zip_file(zip_path, filename)
 
 
-def test_verify_zip_file_no_xml(tmp_path):
+def test_verify_zip_file_no_xml(tmp_path: Path):
     """
-    Test ZIP file with no XML files raises NoDataFound
+    Test ZIP file with no XML files raises ZipNoDataFound
     """
     filename = "no_xml.zip"
     zip_path = tmp_path / filename
@@ -51,7 +53,5 @@ def test_verify_zip_file_no_xml(tmp_path):
         zip_path, {"image.jpg": b"binarydata", "notes.txt": b"hello world"}
     )
 
-    with pytest.raises(
-        NoDataFound, match=f"Zip file {filename} contains no data files"
-    ):
+    with pytest.raises(ZipNoDataFound):
         verify_zip_file(zip_path, filename)

@@ -5,11 +5,7 @@ Functions to Verify the Zip meets ingest Requirements
 import zipfile
 from pathlib import Path
 
-from common_layer.exceptions.zip_file_exceptions import (
-    NestedZipForbidden,
-    NoDataFound,
-    ZipTooLarge,
-)
+from common_layer.exceptions import NestedZipForbidden, ZipNoDataFound, ZipTooLarge
 from structlog.stdlib import get_logger
 
 log = get_logger()
@@ -94,15 +90,15 @@ def verify_zip_file(path: Path, filename: str) -> None:
     """
     nested_zip_result, _ = check_for_nested_zips(path)
     if nested_zip_result:
-        raise NestedZipForbidden(filename)
+        raise NestedZipForbidden(input_file=filename)
 
     uncompressed_size_result, total_size = check_zip_uncompressed_size(path)
     if not uncompressed_size_result:
-        raise ZipTooLarge(filename)
+        raise ZipTooLarge(input_file=filename)
 
     zip_contains_xml_files = check_zip_contains_xml_files(path)
     if not zip_contains_xml_files:
-        raise NoDataFound(filename)
+        raise ZipNoDataFound(input_file=filename)
 
     log.info(
         "Zip File Verification Passed", path=path, total_uncompressed_size=total_size

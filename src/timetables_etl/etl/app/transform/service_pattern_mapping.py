@@ -13,15 +13,18 @@ from common_layer.xml.txc.helpers import (
 from common_layer.xml.txc.models import (
     JourneyPatternVehicleDirectionT,
     TXCData,
+    TXCFlexibleJourneyPattern,
     TXCJourneyPattern,
     TXCJourneyPatternSection,
     TXCLine,
+    TXCStandardService,
 )
 from structlog.stdlib import get_logger
 
 from ..helpers.dataclasses.lookups import ReferenceDataLookups
 from ..helpers.types import StopsLookup
 from .utils_stops import get_pattern_stops
+from .utils_stops_flexible import get_flexible_pattern_stops
 
 log = get_logger()
 
@@ -142,8 +145,14 @@ def validate_and_set_directions(
     journey_pattern_lookup = {
         jp.id: jp
         for service in txc.Services
-        if service.StandardService
-        for jp in service.StandardService.JourneyPattern
+        for jp in (
+            (service.StandardService.JourneyPattern if service.StandardService else [])
+            + (
+                service.FlexibleService.FlexibleJourneyPattern
+                if service.FlexibleService
+                else []
+            )
+        )
     }
 
     for sp_id, jp_ids in service_pattern_to_journey_patterns.items():
@@ -275,7 +284,7 @@ def create_service_pattern_id_for_stops(
 
 
 def process_journey_pattern(
-    txc_jp: TXCJourneyPattern,
+    txc_jp: TXCJourneyPattern | TXCFlexibleJourneyPattern,
     jps_list: list[TXCJourneyPatternSection],
     service_code: str,
     stops_lookup: StopsLookup,
@@ -284,7 +293,12 @@ def process_journey_pattern(
     """
     Process a single journey pattern and update the collections
     """
-    stops = get_pattern_stops(txc_jp, jps_list, stops_lookup)
+
+    stops = (
+        get_pattern_stops(txc_jp, jps_list, stops_lookup)
+        if isinstance(txc_jp, TXCJourneyPattern)
+        else get_flexible_pattern_stops(txc_jp, stops_lookup)
+    )
 
     # Create a hashable representation of the stop sequence
     stop_sequence_key, service_pattern_id = create_service_pattern_id_for_stops(
@@ -315,6 +329,7 @@ def identify_unique_patterns(
 ) -> ServicePatternCollections:
     """
     Identify unique stop patterns and create mappings between journey patterns and service patterns
+    for both standard and flexible services.
     """
     collections = ServicePatternCollections()
     jps_list = txc.JourneyPatternSections
@@ -324,6 +339,16 @@ def identify_unique_patterns(
             for txc_jp in service.StandardService.JourneyPattern:
                 process_journey_pattern(
                     txc_jp, jps_list, service.ServiceCode, lookups.stops, collections
+                )
+
+        if service.FlexibleService:
+            for flexible_jp in service.FlexibleService.FlexibleJourneyPattern:
+                process_journey_pattern(
+                    flexible_jp,
+                    jps_list,
+                    service.ServiceCode,
+                    lookups.stops,
+                    collections,
                 )
 
     return collections
@@ -559,3 +584,20 @@ def map_unique_journey_patterns(
         line_to_vehicle_journeys=line_to_vehicle_journeys,
         stats=stats,
     )
+
+
+def get_standard_service_pattern_ids(
+    service: TXCStandardService,
+    service_pattern_mapping: ServicePatternMapping,
+) -> list[str]:
+    """
+    Get a filtered list of service pattern IDs for a standard service
+    """
+    return [
+        sp_id
+        for sp_id, metadata in service_pattern_mapping.service_pattern_metadata.items()
+        if any(
+            jp in {jp.id for jp in service.JourneyPattern}
+            for jp in metadata.journey_pattern_ids
+        )
+    ]

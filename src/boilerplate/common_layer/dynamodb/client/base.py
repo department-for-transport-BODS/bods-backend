@@ -3,7 +3,7 @@ DynamoDB Client
 """
 
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import boto3
 import botocore.config
@@ -15,6 +15,8 @@ from structlog.stdlib import get_logger
 from .models import AttributeValueTypeDef
 from .settings import DynamoDBSettings
 
+if TYPE_CHECKING:
+    from mypy_boto3_dynamodb import DynamoDBClient
 log = get_logger()
 
 
@@ -29,13 +31,13 @@ class DynamoDB:
         self._serializer = TypeSerializer()
         self._deserializer = TypeDeserializer()
 
-    def _create_dynamodb_client(self):
+    def _create_dynamodb_client(self) -> "DynamoDBClient":
         """
         Create a DynamoDB client
         If running locally, it points to the LocalStack DynamoDB service.
         """
         if self._settings.PROJECT_ENV == ProjectEnvironment.LOCAL:
-            return boto3.client(
+            return boto3.client(  # type: ignore
                 "dynamodb",
                 endpoint_url=self._settings.DYNAMODB_ENDPOINT_URL,
                 aws_access_key_id="dummy",
@@ -44,7 +46,7 @@ class DynamoDB:
             )
 
         config = botocore.config.Config(proxies={})
-        return boto3.client("dynamodb", config=config)
+        return boto3.client("dynamodb", config=config)  # type: ignore
 
     def get(self, key: str) -> dict[str, Any] | None:
         """
@@ -61,7 +63,7 @@ class DynamoDB:
             return result
         except Exception as e:
             message = f"Failed to get item with key '{key}': {str(e)}"
-            log.error("DynamoDB: Failed ot get item", key=key)
+            log.error("DynamoDB: Failed to get item", key=key)
             raise PipelineException(message) from e
 
     def put(self, key: str, value: Any, ttl: int | None = None):

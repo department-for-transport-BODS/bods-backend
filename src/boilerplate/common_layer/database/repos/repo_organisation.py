@@ -9,6 +9,10 @@ from sqlalchemy import and_
 from structlog.stdlib import get_logger
 
 from ..client import SqlDB
+from ..exceptions import (
+    OrganisationDatasetRevisionNotFound,
+    OrganisationTXCFileAttributesNotFound,
+)
 from ..models import (
     OrganisationDataset,
     OrganisationDatasetMetadata,
@@ -84,8 +88,18 @@ class OrganisationDatasetRevisionRepo(
     Table: organisation_datasetrevision
     """
 
-    def __init__(self, db: SqlDB):
+    def __init__(self, db: SqlDB) -> None:
         super().__init__(db, OrganisationDatasetRevision)
+
+    @handle_repository_errors
+    def require_by_id(self, dataset_id: int) -> OrganisationDatasetRevision:
+        """
+        Return a Dataset Revision otherwise raise OrganisationDatasetRevisionNotFound exception
+        """
+        revision = self.get_by_id(dataset_id)
+        if revision is None:
+            raise OrganisationDatasetRevisionNotFound(f"ID {dataset_id} not found")
+        return revision
 
     @handle_repository_errors
     def get_by_dataset_id(self, dataset_id: int) -> list[OrganisationDatasetRevision]:
@@ -172,6 +186,16 @@ class OrganisationTXCFileAttributesRepo(
 
     def __init__(self, db: SqlDB):
         super().__init__(db, OrganisationTXCFileAttributes)
+
+    @handle_repository_errors
+    def require_by_id(self, attrs_id: int) -> OrganisationTXCFileAttributes:
+        """
+        Return a Organisation File Attributes by ID else raise Exception
+        """
+        attrs = self.get_by_id(attrs_id)
+        if attrs is None:
+            raise OrganisationTXCFileAttributesNotFound(f"ID {attrs_id} not found")
+        return attrs
 
     @handle_repository_errors
     def get_by_revision_id(

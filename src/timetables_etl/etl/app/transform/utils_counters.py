@@ -1,5 +1,5 @@
 """
-Functions that get the counts 
+Functions that get the counts
 """
 
 from common_layer.xml.txc.models import TXCJourneyPatternSection
