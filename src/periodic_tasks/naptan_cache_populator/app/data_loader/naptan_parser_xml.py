@@ -113,7 +113,7 @@ async def process_stop_points(
     active_tasks: list[asyncio.Task[tuple[int, int]]] = []
     current_batch: list[dict[str, Any]] = []
 
-    transaction_size = 100
+    transaction_size = 1000
 
     async def process_batch(items: list[dict[str, Any]]) -> tuple[int, int]:
         return await dynamo_loader.async_transact_write_items(items)
