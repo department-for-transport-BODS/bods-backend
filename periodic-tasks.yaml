@@ -161,6 +161,7 @@ Resources:
               'naptan_url.$': '$.naptan_url'
               'dynamo_table.$': '$.dynamo_table'
               'aws_region.$': '$.aws_region'
+              'max_concurrent_batches.$': '$.max_concurrent_batches'
             ResultPath: '$.populate_result'
             Catch:
               - ErrorEquals: ['States.TaskFailed']
