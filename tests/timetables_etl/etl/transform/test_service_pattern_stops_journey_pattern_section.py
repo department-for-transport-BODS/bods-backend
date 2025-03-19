@@ -100,6 +100,20 @@ def txc_vehicle_journey_without_vjtl() -> TXCVehicleJourney:
         VehicleJourneyCode="VJ1",
         JourneyPatternRef="JP1",
         DepartureTime="9:00",
+        VehicleJourneyTimingLink=[
+            TXCVehicleJourneyTimingLink(
+                id="VJTL1",
+                JourneyPatternTimingLinkRef="1_1",
+                VehicleJourneyRef="VJ1",
+                RunTime="PT4M",
+            ),
+            TXCVehicleJourneyTimingLink(
+                id="VJTL2",
+                JourneyPatternTimingLinkRef="1_2",
+                VehicleJourneyRef="VJ2",
+                RunTime="PT2M",
+            ),
+        ],
     )
 
 
@@ -194,7 +208,6 @@ def journey_context_without_vjtl(
                         From=TXCJourneyPatternStopUsageFactory(
                             StopPointRef="2400A001",
                             SequenceNumber="0",
-                            WaitTime="PT13M",
                             TimingStatus="principalTimingPoint",
                         ),
                         To=TXCJourneyPatternStopUsageFactory(
@@ -208,6 +221,7 @@ def journey_context_without_vjtl(
                         id="1_2",
                         From=TXCJourneyPatternStopUsageFactory(
                             StopPointRef="2400A002",
+                            WaitTime="PT13M",
                             SequenceNumber="1",
                             TimingStatus="otherPoint",
                         ),
@@ -244,28 +258,28 @@ def journey_context_without_vjtl(
                 {
                     "atco_code": "2400A001",
                     "sequence_number": 0,
-                    "departure_time": time(9, 13),
+                    "departure_time": time(9, 0),
                     "is_timing_point": True,
                     "naptan_stop_id": 123,
                 },
                 {
                     "atco_code": "2400A002",
                     "sequence_number": 1,
-                    "departure_time": time(9, 18),
+                    "departure_time": time(9, 17),
                     "is_timing_point": False,
                     "naptan_stop_id": 456,
                 },
                 {
                     "atco_code": "2400A003",
                     "sequence_number": 2,
-                    "departure_time": time(9, 25),
+                    "departure_time": time(9, 24),
                     "is_timing_point": False,
                     "naptan_stop_id": 789,
                 },
                 {
                     "atco_code": "2400A004",
                     "sequence_number": 3,
-                    "departure_time": time(9, 28),
+                    "departure_time": time(9, 27),
                     "is_timing_point": False,
                     "naptan_stop_id": 999,
                 },
