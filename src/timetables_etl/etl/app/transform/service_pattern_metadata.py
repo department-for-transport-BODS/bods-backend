@@ -3,11 +3,9 @@ Meta Data Extraction
 """
 
 from dataclasses import dataclass
-from uuid import uuid4
 
 from common_layer.database.models import NaptanStopPoint
 from common_layer.xml.txc.models import (
-    TXCFlexibleJourneyPattern,
     TXCJourneyPattern,
     TXCJourneyPatternSection,
     TXCLine,
@@ -172,12 +170,3 @@ def extract_pattern_metadata(
         description=f"{first_stop} - {last_stop}",
         line_name=line.LineName,
     )
-
-
-def make_service_pattern_id(
-    service: TXCService, jp: TXCJourneyPattern | TXCFlexibleJourneyPattern
-):
-    """
-    Generate a Unique Service Pattern ID to be used
-    """
-    return f"{service.ServiceCode}-{jp.id}-{uuid4()}"

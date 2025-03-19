@@ -3,19 +3,20 @@ Flexible Service Pattern Handling
 """
 
 from common_layer.database import SqlDB
-from common_layer.database.models import (
-    OrganisationDatasetRevision,
-    TransmodelServicePattern,
-)
+from common_layer.database.models import TransmodelServicePattern
 from common_layer.database.repos import TransmodelServicePatternRepo
-from common_layer.xml.txc.models import TXCData, TXCFlexibleJourneyPattern, TXCService
+from common_layer.xml.txc.models import TXCData, TXCService
 from structlog.stdlib import get_logger
 
-from ..helpers import ReferenceDataLookups, StopsLookup
+from ..helpers import ReferenceDataLookups
 from ..models import PatternCommonStats, TaskData
 from ..transform.service_pattern_mapping import map_unique_journey_patterns
 from ..transform.service_patterns_flexible import create_flexible_service_pattern
-from .models_context import ProcessPatternCommonContext
+from .models_context import (
+    ProcessPatternCommonContext,
+    ProcessServicePatternContext,
+    ServicePatternMapping,
+)
 from .servicepatterns_common import process_pattern_common
 
 log = get_logger()
@@ -23,15 +24,18 @@ log = get_logger()
 
 def process_flexible_service_pattern(
     service: TXCService,
-    jp: TXCFlexibleJourneyPattern,
-    revision: OrganisationDatasetRevision,
-    stop_mapping: StopsLookup,
+    service_pattern_id: str,
+    service_pattern_mapping: ServicePatternMapping,
+    context: ProcessServicePatternContext,
     db: SqlDB,
 ) -> TransmodelServicePattern:
     """
     Process a single Service Pattern
     """
-    pattern = create_flexible_service_pattern(service, jp, revision, stop_mapping)
+    # pylint: disable=R0801
+    pattern = create_flexible_service_pattern(
+        service, service_pattern_id, service_pattern_mapping, context
+    )
     saved_pattern = TransmodelServicePatternRepo(db).insert(pattern)
     log.info(
         "Saved flexible service pattern",
@@ -54,17 +58,23 @@ def process_flexible_service_patterns(
     if not service.FlexibleService:
         return [], stats
 
+    service_pattern_context = ProcessServicePatternContext(
+        revision=task_data.revision,
+        journey_pattern_sections=txc.JourneyPatternSections,
+        stop_mapping=lookups.stops,
+        db=db,
+    )
+
     service_pattern_mapping = map_unique_journey_patterns(txc, lookups)
 
-    for flexible_jp in service.FlexibleService.FlexibleJourneyPattern:
+    for service_pattern_id in service_pattern_mapping.service_pattern_metadata:
         service_pattern = process_flexible_service_pattern(
             service,
-            flexible_jp,
-            task_data.revision,
-            lookups.stops,
+            service_pattern_id,
+            service_pattern_mapping,
+            service_pattern_context,
             db,
         )
-
         context = ProcessPatternCommonContext(
             txc=txc,
             service_pattern=service_pattern,

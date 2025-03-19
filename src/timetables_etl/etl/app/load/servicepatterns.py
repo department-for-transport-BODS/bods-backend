@@ -61,6 +61,7 @@ def process_standard_service_patterns(
     if not service.StandardService:
         return [], stats
 
+    # pylint: disable=R0801
     service_pattern_context = ProcessServicePatternContext(
         revision=task_data.revision,
         journey_pattern_sections=txc.JourneyPatternSections,
@@ -101,6 +102,7 @@ def load_transmodel_service_patterns(
     """
     Generate and load transmodel service patterns for both standard and flexible services
     """
+
     patterns: list[TransmodelServicePattern] = []
     stats = PatternCommonStats()
     if service.StandardService:

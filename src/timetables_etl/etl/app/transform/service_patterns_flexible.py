@@ -2,22 +2,13 @@
 Process Flexible Service Patterns
 """
 
-from typing import Sequence
-
-from common_layer.database.models import (
-    OrganisationDatasetRevision,
-    TransmodelServicePattern,
-)
-from common_layer.xml.txc.helpers.service import extract_flexible_pattern_stop_refs
-from common_layer.xml.txc.models import TXCFlexibleJourneyPattern, TXCService
-from geoalchemy2 import WKBElement
-from geoalchemy2.shape import from_shape  # type: ignore
-from shapely import LineString, Point
+from common_layer.database.models import TransmodelServicePattern
+from common_layer.xml.txc.models import TXCService
 from structlog.stdlib import get_logger
 
-from ..helpers.dataclasses import NonExistentNaptanStop
-from ..helpers.types import StopsLookup
-from .service_pattern_metadata import PatternMetadata, make_service_pattern_id
+from ..load.models_context import ProcessServicePatternContext, ServicePatternMapping
+from .service_pattern_geom import generate_service_pattern_geometry_from_list
+from .service_pattern_metadata import PatternMetadata
 
 log = get_logger()
 
@@ -39,63 +30,28 @@ def extract_flexible_pattern_metadata(
     )
 
 
-def generate_flexible_pattern_geometry(
-    stops: Sequence[str],
-    stop_mapping: StopsLookup,
-) -> WKBElement | None:
-    """
-    Generate geometry for a flexible service pattern.
-    Returns None if insufficient points available to create a LineString.
-
-    Returns:
-        WKBElement containing LineString geometry if 2+ points available,
-        None otherwise
-    """
-    route_points: list[Point] = []
-    for stop in stops:
-        stop_data = stop_mapping[stop]
-        if not isinstance(stop_data, NonExistentNaptanStop):
-            route_points.append(stop_data.shape)
-
-    if len(route_points) < 2:
-        log.warning(
-            "Fewer than 2 stops so a Postgres LineString cannot be created, returning None",
-            stops=stops,
-        )
-        return None
-
-    return from_shape(LineString(route_points), srid=4326)
-
-
 def create_flexible_service_pattern(
     service: TXCService,
-    jp: TXCFlexibleJourneyPattern,
-    revision: OrganisationDatasetRevision,
-    stop_mapping: StopsLookup,
+    service_pattern_id: str,
+    service_pattern_mapping: ServicePatternMapping,
+    context: ProcessServicePatternContext,
 ) -> TransmodelServicePattern:
     """
     Create a single TransmodelServicePattern from a TXC flexible journey pattern
 
     """
-    log.info(
-        "Processing Flexible Service Pattern",
-        service_code=service.ServiceCode,
-        journey_pattern_id=jp.id,
-    )
+    data = service_pattern_mapping.service_pattern_metadata[service_pattern_id]
     metadata = extract_flexible_pattern_metadata(service)
-    log.debug("Flexible Metadata extracted", metadata=metadata)
-    stops = extract_flexible_pattern_stop_refs(jp)
-    log.debug("Stop sequence found", stops=stops)
-    geom = generate_flexible_pattern_geometry(stops, stop_mapping)
-    log.debug("Geometry created", geom=geom)
+
+    # pylint: disable=R0801
     pattern = TransmodelServicePattern(
-        service_pattern_id=make_service_pattern_id(service, jp),
+        service_pattern_id=service_pattern_id,
+        description=metadata.description,
         origin=metadata.origin,
         destination=metadata.destination,
-        description=metadata.description,
-        revision_id=revision.id,
         line_name=metadata.line_name,
-        geom=geom,
+        revision_id=context.revision.id,
+        geom=generate_service_pattern_geometry_from_list(data.stop_sequence),
     )
 
     log.info(
