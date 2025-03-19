@@ -105,7 +105,7 @@ async def process_stop_points(
     stop_points_stream: AsyncIterator[dict[str, Any]], dynamo_loader: DynamoDBLoader
 ) -> tuple[int, int]:
     """
-    Process stream of stop points using concurrent DynamoDB batch operations.
+    Process stream of stop points using concurrent DynamoDB transactions.
     Returns (processed_count, error_count).
     """
     total_processed = 0
@@ -113,8 +113,10 @@ async def process_stop_points(
     active_tasks: list[asyncio.Task[tuple[int, int]]] = []
     current_batch: list[dict[str, Any]] = []
 
+    transaction_size = 100
+
     async def process_batch(items: list[dict[str, Any]]) -> tuple[int, int]:
-        return await dynamo_loader.async_batch_write_items(items)
+        return await dynamo_loader.async_transact_write_items(items)
 
     async def wait_for_slot() -> None:
         """Wait for a task slot to become available and process completed tasks."""
@@ -137,10 +139,10 @@ async def process_stop_points(
                     error_code=error_code,
                     error_message=error_message,
                 )
-                total_errors += dynamo_loader.batch_size
+                total_errors += transaction_size
             except ValueError as e:
                 await log.aerror("Failed to process batch result", error=str(e))
-                total_errors += dynamo_loader.batch_size
+                total_errors += transaction_size
 
         active_tasks = list(pending)
 
@@ -148,8 +150,7 @@ async def process_stop_points(
         async for stop_point in stop_points_stream:
             current_batch.append(stop_point)
 
-            # When we have a full batch, process it
-            if len(current_batch) >= dynamo_loader.batch_size:
+            if len(current_batch) >= transaction_size:
                 # Wait for a slot if we're at max concurrency
                 while len(active_tasks) >= dynamo_loader.max_concurrent_batches:
                     await wait_for_slot()

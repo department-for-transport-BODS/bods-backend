@@ -482,3 +482,148 @@ class DynamoDBLoader:
 
         await self.log.aerror("Max retries reached for batch update")
         return False
+
+    async def async_transact_write_items(
+        self, items: list[dict[str, Any]]
+    ) -> tuple[int, int]:
+        """
+        Asynchronously write multiple items using TransactWriteItems.
+        Can handle up to 100 items per transaction (vs 25 for batch_write).
+        All items in a single transaction either succeed or fail together.
+
+        Returns:
+        tuple[int, int]: (processed_count, error_count)
+        """
+        if not items:
+            return 0, 0
+
+        await self.log.ainfo(
+            "Writing items using TransactWriteItems", item_count=len(items)
+        )
+
+        processed_count = 0
+        error_count = 0
+        # DynamoDB transact_write_items can handle up to 100 items per transaction
+        transaction_size = 100
+
+        # Split items into batches of transaction_size
+        batches = [
+            items[i : i + transaction_size]
+            for i in range(0, len(items), transaction_size)
+        ]
+        tasks = [self.transact_write_items_batch(batch) for batch in batches]
+
+        start_time = time.time()
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        total_time = time.time() - start_time
+
+        for i, result in enumerate(results):
+            if isinstance(result, BaseException):
+                error_count += len(batches[i])
+                await self.log.aerror("Transaction failed", error=str(result))
+            elif result is True:
+                processed_count += len(batches[i])
+            else:
+                error_count += len(batches[i])
+
+        await self.log.ainfo(
+            "Completed transact write operations",
+            processed_count=processed_count,
+            error_count=error_count,
+            total_time=f"{total_time:.2f}s",
+        )
+
+        return processed_count, error_count
+
+    async def transact_write_items_batch(self, batch: list[dict[str, Any]]) -> bool:
+        """
+        Writes multiple items in DynamoDB using transact_write_items with retries.
+        Each batch can contain up to 100 items.
+
+        Parameters:
+        batch (list[dict[str, Any]]): Batch of items to write in a single transaction
+
+        Returns:
+        bool: True if write was successful after all retries, False otherwise
+        """
+        if not batch:
+            return False
+
+        transact_items: list[dict[str, Any]] = []
+
+        for item in batch:
+            if self.partition_key not in item:
+                await self.log.awarning(
+                    "Skipping item missing partition key",
+                    partition_key=self.partition_key,
+                    item_keys=list(item.keys()),
+                )
+                continue
+
+            transact_items.append(
+                {
+                    "Put": {
+                        "TableName": self.table_name,
+                        "Item": item,
+                    }
+                }
+            )
+
+        if not transact_items:
+            await self.log.awarning(
+                "No valid items found for transaction",
+                skipped_count=len(batch),
+            )
+            return False
+
+        max_retries = 5
+        retry_count = 0
+
+        async with self.semaphore:
+            while retry_count < max_retries:
+                if retry_count > 0:
+                    wait_time = (2**retry_count) * 0.1 + (random.random() * 0.1)
+                    await self.log.awarning(
+                        "Retrying transact_write_items due to failure",
+                        retry_attempt=retry_count,
+                        wait_time=f"{wait_time:.2f}s",
+                    )
+                    await asyncio.sleep(wait_time)
+
+                try:
+                    loop = asyncio.get_event_loop()
+                    await loop.run_in_executor(
+                        None,
+                        lambda: self.dynamodb.meta.client.transact_write_items(
+                            TransactItems=transact_items  # type: ignore
+                        ),
+                    )
+                    return True
+
+                except ClientError as e:
+                    error_response: _ClientErrorResponseTypeDef = e.response
+                    error_message = error_response.get("Error", {}).get("Message", "")
+                    error_code = error_response.get("Error", {}).get("Code", "")
+                    await self.log.aerror(
+                        "Failed to execute transact_write_items",
+                        error_code=error_code,
+                        retry_count=retry_count,
+                        error_message=error_message,
+                    )
+                    if error_code in [
+                        "ProvisionedThroughputExceededException",
+                        "RequestLimitExceeded",
+                        "TransactionCanceledException",
+                    ]:
+                        retry_count += 1
+                        continue
+
+                    await self.log.aerror(
+                        "Failed to write batch with transact_write_items",
+                        error_code=error_code,
+                        exc_info=True,
+                    )
+                    return False
+
+            await self.log.aerror("Max retries reached for transact_write_items batch")
+            return False
