@@ -25,6 +25,7 @@ class NaptanProcessingInput(BaseModel):
     naptan_url: HttpUrl
     dynamo_table: str
     aws_region: str = "eu-west-2"
+    max_concurrent_batches: int | None = None
 
     @field_validator("dynamo_table")
     @classmethod
@@ -56,6 +57,7 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
         table_name=input_data.dynamo_table,
         region=input_data.aws_region,
         partition_key="AtcoCode",
+        max_concurrent_batches=input_data.max_concurrent_batches,
     )
 
     processed_count, error_count = load_naptan_data_from_xml(

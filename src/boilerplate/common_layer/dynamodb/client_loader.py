@@ -100,7 +100,7 @@ class DynamoDBLoader:
         table_name: str,
         region: str = "eu-west-2",
         partition_key: str = "AtcoCode",
-        max_concurrent_batches: int = 30,
+        max_concurrent_batches: int | None = None,
     ):
         """Initialize DynamoDB loader with table name and region."""
         self.dynamodb = boto3.resource("dynamodb", region_name=region)  # type: ignore
@@ -108,8 +108,10 @@ class DynamoDBLoader:
         self.table = self.dynamodb.Table(table_name)
         self.log = get_logger().bind(table_name=table_name)
         self.partition_key = partition_key
-        self.max_concurrent_batches = max_concurrent_batches
-        self.semaphore = asyncio.Semaphore(max_concurrent_batches)
+        self.max_concurrent_batches = (
+            max_concurrent_batches if max_concurrent_batches else 30
+        )
+        self.semaphore = asyncio.Semaphore(self.max_concurrent_batches)
 
     def prepare_put_requests(
         self, items: list[dict[str, Any]]
@@ -295,7 +297,7 @@ class DynamoDBLoader:
             while unprocessed_items and retry_count < max_retries:
                 if retry_count > 0:
                     wait_time = (2**retry_count) * 0.1 + (random.random() * 0.1)
-                    self.log.info(
+                    await self.log.ainfo(
                         "Retrying batch operation",
                         retry_count=retry_count,
                         wait_time=wait_time,
@@ -347,12 +349,12 @@ class DynamoDBLoader:
         for result in results:
             if isinstance(result, BaseException):
                 error_count += self.batch_size
-                self.log.error("Batch failed", error=str(result))
+                await self.log.aerror("Batch failed", error=str(result))
             else:
                 error_count += result
         processed_count = len(items) - error_count
 
-        self.log.info(
+        await self.log.ainfo(
             "Completed batch operation",
             processed_count=processed_count,
             error_count=error_count,
@@ -372,7 +374,7 @@ class DynamoDBLoader:
         if not updates:
             return 0, 0
 
-        self.log.info(
+        await self.log.ainfo(
             "Updating PrivateCodes for DynamoDB records", batch_size=len(updates)
         )
 
@@ -398,7 +400,7 @@ class DynamoDBLoader:
             len(batch) for batch, success in zip(batches, results) if not success
         )
 
-        self.log.info(
+        await self.log.ainfo(
             "Completed batch update operations",
             processed_count=processed_count,
             error_count=error_count,
@@ -439,7 +441,7 @@ class DynamoDBLoader:
             while retry_count < max_retries:
                 if retry_count > 0:
                     wait_time = (2**retry_count) * 0.1 + (random.random() * 0.1)
-                    self.log.warning(
+                    await self.log.awarning(
                         "Retrying transact_write_items due to failure",
                         retry_attempt=retry_count,
                         wait_time=f"{wait_time:.2f}s",
@@ -460,7 +462,7 @@ class DynamoDBLoader:
                     error_response: _ClientErrorResponseTypeDef = e.response
                     error_message = error_response.get("Error", {}).get("Message", "")
                     error_code = error_response.get("Error", {}).get("Code", "")
-                    self.log.error(
+                    await self.log.aerror(
                         "Failed to execute batch write operation",
                         error_code=error_code,
                         retry_count=retry_count,
@@ -473,10 +475,10 @@ class DynamoDBLoader:
                         retry_count += 1
                         continue
 
-                    self.log.error(
+                    await self.log.aerror(
                         "Failed to update batch", error_code=error_code, error=str(e)
                     )
                     return False
 
-        self.log.error("Max retries reached for batch update")
+        await self.log.aerror("Max retries reached for batch update")
         return False

@@ -95,7 +95,7 @@ async def async_stream_stop_points(xml_path: Path) -> AsyncIterator[dict[str, An
                 parent.remove(previous)
 
     except Exception:
-        log.error("Failed to parse XML file", exc_info=True)
+        await log.aerror("Failed to parse XML file", exc_info=True)
         raise
     finally:
         del context
@@ -132,14 +132,14 @@ async def process_stop_points(
             except ClientError as e:
                 error_code = e.response.get("Error", {}).get("Code", "Unknown")
                 error_message = e.response.get("Error", {}).get("Message", "No message")
-                log.error(
+                await log.aerror(
                     "AWS operation failed",
                     error_code=error_code,
                     error_message=error_message,
                 )
                 total_errors += dynamo_loader.batch_size
             except ValueError as e:
-                log.error("Failed to process batch result", error=str(e))
+                await log.aerror("Failed to process batch result", error=str(e))
                 total_errors += dynamo_loader.batch_size
 
         active_tasks = list(pending)
@@ -169,10 +169,10 @@ async def process_stop_points(
             await wait_for_slot()
 
     except Exception:
-        log.error("Failed to process stop points", exc_info=True)
+        await log.aerror("Failed to process stop points", exc_info=True)
         raise
 
-    log.info(
+    await log.ainfo(
         "Completed stop point processing",
         processed_count=total_processed,
         error_count=total_errors,
@@ -182,7 +182,7 @@ async def process_stop_points(
 
 
 def load_naptan_data_from_xml(
-    url: str, data_dir: Path, dynamo_loader: Any
+    url: str, data_dir: Path, dynamo_loader: DynamoDBLoader
 ) -> tuple[int, int]:
     """
     Process NaPTAN XML data from URL and load into DynamoDB.
