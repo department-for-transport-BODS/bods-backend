@@ -65,39 +65,82 @@ def get_first_and_last_stops(
     return first_stop, last_stop
 
 
+def get_origin_destination(
+    service: TXCService, sp_data: ServicePatternMetadata
+) -> tuple[str, str]:
+    """
+    Get the origin and destination strings for the given service
+    """
+    first_stop, last_stop = get_first_and_last_stops(sp_data.stop_sequence)
+    if first_stop and last_stop:
+        return first_stop.common_name, last_stop.common_name
+
+    if service.StandardService:
+        return service.StandardService.Origin, service.StandardService.Destination
+
+    if service.FlexibleService:
+        return service.FlexibleService.Origin, service.FlexibleService.Destination
+
+    return "unknown", "unknown"
+
+
+def get_description(
+    line: TXCLine,
+    sp_data: ServicePatternMetadata,
+    service_origin: str,
+    service_destination: str,
+) -> str:
+    """
+    Get the description for the service using the given line
+    """
+
+    # Try to get description from the line
+    if (
+        sp_data.direction in ["inbound", "antiClockwise"]
+        and line.InboundDescription
+        and line.InboundDescription.Description
+    ):
+        return line.InboundDescription.Description
+
+    if (
+        sp_data.direction in ["outbound", "clockwise"]
+        and line.OutboundDescription
+        and line.OutboundDescription.Description
+    ):
+        return line.OutboundDescription.Description
+
+    if sp_data.direction not in ["inbound", "outbound"]:
+        log.warning(
+            "Unexpected direction value for service pattern",
+            line_id=sp_data.line_id,
+            direction=sp_data.direction,
+            journey_pattern_ids=sp_data.journey_pattern_ids,
+        )
+
+    # Fallback if we're unable to get the description from the line data
+    if service_origin != "unknown" and service_destination != "unknown":
+        return f"{service_origin} - {service_destination}"
+
+    return "unknown"
+
+
 def make_metadata(
-    sp_data: ServicePatternMetadata, line_to_txc_line: dict[str, TXCLine]
+    service: TXCService,
+    sp_data: ServicePatternMetadata,
+    line_to_txc_line: dict[str, TXCLine],
 ):
     """
     Generate the metadata
     """
-    first_stop, last_stop = get_first_and_last_stops(sp_data.stop_sequence)
-
-    origin = first_stop.common_name if first_stop else "unknown"
-    destination = last_stop.common_name if last_stop else "unknown"
+    origin, destination = get_origin_destination(service, sp_data)
     line_name = "unknown"
     description = "unknown"
 
     line = line_to_txc_line.get(sp_data.line_id)
     if line:
         line_name = line.LineName
+        description = get_description(line, sp_data, origin, destination)
 
-        if (
-            sp_data.direction in ["inbound", "antiClockwise"]
-            and line.InboundDescription
-        ):
-            description = line.InboundDescription.Description or "unknown"
-        elif (
-            sp_data.direction in ["outbound", "clockwise"] and line.OutboundDescription
-        ):
-            description = line.OutboundDescription.Description or "unknown"
-        elif sp_data.direction not in ["inbound", "outbound"]:
-            log.warning(
-                "Unexpected direction value for service pattern",
-                line_id=sp_data.line_id,
-                direction=sp_data.direction,
-                journey_pattern_ids=sp_data.journey_pattern_ids,
-            )
     return PatternMetadata(
         origin=origin,
         destination=destination,

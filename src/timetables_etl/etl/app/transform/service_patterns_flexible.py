@@ -8,26 +8,9 @@ from structlog.stdlib import get_logger
 
 from ..load.models_context import ProcessServicePatternContext, ServicePatternMapping
 from .service_pattern_geom import generate_service_pattern_geometry_from_list
-from .service_pattern_metadata import PatternMetadata
+from .service_pattern_metadata import make_metadata
 
 log = get_logger()
-
-
-def extract_flexible_pattern_metadata(
-    service: TXCService,
-) -> PatternMetadata:
-    """
-    Extract pattern metadata from a flexible service
-    """
-    if not service.FlexibleService:
-        raise ValueError("Service must have FlexibleService data")
-
-    return PatternMetadata(
-        origin=service.FlexibleService.Origin,
-        destination=service.FlexibleService.Destination,
-        description=f"{service.FlexibleService.Origin} - {service.FlexibleService.Destination}",
-        line_name=service.Lines[0].LineName if service.Lines else "unknown",
-    )
 
 
 def create_flexible_service_pattern(
@@ -41,7 +24,7 @@ def create_flexible_service_pattern(
 
     """
     data = service_pattern_mapping.service_pattern_metadata[service_pattern_id]
-    metadata = extract_flexible_pattern_metadata(service)
+    metadata = make_metadata(service, data, service_pattern_mapping.line_to_txc_line)
 
     # pylint: disable=duplicate-code
     pattern = TransmodelServicePattern(

@@ -15,6 +15,7 @@ from common_layer.database.repos import (
     TransmodelBankHolidaysRepo,
     TransmodelServicePatternAdminAreaRepo,
     TransmodelServicePatternLocalityRepo,
+    TransmodelServicePatternRepo,
 )
 from common_layer.xml.txc.models import (
     TXCFlexibleJourneyPattern,
@@ -32,8 +33,12 @@ from ..transform.service_pattern_associations import (
     generate_pattern_admin_areas,
     generate_pattern_localities,
 )
+from ..transform.service_pattern_geom import generate_service_pattern_geometry_from_list
+from ..transform.service_pattern_metadata import make_metadata
 from .models_context import (
     ProcessPatternCommonContext,
+    ProcessServicePatternContext,
+    ServicePatternMapping,
     ServicePatternVehicleJourneyContext,
 )
 from .vehicle_journey import (
@@ -241,3 +246,60 @@ def process_pattern_common(
         pattern_stops=len(tm_pattern_stops),
         tracks=len(tracks),
     )
+
+
+def create_service_pattern(
+    service: TXCService,
+    service_pattern_id: str,
+    service_pattern_mapping: ServicePatternMapping,
+    context: ProcessServicePatternContext,
+) -> TransmodelServicePattern:
+    """
+    Create a single TransmodelServicePattern from a TXC journey pattern
+    """
+
+    data = service_pattern_mapping.service_pattern_metadata[service_pattern_id]
+    metadata = make_metadata(service, data, service_pattern_mapping.line_to_txc_line)
+
+    pattern = TransmodelServicePattern(
+        service_pattern_id=service_pattern_id,
+        description=metadata.description,
+        origin=metadata.origin,
+        destination=metadata.destination,
+        line_name=metadata.line_name,
+        revision_id=context.revision.id,
+        geom=generate_service_pattern_geometry_from_list(data.stop_sequence),
+    )
+
+    log.info(
+        "Created service pattern",
+        pattern_id=pattern.service_pattern_id,
+    )
+    return pattern
+
+
+def process_service_pattern(
+    service: TXCService,
+    service_pattern_id: str,
+    service_pattern_mapping: ServicePatternMapping,
+    context: ProcessServicePatternContext,
+) -> TransmodelServicePattern:
+    """
+    Generate Service Pattern and Add to db
+    Returns model instance with generated ID
+    """
+    pattern = create_service_pattern(
+        service,
+        service_pattern_id,
+        service_pattern_mapping,
+        context,
+    )
+    saved_pattern = TransmodelServicePatternRepo(context.db).insert(pattern)
+
+    log.info(
+        "Saved service pattern",
+        db_id=saved_pattern.id,
+        pattern_id=saved_pattern.service_pattern_id,
+    )
+
+    return saved_pattern

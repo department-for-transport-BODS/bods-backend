@@ -4,45 +4,19 @@ Flexible Service Pattern Handling
 
 from common_layer.database import SqlDB
 from common_layer.database.models import TransmodelServicePattern
-from common_layer.database.repos import TransmodelServicePatternRepo
 from common_layer.xml.txc.models import TXCData, TXCService
 from structlog.stdlib import get_logger
 
 from ..helpers import ReferenceDataLookups
 from ..models import PatternCommonStats, TaskData
-from ..transform.service_pattern_mapping import map_unique_journey_patterns
-from ..transform.service_patterns_flexible import create_flexible_service_pattern
-from .models_context import (
-    ProcessPatternCommonContext,
-    ProcessServicePatternContext,
-    ServicePatternMapping,
+from ..transform.service_pattern_mapping import (
+    get_flexible_service_pattern_ids,
+    map_unique_journey_patterns,
 )
-from .servicepatterns_common import process_pattern_common
+from .models_context import ProcessPatternCommonContext, ProcessServicePatternContext
+from .servicepatterns_common import process_pattern_common, process_service_pattern
 
 log = get_logger()
-
-
-def process_flexible_service_pattern(
-    service: TXCService,
-    service_pattern_id: str,
-    service_pattern_mapping: ServicePatternMapping,
-    context: ProcessServicePatternContext,
-    db: SqlDB,
-) -> TransmodelServicePattern:
-    """
-    Process a single Service Pattern
-    """
-    # pylint: disable=duplicate-code
-    pattern = create_flexible_service_pattern(
-        service, service_pattern_id, service_pattern_mapping, context
-    )
-    saved_pattern = TransmodelServicePatternRepo(db).insert(pattern)
-    log.info(
-        "Saved flexible service pattern",
-        pattern_id=saved_pattern.service_pattern_id,
-        db_id=saved_pattern.id,
-    )
-    return saved_pattern
 
 
 def process_flexible_service_patterns(
@@ -66,14 +40,16 @@ def process_flexible_service_patterns(
     )
 
     service_pattern_mapping = map_unique_journey_patterns(txc, lookups)
+    flexible_service_pattern_ids = get_flexible_service_pattern_ids(
+        service.FlexibleService, service_pattern_mapping
+    )
 
-    for service_pattern_id in service_pattern_mapping.service_pattern_metadata:
-        service_pattern = process_flexible_service_pattern(
+    for service_pattern_id in flexible_service_pattern_ids:
+        service_pattern = process_service_pattern(
             service,
             service_pattern_id,
             service_pattern_mapping,
             service_pattern_context,
-            db,
         )
         context = ProcessPatternCommonContext(
             txc=txc,
