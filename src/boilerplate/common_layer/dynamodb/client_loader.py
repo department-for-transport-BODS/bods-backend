@@ -8,6 +8,7 @@ import time
 from typing import Any, Literal, NotRequired, TypedDict
 
 import boto3
+import botocore.config
 from boto3.dynamodb.types import TypeDeserializer
 from botocore.exceptions import ClientError
 from structlog.stdlib import get_logger
@@ -103,7 +104,9 @@ class DynamoDBLoader:
         max_concurrent_batches: int | None = None,
     ):
         """Initialize DynamoDB loader with table name and region."""
-        self.dynamodb = boto3.resource("dynamodb", region_name=region)  # type: ignore
+        self.dynamodb = boto3.resource(  # type: ignore
+            "dynamodb", region_name=region, config=botocore.config.Config(proxies={})
+        )
         self.table_name = table_name
         self.table = self.dynamodb.Table(table_name)
         self.log = get_logger().bind(table_name=table_name)
@@ -380,8 +383,7 @@ class DynamoDBLoader:
 
         processed_count = 0
         error_count = 0
-        # Dynamo transact_write_items can handle up to 100 updates at a time
-        batch_size = 100
+        batch_size: int = 100
 
         batches = [
             dict(list(updates.items())[i : i + batch_size])
