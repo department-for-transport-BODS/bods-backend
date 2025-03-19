@@ -43,7 +43,7 @@ def create_flexible_service_pattern(
     data = service_pattern_mapping.service_pattern_metadata[service_pattern_id]
     metadata = extract_flexible_pattern_metadata(service)
 
-    # pylint: disable=R0801
+    # pylint: disable=duplicate-code
     pattern = TransmodelServicePattern(
         service_pattern_id=service_pattern_id,
         description=metadata.description,

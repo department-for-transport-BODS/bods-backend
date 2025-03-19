@@ -61,7 +61,7 @@ def process_standard_service_patterns(
     if not service.StandardService:
         return [], stats
 
-    # pylint: disable=R0801
+    # pylint: disable=duplicate-code
     service_pattern_context = ProcessServicePatternContext(
         revision=task_data.revision,
         journey_pattern_sections=txc.JourneyPatternSections,

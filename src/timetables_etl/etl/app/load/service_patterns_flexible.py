@@ -32,7 +32,7 @@ def process_flexible_service_pattern(
     """
     Process a single Service Pattern
     """
-    # pylint: disable=R0801
+    # pylint: disable=duplicate-code
     pattern = create_flexible_service_pattern(
         service, service_pattern_id, service_pattern_mapping, context
     )
