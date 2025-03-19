@@ -15,6 +15,22 @@ class SchemaViolationsFound(ETLException):
     code = ETLErrorCode.SCHEMA_ERROR
 
 
+class SchemaUnknown(ETLException):
+    """
+    Exception raised when input XML is an unknown type
+    """
+
+    code = ETLErrorCode.SCHEMA_UNKNOWN
+
+
+class SchemaMismatch(ETLException):
+    """
+    Exception raised when input XML does not match requested data type
+    """
+
+    code = ETLErrorCode.SCHEMA_MISMATCH
+
+
 class PostSchemaViolationsFound(ETLException):
     """
     Exception raised when schema violation is found
