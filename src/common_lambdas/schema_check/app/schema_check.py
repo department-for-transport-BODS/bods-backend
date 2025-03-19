@@ -104,12 +104,12 @@ def validate_schema_type(data_type: XMLDataType, detected_schema_type: XMLSchema
     if detected_schema_type != expected_schema_type:
         log.error(
             "XMLSchemaType mismatch: provided XML file does not match expected schema type",
-            exected_schema_type=expected_schema_type,
-            detected_schema_type=detected_schema_type,
+            expected_schema_type=expected_schema_type.value,
+            detected_schema_type=detected_schema_type.value,
         )
         raise SchemaMismatch(
-            detected_schema_type=detected_schema_type,
-            expected_schema_type=expected_schema_type,
+            detected_schema_type=detected_schema_type.value,
+            expected_schema_type=expected_schema_type.value,
         )
 
 
