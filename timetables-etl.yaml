@@ -57,21 +57,6 @@ Conditions:
   IsNotTemp: ## TODO: Remove condition and references to it once isolated testing is completed and ETL is fully integrated into BODS
     !Not [!Equals [!Select ['2', !Split ['-', !Ref 'AWS::StackName']], 'temp']]
 
-Mappings:
-  EnvironmentConfig:
-    uat:
-      LambdaConcurrency: 100
-    prod:
-      LambdaConcurrency: 100
-    dev:
-      LambdaConcurrency: 50
-    test:
-      LambdaConcurrency: 50
-    staging:
-      LambdaConcurrency: 50
-    local:
-      LambdaConcurrency: 50
-
 Globals:
   Function:
     Architectures:
@@ -90,8 +75,6 @@ Globals:
       - IsNotLocal
       - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
       - !Ref AWS::NoValue
-    ReservedConcurrentExecutions:
-      !FindInMap [EnvironmentConfig, !Ref Environment, LambdaConcurrency]
     VpcConfig: !If
       - IsNotLocal
       - SubnetIds:
