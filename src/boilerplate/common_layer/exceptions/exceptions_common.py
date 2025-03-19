@@ -3,6 +3,7 @@ Common Exception logic
 """
 
 import inspect
+import json
 from typing import Any, TypedDict
 
 from common_layer.database.models import ETLErrorCode
@@ -52,11 +53,8 @@ class ETLException(Exception):
         super().__init__(self.message)
 
     def __str__(self) -> str:
-        """Format the exception as a human-readable string."""
-        return (
-            f"[{self.code.name}] {self.message} "
-            f"({self.filename_template.format(filename=self.filename, line=self.line)})"
-        )
+        """Format the exception as a JSON string matching the to_dict() structure."""
+        return json.dumps(self.to_dict())
 
     def to_dict(self) -> dict[str, Any]:
         """Convert the exception details to a dictionary for Step Functions."""
