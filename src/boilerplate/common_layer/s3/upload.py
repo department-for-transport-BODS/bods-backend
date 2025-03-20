@@ -7,7 +7,7 @@ import os
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Coroutine, Generator, Iterator
+from typing import Generator
 from zipfile import BadZipFile, ZipFile
 
 from botocore.exceptions import BotoCoreError, ClientError
@@ -68,7 +68,7 @@ def get_space_info(temp_dir: str, min_free_bytes: int) -> dict[str, int]:
     }
 
 
-def create_file_list(zip_obj: ZipFile) -> tuple[list[tuple[str, int]], int]:
+def create_file_list(zip_obj: ZipFile) -> tuple[list[tuple[str, int]], ProcessingStats]:
     """
     Create sorted list of files in a Zip to process using a single pass
     Returns a tuple of (sorted_xml_files, skipped_count)
@@ -95,8 +95,9 @@ def create_file_list(zip_obj: ZipFile) -> tuple[list[tuple[str, int]], int]:
             skipped_count += 1
 
     sorted_xml_files = sorted(xml_files_with_size, key=lambda x: x[1])
-
-    return sorted_xml_files, skipped_count
+    stats = ProcessingStats()
+    stats.skip_count = skipped_count
+    return sorted_xml_files, stats
 
 
 async def extract_and_upload_single_file(
@@ -180,98 +181,94 @@ async def process_file_with_semaphore(
         return await extract_and_upload_single_file(context, zip_obj, s3_client)
 
 
-async def process_batch(
-    batch: list[tuple[str, int]],
-    zip_obj: ZipFile,
-    s3_client: "S3",
-    shared_context: SharedContext,
-    semaphore: asyncio.Semaphore,
-) -> list[bool]:
-    """Process a single batch of files concurrently"""
-    # Process this batch concurrently
-    tasks: list[Coroutine[None, None, bool]] = []
-    for file_path, file_size in batch:
-        file_context = FileContext(
-            file_path=file_path,
-            file_size=file_size,
-            shared=shared_context,
-        )
-        tasks.append(
-            process_file_with_semaphore(file_context, zip_obj, s3_client, semaphore)
-        )
-
-    # Gather results and update stats
-    return await asyncio.gather(*tasks)
-
-
-def batch_items(
-    items: list[tuple[str, int]], batch_size: int
-) -> Iterator[tuple[int, list[tuple[str, int]]]]:
-    """
-    Generate batches from a list of XML files with their sizes
-
-    Args:
-        items: List of (file_path, file_size) tuples
-        batch_size: Size of each batch
-
-    Yields:
-        Tuples of (batch_number, batch_items)
-    """
-    total_items = len(items)
-    for i in range(0, total_items, batch_size):
-        yield i // batch_size, items[i : min(i + batch_size, total_items)]
-
-
 async def process_zip_contents(
     zip_obj: ZipFile, s3_client: "S3", zip_path: Path, shared_context: SharedContext
 ) -> tuple[str, "ProcessingStats"]:
-    """Process contents of a zip file using a shared context"""
-    xml_files, skipped_count = create_file_list(zip_obj)
-    stats = ProcessingStats()
-    stats.skip_count = skipped_count
+    """
+    Process contents of a zip file using  starts new files as soon as slots become available
+    """
+    xml_files, stats = create_file_list(zip_obj)
 
     if not xml_files:
         await log.ainfo("No XML files found in zip", zip_path=str(zip_path))
         return shared_context.destination_prefix, stats
 
-    total_files = len(xml_files)
-
     await log.ainfo(
-        "Starting batch processing",
-        total_files=total_files,
+        "Starting dynamic processing",
+        total_files=len(xml_files),
         space_info=get_space_info(
             shared_context.temp_dir, shared_context.min_free_bytes
         ),
     )
 
-    semaphore = asyncio.Semaphore(s3_client.max_workers)
-    batch_size = s3_client.max_workers
-    for batch_num, batch in batch_items(xml_files, batch_size):
+    file_queue: asyncio.Queue[tuple[str, int]] = asyncio.Queue()
+    for file_path, file_size in xml_files:
+        await file_queue.put((file_path, file_size))
 
-        results = await process_batch(
-            batch,
-            zip_obj,
-            s3_client,
-            shared_context,
-            semaphore,
+    active_tasks: set[asyncio.Task[bool]] = set()
+    results: list[bool] = []
+    semaphore: asyncio.Semaphore = asyncio.Semaphore(s3_client.max_workers)
+
+    async def process_next_file() -> bool:
+        """Process a single file from the queue"""
+        if file_queue.empty():
+            return False
+
+        file_path, file_size = await file_queue.get()
+
+        file_context: FileContext = FileContext(
+            file_path=file_path,
+            file_size=file_size,
+            shared=shared_context,
         )
 
-        await log.ainfo(
-            "Batch completed",
-            batch=batch_num + 1,
-            total_batches=(len(xml_files) + batch_size - 1) // batch_size,
-            processed=len(shared_context.processed_files),
-            total_files=total_files,
-            space_info=get_space_info(
-                shared_context.temp_dir, shared_context.min_free_bytes
-            ),
-            remaining_files=total_files - len(shared_context.processed_files),
+        result: bool = await process_file_with_semaphore(
+            file_context, zip_obj, s3_client, semaphore
         )
-        stats.success_count += sum(1 for result in results if result)
-        stats.fail_count += sum(1 for result in results if not result)
+
+        results.append(result)
+
+        if len(results) % 10 == 0 and len(results) > 0:
+            asyncio.create_task(
+                log.ainfo(
+                    "Processing progress",
+                    processed=len(shared_context.processed_files),
+                    total_files=len(xml_files),
+                    space_info=get_space_info(
+                        shared_context.temp_dir, shared_context.min_free_bytes
+                    ),
+                    remaining_files=len(xml_files)
+                    - len(shared_context.processed_files),
+                )
+            )
+
+        return result
+
+    def on_task_complete(task: "asyncio.Task[bool]") -> None:
+        """Handle task completion and start a new one if files are available"""
+        active_tasks.discard(task)
+
+        # Start a new task if there are more files to process
+        if not file_queue.empty():
+            new_task: "asyncio.Task[bool]" = asyncio.create_task(process_next_file())
+            active_tasks.add(new_task)
+            new_task.add_done_callback(on_task_complete)
+
+    for _ in range(min(s3_client.max_workers, len(xml_files))):
+        task: asyncio.Task[bool] = asyncio.create_task(process_next_file())
+        active_tasks.add(task)
+        task.add_done_callback(on_task_complete)
+
+    # Wait for all tasks to complete
+    while active_tasks:
+        await asyncio.wait(active_tasks, return_when=asyncio.FIRST_COMPLETED)
+
+    # Update statistics
+    stats.success_count = sum(1 for result in results if result)
+    stats.fail_count = sum(1 for result in results if not result)
 
     await log.ainfo(
-        "Completed batch zip processing",
+        "Completed dynamic zip processing",
         zip_path=str(zip_path),
         destination=shared_context.destination_prefix,
         files_processed=stats.success_count,
