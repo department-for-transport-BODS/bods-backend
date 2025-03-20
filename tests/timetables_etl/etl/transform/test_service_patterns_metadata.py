@@ -9,6 +9,7 @@ from geoalchemy2.shape import from_shape
 from shapely.geometry import Point
 
 from tests.factories.database.naptan import NaptanStopPointFactory
+from tests.timetables_etl.factories.txc import TXCServiceFactory
 from tests.timetables_etl.factories.txc.factory_txc_service import (
     TXCLineDescriptionFactory,
     TXCLineFactory,
@@ -90,7 +91,9 @@ def test_make_metadata(
 
     line_to_txc_line = {"LINE:123": line}
 
-    result = make_metadata(sp_data, line_to_txc_line)
+    service = TXCServiceFactory.create()
+
+    result = make_metadata(service, sp_data, line_to_txc_line)
 
     # Verify result
     assert isinstance(result, PatternMetadata)
