@@ -32,10 +32,10 @@ class S3:
     Description: Class to provide access to S3 objects
     """
 
-    def __init__(self, bucket_name: str):
+    def __init__(self, bucket_name: str, max_workers: int = 60):
         self._client: "S3Client" = self._create_s3_client()
         self._bucket_name: str = bucket_name
-        self.thread_pool = ThreadPoolExecutor(max_workers=20)
+        self.thread_pool = ThreadPoolExecutor(max_workers=max_workers)
 
     @property
     def bucket_name(self) -> str:
@@ -71,7 +71,6 @@ class S3:
 
         if content_type is None:
             content_type = "application/octet-stream"
-        logger.debug("S3: Determined Content Type", content_type=content_type)
         return content_type
 
     def put_object(
@@ -121,12 +120,6 @@ class S3:
         Async version of put_object that uploads file data to S3
 
         """
-        logger.info(
-            "S3: Uploading file async",
-            bucket_name=self.bucket_name,
-            object_key=file_path,
-        )
-
         content_type = self._get_content_type(file_path)
         tagging_str = format_s3_tags(tags)
 
@@ -134,10 +127,6 @@ class S3:
 
         try:
             if tagging_str:
-                logger.debug(
-                    "S3: Adding tags to object async", object_key=file_path, tags=tags
-                )
-
                 await loop.run_in_executor(
                     self.thread_pool,
                     functools.partial(
@@ -161,7 +150,7 @@ class S3:
                     ),
                 )
 
-            logger.info(
+            await logger.ainfo(
                 "S3: Uploaded file successfully async",
                 bucket_name=self.bucket_name,
                 object_key=file_path,

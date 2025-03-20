@@ -57,14 +57,14 @@ def get_available_space(path: str) -> int:
     return usage.free
 
 
-def get_space_info(temp_dir: str, min_free_mb: int) -> dict[str, int]:
+def get_space_info(temp_dir: str, min_free_bytes: int) -> dict[str, int]:
     """Get information about disk space for logging"""
     usage = shutil.disk_usage(temp_dir)
     return {
         "total_mb": usage.total // (1024 * 1024),
         "used_mb": usage.used // (1024 * 1024),
         "free_mb": usage.free // (1024 * 1024),
-        "available_mb": (usage.free - min_free_mb * 1024 * 1024) // (1024 * 1024),
+        "available_mb": (usage.free - min_free_bytes) // (1024 * 1024),
     }
 
 
@@ -155,16 +155,14 @@ async def extract_and_upload_single_file(
         return False
 
     finally:
-        # Clean up the file
+        # Remove file to save disk space
         if extracted_path.exists():
             try:
                 os.unlink(extracted_path)
-                await log.adebug("Cleaned up extracted file", path=str(extracted_path))
-            except OSError as err:
+            except OSError:
                 await log.aerror(
                     "Failed to cleanup extracted file",
                     path=str(extracted_path),
-                    error=str(err),
                     exc_info=True,
                 )
 
