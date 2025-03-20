@@ -8,6 +8,7 @@ import time
 from typing import Any, Literal, NotRequired, TypedDict
 
 import boto3
+import botocore.config
 from boto3.dynamodb.types import TypeDeserializer
 from botocore.exceptions import ClientError
 from structlog.stdlib import get_logger
@@ -100,16 +101,22 @@ class DynamoDBLoader:
         table_name: str,
         region: str = "eu-west-2",
         partition_key: str = "AtcoCode",
-        max_concurrent_batches: int = 30,
+        max_concurrent_batches: int | None = None,
     ):
         """Initialize DynamoDB loader with table name and region."""
-        self.dynamodb = boto3.resource("dynamodb", region_name=region)  # type: ignore
+        self.dynamodb = boto3.resource(  # type: ignore
+            "dynamodb",
+            region_name=region,
+            config=botocore.config.Config(proxies={}, max_pool_connections=100),
+        )
         self.table_name = table_name
         self.table = self.dynamodb.Table(table_name)
         self.log = get_logger().bind(table_name=table_name)
         self.partition_key = partition_key
-        self.max_concurrent_batches = max_concurrent_batches
-        self.semaphore = asyncio.Semaphore(max_concurrent_batches)
+        self.max_concurrent_batches = (
+            max_concurrent_batches if max_concurrent_batches else 30
+        )
+        self.semaphore = asyncio.Semaphore(self.max_concurrent_batches)
 
     def prepare_put_requests(
         self, items: list[dict[str, Any]]
@@ -279,10 +286,7 @@ class DynamoDBLoader:
         return result
 
     async def async_process_batch(self, items: list[dict[str, Any]]) -> int:
-        """
-        Process a single batch of items with retries.
-        Semaphore is used to limit the concurrent executions
-        """
+        """Process a single batch of items with retries."""
         if not items:
             return 0
 
@@ -291,18 +295,18 @@ class DynamoDBLoader:
         retry_count = 0
         unprocessed_items: BatchWriteItemInputRequestItems = request_items
 
-        async with self.semaphore:
-            while unprocessed_items and retry_count < max_retries:
-                if retry_count > 0:
-                    wait_time = (2**retry_count) * 0.1 + (random.random() * 0.1)
-                    self.log.info(
-                        "Retrying batch operation",
-                        retry_count=retry_count,
-                        wait_time=wait_time,
-                        remaining_items=len(unprocessed_items),
-                    )
-                    await asyncio.sleep(wait_time)
+        while unprocessed_items and retry_count < max_retries:
+            if retry_count > 0:
+                wait_time = (2**retry_count) * 0.1 + (random.random() * 0.1)
+                await self.log.ainfo(
+                    "Waiting before retry batch operation",
+                    retry_count=retry_count,
+                    wait_time=wait_time,
+                    remaining_items=len(unprocessed_items),
+                )
+                await asyncio.sleep(wait_time)
 
+            async with self.semaphore:
                 try:
                     loop = asyncio.get_event_loop()
                     response = await loop.run_in_executor(
@@ -318,7 +322,6 @@ class DynamoDBLoader:
                     error_code = e.response.get("Error", {}).get("Code", "")
                     if error_code == "ProvisionedThroughputExceededException":
                         retry_count += 1
-                        await asyncio.sleep(2**retry_count * 0.1)
                         continue
                     raise
 
@@ -347,12 +350,12 @@ class DynamoDBLoader:
         for result in results:
             if isinstance(result, BaseException):
                 error_count += self.batch_size
-                self.log.error("Batch failed", error=str(result))
+                await self.log.aerror("Batch failed", error=str(result))
             else:
                 error_count += result
         processed_count = len(items) - error_count
 
-        self.log.info(
+        await self.log.ainfo(
             "Completed batch operation",
             processed_count=processed_count,
             error_count=error_count,
@@ -372,14 +375,13 @@ class DynamoDBLoader:
         if not updates:
             return 0, 0
 
-        self.log.info(
+        await self.log.ainfo(
             "Updating PrivateCodes for DynamoDB records", batch_size=len(updates)
         )
 
         processed_count = 0
         error_count = 0
-        # Dynamo transact_write_items can handle up to 100 updates at a time
-        batch_size = 100
+        batch_size: int = 100
 
         batches = [
             dict(list(updates.items())[i : i + batch_size])
@@ -398,7 +400,7 @@ class DynamoDBLoader:
             len(batch) for batch, success in zip(batches, results) if not success
         )
 
-        self.log.info(
+        await self.log.ainfo(
             "Completed batch update operations",
             processed_count=processed_count,
             error_count=error_count,
@@ -439,7 +441,7 @@ class DynamoDBLoader:
             while retry_count < max_retries:
                 if retry_count > 0:
                     wait_time = (2**retry_count) * 0.1 + (random.random() * 0.1)
-                    self.log.warning(
+                    await self.log.awarning(
                         "Retrying transact_write_items due to failure",
                         retry_attempt=retry_count,
                         wait_time=f"{wait_time:.2f}s",
@@ -460,7 +462,7 @@ class DynamoDBLoader:
                     error_response: _ClientErrorResponseTypeDef = e.response
                     error_message = error_response.get("Error", {}).get("Message", "")
                     error_code = error_response.get("Error", {}).get("Code", "")
-                    self.log.error(
+                    await self.log.aerror(
                         "Failed to execute batch write operation",
                         error_code=error_code,
                         retry_count=retry_count,
@@ -473,10 +475,155 @@ class DynamoDBLoader:
                         retry_count += 1
                         continue
 
-                    self.log.error(
+                    await self.log.aerror(
                         "Failed to update batch", error_code=error_code, error=str(e)
                     )
                     return False
 
-        self.log.error("Max retries reached for batch update")
+        await self.log.aerror("Max retries reached for batch update")
         return False
+
+    async def async_transact_write_items(
+        self, items: list[dict[str, Any]]
+    ) -> tuple[int, int]:
+        """
+        Asynchronously write multiple items using TransactWriteItems.
+        Can handle up to 100 items per transaction (vs 25 for batch_write).
+        All items in a single transaction either succeed or fail together.
+
+        Returns:
+        tuple[int, int]: (processed_count, error_count)
+        """
+        if not items:
+            return 0, 0
+
+        await self.log.ainfo(
+            "Writing items using TransactWriteItems", item_count=len(items)
+        )
+
+        processed_count = 0
+        error_count = 0
+        # DynamoDB transact_write_items can handle up to 100 items per transaction
+        transaction_size = 100
+
+        # Split items into batches of transaction_size
+        batches = [
+            items[i : i + transaction_size]
+            for i in range(0, len(items), transaction_size)
+        ]
+        tasks = [self.transact_write_items_batch(batch) for batch in batches]
+
+        start_time = time.time()
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        total_time = time.time() - start_time
+
+        for i, result in enumerate(results):
+            if isinstance(result, BaseException):
+                error_count += len(batches[i])
+                await self.log.aerror("Transaction failed", error=str(result))
+            elif result is True:
+                processed_count += len(batches[i])
+            else:
+                error_count += len(batches[i])
+
+        await self.log.ainfo(
+            "Completed transact write operations",
+            processed_count=processed_count,
+            error_count=error_count,
+            total_time=f"{total_time:.2f}s",
+        )
+
+        return processed_count, error_count
+
+    async def transact_write_items_batch(self, batch: list[dict[str, Any]]) -> bool:
+        """
+        Writes multiple items in DynamoDB using transact_write_items with retries.
+        Each batch can contain up to 100 items.
+
+        Parameters:
+        batch (list[dict[str, Any]]): Batch of items to write in a single transaction
+
+        Returns:
+        bool: True if write was successful after all retries, False otherwise
+        """
+        if not batch:
+            return False
+
+        transact_items: list[dict[str, Any]] = []
+
+        for item in batch:
+            if self.partition_key not in item:
+                await self.log.awarning(
+                    "Skipping item missing partition key",
+                    partition_key=self.partition_key,
+                    item_keys=list(item.keys()),
+                )
+                continue
+
+            transact_items.append(
+                {
+                    "Put": {
+                        "TableName": self.table_name,
+                        "Item": item,
+                    }
+                }
+            )
+
+        if not transact_items:
+            await self.log.awarning(
+                "No valid items found for transaction",
+                skipped_count=len(batch),
+            )
+            return False
+
+        max_retries = 5
+        retry_count = 0
+
+        async with self.semaphore:
+            while retry_count < max_retries:
+                if retry_count > 0:
+                    wait_time = (2**retry_count) * 0.1 + (random.random() * 0.1)
+                    await self.log.awarning(
+                        "Retrying transact_write_items due to failure",
+                        retry_attempt=retry_count,
+                        wait_time=f"{wait_time:.2f}s",
+                    )
+                    await asyncio.sleep(wait_time)
+
+                try:
+                    loop = asyncio.get_event_loop()
+                    await loop.run_in_executor(
+                        None,
+                        lambda: self.dynamodb.meta.client.transact_write_items(
+                            TransactItems=transact_items  # type: ignore
+                        ),
+                    )
+                    return True
+
+                except ClientError as e:
+                    error_response: _ClientErrorResponseTypeDef = e.response
+                    error_message = error_response.get("Error", {}).get("Message", "")
+                    error_code = error_response.get("Error", {}).get("Code", "")
+                    await self.log.aerror(
+                        "Failed to execute transact_write_items",
+                        error_code=error_code,
+                        retry_count=retry_count,
+                        error_message=error_message,
+                    )
+                    if error_code in [
+                        "ProvisionedThroughputExceededException",
+                        "RequestLimitExceeded",
+                        "TransactionCanceledException",
+                    ]:
+                        retry_count += 1
+                        continue
+
+                    await self.log.aerror(
+                        "Failed to write batch with transact_write_items",
+                        error_code=error_code,
+                        exc_info=True,
+                    )
+                    return False
+
+            await self.log.aerror("Max retries reached for transact_write_items batch")
+            return False
