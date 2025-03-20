@@ -46,7 +46,6 @@ env:
     github.event_name == 'release' && github.event.release.tag_name || 'null' }}
   RC_SRC: ${{ vars.DEPLOYMENT_ARTEFACTS_S3_BUCKET }}
   BODS_DEFAULT_GITHUB_ACTIONS_ASSUME_ROLE_ARN: ${{ vars.BODS_DEFAULT_GITHUB_ACTIONS_ASSUME_ROLE_ARN }}
-  ASSUME_ROLE_ARN: ${{ vars.ASSUME_ROLE_ARN }}
 
 jobs:
   validation:
@@ -86,7 +85,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
-          role-to-assume: ${{ env.ASSUME_ROLE_ARN }}
+          role-to-assume: ${{ vars.ASSUME_ROLE_ARN }}
           role-session-name: ${{ vars.PROJECT_NAME }}-${{ env.RC_ENV }}-app-deploy-validation
           role-duration-seconds: 3600
           role-skip-session-tagging: true
@@ -160,7 +159,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
-          role-to-assume: ${{ env.ASSUME_ROLE_ARN }}
+          role-to-assume: ${{ vars.ASSUME_ROLE_ARN }}
           role-session-name: ${{ vars.PROJECT_NAME }}-${{ env.RC_ENV }}-app-deploy
           role-duration-seconds: 3600
           role-skip-session-tagging: true
@@ -260,7 +259,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
-          role-to-assume: ${{ env.ASSUME_ROLE_ARN }}
+          role-to-assume: ${{ vars.ASSUME_ROLE_ARN }}
           role-session-name: ${{ vars.PROJECT_NAME }}-${{ matrix.stack }}-app-deploy
           role-duration-seconds: 3600
           role-skip-session-tagging: true
