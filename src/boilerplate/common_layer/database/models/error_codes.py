@@ -43,6 +43,10 @@ class ETLErrorCode(str, Enum):
 
     # Schema
     SCHEMA_ERROR = "XSD Schema Validation error."
+    SCHEMA_UNKNOWN = "XML has an unknown schema"
+    SCHEMA_MISMATCH = (
+        "XML has a known schema but not what was requested to be validated against"
+    )
     SCHEMA_VERSION_MISSING = "Schema version is missing."
     SCHEMA_VERSION_NOT_SUPPORTED = "Schema version is not supported."
 

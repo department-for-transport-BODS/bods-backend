@@ -2,6 +2,7 @@
 Utility functions for Schema Check
 """
 
+from common_layer.exceptions import XMLSyntaxError
 from lxml.etree import _Element  # type: ignore
 from lxml.etree import QName
 from structlog.stdlib import get_logger
@@ -34,13 +35,13 @@ def get_xml_type(xml_root: _Element) -> tuple[XMLSchemaType, str]:
     if f"{{{NETEX_NS}}}PublicationDelivery" == tag:
         version = xml_root.get("version")
         if version is None:
-            raise ValueError(f"Missing version attribute in {tag}")
+            raise XMLSyntaxError(f"Missing version attribute in {tag}")
         return XMLSchemaType.NETEX, version
 
     if "TransXChange" in tag:
         version = xml_root.get("SchemaVersion")
         if version is None:
-            raise ValueError(f"Missing SchemaVersion attribute in {tag}")
+            raise XMLSyntaxError(f"Missing SchemaVersion attribute in {tag}")
         return XMLSchemaType.TRANSXCHANGE, version
 
-    raise ValueError(f"Unknown root tag: {tag}")
+    raise XMLSyntaxError(f"Unknown root tag: {tag}")

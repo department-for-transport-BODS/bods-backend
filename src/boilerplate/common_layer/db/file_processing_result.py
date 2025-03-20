@@ -3,7 +3,6 @@ Description: Module contains the database functionality for
              FileProcessingResult table
 """
 
-import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, Callable, Literal, TypeVar
@@ -247,10 +246,7 @@ def file_processing_result_to_db(step_name: StepName):
 
             except ETLException as validation_error:
                 handle_lambda_error(step_name, processing_context, validation_error)
-                # Convert ValidationException so `Error` and `Cause` are correctly formatted
-                raise Exception(  # pylint: disable=broad-exception-raised
-                    json.dumps(validation_error.to_dict())
-                ) from validation_error
+                raise
 
             except Exception as lambda_error:  # pylint: disable=broad-exception-caught
                 handle_lambda_error(step_name, processing_context, lambda_error)

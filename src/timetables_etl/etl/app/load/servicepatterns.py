@@ -4,48 +4,20 @@ Transmodel Service Patterns Loader
 
 from common_layer.database import SqlDB
 from common_layer.database.models import TransmodelServicePattern
-from common_layer.database.repos import TransmodelServicePatternRepo
 from common_layer.xml.txc.models import TXCData, TXCService
 from structlog.stdlib import get_logger
 
 from ..helpers import ReferenceDataLookups
 from ..models import PatternCommonStats, TaskData
 from ..transform.service_pattern_mapping import (
-    ServicePatternMapping,
     get_standard_service_pattern_ids,
     map_unique_journey_patterns,
 )
-from ..transform.service_patterns import create_service_pattern
 from .models_context import ProcessPatternCommonContext, ProcessServicePatternContext
 from .service_patterns_flexible import process_flexible_service_patterns
-from .servicepatterns_common import process_pattern_common
+from .servicepatterns_common import process_pattern_common, process_service_pattern
 
 log = get_logger()
-
-
-def process_service_pattern(
-    service_pattern_id: str,
-    service_pattern_mapping: ServicePatternMapping,
-    context: ProcessServicePatternContext,
-) -> TransmodelServicePattern:
-    """
-    Generate Service Pattern and Add to db
-    Returns model instance with generated ID
-    """
-    pattern = create_service_pattern(
-        service_pattern_id,
-        service_pattern_mapping,
-        context,
-    )
-    saved_pattern = TransmodelServicePatternRepo(context.db).insert(pattern)
-
-    log.info(
-        "Saved service pattern",
-        db_id=saved_pattern.id,
-        pattern_id=saved_pattern.service_pattern_id,
-    )
-
-    return saved_pattern
 
 
 def process_standard_service_patterns(
@@ -61,6 +33,7 @@ def process_standard_service_patterns(
     if not service.StandardService:
         return [], stats
 
+    # pylint: disable=duplicate-code
     service_pattern_context = ProcessServicePatternContext(
         revision=task_data.revision,
         journey_pattern_sections=txc.JourneyPatternSections,
@@ -75,7 +48,10 @@ def process_standard_service_patterns(
 
     for service_pattern_id in standard_service_pattern_ids:
         service_pattern = process_service_pattern(
-            service_pattern_id, service_pattern_mapping, service_pattern_context
+            service,
+            service_pattern_id,
+            service_pattern_mapping,
+            service_pattern_context,
         )
         common_context = ProcessPatternCommonContext(
             db=db,
@@ -101,6 +77,7 @@ def load_transmodel_service_patterns(
     """
     Generate and load transmodel service patterns for both standard and flexible services
     """
+
     patterns: list[TransmodelServicePattern] = []
     stats = PatternCommonStats()
     if service.StandardService:

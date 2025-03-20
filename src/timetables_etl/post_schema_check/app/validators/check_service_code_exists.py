@@ -5,8 +5,11 @@ Check if service code exists in published dataset
 from dataclasses import dataclass
 
 from common_layer.database.client import SqlDB
-from common_layer.database.models.model_organisation import OrganisationDataset
-from common_layer.database.repos.repo_organisation import (
+from common_layer.database.models import (
+    OrganisationDataset,
+    OrganisationTXCFileAttributes,
+)
+from common_layer.database.repos import (
     OrganisationDatasetRepo,
     OrganisationDatasetRevisionRepo,
     OrganisationTXCFileAttributesRepo,
@@ -48,14 +51,12 @@ class PublishedServiceData:
         """
         service_codes_list = list(self.service_codes)
 
-        data = {
-            "published_dataset": self.dataset_id,
-            "service_codes": service_codes_list,
-        }
         return ValidationResult(
             is_valid=False,
             error_code="SERVICE EXISTS",
-            additional_details=PublishedDatasetModel(**data),
+            additional_details=PublishedDatasetModel(
+                published_dataset=self.dataset_id, service_codes=service_codes_list
+            ),
             message=f"Found an existing published dataset \
             (ID: {self.dataset_id}) with service codes: {service_codes_list}",
         )
@@ -82,7 +83,7 @@ def get_live_service_revisions(service_codes: list[str], db: SqlDB) -> ServiceRe
     txc_file_attributes_repo = OrganisationTXCFileAttributesRepo(db)
     txc_attributes = txc_file_attributes_repo.get_by_service_code(service_codes)
 
-    service_to_revision_map = {}
+    service_to_revision_map: dict[str, list[int]] = {}
     for attr in txc_attributes:
         service_to_revision_map.setdefault(attr.service_code, []).append(
             attr.revision_id
@@ -133,7 +134,7 @@ def get_published_services(
     txc_file_attributes_repo = OrganisationTXCFileAttributesRepo(db)
 
     # Fetch attributes one revision at a time and combine results
-    all_published_txc_attributes = []
+    all_published_txc_attributes: list[OrganisationTXCFileAttributes] = []
     for revision_id in published_revision_ids:
         attributes = txc_file_attributes_repo.get_by_revision_id(revision_id)
         all_published_txc_attributes.extend(attributes)
@@ -177,7 +178,7 @@ def check_service_code_exists(txc_data: TXCData, _db: SqlDB) -> list[ValidationR
     if not published_services:
         return [ValidationResult(is_valid=True)]
 
-    validation_results = []
+    validation_results: list[ValidationResult] = []
     for published_service in published_services:
         log.warning(
             "Found an existing published dataset with",

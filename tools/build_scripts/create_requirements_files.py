@@ -2,7 +2,7 @@
 The AWS Lambda environment expects each lambda, and layer, to have a requirements.txt
 However, we're using poetry to manage our dependencies.
 
-This script will export the requirements.txt files to each lambda/layer folder based on 
+This script will export the requirements.txt files to each lambda/layer folder based on
 the poetry dependency groups defined in pyproject.toml
 """
 
@@ -37,7 +37,7 @@ def get_dependency_groups_for_lambdas(
     Build a mapping between lambda directories to their dependency groups.
     Note that the poetry dependency group name and the lambda names are the same
     """
-    lambda_groups = {}
+    lambda_groups: dict[Path, list[str]] = {}
 
     # Iterate through the lambda applications (timetables & periodic tasks)
     for lambda_application_dir in LAMBDA_BASE_DIRS:

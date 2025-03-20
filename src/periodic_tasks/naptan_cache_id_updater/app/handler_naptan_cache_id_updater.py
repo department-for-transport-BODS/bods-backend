@@ -22,7 +22,7 @@ tracer = Tracer()
 log = get_logger()
 
 
-# pylint: disable=R0801
+# pylint: disable=duplicate-code
 class NaptanProcessingInput(BaseModel):
     """Input schema for NaPTAN processing Lambda."""
 
