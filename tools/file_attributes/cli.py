@@ -24,23 +24,24 @@ log = get_logger()
 PARSER_CONFIG = TXCParserConfig(file_hash=True)
 
 
-def process_txc(xml_paths: list[Path], revision_id: int, db: SqlDB) -> int | None:
+def process_txc(xml_paths: list[Path], revision_id: int, db: SqlDB) -> list[int]:
     """
     Process file attributes
     """
-    input_data = FileAttributesInputData(
-        DatasetRevisionId=revision_id, Bucket="Test", ObjectKey="Test"
-    )
 
+    created_file_attribute_ids: list[int] = []
     for xml_path in xml_paths:
+        input_data = FileAttributesInputData(
+            DatasetRevisionId=revision_id, Bucket="Test", ObjectKey=str(xml_path)
+        )
         log.info("Processing XML File", path=xml_path)
         txc_data = parse_txc_file(xml_path, PARSER_CONFIG)
         try:
             txc_file_attributes = process_file_attributes(input_data, txc_data, db)
-            return txc_file_attributes.id
+            created_file_attribute_ids.append(txc_file_attributes.id)
         except ValueError as e:
             log.error("Revision ID Not found, can't add File Attributes", error=str(e))
-    return None
+    return created_file_attribute_ids
 
 
 @app.command(name="file-attributes")
@@ -103,10 +104,10 @@ def main(
         log.error("Database configuration error", error=str(e))
         raise typer.Exit(1)
     db = setup_db_instance(db_config)
-    txc_file_attributes_id = process_txc(xml_paths, revision_id, db)
+    txc_file_attributes_ids = process_txc(xml_paths, revision_id, db)
     log.info(
         "Created TXCFileAttributes",
-        txc_file_attributes_id=txc_file_attributes_id,
+        txc_file_attributes_ids=txc_file_attributes_ids,
     )
 
 

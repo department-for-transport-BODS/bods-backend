@@ -13,7 +13,12 @@ from .exceptions_download import (
 )
 from .exceptions_pti import PTIViolationFound
 from .exceptions_s3 import S3FilenameParseFailed, S3FileTooLargeError
-from .exceptions_schema import PostSchemaViolationsFound, SchemaViolationsFound
+from .exceptions_schema import (
+    PostSchemaViolationsFound,
+    SchemaMismatch,
+    SchemaUnknown,
+    SchemaViolationsFound,
+)
 from .exceptions_xml import DangerousXML, FileNotXML, XMLSyntaxError
 from .exceptions_zip import NestedZipForbidden, ZipNoDataFound, ZipTooLarge
 
@@ -36,6 +41,8 @@ __all__ = [
     # Schema
     "SchemaViolationsFound",
     "PostSchemaViolationsFound",
+    "SchemaUnknown",
+    "SchemaMismatch",
     # XML exceptions
     "DangerousXML",
     "FileNotXML",

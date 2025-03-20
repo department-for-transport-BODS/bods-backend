@@ -4,6 +4,7 @@ Functions for loading an XMLSchema for validation purposes
 
 from pathlib import Path
 
+from common_layer.exceptions import SchemaUnknown, XMLSyntaxError
 from lxml.etree import ParseError, XMLParser, XMLSchema, XMLSchemaParseError, parse
 from structlog.stdlib import get_logger
 
@@ -21,7 +22,7 @@ def get_schema_spec(schema_type: XMLSchemaType, version: str) -> SchemaSpec:
         log.error(
             "Unsupported schema type/version", schema_type=schema_type, version=version
         )
-        raise ValueError(
+        raise SchemaUnknown(
             f"Unsupported schema type '{schema_type.value}' with version '{version}'"
         )
 
@@ -35,7 +36,7 @@ def load_schema(schema_type: XMLSchemaType, version: str) -> XMLSchema:
     """
     schema_spec = get_schema_spec(schema_type, version)
 
-    schema_path = (
+    schema_path: Path = (
         Path(__file__).parent
         / "schemas"
         / schema_spec.schema_type.value.lower()
@@ -59,5 +60,5 @@ def load_schema(schema_type: XMLSchemaType, version: str) -> XMLSchema:
             log.info("Successfully parsed Schema Doc as XMLSchema")
             return schema
     except (XMLSchemaParseError, ParseError) as e:
-        log.error("schema_parse_error", error=str(e))
-        raise
+        log.error("Error Parsing Schema XML", exc_info=True)
+        raise XMLSyntaxError("Error Parsing Schema") from e

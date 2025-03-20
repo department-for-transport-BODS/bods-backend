@@ -14,7 +14,7 @@ from structlog.stdlib import get_logger
 
 log = get_logger()
 
-client = boto3.client("lambda", region_name=environ.get("AWS_REGION", "eu-west-2"))
+client = boto3.client("lambda", region_name=environ.get("AWS_REGION", "eu-west-2"))  # type: ignore
 
 
 def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any]:

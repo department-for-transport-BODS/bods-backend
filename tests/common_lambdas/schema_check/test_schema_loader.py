@@ -7,7 +7,8 @@ from pathlib import Path
 from unittest.mock import mock_open, patch
 
 import pytest
-from lxml.etree import _ElementTree
+from common_layer.exceptions import SchemaUnknown
+from lxml.etree import _ElementTree  # type: ignore
 
 from common_lambdas.schema_check.app.constants import XMLSchemaType
 from common_lambdas.schema_check.app.schema_loader import load_schema
@@ -24,7 +25,7 @@ def m_valid_schema_file():
 
 
 @pytest.fixture
-def setup_mocks(mocker, m_valid_schema_file):
+def setup_mocks(mocker, m_valid_schema_file: bytes):
     """
     Setup mocks for schema loading
     """
@@ -76,17 +77,16 @@ def test_load_schema_valid(setup_mocks, inputs, expected_file_name):
 @pytest.mark.parametrize(
     "schema_type, version",
     [
-        (XMLSchemaType.TRANSXCHANGE, "3.0"),  # Unsupported version
-        (XMLSchemaType.NETEX, "2.0"),  # Unsupported version
+        pytest.param(XMLSchemaType.TRANSXCHANGE, "3.0", id="Unsupported TXC Version"),
+        pytest.param(XMLSchemaType.NETEX, "2.0", id="Unsupported Netex Version"),
     ],
 )
-def test_load_schema_invalid_version(schema_type, version):
+def test_load_schema_invalid_version(schema_type: XMLSchemaType, version: str) -> None:
     """
     Test that load_schema raises a ValueError when given an unsupported schema type/version.
     """
     with pytest.raises(
-        ValueError,
-        match=f"Unsupported schema type '{schema_type.value}' with version '{version}'",
+        SchemaUnknown,
     ):
         load_schema(schema_type, version)
 
