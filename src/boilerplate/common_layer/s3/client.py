@@ -32,7 +32,7 @@ class S3:
     Description: Class to provide access to S3 objects
     """
 
-    def __init__(self, bucket_name: str, max_workers: int = 60):
+    def __init__(self, bucket_name: str, max_workers: int = 150):
         self._client: "S3Client" = self._create_s3_client()
         self._bucket_name: str = bucket_name
         self.thread_pool = ThreadPoolExecutor(max_workers=max_workers)
@@ -150,11 +150,6 @@ class S3:
                     ),
                 )
 
-            await logger.ainfo(
-                "S3: Uploaded file successfully async",
-                bucket_name=self.bucket_name,
-                object_key=file_path,
-            )
             return True
         except (ClientError, BotoCoreError) as err:
             logger.error(

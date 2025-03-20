@@ -244,7 +244,7 @@ async def process_zip_contents(
         ),
     )
 
-    semaphore = asyncio.Semaphore(20)
+    semaphore = asyncio.Semaphore(150)
     batch_size = 50
     for batch_num, batch in batch_items(xml_files, batch_size):
 
