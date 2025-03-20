@@ -403,7 +403,7 @@
         "PublishDatasetRevision": "{% $publishDatasetRevision %}",
         "OverwriteInputDataset": "{% $overwriteInputDataset %}"
       },
-      "Output": {
+      "Assign": {
         "finalResult": "{% $states.result %}"
       },
       "Catch": [
@@ -420,8 +420,7 @@
       "Type": "Choice",
       "Choices": [
         {
-          "Variable": "$.finalResult.body.successful_files",
-          "NumericGreaterThan": 0,
+          "Condition": "{% $finalResult.body.successful_files > 0 %}",
           "Next": "Trigger DQS State Machine"
         }
       ],
