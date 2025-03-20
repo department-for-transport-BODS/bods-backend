@@ -162,6 +162,7 @@ Resources:
               'dynamo_table.$': '$.dynamo_table'
               'aws_region.$': '$.aws_region'
               'max_concurrent_batches.$': '$.max_concurrent_batches'
+              'batch_mode.$': '$.batch_mode'
             ResultPath: '$.populate_result'
             Catch:
               - ErrorEquals: ['States.TaskFailed']
