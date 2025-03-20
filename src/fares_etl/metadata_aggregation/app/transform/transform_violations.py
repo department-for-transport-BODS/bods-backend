@@ -7,6 +7,9 @@ from typing import Any
 
 from boto3.dynamodb.types import TypeDeserializer
 from common_layer.database.models import FaresValidation, FaresValidationResult
+from structlog.stdlib import get_logger
+
+log = get_logger()
 
 
 def map_violations(
@@ -46,5 +49,10 @@ def map_violations(
         count=len(fares_violations_list),
         report_file_name=fares_validator_report_name,
     )
-
+    log.info(
+        "Violations Mapping Complete",
+        fares_violations_count=len(fares_violations_list),
+        organisation_id=organisation_id,
+        report_file_name=fares_validator_report_name,
+    )
     return fares_violations_list, fares_validation_result
