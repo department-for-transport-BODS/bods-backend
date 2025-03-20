@@ -10,32 +10,14 @@ from aws_lambda_powertools import Tracer
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.dynamodb.client_loader import DynamoDBLoader
 from common_layer.json_logging import configure_logging
-from pydantic import BaseModel, HttpUrl, ValidationError, field_validator
+from pydantic import ValidationError
 from structlog.stdlib import get_logger
 
 from .data_loader.naptan_parser_xml import load_naptan_data_from_xml
+from .naptan_cache_models import NaptanProcessingInput
 
 tracer = Tracer()
 log = get_logger()
-
-
-class NaptanProcessingInput(BaseModel):
-    """Input schema for NaPTAN processing Lambda."""
-
-    naptan_url: HttpUrl
-    dynamo_table: str
-    aws_region: str = "eu-west-2"
-    max_concurrent_batches: int | None = None
-
-    @field_validator("dynamo_table")
-    @classmethod
-    def validate_table_name(cls, v: str) -> str:
-        """
-        Ensure that there is a table name
-        """
-        if not v.strip():
-            raise ValueError("DynamoDB table name cannot be empty")
-        return v
 
 
 @tracer.capture_lambda_handler
@@ -64,6 +46,7 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
         url=str(input_data.naptan_url),
         data_dir=Path("/tmp"),
         dynamo_loader=dynamo_loader,
+        write_mode=input_data.write_mode,
     )
 
     response = {
