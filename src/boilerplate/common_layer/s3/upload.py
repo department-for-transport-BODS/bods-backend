@@ -139,7 +139,7 @@ async def extract_and_upload_single_file(
             "Successfully uploaded file",
             file_path=context.file_path,
             s3_key=s3_key,
-            size_mb=context.file_size / (1024 * 1024),
+            size_mb=round(context.file_size / (1024 * 1024), 2),
         )
 
         return True
@@ -244,8 +244,8 @@ async def process_zip_contents(
         ),
     )
 
-    semaphore = asyncio.Semaphore(150)
-    batch_size = 50
+    semaphore = asyncio.Semaphore(s3_client.max_workers)
+    batch_size = s3_client.max_workers
     for batch_num, batch in batch_items(xml_files, batch_size):
 
         results = await process_batch(
@@ -287,7 +287,6 @@ async def process_zip_to_s3_async(
     zip_path: Path,
     destination_prefix: str,
     tags: dict[str, str] | None = None,
-    max_concurrent: int = 50,
 ) -> tuple[str, "ProcessingStats"]:
     """
     Process all files in a zip to S3, managing space efficiently in batches
@@ -299,7 +298,7 @@ async def process_zip_to_s3_async(
         "Processing zip file in batches",
         zip_path=str(zip_path),
         destination=destination_prefix,
-        max_concurrent=max_concurrent,
+        max_concurrent=s3_client.max_workers,
     )
 
     with tempfile.TemporaryDirectory() as temp_dir:

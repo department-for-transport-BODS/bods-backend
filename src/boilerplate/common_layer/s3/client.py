@@ -35,6 +35,7 @@ class S3:
     def __init__(self, bucket_name: str, max_workers: int = 150):
         self._client: "S3Client" = self._create_s3_client()
         self._bucket_name: str = bucket_name
+        self.max_workers: int = max_workers
         self.thread_pool = ThreadPoolExecutor(max_workers=max_workers)
 
     @property
