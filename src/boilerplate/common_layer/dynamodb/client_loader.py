@@ -105,7 +105,9 @@ class DynamoDBLoader:
     ):
         """Initialize DynamoDB loader with table name and region."""
         self.dynamodb = boto3.resource(  # type: ignore
-            "dynamodb", region_name=region, config=botocore.config.Config(proxies={})
+            "dynamodb",
+            region_name=region,
+            config=botocore.config.Config(proxies={}, max_pool_connections=100),
         )
         self.table_name = table_name
         self.table = self.dynamodb.Table(table_name)
@@ -284,10 +286,7 @@ class DynamoDBLoader:
         return result
 
     async def async_process_batch(self, items: list[dict[str, Any]]) -> int:
-        """
-        Process a single batch of items with retries.
-        Semaphore is used to limit the concurrent executions
-        """
+        """Process a single batch of items with retries."""
         if not items:
             return 0
 
@@ -296,18 +295,18 @@ class DynamoDBLoader:
         retry_count = 0
         unprocessed_items: BatchWriteItemInputRequestItems = request_items
 
-        async with self.semaphore:
-            while unprocessed_items and retry_count < max_retries:
-                if retry_count > 0:
-                    wait_time = (2**retry_count) * 0.1 + (random.random() * 0.1)
-                    await self.log.ainfo(
-                        "Retrying batch operation",
-                        retry_count=retry_count,
-                        wait_time=wait_time,
-                        remaining_items=len(unprocessed_items),
-                    )
-                    await asyncio.sleep(wait_time)
+        while unprocessed_items and retry_count < max_retries:
+            if retry_count > 0:
+                wait_time = (2**retry_count) * 0.1 + (random.random() * 0.1)
+                await self.log.ainfo(
+                    "Waiting before retry batch operation",
+                    retry_count=retry_count,
+                    wait_time=wait_time,
+                    remaining_items=len(unprocessed_items),
+                )
+                await asyncio.sleep(wait_time)
 
+            async with self.semaphore:
                 try:
                     loop = asyncio.get_event_loop()
                     response = await loop.run_in_executor(
@@ -323,7 +322,6 @@ class DynamoDBLoader:
                     error_code = e.response.get("Error", {}).get("Code", "")
                     if error_code == "ProvisionedThroughputExceededException":
                         retry_count += 1
-                        await asyncio.sleep(2**retry_count * 0.1)
                         continue
                     raise
 
