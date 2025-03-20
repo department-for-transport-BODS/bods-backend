@@ -29,7 +29,7 @@ def make_output_folder_name(
     """
     file_stem = file_path.stem
 
-    return f"{file_stem}/{request_id}/"
+    return f"serverless-extracted-files/{file_stem}/{request_id}/"
 
 
 def verify_and_extract(

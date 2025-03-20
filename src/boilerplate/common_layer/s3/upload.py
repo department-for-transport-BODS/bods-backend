@@ -454,7 +454,10 @@ def process_zip_to_s3(
 
 
 def process_file_to_s3(
-    s3_client: S3, file_path: Path, destination_prefix: str
+    s3_client: S3,
+    file_path: Path,
+    destination_prefix: str,
+    tags: dict[str, str] | None = None,
 ) -> tuple[str, ProcessingStats]:
     """
     Copy a single file and upload it to S3 in a dedicated folder.
@@ -472,7 +475,7 @@ def process_file_to_s3(
 
     try:
         with open(file_path, "rb") as file:
-            s3_client.put_object(s3_key, file.read())
+            s3_client.put_object(s3_key, file.read(), tags=tags)
             log.debug(
                 "Successfully uploaded file to new location",
                 filename=file_name,
