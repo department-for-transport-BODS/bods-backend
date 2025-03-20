@@ -390,7 +390,7 @@
     },
     "Generate Output Zip and Update Status": {
       "Type": "Task",
-      "Next": "Trigger DQS State Machine",
+      "Next": "Check Successful Files",
       "Resource": "${GenerateOutputZipLambdaArn}",
       "Arguments": {
         "MapRunArn": "{% $states.input.etlMapResults.MapRunArn %}",
@@ -403,6 +403,9 @@
         "PublishDatasetRevision": "{% $publishDatasetRevision %}",
         "OverwriteInputDataset": "{% $overwriteInputDataset %}"
       },
+      "Output": {
+        "finalResult": "{% $states.result %}"
+      },
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
@@ -412,6 +415,17 @@
           }
         }
       ]
+    },
+    "Check Successful File Count": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.finalResult.body.successful_files",
+          "NumericGreaterThan": 0,
+          "Next": "Trigger DQS State Machine"
+        }
+      ],
+      "Default": "Completed"
     },
     "Trigger DQS State Machine": {
       "Type": "Task",
