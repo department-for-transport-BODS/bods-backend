@@ -45,6 +45,8 @@ env:
     ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.release_version ||
     github.event_name == 'release' && github.event.release.tag_name || 'null' }}
   RC_SRC: ${{ vars.DEPLOYMENT_ARTEFACTS_S3_BUCKET }}
+  BODS_DEFAULT_GITHUB_ACTIONS_ASSUME_ROLE_ARN: ${{ vars.BODS_DEFAULT_GITHUB_ACTIONS_ASSUME_ROLE_ARN }}
+  ASSUME_ROLE_ARN: ${{ vars.ASSUME_ROLE_ARN }}
 
 jobs:
   validation:
@@ -69,14 +71,26 @@ jobs:
         if: ${{ env.RC_VER == 'null' }}
         uses: actions/checkout@v4
 
+      # Configure AWS credentials against the BODS Shared-Services Account
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
-          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/${{ vars.AWS_ASSUME_ROLE_NAME }}
+          role-to-assume: ${{ env.BODS_DEFAULT_GITHUB_ACTIONS_ASSUME_ROLE_ARN }}
           role-session-name: ${{ vars.PROJECT_NAME }}-${{ env.RC_ENV }}-app-deploy-validation
           role-duration-seconds: 3600
           role-skip-session-tagging: true
+
+      # Assume a role into the BODS-PROD account
+      - name: Configure AWS Credentials in bodds-prod
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ env.ASSUME_ROLE_ARN }}
+          role-session-name: ${{ vars.PROJECT_NAME }}-${{ env.RC_ENV }}-app-deploy-validation
+          role-duration-seconds: 3600
+          role-skip-session-tagging: true
+          role-chaining: true
 
       - name: validate job parameters
         id: validate
@@ -131,14 +145,26 @@ jobs:
         with:
           use-installer: true
 
+      # Configure AWS credentials against the BODS Shared-Services Account
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
-          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/${{ vars.AWS_ASSUME_ROLE_NAME }}
+          role-to-assume: ${{ env.BODS_DEFAULT_GITHUB_ACTIONS_ASSUME_ROLE_ARN }}
           role-session-name: ${{ vars.PROJECT_NAME }}-${{ env.RC_ENV }}-app-deploy
           role-duration-seconds: 3600
           role-skip-session-tagging: true
+
+      # Assume a role into the BODS-PROD account
+      - name: Configure AWS Credentials in bodds-prod
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ env.ASSUME_ROLE_ARN }}
+          role-session-name: ${{ vars.PROJECT_NAME }}-${{ env.RC_ENV }}-app-deploy
+          role-duration-seconds: 3600
+          role-skip-session-tagging: true
+          role-chaining: true
 
       - name: retrieve code
         env:
@@ -219,14 +245,26 @@ jobs:
         with:
           use-installer: true
 
+      # Configure AWS credentials against the BODS Shared-Services Account
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
-          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/${{ vars.AWS_ASSUME_ROLE_NAME }}
+          role-to-assume: ${{ env.BODS_DEFAULT_GITHUB_ACTIONS_ASSUME_ROLE_ARN }}
           role-session-name: ${{ vars.PROJECT_NAME }}-${{ matrix.stack }}-app-deploy
           role-duration-seconds: 3600
           role-skip-session-tagging: true
+
+      # Assume a role into the BODS-PROD account
+      - name: Configure AWS Credentials in bodds-prod
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ env.ASSUME_ROLE_ARN }}
+          role-session-name: ${{ vars.PROJECT_NAME }}-${{ matrix.stack }}-app-deploy
+          role-duration-seconds: 3600
+          role-skip-session-tagging: true
+          role-chaining: true
 
       - name: retrieve code
         env:
