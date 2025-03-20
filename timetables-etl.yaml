@@ -181,8 +181,10 @@ Resources:
       Handler: app.clamav_scanner.lambda_handler
       Layers:
         - !Ref BoilerplateLambdaLayerArn
-      MemorySize: 512
-      Timeout: 300
+      MemorySize: 1024
+      EphemeralStorage:
+        Size: 1024
+      Timeout: 900
       Environment:
         Variables:
           CLAMAV_HOST: !Sub 'clamav.bodds.${Environment}'
