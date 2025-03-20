@@ -2,13 +2,16 @@
 Description: Module to provide access to S3 objects
 """
 
+import asyncio
+import functools
 import mimetypes
 import os
 import shutil
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 from io import BytesIO
 from pathlib import Path
-from typing import Iterator
+from typing import TYPE_CHECKING, Iterator
 
 import boto3
 import botocore.config
@@ -17,7 +20,10 @@ from botocore.response import StreamingBody
 from structlog.stdlib import get_logger
 
 from .models import ListObjectsV2OutputTypeDef
+from .utils import format_s3_tags
 
+if TYPE_CHECKING:
+    from mypy_boto3_s3 import S3Client
 logger = get_logger()
 
 
@@ -27,8 +33,9 @@ class S3:
     """
 
     def __init__(self, bucket_name: str):
-        self._client = self._create_s3_client()
-        self._bucket_name = bucket_name
+        self._client: "S3Client" = self._create_s3_client()
+        self._bucket_name: str = bucket_name
+        self.thread_pool = ThreadPoolExecutor(max_workers=20)
 
     @property
     def bucket_name(self) -> str:
@@ -37,7 +44,7 @@ class S3:
         """
         return self._bucket_name
 
-    def _create_s3_client(self):
+    def _create_s3_client(self) -> "S3Client":
         """
         Creates an S3 client. If running locally (PROJECT_ENV=local),
         it points to the LocalStack S3 service; otherwise, it connects to AWS
@@ -52,7 +59,7 @@ class S3:
                 aws_secret_access_key="dummy",
             )
         logger.info("Using AWS S3 (production or non-local environment)")
-        config = botocore.config.Config(proxies={})
+        config = botocore.config.Config(proxies={}, max_pool_connections=150)
         return boto3.client("s3", config=config)  # type: ignore
 
     def _get_content_type(self, file_path: str) -> str:
@@ -67,7 +74,9 @@ class S3:
         logger.debug("S3: Determined Content Type", content_type=content_type)
         return content_type
 
-    def put_object(self, file_path: str, file_data: bytes):
+    def put_object(
+        self, file_path: str, file_data: bytes, tags: dict[str, str] | None = None
+    ):
         """
         Upload File data to S3
         """
@@ -78,22 +87,90 @@ class S3:
         )
 
         content_type = self._get_content_type(file_path)
+        tagging_str = format_s3_tags(tags)
+        try:
+            if tagging_str:
+                logger.debug(
+                    "S3: Adding tags to object", object_key=file_path, tags=tags
+                )
+
+                self._client.put_object(
+                    Bucket=self.bucket_name,
+                    Key=file_path,
+                    Body=file_data,
+                    ContentType=content_type,
+                    Tagging=tagging_str,
+                )
+            else:
+                self._client.put_object(
+                    Bucket=self.bucket_name,
+                    Key=file_path,
+                    Body=file_data,
+                    ContentType=content_type,
+                )
+
+            return True
+        except (ClientError, BotoCoreError) as err:
+            logger.error("Error uploading file", file_path=file_path, exc_info=True)
+            raise err
+
+    async def put_object_async(
+        self, file_path: str, file_data: bytes, tags: dict[str, str] | None = None
+    ) -> bool:
+        """
+        Async version of put_object that uploads file data to S3
+
+        """
+        logger.info(
+            "S3: Uploading file async",
+            bucket_name=self.bucket_name,
+            object_key=file_path,
+        )
+
+        content_type = self._get_content_type(file_path)
+        tagging_str = format_s3_tags(tags)
+
+        loop = asyncio.get_running_loop()
 
         try:
-            self._client.put_object(
-                Bucket=self.bucket_name,
-                Key=file_path,
-                Body=file_data,
-                ContentType=content_type,
-            )
+            if tagging_str:
+                logger.debug(
+                    "S3: Adding tags to object async", object_key=file_path, tags=tags
+                )
+
+                await loop.run_in_executor(
+                    self.thread_pool,
+                    functools.partial(
+                        self._client.put_object,
+                        Bucket=self.bucket_name,
+                        Key=file_path,
+                        Body=file_data,
+                        ContentType=content_type,
+                        Tagging=tagging_str,
+                    ),
+                )
+            else:
+                await loop.run_in_executor(
+                    self.thread_pool,
+                    functools.partial(
+                        self._client.put_object,
+                        Bucket=self.bucket_name,
+                        Key=file_path,
+                        Body=file_data,
+                        ContentType=content_type,
+                    ),
+                )
+
             logger.info(
-                "S3: Uploaded file successfully",
+                "S3: Uploaded file successfully async",
                 bucket_name=self.bucket_name,
                 object_key=file_path,
             )
             return True
         except (ClientError, BotoCoreError) as err:
-            logger.error(f"Error uploading file {file_path}: {err}")
+            logger.error(
+                "Error uploading file async", file_path=file_path, exc_info=True
+            )
             raise err
 
     def download_fileobj(self, file_path: str) -> BytesIO:

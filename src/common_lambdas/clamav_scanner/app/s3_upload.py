@@ -2,9 +2,15 @@
 Post ClamAV Scan, upload files to S3
 """
 
+import asyncio
 from pathlib import Path
 
-from common_layer.s3 import S3, ProcessingStats, process_file_to_s3, process_zip_to_s3
+from common_layer.s3 import (
+    S3,
+    ProcessingStats,
+    process_file_to_s3,
+    process_zip_to_s3_async,
+)
 from structlog.stdlib import get_logger
 
 from .verify_file import verify_zip_file
@@ -48,12 +54,22 @@ def unzip_and_upload_files(
     If the file is a zip, unzip and upload its contents to S3.
     Otherwise, copy the single file to a new folder and return that folder path.
     """
+    tags = {
+        "Lifecycle": "temporary",
+        "Expiration": "After ETL Completion",
+        "Purpose": "Serverless ETL Map Processing",
+    }
     if file_path.suffix.lower() == ".zip":
         log.info("Input File is a Zip. Processing...", file_path=str(file_path))
-        return process_zip_to_s3(
-            s3_client=s3_handler,
-            zip_path=file_path,
-            destination_prefix=s3_output_folder,
+        loop = asyncio.get_event_loop()
+        return loop.run_until_complete(
+            process_zip_to_s3_async(
+                s3_client=s3_handler,
+                zip_path=file_path,
+                destination_prefix=s3_output_folder,
+                tags=tags,
+                max_concurrent=50,
+            )
         )
 
     log.info("Input file is a single file", path=str(file_path))
