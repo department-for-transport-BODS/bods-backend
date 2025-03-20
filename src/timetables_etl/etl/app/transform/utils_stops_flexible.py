@@ -27,7 +27,7 @@ def map_stop_refs_to_naptan(
     for stop_ref in stop_refs:
         if not stop_ref in atco_location_mapping:
             msg = "Stop referenced in FlexibleJourneyPattern not found in stop map"
-            log.error(msg, stop_id=stop_ref)  # pylint: disable=R0801
+            log.error(msg, stop_id=stop_ref)  # pylint: disable=duplicate-code
             raise ValueError(msg)
 
         stop_data = atco_location_mapping[stop_ref]
