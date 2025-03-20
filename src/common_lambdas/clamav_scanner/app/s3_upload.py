@@ -68,7 +68,6 @@ def unzip_and_upload_files(
                 zip_path=file_path,
                 destination_prefix=s3_output_folder,
                 tags=tags,
-                max_concurrent=50,
             )
         )
 
