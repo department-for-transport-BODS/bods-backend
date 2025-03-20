@@ -390,7 +390,7 @@
     },
     "Generate Output Zip and Update Status": {
       "Type": "Task",
-      "Next": "Check Successful Files",
+      "Next": "Check Successful File Count",
       "Resource": "${GenerateOutputZipLambdaArn}",
       "Arguments": {
         "MapRunArn": "{% $states.input.etlMapResults.MapRunArn %}",
