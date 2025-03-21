@@ -640,3 +640,19 @@ Resources:
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
         - !Ref AWS::NoValue
       RetentionInDays: 30
+
+#################
+#### OUTPUTS ####
+#################
+Outputs:
+  NaptanStopPointTableArn:
+    Description: ARN associated with the Naptan Stop Points DynamoDb Table
+    Value: !GetAtt NaptanStopPointTable.Arn
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-naptan-stop-points-table-arn'
+
+  NaptanStopPointTableName:
+    Description: Name of the Naptan Stop Points DynamoDb Table
+    Value: !Ref NaptanStopPointTable
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-naptan-stop-points-table-name'
