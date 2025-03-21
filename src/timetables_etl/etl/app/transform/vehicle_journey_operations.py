@@ -329,6 +329,24 @@ def create_vehicle_journey_operations(
             operating_profile.RegularDayType,
         )
     )
+
+    # Combine the two lists
+    operating_days_list = special_operating_dates + bank_holiday_operating_dates
+    non_operating_days_list = (
+        special_non_operating_dates + bank_holiday_non_operating_dates
+    )
+
+    # Use a dictionary to store unique operating_dates, where the key is the operating_date
+    unique_operating_dates_dict = {
+        entry.operating_date: entry for entry in operating_days_list
+    }
+    # Use a dictionary to store unique non_operating_dates, where the key is the non_operating_date
+    unique_non_operating_dates_dict = {
+        entry.non_operating_date: entry for entry in non_operating_days_list
+    }
+    unique_operating_dates = list(unique_operating_dates_dict.values())
+    unique_non_operating_dates = list(unique_non_operating_dates_dict.values())
+
     serviced_org_vehicle_journeys, working_days_patterns = (
         create_serviced_organisation_vehicle_journeys(
             operating_profile.ServicedOrganisationDayType,
@@ -342,11 +360,8 @@ def create_vehicle_journey_operations(
         operating_profiles=create_operating_profiles(
             operating_profile.RegularDayType, tm_vj
         ),
-        operating_dates=[*special_operating_dates, *bank_holiday_operating_dates],
-        non_operating_dates=[
-            *special_non_operating_dates,
-            *bank_holiday_non_operating_dates,
-        ],
+        operating_dates=unique_operating_dates,
+        non_operating_dates=unique_non_operating_dates,
         serviced_organisation_vehicle_journeys=serviced_org_vehicle_journeys,
         working_days_patterns=working_days_patterns,
     )
