@@ -94,8 +94,6 @@ uat2:
         Environment='uat2'
         AvlConsumerApiBaseUrl='https://x87vl7rpc0.execute-api.eu-west-2.amazonaws.com/v1'
         CavlConsumerUrl='https://api-consumer-cavl-staging.itoworld.com'
-        DDGitData='7b4b66252fb52c0d4f4412f823cf7694616a1c46,https://github.com/department-for-transport-BODS/bods-backend.git'
-        Version='v1.0.112'
 
 prod:
   sync:
