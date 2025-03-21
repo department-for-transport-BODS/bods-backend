@@ -344,8 +344,6 @@ def create_vehicle_journey_operations(
     unique_non_operating_dates_dict = {
         entry.non_operating_date: entry for entry in non_operating_days_list
     }
-    unique_operating_dates = list(unique_operating_dates_dict.values())
-    unique_non_operating_dates = list(unique_non_operating_dates_dict.values())
 
     serviced_org_vehicle_journeys, working_days_patterns = (
         create_serviced_organisation_vehicle_journeys(
@@ -360,8 +358,8 @@ def create_vehicle_journey_operations(
         operating_profiles=create_operating_profiles(
             operating_profile.RegularDayType, tm_vj
         ),
-        operating_dates=unique_operating_dates,
-        non_operating_dates=unique_non_operating_dates,
+        operating_dates=list(unique_operating_dates_dict.values()),
+        non_operating_dates=list(unique_non_operating_dates_dict.values()),
         serviced_organisation_vehicle_journeys=serviced_org_vehicle_journeys,
         working_days_patterns=working_days_patterns,
     )
