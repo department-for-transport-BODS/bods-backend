@@ -11,6 +11,7 @@ from common_layer.aws import configure_metrics
 from common_layer.database.client import SqlDB
 from common_layer.database.models import (
     DatasetETLTaskResult,
+    ETLErrorCode,
     OrganisationDatasetRevision,
     TaskState,
 )
@@ -63,6 +64,7 @@ def create_task_result(db: SqlDB, revision_id: int) -> int:
         revision_id=revision_id,
         status=TaskState.STARTED,
         task_id=str(uuid4()),
+        error_code=ETLErrorCode.EMPTY,
     )
     created_task_result = task_result_repo.insert(task_result)
     return created_task_result.id
