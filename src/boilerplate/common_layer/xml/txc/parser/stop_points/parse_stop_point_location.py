@@ -11,7 +11,7 @@ from ...models import LocationStructure, PlaceStructure
 log = get_logger()
 
 
-def parse_location_structure(location_xml: _Element) -> LocationStructure | None:
+def parse_location_structure(location_xml: _Element) -> LocationStructure:
     """
     StopPoints -> StopPoint -> Place -> Location
     """
