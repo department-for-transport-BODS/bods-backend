@@ -444,7 +444,7 @@
       "Arguments": {
         "Error": "{% $states.input.errorInfo.Error %}",
         "Cause": "{% $parse($states.input.errorInfo.Cause) %}",
-        "datasetETLTaskResultId": "{% $exists($DatasetEtlTaskResultId) ? $DatasetEtlTaskResultId : datasetEtlTaskResultId %}"
+        "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}"
       }
     },
     "Overall State Machine Failed": {
