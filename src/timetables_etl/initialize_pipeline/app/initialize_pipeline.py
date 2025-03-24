@@ -5,13 +5,13 @@ Lambda: InitializePipeline
 from typing import Any
 from uuid import uuid4
 
+import common_layer.aws.datadog.tracing  # type: ignore # pylint: disable=unused-import
 from aws_lambda_powertools.metrics import MetricUnit
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.aws import configure_metrics
 from common_layer.database.client import SqlDB
 from common_layer.database.models import (
     DatasetETLTaskResult,
-    ETLErrorCode,
     OrganisationDatasetRevision,
     TaskState,
 )
