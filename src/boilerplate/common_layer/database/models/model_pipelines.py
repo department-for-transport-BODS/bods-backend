@@ -83,16 +83,27 @@ class ETLErrorCodeType(TypeDecorator[ETLErrorCode]):
     cache_ok = True
 
     def __init__(self, **kw: Any) -> None:
+        # Ensure empty string is explicitly included in the enum values
+        if "values_callable" in kw:
+            original_callable = kw["values_callable"]
+            kw["values_callable"] = lambda e: original_callable(e) + [""]  # type: ignore
+        else:
+            kw["values_callable"] = lambda e: [x.name for x in e] + [""]  # type: ignore
+
+        kw["validate_strings"] = False
+
         super().__init__(**kw)
 
     def process_result_value(self, value: Any | None, dialect: Dialect) -> ETLErrorCode:
         """Convert from DB to Python"""
         if value == "" or value is None:
             return ETLErrorCode.EMPTY
-        result = super().process_result_value(value, dialect)
-        if result is None:
+        try:
+            result = super().process_result_value(value, dialect)
+            return ETLErrorCode.EMPTY if result is None else result
+        except LookupError:
+            # Catch lookup errors and return EMPTY
             return ETLErrorCode.EMPTY
-        return result
 
     def process_bind_param(self, value: ETLErrorCode | None, dialect: Dialect) -> str:
         """Convert from Python to DB"""
@@ -135,7 +146,6 @@ class DatasetETLTaskResult(TaskResult):
             enum_class=ETLErrorCode,
             native_enum=False,
             length=50,
-            values_callable=lambda e: [x.name for x in e] + [""],  # type: ignore
         ),
         nullable=False,
         index=True,
