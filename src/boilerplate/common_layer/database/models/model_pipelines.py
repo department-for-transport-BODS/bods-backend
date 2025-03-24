@@ -135,7 +135,7 @@ class DatasetETLTaskResult(TaskResult):
             enum_class=ETLErrorCode,
             native_enum=False,
             length=50,
-            values_callable=lambda e: [x.name for x in e],  # type: ignore
+            values_callable=lambda e: [x.name for x in e] + [""],  # type: ignore
         ),
         nullable=False,
         index=True,
