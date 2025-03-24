@@ -7,6 +7,7 @@ import shutil
 from pathlib import Path
 from typing import Any
 
+import common_layer.aws.datadog.tracing  # type: ignore # pylint: disable=unused-import
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.database.client import SqlDB
 from common_layer.database.repos import ETLTaskResultRepo
