@@ -30,7 +30,7 @@ txc-tools = "tools.txc_tools.cli:cli"
 etl-state-machine = "tools.state_runner.cli:app"
 create-requirements-files = "tools.build_scripts.create_requirements_files:main"
 file-viewer = "tools.file_viewer.cli:run_cli"
-
+step-function-viewer = "tools.state_machine_viewer.step_function_viewer:app"
 [tool.poetry.dependencies]
 python = "^3.11"
 lxml = "^5.3.0"
