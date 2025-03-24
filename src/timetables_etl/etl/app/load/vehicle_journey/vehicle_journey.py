@@ -155,6 +155,10 @@ def get_journey_pattern_lookup(
         if service.StandardService:
             for jp in service.StandardService.JourneyPattern:
                 jp_lookup[jp.id] = jp
+
+        if service.FlexibleService:
+            for fjp in service.FlexibleService.FlexibleJourneyPattern:
+                jp_lookup[fjp.id] = fjp
     return jp_lookup
 
 

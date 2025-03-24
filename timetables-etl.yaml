@@ -4,7 +4,7 @@ Transform:
   - Name: DatadogServerless
     Parameters:
       stackName: !Ref 'AWS::StackName'
-      apiKeySecretArn: arn:aws:secretsmanager:eu-west-2:228266753808:secret:DD_API_KEY_ALL_ENV-WDa721
+      apiKeySecretArn: !Sub '{{resolve:secretsmanager:bodds/${Environment}/dd_api_key}}'
       pythonLayerVersion: 105
       extensionLayerVersion: 69
       site: datadoghq.eu
@@ -54,8 +54,6 @@ Parameters:
 Conditions:
   IsNotLocal: !Not [!Equals [!Ref Environment, 'local']]
   IsNotProd: !Not [!Equals [!Ref Environment, 'prod']]
-  IsNotTemp: ## TODO: Remove condition and references to it once isolated testing is completed and ETL is fully integrated into BODS
-    !Not [!Equals [!Select ['2', !Split ['-', !Ref 'AWS::StackName']], 'temp']]
 
 Globals:
   Function:
@@ -75,7 +73,6 @@ Globals:
       - IsNotLocal
       - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
       - !Ref AWS::NoValue
-    ReservedConcurrentExecutions: 100
     VpcConfig: !If
       - IsNotLocal
       - SubnetIds:
@@ -98,10 +95,7 @@ Globals:
         PROJECT_NAME: !Ref ProjectName
         POSTGRES_HOST: !If
           - IsNotLocal
-          - !If ## Remove condition once isolated testing is completed and ETL is fully integrated into BODS
-            - IsNotTemp
-            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
-            - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-endpoint}}'
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
           - !Ref RdsDbHostAddr
         POSTGRES_PORT: !Ref RdsDbPort
         POSTGRES_DB: !If
@@ -113,7 +107,8 @@ Globals:
           - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
           - !Ref RdsDbUsername
         DYNAMODB_CACHE_TABLE_NAME: !Ref TimetablesCache
-        DYNAMODB_NAPTAN_STOP_POINT_TABLE_NAME: !Sub 'bods-backend-${Environment}-naptan-stop-points-table' ## TODO: stop hardcoding this once IsNotTemp is removed
+        DYNAMODB_NAPTAN_STOP_POINT_TABLE_NAME:
+          Fn::ImportValue: !Sub '${ProjectName}-${Environment}-naptan-stop-points-table-name'
         DD_MERGE_XRAY_TRACES: true
         DD_RUNTIME_METRICS_ENABLED: true
         DD_DBM_PROPAGATION_MODE: full
@@ -182,8 +177,10 @@ Resources:
       Handler: app.clamav_scanner.lambda_handler
       Layers:
         - !Ref BoilerplateLambdaLayerArn
-      MemorySize: 512
-      Timeout: 300
+      MemorySize: 1024
+      EphemeralStorage:
+        Size: 1024
+      Timeout: 900
       Environment:
         Variables:
           CLAMAV_HOST: !Sub 'clamav.bodds.${Environment}'
@@ -399,17 +396,11 @@ Resources:
         - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
         - !If
           - IsNotLocal
-          - !If ## Remove condition once isolated testing is completed and ETL is fully integrated into BODS
-            - IsNotTemp
-            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
-            - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-rw-user-access-policy-arn}}'
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
           - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess'
         - !If
           - IsNotLocal
-          - !If ## Remove condition once isolated testing is completed and ETL is fully integrated into BODS
-            - IsNotTemp
-            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
-            - !Sub '{{resolve:ssm:/bodds/${Environment}/etl-rds-proxy-ro-user-access-policy-arn}}'
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-ro-user-access-policy-arn}}'
           - 'arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess'
       Policies:
         - PolicyName: S3AccessPolicy
@@ -459,14 +450,15 @@ Resources:
                   - dynamodb:GetItem
                   - dynamodb:PutItem
                   - dynamodb:BatchGetItem
-                Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/bods-backend-${Environment}-naptan-stop-points-table' ## TODO: stop hardcoding this once IsNotTemp is removed
+                Resource:
+                  Fn::ImportValue: !Sub '${ProjectName}-${Environment}-naptan-stop-points-table-arn'
         - PolicyName: DataDogAPIAccess
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action: secretsmanager:GetSecretValue
-                Resource: arn:aws:secretsmanager:eu-west-2:228266753808:secret:DD_API_KEY_ALL_ENV-WDa721
+                Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:bodds/${Environment}/dd_api_key-*'
 
   TimetablesStateMachineRole:
     Type: AWS::IAM::Role

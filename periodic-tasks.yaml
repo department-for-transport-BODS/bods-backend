@@ -149,7 +149,9 @@ Resources:
               {
                 "naptan_url": "https://naptan.api.dft.gov.uk/v1/access-nodes?dataFormat=xml",
                 "dynamo_table": "${ProjectName}-${Environment}-naptan-stop-points-table",
-                "aws_region": "${AWS::Region}"
+                "aws_region": "${AWS::Region}",
+                "max_concurrent_batches": "60",
+                "write_mode": "batch"
               }
       Definition:
         StartAt: PopulateDynamodbNaptanCache
@@ -161,6 +163,8 @@ Resources:
               'naptan_url.$': '$.naptan_url'
               'dynamo_table.$': '$.dynamo_table'
               'aws_region.$': '$.aws_region'
+              'max_concurrent_batches.$': '$.max_concurrent_batches'
+              'write_mode.$': '$.write_mode'
             ResultPath: '$.populate_result'
             Catch:
               - ErrorEquals: ['States.TaskFailed']
@@ -309,7 +313,7 @@ Resources:
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       Timeout: 900
-      MemorySize: 1280
+      MemorySize: 1769
       EphemeralStorage:
         Size: 1024
 
@@ -643,3 +647,19 @@ Resources:
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
         - !Ref AWS::NoValue
       RetentionInDays: 30
+
+#################
+#### OUTPUTS ####
+#################
+Outputs:
+  NaptanStopPointTableArn:
+    Description: ARN associated with the Naptan Stop Points DynamoDb Table
+    Value: !GetAtt NaptanStopPointTable.Arn
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-naptan-stop-points-table-arn'
+
+  NaptanStopPointTableName:
+    Description: Name of the Naptan Stop Points DynamoDb Table
+    Value: !Ref NaptanStopPointTable
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-naptan-stop-points-table-name'

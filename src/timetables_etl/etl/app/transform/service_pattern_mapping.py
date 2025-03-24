@@ -14,6 +14,7 @@ from common_layer.xml.txc.models import (
     JourneyPatternVehicleDirectionT,
     TXCData,
     TXCFlexibleJourneyPattern,
+    TXCFlexibleService,
     TXCJourneyPattern,
     TXCJourneyPatternSection,
     TXCLine,
@@ -598,6 +599,23 @@ def get_standard_service_pattern_ids(
         for sp_id, metadata in service_pattern_mapping.service_pattern_metadata.items()
         if any(
             jp in {jp.id for jp in service.JourneyPattern}
+            for jp in metadata.journey_pattern_ids
+        )
+    ]
+
+
+def get_flexible_service_pattern_ids(
+    service: TXCFlexibleService,
+    service_pattern_mapping: ServicePatternMapping,
+) -> list[str]:
+    """
+    Get a filtered list of service pattern IDs for a standard service
+    """
+    return [
+        sp_id
+        for sp_id, metadata in service_pattern_mapping.service_pattern_metadata.items()
+        if any(
+            jp in {jp.id for jp in service.FlexibleJourneyPattern}
             for jp in metadata.journey_pattern_ids
         )
     ]
