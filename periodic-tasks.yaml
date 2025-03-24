@@ -47,7 +47,14 @@ Parameters:
     Default: 'bodds_rw'
   BoilerplateLambdaLayerArn:
     Type: String
-
+  DDGitData:
+    Type: String
+    Default: ''
+    Description: 'The output of $(git rev-parse HEAD),$(git config --get remote.origin.url). Used for Datadog Source Code Integration tagging'
+  Version:
+    Type: String
+    Default: 'unknown'
+    Description: 'Version to pass to Datadog APM'
 Conditions:
   IsNotLocal: !Not [!Equals [!Ref Environment, 'local']]
 
