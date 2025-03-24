@@ -21,17 +21,32 @@ class SQLDBClientError(Exception):
     def __init__(self, message: str, original_error: Exception | None = None):
         self.message = message
         self.original_error = original_error
+        self.error_locations: list[dict[str, str | int]] = []
 
-        # Capture stack information
         try:
             frame_info = inspect.stack()[2]  # Skip the decorator frame
+            location = {
+                "File": frame_info.filename,
+                "Line": frame_info.lineno,
+                "Function": frame_info.function,
+            }
             self.filename = frame_info.filename
             self.line = frame_info.lineno
             self.function = frame_info.function
+            self.error_locations.append(location)
         except (IndexError, AttributeError):
+            location = {
+                "File": "<unknown>",
+                "Line": 0,
+                "Function": "<unknown>",
+            }
             self.filename = "<unknown>"
             self.line = 0
             self.function = "<unknown>"
+            self.error_locations.append(location)
+
+        if isinstance(original_error, SQLDBClientError):
+            self.error_locations.extend(original_error.error_locations)
 
         super().__init__(self.message)
 
@@ -44,28 +59,28 @@ class SQLDBClientError(Exception):
         error_dict: dict[str, Any] = {
             "ErrorType": self.__class__.__name__,
             "Message": self.message,
-            "Location": {
-                "File": self.filename,
-                "Line": self.line,
-                "Function": self.function,
-            },
+            "Locations": self.error_locations,
         }
 
-        if self.original_error:
-            # Extract information from the original error
+        # Get the actual root cause, not another SQLDBClientError
+        root_error = self.original_error
+        while isinstance(root_error, SQLDBClientError) and root_error.original_error:
+            root_error = root_error.original_error
+
+        if root_error and not isinstance(root_error, SQLDBClientError):
             original_error_info: dict[str, Any] = {
-                "Type": self.original_error.__class__.__name__,
-                "Message": str(self.original_error),
+                "Type": root_error.__class__.__name__,
+                "Message": str(root_error),
             }
 
             # Add SQLAlchemy specific details if applicable
-            if isinstance(self.original_error, SQLAlchemyError):
+            if isinstance(root_error, SQLAlchemyError):
                 sql_info: dict[str, Any] = {}
-                stmt = getattr(self.original_error, "statement", None)
+                stmt = getattr(root_error, "statement", None)
                 if stmt is not None:
                     sql_info["Statement"] = str(stmt)
 
-                params = getattr(self.original_error, "params", None)
+                params = getattr(root_error, "params", None)
                 if params is not None:
                     sql_info["Parameters"] = str(params)
 

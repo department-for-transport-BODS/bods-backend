@@ -66,7 +66,7 @@ def create_task_result(db: SqlDB, revision_id: int) -> int:
         revision_id=revision_id,
         status=TaskState.STARTED,
         task_id=str(uuid4()),
-        error_code=ETLErrorCode.EMPTY,
+        error_code="",
     )
     created_task_result = task_result_repo.insert(task_result)
     return created_task_result.id
