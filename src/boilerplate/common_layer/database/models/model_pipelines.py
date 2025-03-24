@@ -9,7 +9,9 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from enum import Enum
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import DateTime
+from sqlalchemy import Enum as SqlAlchemyEnum
+from sqlalchemy import ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .common import BaseSQLModel, TimeStampedMixin
@@ -91,10 +93,15 @@ class DatasetETLTaskResult(TaskResult):
     task_name_failed: Mapped[str] = mapped_column(String(255), default="", kw_only=True)
 
     error_code: Mapped[ETLErrorCode] = mapped_column(
-        String(50),
+        SqlAlchemyEnum(
+            ETLErrorCode,
+            native_enum=False,
+            length=50,
+            values_callable=lambda e: [x.name for x in e],  # type: ignore
+        ),
         nullable=False,
         index=True,
-        default="",
+        default=ETLErrorCode.EMPTY,
         kw_only=True,
         doc="The error code returned for the failed task",
     )
