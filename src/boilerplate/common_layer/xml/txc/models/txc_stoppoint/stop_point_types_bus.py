@@ -2,10 +2,15 @@
 Bus Stop Type
 """
 
+from common_layer.xml.txc.models import LocationStructure
 from pydantic import BaseModel, Field, field_validator
 
 from ..txc_types import BusStopTypeT, TimingStatusT
 from .stop_point_marked import MarkedPointStructure, UnmarkedPointStructure
+
+
+class FlexibleZoneStructure(BaseModel):
+    Location: list[LocationStructure] | None = Field(default=None)
 
 
 class BusStopStructure(BaseModel):
@@ -29,6 +34,10 @@ class BusStopStructure(BaseModel):
     UnmarkedPoint: UnmarkedPointStructure | None = Field(
         default=None,
         description="Unmarked stop (or only marked on the road).",
+    )
+
+    FlexibleZone: FlexibleZoneStructure | None = Field(
+        default=None, description="Flexible stop zone"
     )
 
     @field_validator("BusStopType", mode="before")

@@ -4,6 +4,9 @@ Parse OnStreet XML
 
 from typing import cast, get_args
 
+from common_layer.xml.txc.models.txc_stoppoint.stop_point_types_bus import (
+    FlexibleZoneStructure,
+)
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
@@ -11,9 +14,11 @@ from ....utils import get_element_text
 from ...models import (
     BusStopStructure,
     BusStopTypeT,
+    LocationStructure,
     OnStreetStructure,
     TaxiStopClassificationStructure,
 )
+from ..stop_points import parse_location_structure
 from ..txc_types import parse_timing_status
 from .parse_stop_point_marked import (
     parse_marked_point_structure,
@@ -68,12 +73,32 @@ def parse_bus_stop_structure(bus_xml: _Element) -> BusStopStructure | None:
         log.warning("Missing MarkedPoint for marked bus stop type")
         return None
 
+    flexible_zone_xml = bus_xml.find("FlexibleZone")
+    flexible_zone = (
+        parse_flexible_zone(flexible_zone_xml) if flexible_zone_xml else None
+    )
+
     return BusStopStructure(
         BusStopType=cast(BusStopTypeT, bus_stop_type),
         TimingStatus=timing_status,
         MarkedPoint=marked_point,
         UnmarkedPoint=unmarked_point,
+        FlexibleZone=flexible_zone,
     )
+
+
+def parse_flexible_zone(xml: _Element) -> FlexibleZoneStructure:
+    """
+    Parse the FlexibleZone structure within a Bus element
+
+    StopPoints -> StopPoint -> StopClassification -> OnStreet -> Bus -> FlexibleZone
+    """
+    location_elements = xml.findall("Location")
+    locations: list[LocationStructure] = []
+    for loc_xml in location_elements:
+        location = parse_location_structure(loc_xml)
+        locations.append(location)
+    return FlexibleZoneStructure(Location=locations or None)
 
 
 def parse_taxi_structure(taxi_xml: _Element) -> TaxiStopClassificationStructure | None:
