@@ -81,7 +81,7 @@ Globals:
           - IsNotLocal
           - !Sub 'http://squid.bodds.${Environment}:3128'
           - !Ref AWS::NoValue
-
+        DD_EXTENSION_VERSION: compatibility
     KmsKeyArn: !If
       - IsNotLocal
       - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'

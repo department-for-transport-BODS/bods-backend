@@ -112,6 +112,7 @@ Globals:
         DD_MERGE_XRAY_TRACES: true
         DD_RUNTIME_METRICS_ENABLED: true
         DD_DBM_PROPAGATION_MODE: full
+        DD_EXTENSION_VERSION: compatibility
 
 Resources:
   #######################
@@ -308,7 +309,7 @@ Resources:
       CodeUri: ./src/timetables_etl/etl
       Handler: app.etl_process.lambda_handler
       Timeout: 900
-      MemorySize: 1024
+      MemorySize: 1280
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
