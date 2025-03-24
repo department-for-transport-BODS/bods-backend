@@ -10,6 +10,7 @@ class StepName(str, Enum):
     Enumeration representing various steps or processes in a workflow.
     """
 
+    INITIALIZE_PIPELINE = "INITIALIZE_PIPELINE"
     CLAM_AV_SCANNER = "Clam AV Scanner"
     DOWNLOAD_DATASET = "Download Dataset"
     ETL_PROCESS = "ETL Process"

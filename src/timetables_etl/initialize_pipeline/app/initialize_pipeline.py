@@ -19,6 +19,8 @@ from common_layer.database.repos import (
     ETLTaskResultRepo,
     OrganisationDatasetRevisionRepo,
 )
+from common_layer.db.constants import StepName
+from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.dynamodb.client.cache import DynamoDBCache
 from common_layer.dynamodb.data_manager import FileProcessingDataManager
 from common_layer.enums import FeedStatus
@@ -26,7 +28,7 @@ from common_layer.json_logging import configure_logging
 from pydantic import BaseModel
 from structlog.stdlib import get_logger
 
-metrics = configure_metrics()
+metrics = configure_metrics(StepName.INITIALIZE_PIPELINE)
 logger = get_logger()
 
 
@@ -112,6 +114,7 @@ def initialize_pipeline(
 
 
 @metrics.log_metrics  # type: ignore
+@file_processing_result_to_db(step_name=StepName.INITIALIZE_PIPELINE)
 def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any]:
     """
     Handler for InitializePipeline
