@@ -5,7 +5,7 @@ Transform:
     Parameters:
       stackName: !Ref 'AWS::StackName'
       apiKey: !Sub '{{resolve:secretsmanager:bodds/${Environment}/dd_api_key}}'
-      pythonLayerVersion: 106
+      pythonLayerVersion: 105
       extensionLayerVersion: 75
       site: datadoghq.eu
       service: !Sub '${ProjectName}-timetables-etl'
