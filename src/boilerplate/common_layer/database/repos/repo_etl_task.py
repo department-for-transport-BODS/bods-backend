@@ -188,12 +188,13 @@ class PipelineProcessingStepRepository(BaseRepositoryWithId[PipelineProcessingSt
         self, name: str, category: str
     ) -> PipelineProcessingStep | None:
         """
-        Retrieve a unique PipelineProcessingStep by its name and category
+        Retrieve a PipelineProcessingStep by its name and category.
+        If multiple are found, logs an error and returns the first one.
         """
         statement = self._build_query().where(
             self._model.name == name, self._model.category == category
         )
-        return self._fetch_one(statement)
+        return self._fetch_first(statement)
 
     def get_or_create_by_name_and_category(
         self, name: str, category: str
