@@ -378,6 +378,8 @@ Resources:
       AttributeDefinitions:
         - AttributeName: AtcoCode
           AttributeType: S
+        - AttributeName: NaptanCode
+          AttributeType: S
       KeySchema:
         - AttributeName: AtcoCode
           KeyType: HASH
