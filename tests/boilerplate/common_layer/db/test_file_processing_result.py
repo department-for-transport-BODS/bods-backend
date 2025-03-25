@@ -3,10 +3,12 @@ Tests for the file_processing_result_to_db decorator
 Used to update task status in the lambdas
 """
 
+from typing import Any
 from unittest.mock import MagicMock, patch
 from uuid import UUID
 
 import pytest
+from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.database.models import ETLErrorCode, TaskState
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import (
@@ -179,7 +181,10 @@ def test_handle_lambda_success(has_db_connection: bool):
         ),
     ],
 )
-def test_handle_lambda_error(exception_type: str, has_db_connection):
+def test_handle_lambda_error(exception_type: str, has_db_connection: bool):
+    """
+    Test Handle lambda error to db
+    """
     db = MagicMock() if has_db_connection else None
     processing_result = FileProcessingResultFactory() if has_db_connection else None
     context = MagicMock(
@@ -190,7 +195,7 @@ def test_handle_lambda_error(exception_type: str, has_db_connection):
     )
     error = type(exception_type, (Exception,), {})()
 
-    handle_lambda_error(StepName.DOWNLOAD_DATASET, context, error)
+    handle_lambda_error(context, error)
 
     if has_db_connection:
         assert context.processing_result.status == TaskState.FAILURE
@@ -218,7 +223,7 @@ def test_file_processing_result_to_db_decorator(success: bool, db_available: boo
     context = MagicMock()
 
     @file_processing_result_to_db(step_name=StepName.CLAM_AV_SCANNER)
-    def test_lambda(event, context):
+    def test_lambda(_event: dict[str, Any], _context: LambdaContext):
         if not success:
             raise ValueError("Test error")
         return "success"

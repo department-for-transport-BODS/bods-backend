@@ -22,6 +22,7 @@ from common_layer.database.repos import (
     PipelineErrorCodeRepository,
     PipelineProcessingStepRepository,
 )
+from common_layer.database.repos.operation_decorator import SQLDBClientError
 from common_layer.db.constants import StepName
 from common_layer.exceptions import ETLException
 from common_layer.json_logging import configure_logging
@@ -182,21 +183,8 @@ def handle_lambda_success(context: ProcessingContext) -> None:
             )
 
 
-def handle_lambda_error(
-    step_name: StepName, context: ProcessingContext, error: Exception
-) -> None:
+def handle_lambda_error(context: ProcessingContext, error: Exception) -> None:
     """Handle lambda execution failure by updating database"""
-
-    log.error(
-        "Lambda Execution Failed",
-        error_type=error.__class__.__name__,
-        error_message=str(error),
-        step_name=step_name.value,
-        task_id=str(context.task_id),
-        exc_info=True,
-    )
-
-    # Only attempt to write error to DB if connection exists
     if context.db is not None and context.processing_result is not None:
         try:
             write_error_to_db(context.db, context.processing_result, error)
@@ -245,11 +233,31 @@ def file_processing_result_to_db(step_name: StepName):
                 return result
 
             except ETLException as validation_error:
-                handle_lambda_error(step_name, processing_context, validation_error)
+                handle_lambda_error(processing_context, validation_error)
+                log.error(
+                    "Input File Failed Step",
+                    error_type=validation_error.__class__.__name__,
+                    error_message=validation_error.to_dict(),
+                    step_name=step_name.value,
+                    exc_info=True,
+                )
+
                 raise
 
             except Exception as lambda_error:  # pylint: disable=broad-exception-caught
-                handle_lambda_error(step_name, processing_context, lambda_error)
+                handle_lambda_error(processing_context, lambda_error)
+
+                if isinstance(lambda_error, SQLDBClientError):
+                    error_message = lambda_error.to_dict()
+                else:
+                    error_message = str(lambda_error)
+                log.critical(
+                    "Lambda Raised Unhandled Exception",
+                    error_type=lambda_error.__class__.__name__,
+                    error_message=error_message,
+                    step_name=step_name.value,
+                    exc_info=True,
+                )
                 raise
 
         return wrapper

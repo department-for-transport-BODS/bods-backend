@@ -30,16 +30,9 @@ Parameters:
     Default: 'unknown'
     Description: 'Version to pass to Datadog APM'
 
-Conditions:
-  ## Remove conditions once isolated testing is completed and ETL is fully integrated into BODS
-  IsNotTemp:
-    !Not [!Equals [!Select ['2', !Split ['-', !Ref 'AWS::StackName']], 'temp']]
-
 Resources:
   PeriodicTasks:
     Type: AWS::Serverless::Application
-    ## Remove once isolated testing is completed and ETL is fully integrated into BODS
-    Condition: IsNotTemp
     Properties:
       Location: './periodic-tasks.yaml'
       Parameters:
@@ -50,12 +43,15 @@ Resources:
         RdsDbHostAddr: !Ref RdsDbHostAddr
         RdsDbPort: !Ref RdsDbPort
         BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
+        DDGitData: !Ref DDGitData
+        Version: !Ref Version
       Tags:
         env: !Ref Environment
         service: !Sub '${ProjectName}-periodic-tasks'
 
   TimetablesEtl:
     Type: AWS::Serverless::Application
+    DependsOn: PeriodicTasks
     Properties:
       Location: './timetables-etl.yaml'
       Parameters:

@@ -10,6 +10,7 @@ from structlog.stdlib import get_logger
 
 from ..client import SqlDB
 from ..exceptions import (
+    OrganisationDatasetNotFound,
     OrganisationDatasetRevisionNotFound,
     OrganisationTXCFileAttributesNotFound,
 )
@@ -34,6 +35,16 @@ class OrganisationDatasetRepo(BaseRepositoryWithId[OrganisationDataset]):
 
     def __init__(self, db: SqlDB):
         super().__init__(db, OrganisationDataset)
+
+    @handle_repository_errors
+    def require_by_id(self, dataset_id: int) -> OrganisationDataset:
+        """
+        Return a Dataset Revision otherwise raise OrganisationDatasetNotFound exception
+        """
+        revision = self.get_by_id(dataset_id)
+        if revision is None:
+            raise OrganisationDatasetNotFound(dataset_id=dataset_id)
+        return revision
 
     @handle_repository_errors
     def get_published_datasets(

@@ -6,6 +6,7 @@ Process the results
 from io import BytesIO
 from typing import Any, Counter
 
+import common_layer.aws.datadog.tracing  # type: ignore # pylint: disable=unused-import
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.aws.step import get_map_processing_results, get_map_run_base_path
 from common_layer.database import SqlDB

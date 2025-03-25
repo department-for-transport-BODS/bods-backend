@@ -58,6 +58,7 @@ class ETLErrorCode(str, Enum):
     PTI_VIOLATION_FOUND = "PTI Failed due to one or more violations"
 
     # DB
+    ORGANISATION_DATASET_NOT_FOUND = "The Organisation ID was not found in the DB"
     ORGANISATION_DATASET_REVISION_NOT_FOUND = "The Revision ID was not found in the DB"
     ORGANISATION_TXC_FILE_ATTRIBUTES_NOT_FOUND = (
         "The File Attributes were not found in the DB"
@@ -65,6 +66,9 @@ class ETLErrorCode(str, Enum):
     PIPELINES_DATASET_ETL_TASK_RESULT_NOT_FOUND = (
         "The DatasetETLTaskResult was not found in DB"
     )
+
+    # Fares
+    FARES_METADATA_NOT_FOUND = "No Metadata found in DynamoDB for Aggregation"
 
     @property
     def code(self) -> str:

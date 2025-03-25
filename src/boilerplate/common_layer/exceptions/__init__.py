@@ -11,6 +11,7 @@ from .exceptions_download import (
     PermissionDenied,
     UnknownFileType,
 )
+from .exceptions_fares import FaresMetadataNotFound
 from .exceptions_pti import PTIViolationFound
 from .exceptions_s3 import S3FilenameParseFailed, S3FileTooLargeError
 from .exceptions_schema import (
@@ -53,4 +54,6 @@ __all__ = [
     "ZipTooLarge",
     # PTI
     "PTIViolationFound",
+    # Fares
+    "FaresMetadataNotFound",
 ]

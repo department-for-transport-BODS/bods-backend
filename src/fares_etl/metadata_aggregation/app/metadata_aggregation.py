@@ -16,9 +16,10 @@ from common_layer.database.repos import (
     OrganisationDatasetRevisionRepo,
 )
 from common_layer.dynamodb.client.fares_metadata import DynamoDBFaresMetadata
+from common_layer.exceptions import FaresMetadataNotFound
 from common_layer.json_logging import configure_logging
 from pydantic import BaseModel, Field
-from structlog import get_logger
+from structlog.stdlib import get_logger
 
 from .load.dataset import load_dataset
 from .load.metadata import load_metadata
@@ -47,18 +48,12 @@ def get_organisation_id_from_revision_id(db: SqlDB, revision_id: int) -> int:
     Retrieve the organisation ID associated with a given revision ID.
     """
 
-    org_dataset_revision_repo = OrganisationDatasetRevisionRepo(db)
-    org_dataset_repo = OrganisationDatasetRepo(db)
-
-    org_dataset_revision = org_dataset_revision_repo.get_by_id(revision_id)
-
-    if not org_dataset_revision:
-        raise ValueError(f"Revision ID {revision_id} not found")
-
-    organisation_dataset = org_dataset_repo.get_by_id(org_dataset_revision.dataset_id)
-
-    if not organisation_dataset:
-        raise ValueError(f"Organisation ID not found for revision ID {revision_id}")
+    org_dataset_revision = OrganisationDatasetRevisionRepo(db).require_by_id(
+        revision_id
+    )
+    organisation_dataset = OrganisationDatasetRepo(db).require_by_id(
+        org_dataset_revision.dataset_id
+    )
 
     return organisation_dataset.organisation_id
 
@@ -82,8 +77,8 @@ def get_data_from_dynamodb(
     ]
 
     if len(dynamodb_metadata) == 0:
-        log.error(f"No data found in dynamodb for task: {task_id}")
-        raise ValueError("No data found in dynamodb")
+        log.error("No Fares metadata found in dynamodb for task", task_id=task_id)
+        raise FaresMetadataNotFound(task_id=task_id)
 
     return dynamodb_metadata, dynamodb_violations
 
@@ -124,7 +119,9 @@ def load_metadata_to_database(
     load_metadata(db, aggregated_fares_metadata, stops, data_catalogues)
 
 
-def lambda_handler(event: dict[str, Any], context: LambdaContext):
+def lambda_handler(
+    event: dict[str, Any], context: LambdaContext
+) -> dict[str, int | str]:
     """
     Fares Metadata Aggregation
     """
@@ -161,4 +158,11 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext):
 
     load_violations(db, violations, fares_validation_result)
 
-    return {"status_code": 200, "message": "Fares Metadata Aggregation Completed"}
+    return {
+        "status_code": 200,
+        "message": "Fares Metadata Aggregation Completed",
+        "fares_metadata_count": len(fares_metadata),
+        "stops_count": len(stops),
+        "data_catalogues_count": len(data_catalogues),
+        "violations_count": len(violations),
+    }

@@ -55,7 +55,7 @@ class ETLTaskResultRepo(BaseRepositoryWithId[DatasetETLTaskResult]):
             task.status = TaskState.SUCCESS
             task.completed = datetime.now(UTC)
             task.task_name_failed = ""
-            task.error_code = ETLErrorCode.EMPTY
+            task.error_code = ""
 
         statement = self._build_query().where(self._model.id == task_id)
         self._update_one(statement, update_func)
@@ -77,7 +77,7 @@ class ETLTaskResultRepo(BaseRepositoryWithId[DatasetETLTaskResult]):
                 task.status = TaskState.FAILURE
                 task.completed = datetime.now(UTC)
                 task.task_name_failed = task_name
-                task.error_code = error_code
+                task.error_code = error_code.name
                 task.additional_info = additional_info
 
         statement = self._build_query().where(self._model.id == task_id)
@@ -188,12 +188,13 @@ class PipelineProcessingStepRepository(BaseRepositoryWithId[PipelineProcessingSt
         self, name: str, category: str
     ) -> PipelineProcessingStep | None:
         """
-        Retrieve a unique PipelineProcessingStep by its name and category
+        Retrieve a PipelineProcessingStep by its name and category.
+        If multiple are found, logs an error and returns the first one.
         """
         statement = self._build_query().where(
             self._model.name == name, self._model.category == category
         )
-        return self._fetch_one(statement)
+        return self._fetch_first(statement)
 
     def get_or_create_by_name_and_category(
         self, name: str, category: str
