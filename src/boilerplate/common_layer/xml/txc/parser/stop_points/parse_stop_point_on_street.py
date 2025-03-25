@@ -75,7 +75,9 @@ def parse_bus_stop_structure(bus_xml: _Element) -> BusStopStructure | None:
 
     flexible_zone_xml = bus_xml.find("FlexibleZone")
     flexible_zone = (
-        parse_flexible_zone(flexible_zone_xml) if flexible_zone_xml else None
+        parse_flexible_zone(flexible_zone_xml)
+        if flexible_zone_xml is not None
+        else None
     )
 
     return BusStopStructure(
