@@ -6,7 +6,7 @@ Transform:
       stackName: !Ref 'AWS::StackName'
       apiKeySecretArn: !Sub '{{resolve:secretsmanager:bodds/${Environment}/dd_api_key}}'
       pythonLayerVersion: 105
-      extensionLayerVersion: 69
+      extensionLayerVersion: 75
       site: datadoghq.eu
       service: !Sub '${ProjectName}-fares-etl'
       env: !Ref Environment
