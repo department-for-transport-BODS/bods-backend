@@ -10,6 +10,9 @@ from common_layer.database.models import (
     FaresMetadata,
     FaresMetadataStop,
 )
+from structlog.stdlib import get_logger
+
+log = get_logger()
 
 
 def get_min_schema_version(schema_versions: list[str]) -> str:
@@ -102,7 +105,13 @@ def map_metadata(metadata_items: list[dict[str, Any]]) -> tuple[
         data_catalogue_list.append(FaresDataCatalogueMetadata(**data_catalogue_item))
 
     stops = [FaresMetadataStop(stoppoint_id=stop_id) for stop_id in stop_ids]
-
+    log.info(
+        "Metadata Mapping Completed",
+        fares_metadata_count=len(fares_metadata_list),
+        data_catalogue_count=len(data_catalogue_list),
+        stops_count=len(stops),
+        netex_schema_versions_count=len(netex_schema_versions),
+    )
     return (
         fares_metadata_list,
         data_catalogue_list,

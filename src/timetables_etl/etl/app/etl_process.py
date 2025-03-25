@@ -5,8 +5,9 @@ Each invocation handles a single file
 
 from typing import Any
 
-from aws_lambda_powertools.metrics.provider.datadog import DatadogMetrics
+import common_layer.aws.datadog.tracing  # type: ignore # pylint: disable=unused-import
 from aws_lambda_powertools.utilities.typing import LambdaContext
+from common_layer.aws import configure_metrics
 from common_layer.database import SqlDB
 from common_layer.database.repos import (
     ETLTaskResultRepo,
@@ -27,8 +28,7 @@ from .models import ETLInputData, TaskData
 from .pipeline import transform_data
 
 log = get_logger()
-metrics = DatadogMetrics(flush_to_log=True)
-metrics.set_default_tags(function="ETLProcess")  # type: ignore
+metrics = configure_metrics(StepName.ETL_PROCESS)
 
 
 PARSER_CONFIG = TXCParserConfig(
@@ -79,7 +79,7 @@ def get_task_data(input_data: ETLInputData, db: SqlDB) -> TaskData:
     )
 
 
-@metrics.log_metrics
+@metrics.log_metrics  # type: ignore
 @file_processing_result_to_db(step_name=StepName.ETL_PROCESS)
 def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, Any]:
     """

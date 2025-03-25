@@ -22,8 +22,20 @@ def parse_jp_direction(elem: _Element) -> JourneyPatternVehicleDirectionT | None
     Parse a JourneyPatternVehicleDirectionT from a TXC XML element
     """
     text = get_element_text(elem, "Direction")
+
+    original_text = text
+    text = text.strip() if text else text
+
+    if text != original_text:
+        log.info(
+            "Stripped whitespace from JourneyPatternVehicleDirectionT",
+            original=original_text,
+            cleaned=text,
+        )
+
     if text in get_args(JourneyPatternVehicleDirectionT):
         return cast(JourneyPatternVehicleDirectionT, text)
+
     log.warning("Unknown JourneyPatternVehicleDirectionT Type", text=text)
     return None
 

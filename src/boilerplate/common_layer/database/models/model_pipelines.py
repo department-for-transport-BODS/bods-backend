@@ -13,7 +13,6 @@ from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .common import BaseSQLModel, TimeStampedMixin
-from .error_codes import ETLErrorCode
 
 
 class TaskState(str, Enum):
@@ -90,7 +89,7 @@ class DatasetETLTaskResult(TaskResult):
 
     task_name_failed: Mapped[str] = mapped_column(String(255), default="", kw_only=True)
 
-    error_code: Mapped[ETLErrorCode] = mapped_column(
+    error_code: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
         index=True,
