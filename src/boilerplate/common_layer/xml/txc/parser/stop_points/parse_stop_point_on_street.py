@@ -4,9 +4,6 @@ Parse OnStreet XML
 
 from typing import cast, get_args
 
-from common_layer.xml.txc.models.txc_stoppoint.stop_point_types_bus import (
-    FlexibleZoneStructure,
-)
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
@@ -14,10 +11,12 @@ from ....utils import get_element_text
 from ...models import (
     BusStopStructure,
     BusStopTypeT,
+    FlexibleZoneStructure,
     LocationStructure,
     OnStreetStructure,
     TaxiStopClassificationStructure,
 )
+from ...models.txc_stoppoint.stop_point_types_bus import FlexibleZoneStructure
 from ..stop_points import parse_location_structure
 from ..txc_types import parse_timing_status
 from .parse_stop_point_marked import (
