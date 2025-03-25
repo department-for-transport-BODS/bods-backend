@@ -4,9 +4,9 @@ Transform:
   - Name: DatadogServerless
     Parameters:
       stackName: !Ref 'AWS::StackName'
-      apiKeySecretArn: !Sub '{{resolve:secretsmanager:bodds/${Environment}/dd_api_key}}'
+      apiKey: !Sub '{{resolve:secretsmanager:bodds/${Environment}/dd_api_key}}'
       pythonLayerVersion: 105
-      extensionLayerVersion: 69
+      extensionLayerVersion: 75
       site: datadoghq.eu
       service: !Sub '${ProjectName}-timetables-etl'
       env: !Ref Environment
@@ -309,7 +309,7 @@ Resources:
       CodeUri: ./src/timetables_etl/etl
       Handler: app.etl_process.lambda_handler
       Timeout: 900
-      MemorySize: 1024
+      MemorySize: 1280
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:

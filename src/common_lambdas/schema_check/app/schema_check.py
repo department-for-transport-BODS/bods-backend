@@ -4,6 +4,7 @@ SchemaCheckLambda
 
 from typing import Any
 
+import common_layer.aws.datadog.tracing  # type: ignore # pylint: disable=unused-import
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from botocore.exceptions import BotoCoreError, ClientError
 from common_layer.database.client import SqlDB

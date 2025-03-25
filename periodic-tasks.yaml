@@ -1,5 +1,20 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Transform: AWS::Serverless-2016-10-31
+Transform:
+  - AWS::Serverless-2016-10-31
+  - Name: DatadogServerless
+    Parameters:
+      stackName: !Ref 'AWS::StackName'
+      apiKey: !Sub '{{resolve:secretsmanager:bodds/${Environment}/dd_api_key}}'
+      pythonLayerVersion: 105
+      extensionLayerVersion: 75
+      site: datadoghq.eu
+      service: !Sub '${ProjectName}-periodic-tasks'
+      env: !Ref Environment
+      version: !Ref Version
+      gitData: !Ref DDGitData
+      enableDDTracing: true
+      captureLambdaPayload: true
+      enableProfiling: false
 Description: Supporting services for the execution of periodic tasks
 
 Parameters:
@@ -32,7 +47,14 @@ Parameters:
     Default: 'bodds_rw'
   BoilerplateLambdaLayerArn:
     Type: String
-
+  DDGitData:
+    Type: String
+    Default: ''
+    Description: 'The output of $(git rev-parse HEAD),$(git config --get remote.origin.url). Used for Datadog Source Code Integration tagging'
+  Version:
+    Type: String
+    Default: 'unknown'
+    Description: 'Version to pass to Datadog APM'
 Conditions:
   IsNotLocal: !Not [!Equals [!Ref Environment, 'local']]
 
@@ -59,7 +81,7 @@ Globals:
           - IsNotLocal
           - !Sub 'http://squid.bodds.${Environment}:3128'
           - !Ref AWS::NoValue
-
+        DD_EXTENSION_VERSION: compatibility
     KmsKeyArn: !If
       - IsNotLocal
       - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'

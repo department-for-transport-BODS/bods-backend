@@ -11,7 +11,7 @@ from common_layer.database.repos import (
     DataQualityPTIObservationRepo,
     OrganisationDatasetRevisionRepo,
 )
-from common_layer.database.repos.operation_decorator import RepositoryError
+from common_layer.database.repos.operation_decorator import SQLDBClientError
 from pti.app.models.models_pti import PtiObservation, PtiRule, PtiViolation
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -130,7 +130,7 @@ def test_create_observations_handles_error(
 
     with (
         patch.object(test_db, "session_scope", mock_session),
-        pytest.raises(RepositoryError),
+        pytest.raises(SQLDBClientError),
     ):
         observations = [
             PtiViolation.make_observation(789, violation)

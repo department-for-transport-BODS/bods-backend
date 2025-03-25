@@ -69,6 +69,28 @@ class BaseRepository(Generic[DBModelT]):
             return results
 
     @handle_repository_errors
+    def _fetch_first(self, statement: Select[tuple[DBModelT]]) -> DBModelT | None:
+        """
+        Fetch the first result from a query, ignores if multiple were found
+        Logs a warning if multiple results are found.
+        """
+        with self._db.session_scope() as session:
+            results = list(session.execute(statement).scalars().all())
+            if not results:
+                return None
+
+            if len(results) > 1:
+                self._log.error(
+                    "Multiple results found when expecting one",
+                    count=len(results),
+                    statement=str(statement),
+                )
+
+            result = results[0]
+            session.expunge(result)
+            return result
+
+    @handle_repository_errors
     def _update_one(
         self,
         statement: Select[tuple[DBModelT]],

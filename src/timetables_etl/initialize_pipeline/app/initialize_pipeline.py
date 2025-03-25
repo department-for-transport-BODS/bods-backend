@@ -5,6 +5,7 @@ Lambda: InitializePipeline
 from typing import Any
 from uuid import uuid4
 
+import common_layer.aws.datadog.tracing  # type: ignore # pylint: disable=unused-import
 from aws_lambda_powertools.metrics import MetricUnit
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.aws import configure_metrics
@@ -18,6 +19,8 @@ from common_layer.database.repos import (
     ETLTaskResultRepo,
     OrganisationDatasetRevisionRepo,
 )
+from common_layer.db.constants import StepName
+from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.dynamodb.client.cache import DynamoDBCache
 from common_layer.dynamodb.data_manager import FileProcessingDataManager
 from common_layer.enums import FeedStatus
@@ -25,7 +28,7 @@ from common_layer.json_logging import configure_logging
 from pydantic import BaseModel
 from structlog.stdlib import get_logger
 
-metrics = configure_metrics()
+metrics = configure_metrics(StepName.INITIALIZE_PIPELINE)
 logger = get_logger()
 
 
@@ -63,6 +66,7 @@ def create_task_result(db: SqlDB, revision_id: int) -> int:
         revision_id=revision_id,
         status=TaskState.STARTED,
         task_id=str(uuid4()),
+        error_code="",
     )
     created_task_result = task_result_repo.insert(task_result)
     return created_task_result.id
@@ -110,6 +114,7 @@ def initialize_pipeline(
 
 
 @metrics.log_metrics  # type: ignore
+@file_processing_result_to_db(step_name=StepName.INITIALIZE_PIPELINE)
 def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any]:
     """
     Handler for InitializePipeline

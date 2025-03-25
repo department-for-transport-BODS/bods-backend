@@ -43,6 +43,8 @@ Resources:
         RdsDbHostAddr: !Ref RdsDbHostAddr
         RdsDbPort: !Ref RdsDbPort
         BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
+        DDGitData: !Ref DDGitData
+        Version: !Ref Version
       Tags:
         env: !Ref Environment
         service: !Sub '${ProjectName}-periodic-tasks'
