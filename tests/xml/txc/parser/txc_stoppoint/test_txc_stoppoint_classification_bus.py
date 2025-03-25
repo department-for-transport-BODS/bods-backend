@@ -126,9 +126,9 @@ from lxml.etree import fromstring
                             Latitude=None,
                         ),
                         LocationStructure(
-                            Easting="462636",
-                            Northing="172042",
-                            Longitude="1.9836500",
+                            Easting="401187",
+                            Northing="377271",
+                            Longitude="-1.9836500",
                             Latitude="53.2924256",
                         ),
                     ]
