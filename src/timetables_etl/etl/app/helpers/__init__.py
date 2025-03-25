@@ -3,7 +3,13 @@ Helper exports
 """
 
 from .dataclasses import NonExistentNaptanStop, ReferenceDataLookups
-from .types import LookupStopPoint, ServicedOrgLookup, StopsLookup, TrackLookup
+from .types import (
+    FlexibleZoneLookup,
+    LookupStopPoint,
+    ServicedOrgLookup,
+    StopsLookup,
+    TrackLookup,
+)
 
 __all__ = [
     "NonExistentNaptanStop",
@@ -11,5 +17,6 @@ __all__ = [
     "LookupStopPoint",
     "ServicedOrgLookup",
     "StopsLookup",
+    "FlexibleZoneLookup",
     "TrackLookup",
 ]
