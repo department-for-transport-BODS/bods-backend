@@ -20,7 +20,7 @@ from .load import (
 from .load.servicepatterns import load_transmodel_service_patterns
 from .models import ETLProcessStats, TaskData
 from .transform.stop_points import (
-    create_stop_point_location_mapping,
+    create_stop_point_lookups,
     get_naptan_stops_from_dynamo,
 )
 
@@ -44,7 +44,7 @@ def build_lookup_data(
     db_stops, missing_atco_codes = get_naptan_stops_from_dynamo(
         txc.StopPoints, stop_point_client
     )
-    stop_mapping = create_stop_point_location_mapping(
+    stop_mapping, flexible_zone_lookup = create_stop_point_lookups(
         txc.StopPoints, db_stops, missing_atco_codes
     )
 
@@ -52,7 +52,10 @@ def build_lookup_data(
     track_lookup = load_tracks(txc.RouteSections, db)
 
     return ReferenceDataLookups(
-        stops=stop_mapping, serviced_orgs=serviced_orgs, tracks=track_lookup
+        stops=stop_mapping,
+        flexible_zone_locations=flexible_zone_lookup,
+        serviced_orgs=serviced_orgs,
+        tracks=track_lookup,
     )
 
 

@@ -268,7 +268,9 @@ def create_service_pattern(
         destination=metadata.destination,
         line_name=metadata.line_name,
         revision_id=context.revision.id,
-        geom=generate_service_pattern_geometry_from_list(data.stop_sequence),
+        geom=generate_service_pattern_geometry_from_list(
+            data.stop_sequence, context.flexible_zone_lookup
+        ),
     )
 
     log.info(

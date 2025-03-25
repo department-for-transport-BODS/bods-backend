@@ -111,6 +111,7 @@ def test_create_service_pattern(
         revision=revision,
         journey_pattern_sections=[],
         stop_mapping={},
+        flexible_zone_lookup=None,
         db=MagicMock(),
     )
 

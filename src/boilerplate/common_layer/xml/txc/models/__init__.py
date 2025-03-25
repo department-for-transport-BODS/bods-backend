@@ -57,6 +57,7 @@ from .txc_stoppoint import (
     BusStopStructure,
     DescriptorStructure,
     FerryStopClassificationStructure,
+    FlexibleZoneStructure,
     LocationStructure,
     MarkedPointStructure,
     MetroStopClassificationStructure,
@@ -151,6 +152,7 @@ __all__ = [
     "TaxiStopClassificationStructure",
     "TXCStopPoint",
     "UnmarkedPointStructure",
+    "FlexibleZoneStructure",
     # Types
     "ActivityT",
     "LicenceClassificationT",
