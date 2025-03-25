@@ -106,7 +106,6 @@ class NaptanStopPointDynamoDBClient(DynamoDB):
         log.info("Fetching StopPoints from DynamoDB by NaptanCodes")
 
         if not naptan_codes:
-            log.warning("No NaptanCodes provided for fetching StopPoints")
             return [], []
 
         stop_points: list[TXCStopPoint] = []

@@ -190,6 +190,8 @@ Resources:
       Environment:
         Variables:
           DYNAMODB_FARES_METADATA_TABLE_NAME: !Ref FaresMetadataTable
+          DYNAMODB_NAPTAN_STOP_POINT_TABLE_NAME:
+            Fn::ImportValue: !Sub '${ProjectName}-${Environment}-naptan-stop-points-table-name'
 
   FaresMetadataAggregationLambda:
     Type: AWS::Serverless::Function
