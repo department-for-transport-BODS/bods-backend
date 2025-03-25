@@ -10,6 +10,10 @@ from .stop_point_marked import MarkedPointStructure, UnmarkedPointStructure
 
 
 class FlexibleZoneStructure(BaseModel):
+    """
+    Data type for Type of Flexible Zone
+    """
+
     Location: list[LocationStructure] | None = Field(default=None)
 
 
