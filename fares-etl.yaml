@@ -306,7 +306,7 @@ Resources:
                   - IsNotLocal
                   - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
                   - '*'
-        - PolicyName: DynamoDBAccessPolicy
+        - PolicyName: DynamoDBMetadataAccessPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -315,6 +315,15 @@ Resources:
                   - dynamodb:PutItem
                   - dynamodb:Query
                 Resource: !GetAtt FaresMetadataTable.Arn
+        - PolicyName: DynamoDBNaptanAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:Query
+                Resource:
+                  - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-naptan-stop-points-table-name'
         - PolicyName: DataDogAPIAccess
           PolicyDocument:
             Version: '2012-10-17'
