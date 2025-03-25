@@ -38,6 +38,7 @@ def process_standard_service_patterns(
         revision=task_data.revision,
         journey_pattern_sections=txc.JourneyPatternSections,
         stop_mapping=lookups.stops,
+        flexible_zone_lookup=None,
         db=db,
     )
 

@@ -16,7 +16,7 @@ from .stop_point_types import (
     FerryStopClassificationStructure,
     RailStopClassificationStructure,
 )
-from .stop_point_types_bus import BusStopStructure
+from .stop_point_types_bus import BusStopStructure, FlexibleZoneStructure
 from .stoppoint_classification import (
     MetroStopClassificationStructure,
     OffStreetStructure,
@@ -30,6 +30,7 @@ __all__ = [
     "AnnotatedStopPointRef",
     "BearingStructure",
     "BusStopStructure",
+    "FlexibleZoneStructure",
     "DescriptorStructure",
     "LocationStructure",
     "MarkedPointStructure",
