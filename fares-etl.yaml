@@ -4,7 +4,7 @@ Transform:
   - Name: DatadogServerless
     Parameters:
       stackName: !Ref 'AWS::StackName'
-      apiKeySecretArn: !Sub '{{resolve:secretsmanager:bodds/${Environment}/dd_api_key}}'
+      apiKey: !Sub '{{resolve:secretsmanager:bodds/${Environment}/dd_api_key}}'
       pythonLayerVersion: 105
       extensionLayerVersion: 69
       site: datadoghq.eu
