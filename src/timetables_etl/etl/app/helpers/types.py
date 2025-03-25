@@ -9,6 +9,7 @@ from common_layer.database.models import (
     TransmodelServicedOrganisations,
     TransmodelTracks,
 )
+from common_layer.xml.txc.models import LocationStructure
 
 from .dataclasses.stop_points import NonExistentNaptanStop
 
@@ -17,3 +18,4 @@ ServicedOrgLookup: TypeAlias = dict[str, TransmodelServicedOrganisations]
 
 LookupStopPoint: TypeAlias = NaptanStopPoint | NonExistentNaptanStop
 StopsLookup: TypeAlias = dict[str, LookupStopPoint]
+FlexibleZoneLookup: TypeAlias = dict[str, list[LocationStructure]]

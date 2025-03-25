@@ -16,7 +16,7 @@ from geoalchemy2.shape import from_shape  # type: ignore
 from shapely.geometry import Point
 from structlog.stdlib import get_logger
 
-from ..helpers import StopsLookup
+from ..helpers import FlexibleZoneLookup, StopsLookup
 from ..helpers.dataclasses import NonExistentNaptanStop
 
 log = get_logger()
@@ -83,11 +83,25 @@ def create_non_existent_stop_point_data(
     )
 
 
-def create_stop_point_location_mapping(
+def get_flexible_zone_locations(stop_point: TXCStopPoint) -> list[LocationStructure]:
+    """
+    Get locations from FlexibleZone.Location for the given stop point
+    """
+    bus = (
+        stop_point.StopClassification.OnStreet.Bus
+        if stop_point.StopClassification.OnStreet
+        else None
+    )
+    if bus and bus.FlexibleZone and bus.FlexibleZone.Location:
+        return bus.FlexibleZone.Location
+    return []
+
+
+def create_stop_point_lookups(
     stop_points: list[AnnotatedStopPointRef | TXCStopPoint],
     naptan_stops: list[TXCStopPoint],
     missing_stop_atco_codes: list[str],
-) -> StopsLookup:
+) -> tuple[StopsLookup, FlexibleZoneLookup]:
     """
     Create a mapping dict between AtcoCodes and it's location
 
@@ -96,24 +110,28 @@ def create_stop_point_location_mapping(
     :param missing_stop_atco_codes: AnnotatedStopPoints that
     could not be found in the Naptan DB
     """
-    stop_location_map: StopsLookup = {}
+    stops_lookup: StopsLookup = {}
+    flexible_zone_lookup: dict[str, list[LocationStructure]] = {}
 
+    # Handle
     for naptan in naptan_stops:
-        stop_location_map[naptan.AtcoCode] = create_custom_stop_point_data(naptan)
+        stops_lookup[naptan.AtcoCode] = create_custom_stop_point_data(naptan)
+        flexible_zone_lookup[naptan.AtcoCode] = get_flexible_zone_locations(naptan)
+
     for stop in stop_points:
         if isinstance(stop, TXCStopPoint):
-            stop_location_map[stop.AtcoCode] = create_custom_stop_point_data(stop)
+            stops_lookup[stop.AtcoCode] = create_custom_stop_point_data(stop)
+            flexible_zone_lookup[stop.AtcoCode] = get_flexible_zone_locations(stop)
 
         # Handle AnnotatedStopPointRefs not found in Naptan DB
         if (
             isinstance(stop, AnnotatedStopPointRef)
             and stop.StopPointRef in missing_stop_atco_codes
         ):
-            stop_location_map[stop.StopPointRef] = create_non_existent_stop_point_data(
-                stop
-            )
+            stops_lookup[stop.StopPointRef] = create_non_existent_stop_point_data(stop)
+            flexible_zone_lookup[stop.StopPointRef] = []
 
-    return stop_location_map
+    return stops_lookup, flexible_zone_lookup
 
 
 def get_naptan_stops_from_dynamo(
