@@ -111,7 +111,7 @@ def create_stop_point_lookups(
     could not be found in the Naptan DB
     """
     stops_lookup: StopsLookup = {}
-    flexible_zone_lookup: dict[str, list[LocationStructure]] = {}
+    flexible_zone_lookup: FlexibleZoneLookup = {}
 
     # Handle
     for naptan in naptan_stops:
