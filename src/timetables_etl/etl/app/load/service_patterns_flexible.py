@@ -36,6 +36,7 @@ def process_flexible_service_patterns(
         revision=task_data.revision,
         journey_pattern_sections=txc.JourneyPatternSections,
         stop_mapping=lookups.stops,
+        flexible_zone_lookup=lookups.flexible_zone_locations,
         db=db,
     )
 
