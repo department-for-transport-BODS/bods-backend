@@ -16,7 +16,6 @@ from ...models import (
     OnStreetStructure,
     TaxiStopClassificationStructure,
 )
-from ...models.txc_stoppoint.stop_point_types_bus import FlexibleZoneStructure
 from ..stop_points import parse_location_structure
 from ..txc_types import parse_timing_status
 from .parse_stop_point_marked import (
