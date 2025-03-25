@@ -4,8 +4,8 @@ Bus Stop Type
 
 from pydantic import BaseModel, Field, field_validator
 
-from ...models.txc_stoppoint.stop_point_location import LocationStructure
 from ..txc_types import BusStopTypeT, TimingStatusT
+from .stop_point_location import LocationStructure
 from .stop_point_marked import MarkedPointStructure, UnmarkedPointStructure
 
 
