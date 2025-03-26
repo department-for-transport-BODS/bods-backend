@@ -6,7 +6,7 @@ import json
 from typing import Annotated, Any
 
 from common_layer.database.models import ETLErrorCode
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class ErrorCause(BaseModel):
@@ -58,3 +58,27 @@ class ExceptionHandlerInputData(BaseModel):
     error: str = Field(alias="Error")
     cause: Annotated[ErrorCause, Field(alias="Cause")]
     dataset_etl_task_result_id: int = Field(alias="DatasetEtlTaskResultId")
+
+    @model_validator(mode="before")
+    @classmethod
+    def sanitize_event(cls, values: dict[str, Any]) -> dict[str, Any]:
+        """
+        Handle inputs that don't match the expected ExceptionHandlerInputData model.
+        For example, unexpected platform errors.
+        """
+        raw_cause: dict[str, Any] = values.get("Cause", {})
+
+        if isinstance(raw_cause, str):
+            try:
+                raw_cause = json.loads(raw_cause)
+            except json.JSONDecodeError:
+                raw_cause = {"errorMessage": raw_cause}
+
+        raw_cause.setdefault("errorType", "unknown")
+        raw_cause.setdefault("errorMessage", "unknown")
+        raw_cause.setdefault("requestId", "unknown")
+        raw_cause.setdefault("stackTrace", [])
+
+        values["Cause"] = raw_cause
+
+        return values
