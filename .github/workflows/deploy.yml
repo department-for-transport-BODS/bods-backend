@@ -229,7 +229,7 @@ jobs:
 
   deploy-uat2:
     runs-on: ubuntu-latest
-    if: ${{ github.ref_name == 'main' }}
+    if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
     environment: ${{ github.ref_name == 'main' && 'uat2' }}
     needs: validation
     env:
