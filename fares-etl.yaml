@@ -323,7 +323,7 @@ Resources:
                 Action:
                   - dynamodb:Query
                 Resource:
-                  - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-naptan-stop-points-table-name'
+                  - Fn::ImportValue: !Sub '${ProjectName}-${Environment}-naptan-stop-points-table-arn'
         - PolicyName: DataDogAPIAccess
           PolicyDocument:
             Version: '2012-10-17'
