@@ -8,7 +8,7 @@ from mypy_boto3_stepfunctions import SFNClient
 from ..models import ExecutionDetails
 from ..models.models_describe_executions import DescribeExecutionResponse
 from ..models.models_execution_history import HistoryEvent
-from ..models.models_map_runs import MapRunListItem
+from ..models.models_map_runs import MapRunDescribe, MapRunInfo, MapRunListItem
 
 
 def get_step_functions_client(profile: str) -> SFNClient:
@@ -20,19 +20,25 @@ def get_step_functions_client(profile: str) -> SFNClient:
 
 def get_map_runs_for_execution(
     client: SFNClient, execution_arn: str
-) -> list[MapRunListItem]:
+) -> list[MapRunInfo]:
     """
-    Get Map Run ARNs for a specific execution.
+    Get Map Run information for a specific execution
+
     """
-    map_runs: list[MapRunListItem] = []
+    map_run_infos: list[MapRunInfo] = []
 
     paginator = client.get_paginator("list_map_runs")
 
     for page in paginator.paginate(executionArn=execution_arn):
         for map_run in page.get("mapRuns", []):
-            map_runs.append(MapRunListItem.model_validate(map_run))
+            list_item = MapRunListItem.model_validate(map_run)
 
-    return map_runs
+            describe_response = client.describe_map_run(mapRunArn=list_item.mapRunArn)
+            describe_item = MapRunDescribe.model_validate(describe_response)
+
+            map_run_infos.append(MapRunInfo(listing=list_item, describe=describe_item))
+
+    return map_run_infos
 
 
 def get_execution_history(client: SFNClient, execution_arn: str) -> list[HistoryEvent]:

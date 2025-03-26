@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from .models_describe_executions import DescribeExecutionResponse
 from .models_execution_history import HistoryEvent
-from .models_map_runs import MapRunListItem
+from .models_map_runs import MapRunInfo
 
 
 class StepDuration(BaseModel):
@@ -33,4 +33,4 @@ class ExecutionDetails(BaseModel):
 
     describe: DescribeExecutionResponse
     history: list[HistoryEvent]
-    map_runs: list[MapRunListItem]
+    map_runs: list[MapRunInfo]
