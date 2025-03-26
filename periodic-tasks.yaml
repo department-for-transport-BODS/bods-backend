@@ -12,7 +12,7 @@ Transform:
       env: !Ref Environment
       version: !Ref Version
       gitData: !Ref DDGitData
-      enableDDTracing: true
+      enableDDTracing: false
       captureLambdaPayload: true
       enableProfiling: false
 Description: Supporting services for the execution of periodic tasks
