@@ -2,13 +2,42 @@
 Steps Viewer
 """
 
+from datetime import datetime
+
 from textual.app import ComposeResult
 from textual.containers import Container
 from textual.reactive import reactive, var
 from textual.widgets import DataTable
 
 from ..helpers import format_duration
-from ..models import ExecutionDetails
+from ..models import ExecutionDetails, HistoryEvent
+from .models import StepDuration
+
+
+def analyze_step_durations(events: list[HistoryEvent]) -> list[StepDuration]:
+    """Analyzes events to calculate step durations."""
+    step_start_times: dict[str, datetime] = {}
+    step_durations: list[StepDuration] = []
+
+    for event in events:
+        state_name: str = (
+            event.details.name if event.details and event.details.name else "Unknown"
+        )
+        if event.type.endswith("StateEntered"):
+            step_start_times[state_name] = event.timestamp
+
+        elif event.type.endswith("StateExited"):
+            if state_name in step_start_times:
+                start_time = step_start_times[state_name]
+                step_durations.append(
+                    StepDuration(
+                        name=state_name,
+                        duration=event.timestamp - start_time,
+                        start_time=start_time,
+                        end_time=event.timestamp,
+                    )
+                )
+    return step_durations
 
 
 class StepsTab(Container):
@@ -19,7 +48,7 @@ class StepsTab(Container):
 
     def compose(self) -> ComposeResult:
         """Compose the steps tab layout."""
-        yield DataTable(id="step-durations")
+        yield DataTable(id="step-durations", cursor_type="row")
 
     def on_mount(self) -> None:
         """Initialize the data table."""
@@ -59,13 +88,11 @@ class StepsTab(Container):
         """Populate the table with sorted step data."""
         if not self.execution_details:
             return
-
+        steps = analyze_step_durations(self.execution_details.history)
         if self.sort_by == "duration":
-            sorted_steps = sorted(
-                self.execution_details.steps, key=lambda x: x.duration, reverse=True
-            )
+            sorted_steps = sorted(steps, key=lambda x: x.duration, reverse=True)
         else:
-            sorted_steps = sorted(self.execution_details.steps, key=lambda x: x.name)
+            sorted_steps = sorted(steps, key=lambda x: x.name)
 
         for step in sorted_steps:
             duration_str = format_duration(step.duration)

@@ -2,8 +2,6 @@
 Execution Viewer Screen for AWS Step Functions
 """
 
-import boto3
-from mypy_boto3_stepfunctions.client import SFNClient
 from textual import on
 from textual.app import ComposeResult
 from textual.binding import Binding
@@ -15,16 +13,14 @@ from textual.widgets import (
     Footer,
     Header,
     LoadingIndicator,
-    Static,
     TabbedContent,
     TabPane,
 )
 
-from ..api_requests import get_execution_details
-from ..helpers import format_duration
+from ..api import get_execution_details
+from ..api.api_requests import get_step_functions_client
 from ..models import ExecutionDetails
-from .excution_viewer_calculations import enrich_execution_with_history
-from .tab_map_info import MapExecutionsTab
+from .tab_map_summary import MapRunsTab
 from .tab_payloads import PayloadsTab
 from .tab_steps import StepsTab
 from .tab_summary import SummaryTab
@@ -33,7 +29,6 @@ from .tab_summary import SummaryTab
 class ExecutionViewerScreen(Screen[None]):
     """Screen for viewing execution details"""
 
-    # Custom message for navigation
     class NavigateBack(Message):
         """Message sent when the user wants to go back to execution selection"""
 
@@ -47,6 +42,7 @@ class ExecutionViewerScreen(Screen[None]):
     ]
 
     execution_details = reactive(None)
+    map_executions = reactive(None)
 
     def __init__(self, state_machine_arn: str, execution_id: str, profile: str):
         self.state_machine_arn = state_machine_arn
@@ -66,8 +62,8 @@ class ExecutionViewerScreen(Screen[None]):
                 yield StepsTab(id="steps-container")
             with TabPane("Payloads", id="payloads-pane"):
                 yield PayloadsTab(id="payloads-container", classes="hidden")
-            with TabPane("Map Executions", id="map-executions-pane"):
-                yield MapExecutionsTab(id="map-executions-container")
+            with TabPane("Map Runs", id="map-runs-pane"):
+                yield MapRunsTab(id="map-runs-container")
         yield Footer()
 
     def on_mount(self) -> None:
@@ -110,33 +106,6 @@ class ExecutionViewerScreen(Screen[None]):
         if not execution_details:
             return
 
-        # Update info section
-        self.query_one("#execution-id", Static).update(
-            f"Execution ID: {execution_details.name}"
-        )
-        self.query_one("#status", Static).update(f"Status: {execution_details.status}")
-        self.query_one("#duration", Static).update(
-            f"Total Duration: {format_duration(execution_details.duration)}"
-        )
-
-        map_run_arn = (
-            execution_details.map_run_arn if execution_details.map_run_arn else "N/A"
-        )
-        self.query_one("#map-run-arn", Static).update(f"Map Run ARN: {map_run_arn}")
-
-        error = execution_details.error
-        cause = execution_details.cause
-
-        if error or cause:
-            error_title = "⚠️ Error Information ⚠️"
-            error_content = f"{error_title}\n\nError: {error}\n\nCause:\n{cause}"
-            self.query_one("#error-container").remove_class("hidden")
-        else:
-            error_content = ""
-            self.query_one("#error-container").add_class("hidden")
-
-        self.query_one("#error-data", Static).update(error_content)
-
         self._refresh_tabs()
 
     def refresh_execution_details(self) -> None:
@@ -153,13 +122,10 @@ class ExecutionViewerScreen(Screen[None]):
         Worker to fetch details from AWS
         """
         try:
-            client = self._get_step_functions_client()
-            execution_details = get_execution_details(
+            client = get_step_functions_client(self.profile)
+            self.execution_details = get_execution_details(
                 client, self.state_machine_arn, self.execution_id
             )
-            execution_details = enrich_execution_with_history(execution_details, client)
-
-            self.execution_details = execution_details
             loading = self.query_one("#loading", LoadingIndicator)
             loading.display = False
         except Exception as e:  # pylint: disable=broad-exception-caught
@@ -169,17 +135,7 @@ class ExecutionViewerScreen(Screen[None]):
         """Refresh all tabs with current data."""
         if not self.execution_details:
             return
-
-        # Update Steps tab
-        steps_tab = self.query_one(StepsTab)
-        steps_tab.refresh_data(self.execution_details)
-
-        # Update Payloads tab
-        payloads_tab = self.query_one(PayloadsTab)
-        payloads_tab.update_payloads(self.execution_details)
-
-    def _get_step_functions_client(self) -> SFNClient:
-        """Creates a boto3 Step Functions client."""
-        session = boto3.Session(profile_name=self.profile)
-        client: SFNClient = session.client("stepfunctions")  # type: ignore
-        return client
+        self.query_one(SummaryTab).refresh_data(self.execution_details)
+        self.query_one(StepsTab).refresh_data(self.execution_details)
+        self.query_one(PayloadsTab).update_payloads(self.execution_details)
+        self.query_one(MapRunsTab).refresh_data(self.execution_details)

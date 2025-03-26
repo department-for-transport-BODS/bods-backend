@@ -57,19 +57,19 @@ class PayloadsTab(Container):
     def update_payloads(self, execution_details: ExecutionDetails) -> None:
         """Update the payload data."""
         self.update_section(
-            execution_details.input,
-            execution_details.input_details.truncated,
+            execution_details.describe.input,
+            execution_details.describe.inputDetails.included,
             "#input-truncated-notice",
             "#input-data",
         )
 
         self.update_section(
-            execution_details.output,
-            execution_details.output_details.truncated,
+            execution_details.describe.output,
+            execution_details.describe.outputDetails.included,
             "#output-truncated-notice",
             "#output-data",
         )
 
         self.query_one("#output-data", Markdown).update(
-            wrap_for_markdown(execution_details.output)
+            wrap_for_markdown(execution_details.describe.output)
         )
