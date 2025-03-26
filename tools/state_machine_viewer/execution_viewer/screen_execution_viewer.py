@@ -135,7 +135,9 @@ class ExecutionViewerScreen(Screen[None]):
         """Refresh all tabs with current data."""
         if not self.execution_details:
             return
-        self.query_one(SummaryTab).refresh_data(self.execution_details)
+        self.app.run_worker(
+            self.query_one(SummaryTab).refresh_data(self.execution_details)
+        )
         self.query_one(StepsTab).refresh_data(self.execution_details)
         self.query_one(PayloadsTab).update_payloads(self.execution_details)
         self.query_one(MapRunsTab).refresh_data(self.execution_details)

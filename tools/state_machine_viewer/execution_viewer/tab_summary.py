@@ -5,33 +5,75 @@ Summary Tab
 from textual.app import ComposeResult
 from textual.containers import Container
 from textual.reactive import var
-from textual.widgets import Button, Static
+from textual.widgets import Button, MarkdownViewer
 
-from tools.state_machine_viewer.models import ExecutionDetails
+from ..models import ExecutionDetails
+
+
+def generate_execution_markdown(execution_details: ExecutionDetails) -> str:
+    """
+    Generate formatted markdown content from execution details.
+
+    Args:
+        execution_details: The execution details to format
+
+    Returns:
+        Formatted markdown string
+    """
+    status_emoji = {
+        "RUNNING": "🔄",
+        "SUCCEEDED": "✅",
+        "FAILED": "❌",
+        "ABORTED": "⏹️",
+        "TIMED_OUT": "⏱️",
+    }.get(execution_details.describe.status, "❓")
+
+    md = f"""
+# Execution Summary
+
+## Basic Information
+
+| - | - |
+|----------|-------|
+| **Execution ID** | `{execution_details.describe.name}` |
+| **Status** | {status_emoji} **{execution_details.describe.status}** |
+| **Duration** | ⏱️ `{execution_details.describe.duration}` |
+| **Started At** | {execution_details.describe.startDate.strftime('%Y-%m-%d %H:%M:%S')} |
+| **Completed At** | {execution_details.describe.stopDate.strftime('%Y-%m-%d %H:%M:%S')} |
+
+## Execution Details
+
+- **State Machine ARN**: `{execution_details.describe.stateMachineArn}`
+- **Execution ARN**: `{execution_details.describe.executionArn}`
+- **Redrive Count**: {execution_details.describe.redriveCount}
+- **Redrive Status**: {execution_details.describe.redriveStatus}
+"""
+
+    md += f"""
+## Additional Information
+
+- **Trace Header**: 
+`{execution_details.describe.traceHeader}`
+- **Input Details**: 
+`{"Included" if execution_details.describe.inputDetails.included else "Not Included"}`
+- **Output Details**: 
+`{"Included" if execution_details.describe.outputDetails.included else "Not Included"}`
+"""
+
+    return md
 
 
 class SummaryTab(Container):
     """
-    Summary Default Page
+    Summary Tab showing execution details with a Markdown viewer
     """
 
     execution_details = var(None)
 
     def compose(self) -> ComposeResult:
-        """Compose the payloads tab layout."""
-
+        """Compose the summary tab layout."""
         yield Container(
-            Container(
-                Static("Execution ID: ", id="execution-id", classes="info-item"),
-                Static("Status: ", id="status", classes="info-item"),
-                Static("Total Duration: ", id="duration", classes="info-item"),
-                Static("Map Run ARN: ", id="map-run-arn", classes="info-item"),
-                id="execution-info",
-            ),
-            Container(
-                Static("", id="error-data"),
-                id="error-container",
-            ),
+            MarkdownViewer(show_table_of_contents=False, id="execution-summary"),
             Container(
                 Button("Back to Selection", id="back-button", variant="primary"),
                 Button("Refresh Data", id="refresh-button"),
@@ -39,34 +81,16 @@ class SummaryTab(Container):
             ),
         )
 
-    def refresh_data(self, execution_details: ExecutionDetails) -> None:
-        """Refresh the data table with execution details."""
+    async def on_mount(self) -> None:
+        """Initialize the widget when mounted."""
+        markdown_viewer = self.query_one("#execution-summary", MarkdownViewer)
+        await markdown_viewer.document.update("Loading execution details...")
+
+    async def refresh_data(self, execution_details: ExecutionDetails) -> None:
+        """Refresh the data with execution details formatted as markdown."""
         self.execution_details = execution_details
 
-        # Update info section
-        self.query_one("#execution-id", Static).update(
-            f"Execution ID: {execution_details.describe.name}"
-        )
-        self.query_one("#status", Static).update(
-            f"Status: {execution_details.describe.status}"
-        )
-        self.query_one("#duration", Static).update(
-            f"Total Duration: {execution_details.describe.duration}"
-        )
+        markdown_content = generate_execution_markdown(execution_details)
 
-        map_run_arn = execution_details.describe.executionArn
-
-        self.query_one("#map-run-arn", Static).update(f"Map Run ARN: {map_run_arn}")
-
-        error = "TBC"
-        cause = "TBC"
-
-        if error or cause:
-            error_title = "⚠️ Error Information ⚠️"
-            error_content = f"{error_title}\n\nError: {error}\n\nCause:\n{cause}"
-            self.query_one("#error-container").remove_class("hidden")
-        else:
-            error_content = ""
-            self.query_one("#error-container").add_class("hidden")
-
-        self.query_one("#error-data", Static).update(error_content)
+        markdown_viewer = self.query_one("#execution-summary", MarkdownViewer)
+        await markdown_viewer.document.update(markdown_content)

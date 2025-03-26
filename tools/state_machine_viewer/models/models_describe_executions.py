@@ -3,6 +3,7 @@ Executions
 """
 
 from datetime import datetime, timedelta
+from functools import cached_property
 from typing import Annotated
 
 from pydantic import BaseModel, Field, computed_field
@@ -95,6 +96,7 @@ class DescribeExecutionResponse(BaseModel):
     )
 
     @computed_field
+    @cached_property
     def duration(self) -> timedelta:
         """Calculates the duration of the execution."""
         return calculate_duration(self.startDate, self.stopDate)
