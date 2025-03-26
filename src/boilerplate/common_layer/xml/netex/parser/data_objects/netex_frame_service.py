@@ -11,7 +11,7 @@ from ...models.data_objects.netex_frame_service import Line, ScheduledStopPoint
 from ..netex_parsing_helpers import parse_version_and_id
 from ..netex_types import parse_line_type
 from ..netex_utility import (
-    find_required_netex_element,
+    get_netex_element,
     get_netex_text,
     parse_multilingual_string,
     parse_versioned_ref,
@@ -107,9 +107,12 @@ def parse_service_frame(elem: _Element) -> ServiceFrame:
     type_of_frame_ref = parse_versioned_ref(elem, "TypeOfFrameRef")
 
     # Parse lists
-    lines = parse_lines(find_required_netex_element(elem, "lines"))
-    stop_points = parse_scheduled_stop_points(
-        find_required_netex_element(elem, "scheduledStopPoints")
+    lines = get_netex_element(elem, "lines")
+    parsed_lines = parse_lines(lines) if lines is not None else []
+
+    stop_points = get_netex_element(elem, "scheduledStopPoints")
+    parsed_stop_points = (
+        parse_scheduled_stop_points(stop_points) if stop_points is not None else []
     )
 
     return ServiceFrame(
@@ -119,6 +122,6 @@ def parse_service_frame(elem: _Element) -> ServiceFrame:
         responsibilitySetRef=responsibility_set_ref,
         Description=parse_multilingual_string(elem, "Description"),
         TypeOfFrameRef=type_of_frame_ref,
-        lines=lines,
-        scheduledStopPoints=stop_points,
+        lines=parsed_lines,
+        scheduledStopPoints=parsed_stop_points,
     )
