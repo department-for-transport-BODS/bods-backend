@@ -229,8 +229,8 @@ jobs:
 
   deploy-uat2:
     runs-on: ubuntu-latest
-    environment:
-      ${{ github.ref_name == 'main' && 'uat2' }}
+    if: ${{ github.ref_name == 'main' }}
+    environment: ${{ github.ref_name == 'main' && 'uat2' }}
     needs: validation
     env:
       RC_ENV: uat2
