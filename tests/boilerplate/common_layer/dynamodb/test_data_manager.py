@@ -3,30 +3,62 @@ Test DynamoDB Data Manager
 """
 
 from datetime import datetime
-from unittest.mock import MagicMock, patch
+from types import MethodType
+from unittest.mock import MagicMock, create_autospec, patch
 
 from common_layer.database.client import SqlDB
-from common_layer.dynamodb.client import DynamoDB
+from common_layer.dynamodb.client.cache import DynamoDBCache
 from common_layer.dynamodb.data_manager import FileProcessingDataManager
 from common_layer.dynamodb.models import TXCFileAttributes
 from freezegun import freeze_time
 
 from tests.factories.database.organisation import (
+    OrganisationDatasetFactory,
     OrganisationDatasetRevisionFactory,
     OrganisationTXCFileAttributesFactory,
 )
 
 
+def test_prefetch_and_cache_data():
+    """
+    Test that all expected caching methods are called
+    """
+    draft_revision_id = 123
+    draft_revision = OrganisationDatasetRevisionFactory.create_with_id(
+        id_number=draft_revision_id
+    )
+
+    data_manager = FileProcessingDataManager(
+        db=MagicMock(spec=SqlDB), dynamodb=MagicMock(spec=DynamoDBCache)
+    )
+
+    # Mock internal caching functions
+    data_manager._cache_live_txc_file_attributes = MethodType(
+        create_autospec(FileProcessingDataManager._cache_live_txc_file_attributes),
+        data_manager,
+    )
+    data_manager._cache_stop_activity_id_map = MethodType(
+        create_autospec(FileProcessingDataManager._cache_stop_activity_id_map),
+        data_manager,
+    )
+
+    data_manager.prefetch_and_cache_data(draft_revision)
+
+    # Assert expected caching functions are called
+    data_manager._cache_live_txc_file_attributes.assert_called_once()
+    data_manager._cache_stop_activity_id_map.assert_called_once()
+
+
 @patch("common_layer.dynamodb.data_manager.OrganisationTXCFileAttributesRepo")
 @patch("common_layer.dynamodb.data_manager.OrganisationDatasetRepo")
-def test_prefetch_and_cache_data(
+def test_cache_live_txc_file_attributes(
     m_dataset_repo, m_file_attributes_repo, cached_attributes, frozen_time
 ):
     """
     Test prefetching and caching data
     """
     m_db = MagicMock(spec=SqlDB)
-    m_dynamodb = MagicMock(spec=DynamoDB)
+    m_dynamodb = MagicMock(spec=DynamoDBCache)
 
     draft_revision_id = 123
     draft_revision = OrganisationDatasetRevisionFactory.create_with_id(
@@ -39,9 +71,8 @@ def test_prefetch_and_cache_data(
         id_number=live_revision_id, dataset_id=draft_revision.dataset_id
     )
 
-    # TODO: Add DatasetFactory
-    m_dataset = MagicMock(
-        id=draft_revision.dataset_id, live_revision_id=live_revision.id
+    m_dataset = OrganisationDatasetFactory.create_with_id(
+        id_number=draft_revision.dataset_id, live_revision_id=live_revision.id
     )
     m_dataset_repo.return_value.get_by_id.return_value = m_dataset
 
@@ -71,7 +102,7 @@ def test_prefetch_and_cache_data(
         ]
 
         data_manager = FileProcessingDataManager(db=m_db, dynamodb=m_dynamodb)
-        data_manager.prefetch_and_cache_data(draft_revision)
+        data_manager._cache_live_txc_file_attributes(draft_revision)
 
     m_file_attributes_repo.return_value.get_by_revision_id.assert_called_with(
         live_revision_id
@@ -86,7 +117,7 @@ def test_get_cached_live_txc_file_attributes(cached_attributes):
     Test getting live txc file attributes from cache
     """
     m_db = MagicMock(spec=SqlDB)
-    m_dynamodb = MagicMock(spec=DynamoDB)
+    m_dynamodb = MagicMock(spec=DynamoDBCache)
 
     m_dynamodb.get.return_value = cached_attributes
 
@@ -108,7 +139,7 @@ def test_get_cached_live_txc_file_attributes_cache_miss():
     Should return None on cache miss
     """
     m_db = MagicMock(spec=SqlDB)
-    m_dynamodb = MagicMock(spec=DynamoDB)
+    m_dynamodb = MagicMock(spec=DynamoDBCache)
 
     m_dynamodb.get.return_value = None
 
@@ -120,3 +151,23 @@ def test_get_cached_live_txc_file_attributes_cache_miss():
 
     assert result is None
     m_dynamodb.get.assert_called_once_with(expected_cache_key)
+
+
+@patch("common_layer.dynamodb.data_manager.TransmodelStopActivityRepo")
+def test_cache_stop_activity_id_map(m_stop_activity_repo):
+
+    m_db = create_autospec(SqlDB, instance=True)
+    m_dynamodb = create_autospec(spec=DynamoDBCache, instance=True)
+    data_manager = FileProcessingDataManager(db=m_db, dynamodb=m_dynamodb)
+
+    revision_id = 123
+    expected_cache_key = "revision-123-transmodel_stop_activity_id_map"
+
+    activity_id_map = {"pickUp": 1, "setDown": 2}
+    m_stop_activity_repo.return_value.get_activity_id_map.return_value = activity_id_map
+
+    data_manager._cache_stop_activity_id_map(revision_id)
+
+    m_dynamodb.put.assert_called_once_with(
+        expected_cache_key, activity_id_map, ttl=3600
+    )
