@@ -47,6 +47,10 @@ class TaskData(BaseModel):
 
 
 class ETLTaskClients(BaseModel):
+    """
+    Clients required for ETL task
+    """
+
     db: SqlDB
     stop_point_client: NaptanStopPointDynamoDBClient
     dynamo_data_manager: FileProcessingDataManager
