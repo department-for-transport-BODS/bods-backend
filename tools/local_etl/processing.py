@@ -18,10 +18,10 @@ from common_layer.dynamodb.client.naptan_stop_points import (
 )
 from common_layer.dynamodb.data_manager import FileProcessingDataManager
 from common_layer.xml.txc.parser.parser_txc import parse_txc_file
-from etl.app.models import ETLTaskClients
 from structlog.stdlib import get_logger
 
 from timetables_etl.etl.app.etl_process import PARSER_CONFIG
+from timetables_etl.etl.app.models import ETLTaskClients
 from timetables_etl.etl.app.pipeline import transform_data
 from tools.common.db_tools import setup_db_instance
 from tools.common.models import TestConfig
@@ -45,7 +45,10 @@ def process_single_file(config: TestConfig, file_path: Path) -> TimingStats:
         )
     )
     dynamodb = DynamoDBCache(
-        DynamoDbCacheSettings(DYNAMODB_CACHE_TABLE_NAME="bods-backend-dev-tt-cache")
+        DynamoDbCacheSettings(
+            PROJECT_ENV=ProjectEnvironment.DEVELOPMENT,
+            DYNAMODB_CACHE_TABLE_NAME="bods-backend-dev-tt-cache",
+        )
     )
     dynamo_data_manager = FileProcessingDataManager(db, dynamodb)
     stats = TimingStats(file_path=file_path)
