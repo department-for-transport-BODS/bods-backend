@@ -4,11 +4,16 @@ Pydantic Models
 
 from typing import Annotated, Self
 
+from common_layer.database.client import SqlDB
 from common_layer.database.models import (
     DatasetETLTaskResult,
     OrganisationDatasetRevision,
     OrganisationTXCFileAttributes,
 )
+from common_layer.dynamodb.client.naptan_stop_points import (
+    NaptanStopPointDynamoDBClient,
+)
+from common_layer.dynamodb.data_manager import FileProcessingDataManager
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -39,6 +44,12 @@ class TaskData(BaseModel):
     revision: OrganisationDatasetRevision
     file_attributes: OrganisationTXCFileAttributes
     input_data: ETLInputData
+
+
+class ETLTaskClients(BaseModel):
+    db: SqlDB
+    stop_point_client: NaptanStopPointDynamoDBClient
+    dynamo_data_manager: FileProcessingDataManager
 
 
 class PatternCommonStats(BaseModel):

@@ -13,5 +13,6 @@ class ReferenceDataLookups:
 
     stops: StopsLookup
     flexible_zone_locations: FlexibleZoneLookup
+    stop_activity_id_map: dict[str, int]
     serviced_orgs: ServicedOrgLookup
     tracks: TrackLookup

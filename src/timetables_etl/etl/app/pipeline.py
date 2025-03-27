@@ -2,10 +2,6 @@
 ETL Pipeline
 """
 
-from common_layer.database import SqlDB
-from common_layer.dynamodb.client.naptan_stop_points import (
-    NaptanStopPointDynamoDBClient,
-)
 from common_layer.xml.txc.models import TXCData
 from structlog.stdlib import get_logger
 
@@ -18,7 +14,7 @@ from .load import (
     process_booking_arrangements,
 )
 from .load.servicepatterns import load_transmodel_service_patterns
-from .models import ETLProcessStats, TaskData
+from .models import ETLProcessStats, ETLTaskClients, TaskData
 from .transform.stop_points import (
     create_stop_point_lookups,
     get_naptan_stops_from_dynamo,
@@ -36,24 +32,32 @@ class MissingLines(Exception):
 
 
 def build_lookup_data(
-    txc: TXCData, db: SqlDB, stop_point_client: NaptanStopPointDynamoDBClient
+    txc: TXCData, task_clients: ETLTaskClients, revision_id: int
 ) -> ReferenceDataLookups:
     """
     Get from DB with inserts of reference data used accross the workflow
     """
     db_stops, missing_atco_codes = get_naptan_stops_from_dynamo(
-        txc.StopPoints, stop_point_client
+        txc.StopPoints, task_clients.stop_point_client
     )
     stop_mapping, flexible_zone_lookup = create_stop_point_lookups(
         txc.StopPoints, db_stops, missing_atco_codes
     )
+    stop_activity_id_map = (
+        task_clients.dynamo_data_manager.get_or_compute_stop_activity_id_map(
+            revision_id
+        )
+    )
 
-    serviced_orgs = load_serviced_organizations(txc.ServicedOrganisations, db)
-    track_lookup = load_tracks(txc.RouteSections, db)
+    serviced_orgs = load_serviced_organizations(
+        txc.ServicedOrganisations, task_clients.db
+    )
+    track_lookup = load_tracks(txc.RouteSections, task_clients.db)
 
     return ReferenceDataLookups(
         stops=stop_mapping,
         flexible_zone_locations=flexible_zone_lookup,
+        stop_activity_id_map=stop_activity_id_map,
         serviced_orgs=serviced_orgs,
         tracks=track_lookup,
     )
@@ -62,14 +66,14 @@ def build_lookup_data(
 def transform_data(
     txc: TXCData,
     task_data: TaskData,
-    db: SqlDB,
-    stop_point_client: NaptanStopPointDynamoDBClient,
+    task_clients: ETLTaskClients,
 ) -> ETLProcessStats:
     """
     Transform Parsed TXC XML Data into SQLAlchmeny Database Models to apply
     """
     stats = ETLProcessStats()
-    reference_data = build_lookup_data(txc, db, stop_point_client)
+    reference_data = build_lookup_data(txc, task_clients, task_data.revision.id)
+    db = task_clients.db
     for service in txc.Services:
 
         tm_service = load_transmodel_service(service, task_data, db)
