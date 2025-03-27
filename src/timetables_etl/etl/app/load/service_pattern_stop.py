@@ -24,7 +24,10 @@ from structlog.stdlib import get_logger
 from ..transform.models_context import GeneratePatternStopsContext
 from ..transform.service_pattern_stops import generate_pattern_stops
 from ..transform.service_pattern_stops_flexible import generate_flexible_pattern_stops
-from .models_context import ProcessPatternStopsContext
+from .models_context import (
+    ProcessFlexiblePatternStopsContext,
+    ProcessPatternStopsContext,
+)
 
 log = get_logger()
 
@@ -66,9 +69,7 @@ def process_flexible_pattern_stops(
     tm_service_pattern: TransmodelServicePattern,
     tm_vehicle_journey: TransmodelVehicleJourney,
     flexible_pattern: TXCFlexibleJourneyPattern,
-    stop_sequence: Sequence[NaptanStopPoint],
-    stop_activity_id_map: dict[str, int],
-    db: SqlDB,
+    context: ProcessFlexiblePatternStopsContext,
 ) -> list[TransmodelServicePatternStop]:
     """Process stops for flexible patterns"""
 
@@ -76,11 +77,11 @@ def process_flexible_pattern_stops(
         tm_service_pattern,
         tm_vehicle_journey,
         flexible_pattern,
-        stop_sequence,
-        stop_activity_id_map,
+        context.stop_sequence,
+        context.stop_activity_id_map,
     )
 
-    results = TransmodelServicePatternStopRepo(db).bulk_insert(pattern_stops)
+    results = TransmodelServicePatternStopRepo(context.db).bulk_insert(pattern_stops)
 
     log.info(
         "Saved Flexible Service Pattern Stops for Vehicle Journey",

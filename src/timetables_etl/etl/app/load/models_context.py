@@ -14,6 +14,7 @@ from common_layer.database.models import (
 )
 from common_layer.xml.txc.models import (
     TXCData,
+    TXCFlexibleJourneyPattern,
     TXCJourneyPatternSection,
     TXCService,
     TXCServicedOrganisation,
@@ -68,6 +69,15 @@ class ProcessPatternStopsContext:
     stop_sequence: Sequence[NaptanStopPoint]
     db: SqlDB
     naptan_stops_lookup: StopsLookup
+    stop_activity_id_map: dict[str, int]
+
+
+@dataclass
+class ProcessFlexiblePatternStopsContext:
+    """Context for flexible pattern stops processing"""
+
+    stop_sequence: Sequence[NaptanStopPoint]
+    db: SqlDB
     stop_activity_id_map: dict[str, int]
 
 
