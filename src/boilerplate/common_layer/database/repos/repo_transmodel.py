@@ -107,14 +107,14 @@ class TransmodelStopActivityRepo(BaseRepositoryWithId[TransmodelStopActivity]):
         return self._fetch_one(statement)
 
     @handle_repository_errors
-    def get_activity_map(self) -> dict[str, TransmodelStopActivity]:
+    def get_activity_id_map(self) -> dict[str, int]:
         """
         Get mapping of activity name to TransmodelStopActivity model
         The ID ordering can't be guaranteed so needs to be fetched as a reference
         """
 
         activities = self.get_all()
-        return {activity.name: activity for activity in activities}
+        return {activity.name: activity.id for activity in activities}
 
 
 class TransmodelBankHolidaysRepo(BaseRepository[TransmodelBankHolidays]):
