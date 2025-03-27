@@ -9,8 +9,9 @@ from common_layer.database.models import OrganisationDatasetRevision
 from common_layer.database.repos import (
     OrganisationDatasetRepo,
     OrganisationTXCFileAttributesRepo,
+    TransmodelStopActivityRepo,
 )
-from common_layer.dynamodb.client import DynamoDB
+from common_layer.dynamodb.client.cache import DynamoDBCache
 from common_layer.dynamodb.models import TXCFileAttributes
 from common_layer.dynamodb.utils import dataclass_to_dict
 from common_layer.exceptions.pipeline_exceptions import PipelineException
@@ -23,6 +24,7 @@ class CachedDataType(str, Enum):
     """
 
     LIVE_TXC_FILE_ATTRIBUTES = "live_txc_file_attributes"
+    STOP_ACTIVITY_MAP = "transmodel_stop_activity_map"
 
 
 log = get_logger()
@@ -34,7 +36,7 @@ class FileProcessingDataManager:
     Handles pre-fetching, caching, and retrieval of different data types.
     """
 
-    def __init__(self, db: SqlDB, dynamodb: DynamoDB):
+    def __init__(self, db: SqlDB, dynamodb: DynamoDBCache):
         """
         Initialize the data manager with database and DynamoDB clients.
         """
@@ -46,6 +48,7 @@ class FileProcessingDataManager:
         Pre-fetch and cache data required for file-level processing.
         """
         self._cache_live_txc_file_attributes(revision)
+        self._cache_stop_activity_id_map(revision.id)
 
     def _cache_live_txc_file_attributes(
         self, revision: OrganisationDatasetRevision
@@ -99,6 +102,32 @@ class FileProcessingDataManager:
             TXCFileAttributes(**cached_attribute)  # type: ignore
             for cached_attribute in cached_attributes
         ]
+
+    def _cache_stop_activity_id_map(self, revision_id: int) -> None:
+        """
+        Fetch and cache TransmodelStopActivity ID map for use in ETL
+        """
+        log.info("Caching transmodel stop activity id map")
+        activity_id_map = TransmodelStopActivityRepo(self._db).get_activity_id_map()
+        cache_key = self._generate_cache_key(
+            revision_id, CachedDataType.STOP_ACTIVITY_MAP
+        )
+        self._dynamodb.put(cache_key, activity_id_map, ttl=3600)
+
+    def get_or_compute_stop_activity_id_map(self, revision_id: int) -> dict[str, int]:
+        """
+        Get or compute stop activity id map from the dynamo cache
+        """
+        cache_key = self._generate_cache_key(
+            revision_id, CachedDataType.STOP_ACTIVITY_MAP
+        )
+        return self._dynamodb.get_or_compute(
+            cache_key,
+            compute_fn=lambda: TransmodelStopActivityRepo(
+                self._db
+            ).get_activity_id_map(),
+            ttl=3600,
+        )
 
     @staticmethod
     def _generate_cache_key(revision_id: int, data_type: CachedDataType) -> str:
