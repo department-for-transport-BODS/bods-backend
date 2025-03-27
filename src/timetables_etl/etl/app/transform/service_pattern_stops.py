@@ -8,7 +8,6 @@ from common_layer.database.models import (
     NaptanStopPoint,
     TransmodelServicePattern,
     TransmodelServicePatternStop,
-    TransmodelStopActivity,
     TransmodelVehicleJourney,
 )
 from common_layer.xml.txc.models import (
