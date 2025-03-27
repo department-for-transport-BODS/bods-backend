@@ -252,6 +252,7 @@ def process_journey_pattern_vehicle_journeys(
                 tm_vj,
                 txc_jp,
                 context.stops,
+                context.stop_activity_id_map,
                 context.db,
             )
             pattern_stops.extend(stops)
@@ -279,7 +280,11 @@ def process_journey_pattern_vehicle_journeys(
                 tm_vehicle_journey=tm_vj,
                 txc_vehicle_journey=txc_vj,
                 context=ProcessPatternStopsContext(
-                    jp_sections, context.stops, context.db, context.naptan_stops_lookup
+                    jp_sections,
+                    context.stops,
+                    context.db,
+                    context.naptan_stops_lookup,
+                    context.stop_activity_id_map,
                 ),
             )
             pattern_stops.extend(stops)

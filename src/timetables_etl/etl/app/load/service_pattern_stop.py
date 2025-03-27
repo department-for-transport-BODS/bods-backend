@@ -13,10 +13,7 @@ from common_layer.database.models import (
 from common_layer.database.models.model_transmodel_vehicle_journey import (
     TransmodelVehicleJourney,
 )
-from common_layer.database.repos import (
-    TransmodelServicePatternStopRepo,
-    TransmodelStopActivityRepo,
-)
+from common_layer.database.repos import TransmodelServicePatternStopRepo
 from common_layer.xml.txc.models import (
     TXCFlexibleJourneyPattern,
     TXCFlexibleVehicleJourney,
@@ -41,8 +38,6 @@ def process_pattern_stops(
     """
     Process and insert transmodel_servicepatternstop
     """
-    activity_map = TransmodelStopActivityRepo(context.db).get_activity_map()
-
     pattern_stops = generate_pattern_stops(
         tm_service_pattern,
         tm_vehicle_journey,
@@ -50,7 +45,7 @@ def process_pattern_stops(
         GeneratePatternStopsContext(
             context.jp_sections,
             context.stop_sequence,
-            activity_map,
+            context.stop_activity_id_map,
             context.naptan_stops_lookup,
         ),
     )
@@ -72,17 +67,17 @@ def process_flexible_pattern_stops(
     tm_vehicle_journey: TransmodelVehicleJourney,
     flexible_pattern: TXCFlexibleJourneyPattern,
     stop_sequence: Sequence[NaptanStopPoint],
+    stop_activity_id_map: dict[str, int],
     db: SqlDB,
 ) -> list[TransmodelServicePatternStop]:
     """Process stops for flexible patterns"""
-    activity_map = TransmodelStopActivityRepo(db).get_activity_map()
 
     pattern_stops = generate_flexible_pattern_stops(
         tm_service_pattern,
         tm_vehicle_journey,
         flexible_pattern,
         stop_sequence,
-        activity_map,
+        stop_activity_id_map,
     )
 
     results = TransmodelServicePatternStopRepo(db).bulk_insert(pattern_stops)

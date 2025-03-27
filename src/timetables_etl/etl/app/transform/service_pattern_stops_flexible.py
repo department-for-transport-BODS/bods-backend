@@ -9,7 +9,6 @@ from common_layer.database.models import (
     NaptanStopPoint,
     TransmodelServicePattern,
     TransmodelServicePatternStop,
-    TransmodelStopActivity,
     TransmodelVehicleJourney,
 )
 from common_layer.xml.txc.helpers.service import get_stop_activity_details
@@ -86,7 +85,7 @@ def process_sequence_stop(
     stop_point: TXCFixedStopUsage | TXCFlexibleStopUsage,
     stop_sequence: Sequence[NaptanStopPoint],
     context: FlexibleStopContext,
-    activity_map: dict[str, TransmodelStopActivity],
+    stop_activity_id_map: dict[str, int],
 ) -> TransmodelServicePatternStop | None:
     """Process a single stop in the sequence"""
     naptan_stop = find_naptan_stop(stop_point.StopPointRef, stop_sequence)
@@ -103,12 +102,12 @@ def process_sequence_stop(
         )
         return None
 
-    activity = activity_map.get(activity_type)
-    if not activity:
+    activity_id = stop_activity_id_map.get(activity_type)
+    if not activity_id:
         log.error(
             "Stop activity not found - skipping stop",
             requested_activity=activity_type,
-            available_activities=list(activity_map.keys()),
+            available_activities=list(stop_activity_id_map.keys()),
             stop_point=stop_point.StopPointRef,
             vehicle_journey_id=context.vehicle_journey.id,
         )
@@ -118,7 +117,7 @@ def process_sequence_stop(
         stop_ref=stop_point.StopPointRef,
         naptan_stop=naptan_stop,
         is_timing_point=is_timing_point,
-        activity_id=activity.id,
+        activity_id=activity_id,
     )
 
     return create_flexible_stop(details, context)
@@ -129,13 +128,13 @@ def generate_flexible_pattern_stops(
     vehicle_journey: TransmodelVehicleJourney,
     flexible_pattern: TXCFlexibleJourneyPattern,
     stop_sequence: Sequence[NaptanStopPoint],
-    activity_map: dict[str, TransmodelStopActivity],
+    stop_activity_id_map: dict[str, int],
 ) -> list[TransmodelServicePatternStop]:
     """Generate service pattern stops for a flexible service"""
     log.info(
         "Starting flexible pattern stops generation",
         stop_count=len(stop_sequence),
-        activity_count=len(activity_map),
+        activity_count=len(stop_activity_id_map),
         pattern_id=flexible_pattern.id,
     )
 
@@ -154,7 +153,7 @@ def generate_flexible_pattern_stops(
             stop_point,
             stop_sequence,
             context,
-            activity_map,
+            stop_activity_id_map,
         ):
             pattern_stops.append(stop)
             auto_sequence += 1
@@ -171,7 +170,7 @@ def generate_flexible_pattern_stops(
             zone,
             stop_sequence,
             context,
-            activity_map,
+            stop_activity_id_map,
         ):
             pattern_stops.append(stop)
             auto_sequence += 1

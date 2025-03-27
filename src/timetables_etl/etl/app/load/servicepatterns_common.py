@@ -223,6 +223,7 @@ def process_pattern_common(
         sp_data=sp_data,
         db=context.db,
         vehicle_journeys=filtered_vehicle_journeys,
+        stop_activity_id_map=context.lookups.stop_activity_id_map,
     )
 
     tm_vjs, tm_pattern_stops = process_service_pattern_vehicle_journeys(
