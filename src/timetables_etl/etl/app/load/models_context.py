@@ -23,7 +23,7 @@ from common_layer.xml.txc.models.txc_vehicle_journey_flexible import (
     TXCFlexibleVehicleJourney,
 )
 
-from ..helpers import StopsLookup
+from ..helpers import FlexibleZoneLookup, StopsLookup
 from ..helpers.dataclasses import ReferenceDataLookups
 from ..helpers.types import ServicedOrgLookup
 from ..transform.service_pattern_mapping import (
@@ -102,4 +102,5 @@ class ProcessServicePatternContext:
     revision: OrganisationDatasetRevision
     journey_pattern_sections: list[TXCJourneyPatternSection]
     stop_mapping: StopsLookup
+    flexible_zone_lookup: FlexibleZoneLookup | None
     db: SqlDB

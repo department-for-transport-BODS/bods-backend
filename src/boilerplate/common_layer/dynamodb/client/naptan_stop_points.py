@@ -55,7 +55,7 @@ class NaptanStopPointDynamoDBClient(DynamoDB):
             raw_items = self._batch_get_items(batch)
             for item in raw_items:
                 atco_code = item.get("AtcoCode", {}).get("S")
-                stop_point = self._deserialize_stop_point(item, atco_code)
+                stop_point = self._deserialize_stop_point(item, atco_code=atco_code)
                 if stop_point:
                     stop_points.append(stop_point)
                     found_atco_codes.add(stop_point.AtcoCode)
@@ -88,11 +88,66 @@ class NaptanStopPointDynamoDBClient(DynamoDB):
                 log.info("No StopPoint found for AtcoCode", atco_code=atco_code)
                 return None
 
-            return self._deserialize_stop_point(item, atco_code)
+            return self._deserialize_stop_point(item, atco_code=atco_code)
 
         except Exception:
             log.error("Failed to fetch StopPoint", atco_code=atco_code, exc_info=True)
             raise
+
+    def get_by_naptan_codes(
+        self, naptan_codes: list[str]
+    ) -> tuple[list[TXCStopPoint], list[str]]:
+        """
+        Get all StopPoints from DynamoDB by the given list of NaptanCodes.
+
+        Returns:
+            Tuple of (found TXCStopPoints, list of missing NaptanCodes).
+        """
+        log.info("Fetching StopPoints from DynamoDB by NaptanCodes")
+
+        if not naptan_codes:
+            return [], []
+
+        stop_points: list[TXCStopPoint] = []
+        found_naptan_codes: Set[str] = set()
+
+        # Batch get item can't be used on a GSI so we need to query for each NaptanCode
+        for naptan_code in naptan_codes:
+            raw_items = self._client.query(
+                TableName=self._settings.DYNAMODB_TABLE_NAME,
+                IndexName="NaptanCodeIndex",
+                KeyConditionExpression="NaptanCode = :NaptanCode",
+                ExpressionAttributeValues={":NaptanCode": {"S": naptan_code}},
+            ).get("Items", [])
+
+            if len(raw_items) == 0:
+                log.info("No StopPoint found for NaptanCode", naptan_code=naptan_code)
+                continue
+
+            if len(raw_items) > 1:
+                log.info(
+                    "Multiple StopPoints found for NaptanCode", naptan_code=naptan_code
+                )
+                continue
+
+            item = raw_items[0]
+
+            naptan_code = item.get("NaptanCode", {}).get("S")
+            stop_point = self._deserialize_stop_point(item, naptan_code=naptan_code)
+            if stop_point and stop_point.NaptanCode:
+                stop_points.append(stop_point)
+                found_naptan_codes.add(stop_point.NaptanCode)
+
+        missing_naptan_codes = [
+            code for code in naptan_codes if code not in found_naptan_codes
+        ]
+
+        log.info(
+            "Completed fetching and parsing TxcStopPoints from DynamoDB",
+            total_fetched=len(stop_points),
+            total_missing=len(missing_naptan_codes),
+        )
+        return stop_points, missing_naptan_codes
 
     def get_stop_area_map(self, atco_codes: list[str]) -> dict[str, list[str]]:
         """
@@ -108,7 +163,10 @@ class NaptanStopPointDynamoDBClient(DynamoDB):
         }
 
     def _deserialize_stop_point(
-        self, raw_item: dict[str, AttributeValueTypeDef], atco_code: str | None = None
+        self,
+        raw_item: dict[str, AttributeValueTypeDef],
+        atco_code: str | None = None,
+        naptan_code: str | None = None,
     ) -> TXCStopPoint | None:
         """
         Deserialize a DynamoDB item into a TXCStopPoint.
@@ -123,6 +181,7 @@ class NaptanStopPointDynamoDBClient(DynamoDB):
             log.error(
                 "Failed to parse StopPoint",
                 atco_code=atco_code,
+                naptan_code=naptan_code,
                 item=raw_item,
                 exc_info=True,
             )

@@ -7,7 +7,6 @@ import os
 from typing import Any
 
 from aws_lambda_powertools.utilities.typing import LambdaContext
-from common_layer.database import SqlDB
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.s3 import S3
@@ -44,7 +43,6 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext):
     """
     log.debug("Input Data", data=event)
     input_data = ETLInputData(**event)
-    db = SqlDB()
 
     netex_data = get_netex_publication_delivery(
         input_data.s3_bucket_name,
@@ -55,7 +53,6 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext):
         netex_data,
         input_data.task_id,
         os.path.basename(input_data.s3_file_key),
-        db,
     )
 
     return {"status_code": 200, "message": "ETL Completed"}

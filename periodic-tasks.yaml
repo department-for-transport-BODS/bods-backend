@@ -12,7 +12,7 @@ Transform:
       env: !Ref Environment
       version: !Ref Version
       gitData: !Ref DDGitData
-      enableDDTracing: true
+      enableDDTracing: false
       captureLambdaPayload: true
       enableProfiling: false
 Description: Supporting services for the execution of periodic tasks
@@ -378,9 +378,18 @@ Resources:
       AttributeDefinitions:
         - AttributeName: AtcoCode
           AttributeType: S
+        - AttributeName: NaptanCode
+          AttributeType: S
       KeySchema:
         - AttributeName: AtcoCode
           KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: NaptanCodeIndex
+          Projection:
+            ProjectionType: ALL
+          KeySchema:
+            - KeyType: HASH
+              AttributeName: NaptanCode
       BillingMode: PAY_PER_REQUEST
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: false

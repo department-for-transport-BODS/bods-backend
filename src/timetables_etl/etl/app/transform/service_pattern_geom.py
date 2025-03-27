@@ -2,16 +2,23 @@
 Service Pattern Geometry Calculation
 """
 
+from typing import Sequence
+
 from common_layer.database.models import NaptanStopPoint
 from common_layer.xml.txc.helpers import get_stops_from_sections
-from common_layer.xml.txc.models import TXCJourneyPattern, TXCJourneyPatternSection
+from common_layer.xml.txc.models import (
+    LocationStructure,
+    TXCJourneyPattern,
+    TXCJourneyPatternSection,
+)
 from geoalchemy2 import WKBElement
 from geoalchemy2.shape import from_shape  # type: ignore
 from shapely import Point
 from shapely.geometry import LineString
 from structlog.stdlib import get_logger
 
-from ..helpers import NonExistentNaptanStop, StopsLookup
+from ..helpers import FlexibleZoneLookup, NonExistentNaptanStop, StopsLookup
+from .stop_points import convert_location_to_point
 
 log = get_logger()
 
@@ -49,12 +56,33 @@ def get_valid_route_points(
     return route_points
 
 
+def get_valid_points_from_locations(
+    locations: list[LocationStructure],
+) -> list[Point]:
+    """
+    Return a list of Points for the given list of Locations
+    """
+    points: list[Point] = []
+    for loc in locations:
+        try:
+            point = convert_location_to_point(loc)
+            points.append(point)
+        except ValueError as e:
+            log.warning(
+                "Failed to convert Location to Point",
+                error=str(e),
+            )
+    return points
+
+
 def get_valid_route_points_from_list(
-    stop_points: list[NaptanStopPoint],
+    stop_points: list[NaptanStopPoint], flexible_zone_lookup: FlexibleZoneLookup | None
 ) -> list[Point]:
     """
     Get valid route points from a list of NaptanStopPoint objects.
 
+    If a flexible_zone_lookup is provided, any Locations from Flexible Zones
+    related to the NaptanStopPoints will be included
     """
     route_points: list[Point] = []
 
@@ -69,6 +97,11 @@ def get_valid_route_points_from_list(
 
         # Add the shape of valid stops to route_points
         route_points.append(stop.shape)
+
+        if flexible_zone_lookup:
+            flexible_locations = flexible_zone_lookup.get(stop.atco_code)
+            if flexible_locations:
+                route_points += get_valid_points_from_locations(flexible_locations)
 
     if len(route_points) <= 1:
         log.warning(
@@ -107,18 +140,48 @@ def generate_service_pattern_geometry(
     return from_shape(LineString(route_points), srid=4326)
 
 
-def generate_service_pattern_geometry_from_list(
-    stop_points: list[NaptanStopPoint],
+def generate_flexible_pattern_geometry(
+    stops: Sequence[str],
+    stop_mapping: StopsLookup,
 ) -> WKBElement | None:
     """
-    Generate the Stop Linestring from a list of NaptanStopPoint objects.
+    Generate geometry for a flexible service pattern.
+    Returns None if insufficient points available to create a LineString.
+    Returns:
+        WKBElement containing LineString geometry if 2+ points available,
+        None otherwise
+    """
+
+    route_points: list[Point] = []
+    for stop in stops:
+        stop_data = stop_mapping[stop]
+        if not isinstance(stop_data, NonExistentNaptanStop):
+            route_points.append(stop_data.shape)
+
+    if len(route_points) < 2:
+        log.warning(
+            "Fewer than 2 stops so a Postgres LineString cannot be created, returning None",
+            stops=stops,
+        )
+        return None
+
+    return from_shape(LineString(route_points), srid=4326)
+
+
+def generate_service_pattern_geometry_from_list(
+    stop_points: list[NaptanStopPoint], flexible_zone_lookup: FlexibleZoneLookup | None
+) -> WKBElement | None:
+    """
+    Generate the Stop Linestring from a list of NaptanStopPoint objects,
+    including locations from flexible zones if provided.
+
     SRID 4326 (WGS84) which is Longitude / Latitude.
 
     Returns:
         WKBElement: The geometry of the service pattern
         None: If insufficient valid stops are found to create a linestring
     """
-    route_points = get_valid_route_points_from_list(stop_points)
+    route_points = get_valid_route_points_from_list(stop_points, flexible_zone_lookup)
 
     if len(route_points) <= 1:
         log.warning(
