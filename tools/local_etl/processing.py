@@ -10,11 +10,15 @@ from pathlib import Path
 
 from common_layer.database.client import ProjectEnvironment
 from common_layer.database.create_tables import create_db_tables
+from common_layer.dynamodb.client import DynamoDbCacheSettings
+from common_layer.dynamodb.client.cache import DynamoDBCache
 from common_layer.dynamodb.client.naptan_stop_points import (
     NaptanDynamoDBSettings,
     NaptanStopPointDynamoDBClient,
 )
+from common_layer.dynamodb.data_manager import FileProcessingDataManager
 from common_layer.xml.txc.parser.parser_txc import parse_txc_file
+from etl.app.models import ETLTaskClients
 from structlog.stdlib import get_logger
 
 from timetables_etl.etl.app.etl_process import PARSER_CONFIG
@@ -40,6 +44,10 @@ def process_single_file(config: TestConfig, file_path: Path) -> TimingStats:
             DYNAMODB_ENDPOINT_URL="",
         )
     )
+    dynamodb = DynamoDBCache(
+        DynamoDbCacheSettings(DYNAMODB_CACHE_TABLE_NAME="bods-backend-dev-tt-cache")
+    )
+    dynamo_data_manager = FileProcessingDataManager(db, dynamodb)
     stats = TimingStats(file_path=file_path)
     start_time = time.time()
 
@@ -54,8 +62,13 @@ def process_single_file(config: TestConfig, file_path: Path) -> TimingStats:
         task_data = create_task_data_from_inputs(
             txc, config.task_id, config.file_attributes_id, config.revision_id, db
         )
+        task_clients = ETLTaskClients(
+            db=db,
+            stop_point_client=stop_point_client,
+            dynamo_data_manager=dynamo_data_manager,
+        )
         log.info("✅ Setup Complete, starting ETL Task")
-        transform_data(txc, task_data, db, stop_point_client)
+        transform_data(txc, task_data, task_clients)
         stats.transform_time = time.time() - transform_start
 
     except Exception as e:  # pylint: disable=broad-exception-caught

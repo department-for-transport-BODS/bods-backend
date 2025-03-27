@@ -116,7 +116,8 @@ class FileProcessingDataManager:
 
     def get_or_compute_stop_activity_id_map(self, revision_id: int) -> dict[str, int]:
         """
-        Get or compute stop activity id map from the dynamo cache
+        Get stop activity id map from the DynamoDB cache
+        or compute and cache it if not found
         """
         cache_key = self._generate_cache_key(
             revision_id, CachedDataType.STOP_ACTIVITY_ID_MAP
