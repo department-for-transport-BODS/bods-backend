@@ -48,7 +48,7 @@ class FileProcessingDataManager:
         Pre-fetch and cache data required for file-level processing.
         """
         self._cache_live_txc_file_attributes(revision)
-        self._cache_stop_activity_id_map(revision.id)
+        self.get_or_compute_stop_activity_id_map()
 
     def _cache_live_txc_file_attributes(
         self, revision: OrganisationDatasetRevision
@@ -80,8 +80,8 @@ class FileProcessingDataManager:
         log.info("Caching TXCFileAttributes", count=len(live_attributes_to_cache))
 
         cache_key = self._generate_cache_key(
-            revision.id,
             CachedDataType.LIVE_TXC_FILE_ATTRIBUTES,
+            prefix=f"revision-{revision.id}",
         )
         self._dynamodb.put(cache_key, live_attributes_to_cache, ttl=3600)
 
@@ -92,8 +92,9 @@ class FileProcessingDataManager:
         Get the Cached Attributes from DynamoDB
         """
         cache_key = self._generate_cache_key(
-            revision_id, CachedDataType.LIVE_TXC_FILE_ATTRIBUTES
+            CachedDataType.LIVE_TXC_FILE_ATTRIBUTES, prefix=f"revision-{revision_id}"
         )
+
         cached_attributes = self._dynamodb.get(cache_key)
         if not cached_attributes:
             return None
@@ -103,25 +104,12 @@ class FileProcessingDataManager:
             for cached_attribute in cached_attributes
         ]
 
-    def _cache_stop_activity_id_map(self, revision_id: int) -> None:
-        """
-        Fetch and cache TransmodelStopActivity ID map for use in ETL
-        """
-        log.info("Caching transmodel stop activity id map")
-        activity_id_map = TransmodelStopActivityRepo(self._db).get_activity_id_map()
-        cache_key = self._generate_cache_key(
-            revision_id, CachedDataType.STOP_ACTIVITY_ID_MAP
-        )
-        self._dynamodb.put(cache_key, activity_id_map, ttl=3600)
-
-    def get_or_compute_stop_activity_id_map(self, revision_id: int) -> dict[str, int]:
+    def get_or_compute_stop_activity_id_map(self) -> dict[str, int]:
         """
         Get stop activity id map from the DynamoDB cache
         or compute and cache it if not found
         """
-        cache_key = self._generate_cache_key(
-            revision_id, CachedDataType.STOP_ACTIVITY_ID_MAP
-        )
+        cache_key = self._generate_cache_key(CachedDataType.STOP_ACTIVITY_ID_MAP)
         return self._dynamodb.get_or_compute(
             cache_key,
             compute_fn=lambda: TransmodelStopActivityRepo(
@@ -131,8 +119,13 @@ class FileProcessingDataManager:
         )
 
     @staticmethod
-    def _generate_cache_key(revision_id: int, data_type: CachedDataType) -> str:
+    def _generate_cache_key(
+        data_type: CachedDataType,
+        prefix: str | None = None,
+    ) -> str:
         """
-        Generate a cache key for the given revision_id and data_type
+        Generate a cache key for the given data_type with an optional prefix
         """
-        return f"revision-{revision_id}-{data_type.value}"
+        if prefix:
+            return f"{prefix}-{data_type.value}"
+        return data_type.value

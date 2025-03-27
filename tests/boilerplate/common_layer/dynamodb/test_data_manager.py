@@ -154,20 +154,23 @@ def test_get_cached_live_txc_file_attributes_cache_miss():
 
 
 @patch("common_layer.dynamodb.data_manager.TransmodelStopActivityRepo")
-def test_cache_stop_activity_id_map(m_stop_activity_repo):
+def test_get_or_compute_stop_activity_id_map(m_stop_activity_repo):
 
     m_db = create_autospec(SqlDB, instance=True)
     m_dynamodb = create_autospec(spec=DynamoDBCache, instance=True)
     data_manager = FileProcessingDataManager(db=m_db, dynamodb=m_dynamodb)
 
-    revision_id = 123
-    expected_cache_key = "revision-123-transmodel_stop_activity_id_map"
+    expected_cache_key = "transmodel_stop_activity_id_map"
+    m_stop_activity_repo.return_value.get_activity_id_map.return_value = {"pickUp": 1}
 
-    activity_id_map = {"pickUp": 1, "setDown": 2}
-    m_stop_activity_repo.return_value.get_activity_id_map.return_value = activity_id_map
+    data_manager.get_or_compute_stop_activity_id_map()
 
-    data_manager._cache_stop_activity_id_map(revision_id)
+    args, kwargs = m_dynamodb.get_or_compute.call_args
+    assert args[0] == expected_cache_key
+    assert kwargs["ttl"] == 3600
 
-    m_dynamodb.put.assert_called_once_with(
-        expected_cache_key, activity_id_map, ttl=3600
-    )
+    # Check correct compute function was passed
+    actual_compute_fn = kwargs["compute_fn"]
+    expected_result = m_stop_activity_repo.return_value.get_activity_id_map.return_value
+
+    assert actual_compute_fn() == expected_result

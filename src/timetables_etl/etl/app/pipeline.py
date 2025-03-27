@@ -32,7 +32,7 @@ class MissingLines(Exception):
 
 
 def build_lookup_data(
-    txc: TXCData, task_clients: ETLTaskClients, revision_id: int
+    txc: TXCData, task_clients: ETLTaskClients
 ) -> ReferenceDataLookups:
     """
     Get from DB with inserts of reference data used accross the workflow
@@ -44,9 +44,7 @@ def build_lookup_data(
         txc.StopPoints, db_stops, missing_atco_codes
     )
     stop_activity_id_map = (
-        task_clients.dynamo_data_manager.get_or_compute_stop_activity_id_map(
-            revision_id
-        )
+        task_clients.dynamo_data_manager.get_or_compute_stop_activity_id_map()
     )
 
     serviced_orgs = load_serviced_organizations(
@@ -72,7 +70,7 @@ def transform_data(
     Transform Parsed TXC XML Data into SQLAlchmeny Database Models to apply
     """
     stats = ETLProcessStats()
-    reference_data = build_lookup_data(txc, task_clients, task_data.revision.id)
+    reference_data = build_lookup_data(txc, task_clients)
     db = task_clients.db
     for service in txc.Services:
 
