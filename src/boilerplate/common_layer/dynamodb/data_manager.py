@@ -24,7 +24,7 @@ class CachedDataType(str, Enum):
     """
 
     LIVE_TXC_FILE_ATTRIBUTES = "live_txc_file_attributes"
-    STOP_ACTIVITY_MAP = "transmodel_stop_activity_map"
+    STOP_ACTIVITY_ID_MAP = "transmodel_stop_activity_id_map"
 
 
 log = get_logger()
@@ -110,7 +110,7 @@ class FileProcessingDataManager:
         log.info("Caching transmodel stop activity id map")
         activity_id_map = TransmodelStopActivityRepo(self._db).get_activity_id_map()
         cache_key = self._generate_cache_key(
-            revision_id, CachedDataType.STOP_ACTIVITY_MAP
+            revision_id, CachedDataType.STOP_ACTIVITY_ID_MAP
         )
         self._dynamodb.put(cache_key, activity_id_map, ttl=3600)
 
@@ -119,7 +119,7 @@ class FileProcessingDataManager:
         Get or compute stop activity id map from the dynamo cache
         """
         cache_key = self._generate_cache_key(
-            revision_id, CachedDataType.STOP_ACTIVITY_MAP
+            revision_id, CachedDataType.STOP_ACTIVITY_ID_MAP
         )
         return self._dynamodb.get_or_compute(
             cache_key,
