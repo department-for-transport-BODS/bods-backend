@@ -37,8 +37,8 @@ def test_prefetch_and_cache_data():
         create_autospec(FileProcessingDataManager._cache_live_txc_file_attributes),
         data_manager,
     )
-    data_manager._cache_stop_activity_id_map = MethodType(
-        create_autospec(FileProcessingDataManager._cache_stop_activity_id_map),
+    data_manager.get_or_compute_stop_activity_id_map = MethodType(
+        create_autospec(FileProcessingDataManager.get_or_compute_stop_activity_id_map),
         data_manager,
     )
 
@@ -46,7 +46,7 @@ def test_prefetch_and_cache_data():
 
     # Assert expected caching functions are called
     data_manager._cache_live_txc_file_attributes.assert_called_once()
-    data_manager._cache_stop_activity_id_map.assert_called_once()
+    data_manager.get_or_compute_stop_activity_id_map.assert_called_once()
 
 
 @patch("common_layer.dynamodb.data_manager.OrganisationTXCFileAttributesRepo")
