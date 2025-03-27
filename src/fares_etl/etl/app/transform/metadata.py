@@ -3,7 +3,7 @@ Create fares metadata
 """
 
 from common_layer.database.models import FaresMetadata
-from common_layer.database.repos import NaptanStopPointRepo
+from common_layer.dynamodb.client import NaptanStopPointDynamoDBClient
 from common_layer.xml.netex.helpers.helpers_counts import (
     number_of_distinct_user_profiles,
     number_of_fare_zones,
@@ -52,33 +52,31 @@ def create_metadata(netex: PublicationDeliveryStructure) -> FaresMetadata:
 
 
 def get_stop_ids(
-    netex: PublicationDeliveryStructure, naptan_stop_point_repo: NaptanStopPointRepo
+    netex: PublicationDeliveryStructure,
+    dynamodb_naptan_stop_point_client: NaptanStopPointDynamoDBClient,
 ) -> list[int]:
     """
-    Create FaresMetadataStops
+    Get list of stop PrivateCodes from NeTEx
     """
     sorted_frames = sort_frames(netex.dataObjects)
     stop_point_refs = get_scheduled_stop_point_refs(sorted_frames.fare_frames)
 
-    naptan_ids: set[str] = set()
-    atco_ids: set[str] = set()
+    atco_ids = {stop.atco_code for stop in stop_point_refs if stop.atco_code}
+    naptan_ids = {stop.naptan_code for stop in stop_point_refs if stop.naptan_code}
 
-    for stop in stop_point_refs:
-        if stop.atco_code:
-            atco_ids.add(stop.atco_code)
-
-        if stop.naptan_code:
-            naptan_ids.add(stop.naptan_code)
-
-    stops_from_atco_ids = naptan_stop_point_repo.get_by_atco_codes(
-        sorted(list(atco_ids))
+    stops_from_atco_ids = dynamodb_naptan_stop_point_client.get_by_atco_codes(
+        sorted(atco_ids)
     )[0]
 
-    stops_from_naptan_ids = naptan_stop_point_repo.get_by_naptan_codes(
-        sorted(list(naptan_ids))
+    stops_from_naptan_ids = dynamodb_naptan_stop_point_client.get_by_naptan_codes(
+        sorted(naptan_ids)
     )[0]
 
     stops = stops_from_atco_ids + stops_from_naptan_ids
-    stop_ids = [stop.id for stop in stops]
+    stop_ids = {
+        int(stop.PrivateCode)
+        for stop in stops
+        if stop.PrivateCode is not None and stop.PrivateCode.isdigit()
+    }
 
-    return list(set(stop_ids))
+    return list(stop_ids)

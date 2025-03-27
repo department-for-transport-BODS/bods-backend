@@ -27,22 +27,20 @@ def handle_error(
     """
     Core error handling logic
     """
-    task_result = ETLTaskResultRepo(db).require_by_id(
-        event_data.dataset_etl_task_result_id
-    )
+    task_result_repo = ETLTaskResultRepo(db)
+    task_result = task_result_repo.require_by_id(event_data.dataset_etl_task_result_id)
 
-    revision = OrganisationDatasetRevisionRepo(db).require_by_id(
-        task_result.revision_id
-    )
+    revision_repo = OrganisationDatasetRevisionRepo(db)
+    revision = revision_repo.require_by_id(task_result.revision_id)
 
-    ETLTaskResultRepo(db).mark_error(
+    task_result_repo.mark_error(
         task_id=event_data.dataset_etl_task_result_id,
         task_name="Exception Handler Does not Know Failed Task Name",
         error_code=event_data.cause.error_code,
         additional_info=event_data.cause.extracted_message,
     )
     revision.status = FeedStatus.ERROR
-    OrganisationDatasetRevisionRepo(db).update(revision)
+    revision_repo.update(revision)
 
     return revision
 
