@@ -2,11 +2,7 @@
 transmodel_service_patternstops
 """
 
-from typing import Sequence
-
-from common_layer.database.client import SqlDB
 from common_layer.database.models import (
-    NaptanStopPoint,
     TransmodelServicePattern,
     TransmodelServicePatternStop,
 )

@@ -14,7 +14,6 @@ from common_layer.database.models import (
 )
 from common_layer.xml.txc.models import (
     TXCData,
-    TXCFlexibleJourneyPattern,
     TXCJourneyPatternSection,
     TXCService,
     TXCServicedOrganisation,
