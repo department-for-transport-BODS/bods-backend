@@ -2,6 +2,7 @@
 Pydantic Models
 """
 
+from dataclasses import dataclass
 from typing import Annotated, Self
 
 from common_layer.database.client import SqlDB
@@ -46,7 +47,8 @@ class TaskData(BaseModel):
     input_data: ETLInputData
 
 
-class ETLTaskClients(BaseModel):
+@dataclass
+class ETLTaskClients:
     """
     Clients required for ETL task
     """
