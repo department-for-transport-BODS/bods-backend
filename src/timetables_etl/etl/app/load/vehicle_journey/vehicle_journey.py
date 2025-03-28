@@ -32,6 +32,7 @@ from ...transform.vehicle_journeys import (
 )
 from ..models_context import (
     OperatingProfileProcessingContext,
+    ProcessFlexiblePatternStopsContext,
     ProcessPatternStopsContext,
     ServicePatternVehicleJourneyContext,
     VehicleJourneyProcessingContext,
@@ -251,8 +252,11 @@ def process_journey_pattern_vehicle_journeys(
                 context.service_pattern,
                 tm_vj,
                 txc_jp,
-                context.stops,
-                context.db,
+                context=ProcessFlexiblePatternStopsContext(
+                    stop_sequence=context.stops,
+                    stop_activity_id_map=context.stop_activity_id_map,
+                    db=context.db,
+                ),
             )
             pattern_stops.extend(stops)
         else:  # TXCJourneyPattern
@@ -279,7 +283,11 @@ def process_journey_pattern_vehicle_journeys(
                 tm_vehicle_journey=tm_vj,
                 txc_vehicle_journey=txc_vj,
                 context=ProcessPatternStopsContext(
-                    jp_sections, context.stops, context.db, context.naptan_stops_lookup
+                    jp_sections,
+                    context.stops,
+                    context.db,
+                    context.naptan_stops_lookup,
+                    context.stop_activity_id_map,
                 ),
             )
             pattern_stops.extend(stops)

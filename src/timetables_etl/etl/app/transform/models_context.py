@@ -10,7 +10,6 @@ from common_layer.database.models import (
     NaptanStopPoint,
     TransmodelServicePattern,
     TransmodelServicePatternStop,
-    TransmodelStopActivity,
     TransmodelVehicleJourney,
 )
 from common_layer.xml.txc.models import (
@@ -60,7 +59,7 @@ class GeneratePatternStopsContext:
 
     jp_sections: list[TXCJourneyPatternSection]
     stop_sequence: Sequence[NaptanStopPoint]
-    activity_map: dict[str, TransmodelStopActivity]
+    stop_activity_id_map: dict[str, int]
     naptan_stops_lookup: StopsLookup
 
 

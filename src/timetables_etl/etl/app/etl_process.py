@@ -17,14 +17,16 @@ from common_layer.database.repos import (
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.download import download_and_parse_txc
+from common_layer.dynamodb.client.cache import DynamoDBCache
 from common_layer.dynamodb.client.naptan_stop_points import (
     NaptanStopPointDynamoDBClient,
 )
+from common_layer.dynamodb.data_manager import FileProcessingDataManager
 from common_layer.xml.txc.parser.parser_txc import TXCParserConfig
 from structlog.stdlib import get_logger
 
 from .metrics import create_datadog_metrics
-from .models import ETLInputData, TaskData
+from .models import ETLInputData, ETLTaskClients, TaskData
 from .pipeline import transform_data
 
 log = get_logger()
@@ -88,11 +90,17 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, 
     input_data = ETLInputData(**event)
     db = SqlDB()
     stop_point_client = NaptanStopPointDynamoDBClient()
+    dynamodb = DynamoDBCache()
+    data_manager = FileProcessingDataManager(db, dynamodb)
+    task_clients = ETLTaskClients(
+        db=db, stop_point_client=stop_point_client, dynamo_data_manager=data_manager
+    )
+
     txc_data = download_and_parse_txc(
         input_data.s3_bucket_name, input_data.s3_file_key, PARSER_CONFIG
     )
     task_data = get_task_data(input_data, db)
-    stats = transform_data(txc_data, task_data, db, stop_point_client)
+    stats = transform_data(txc_data, task_data, task_clients)
     create_datadog_metrics(metrics, stats)
     return {
         "status_code": 200,
