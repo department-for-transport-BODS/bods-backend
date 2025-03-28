@@ -192,13 +192,13 @@ class TransmodelTrackRepo(BaseRepositoryWithId[TransmodelTracks]):
         return self._fetch_all(statement)
 
     @handle_repository_errors
-    def bulk_insert_ignore_duplicates(self, records: list[TransmodelTracks]) -> int:
+    def bulk_insert_ignore_duplicates(self, records: list[TransmodelTracks]) -> None:
         """
         Insert multiple records using PostgreSQL's ON CONFLICT DO NOTHING syntax.
         Returns count of records inserted
         """
         if not records:
-            return 0
+            return
 
         with self._db.session_scope() as session:
             insert_stmt = insert(self._model)
@@ -206,11 +206,5 @@ class TransmodelTrackRepo(BaseRepositoryWithId[TransmodelTracks]):
                 constraint="unique_from_to_atco_code"
             )
 
-            result = session.execute(
-                insert_stmt, [record.__dict__ for record in records]
-            )
-
-        if result.rowcount != len(records):
-            self._log.error("Inserted Tracks count does not match")
-
-        return result.rowcount
+            session.execute(insert_stmt, [record.__dict__ for record in records])
+        return
