@@ -7,6 +7,7 @@ from datetime import date
 from typing import Literal
 
 from sqlalchemy import tuple_
+from sqlalchemy.dialects.postgresql import insert
 
 from ..client import SqlDB
 from ..models import (
@@ -189,3 +190,21 @@ class TransmodelTrackRepo(BaseRepositoryWithId[TransmodelTracks]):
             tuple_(self._model.from_atco_code, self._model.to_atco_code).in_(stop_pairs)
         )
         return self._fetch_all(statement)
+
+    @handle_repository_errors
+    def bulk_insert_ignore_duplicates(self, records: list[TransmodelTracks]) -> None:
+        """
+        Insert multiple records using PostgreSQL's ON CONFLICT DO NOTHING syntax.
+        Returns count of records inserted
+        """
+        if not records:
+            return
+
+        with self._db.session_scope() as session:
+            insert_stmt = insert(self._model)
+            insert_stmt = insert_stmt.on_conflict_do_nothing(
+                constraint="unique_from_to_atco_code"
+            )
+
+            session.execute(insert_stmt, [record.__dict__ for record in records])
+        return
