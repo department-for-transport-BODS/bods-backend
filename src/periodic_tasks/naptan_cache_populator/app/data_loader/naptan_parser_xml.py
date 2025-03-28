@@ -156,6 +156,9 @@ async def process_stop_points(
 
     try:
         async for stop_point in stop_points_stream:
+            if stop_point["NaptanCode"] is None or stop_point["NaptanCode"] == "":
+                del stop_point["NaptanCode"]
+
             current_batch.append(stop_point)
 
             if len(current_batch) >= transaction_size:
