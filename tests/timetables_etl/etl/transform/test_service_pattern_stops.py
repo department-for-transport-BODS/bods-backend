@@ -1,13 +1,13 @@
 import pytest
 from common_layer.database.models import TransmodelServicePatternStop
 from common_layer.xml.txc.models import TXCJourneyPatternTimingLink
-from etl.app.transform.service_pattern_stops import is_duplicate_stop
 
 from tests.factories.database.transmodel import TransmodelServicePatternStopFactory
 from tests.timetables_etl.factories.txc import (
     TXCJourneyPatternStopUsageFactory,
     TXCJourneyPatternTimingLinkFactory,
 )
+from timetables_etl.etl.app.transform.service_pattern_stops import is_duplicate_stop
 
 
 @pytest.mark.parametrize(
