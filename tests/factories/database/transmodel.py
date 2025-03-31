@@ -9,6 +9,7 @@ import factory
 from common_layer.database.models import (
     TransmodelBookingArrangements,
     TransmodelService,
+    TransmodelServicePatternStop,
     TransmodelVehicleJourney,
 )
 
@@ -158,3 +159,21 @@ class TransmodelBookingArrangementsFactory(factory.Factory):
             web_address=web_address,
             service_id=service_id,
         )
+
+
+class TransmodelServicePatternStopFactory(factory.Factory):
+    """Factory for TransmodelServicePatternStop"""
+
+    class Meta:
+        model = TransmodelServicePatternStop
+
+    sequence_number = factory.Sequence(lambda n: n)
+    atco_code = factory.Faker("ATCO001")  # use a simple fake code
+    naptan_stop_id = None
+    service_pattern_id = 1
+    departure_time = None
+    is_timing_point = True
+    txc_common_name = None
+    vehicle_journey_id = None
+    stop_activity_id = None
+    auto_sequence_number = factory.SelfAttribute("sequence_number")

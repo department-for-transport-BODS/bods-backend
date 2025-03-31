@@ -13,6 +13,7 @@ from common_layer.database.models import (
 from common_layer.xml.txc.models import (
     TXCFlexibleVehicleJourney,
     TXCJourneyPatternSection,
+    TXCJourneyPatternTimingLink,
     TXCVehicleJourney,
 )
 from structlog.stdlib import get_logger
@@ -100,6 +101,7 @@ def is_duplicate_stop(
     current_stop_ref: str,
     current_sequence: int,
     previous_stop: TransmodelServicePatternStop | None,
+    previous_link: TXCJourneyPatternTimingLink | None,
 ) -> bool:
     """
     Determine if a stop would be a duplicate at a section boundary.
@@ -108,6 +110,14 @@ def is_duplicate_stop(
     Meaning that the last stop of the JPS is the first stop of the next JPS
     """
     if not previous_stop or previous_stop.auto_sequence_number is None:
+        return False
+
+    # Skip check if the From/To on the previous link are the same
+    # Edge case: https://kpmgengineering.atlassian.net/browse/BODS-8631
+    if (
+        previous_link
+        and previous_link.From.StopPointRef == previous_link.To.StopPointRef
+    ):
         return False
 
     return (
@@ -185,10 +195,12 @@ def process_journey_pattern_section(
         )
 
         # Handle 'From' stop
+        previous_link = links[i - 1] if i > 0 else None
         if not is_duplicate_stop(
             current_stop_ref=link.From.StopPointRef,
             current_sequence=state.auto_sequence,
             previous_stop=state.pattern_stops[-1] if state.pattern_stops else None,
+            previous_link=previous_link,
         ):
             if stop := create_pattern_stop(
                 StopData(
