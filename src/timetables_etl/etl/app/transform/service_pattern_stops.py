@@ -8,7 +8,6 @@ from common_layer.database.models import (
     NaptanStopPoint,
     TransmodelServicePattern,
     TransmodelServicePatternStop,
-    TransmodelStopActivity,
     TransmodelVehicleJourney,
 )
 from common_layer.xml.txc.models import (
@@ -60,17 +59,17 @@ def calculate_next_time(
 def create_stop(
     stop_data: StopData,
     context: StopContext,
-    activity_map: dict[str, TransmodelStopActivity],
+    stop_activity_id_map: dict[str, int],
 ) -> TransmodelServicePatternStop | None:
     """
     Create a TransmodelServicePatternStop for a single stop in the vehicle journey
     """
-    activity = activity_map.get(stop_data.stop_usage.Activity)
-    if not activity:
+    activity_id = stop_activity_id_map.get(stop_data.stop_usage.Activity)
+    if not activity_id:
         log.error(
             "Stop activity not found - skipping stop",
             requested_activity=stop_data.stop_usage.Activity,
-            available_activities=list(activity_map.keys()),
+            available_activities=list(stop_activity_id_map.keys()),
             stop_point=stop_data.stop_usage.StopPointRef,
             vehicle_journey_id=context.vehicle_journey.id,
         )
@@ -92,7 +91,7 @@ def create_stop(
         is_timing_point=stop_data.stop_usage.TimingStatus == "principalTimingPoint",
         txc_common_name=stop_data.naptan_stop.common_name,
         vehicle_journey_id=context.vehicle_journey.id,
-        stop_activity_id=activity.id,
+        stop_activity_id=activity_id,
         auto_sequence_number=context.auto_sequence,
     )
 
@@ -120,12 +119,12 @@ def is_duplicate_stop(
 def create_pattern_stop(
     stop_data: StopData,
     stop_context: StopContext,
-    activity_map: dict[str, TransmodelStopActivity],
+    stop_activity_id_map: dict[str, int],
 ) -> TransmodelServicePatternStop | None:
     """
     Create a new service pattern stop if appropriate.
     """
-    if stop := create_stop(stop_data, stop_context, activity_map):
+    if stop := create_stop(stop_data, stop_context, stop_activity_id_map):
         return stop
     return None
 
@@ -202,7 +201,7 @@ def process_journey_pattern_section(
                     auto_sequence=state.auto_sequence,
                     departure_time=state.current_time,
                 ),
-                context.pattern_context.activity_map,
+                context.pattern_context.stop_activity_id_map,
             ):
                 state.pattern_stops.append(stop)
                 state.auto_sequence += 1
@@ -241,7 +240,7 @@ def process_journey_pattern_section(
                     auto_sequence=state.auto_sequence,
                     departure_time=state.current_time,
                 ),
-                context.pattern_context.activity_map,
+                context.pattern_context.stop_activity_id_map,
             ):
                 state.pattern_stops.append(stop)
                 state.auto_sequence += 1
@@ -263,7 +262,7 @@ def generate_pattern_stops(
         "Starting pattern stops generation",
         jp_section_count=len(context.jp_sections),
         stop_count=len(context.stop_sequence),
-        activity_count=len(context.activity_map),
+        activity_count=len(context.stop_activity_id_map),
         vehicle_journey=txc_vehicle_journey.VehicleJourneyCode,
     )
 

@@ -57,6 +57,7 @@ class ServicePatternVehicleJourneyContext:
     sp_data: ServicePatternMetadata
     naptan_stops_lookup: StopsLookup
     vehicle_journeys: list[TXCVehicleJourney | TXCFlexibleVehicleJourney]
+    stop_activity_id_map: dict[str, int]
 
 
 @dataclass
@@ -67,6 +68,16 @@ class ProcessPatternStopsContext:
     stop_sequence: Sequence[NaptanStopPoint]
     db: SqlDB
     naptan_stops_lookup: StopsLookup
+    stop_activity_id_map: dict[str, int]
+
+
+@dataclass
+class ProcessFlexiblePatternStopsContext:
+    """Context for flexible pattern stops processing"""
+
+    stop_sequence: Sequence[NaptanStopPoint]
+    db: SqlDB
+    stop_activity_id_map: dict[str, int]
 
 
 @dataclass

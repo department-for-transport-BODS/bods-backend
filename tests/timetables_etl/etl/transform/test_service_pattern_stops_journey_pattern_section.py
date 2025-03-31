@@ -138,15 +138,12 @@ def naptan_stop_lookup() -> dict[str, NaptanStopPoint]:
 
 
 @pytest.fixture
-def activity_map() -> dict[str, TransmodelStopActivity]:
+def stop_activity_id_map() -> dict[str, int]:
     """Fixture for stop activities"""
     return {
-        "pickUpAndSetDown": TransmodelStopActivity(
-            name="pickUpAndSetDown",
-            is_pickup=True,
-            is_setdown=True,
-            is_driverrequest=False,
-        )
+        "pickUp": 1,
+        "setDown": 2,
+        "pickUpAndSetDown": 3,
     }
 
 
@@ -156,7 +153,7 @@ def journey_context(
     vehicle_journey: TransmodelVehicleJourney,
     txc_vehicle_journey: TXCVehicleJourney,
     naptan_stop_lookup: dict[str, NaptanStopPoint],  # Explicit dictionary type
-    activity_map: dict[str, TransmodelStopActivity],  # Explicit dictionary type
+    stop_activity_id_map: dict[str, int],  # Explicit dictionary type
 ) -> JourneySectionContext:
     """Fixture for JourneySectionContext"""
     return JourneySectionContext(
@@ -166,7 +163,7 @@ def journey_context(
         pattern_context=GeneratePatternStopsContext(
             jp_sections=[],
             stop_sequence=list(naptan_stop_lookup.values()),
-            activity_map=activity_map,
+            stop_activity_id_map=stop_activity_id_map,
             naptan_stops_lookup=naptan_stop_lookup,
         ),
         naptan_stops_lookup=naptan_stop_lookup,
@@ -179,7 +176,7 @@ def journey_context_without_vjtl(
     vehicle_journey: TransmodelVehicleJourney,
     txc_vehicle_journey_without_vjtl: TXCVehicleJourney,
     naptan_stop_lookup: dict[str, NaptanStopPoint],  # Explicit dictionary type
-    activity_map: dict[str, TransmodelStopActivity],  # Explicit dictionary type
+    stop_activity_id_map: dict[str, int],  # Explicit dictionary type
 ) -> JourneySectionContext:
     """Fixture for JourneySectionContext"""
     return JourneySectionContext(
@@ -189,7 +186,7 @@ def journey_context_without_vjtl(
         pattern_context=GeneratePatternStopsContext(
             jp_sections=[],
             stop_sequence=list(naptan_stop_lookup.values()),
-            activity_map=activity_map,
+            stop_activity_id_map=stop_activity_id_map,
             naptan_stops_lookup=naptan_stop_lookup,
         ),
         naptan_stops_lookup=naptan_stop_lookup,
