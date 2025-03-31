@@ -10,7 +10,7 @@ from typing import Any, Type, cast
 
 import structlog
 from sqlalchemy import Column as SQLColumn
-from sqlalchemy import Engine, MetaData, inspect, text
+from sqlalchemy import Engine, MetaData, UniqueConstraint, inspect, text
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.engine.interfaces import ReflectedColumn
 from sqlalchemy.sql.schema import Table
@@ -44,12 +44,144 @@ def get_existing_columns(engine: Engine, table_name: str) -> dict[str, Reflected
     return columns
 
 
+def get_existing_constraints(engine: Engine, table_name: str) -> list[str]:
+    """Get existing constraint names from a database table."""
+    inspector = inspect(engine)
+    constraints: list[str] = []
+
+    if inspector.has_table(table_name):
+        # Get unique constraints
+        unique_constraints = inspector.get_unique_constraints(table_name)
+        for c in unique_constraints:
+            if c["name"] is not None:
+                constraints.append(c["name"])
+
+        # Get primary key constraints
+        pk = inspector.get_pk_constraint(table_name)
+        pk_name = pk.get("name")
+        if pk_name is not None:
+            constraints.append(pk_name)
+
+        # Get foreign key constraints
+        fk_constraints = inspector.get_foreign_keys(table_name)
+        for fk in fk_constraints:
+            fk_name = fk.get("name")
+            if fk_name is not None:
+                constraints.append(fk_name)
+
+    return constraints
+
+
+def extract_table_args(model: Type[BaseSQLModel]) -> tuple[Any, ...]:
+    """
+    Extract table arguments including constraints from a SQLAlchemy model.
+    Returns a tuple of table arguments that can be passed to Table constructor.
+    """
+    table_args = cast(
+        tuple[Any, ...] | dict[str, Any], getattr(model, "__table_args__", ())
+    )
+    # If table_args is a dict, it's not constraints but table options
+    # In that case, return an empty tuple as we're only interested in constraints here
+    if isinstance(table_args, dict):
+        log.info(
+            "Model has table options but no constraints",
+            model_name=model.__name__,
+            options=table_args,
+        )
+        return ()
+
+    # If it's a tuple, it might contain constraints and/or a dict of table options
+    # Filter out the dict of options if present (usually the last item)
+    constraints: list[Any] = []
+    for item in table_args:
+        if not isinstance(item, dict):
+            constraints.append(item)
+
+    if constraints:
+        log.info(
+            "Extracted table constraints",
+            model_name=model.__name__,
+            constraint_count=len(constraints),
+            constraint_types=[type(c).__name__ for c in constraints],
+        )
+        return tuple(constraints)
+
+    return ()
+
+
+def add_missing_constraints(
+    model: Type[BaseSQLModel], table_name: str, engine: Engine
+) -> None:
+    """Add missing constraints to an existing table."""
+    # Extract table constraints from model
+    table_constraints = extract_table_args(model)
+    if not table_constraints:
+        return
+
+    # Get existing constraint names
+    existing_constraints = get_existing_constraints(engine, table_name)
+
+    for constraint in table_constraints:
+        # Skip constraints without names
+        if not hasattr(constraint, "name") or not constraint.name:
+            continue
+
+        # Check if constraint already exists
+        if constraint.name in existing_constraints:
+            continue
+
+        log.info(
+            "Adding missing constraint to table",
+            table=table_name,
+            constraint_name=constraint.name,
+            constraint_type=type(constraint).__name__,
+        )
+
+        try:
+            # Handle different constraint types
+            if isinstance(constraint, UniqueConstraint):
+                # Get column names from the constraint
+                columns = ", ".join([f'"{col}"' for col in constraint.columns])
+
+                # Create ALTER TABLE statement for unique constraint
+                alter_stmt = (
+                    f'ALTER TABLE "{table_name}" '
+                    f'ADD CONSTRAINT "{constraint.name}" UNIQUE ({columns})'
+                )
+
+                with engine.begin() as conn:
+                    conn.execute(text(alter_stmt))
+
+                log.info(
+                    "Successfully added unique constraint",
+                    table=table_name,
+                    constraint_name=constraint.name,
+                )
+
+            # Add other constraint types as needed (ForeignKeyConstraint, CheckConstraint, etc.)
+            else:
+                log.warning(
+                    "Unsupported constraint type for automatic addition",
+                    table=table_name,
+                    constraint_name=constraint.name,
+                    constraint_type=type(constraint).__name__,
+                )
+
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            log.error(
+                "Failed to add constraint",
+                table=table_name,
+                constraint_name=constraint.name,
+                error=str(e),
+            )
+
+
 def compare_and_alter_table(
     model: Type[BaseSQLModel], table: Table, engine: Engine
 ) -> None:
     """
     Compare existing table columns with model columns and alter table if needed.
-    TODO: IF columns are NOT NULL and existing rows are there, this will fail
+    Also adds any missing constraints defined in the model.
     """
     inspector = inspect(engine)
     existing_columns = get_existing_columns(engine, table.name)
@@ -116,6 +248,9 @@ def compare_and_alter_table(
                 raise RuntimeError(
                     f"Failed to add column {column.name} to table {table.name}: {str(e)}"
                 ) from e
+
+    # Add any missing constraints defined in the model
+    add_missing_constraints(model, table.name, engine)
 
 
 def get_model_classes(model_module: ModuleType) -> list[Type[BaseSQLModel]]:
@@ -282,7 +417,7 @@ def handle_enums_and_create_table(
     """
     Create a database table for a SQLAlchemy model, handling PostgreSQL enum types.
     First creates any required enum types if they don't exist, then creates the table
-    with proper column definitions including enum references
+    with proper column definitions including enum references and table constraints.
     """
     table_name = model.__tablename__
     log.info(
@@ -298,17 +433,21 @@ def handle_enums_and_create_table(
         if not check_enum_exists(engine, enum_name):
             create_enum_type(engine, enum_name, enum_values)
 
+    # Create column definitions
     columns = create_table_columns(model, enum_types)
 
-    # Create table
+    # Extract table constraints and other table arguments
+    table_constraints = extract_table_args(model)
+
     log.info(
         "Attempting to create table",
         model_name=model.__name__,
         table_name=table_name,
         total_columns=len(columns),
+        constraint_count=len(table_constraints),
     )
 
-    table = Table(table_name, metadata, *columns)
+    table = Table(table_name, metadata, *columns, *table_constraints)
     try:
         table.create(engine)
         log.info(

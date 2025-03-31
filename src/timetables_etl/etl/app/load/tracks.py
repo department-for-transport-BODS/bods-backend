@@ -31,8 +31,8 @@ def load_tracks(route_sections: list[TXCRouteSection], db: SqlDB) -> TrackLookup
     all_tracks = existing_tracks
     if analysis.pairs_to_create:
         new_tracks = create_new_tracks(analysis.pairs_to_create, route_sections)
-        track_repo.bulk_insert(new_tracks)
-        all_tracks = existing_tracks + new_tracks
+        track_repo.bulk_insert_ignore_duplicates(new_tracks)
+        all_tracks = track_repo.get_by_stop_pairs(route_pairs)
 
         log_ctx.info(
             "Fetched Existing and Added new tracks to database",

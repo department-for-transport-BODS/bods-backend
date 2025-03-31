@@ -9,8 +9,9 @@ from common_layer.database.models import OrganisationDatasetRevision
 from common_layer.database.repos import (
     OrganisationDatasetRepo,
     OrganisationTXCFileAttributesRepo,
+    TransmodelStopActivityRepo,
 )
-from common_layer.dynamodb.client import DynamoDB
+from common_layer.dynamodb.client.cache import DynamoDBCache
 from common_layer.dynamodb.models import TXCFileAttributes
 from common_layer.dynamodb.utils import dataclass_to_dict
 from common_layer.exceptions.pipeline_exceptions import PipelineException
@@ -23,6 +24,7 @@ class CachedDataType(str, Enum):
     """
 
     LIVE_TXC_FILE_ATTRIBUTES = "live_txc_file_attributes"
+    STOP_ACTIVITY_ID_MAP = "transmodel_stop_activity_id_map"
 
 
 log = get_logger()
@@ -34,7 +36,7 @@ class FileProcessingDataManager:
     Handles pre-fetching, caching, and retrieval of different data types.
     """
 
-    def __init__(self, db: SqlDB, dynamodb: DynamoDB):
+    def __init__(self, db: SqlDB, dynamodb: DynamoDBCache):
         """
         Initialize the data manager with database and DynamoDB clients.
         """
@@ -46,6 +48,7 @@ class FileProcessingDataManager:
         Pre-fetch and cache data required for file-level processing.
         """
         self._cache_live_txc_file_attributes(revision)
+        self.get_or_compute_stop_activity_id_map()
 
     def _cache_live_txc_file_attributes(
         self, revision: OrganisationDatasetRevision
@@ -77,8 +80,8 @@ class FileProcessingDataManager:
         log.info("Caching TXCFileAttributes", count=len(live_attributes_to_cache))
 
         cache_key = self._generate_cache_key(
-            revision.id,
             CachedDataType.LIVE_TXC_FILE_ATTRIBUTES,
+            prefix=f"revision-{revision.id}",
         )
         self._dynamodb.put(cache_key, live_attributes_to_cache, ttl=3600)
 
@@ -89,8 +92,9 @@ class FileProcessingDataManager:
         Get the Cached Attributes from DynamoDB
         """
         cache_key = self._generate_cache_key(
-            revision_id, CachedDataType.LIVE_TXC_FILE_ATTRIBUTES
+            CachedDataType.LIVE_TXC_FILE_ATTRIBUTES, prefix=f"revision-{revision_id}"
         )
+
         cached_attributes = self._dynamodb.get(cache_key)
         if not cached_attributes:
             return None
@@ -100,9 +104,28 @@ class FileProcessingDataManager:
             for cached_attribute in cached_attributes
         ]
 
+    def get_or_compute_stop_activity_id_map(self) -> dict[str, int]:
+        """
+        Get stop activity id map from the DynamoDB cache
+        or compute and cache it if not found
+        """
+        cache_key = self._generate_cache_key(CachedDataType.STOP_ACTIVITY_ID_MAP)
+        return self._dynamodb.get_or_compute(
+            cache_key,
+            compute_fn=lambda: TransmodelStopActivityRepo(
+                self._db
+            ).get_activity_id_map(),
+            ttl=3600,
+        )
+
     @staticmethod
-    def _generate_cache_key(revision_id: int, data_type: CachedDataType) -> str:
+    def _generate_cache_key(
+        data_type: CachedDataType,
+        prefix: str | None = None,
+    ) -> str:
         """
-        Generate a cache key for the given revision_id and data_type
+        Generate a cache key for the given data_type with an optional prefix
         """
-        return f"revision-{revision_id}-{data_type.value}"
+        if prefix:
+            return f"{prefix}-{data_type.value}"
+        return data_type.value

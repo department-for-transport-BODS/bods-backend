@@ -63,10 +63,11 @@ def create_task_data_from_inputs(
     if task_id and file_attributes_id and db:
         log.info("Fetching task data from database using provided IDs")
         input_data = ETLInputData(
-            DatasetEtlTaskResultId=task_id,
-            fileAttributesId=file_attributes_id,
-            Bucket="test",
-            ObjectKey="test",
+            task_id=task_id,
+            file_attributes_id=file_attributes_id,
+            s3_bucket_name="test",
+            s3_file_key="test",
+            superseded_timetable=False,
         )
         return get_task_data(input_data, db)
 
@@ -93,10 +94,11 @@ def create_task_data_from_inputs(
         )
 
         input_data = ETLInputData(
-            DatasetEtlTaskResultId=mock_task.id,
-            fileAttributesId=file_attributes_id,
-            Bucket="test",
-            ObjectKey="test",
+            task_id=task_id or 1,
+            file_attributes_id=file_attributes_id,
+            s3_bucket_name="test",
+            s3_file_key="test",
+            superseded_timetable=False,
         )
 
         return TaskData(
@@ -140,10 +142,11 @@ def create_task_data_from_inputs(
             revision=revision,
             file_attributes=file_attributes,
             input_data=ETLInputData(
-                DatasetEtlTaskResultId=mock_task.id,
-                fileAttributesId=file_attributes_id,
-                Bucket="test",
-                ObjectKey="test",
+                task_id=mock_task.id,
+                file_attributes_id=file_attributes_id,
+                s3_bucket_name="test",
+                s3_file_key="test",
+                superseded_timetable=False,
             ),
         )
 
