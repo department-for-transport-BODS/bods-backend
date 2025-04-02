@@ -100,7 +100,9 @@
             "States.ALL"
           ],
           "Next": "Parent Exception Handler",
-          "Output": "$.error"
+          "Output": {
+            "errorInfo": "$.error"
+          }
         }
       ],
       "Next": "Initialize Pipeline"
@@ -194,7 +196,7 @@
           "ErrorEquals": [
             "States.ALL"
           ],
-          "Next": "Release Lock Exception Handler",
+          "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"
           }
@@ -235,7 +237,7 @@
           "ErrorEquals": [
             "States.ALL"
           ],
-          "Next": "Release Lock Exception Handler",
+          "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"
           }
@@ -261,7 +263,7 @@
           "ErrorEquals": [
             "States.ALL"
           ],
-          "Next": "Release Lock Exception Handler",
+          "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"
           }
@@ -441,7 +443,7 @@
           "ErrorEquals": [
             "States.ALL"
           ],
-          "Next": "Release Lock Exception Handler",
+          "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"
           }
@@ -588,7 +590,7 @@
           "ErrorEquals": [
             "States.ALL"
           ],
-          "Next": "Release Lock Exception Handler",
+          "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"
           }
@@ -666,10 +668,22 @@
             "States.ALL"
           ],
           "Next": "Parent Exception Handler",
-          "Output": "$.error"
+          "Output": {
+            "errorInfo": "$.error"
+          }
         }
       ],
       "Next": "Completed"
+    },
+    "Parent Exception Handler": {
+      "Type": "Task",
+      "Next": "Release Lock Exception Handler",
+      "Resource": "${ExceptionHandlerLambdaArn}",
+      "Arguments": {
+        "Error": "{% $states.input.errorInfo.Error %}",
+        "Cause": "{% $states.input.errorInfo.Cause %}",
+        "DatasetEtlTaskResultId": "{% $datasetETLTaskResultId %}"
+      }
     },
     "Release Lock Exception Handler": {
       "Type": "Task",
@@ -709,26 +723,16 @@
           "BackoffRate": 1.5
         }
       ],
-      "Next": "Parent Exception Handler",
+      "Next": "Overall State Machine Failed",
       "Catch": [
         {
           "ErrorEquals": [
             "States.ALL"
           ],
-          "Next": "Parent Exception Handler",
+          "Next": "Overall State Machine Failed",
           "Output": "$.releaseError"
         }
       ]
-    },
-    "Parent Exception Handler": {
-      "Type": "Task",
-      "Next": "Overall State Machine Failed",
-      "Resource": "${ExceptionHandlerLambdaArn}",
-      "Arguments": {
-        "Error": "{% $states.input.errorInfo.Error %}",
-        "Cause": "{% $states.input.errorInfo.Cause %}",
-        "DatasetEtlTaskResultId": "{% $datasetETLTaskResultId %}"
-      }
     },
     "Overall State Machine Failed": {
       "Type": "Fail",
