@@ -578,7 +578,8 @@
         "OriginalObjectKey": "{% $s3Object %}",
         "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}",
         "PublishDatasetRevision": "{% $publishDatasetRevision %}",
-        "OverwriteInputDataset": "{% $overwriteInputDataset %}"
+        "OverwriteInputDataset": "{% $overwriteInputDataset %}",
+        "DatasetType": "{% $datasetType %}"
       },
       "Assign": {
         "finalResult": "{% $states.result %}"
