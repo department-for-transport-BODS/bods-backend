@@ -6,10 +6,11 @@ from .exceptions_anti_virus import ClamAVScanFailed, ClamConnectionError, Suspic
 from .exceptions_common import ETLException
 from .exceptions_download import (
     DownloadException,
+    DownloadFileNotFound,
+    DownloadPermissionDenied,
+    DownloadProxyError,
     DownloadTimeout,
-    FileNotFound,
-    PermissionDenied,
-    UnknownFileType,
+    DownloadUnknownFileType,
 )
 from .exceptions_fares import FaresMetadataNotFound
 from .exceptions_pti import PTIViolationFound
@@ -33,9 +34,10 @@ __all__ = [
     # Download exceptions
     "DownloadException",
     "DownloadTimeout",
-    "PermissionDenied",
-    "UnknownFileType",
-    "FileNotFound",
+    "DownloadPermissionDenied",
+    "DownloadUnknownFileType",
+    "DownloadFileNotFound",
+    "DownloadProxyError",
     # S3 exceptions
     "S3FilenameParseFailed",
     "S3FileTooLargeError",
