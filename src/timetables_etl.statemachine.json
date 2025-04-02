@@ -67,40 +67,30 @@
       },
       "Retry": [
         {
-          "ErrorEquals": [
-            "DynamoDB.AmazonDynamoDBException"
-          ],
+          "ErrorEquals": ["DynamoDB.AmazonDynamoDBException"],
           "MaxAttempts": 0
         },
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "MaxAttempts": 6,
           "BackoffRate": 2
         }
       ],
       "Catch": [
         {
-          "ErrorEquals": [
-            "DynamoDB.AmazonDynamoDBException"
-          ],
+          "ErrorEquals": ["DynamoDB.AmazonDynamoDBException"],
           "Next": "Initialize Lock Item",
           "Output": "$lockinfo.acquisitionerror"
         },
         {
-          "ErrorEquals": [
-            "DynamoDB.ConditionalCheckFailedException"
-          ],
+          "ErrorEquals": ["DynamoDB.ConditionalCheckFailedException"],
           "Next": "Get Current Lock Record",
           "Output": "$lockinfo.acquisitionerror"
         },
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "Next": "Parent Exception Handler",
-          "Output": "$.error"
+          "Output": { "errorInfo": "$.error" }
         }
       ],
       "Next": "Initialize Pipeline"
@@ -128,9 +118,7 @@
       },
       "Catch": [
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "Next": "Acquire Lock"
         }
       ],
@@ -191,10 +179,8 @@
       },
       "Catch": [
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
-          "Next": "Release Lock Exception Handler",
+          "ErrorEquals": ["States.ALL"],
+          "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"
           }
@@ -232,10 +218,8 @@
       },
       "Catch": [
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
-          "Next": "Release Lock Exception Handler",
+          "ErrorEquals": ["States.ALL"],
+          "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"
           }
@@ -258,10 +242,8 @@
       },
       "Catch": [
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
-          "Next": "Release Lock Exception Handler",
+          "ErrorEquals": ["States.ALL"],
+          "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"
           }
@@ -317,9 +299,7 @@
             },
             "Catch": [
               {
-                "ErrorEquals": [
-                  "States.ALL"
-                ],
+                "ErrorEquals": ["States.ALL"],
                 "Next": "Validation Exception Handler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
@@ -341,9 +321,7 @@
             },
             "Catch": [
               {
-                "ErrorEquals": [
-                  "States.ALL"
-                ],
+                "ErrorEquals": ["States.ALL"],
                 "Next": "Validation Exception Handler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
@@ -365,9 +343,7 @@
             },
             "Catch": [
               {
-                "ErrorEquals": [
-                  "States.ALL"
-                ],
+                "ErrorEquals": ["States.ALL"],
                 "Next": "Validation Exception Handler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
@@ -389,9 +365,7 @@
             },
             "Catch": [
               {
-                "ErrorEquals": [
-                  "States.ALL"
-                ],
+                "ErrorEquals": ["States.ALL"],
                 "Next": "Validation Exception Handler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
@@ -438,10 +412,8 @@
       },
       "Catch": [
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
-          "Next": "Release Lock Exception Handler",
+          "ErrorEquals": ["States.ALL"],
+          "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"
           }
@@ -505,9 +477,7 @@
             },
             "Catch": [
               {
-                "ErrorEquals": [
-                  "States.ALL"
-                ],
+                "ErrorEquals": ["States.ALL"],
                 "Next": "ETL Exception Handler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
@@ -532,9 +502,7 @@
             },
             "Catch": [
               {
-                "ErrorEquals": [
-                  "States.ALL"
-                ],
+                "ErrorEquals": ["States.ALL"],
                 "Next": "ETL Exception Handler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
@@ -585,10 +553,8 @@
       },
       "Catch": [
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
-          "Next": "Release Lock Exception Handler",
+          "ErrorEquals": ["States.ALL"],
+          "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"
           }
@@ -641,35 +607,37 @@
       },
       "Retry": [
         {
-          "ErrorEquals": [
-            "DynamoDB.ConditionalCheckFailedException"
-          ],
+          "ErrorEquals": ["DynamoDB.ConditionalCheckFailedException"],
           "MaxAttempts": 0
         },
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "MaxAttempts": 5,
           "BackoffRate": 1.5
         }
       ],
       "Catch": [
         {
-          "ErrorEquals": [
-            "DynamoDB.ConditionalCheckFailedException"
-          ],
+          "ErrorEquals": ["DynamoDB.ConditionalCheckFailedException"],
           "Next": "Completed"
         },
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "Next": "Parent Exception Handler",
-          "Output": "$.error"
+          "Output": { "errorInfo": "$.error" }
         }
       ],
       "Next": "Completed"
+    },
+    "Parent Exception Handler": {
+      "Type": "Task",
+      "Next": "Release Lock Exception Handler",
+      "Resource": "${ExceptionHandlerLambdaArn}",
+      "Arguments": {
+        "Error": "{% $states.input.errorInfo.Error %}",
+        "Cause": "{% $states.input.errorInfo.Cause %}",
+        "DatasetEtlTaskResultId": "{% $datasetETLTaskResultId %}"
+      }
     },
     "Release Lock Exception Handler": {
       "Type": "Task",
@@ -696,39 +664,23 @@
       },
       "Retry": [
         {
-          "ErrorEquals": [
-            "DynamoDB.ConditionalCheckFailedException"
-          ],
+          "ErrorEquals": ["DynamoDB.ConditionalCheckFailedException"],
           "MaxAttempts": 0
         },
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "MaxAttempts": 5,
           "BackoffRate": 1.5
         }
       ],
-      "Next": "Parent Exception Handler",
+      "Next": "Overall State Machine Failed",
       "Catch": [
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
-          "Next": "Parent Exception Handler",
+          "ErrorEquals": ["States.ALL"],
+          "Next": "Overall State Machine Failed",
           "Output": "$.releaseError"
         }
       ]
-    },
-    "Parent Exception Handler": {
-      "Type": "Task",
-      "Next": "Overall State Machine Failed",
-      "Resource": "${ExceptionHandlerLambdaArn}",
-      "Arguments": {
-        "Error": "{% $states.input.errorInfo.Error %}",
-        "Cause": "{% $states.input.errorInfo.Cause %}",
-        "DatasetEtlTaskResultId": "{% $datasetETLTaskResultId %}"
-      }
     },
     "Overall State Machine Failed": {
       "Type": "Fail",
