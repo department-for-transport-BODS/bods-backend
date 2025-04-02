@@ -67,28 +67,38 @@
       },
       "Retry": [
         {
-          "ErrorEquals": ["DynamoDB.AmazonDynamoDBException"],
+          "ErrorEquals": [
+            "DynamoDB.AmazonDynamoDBException"
+          ],
           "MaxAttempts": 0
         },
         {
-          "ErrorEquals": ["States.ALL"],
+          "ErrorEquals": [
+            "States.ALL"
+          ],
           "MaxAttempts": 6,
           "BackoffRate": 2
         }
       ],
       "Catch": [
         {
-          "ErrorEquals": ["DynamoDB.AmazonDynamoDBException"],
+          "ErrorEquals": [
+            "DynamoDB.AmazonDynamoDBException"
+          ],
           "Next": "Initialize Lock Item",
           "Output": "$lockinfo.acquisitionerror"
         },
         {
-          "ErrorEquals": ["DynamoDB.ConditionalCheckFailedException"],
+          "ErrorEquals": [
+            "DynamoDB.ConditionalCheckFailedException"
+          ],
           "Next": "Get Current Lock Record",
           "Output": "$lockinfo.acquisitionerror"
         },
         {
-          "ErrorEquals": ["States.ALL"],
+          "ErrorEquals": [
+            "States.ALL"
+          ],
           "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "$.error"
@@ -120,7 +130,9 @@
       },
       "Catch": [
         {
-          "ErrorEquals": ["States.ALL"],
+          "ErrorEquals": [
+            "States.ALL"
+          ],
           "Next": "Acquire Lock"
         }
       ],
@@ -181,7 +193,9 @@
       },
       "Catch": [
         {
-          "ErrorEquals": ["States.ALL"],
+          "ErrorEquals": [
+            "States.ALL"
+          ],
           "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"
@@ -220,7 +234,9 @@
       },
       "Catch": [
         {
-          "ErrorEquals": ["States.ALL"],
+          "ErrorEquals": [
+            "States.ALL"
+          ],
           "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"
@@ -244,7 +260,9 @@
       },
       "Catch": [
         {
-          "ErrorEquals": ["States.ALL"],
+          "ErrorEquals": [
+            "States.ALL"
+          ],
           "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"
@@ -301,7 +319,9 @@
             },
             "Catch": [
               {
-                "ErrorEquals": ["States.ALL"],
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
                 "Next": "Validation Exception Handler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
@@ -323,7 +343,9 @@
             },
             "Catch": [
               {
-                "ErrorEquals": ["States.ALL"],
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
                 "Next": "Validation Exception Handler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
@@ -345,7 +367,9 @@
             },
             "Catch": [
               {
-                "ErrorEquals": ["States.ALL"],
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
                 "Next": "Validation Exception Handler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
@@ -367,7 +391,9 @@
             },
             "Catch": [
               {
-                "ErrorEquals": ["States.ALL"],
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
                 "Next": "Validation Exception Handler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
@@ -414,7 +440,9 @@
       },
       "Catch": [
         {
-          "ErrorEquals": ["States.ALL"],
+          "ErrorEquals": [
+            "States.ALL"
+          ],
           "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"
@@ -479,7 +507,9 @@
             },
             "Catch": [
               {
-                "ErrorEquals": ["States.ALL"],
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
                 "Next": "ETL Exception Handler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
@@ -504,7 +534,9 @@
             },
             "Catch": [
               {
-                "ErrorEquals": ["States.ALL"],
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
                 "Next": "ETL Exception Handler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}"
@@ -555,7 +587,9 @@
       },
       "Catch": [
         {
-          "ErrorEquals": ["States.ALL"],
+          "ErrorEquals": [
+            "States.ALL"
+          ],
           "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}"
@@ -609,22 +643,30 @@
       },
       "Retry": [
         {
-          "ErrorEquals": ["DynamoDB.ConditionalCheckFailedException"],
+          "ErrorEquals": [
+            "DynamoDB.ConditionalCheckFailedException"
+          ],
           "MaxAttempts": 0
         },
         {
-          "ErrorEquals": ["States.ALL"],
+          "ErrorEquals": [
+            "States.ALL"
+          ],
           "MaxAttempts": 5,
           "BackoffRate": 1.5
         }
       ],
       "Catch": [
         {
-          "ErrorEquals": ["DynamoDB.ConditionalCheckFailedException"],
+          "ErrorEquals": [
+            "DynamoDB.ConditionalCheckFailedException"
+          ],
           "Next": "Completed"
         },
         {
-          "ErrorEquals": ["States.ALL"],
+          "ErrorEquals": [
+            "States.ALL"
+          ],
           "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "$.error"
@@ -668,11 +710,15 @@
       },
       "Retry": [
         {
-          "ErrorEquals": ["DynamoDB.ConditionalCheckFailedException"],
+          "ErrorEquals": [
+            "DynamoDB.ConditionalCheckFailedException"
+          ],
           "MaxAttempts": 0
         },
         {
-          "ErrorEquals": ["States.ALL"],
+          "ErrorEquals": [
+            "States.ALL"
+          ],
           "MaxAttempts": 5,
           "BackoffRate": 1.5
         }
@@ -680,7 +726,9 @@
       "Next": "Overall State Machine Failed",
       "Catch": [
         {
-          "ErrorEquals": ["States.ALL"],
+          "ErrorEquals": [
+            "States.ALL"
+          ],
           "Next": "Overall State Machine Failed",
           "Output": "$.releaseError"
         }
