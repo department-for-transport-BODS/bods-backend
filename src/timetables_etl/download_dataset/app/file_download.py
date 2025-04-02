@@ -107,12 +107,16 @@ class FileDownloader:
                 url=url_str,
                 reason=exc.response.reason,
                 status_code=exc.response.status_code,
+                exception_type=type(exc).__name__,
+                response=str(exc.response),
             ) from exc
 
         except RequestException as exc:
             self._cleanup_on_error(temp_file, url_str)
             raise DownloadException(
                 url=url_str,
+                response=str(exc.response),
+                exception_type=type(exc).__name__,
             ) from exc
 
     def _save_to_file(self, response: requests.Response, path: Path) -> int:
