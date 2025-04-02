@@ -621,7 +621,21 @@
         "Input": {
           "DatasetRevisionId": "{% $datasetRevisionId %}"
         }
-      }
+      },
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "Parent Exception Handler",
+          "Output": {
+            "errorInfo": {
+              "Error": "{% $states.errorOutput.error %}",
+              "Cause": "{% $states.errorOutput.cause %}"
+            }
+          }
+        }
+      ]
     },
     "Release Lock": {
       "Type": "Task",
