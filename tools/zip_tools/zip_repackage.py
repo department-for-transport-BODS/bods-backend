@@ -1,5 +1,5 @@
 """
-Something
+Repackages an input zip by extracting sub zips and compressing with LZMA
 """
 
 import sys
@@ -154,11 +154,9 @@ def process_zip_file(input_zip_path: Path, output_zip_path: Path) -> None:
         temp_path = Path(temp_dir)
         extract_zip(input_zip_path, temp_path)
 
-        # Find the top level folder
         top_level_folder = find_top_level_folder(temp_path)
         log.info("Identified top level folder", folder=top_level_folder)
 
-        # Process all files and directories
         result = ZipProcessingResult()
         process_directory(temp_path, result)
 
@@ -168,7 +166,6 @@ def process_zip_file(input_zip_path: Path, output_zip_path: Path) -> None:
             xml_files=result.xml_files,
         )
 
-        # Create the output zip
         create_lzma_zip(output_zip_path, result.processed_xmls, top_level_folder)
 
     log.info(

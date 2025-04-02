@@ -359,12 +359,10 @@ def batch_optimize_xml_zip(
     zip_index: int = 1
 
     while remaining_files:
-        # Create output zip path
         output_zip_path = os.path.join(
             output_folder, f"all_fares_part_{zip_index:03d}.zip"
         )
 
-        # Select files for this zip
         files_to_include = select_files_for_target_size(
             remaining_files, target_size_bytes, overhead_per_file, max_files_per_zip
         )
@@ -373,10 +371,8 @@ def batch_optimize_xml_zip(
             log.warning("Could not fit any remaining files in a new zip")
             break
 
-        # Create the zip
         final_size = create_lzma_zip(source_zip_path, output_zip_path, files_to_include)
 
-        # Add to the list of created zips
         created_zips.append((output_zip_path, final_size))
 
         # Remove included files from remaining files
