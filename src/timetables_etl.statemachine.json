@@ -90,7 +90,9 @@
         {
           "ErrorEquals": ["States.ALL"],
           "Next": "Parent Exception Handler",
-          "Output": { "errorInfo": "$.error" }
+          "Output": {
+            "errorInfo": "$.error"
+          }
         }
       ],
       "Next": "Initialize Pipeline"
@@ -624,7 +626,9 @@
         {
           "ErrorEquals": ["States.ALL"],
           "Next": "Parent Exception Handler",
-          "Output": { "errorInfo": "$.error" }
+          "Output": {
+            "errorInfo": "$.error"
+          }
         }
       ],
       "Next": "Completed"
