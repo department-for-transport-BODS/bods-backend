@@ -39,6 +39,9 @@
       "Comment": "Acquire a lock using a conditional update to DynamoDB",
       "Type": "Task",
       "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Assign": {
+        "lockacquiredtime": "{% $states.context.State.EnteredTime %}"
+      },
       "Arguments": {
         "TableName": "${TimetablesSemaphoreDynamoDbTableName}",
         "Key": {
@@ -580,7 +583,9 @@
         "OriginalObjectKey": "{% $s3Object %}",
         "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}",
         "PublishDatasetRevision": "{% $publishDatasetRevision %}",
-        "OverwriteInputDataset": "{% $overwriteInputDataset %}"
+        "OverwriteInputDataset": "{% $overwriteInputDataset %}",
+        "DatasetType": "{% $datasetType %}",
+        "lockacquiredtime": "{% $lockacquiredtime %}"
       },
       "Assign": {
         "finalResult": "{% $states.result %}"

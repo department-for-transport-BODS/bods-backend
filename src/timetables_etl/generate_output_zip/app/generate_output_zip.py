@@ -136,6 +136,26 @@ def process_map_results(
     return processing_result
 
 
+def calculate_duration(timestamp: str | None):
+    """
+    Calculate the duration
+    """
+    if timestamp is None:
+        return None
+
+    try:
+        dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+
+        now = datetime.now(UTC)
+
+        delta = abs(now - dt)
+
+        return str(delta)
+
+    except (ValueError, TypeError):
+        return None
+
+
 @file_processing_result_to_db(StepName.GENERATE_OUTPUT_ZIP)
 def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, Any]:
     """
@@ -151,6 +171,7 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, 
         successful_files=result.successful_files,
         failed_files=result.failed_files,
         zip_location=result.output_location,
+        duration_after_lock_acquired=calculate_duration(input_data.lock_acquired_time),
     )
 
     return {
