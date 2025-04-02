@@ -28,6 +28,7 @@ class ETLErrorCode(str, Enum):
     DOWNLOAD_PERMISSION_DENIED = "File Download HTTP 403 Permission Denied"
     DOWNLOAD_NOT_FOUND = "File Download HTTP 404 Not Found"
     DOWNLOAD_UNKNOWN_FILE_TYPE = "File Downloaded is not .xml or .zip"
+    DOWNLOAD_PROXY_ERROR = "File Download failed due to a Proxy Error"
 
     # File Validation
     FILE_TOO_LARGE = "XML file is too large."
