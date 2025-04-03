@@ -73,6 +73,7 @@ ZIP_NOT_FOUND_CAUSE_RAW = (
                 "Error": "ZipNoDataFound",
                 "Cause": ZIP_NOT_FOUND_CAUSE_RAW,
                 "DatasetEtlTaskResultId": 4200,
+                "StepName": "ClamAV and Extraction",
             },
             ETLErrorCode.NO_DATA_FOUND,
             "Zip file contains no XML files.",
@@ -83,6 +84,7 @@ ZIP_NOT_FOUND_CAUSE_RAW = (
                 "Error": "Runtime.ExitError",
                 "Cause": '{"errorType":"Runtime.ExitError","errorMessage":"RequestId: d018ab48-c1d6-4075-9721-fe8ee92e458a Error: Runtime exited with error: signal: killed"}',
                 "DatasetEtlTaskResultId": 72118,
+                "StepName": "Download Dataset",
             },
             ETLErrorCode.SYSTEM_ERROR,
             "RequestId: d018ab48-c1d6-4075-9721-fe8ee92e458a Error: Runtime exited with error: signal: killed",
@@ -93,6 +95,7 @@ ZIP_NOT_FOUND_CAUSE_RAW = (
                 "Error": "Lambda.Unknown",
                 "Cause": 'The cause could not be determined because Lambda did not return an error type. Returned payload: {"errorMessage":"2025-03-25T14:59:02.758Z 92f6dcea-87c0-4e89-9a9e-294239bffbb9 Task timed out after 902.11 seconds"}',
                 "DatasetEtlTaskResultId": 1234,
+                "StepName": "Download Dataset",
             },
             ETLErrorCode.SYSTEM_ERROR,
             'The cause could not be determined because Lambda did not return an error type. Returned payload: {"errorMessage":"2025-03-25T14:59:02.758Z 92f6dcea-87c0-4e89-9a9e-294239bffbb9 Task timed out after 902.11 seconds"}',
@@ -121,7 +124,7 @@ def test_lambda_handler(
 
     m_task_result_repo.mark_error.assert_called_once_with(
         task_id=event["DatasetEtlTaskResultId"],
-        task_name="Exception Handler Does not Know Failed Task Name",
+        task_name=event["StepName"],
         error_code=expected_error_code,
         additional_info=expected_additional_info,
     )
