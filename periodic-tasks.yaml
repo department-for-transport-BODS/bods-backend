@@ -82,7 +82,7 @@ Globals:
           - !Sub 'http://squid.bodds.${Environment}:3128'
           - !Ref AWS::NoValue
         DD_EXTENSION_VERSION: compatibility
-        NO_PROXY: 'localhost,127.0.0.1,secretsmanager.eu-west-2.amazonaws.com,s3.eu-west-2.amazonaws.com,dynamodb.eu-west-2.amazonaws.com,.datadoghq.eu'
+        NO_PROXY: 'localhost,127.0.0.1,secretsmanager.eu-west-2.amazonaws.com,s3.eu-west-2.amazonaws.com,dynamodb.eu-west-2.amazonaws.com,instrumentation-telemetry-intake.datadoghq.eu,7-63-3-app.agent.datadoghq.eu,http-intake.logs.datadoghq.eu'
     KmsKeyArn: !If
       - IsNotLocal
       - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
