@@ -30,7 +30,7 @@ def handle_error(db: SqlDB, event_data: ExceptionHandlerInputData):
     if event_data.fail_dataset_etl_task_result:
         task_result_repo.mark_error(
             task_id=event_data.dataset_etl_task_result_id,
-            task_name="Exception Handler Does not Know Failed Task Name",
+            task_name=event_data.step_name,
             error_code=event_data.cause.error_code,
             additional_info=event_data.cause.extracted_message,
         )
