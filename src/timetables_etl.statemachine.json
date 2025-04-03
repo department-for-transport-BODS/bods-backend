@@ -712,9 +712,9 @@
         "Error": "{% $states.input.errorInfo.Error %}",
         "Cause": "{% $states.input.errorInfo.Cause %}",
         "DatasetEtlTaskResultId": "{% $datasetETLTaskResultId %}",
-        "StepName": "{% $exists(states.input.stepName) ? $states.input.stepName : null %}",
-        "FailDatasetRevision": "{% $exists(states.input.failDatasetRevision) ? $states.input.failDatasetRevision : null %}",
-        "FailDatasetETLTaskResult": "{% $exists(states.input.failDatasetETLTaskResult) ? $states.input.failDatasetETLTaskResult : null %}"
+        "StepName": "{% $states.input.stepName %}",
+        "FailDatasetRevision": "{% $states.input.failDatasetRevision %}",
+        "FailDatasetETLTaskResult": "{% $states.input.failDatasetETLTaskResult %}"
       }
     },
     "Release Lock Exception Handler": {
