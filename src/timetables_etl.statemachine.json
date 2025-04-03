@@ -105,7 +105,7 @@
           "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "$.error",
-            "stepName": "{% $states.context.State.Name %}"
+            "stepName": "Acquire Lock"
           }
         }
       ],
@@ -203,7 +203,7 @@
           "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}",
-            "stepName": "{% $states.context.State.Name %}"
+            "stepName": "Initialize Pipeline"
           }
         }
       ]
@@ -245,7 +245,7 @@
           "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}",
-            "stepName": "{% $states.context.State.Name %}"
+            "stepName": "Download Dataset"
           }
         }
       ]
@@ -272,7 +272,7 @@
           "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}",
-            "stepName": "{% $states.context.State.Name %}"
+            "stepName": "ClamAV and Extraction"
           }
         }
       ]
@@ -453,7 +453,7 @@
           "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}",
-            "stepName": "{% $states.context.State.Name %}"
+            "stepName": "Collate Files"
           }
         }
       ]
@@ -603,7 +603,7 @@
           "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "{% $states.errorOutput %}",
-            "stepName": "{% $states.context.State.Name %}"
+            "stepName": "Generate Output Zip and Update Status"
           }
         }
       ]
@@ -639,7 +639,7 @@
               "Error": "$.error",
               "Cause": "$.cause"
             },
-            "stepName": "{% $states.context.State.Name %}",
+            "stepName": "Trigger DQS State Machine",
             "failDatasetRevision": false,
             "failDatasetETLTaskResult": true
           }
@@ -698,7 +698,7 @@
           "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": "$.error",
-            "stepName": "{% $states.context.State.Name %}"
+            "stepName": "Release Lock"
           }
         }
       ],
