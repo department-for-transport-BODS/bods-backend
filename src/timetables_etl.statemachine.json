@@ -635,10 +635,7 @@
           ],
           "Next": "Parent Exception Handler",
           "Output": {
-            "errorInfo": {
-              "Error": "{% $states.errorOutput.error %}",
-              "Cause": "{% $states.errorOutput.error %}"
-            },
+            "errorInfo": "{% $states.errorOutput }",
             "stepName": "Trigger DQS State Machine",
             "failDatasetRevision": false,
             "failDatasetETLTaskResult": true
