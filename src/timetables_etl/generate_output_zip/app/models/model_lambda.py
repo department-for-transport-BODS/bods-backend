@@ -2,6 +2,8 @@
 Lambda Specific Models
 """
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -21,3 +23,5 @@ class GenerateOutputZipInputData(BaseModel):
     dataset_etl_task_result_id: int = Field(alias="DatasetEtlTaskResultId")
     publish_dataset_revision: bool = Field(alias="PublishDatasetRevision")
     overwrite_input_dataset: bool = Field(alias="OverwriteInputDataset")
+    dataset_type: Literal["timetables", "fares"] = Field(alias="DatasetType")
+    lock_acquired_time: str | None = Field(alias="lockacquiredtime")

@@ -21,19 +21,25 @@ class DownloadTimeout(ETLException):
     code = ETLErrorCode.DOWNLOAD_TIMEOUT
 
 
-class PermissionDenied(ETLException):
+class DownloadPermissionDenied(ETLException):
     """A permission denied response was received."""
 
     code = ETLErrorCode.DOWNLOAD_PERMISSION_DENIED
 
 
-class FileNotFound(ETLException):
+class DownloadFileNotFound(ETLException):
     """A permission denied response was received."""
 
     code = ETLErrorCode.DOWNLOAD_NOT_FOUND
 
 
-class UnknownFileType(ETLException):
+class DownloadUnknownFileType(ETLException):
     """The content returned in the response was of an unknown file type."""
 
     code = ETLErrorCode.DOWNLOAD_UNKNOWN_FILE_TYPE
+
+
+class DownloadProxyError(ETLException):
+    """A permission denied response was received."""
+
+    code = ETLErrorCode.DOWNLOAD_PROXY_ERROR
