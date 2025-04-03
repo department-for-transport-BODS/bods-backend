@@ -623,7 +623,7 @@
       "Next": "Release Lock",
       "Resource": "arn:aws:states:::states:startExecution",
       "Arguments": {
-        "StateMachineArn": "${DqsStateMachineArn}",
+        "StateMachineArn": "invalid-arn",
         "Input": {
           "DatasetRevisionId": "{% $datasetRevisionId %}"
         }
