@@ -636,8 +636,8 @@
           "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": {
-              "Error": "$.error",
-              "Cause": "$.cause"
+              "Error": "{% $states.errorOutput.error %}",
+              "Cause": "{% $states.errorOutput.error %}"
             },
             "stepName": "Trigger DQS State Machine",
             "failDatasetRevision": false,
