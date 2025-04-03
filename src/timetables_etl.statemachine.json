@@ -636,8 +636,8 @@
           "Next": "Parent Exception Handler",
           "Output": {
             "errorInfo": {
-              "Error": "{% $.error %}",
-              "Cause": "{% $.cause %}"
+              "Error": "$.error",
+              "Cause": "$.cause"
             },
             "stepName": "{% $states.context.State.Name %}",
             "failDatasetRevision": false,
