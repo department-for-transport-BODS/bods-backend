@@ -4,11 +4,17 @@ Test File Download Functions
 
 from io import BytesIO
 from pathlib import Path
+from typing import Callable, Type
 from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
-from common_layer.exceptions import DownloadException, DownloadTimeout, UnknownFileType
+from common_layer.exceptions import (
+    DownloadException,
+    DownloadProxyError,
+    DownloadTimeout,
+    DownloadUnknownFileType,
+)
 from download_dataset.app.file_download import (
     FileDownloader,
     download_file,
@@ -30,7 +36,7 @@ from .conftest import create_valid_zip
     ],
     ids=["Valid ZIP file", "Invalid ZIP file", "Empty content", "XML content"],
 )
-def test_is_zip_file(test_input: bytes, expected: bool):
+def test_is_zip_file(test_input: bytes | Callable[[], bytes], expected: bool):
     """
     Test the `is_zip_file` function with various input types.
     """
@@ -72,7 +78,7 @@ def test_is_zip_file(test_input: bytes, expected: bool):
             "application/json",
             b"{}",
             None,
-            marks=pytest.mark.xfail(raises=UnknownFileType),
+            marks=pytest.mark.xfail(raises=DownloadUnknownFileType),
             id="Unknown filetype",
         ),
         pytest.param(
@@ -85,7 +91,7 @@ def test_is_zip_file(test_input: bytes, expected: bool):
             "text/plain",
             b"regular content",
             None,
-            marks=pytest.mark.xfail(raises=UnknownFileType),
+            marks=pytest.mark.xfail(raises=DownloadUnknownFileType),
             id="Unsupported Content-Type",
         ),
         pytest.param(
@@ -111,7 +117,7 @@ def test_get_content_type(
     file_obj = BytesIO(file_content)
 
     if expected_filetype is None:
-        with pytest.raises(UnknownFileType):
+        with pytest.raises(DownloadUnknownFileType):
             get_content_type(mock_response, file_obj)
     else:
         detected_filetype = get_content_type(mock_response, file_obj)
@@ -119,33 +125,44 @@ def test_get_content_type(
 
 
 @pytest.mark.parametrize(
-    "exception",
+    "exception, expected_exception",
     [
         pytest.param(
             requests.Timeout("Connection timed out"),
+            DownloadTimeout,
             id="Timeout Error",
         ),
         pytest.param(
             requests.ConnectionError("Connection failed"),
+            DownloadException,
             id="Connection Error",
         ),
         pytest.param(
             requests.HTTPError(response=requests.Response()),
+            DownloadException,
             id="HTTP Error",
         ),
         pytest.param(
             requests.RequestException("Generic failure"),
+            DownloadException,
             id="Generic Request Error",
+        ),
+        pytest.param(
+            requests.exceptions.ProxyError("Proxy error", response=requests.Response()),
+            DownloadProxyError,
+            id="Proxy Error",
         ),
     ],
 )
-def test_file_downloader_failures(exception: requests.RequestException) -> None:
+def test_file_downloader_failures(
+    exception: requests.RequestException, expected_exception: Type[Exception]
+) -> None:
     """
     Test that FileDownloader properly handles various request exceptions.
     """
     downloader = FileDownloader()
     with patch("requests.get", side_effect=exception):
-        with pytest.raises((DownloadTimeout, DownloadException)):
+        with pytest.raises(expected_exception):
             downloader.download_to_temp("https://test.com")
 
 

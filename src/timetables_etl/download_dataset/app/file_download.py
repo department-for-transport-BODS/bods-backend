@@ -11,10 +11,11 @@ import requests
 from common_layer.database.models import OrganisationDatasetRevision
 from common_layer.exceptions import (
     DownloadException,
+    DownloadFileNotFound,
+    DownloadPermissionDenied,
+    DownloadProxyError,
     DownloadTimeout,
-    FileNotFound,
-    PermissionDenied,
-    UnknownFileType,
+    DownloadUnknownFileType,
 )
 from pydantic import AnyUrl
 from requests.exceptions import RequestException
@@ -41,7 +42,7 @@ def get_content_type(response: requests.Response, file: BinaryIO) -> FileType:
         return "zip"
     if "xml" in content_type:
         return "xml"
-    raise UnknownFileType(str(response.url))
+    raise DownloadUnknownFileType(str(response.url))
 
 
 def validate_filetype(content_type: FileType) -> bool:
@@ -89,25 +90,33 @@ class FileDownloader:
                 url=url_str,
                 timeout=self.timeout,
             ) from exc
+        except requests.exceptions.ProxyError as exc:
+            self._cleanup_on_error(temp_file, url_str)
+            raise DownloadProxyError(url=url_str, response=str(exc.response)) from exc
         except requests.HTTPError as exc:
             if exc.response.status_code == 403:
                 self._cleanup_on_error(temp_file, url_str)
-                raise PermissionDenied(
+                raise DownloadPermissionDenied(
                     url=url_str,
                 ) from exc
             if exc.response.status_code == 404:
                 self._cleanup_on_error(temp_file, url_str)
-                raise FileNotFound(url=url_str) from exc
+                raise DownloadFileNotFound(url=url_str) from exc
             self._cleanup_on_error(temp_file, url_str)
             raise DownloadException(
                 url=url_str,
                 reason=exc.response.reason,
                 status_code=exc.response.status_code,
+                exception_type=type(exc).__name__,
+                response=str(exc.response),
             ) from exc
+
         except RequestException as exc:
             self._cleanup_on_error(temp_file, url_str)
             raise DownloadException(
                 url=url_str,
+                response=str(exc.response),
+                exception_type=type(exc).__name__,
             ) from exc
 
     def _save_to_file(self, response: requests.Response, path: Path) -> int:

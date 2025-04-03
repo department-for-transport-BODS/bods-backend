@@ -3,11 +3,10 @@ Tests for DownloadDataset Lambda
 """
 
 from pathlib import Path
-from typing import Literal
 from unittest.mock import MagicMock, patch
 
 import pytest
-from common_layer.exceptions import UnknownFileType
+from common_layer.exceptions import DownloadUnknownFileType
 from download_dataset.app.file_download import FileDownloader
 from download_dataset.app.models import DownloadResult
 
@@ -86,5 +85,5 @@ def test_get_exception(
 
     with patch("requests.get") as mock_get:
         mock_get.return_value.__enter__.return_value = mock_response
-        with pytest.raises(UnknownFileType):
+        with pytest.raises(DownloadUnknownFileType):
             mock_file_downloader.download_to_temp("https://test.com")
