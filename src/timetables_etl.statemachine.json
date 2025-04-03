@@ -104,7 +104,8 @@
           ],
           "Next": "Parent Exception Handler",
           "Output": {
-            "errorInfo": "$.error"
+            "errorInfo": "$.error",
+            "stepName": "{% $states.context.State.Name %}"
           }
         }
       ],
@@ -201,7 +202,8 @@
           ],
           "Next": "Parent Exception Handler",
           "Output": {
-            "errorInfo": "{% $states.errorOutput %}"
+            "errorInfo": "{% $states.errorOutput %}",
+            "stepName": "{% $states.context.State.Name %}"
           }
         }
       ]
@@ -242,7 +244,8 @@
           ],
           "Next": "Parent Exception Handler",
           "Output": {
-            "errorInfo": "{% $states.errorOutput %}"
+            "errorInfo": "{% $states.errorOutput %}",
+            "stepName": "{% $states.context.State.Name %}"
           }
         }
       ]
@@ -268,7 +271,8 @@
           ],
           "Next": "Parent Exception Handler",
           "Output": {
-            "errorInfo": "{% $states.errorOutput %}"
+            "errorInfo": "{% $states.errorOutput %}",
+            "stepName": "{% $states.context.State.Name %}"
           }
         }
       ]
@@ -448,7 +452,8 @@
           ],
           "Next": "Parent Exception Handler",
           "Output": {
-            "errorInfo": "{% $states.errorOutput %}"
+            "errorInfo": "{% $states.errorOutput %}",
+            "stepName": "{% $states.context.State.Name %}"
           }
         }
       ]
@@ -597,7 +602,8 @@
           ],
           "Next": "Parent Exception Handler",
           "Output": {
-            "errorInfo": "{% $states.errorOutput %}"
+            "errorInfo": "{% $states.errorOutput %}",
+            "stepName": "{% $states.context.State.Name %}"
           }
         }
       ]
@@ -632,7 +638,10 @@
             "errorInfo": {
               "Error": "{% $states.errorOutput.error %}",
               "Cause": "{% $states.errorOutput.cause %}"
-            }
+            },
+            "stepName": "{% $states.context.State.Name %}",
+            "failDatasetRevision": false,
+            "failDatasetETLTaskResult": true
           }
         }
       ]
@@ -688,7 +697,8 @@
           ],
           "Next": "Parent Exception Handler",
           "Output": {
-            "errorInfo": "$.error"
+            "errorInfo": "$.error",
+            "stepName": "{% $states.context.State.Name %}"
           }
         }
       ],
@@ -701,7 +711,10 @@
       "Arguments": {
         "Error": "{% $states.input.errorInfo.Error %}",
         "Cause": "{% $states.input.errorInfo.Cause %}",
-        "DatasetEtlTaskResultId": "{% $datasetETLTaskResultId %}"
+        "DatasetEtlTaskResultId": "{% $datasetETLTaskResultId %}",
+        "StepName": "{% $exists(states.input.stepName) ? $states.input.stepName : null %}",
+        "FailDatasetRevision": "{% $exists(states.input.failDatasetRevision) ? $states.input.failDatasetRevision : null %}",
+        "FailDatasetETLTaskResult": "{% $exists(states.input.failDatasetETLTaskResult) ? $states.input.failDatasetETLTaskResult : null %}"
       }
     },
     "Release Lock Exception Handler": {
