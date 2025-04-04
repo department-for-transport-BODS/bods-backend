@@ -412,8 +412,17 @@
             "Type": "Succeed"
           },
           "Validation Exception Handler": {
-            "Type": "Pass",
-            "Next": "Validation Failed"
+            "Type": "Task",
+            "Next": "Validation Failed",
+            "Resource": "${ExceptionHandlerLambdaArn}",
+            "Arguments": {
+              "Error": "{% $states.input.errorInfo.Error %}",
+              "Cause": "{% $states.input.errorInfo.Cause %}",
+              "DatasetEtlTaskResultId": "{% $datasetETLTaskResultId %}",
+              "StepName": "{% $states.input.stepName %}",
+              "FailDatasetRevision": false,
+              "FailDatasetETLTaskResult": false
+            }
           },
           "Validation Failed": {
             "Type": "Fail",
@@ -556,8 +565,17 @@
             "Type": "Succeed"
           },
           "ETL Exception Handler": {
-            "Type": "Pass",
-            "Next": "PTI and ETL Failed"
+            "Type": "Task",
+            "Next": "PTI and ETL Failed",
+            "Resource": "${ExceptionHandlerLambdaArn}",
+            "Arguments": {
+              "Error": "{% $states.input.errorInfo.Error %}",
+              "Cause": "{% $states.input.errorInfo.Cause %}",
+              "DatasetEtlTaskResultId": "{% $datasetETLTaskResultId %}",
+              "StepName": "{% $states.input.stepName %}",
+              "FailDatasetRevision": false,
+              "FailDatasetETLTaskResult": false
+            }
           },
           "PTI and ETL Failed": {
             "Type": "Fail"
