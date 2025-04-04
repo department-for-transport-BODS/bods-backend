@@ -52,7 +52,7 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
     parsed_event = ExceptionHandlerInputData(**event)
     log.error(
         "Step Failed",
-        parsed_event.cause.error_message,
+        error_message=parsed_event.cause.error_message,
         error_details=parsed_event.cause,
         step_name=parsed_event.step_name,
     )
