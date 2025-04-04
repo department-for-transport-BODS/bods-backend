@@ -331,7 +331,8 @@
                 ],
                 "Next": "Validation Exception Handler",
                 "Output": {
-                  "errorInfo": "{% $states.errorOutput %}"
+                  "errorInfo": "{% $states.errorOutput %}",
+                  "stepName": "File Validation"
                 }
               }
             ]
@@ -355,7 +356,8 @@
                 ],
                 "Next": "Validation Exception Handler",
                 "Output": {
-                  "errorInfo": "{% $states.errorOutput %}"
+                  "errorInfo": "{% $states.errorOutput %}",
+                  "stepName": "XSD Schema Check"
                 }
               }
             ]
@@ -379,7 +381,8 @@
                 ],
                 "Next": "Validation Exception Handler",
                 "Output": {
-                  "errorInfo": "{% $states.errorOutput %}"
+                  "errorInfo": "{% $states.errorOutput %}",
+                  "stepName": "Post Schema Check"
                 }
               }
             ]
@@ -403,7 +406,8 @@
                 ],
                 "Next": "Validation Exception Handler",
                 "Output": {
-                  "errorInfo": "{% $states.errorOutput %}"
+                  "errorInfo": "{% $states.errorOutput %}",
+                  "stepName": "FileAttributes ETL"
                 }
               }
             ]
@@ -529,7 +533,8 @@
                 ],
                 "Next": "ETL Exception Handler",
                 "Output": {
-                  "errorInfo": "{% $states.errorOutput %}"
+                  "errorInfo": "{% $states.errorOutput %}",
+                  "stepName": "PTI Validation"
                 }
               }
             ]
@@ -556,7 +561,8 @@
                 ],
                 "Next": "ETL Exception Handler",
                 "Output": {
-                  "errorInfo": "{% $states.errorOutput %}"
+                  "errorInfo": "{% $states.errorOutput %}",
+                  "stepName": "Timetables ETL"
                 }
               }
             ]
