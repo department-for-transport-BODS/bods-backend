@@ -11,6 +11,7 @@ from common_layer.database.repos import (
     ETLTaskResultRepo,
     OrganisationDatasetRevisionRepo,
 )
+from common_layer.enums import FeedStatus
 from pytest_mock import MockerFixture
 
 from tests.factories.database import OrganisationDatasetRevisionFactory
@@ -72,6 +73,7 @@ ZIP_NOT_FOUND_CAUSE_RAW = (
                 "Error": "ZipNoDataFound",
                 "Cause": ZIP_NOT_FOUND_CAUSE_RAW,
                 "DatasetEtlTaskResultId": 4200,
+                "StepName": "ClamAV and Extraction",
             },
             ETLErrorCode.NO_DATA_FOUND,
             "Zip file contains no XML files.",
@@ -82,6 +84,7 @@ ZIP_NOT_FOUND_CAUSE_RAW = (
                 "Error": "Runtime.ExitError",
                 "Cause": '{"errorType":"Runtime.ExitError","errorMessage":"RequestId: d018ab48-c1d6-4075-9721-fe8ee92e458a Error: Runtime exited with error: signal: killed"}',
                 "DatasetEtlTaskResultId": 72118,
+                "StepName": "Download Dataset",
             },
             ETLErrorCode.SYSTEM_ERROR,
             "RequestId: d018ab48-c1d6-4075-9721-fe8ee92e458a Error: Runtime exited with error: signal: killed",
@@ -92,6 +95,7 @@ ZIP_NOT_FOUND_CAUSE_RAW = (
                 "Error": "Lambda.Unknown",
                 "Cause": 'The cause could not be determined because Lambda did not return an error type. Returned payload: {"errorMessage":"2025-03-25T14:59:02.758Z 92f6dcea-87c0-4e89-9a9e-294239bffbb9 Task timed out after 902.11 seconds"}',
                 "DatasetEtlTaskResultId": 1234,
+                "StepName": "Download Dataset",
             },
             ETLErrorCode.SYSTEM_ERROR,
             'The cause could not be determined because Lambda did not return an error type. Returned payload: {"errorMessage":"2025-03-25T14:59:02.758Z 92f6dcea-87c0-4e89-9a9e-294239bffbb9 Task timed out after 902.11 seconds"}',
@@ -120,7 +124,48 @@ def test_lambda_handler(
 
     m_task_result_repo.mark_error.assert_called_once_with(
         task_id=event["DatasetEtlTaskResultId"],
-        task_name="Exception Handler Does not Know Failed Task Name",
+        task_name=event["StepName"],
         error_code=expected_error_code,
         additional_info=expected_additional_info,
     )
+
+
+@pytest.mark.parametrize(
+    "fail_dataset_revision,fail_dataset_etl_task_result",
+    [
+        pytest.param(True, True, id="Fail both revision and task (default)"),
+        pytest.param(False, True, id="Fail task result only"),
+        pytest.param(True, False, id="Fail revision only"),
+        pytest.param(False, False, id="Fail neither (only log errors)"),
+    ],
+)
+def test_lambda_handler_skip_mark_as_failed(
+    setup_mocks: dict[str, Any],
+    fail_dataset_revision: bool,
+    fail_dataset_etl_task_result: bool,
+):
+    m_task_result_repo = setup_mocks["m_task_result_repo"]
+    m_revision_repo = setup_mocks["m_dataset_revision_repo"]
+
+    event = {
+        "Error": "Runtime.ExitError",
+        "Cause": "Previous state failed",
+        "DatasetEtlTaskResultId": 72118,
+        "FailDatasetRevision": fail_dataset_revision,
+        "FailDatasetETLTaskResult": fail_dataset_etl_task_result,
+    }
+
+    result = lambda_handler(event, {})
+
+    assert result == {"statusCode": 200}
+
+    if fail_dataset_revision:
+        m_revision_repo.update.assert_called_once()
+        assert m_revision_repo.update.call_args[0][0].status == FeedStatus.ERROR
+    else:
+        m_revision_repo.update.assert_not_called()
+
+    if fail_dataset_etl_task_result:
+        m_task_result_repo.mark_error.assert_called_once()
+    else:
+        m_task_result_repo.mark_error.assert_not_called()

@@ -104,7 +104,8 @@
           ],
           "Next": "Parent Exception Handler",
           "Output": {
-            "errorInfo": "$.error"
+            "errorInfo": "$.error",
+            "stepName": "Acquire Lock"
           }
         }
       ],
@@ -201,7 +202,8 @@
           ],
           "Next": "Parent Exception Handler",
           "Output": {
-            "errorInfo": "{% $states.errorOutput %}"
+            "errorInfo": "{% $states.errorOutput %}",
+            "stepName": "Initialize Pipeline"
           }
         }
       ]
@@ -242,7 +244,8 @@
           ],
           "Next": "Parent Exception Handler",
           "Output": {
-            "errorInfo": "{% $states.errorOutput %}"
+            "errorInfo": "{% $states.errorOutput %}",
+            "stepName": "Download Dataset"
           }
         }
       ]
@@ -268,7 +271,8 @@
           ],
           "Next": "Parent Exception Handler",
           "Output": {
-            "errorInfo": "{% $states.errorOutput %}"
+            "errorInfo": "{% $states.errorOutput %}",
+            "stepName": "ClamAV and Extraction"
           }
         }
       ]
@@ -327,7 +331,8 @@
                 ],
                 "Next": "Validation Exception Handler",
                 "Output": {
-                  "errorInfo": "{% $states.errorOutput %}"
+                  "errorInfo": "{% $states.errorOutput %}",
+                  "stepName": "File Validation"
                 }
               }
             ]
@@ -351,7 +356,8 @@
                 ],
                 "Next": "Validation Exception Handler",
                 "Output": {
-                  "errorInfo": "{% $states.errorOutput %}"
+                  "errorInfo": "{% $states.errorOutput %}",
+                  "stepName": "XSD Schema Check"
                 }
               }
             ]
@@ -375,7 +381,8 @@
                 ],
                 "Next": "Validation Exception Handler",
                 "Output": {
-                  "errorInfo": "{% $states.errorOutput %}"
+                  "errorInfo": "{% $states.errorOutput %}",
+                  "stepName": "Post Schema Check"
                 }
               }
             ]
@@ -399,7 +406,8 @@
                 ],
                 "Next": "Validation Exception Handler",
                 "Output": {
-                  "errorInfo": "{% $states.errorOutput %}"
+                  "errorInfo": "{% $states.errorOutput %}",
+                  "stepName": "FileAttributes ETL"
                 }
               }
             ]
@@ -408,8 +416,17 @@
             "Type": "Succeed"
           },
           "Validation Exception Handler": {
-            "Type": "Pass",
-            "Next": "Validation Failed"
+            "Type": "Task",
+            "Next": "Validation Failed",
+            "Resource": "${ExceptionHandlerLambdaArn}",
+            "Arguments": {
+              "Error": "{% $states.input.errorInfo.Error %}",
+              "Cause": "{% $states.input.errorInfo.Cause %}",
+              "DatasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}",
+              "StepName": "{% $states.input.stepName %}",
+              "FailDatasetRevision": false,
+              "FailDatasetETLTaskResult": false
+            }
           },
           "Validation Failed": {
             "Type": "Fail",
@@ -448,7 +465,8 @@
           ],
           "Next": "Parent Exception Handler",
           "Output": {
-            "errorInfo": "{% $states.errorOutput %}"
+            "errorInfo": "{% $states.errorOutput %}",
+            "stepName": "Collate Files"
           }
         }
       ]
@@ -515,7 +533,8 @@
                 ],
                 "Next": "ETL Exception Handler",
                 "Output": {
-                  "errorInfo": "{% $states.errorOutput %}"
+                  "errorInfo": "{% $states.errorOutput %}",
+                  "stepName": "PTI Validation"
                 }
               }
             ]
@@ -542,7 +561,8 @@
                 ],
                 "Next": "ETL Exception Handler",
                 "Output": {
-                  "errorInfo": "{% $states.errorOutput %}"
+                  "errorInfo": "{% $states.errorOutput %}",
+                  "stepName": "Timetables ETL"
                 }
               }
             ]
@@ -551,8 +571,17 @@
             "Type": "Succeed"
           },
           "ETL Exception Handler": {
-            "Type": "Pass",
-            "Next": "PTI and ETL Failed"
+            "Type": "Task",
+            "Next": "PTI and ETL Failed",
+            "Resource": "${ExceptionHandlerLambdaArn}",
+            "Arguments": {
+              "Error": "{% $states.input.errorInfo.Error %}",
+              "Cause": "{% $states.input.errorInfo.Cause %}",
+              "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}",
+              "StepName": "{% $states.input.stepName %}",
+              "FailDatasetRevision": false,
+              "FailDatasetETLTaskResult": false
+            }
           },
           "PTI and ETL Failed": {
             "Type": "Fail"
@@ -597,7 +626,8 @@
           ],
           "Next": "Parent Exception Handler",
           "Output": {
-            "errorInfo": "{% $states.errorOutput %}"
+            "errorInfo": "{% $states.errorOutput %}",
+            "stepName": "Generate Output Zip and Update Status"
           }
         }
       ]
@@ -621,7 +651,21 @@
         "Input": {
           "DatasetRevisionId": "{% $datasetRevisionId %}"
         }
-      }
+      },
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "Parent Exception Handler",
+          "Output": {
+            "errorInfo": "{% $states.errorOutput %}",
+            "stepName": "Trigger DQS State Machine",
+            "failDatasetRevision": false,
+            "failDatasetETLTaskResult": true
+          }
+        }
+      ]
     },
     "Release Lock": {
       "Type": "Task",
@@ -674,7 +718,8 @@
           ],
           "Next": "Parent Exception Handler",
           "Output": {
-            "errorInfo": "$.error"
+            "errorInfo": "$.error",
+            "stepName": "Release Lock"
           }
         }
       ],
@@ -687,7 +732,10 @@
       "Arguments": {
         "Error": "{% $states.input.errorInfo.Error %}",
         "Cause": "{% $states.input.errorInfo.Cause %}",
-        "DatasetEtlTaskResultId": "{% $datasetETLTaskResultId %}"
+        "DatasetEtlTaskResultId": "{% $datasetETLTaskResultId %}",
+        "StepName": "{% $states.input.stepName %}",
+        "FailDatasetRevision": "{% $states.input.failDatasetRevision %}",
+        "FailDatasetETLTaskResult": "{% $states.input.failDatasetETLTaskResult %}"
       }
     },
     "Release Lock Exception Handler": {

@@ -57,7 +57,16 @@ class ExceptionHandlerInputData(BaseModel):
 
     error: str = Field(alias="Error")
     cause: Annotated[ErrorCause, Field(alias="Cause")]
+    step_name: str = Field(alias="StepName", default="unknown")
+
     dataset_etl_task_result_id: int = Field(alias="DatasetEtlTaskResultId")
+
+    fail_dataset_revision: bool | None = Field(
+        alias="FailDatasetRevision", default=True
+    )
+    fail_dataset_etl_task_result: bool | None = Field(
+        alias="FailDatasetETLTaskResult", default=True
+    )
 
     @model_validator(mode="before")
     @classmethod
