@@ -47,9 +47,10 @@ def make_remote_file_name(
     url_path = Path(revision.url_link)
 
     if url_path.suffix in (".zip", ".xml"):
-        name = unquote(url_path.name)
+        file_name = unquote(url_path.name)
+        name = f"{revision.dataset_id}_{revision.id}_{now}_{file_name}"
     else:
-        name = f"remote_dataset_{revision.dataset_id}_{now}.{filetype}"
+        name = f"{revision.dataset_id}_{revision.id}_{now}.{filetype}"
 
     return name
 
