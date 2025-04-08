@@ -2,13 +2,19 @@
 Tests for DownloadDataset Lambda
 """
 
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+from common_layer.database.models import OrganisationDatasetRevision
 from common_layer.exceptions import DownloadUnknownFileType
+from download_dataset.app.download_dataset import make_remote_file_name
 from download_dataset.app.file_download import FileDownloader
 from download_dataset.app.models import DownloadResult
+from freezegun import freeze_time
+
+from tests.factories.database import OrganisationDatasetRevisionFactory
 
 DT_FORMAT = "%Y-%m-%d_%H-%M-%S"
 TEST_ENV_VAR = {
@@ -87,3 +93,22 @@ def test_get_exception(
         mock_get.return_value.__enter__.return_value = mock_response
         with pytest.raises(DownloadUnknownFileType):
             mock_file_downloader.download_to_temp("https://test.com")
+
+
+def test_make_remote_file_name():
+    dataset_id = 123
+    revision_id = 345
+    filename = "current.zip"
+    m_revision: OrganisationDatasetRevision = (
+        OrganisationDatasetRevisionFactory.create_with_id(
+            id_number=revision_id,
+            dataset_id=dataset_id,
+            url_link=f"http://test.com/{filename}",
+        )
+    )
+
+    now = datetime(2025, 4, 8, 10, 15, 30)
+    formatted_datetime = "2025-04-08_10-15-30"
+    with freeze_time(now):
+        result = make_remote_file_name(m_revision, "zip")
+        assert result == f"{dataset_id}_{revision_id}_{formatted_datetime}_{filename}"
