@@ -310,7 +310,8 @@
               "Bucket": "{% $states.input.mapS3Bucket %}",
               "ObjectKey": "{% $states.input.mapS3Object %}",
               "DatasetRevisionId": "{% $states.input.mapDatasetRevisionId %}",
-              "datasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}"
+              "datasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}",
+              "DatasetType": "{% $states.input.mapDatasetType %}"
             }
           },
           "File Validation": {
@@ -424,8 +425,8 @@
               "Error": "{% $states.input.errorInfo.Error %}",
               "Cause": "{% $states.input.errorInfo.Cause %}",
               "DatasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}",
-              "DatasetRevisionId": "{% $states.input.mapDatasetRevisionId %}",
-              "DatasetType": "{% $states.input.mapDatasetType %}",
+              "DatasetRevisionId": "{% $DatasetRevisionId %}",
+              "DatasetType": "{% $DatasetType %}",
               "StepName": "{% $states.input.stepName %}",
               "ObjectKey": "{% $ObjectKey %}",
               "FailDatasetRevision": false,
@@ -515,7 +516,8 @@
               "SupersededTimetable": "{% $states.input.mapDatasetSupersededTimetable %}",
               "datasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}",
               "DatasetRevisionId": "{% $states.input.mapDatasetRevisionId %}",
-              "FileAttributesEtl": "{% $states.input.mapDatasetFileAttributesEtl %}"
+              "FileAttributesEtl": "{% $states.input.mapDatasetFileAttributesEtl %}",
+              "DatasetType": "{% $states.input.mapDatasetType %}"
             }
           },
           "PTI Validation": {
@@ -584,7 +586,7 @@
               "Cause": "{% $states.input.errorInfo.Cause %}",
               "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}",
               "DatasetRevisionId": "{% $DatasetRevisionId %}",
-              "DatasetType": "{% $states.input.mapDatasetType %}",
+              "DatasetType": "{% $DatasetType %}",
               "ObjectKey": "{% $ObjectKey %}",
               "StepName": "{% $states.input.stepName %}",
               "FailDatasetRevision": false,
