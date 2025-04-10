@@ -47,7 +47,7 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
     Timetables ETL Statemachine Exception Handler
     """
     log.info("Exception Event", data=event)
-    # Include event in every log
+    # Include all event details in every log
     configure_logging(event, context)
 
     parsed_event = ExceptionHandlerInputData(**event)
