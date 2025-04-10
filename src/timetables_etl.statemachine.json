@@ -423,6 +423,7 @@
               "Error": "{% $states.input.errorInfo.Error %}",
               "Cause": "{% $states.input.errorInfo.Cause %}",
               "DatasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}",
+              "DatasetRevisionId": "{% $states.input.mapDatasetRevisionId %}",
               "StepName": "{% $states.input.stepName %}",
               "FailDatasetRevision": false,
               "FailDatasetETLTaskResult": false
@@ -578,6 +579,7 @@
               "Error": "{% $states.input.errorInfo.Error %}",
               "Cause": "{% $states.input.errorInfo.Cause %}",
               "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}",
+              "DatasetRevisionId": "{% $DatasetRevisionId %}",
               "StepName": "{% $states.input.stepName %}",
               "FailDatasetRevision": false,
               "FailDatasetETLTaskResult": false
@@ -733,6 +735,7 @@
         "Error": "{% $states.input.errorInfo.Error %}",
         "Cause": "{% $states.input.errorInfo.Cause %}",
         "DatasetEtlTaskResultId": "{% $datasetETLTaskResultId %}",
+        "DatasetRevisionId": "{% $datasetRevisionId %}",
         "StepName": "{% $states.input.stepName %}",
         "FailDatasetRevision": "{% $states.input.failDatasetRevision %}",
         "FailDatasetETLTaskResult": "{% $states.input.failDatasetETLTaskResult %}"
