@@ -286,7 +286,8 @@
         "mapS3Bucket": "{% $s3Bucket %}",
         "mapS3Object": "{% $states.context.Map.Item.Value.Key %}",
         "mapDatasetRevisionId": "{% $datasetRevisionId %}",
-        "mapDatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}"
+        "mapDatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}",
+        "mapDatasetType": "{% $datasetType %}"
       },
       "ItemReader": {
         "Resource": "arn:aws:states:::s3:listObjectsV2",
@@ -424,6 +425,7 @@
               "Cause": "{% $states.input.errorInfo.Cause %}",
               "DatasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}",
               "DatasetRevisionId": "{% $states.input.mapDatasetRevisionId %}",
+              "DatasetType": "{% $states.input.mapDatasetType %}",
               "StepName": "{% $states.input.stepName %}",
               "FailDatasetRevision": false,
               "FailDatasetETLTaskResult": false
@@ -483,7 +485,8 @@
         "mapDatasetSupersededTimetable": "{% $states.context.Map.Item.Value.SupersededTimetable %}",
         "mapDatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}",
         "mapDatasetFileAttributesEtl": "{% $states.context.Map.Item.Value.TxcFileAttributesId %}",
-        "mapDatasetRevisionId": "{% $datasetRevisionId %}"
+        "mapDatasetRevisionId": "{% $datasetRevisionId %}",
+        "mapDatasetType": "{% $datasetType %}"
       },
       "ItemReader": {
         "Resource": "arn:aws:states:::s3:getObject",
@@ -511,7 +514,8 @@
               "SupersededTimetable": "{% $states.input.mapDatasetSupersededTimetable %}",
               "datasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}",
               "DatasetRevisionId": "{% $states.input.mapDatasetRevisionId %}",
-              "FileAttributesEtl": "{% $states.input.mapDatasetFileAttributesEtl %}"
+              "FileAttributesEtl": "{% $states.input.mapDatasetFileAttributesEtl %}",
+              "DatasetType": "{% $states.input.mapDatasetType %}"
             }
           },
           "PTI Validation": {
@@ -580,6 +584,7 @@
               "Cause": "{% $states.input.errorInfo.Cause %}",
               "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}",
               "DatasetRevisionId": "{% $DatasetRevisionId %}",
+              "DatasetType": "{% $datasetType %}",
               "StepName": "{% $states.input.stepName %}",
               "FailDatasetRevision": false,
               "FailDatasetETLTaskResult": false
@@ -736,6 +741,7 @@
         "Cause": "{% $states.input.errorInfo.Cause %}",
         "DatasetEtlTaskResultId": "{% $datasetETLTaskResultId %}",
         "DatasetRevisionId": "{% $datasetRevisionId %}",
+        "DatasetType": "{% $datasetType %}",
         "StepName": "{% $states.input.stepName %}",
         "FailDatasetRevision": "{% $states.input.failDatasetRevision %}",
         "FailDatasetETLTaskResult": "{% $states.input.failDatasetETLTaskResult %}"
