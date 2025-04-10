@@ -310,7 +310,7 @@
               "Bucket": "{% $states.input.mapS3Bucket %}",
               "ObjectKey": "{% $states.input.mapS3Object %}",
               "DatasetRevisionId": "{% $states.input.mapDatasetRevisionId %}",
-              "datasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}",
+              "DatasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}",
               "DatasetType": "{% $states.input.mapDatasetType %}"
             }
           },
@@ -424,7 +424,7 @@
             "Arguments": {
               "Error": "{% $states.input.errorInfo.Error %}",
               "Cause": "{% $states.input.errorInfo.Cause %}",
-              "DatasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}",
+              "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}",
               "DatasetRevisionId": "{% $DatasetRevisionId %}",
               "DatasetType": "{% $DatasetType %}",
               "StepName": "{% $states.input.stepName %}",
