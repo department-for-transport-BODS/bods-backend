@@ -743,10 +743,11 @@
         "DatasetEtlTaskResultId": "{% $datasetETLTaskResultId %}",
         "DatasetRevisionId": "{% $datasetRevisionId %}",
         "DatasetType": "{% $datasetType %}",
-        "StepName": "{% $states.input.stepName %}",
+        "StepName": "{% $exists($states.input.stepName) ? states.input.stepName : 'unknown' %}",
         "ObjectKey": "{% $s3Object %}",
-        "FailDatasetRevision": "{% $states.input.failDatasetRevision %}",
-        "FailDatasetETLTaskResult": "{% $states.input.failDatasetETLTaskResult %}"
+        "Url": "{% $url %}",
+        "FailDatasetRevision": "{% $exists($states.input.failDatasetRevision) ? $states.input.failDatasetRevision : true %}",
+        "FailDatasetETLTaskResult": "{% $exists($states.input.failDatasetETLTaskResult) ? $states.input.failDatasetRevision : true %}"
       }
     },
     "Release Lock Exception Handler": {
