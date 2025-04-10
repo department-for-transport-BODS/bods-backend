@@ -743,7 +743,7 @@
         "DatasetEtlTaskResultId": "{% $datasetETLTaskResultId %}",
         "DatasetRevisionId": "{% $datasetRevisionId %}",
         "DatasetType": "{% $datasetType %}",
-        "StepName": "{% $exists($states.input.stepName) ? states.input.stepName : 'unknown' %}",
+        "StepName": "{% $exists($states.input.stepName) ? $states.input.stepName : 'unknown' %}",
         "ObjectKey": "{% $s3Object %}",
         "Url": "{% $url %}",
         "FailDatasetRevision": "{% $exists($states.input.failDatasetRevision) ? $states.input.failDatasetRevision : true %}",
