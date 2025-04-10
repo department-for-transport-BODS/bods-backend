@@ -189,12 +189,12 @@ jobs:
       contents: write
 
     steps:
-      - name: trigger remote
-        uses: peter-evans/repository-dispatch@v3
-        with:
-          repository: ${{ github.repository }}
-          event-type: automated-deploy-dev
-          client-payload: '{ "environment": "dev", "release_version": "${{ needs.validation.outputs.VERSION }}" }'
+      # - name: trigger remote
+      #   uses: peter-evans/repository-dispatch@v3
+      #   with:
+      #     repository: ${{ github.repository }}
+      #     event-type: automated-deploy-dev
+      #     client-payload: '{ "environment": "dev", "release_version": "${{ needs.validation.outputs.VERSION }}" }'
 
       - name: trigger remote for dev2
         uses: peter-evans/repository-dispatch@v3
