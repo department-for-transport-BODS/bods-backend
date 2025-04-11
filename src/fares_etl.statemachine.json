@@ -396,6 +396,7 @@
         "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}",
         "PublishDatasetRevision": "{% $publishDatasetRevision %}",
         "OverwriteInputDataset": "{% $overwriteInputDataset %}",
+        "DatasetType": "{% $datasetType %}",
         "lockacquiredtime": "{% $lockacquiredtime %}"
       },
       "Catch": [
