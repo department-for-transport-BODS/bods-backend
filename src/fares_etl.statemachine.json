@@ -438,8 +438,15 @@
       "Resource": "${ExceptionHandlerLambdaArn}",
       "Arguments": {
         "Error": "{% $states.input.errorInfo.Error %}",
-        "Cause": "{% $parse($states.input.errorInfo.Cause) %}",
-        "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}"
+        "Cause": "{% $states.input.errorInfo.Cause %}",
+        "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}",
+        "DatasetRevisionId": "{% $datasetRevisionId %}",
+        "DatasetType": "{% $datasetType %}",
+        "StepName": "{% $exists($states.input.stepName) ? $states.input.stepName : 'unknown' %}",
+        "ObjectKey": "{% $s3Object %}",
+        "Url": "{% $url %}",
+        "FailDatasetRevision": "{% $exists($states.input.failDatasetRevision) ? $states.input.failDatasetRevision : true %}",
+        "FailDatasetETLTaskResult": "{% $exists($states.input.failDatasetETLTaskResult) ? $states.input.failDatasetRevision : true %}"
       }
     },
     "ReleaseLockExceptionHandler": {
