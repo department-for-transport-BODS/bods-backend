@@ -4,7 +4,7 @@
   "States": {
     "ProcessInput": {
       "Type": "Pass",
-      "Next": "InitializePipeline",
+      "Next": "ValidateLockInputs",
       "Assign": {
         "inputDataSource": "{% $states.input.inputDataSource %}",
         "datasetRevisionId": "{% $states.input.datasetRevisionId %}",
@@ -13,8 +13,114 @@
         "s3Bucket": "{% $exists($states.input.s3.bucket) ? $states.input.s3.bucket : '${DefaultS3BucketName}' %}",
         "s3Object": "{% $exists($states.input.s3.object) ? $states.input.s3.object : null %}",
         "publishDatasetRevision": "{% $exists($states.input.publishDatasetRevision) ? $states.input.publishDatasetRevision : false %}",
-        "overwriteInputDataset": "{% $exists($states.input.overwriteInputDataset) ? $states.input.overwriteInputDataset : true %}"
+        "overwriteInputDataset": "{% $exists($states.input.overwriteInputDataset) ? $states.input.overwriteInputDataset : true %}",
+        "lock_name": "bods-backend-fares-semaphore",
+        "concurrency_limit": 10,
+        "lock_entry": "{% $uuid() %}"
       }
+    },
+    "ValidateLockInputs": {
+      "Type": "Choice",
+      "Default": "LockConfigurationError",
+      "Choices": [
+        {
+          "Condition": "{% $exists($lock_name) and $type($lock_name) = 'string' and $exists($concurrency_limit) and $type($concurrency_limit) = 'number' and $exists($lock_entry) and $type($lock_entry) = 'string' %}",
+          "Next": "AcquireLock"
+        }
+      ]
+    },
+    "LockConfigurationError": {
+      "Type": "Fail",
+      "Error": "InsufficientLockInput",
+      "Cause": "Lock parameters are missing or invalid"
+    },
+    "AcquireLock": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Assign": {
+        "lockacquiredtime": "{% $states.context.State.EnteredTime %}"
+      },
+      "Arguments": {
+        "TableName": "${FaresSemaphoreDynamoDbTableName}",
+        "Key": {
+          "LockName": {
+            "S": "{% $lock_name %}"
+          }
+        },
+        "ExpressionAttributeNames": {
+          "#currentlockcount": "currentlockcount",
+          "#lockownerid": "{% $lock_entry %}"
+        },
+        "ExpressionAttributeValues": {
+          ":increase": { "N": "1" },
+          ":limit": { "N": "{% $string($concurrency_limit) %}" },
+          ":lockacquiredtime": { "S": "{% $states.context.State.EnteredTime %}" }
+        },
+        "UpdateExpression": "SET #currentlockcount = #currentlockcount + :increase, #lockownerid = :lockacquiredtime",
+        "ConditionExpression": "currentlockcount <> :limit and attribute_not_exists(#lockownerid)",
+        "ReturnValues": "UPDATED_NEW"
+      },
+      "Retry": [
+        { "ErrorEquals": ["DynamoDB.AmazonDynamoDBException"], "MaxAttempts": 0 },
+        { "ErrorEquals": ["States.ALL"], "MaxAttempts": 6, "BackoffRate": 2 }
+      ],
+      "Catch": [
+        { "ErrorEquals": ["DynamoDB.AmazonDynamoDBException"], "Next": "InitializeLockItem", "Output": "$lockinfo.acquisitionerror" },
+        { "ErrorEquals": ["DynamoDB.ConditionalCheckFailedException"], "Next": "GetCurrentLockRecord", "Output": "$lockinfo.acquisitionerror" },
+        { "ErrorEquals": ["States.ALL"], "Next": "ParentExceptionHandler", "Output": { "errorInfo": "$.error", "stepName": "AcquireLock" } }
+      ],
+      "Next": "InitializePipeline"
+    },
+    "InitializeLockItem": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:putItem",
+      "Arguments": {
+        "TableName": "${FaresSemaphoreDynamoDbTableName}",
+        "Item": {
+          "LockName": { "S": "{% $lock_name %}" },
+          "currentlockcount": { "N": "0" }
+        },
+        "ConditionExpression": "LockName <> :lockname",
+        "ExpressionAttributeValues": {
+          ":lockname": { "S": "{% $lock_name %}" }
+        }
+      },
+      "Catch": [
+        { "ErrorEquals": ["States.ALL"], "Next": "AcquireLock" }
+      ],
+      "Next": "AcquireLock"
+    },
+    "GetCurrentLockRecord": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:getItem",
+      "Arguments": {
+        "TableName": "${FaresSemaphoreDynamoDbTableName}",
+        "ExpressionAttributeNames": {
+          "#lockownerid": "{% $lock_entry %}"
+        },
+        "Key": {
+          "LockName": { "S": "{% $lock_name %}" }
+        },
+        "ProjectionExpression": "#lockownerid"
+      },
+      "Assign": {
+        "Item": "{% $states.result.Item %}",
+        "ItemString": "{% $string($states.result.Item) %}"
+      },
+      "Output": "$lockinfo.currentlockitem",
+      "Next": "CheckIfLockAlreadyAcquired"
+    },
+    "CheckIfLockAlreadyAcquired": {
+      "Type": "Choice",
+      "Choices": [
+        { "Condition": "{% $exists($ItemString) and $contains($ItemString, 'Z') %}", "Next": "InitializePipeline" }
+      ],
+      "Default": "WaitToGetLock"
+    },
+    "WaitToGetLock": {
+      "Type": "Wait",
+      "Seconds": 30,
+      "Next": "AcquireLock"
     },
     "InitializePipeline": {
       "Type": "Task",
@@ -278,7 +384,7 @@
     },
     "GenerateOutputZip": {
       "Type": "Task",
-      "Next": "Completed",
+      "Next": "ReleaseLock",
       "Resource": "${GenerateOutputZipLambdaArn}",
       "Arguments": {
         "MapRunArn": "{% $states.input.mapResults.MapRunArn %}",
@@ -289,21 +395,45 @@
         "OriginalObjectKey": "{% $s3Object %}",
         "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}",
         "PublishDatasetRevision": "{% $publishDatasetRevision %}",
-        "OverwriteInputDataset": "{% $overwriteInputDataset %}"
+        "OverwriteInputDataset": "{% $overwriteInputDataset %}",
+        "lockacquiredtime": "{% $lockacquiredtime %}"
       },
       "Catch": [
-        {
-          "ErrorEquals": ["States.ALL"],
-          "Next": "ParentExceptionHandler",
-          "Output": {
-            "errorInfo": "{% $states.errorOutput %}"
-          }
-        }
+        { "ErrorEquals": ["States.ALL"], "Next": "ParentExceptionHandler", "Output": { "errorInfo": "{% $states.errorOutput %}" } }
+      ]
+    },
+    "ReleaseLock": {
+      "Type": "Task",
+      "Next": "Completed",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Arguments": {
+        "TableName": "${FaresSemaphoreDynamoDbTableName}",
+        "Key": {
+          "LockName": { "S": "{% $lock_name %}" }
+        },
+        "ExpressionAttributeNames": {
+          "#currentlockcount": "currentlockcount",
+          "#lockownerid": "{% $lock_entry %}"
+        },
+        "ExpressionAttributeValues": {
+          ":decrease": { "N": "1" }
+        },
+        "UpdateExpression": "SET #currentlockcount = #currentlockcount - :decrease REMOVE #lockownerid",
+        "ConditionExpression": "attribute_exists(#lockownerid)",
+        "ReturnValues": "UPDATED_NEW"
+      },
+      "Retry": [
+        { "ErrorEquals": ["DynamoDB.ConditionalCheckFailedException"], "MaxAttempts": 0 },
+        { "ErrorEquals": ["States.ALL"], "MaxAttempts": 5, "BackoffRate": 1.5 }
+      ],
+      "Catch": [
+        { "ErrorEquals": ["DynamoDB.ConditionalCheckFailedException"], "Next": "Completed" },
+        { "ErrorEquals": ["States.ALL"], "Next": "ReleaseLockExceptionHandler", "Output": { "errorInfo": "$.error", "stepName": "Release Lock" } }
       ]
     },
     "ParentExceptionHandler": {
       "Type": "Task",
-      "Next": "ParentFail",
+      "Next": "ReleaseLockExceptionHandler",
       "Resource": "${ExceptionHandlerLambdaArn}",
       "Arguments": {
         "Error": "{% $states.input.errorInfo.Error %}",
@@ -311,13 +441,41 @@
         "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}"
       }
     },
+    "ReleaseLockExceptionHandler": {
+      "Type": "Task",
+      "Next": "ParentFail",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Arguments": {
+        "TableName": "${FaresSemaphoreDynamoDbTableName}",
+        "Key": {
+          "LockName": { "S": "{% $lock_name %}" }
+        },
+        "ExpressionAttributeNames": {
+          "#currentlockcount": "currentlockcount",
+          "#lockownerid": "{% $lock_entry %}"
+        },
+        "ExpressionAttributeValues": {
+          ":decrease": { "N": "1" }
+        },
+        "UpdateExpression": "SET #currentlockcount = #currentlockcount - :decrease REMOVE #lockownerid",
+        "ConditionExpression": "attribute_exists(#lockownerid)",
+        "ReturnValues": "UPDATED_NEW"
+      },
+      "Retry": [
+        { "ErrorEquals": ["DynamoDB.ConditionalCheckFailedException"], "MaxAttempts": 0 },
+        { "ErrorEquals": ["States.ALL"], "MaxAttempts": 5, "BackoffRate": 1.5 }
+      ],
+      "Catch": [
+        { "ErrorEquals": ["States.ALL"], "Next": "ParentFail" }
+      ]
+    },
     "ParentFail": {
       "Type": "Fail",
       "Comment": "Entire ETL Pipeline Failed"
     },
     "Completed": {
       "Type": "Succeed",
-      "Comment": "ETL Process Successully Completed"
+      "Comment": "ETL Process Successfully Completed"
     }
   }
 }
