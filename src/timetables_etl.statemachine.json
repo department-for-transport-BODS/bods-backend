@@ -286,7 +286,8 @@
         "mapS3Bucket": "{% $s3Bucket %}",
         "mapS3Object": "{% $states.context.Map.Item.Value.Key %}",
         "mapDatasetRevisionId": "{% $datasetRevisionId %}",
-        "mapDatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}"
+        "mapDatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}",
+        "mapDatasetType": "{% $datasetType %}"
       },
       "ItemReader": {
         "Resource": "arn:aws:states:::s3:listObjectsV2",
@@ -309,7 +310,8 @@
               "Bucket": "{% $states.input.mapS3Bucket %}",
               "ObjectKey": "{% $states.input.mapS3Object %}",
               "DatasetRevisionId": "{% $states.input.mapDatasetRevisionId %}",
-              "datasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}"
+              "datasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}",
+              "DatasetType": "{% $states.input.mapDatasetType %}"
             }
           },
           "File Validation": {
@@ -422,8 +424,11 @@
             "Arguments": {
               "Error": "{% $states.input.errorInfo.Error %}",
               "Cause": "{% $states.input.errorInfo.Cause %}",
-              "DatasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}",
+              "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}",
+              "DatasetRevisionId": "{% $DatasetRevisionId %}",
+              "DatasetType": "{% $DatasetType %}",
               "StepName": "{% $states.input.stepName %}",
+              "ObjectKey": "{% $ObjectKey %}",
               "FailDatasetRevision": false,
               "FailDatasetETLTaskResult": false
             }
@@ -482,7 +487,8 @@
         "mapDatasetSupersededTimetable": "{% $states.context.Map.Item.Value.SupersededTimetable %}",
         "mapDatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}",
         "mapDatasetFileAttributesEtl": "{% $states.context.Map.Item.Value.TxcFileAttributesId %}",
-        "mapDatasetRevisionId": "{% $datasetRevisionId %}"
+        "mapDatasetRevisionId": "{% $datasetRevisionId %}",
+        "mapDatasetType": "{% $datasetType %}"
       },
       "ItemReader": {
         "Resource": "arn:aws:states:::s3:getObject",
@@ -510,7 +516,8 @@
               "SupersededTimetable": "{% $states.input.mapDatasetSupersededTimetable %}",
               "datasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}",
               "DatasetRevisionId": "{% $states.input.mapDatasetRevisionId %}",
-              "FileAttributesEtl": "{% $states.input.mapDatasetFileAttributesEtl %}"
+              "FileAttributesEtl": "{% $states.input.mapDatasetFileAttributesEtl %}",
+              "DatasetType": "{% $states.input.mapDatasetType %}"
             }
           },
           "PTI Validation": {
@@ -578,6 +585,9 @@
               "Error": "{% $states.input.errorInfo.Error %}",
               "Cause": "{% $states.input.errorInfo.Cause %}",
               "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}",
+              "DatasetRevisionId": "{% $DatasetRevisionId %}",
+              "DatasetType": "{% $DatasetType %}",
+              "ObjectKey": "{% $ObjectKey %}",
               "StepName": "{% $states.input.stepName %}",
               "FailDatasetRevision": false,
               "FailDatasetETLTaskResult": false
@@ -733,9 +743,13 @@
         "Error": "{% $states.input.errorInfo.Error %}",
         "Cause": "{% $states.input.errorInfo.Cause %}",
         "DatasetEtlTaskResultId": "{% $datasetETLTaskResultId %}",
-        "StepName": "{% $states.input.stepName %}",
-        "FailDatasetRevision": "{% $states.input.failDatasetRevision %}",
-        "FailDatasetETLTaskResult": "{% $states.input.failDatasetETLTaskResult %}"
+        "DatasetRevisionId": "{% $datasetRevisionId %}",
+        "DatasetType": "{% $datasetType %}",
+        "StepName": "{% $exists($states.input.stepName) ? $states.input.stepName : 'unknown' %}",
+        "ObjectKey": "{% $s3Object %}",
+        "Url": "{% $url %}",
+        "FailDatasetRevision": "{% $exists($states.input.failDatasetRevision) ? $states.input.failDatasetRevision : true %}",
+        "FailDatasetETLTaskResult": "{% $exists($states.input.failDatasetETLTaskResult) ? $states.input.failDatasetRevision : true %}"
       }
     },
     "Release Lock Exception Handler": {
