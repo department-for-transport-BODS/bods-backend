@@ -52,22 +52,60 @@
           "#lockownerid": "{% $lock_entry %}"
         },
         "ExpressionAttributeValues": {
-          ":increase": { "N": "1" },
-          ":limit": { "N": "{% $string($concurrency_limit) %}" },
-          ":lockacquiredtime": { "S": "{% $states.context.State.EnteredTime %}" }
+          ":increase": {
+            "N": "1"
+          },
+          ":limit": {
+            "N": "{% $string($concurrency_limit) %}"
+          },
+          ":lockacquiredtime": {
+            "S": "{% $states.context.State.EnteredTime %}"
+          }
         },
         "UpdateExpression": "SET #currentlockcount = #currentlockcount + :increase, #lockownerid = :lockacquiredtime",
         "ConditionExpression": "currentlockcount <> :limit and attribute_not_exists(#lockownerid)",
         "ReturnValues": "UPDATED_NEW"
       },
       "Retry": [
-        { "ErrorEquals": ["DynamoDB.AmazonDynamoDBException"], "MaxAttempts": 0 },
-        { "ErrorEquals": ["States.ALL"], "MaxAttempts": 6, "BackoffRate": 2 }
+        {
+          "ErrorEquals": [
+            "DynamoDB.AmazonDynamoDBException"
+          ],
+          "MaxAttempts": 0
+        },
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
       ],
       "Catch": [
-        { "ErrorEquals": ["DynamoDB.AmazonDynamoDBException"], "Next": "InitializeLockItem", "Output": "$lockinfo.acquisitionerror" },
-        { "ErrorEquals": ["DynamoDB.ConditionalCheckFailedException"], "Next": "GetCurrentLockRecord", "Output": "$lockinfo.acquisitionerror" },
-        { "ErrorEquals": ["States.ALL"], "Next": "ParentExceptionHandler", "Output": { "errorInfo": "$.error", "stepName": "AcquireLock" } }
+        {
+          "ErrorEquals": [
+            "DynamoDB.AmazonDynamoDBException"
+          ],
+          "Next": "InitializeLockItem",
+          "Output": "$lockinfo.acquisitionerror"
+        },
+        {
+          "ErrorEquals": [
+            "DynamoDB.ConditionalCheckFailedException"
+          ],
+          "Next": "GetCurrentLockRecord",
+          "Output": "$lockinfo.acquisitionerror"
+        },
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "ParentExceptionHandler",
+          "Output": {
+            "errorInfo": "$.error",
+            "stepName": "AcquireLock"
+          }
+        }
       ],
       "Next": "InitializePipeline"
     },
@@ -77,16 +115,27 @@
       "Arguments": {
         "TableName": "${FaresSemaphoreDynamoDbTableName}",
         "Item": {
-          "LockName": { "S": "{% $lock_name %}" },
-          "currentlockcount": { "N": "0" }
+          "LockName": {
+            "S": "{% $lock_name %}"
+          },
+          "currentlockcount": {
+            "N": "0"
+          }
         },
         "ConditionExpression": "LockName <> :lockname",
         "ExpressionAttributeValues": {
-          ":lockname": { "S": "{% $lock_name %}" }
+          ":lockname": {
+            "S": "{% $lock_name %}"
+          }
         }
       },
       "Catch": [
-        { "ErrorEquals": ["States.ALL"], "Next": "AcquireLock" }
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "AcquireLock"
+        }
       ],
       "Next": "AcquireLock"
     },
@@ -99,7 +148,9 @@
           "#lockownerid": "{% $lock_entry %}"
         },
         "Key": {
-          "LockName": { "S": "{% $lock_name %}" }
+          "LockName": {
+            "S": "{% $lock_name %}"
+          }
         },
         "ProjectionExpression": "#lockownerid"
       },
@@ -113,7 +164,10 @@
     "CheckIfLockAlreadyAcquired": {
       "Type": "Choice",
       "Choices": [
-        { "Condition": "{% $exists($ItemString) and $contains($ItemString, 'Z') %}", "Next": "InitializePipeline" }
+        {
+          "Condition": "{% $exists($ItemString) and $contains($ItemString, 'Z') %}",
+          "Next": "InitializePipeline"
+        }
       ],
       "Default": "WaitToGetLock"
     },
@@ -136,10 +190,13 @@
       },
       "Catch": [
         {
-          "ErrorEquals": ["States.ALL"],
+          "ErrorEquals": [
+            "States.ALL"
+          ],
           "Next": "ParentExceptionHandler",
           "Output": {
-            "errorInfo": "{% $states.errorOutput %}"
+            "errorInfo": "{% $states.errorOutput %}",
+            "stepName": "InitializePipeline"
           }
         }
       ]
@@ -175,10 +232,13 @@
       },
       "Catch": [
         {
-          "ErrorEquals": ["States.ALL"],
+          "ErrorEquals": [
+            "States.ALL"
+          ],
           "Next": "ParentExceptionHandler",
           "Output": {
-            "errorInfo": "{% $states.errorOutput %}"
+            "errorInfo": "{% $states.errorOutput %}",
+            "stepName": "DownloadDataset"
           }
         }
       ]
@@ -197,13 +257,15 @@
       "Assign": {
         "ExtractedSubFolder": "{% $states.result.body.generatedPrefix %}"
       },
-
       "Catch": [
         {
-          "ErrorEquals": ["States.ALL"],
+          "ErrorEquals": [
+            "States.ALL"
+          ],
           "Next": "ParentExceptionHandler",
           "Output": {
-            "errorInfo": "{% $states.errorOutput %}"
+            "errorInfo": "{% $states.errorOutput %}",
+            "stepName": "ClamAvScanner"
           }
         }
       ]
@@ -255,7 +317,6 @@
               "datasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}"
             }
           },
-
           "FileValidation": {
             "Type": "Task",
             "Next": "SchemaCheck",
@@ -270,10 +331,13 @@
             },
             "Catch": [
               {
-                "ErrorEquals": ["States.ALL"],
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
                 "Next": "ExceptionHandler",
                 "Output": {
-                  "errorInfo": "{% $states.errorOutput %}"
+                  "errorInfo": "{% $states.errorOutput %}",
+                  "stepName": "FileValidation"
                 }
               }
             ]
@@ -291,13 +355,15 @@
             "Output": {
               "schemaCheck": "{% $states.result %}"
             },
-
             "Catch": [
               {
-                "ErrorEquals": ["States.ALL"],
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
                 "Next": "ExceptionHandler",
                 "Output": {
-                  "errorInfo": "{% $states.errorOutput %}"
+                  "errorInfo": "{% $states.errorOutput %}",
+                  "stepName": "SchemaCheck"
                 }
               }
             ]
@@ -315,13 +381,15 @@
             "Output": {
               "faresValidation": "{% $states.result %}"
             },
-
             "Catch": [
               {
-                "ErrorEquals": ["States.ALL"],
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
                 "Next": "ExceptionHandler",
                 "Output": {
-                  "errorInfo": "{% $states.errorOutput %}"
+                  "errorInfo": "{% $states.errorOutput %}",
+                  "stepName": "FaresValidation"
                 }
               }
             ]
@@ -341,10 +409,13 @@
             },
             "Catch": [
               {
-                "ErrorEquals": ["States.ALL"],
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
                 "Next": "ExceptionHandler",
                 "Output": {
-                  "errorInfo": "{% $states.errorOutput %}"
+                  "errorInfo": "{% $states.errorOutput %}",
+                  "stepName": "EtlProcess"
                 }
               }
             ]
@@ -352,9 +423,21 @@
           "Success": {
             "Type": "Succeed"
           },
-          "ExceptionHandler": {
-            "Type": "Pass",
-            "Next": "Fail"
+          "FileLevelExceptionHandler": {
+            "Type": "Task",
+            "Next": "Fail",
+            "Resource": "${ExceptionHandlerLambdaArn}",
+            "Arguments": {
+              "Error": "{% $states.input.errorInfo.Error %}",
+              "Cause": "{% $states.input.errorInfo.Cause %}",
+              "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}",
+              "DatasetRevisionId": "{% $DatasetRevisionId %}",
+              "DatasetType": "{% $DatasetType %}",
+              "StepName": "{% $states.input.stepName %}",
+              "ObjectKey": "{% $ObjectKey %}",
+              "FailDatasetRevision": false,
+              "FailDatasetETLTaskResult": false
+            }
           },
           "Fail": {
             "Type": "Fail",
@@ -374,10 +457,13 @@
       "Output": "{% $states.input %}",
       "Catch": [
         {
-          "ErrorEquals": ["States.ALL"],
+          "ErrorEquals": [
+            "States.ALL"
+          ],
           "Next": "ParentExceptionHandler",
           "Output": {
-            "errorInfo": "{% $states.errorOutput %}"
+            "errorInfo": "{% $states.errorOutput %}",
+            "stepName": "MetadataAggregation"
           }
         }
       ]
@@ -400,7 +486,16 @@
         "lockacquiredtime": "{% $lockacquiredtime %}"
       },
       "Catch": [
-        { "ErrorEquals": ["States.ALL"], "Next": "ParentExceptionHandler", "Output": { "errorInfo": "{% $states.errorOutput %}" } }
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "ParentExceptionHandler",
+          "Output": {
+            "errorInfo": "{% $states.errorOutput %}"
+          },
+          "stepName": "GenerateOutputZip"
+        }
       ]
     },
     "ReleaseLock": {
@@ -410,26 +505,55 @@
       "Arguments": {
         "TableName": "${FaresSemaphoreDynamoDbTableName}",
         "Key": {
-          "LockName": { "S": "{% $lock_name %}" }
+          "LockName": {
+            "S": "{% $lock_name %}"
+          }
         },
         "ExpressionAttributeNames": {
           "#currentlockcount": "currentlockcount",
           "#lockownerid": "{% $lock_entry %}"
         },
         "ExpressionAttributeValues": {
-          ":decrease": { "N": "1" }
+          ":decrease": {
+            "N": "1"
+          }
         },
         "UpdateExpression": "SET #currentlockcount = #currentlockcount - :decrease REMOVE #lockownerid",
         "ConditionExpression": "attribute_exists(#lockownerid)",
         "ReturnValues": "UPDATED_NEW"
       },
       "Retry": [
-        { "ErrorEquals": ["DynamoDB.ConditionalCheckFailedException"], "MaxAttempts": 0 },
-        { "ErrorEquals": ["States.ALL"], "MaxAttempts": 5, "BackoffRate": 1.5 }
+        {
+          "ErrorEquals": [
+            "DynamoDB.ConditionalCheckFailedException"
+          ],
+          "MaxAttempts": 0
+        },
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "MaxAttempts": 5,
+          "BackoffRate": 1.5
+        }
       ],
       "Catch": [
-        { "ErrorEquals": ["DynamoDB.ConditionalCheckFailedException"], "Next": "Completed" },
-        { "ErrorEquals": ["States.ALL"], "Next": "ReleaseLockExceptionHandler", "Output": { "errorInfo": "$.error", "stepName": "Release Lock" } }
+        {
+          "ErrorEquals": [
+            "DynamoDB.ConditionalCheckFailedException"
+          ],
+          "Next": "Completed"
+        },
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "ReleaseLockExceptionHandler",
+          "Output": {
+            "errorInfo": "$.error",
+            "stepName": "Release Lock"
+          }
+        }
       ]
     },
     "ParentExceptionHandler": {
@@ -456,25 +580,45 @@
       "Arguments": {
         "TableName": "${FaresSemaphoreDynamoDbTableName}",
         "Key": {
-          "LockName": { "S": "{% $lock_name %}" }
+          "LockName": {
+            "S": "{% $lock_name %}"
+          }
         },
         "ExpressionAttributeNames": {
           "#currentlockcount": "currentlockcount",
           "#lockownerid": "{% $lock_entry %}"
         },
         "ExpressionAttributeValues": {
-          ":decrease": { "N": "1" }
+          ":decrease": {
+            "N": "1"
+          }
         },
         "UpdateExpression": "SET #currentlockcount = #currentlockcount - :decrease REMOVE #lockownerid",
         "ConditionExpression": "attribute_exists(#lockownerid)",
         "ReturnValues": "UPDATED_NEW"
       },
       "Retry": [
-        { "ErrorEquals": ["DynamoDB.ConditionalCheckFailedException"], "MaxAttempts": 0 },
-        { "ErrorEquals": ["States.ALL"], "MaxAttempts": 5, "BackoffRate": 1.5 }
+        {
+          "ErrorEquals": [
+            "DynamoDB.ConditionalCheckFailedException"
+          ],
+          "MaxAttempts": 0
+        },
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "MaxAttempts": 5,
+          "BackoffRate": 1.5
+        }
       ],
       "Catch": [
-        { "ErrorEquals": ["States.ALL"], "Next": "ParentFail" }
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "ParentFail"
+        }
       ]
     },
     "ParentFail": {
