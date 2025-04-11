@@ -334,7 +334,7 @@
                 "ErrorEquals": [
                   "States.ALL"
                 ],
-                "Next": "ExceptionHandler",
+                "Next": "FileLevelExceptionHandler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}",
                   "stepName": "FileValidation"
@@ -360,7 +360,7 @@
                 "ErrorEquals": [
                   "States.ALL"
                 ],
-                "Next": "ExceptionHandler",
+                "Next": "FileLevelExceptionHandler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}",
                   "stepName": "SchemaCheck"
@@ -386,7 +386,7 @@
                 "ErrorEquals": [
                   "States.ALL"
                 ],
-                "Next": "ExceptionHandler",
+                "Next": "FileLevelExceptionHandler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}",
                   "stepName": "FaresValidation"
@@ -412,7 +412,7 @@
                 "ErrorEquals": [
                   "States.ALL"
                 ],
-                "Next": "ExceptionHandler",
+                "Next": "FileLevelExceptionHandler",
                 "Output": {
                   "errorInfo": "{% $states.errorOutput %}",
                   "stepName": "EtlProcess"
@@ -492,9 +492,9 @@
           ],
           "Next": "ParentExceptionHandler",
           "Output": {
-            "errorInfo": "{% $states.errorOutput %}"
-          },
-          "stepName": "GenerateOutputZip"
+            "errorInfo": "{% $states.errorOutput %}",
+            "stepName": "GenerateOutputZip"
+          }
         }
       ]
     },
