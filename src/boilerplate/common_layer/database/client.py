@@ -30,7 +30,6 @@ class ProjectEnvironment(str, Enum):
 
     LOCAL = "local"
     DEVELOPMENT = "dev"
-    DEVELOPMENT2 = "dev2"
     STAGING = "staging"
     TEST = "test"
     UAT = "uat"
