@@ -12,7 +12,10 @@ import common_layer.aws.datadog.tracing  # type: ignore # pylint: disable=unused
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.aws.step import MapExecutionSucceeded, get_map_processing_results
 from common_layer.database.client import SqlDB
-from common_layer.database.repos import ETLTaskResultRepo
+from common_layer.database.repos import (
+    ETLTaskResultRepo,
+    OrganisationDatasetRevisionRepo,
+)
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.s3 import S3
@@ -25,6 +28,7 @@ from .db_operations import (
     update_revision_hash,
     update_task_and_revision_status,
 )
+from .etl_revision_stats import build_revision_stats
 from .models import GenerateOutputZipInputData, ProcessingResult
 from .output_processing import process_files
 
@@ -136,6 +140,15 @@ def process_map_results(
     return processing_result
 
 
+def update_revision_metadata(revision_id: int, db: SqlDB) -> None:
+    """
+    Update revision metadata based on all processed TxcFileAttributes and Services
+    """
+    log.info("Updating DatasetRevision metadata")
+    updated_stats = build_revision_stats(revision_id, db)
+    OrganisationDatasetRevisionRepo(db).update_stats(revision_id, updated_stats)
+
+
 def calculate_duration(timestamp: str | None):
     """
     Calculate the duration
@@ -164,6 +177,8 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, 
     input_data = GenerateOutputZipInputData(**event)
     db = SqlDB()
     ETLTaskResultRepo(db).update_progress(input_data.dataset_etl_task_result_id, 90)
+    # TODO: exception handling; should we continue if stats fail?
+    update_revision_metadata(input_data.dataset_revision_id, db)
     result = process_map_results(input_data, db)
     ETLTaskResultRepo(db).update_progress(input_data.dataset_etl_task_result_id, 100)
     log.info(
