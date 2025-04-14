@@ -149,6 +149,7 @@ Resources:
         FaresValidationLambdaArn: !GetAtt FaresValidationLambda.Arn
         MetadataAggregationLambdaArn: !GetAtt FaresMetadataAggregationLambda.Arn
         DefaultS3BucketName: !Sub 'bodds-${Environment}'
+        FaresSemaphoreDynamoDbTableName: !Ref FaresSemaphore
 
   ##########################
   #### LAMBDA FUNCTIONS ####
@@ -246,6 +247,40 @@ Resources:
           - IsNotLocal
           - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
           - !Ref AWS::NoValue
+
+  FaresSemaphore:
+    # checkov:skip=CKV_AWS_28: DB stores lock to prevent more than one state machine from executing at the same time
+    # checkov:skip=CKV_AWS_119: Data is just a job id
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${ProjectName}-${Environment}-${SubFunction}-fares-semaphore'
+      AttributeDefinitions:
+        - AttributeName: LockName
+          AttributeType: S
+      KeySchema:
+        - AttributeName: LockName
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: false
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: 'KMS'
+        KMSMasterKeyId: !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+          - !Ref AWS::NoValue
+
+  StateMachineToDynamoLockTable:
+    Type: AWS::Serverless::Connector
+    Properties:
+      Source:
+        Id: FaresStateMachine
+      Destination:
+        Id: FaresSemaphore
+      Permissions:
+        - Read
+        - Write
 
   ###################
   #### IAM ROLES ####
