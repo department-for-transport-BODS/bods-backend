@@ -8,6 +8,7 @@
       "Assign": {
         "inputDataSource": "{% $states.input.inputDataSource %}",
         "datasetRevisionId": "{% $states.input.datasetRevisionId %}",
+        "datasetETLTaskResultId": "{% $exists($states.input.datasetETLTaskResultId) ? $states.input.datasetETLTaskResultId : null %}",
         "datasetType": "{% $states.input.datasetType %}",
         "url": "{% $exists($states.input.url) ? $states.input.url : null %}",
         "s3Bucket": "{% $exists($states.input.s3.bucket) ? $states.input.s3.bucket : '${DefaultS3BucketName}' %}",
@@ -183,7 +184,8 @@
       "Arguments": {
         "Bucket": "{% $s3Bucket %}",
         "ObjectKey": "{% $s3Object %}",
-        "DatasetRevisionId": "{% $datasetRevisionId %}"
+        "DatasetRevisionId": "{% $datasetRevisionId %}",
+        "DatasetETLTaskResultId": "{% $datasetETLTaskResultId %}"
       },
       "Assign": {
         "DatasetEtlTaskResultId": "{% $states.result.DatasetEtlTaskResultId %}"
