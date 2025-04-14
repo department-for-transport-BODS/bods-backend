@@ -183,7 +183,8 @@
       "Arguments": {
         "Bucket": "{% $s3Bucket %}",
         "ObjectKey": "{% $s3Object %}",
-        "DatasetRevisionId": "{% $datasetRevisionId %}"
+        "DatasetRevisionId": "{% $datasetRevisionId %}",
+        "DatasetETLTaskResultId": "{% $datasetETLTaskResultId %}"
       },
       "Assign": {
         "DatasetEtlTaskResultId": "{% $states.result.DatasetEtlTaskResultId %}"
