@@ -3,7 +3,8 @@ PTI Fixtures
 """
 
 from io import BytesIO
-from unittest.mock import MagicMock, patch
+from typing import Any, Generator
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from aws_lambda_powertools.utilities.typing import LambdaContext
@@ -11,7 +12,7 @@ from botocore.response import StreamingBody
 
 
 @pytest.fixture(autouse=True)
-def mock_sqldb():
+def mock_sqldb() -> Generator[MagicMock | AsyncMock, Any, None]:
     """
     Mock Database
     """
@@ -22,7 +23,7 @@ def mock_sqldb():
 
 
 @pytest.fixture(name="s3_content")
-def mocked_s3_content():
+def mocked_s3_content() -> bytes:
     """
     Mocked S3 Data
     """
@@ -30,7 +31,7 @@ def mocked_s3_content():
 
 
 @pytest.fixture
-def s3_file(s3_content):
+def s3_file(s3_content: bytes) -> StreamingBody:
     """
     Mocked S3 File
     """
@@ -45,7 +46,7 @@ def lambda_context_fixture() -> LambdaContext:
     Lambda Context
     """
     context = LambdaContext()
-    context._aws_request_id = "test-123"
-    context._function_name = "test-function"
-    context._log_group_name = "/aws/lambda/test"
+    context._aws_request_id = "test-123"  # type: ignore
+    context._function_name = "test-function"  # type: ignore
+    context._log_group_name = "/aws/lambda/test"  # type: ignore
     return context

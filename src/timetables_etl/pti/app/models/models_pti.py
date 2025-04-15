@@ -4,9 +4,13 @@ PTI Pydantic Models
 
 import json
 from pathlib import Path
+from typing import Self
 
 from common_layer.database.models import DataQualityPTIObservation
+from lxml.etree import _Element  # type: ignore
 from pydantic import BaseModel
+
+from ..constants import NAMESPACE
 
 
 class PtiRule(BaseModel):
@@ -99,20 +103,19 @@ class VehicleJourney(BaseModel):
     service_ref: str
 
     @classmethod
-    def from_xml(cls, xml):
+    def from_xml(cls, xml: _Element) -> Self:
         """
         Vehicle Journey XML Parser
         """
-        namespaces = {"x": xml.nsmap.get(None)}
-        code = xml.xpath("string(x:VehicleJourneyCode)", namespaces=namespaces)
-        line_ref = xml.xpath("string(x:LineRef)", namespaces=namespaces)
+        code = xml.xpath("string(x:VehicleJourneyCode)", namespaces=NAMESPACE)
+        line_ref = xml.xpath("string(x:LineRef)", namespaces=NAMESPACE)
         journey_pattern_ref = xml.xpath(
-            "string(x:JourneyPatternRef)", namespaces=namespaces
+            "string(x:JourneyPatternRef)", namespaces=NAMESPACE
         )
         vehicle_journey_ref = xml.xpath(
-            "string(x:VehicleJourneyRef)", namespaces=namespaces
+            "string(x:VehicleJourneyRef)", namespaces=NAMESPACE
         )
-        service_ref = xml.xpath("string(x:ServiceRef)", namespaces=namespaces)
+        service_ref = xml.xpath("string(x:ServiceRef)", namespaces=NAMESPACE)
         return cls(
             code=code,
             line_ref=line_ref,
@@ -131,11 +134,10 @@ class Line(BaseModel):
     line_name: str
 
     @classmethod
-    def from_xml(cls, xml):
+    def from_xml(cls, xml: _Element) -> Self:
         """
         Line XML Parser
         """
-        namespaces = {"x": xml.nsmap.get(None)}
-        ref = xml.xpath("string(@id)", namespaces=namespaces)
-        line_name = xml.xpath("string(x:LineName)", namespaces=namespaces)
+        ref = xml.xpath("string(@id)", namespaces=NAMESPACE)
+        line_name = xml.xpath("string(x:LineName)", namespaces=NAMESPACE)
         return cls(ref=ref, line_name=line_name)

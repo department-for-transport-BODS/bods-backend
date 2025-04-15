@@ -2,12 +2,15 @@
 Validator Helper functions
 """
 
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 log = get_logger()
 
 
-def validate_modification_date_time(_context, roots) -> bool:
+def validate_modification_date_time(
+    _context: _Element | None, roots: list[_Element]
+) -> bool:
     """
     Validates modification datetime against creation datetime
     """
@@ -22,4 +25,6 @@ def validate_modification_date_time(_context, roots) -> bool:
 
     if revision_number == "0":
         return modification_date == creation_date
+    if creation_date is None or modification_date is None:
+        return False
     return creation_date < modification_date

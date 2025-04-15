@@ -39,10 +39,10 @@ from pti.app.utils.utils_xml import (
     ],
 )
 def test_extract_text(
-    elements,
+    elements: list[Mock] | list[str] | Mock | str,
     default: str | None,
     expected: str | None,
-):
+) -> None:
     """
     Test extraction of text content from various element types
     Validates proper text extraction from elements, strings and lists with defaults
@@ -69,7 +69,9 @@ def test_extract_text(
         pytest.param(Mock(spec=Element), False, id="Empty Element"),
     ],
 )
-def test_cast_to_bool(value, expected: bool):
+def test_cast_to_bool(
+    value: list[Mock] | Mock | list[str] | str, expected: bool
+) -> None:
     """
     Test casting various XML element and string inputs to boolean values
     Validates that true/false text content is properly converted
@@ -97,7 +99,7 @@ def test_cast_to_bool(value, expected: bool):
         ),
     ],
 )
-def test_cast_to_date(value, expected: float):
+def test_cast_to_date(value: list[Mock] | Mock | str, expected: float) -> None:
     """
     Test casting XML date elements to timestamp
     Validates proper parsing of date strings in various formats
@@ -132,7 +134,10 @@ def test_cast_to_date(value, expected: float):
         pytest.param(Mock(spec=Element), False, id="Empty Element"),
     ],
 )
-def test_contains_date(value, expected: bool):
+def test_contains_date(
+    value: list[Mock] | Mock | list[str] | str,
+    expected: bool,
+) -> None:
     """
     Test detection of date strings in element text content
     Validates identification of various date formats while ignoring plain numbers
@@ -172,7 +177,10 @@ def test_contains_date(value, expected: bool):
         pytest.param(Mock(spec=Element), False, id="Empty Element"),
     ],
 )
-def test_has_prohibited_chars(value, expected: bool):
+def test_has_prohibited_chars(
+    value: list[Mock] | Mock | list[str] | str,
+    expected: bool,
+):
     """
     Test detection of prohibited characters in element text content
     Validates identification of disallowed XML characters like commas, brackets, etc.
@@ -216,7 +224,7 @@ def test_has_prohibited_chars(value, expected: bool):
     ],
 )
 def test_is_member_of(
-    value,
+    value: list[Mock] | Mock | str,
     list_items: tuple[str, ...],
     expected: bool,
 ):
@@ -244,7 +252,7 @@ def test_is_member_of(
         pytest.param(Mock(spec=Element), r"[a-z]+", False, id="Empty Element"),
     ],
 )
-def test_regex(element, pattern: str, expected: bool):
+def test_regex(element: Mock, pattern: str, expected: bool) -> None:
     """
     Test regex pattern matching against element text content
     Validates that text properly matches against provided patterns
@@ -265,7 +273,7 @@ def test_regex(element, pattern: str, expected: bool):
         pytest.param("", "", id="Empty String"),
     ],
 )
-def test_strip(text, expected: str):
+def test_strip(text: Mock | str, expected: str) -> None:
     """
     Test stripping whitespace from element text content
     Validates proper removal of leading and trailing whitespace
@@ -305,7 +313,7 @@ def test_strip(text, expected: str):
         pytest.param("<root/>", ["Sunday"], True, id="Empty Element List"),
     ],
 )
-def test_has_name(xml_input: str, names: list[str], expected: bool):
+def test_has_name(xml_input: str, names: list[str], expected: bool) -> None:
     """
     Test validation of XML element names against provided patterns.
     Tests various scenarios including multiple elements, namespaces, and empty cases.

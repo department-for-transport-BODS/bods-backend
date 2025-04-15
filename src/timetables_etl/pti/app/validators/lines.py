@@ -4,16 +4,15 @@ Validations related to Lines
 
 import itertools
 from collections import defaultdict
+from typing import Any, Callable
 
 from attr import dataclass
 from common_layer.dynamodb.client import NaptanStopPointDynamoDBClient
-from common_layer.xml.txc.models import TXCData, TXCStopPoint
-from common_layer.xml.txc.models.txc_stoppoint.txc_stoppoint import (
-    AnnotatedStopPointRef,
-)
-from lxml import etree
+from common_layer.xml.txc.models import AnnotatedStopPointRef, TXCData, TXCStopPoint
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
+from ..constants import NAMESPACE
 from .base import BaseValidator
 
 log = get_logger()
@@ -34,7 +33,7 @@ class LinesValidator(BaseValidator):
     Class for running Line validations
     """
 
-    def __init__(self, *args, stop_info_map: dict[str, StopInfo], **kwargs):
+    def __init__(self, *args: Any, stop_info_map: dict[str, StopInfo], **kwargs: Any):
         self._stop_info_map = stop_info_map
         super().__init__(*args, **kwargs)
 
@@ -42,7 +41,7 @@ class LinesValidator(BaseValidator):
         """
         Given list of stops, returns flattened set of stop areas
         """
-        stop_areas = []
+        stop_areas: list[str] = []
         for stop in stops:
             stop_info = self._stop_info_map.get(stop, None)
             stop_areas += stop_info.stop_areas if stop_info else []
@@ -53,7 +52,7 @@ class LinesValidator(BaseValidator):
         Check whether related lines share a JourneyPattern with the
         designated main line.
         """
-        line_to_journey_pattern = {}
+        line_to_journey_pattern: dict[str, list[str]] = {}
         for line in self.lines:
             jp_refs = self.get_journey_pattern_refs_by_line_ref(line.ref)
             line_to_journey_pattern[line.ref] = jp_refs
@@ -81,7 +80,7 @@ class LinesValidator(BaseValidator):
         """
         Check if all lines share common stop points.
         """
-        line_to_stops = defaultdict(list)
+        line_to_stops: dict[str, list[str]] = defaultdict(list)
         for line in self.lines:
             jp_refs = self.get_journey_pattern_refs_by_line_ref(line.ref)
             for jp_ref in jp_refs:
@@ -171,13 +170,13 @@ def get_stop_info_map(
 
 def get_lines_validator(
     naptan_client: NaptanStopPointDynamoDBClient, txc_data: TXCData
-):
+) -> Callable[..., bool]:
     """
     Creates and returns a validator function for NAPTAN lines XML elements.
     """
     stop_info_map = get_stop_info_map(naptan_client, txc_data)
 
-    def validate_lines(_context, lines_list: list[etree._Element]) -> bool:
+    def validate_lines(_: _Element | None, lines_list: list[_Element]) -> bool:
         """
         Validates NAPTAN lines XML elements against stop area data.
         """
@@ -192,7 +191,7 @@ def get_lines_validator(
     return validate_lines
 
 
-def validate_line_id(_context, lines) -> bool:
+def validate_line_id(_: _Element | None, lines: list[_Element]) -> bool:
     """
     Validates that Line@id has the correct format.
     """
@@ -201,19 +200,18 @@ def validate_line_id(_context, lines) -> bool:
         count=len(lines),
     )
     line = lines[0]
-    ns = {"x": line.nsmap.get(None)}
 
     xpath = "string(@id)"
-    line_id = line.xpath(xpath, namespaces=ns)
+    line_id = line.xpath(xpath, namespaces=NAMESPACE)
 
     xpath = "string(//x:Operators/x:Operator/x:NationalOperatorCode)"
-    noc = line.xpath(xpath, namespaces=ns)
+    noc = line.xpath(xpath, namespaces=NAMESPACE)
 
     xpath = "string(../../x:ServiceCode)"
-    service_code = line.xpath(xpath, namespaces=ns)
+    service_code = line.xpath(xpath, namespaces=NAMESPACE)
 
     xpath = "string(x:LineName)"
-    line_name = line.xpath(xpath, namespaces=ns)
+    line_name = line.xpath(xpath, namespaces=NAMESPACE)
     line_name = line_name.replace(" ", "")
 
     expected_line_id = f"{noc}:{service_code}:{line_name}"

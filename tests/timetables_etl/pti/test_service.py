@@ -21,8 +21,8 @@ from pti.app.service import PTIValidationService
 from tests.factories.database.organisation import OrganisationDatasetRevisionFactory
 
 
-@pytest.fixture
-def txc_file_attributes():
+@pytest.fixture(name="txc_file_attributes")
+def m_txc_file_attributes() -> TXCFileAttributes:
     """
     Return an instance of txc file attrictures
     """
@@ -37,8 +37,8 @@ def txc_file_attributes():
     )
 
 
-@pytest.fixture
-def m_db_clients() -> DbClients:
+@pytest.fixture(name="m_db_clients")
+def db_clients() -> DbClients:
     """
     Return instance of DbClients containing mocked clients
     """
@@ -54,12 +54,12 @@ def m_db_clients() -> DbClients:
 @patch("pti.app.service.TXCRevisionValidator")
 @patch("pti.app.service.get_xml_file_pti_validator")
 def test_validate(
-    m_get_xml_file_pti_validator,
-    m_txc_revision_validator,
-    m_observation_repo,
-    m_file_attributes_repo,
-    txc_file_attributes,
-    m_db_clients,
+    m_get_xml_file_pti_validator: MagicMock,
+    m_txc_revision_validator: MagicMock,
+    m_observation_repo: MagicMock,
+    m_file_attributes_repo: MagicMock,
+    txc_file_attributes: TXCFileAttributes,
+    m_db_clients: DbClients,
 ):
     revision = OrganisationDatasetRevisionFactory.create_with_id(id_number=123)
     xml_file = MagicMock()
@@ -125,12 +125,12 @@ def test_validate(
 @patch("pti.app.service.TXCRevisionValidator")
 @patch("pti.app.service.get_xml_file_pti_validator")
 def test_validate_unchanged_file(
-    m_get_xml_file_pti_validator,
-    m_txc_revision_validator,
-    m_sha1_sum,
-    m_observation_repo,
-    txc_file_attributes,
-    m_db_clients,
+    m_get_xml_file_pti_validator: MagicMock,
+    m_txc_revision_validator: MagicMock,
+    m_sha1_sum: MagicMock,
+    m_observation_repo: MagicMock,
+    txc_file_attributes: TXCFileAttributes,
+    m_db_clients: DbClients,
 ):
     """
     Validation should be skipped for unchanged files
