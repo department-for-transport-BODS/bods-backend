@@ -4,9 +4,10 @@ Validators related to holidays
 
 from common_layer.database.client import SqlDB
 from common_layer.dynamodb.client import DynamoDBCache
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
-from ..utils.utils_scotland import is_service_in_scotland
+from ..utils import get_namespaces, is_service_in_scotland
 
 log = get_logger()
 
@@ -45,7 +46,7 @@ BANK_HOLIDAYS = BANK_HOLIDAYS_COMMON + BANK_HOLIDAYS_ONLY_ENGLISH
 SCOTTISH_BANK_HOLIDAYS = BANK_HOLIDAYS_COMMON + BANK_HOLIDAYS_ONLY_SCOTTISH
 
 
-def get_service_ref_from_element(element, ns):
+def get_service_ref_from_element(element: _Element, ns: dict[str, str]):
     """
     Find and return the ServiceRef of the given element
     """
@@ -66,22 +67,19 @@ def get_validate_bank_holidays(dynamo: DynamoDBCache, db: SqlDB):
     Setup and return validator function for bank holidays
     """
 
-    def validate_bank_holidays(_context, bank_holidays):
+    def validate_bank_holidays(_, bank_holidays: list[_Element]) -> bool:
         """
         Validate bank holidays
         """
         bank_holiday = bank_holidays[0]
-        ns = {"x": bank_holiday.nsmap.get(None)}
-        children = bank_holiday.getchildren()
+        ns = get_namespaces(bank_holiday)
         local_name = "local-name()"
 
-        holidays = []
-        element = None
-        for element in children:
+        holidays: list[str] = []
+        element: _Element | None = None
+        for element in bank_holiday:
             if element.xpath(local_name, namespaces=ns) in OPERATION_DAYS:
-                days = [
-                    el.xpath(local_name, namespaces=ns) for el in element.getchildren()
-                ]
+                days = [el.xpath(local_name, namespaces=ns) for el in element]
                 holidays += days
 
         # .getchildren() will return comments: this filters out the comments.
