@@ -4,7 +4,7 @@ Validations related to Lines
 
 import itertools
 from collections import defaultdict
-from typing import Any
+from typing import Any, Callable
 
 from attr import dataclass
 from common_layer.dynamodb.client import NaptanStopPointDynamoDBClient
@@ -170,7 +170,7 @@ def get_stop_info_map(
 
 def get_lines_validator(
     naptan_client: NaptanStopPointDynamoDBClient, txc_data: TXCData
-):
+) -> Callable[..., bool]:
     """
     Creates and returns a validator function for NAPTAN lines XML elements.
     """

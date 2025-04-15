@@ -14,10 +14,7 @@ from common_layer.database.repos import (
 )
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
-from common_layer.dynamodb.client.cache import DynamoDBCache
-from common_layer.dynamodb.client.naptan_stop_points import (
-    NaptanStopPointDynamoDBClient,
-)
+from common_layer.dynamodb.client import DynamoDBCache, NaptanStopPointDynamoDBClient
 from common_layer.dynamodb.data_manager import FileProcessingDataManager
 from common_layer.dynamodb.models import TXCFileAttributes
 from common_layer.s3 import S3

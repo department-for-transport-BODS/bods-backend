@@ -22,7 +22,7 @@ class StopPointValidator(BaseValidator):
     """
 
     @property
-    def stop_point_ref(self):
+    def stop_point_ref(self) -> str:
         """
         Get AtcoCode
         """
