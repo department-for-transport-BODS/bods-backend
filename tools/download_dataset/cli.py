@@ -4,12 +4,12 @@ Runs the File Attributes ETL Process against specified database
 
 import typer
 from common_layer.json_logging import configure_logging
+from structlog.stdlib import get_logger
+
 from src.timetables_etl.download_dataset.app.download_dataset import (
     download_and_upload_dataset,
 )
 from src.timetables_etl.download_dataset.app.models import DownloadDatasetInputData
-from structlog.stdlib import get_logger
-
 from tools.common.db_tools import create_db_config, setup_db_instance
 
 app = typer.Typer()
@@ -86,12 +86,10 @@ def main(
         raise typer.Exit(1) from e
     db = setup_db_instance(db_config)
     event_data = DownloadDatasetInputData(
-        **{
-            "DatasetEtlTaskResultId": etl_task_result_id,
-            "Bucket": bucket,
-            "Url": url_link,
-            "DatasetRevisionId": revision_id,
-        }
+        DatasetEtlTaskResultId=etl_task_result_id,
+        Bucket=bucket,
+        Url=url_link,  # type: ignore
+        DatasetRevisionId=revision_id,
     )
     download_and_upload_dataset(db, event_data)
 

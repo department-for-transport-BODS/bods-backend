@@ -5,7 +5,6 @@ Runs PTI Validation against specified database
 import boto3
 import typer
 from common_layer.database.client import ProjectEnvironment
-from common_layer.dynamodb.client import DynamoDB
 from common_layer.dynamodb.client.cache import DynamoDBCache, DynamoDbCacheSettings
 from common_layer.json_logging import configure_logging
 from structlog.stdlib import get_logger
