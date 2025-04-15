@@ -2,8 +2,10 @@
 DestinationDisplay PTI Validator
 """
 
-from lxml.etree import _Element
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
+
+from ..utils import get_namespaces
 
 log = get_logger()
 
@@ -13,9 +15,9 @@ class DestinationDisplayValidator:
     Validate DestinationDisplay
     """
 
-    def __init__(self, journey_pattern):
+    def __init__(self, journey_pattern: _Element):
 
-        self.namespaces = {"x": journey_pattern.nsmap.get(None)}
+        self.namespaces = get_namespaces(journey_pattern)
         self.journey_pattern: _Element = journey_pattern
         self.journey_pattern_ref = self.journey_pattern.get("id")
 
@@ -106,7 +108,7 @@ class DestinationDisplayValidator:
         return False
 
 
-def has_destination_display(_context, patterns) -> bool:
+def has_destination_display(_, patterns: list[_Element]) -> bool:
     """
     First check if DestinationDisplay in JourneyPattern is provided.
 

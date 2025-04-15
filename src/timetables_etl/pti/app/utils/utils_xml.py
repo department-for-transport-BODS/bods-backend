@@ -6,7 +6,7 @@ import re
 from typing import Sequence
 
 from dateutil import parser
-from lxml.etree import _Element
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 log = get_logger()
@@ -15,11 +15,11 @@ ElementsOrStr = _Element | Sequence[_Element] | list[str] | str
 PROHIBITED_CHARS = r",[]{}^=@:;#$£?%+<>«»\/|~_¬"
 
 
-def extract_text(elements: ElementsOrStr, default=None) -> str | None:
+def extract_text(elements: ElementsOrStr, default: str | None = None) -> str | None:
     """
     Extract Text from a LXML Elements
     """
-    text = ""
+    text: str | None = ""
     if isinstance(elements, list) and len(elements) > 0:
         item = elements[0]
         if isinstance(item, str):
@@ -35,7 +35,7 @@ def extract_text(elements: ElementsOrStr, default=None) -> str | None:
     return text
 
 
-def cast_to_date(_context, date) -> float:
+def cast_to_date(_, date: ElementsOrStr) -> float:
     """
     Casts a lxml date element to an int.
     """
@@ -43,7 +43,7 @@ def cast_to_date(_context, date) -> float:
     return parser.parse(text).timestamp()
 
 
-def cast_to_bool(_context, elements: ElementsOrStr) -> bool:
+def cast_to_bool(_, elements: ElementsOrStr) -> bool:
     """
     Casts either a list of str, list of Elements or a str to a boolean
     """
@@ -51,7 +51,7 @@ def cast_to_bool(_context, elements: ElementsOrStr) -> bool:
     return text == "true"
 
 
-def has_prohibited_chars(_context, element: ElementsOrStr) -> bool:
+def has_prohibited_chars(_, element: ElementsOrStr) -> bool:
     """
     Check if Element has disallowed XML characters
     """
@@ -62,7 +62,7 @@ def has_prohibited_chars(_context, element: ElementsOrStr) -> bool:
     return len([c for c in chars if c in PROHIBITED_CHARS]) > 0
 
 
-def regex(_context, element: ElementsOrStr, pattern) -> bool:
+def regex(_, element: ElementsOrStr, pattern: str) -> bool:
     """
     Checks if element's text content matches the provided regular expression pattern
     """
@@ -70,7 +70,7 @@ def regex(_context, element: ElementsOrStr, pattern) -> bool:
     return re.match(pattern, chars) is not None
 
 
-def is_member_of(_context, element: ElementsOrStr, *args) -> bool:
+def is_member_of(_, element: ElementsOrStr, *args: tuple[str, ...] | None) -> bool:
     """
     Checks if the text content of an element is a member of the provided arguments
     """
@@ -78,7 +78,7 @@ def is_member_of(_context, element: ElementsOrStr, *args) -> bool:
     return text in args
 
 
-def strip(_context, text: str) -> str:
+def strip(_, text: str) -> str:
     """
     Removes leading and trailing whitespace from element's text content
     """
@@ -86,7 +86,7 @@ def strip(_context, text: str) -> str:
     return text.strip()
 
 
-def contains_date(_context, text: ElementsOrStr) -> bool:
+def contains_date(_, text: ElementsOrStr) -> bool:
     """
     Determines if the input text contains any date-like strings.
     """
@@ -103,7 +103,7 @@ def contains_date(_context, text: ElementsOrStr) -> bool:
     return False
 
 
-def has_name(_context, elements: _Element | Sequence[_Element], *names: str) -> bool:
+def has_name(_, elements: _Element | Sequence[_Element], *names: str) -> bool:
     """
     Checks if elements are in the list of names.
     """
