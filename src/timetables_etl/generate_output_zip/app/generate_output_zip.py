@@ -177,7 +177,6 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, 
     input_data = GenerateOutputZipInputData(**event)
     db = SqlDB()
     ETLTaskResultRepo(db).update_progress(input_data.dataset_etl_task_result_id, 90)
-    # TODO: exception handling; should we continue if stats fail?
     update_revision_metadata(input_data.dataset_revision_id, db)
     result = process_map_results(input_data, db)
     ETLTaskResultRepo(db).update_progress(input_data.dataset_etl_task_result_id, 100)

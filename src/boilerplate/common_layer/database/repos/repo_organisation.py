@@ -217,8 +217,6 @@ class OrganisationDatasetRevisionRepo(
                 revision_stats.first_service_start
             )
 
-            return None
-
         self._execute_update(update_record, statement)
 
 

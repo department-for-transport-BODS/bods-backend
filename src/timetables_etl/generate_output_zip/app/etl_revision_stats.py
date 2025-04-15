@@ -1,3 +1,7 @@
+"""
+Module for functions related to revision stats
+"""
+
 from common_layer.database import SqlDB
 from common_layer.database.dataclasses import RevisionStats
 from common_layer.database.repos import (
@@ -19,8 +23,6 @@ def build_revision_stats(revision_id: int, db: SqlDB) -> RevisionStats:
         revision_id
     )
     service_stats = service_repo.get_service_stats_by_revision_id(revision_id)
-
-    # TODO: handle other fields like line_count
 
     return RevisionStats(
         publisher_creation_datetime=txc_file_stats.first_creation_datetime,
