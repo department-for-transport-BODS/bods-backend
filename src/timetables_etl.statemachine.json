@@ -289,7 +289,7 @@
         "States": {
           "Process Validation Map Input": {
             "Type": "Pass",
-            "Next": "File Validation",
+            "Next": "Check if Validations need to be Skipped",
             "Assign": {
               "Bucket": "{% $states.input.mapS3Bucket %}",
               "ObjectKey": "{% $states.input.mapS3Object %}",
@@ -297,6 +297,20 @@
               "datasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}",
               "DatasetType": "{% $states.input.mapDatasetType %}"
             }
+          },
+          "Check if Validations need to be Skipped": {
+            "Type": "Choice",
+            "Default": "File Validation",
+            "Choices": [
+              {
+                "Condition": "{% $performETLOnly = false %}",
+                "Next": "File Validation"
+              },
+              {
+                "Condition": "{% $performETLOnly = true %}",
+                "Next": "FileAttributes ETL"
+              }
+            ]
           },
           "File Validation": {
             "Type": "Task",
@@ -483,7 +497,7 @@
         "States": {
           "Process ETL Map Input": {
             "Type": "Pass",
-            "Next": "PTI Validation",
+            "Next": "Check if PTI needs to be Skipped",
             "Assign": {
               "Bucket": "{% $states.input.mapS3Bucket %}",
               "ObjectKey": "{% $states.input.mapS3Object %}",
@@ -493,6 +507,20 @@
               "FileAttributesEtl": "{% $states.input.mapDatasetFileAttributesEtl %}",
               "DatasetType": "{% $states.input.mapDatasetType %}"
             }
+          },
+          "Check if PTI needs to be Skipped": {
+            "Type": "Choice",
+            "Default": "PTI Validation",
+            "Choices": [
+              {
+                "Condition": "{% $performETLOnly = false %}",
+                "Next": "PTI Validation"
+              },
+              {
+                "Condition": "{% $performETLOnly = true %}",
+                "Next": "Timetables ETL"
+              }
+            ]
           },
           "PTI Validation": {
             "Type": "Task",
@@ -615,10 +643,24 @@
       "Choices": [
         {
           "Condition": "{% $finalResult.body.successful_files > 0 %}",
-          "Next": "Trigger DQS State Machine"
+          "Next": "Check if DQS needs to be Skipped"
         }
       ],
       "Default": "Release Lock"
+    },
+    "Check if DQS needs to be Skipped": {
+      "Type": "Choice",
+      "Default": "Trigger DQS State Machine",
+      "Choices": [
+        {
+          "Condition": "{% $performETLOnly = false %}",
+          "Next": "Trigger DQS State Machine"
+        },
+        {
+          "Condition": "{% $performETLOnly = true %}",
+          "Next": "Release Lock"
+        }
+      ]
     },
     "Trigger DQS State Machine": {
       "Type": "Task",
