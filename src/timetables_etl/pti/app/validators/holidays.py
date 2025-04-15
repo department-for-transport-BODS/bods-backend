@@ -46,10 +46,14 @@ BANK_HOLIDAYS = BANK_HOLIDAYS_COMMON + BANK_HOLIDAYS_ONLY_ENGLISH
 SCOTTISH_BANK_HOLIDAYS = BANK_HOLIDAYS_COMMON + BANK_HOLIDAYS_ONLY_SCOTTISH
 
 
-def get_service_ref_from_element(element: _Element, ns: dict[str, str]):
+def get_service_ref_from_element(
+    element: _Element | None, ns: dict[str, str]
+) -> _Element | None:
     """
     Find and return the ServiceRef of the given element
     """
+    if element is None:
+        return None
     vj = element.xpath("ancestor::x:VehicleJourney", namespaces=ns)
     service_ref = None
     if vj:
@@ -67,7 +71,9 @@ def get_validate_bank_holidays(dynamo: DynamoDBCache, db: SqlDB):
     Setup and return validator function for bank holidays
     """
 
-    def validate_bank_holidays(_, bank_holidays: list[_Element]) -> bool:
+    def validate_bank_holidays(
+        _context: _Element | None, bank_holidays: list[_Element]
+    ) -> bool:
         """
         Validate bank holidays
         """

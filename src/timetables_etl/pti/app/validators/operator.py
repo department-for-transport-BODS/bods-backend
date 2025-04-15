@@ -2,13 +2,15 @@
 Validations for Operator Section
 """
 
-from lxml import etree
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 log = get_logger()
 
 
-def validate_licence_number(_context, elements: list[etree._Element]) -> bool:
+def validate_licence_number(
+    _context: _Element | None, elements: list[_Element]
+) -> bool:
     """
     Validate the license number within a list of XML elements if Primary Mode is not coach.
 
