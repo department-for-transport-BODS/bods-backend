@@ -49,9 +49,7 @@ BANK_HOLIDAYS = BANK_HOLIDAYS_COMMON + BANK_HOLIDAYS_ONLY_ENGLISH
 SCOTTISH_BANK_HOLIDAYS = BANK_HOLIDAYS_COMMON + BANK_HOLIDAYS_ONLY_SCOTTISH
 
 
-def get_service_ref_from_element(
-    element: _Element | None, ns: dict[str, str]
-) -> _Element | None:
+def get_service_ref_from_element(element: _Element | None) -> _Element | None:
     """
     Find and return the ServiceRef of the given element
     """
@@ -110,7 +108,7 @@ def get_validate_bank_holidays(dynamo: DynamoDBCache, db: SqlDB) -> Callable[...
             )
             return False
 
-        service_ref = get_service_ref_from_element(element, NAMESPACE)
+        service_ref = get_service_ref_from_element(element)
         if service_ref and is_service_in_scotland(service_ref, dynamo, db):
             english_removed = list(set(holidays) - set(BANK_HOLIDAYS_ONLY_ENGLISH))
             if sorted(SCOTTISH_BANK_HOLIDAYS) != sorted(english_removed):

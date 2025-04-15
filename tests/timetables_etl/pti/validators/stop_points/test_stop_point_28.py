@@ -5,13 +5,12 @@ Mandatory elements incorrect in 'StopPoint' field.
 
 import pytest
 from lxml import etree
+from pti.app.constants import NAMESPACE
 from pti.app.validators.stop_point import validate_non_naptan_stop_points
 
 from tests.timetables_etl.pti.validators.conftest import run_validation
 
 from .conftest import DATA_DIR
-
-NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
 
 OBSERVATION_ID = 28
 

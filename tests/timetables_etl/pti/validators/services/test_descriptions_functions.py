@@ -3,6 +3,7 @@ Test Descriptions Service Functions
 """
 
 from lxml import etree
+from pti.app.constants import NAMESPACE
 from pti.app.validators.service.descriptions import (
     check_description_for_inbound_description,
     check_description_for_outbound_description,
@@ -40,11 +41,10 @@ def test_check_no_inbound_outbound_description():
     </Services>
     </TransXChange>
     """
-    NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
     doc = etree.fromstring(services)
     elements = doc.xpath("//x:Services", namespaces=NAMESPACE)
-    actual = check_inbound_outbound_description("", elements)
-    assert actual == False
+    actual = check_inbound_outbound_description(None, elements)
+    assert actual is False
 
 
 def test_check_inbound_outbound_description():
@@ -83,11 +83,10 @@ def test_check_inbound_outbound_description():
     </Services>
     </TransXChange>
     """
-    NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
     doc = etree.fromstring(services)
     elements = doc.xpath("//x:Services", namespaces=NAMESPACE)
-    actual = check_inbound_outbound_description("", elements)
-    assert actual == True
+    actual = check_inbound_outbound_description(None, elements)
+    assert actual is True
 
 
 def test_check_description_for_inbound_description():
@@ -129,11 +128,10 @@ def test_check_description_for_inbound_description():
     </Services>
     </TransXChange>
     """
-    NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
     doc = etree.fromstring(services)
     elements = doc.xpath("//x:Services", namespaces=NAMESPACE)
-    actual = check_description_for_inbound_description("", elements)
-    assert actual == True
+    actual = check_description_for_inbound_description(None, elements)
+    assert actual is True
 
 
 def test_check_only_inbound_description():
@@ -169,11 +167,10 @@ def test_check_only_inbound_description():
     </Services>
     </TransXChange>
     """
-    NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
     doc = etree.fromstring(services)
     elements = doc.xpath("//x:Services", namespaces=NAMESPACE)
-    actual = check_inbound_outbound_description("", elements)
-    assert actual == True
+    actual = check_inbound_outbound_description(None, elements)
+    assert actual is True
 
 
 def test_check_only_outbound_description():
@@ -209,7 +206,6 @@ def test_check_only_outbound_description():
     </Services>
     </TransXChange>
     """
-    NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
     doc = etree.fromstring(services)
     elements = doc.xpath("//x:Services", namespaces=NAMESPACE)
     actual = check_inbound_outbound_description("", elements)
@@ -254,11 +250,10 @@ def test_check_description_for_inbound_description_failed():
     </Services>
     </TransXChange>
     """
-    NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
     doc = etree.fromstring(services)
     elements = doc.xpath("//x:Services", namespaces=NAMESPACE)
-    actual = check_description_for_inbound_description("", elements)
-    assert actual == False
+    actual = check_description_for_inbound_description(None, elements)
+    assert actual is False
 
 
 def test_check_description_for_outbound_description():
@@ -300,7 +295,6 @@ def test_check_description_for_outbound_description():
     </Services>
     </TransXChange>
     """
-    NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
     doc = etree.fromstring(services)
     elements = doc.xpath("//x:Services", namespaces=NAMESPACE)
     actual = check_description_for_outbound_description("", elements)
@@ -345,8 +339,7 @@ def test_check_description_for_outbound_description_failed():
     </Services>
     </TransXChange>
     """
-    NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
     doc = etree.fromstring(services)
     elements = doc.xpath("//x:Services", namespaces=NAMESPACE)
-    actual = check_description_for_outbound_description("", elements)
-    assert actual == False
+    actual = check_description_for_outbound_description(None, elements)
+    assert actual is False

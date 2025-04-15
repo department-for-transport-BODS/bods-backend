@@ -6,12 +6,13 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from lxml import etree
+from pti.app.constants import NAMESPACE
 from pti.app.models.models_pti import VehicleJourney
 from pti.app.validators.base import BaseValidator
 
 
 @pytest.fixture(name="m_root")
-def mocked_root():
+def mocked_root() -> MagicMock:
     """
     Mock an XML root element with namespaces and xpath methods.
     """
@@ -21,7 +22,7 @@ def mocked_root():
     return root
 
 
-def test_lines_property(m_root):
+def test_lines_property(m_root: MagicMock) -> None:
     validator = BaseValidator(m_root)
     mock_line = MagicMock()
     m_root.xpath.return_value = [mock_line]
@@ -32,10 +33,10 @@ def test_lines_property(m_root):
 
     assert len(lines) == 1
     assert lines[0] is mock_line_obj
-    m_root.xpath.assert_called_once_with("//x:Line", namespaces=validator.namespaces)
+    m_root.xpath.assert_called_once_with("//x:Line", namespaces=NAMESPACE)
 
 
-def test_vehicle_journeys_property(m_root):
+def test_vehicle_journeys_property(m_root: MagicMock) -> None:
     validator = BaseValidator(m_root)
 
     # Mock the XML elements returned by root.xpath
@@ -60,11 +61,11 @@ def test_vehicle_journeys_property(m_root):
         vehicle_journey
     ], "property returns the correct parsed objects"
     m_root.xpath.assert_called_once_with(
-        "//x:VehicleJourneys/x:VehicleJourney", namespaces=validator.namespaces
+        "//x:VehicleJourneys/x:VehicleJourney", namespaces=NAMESPACE
     )
 
 
-def test_journey_patterns_property():
+def test_journey_patterns_property() -> None:
     xml_content = """
     <Root xmlns="http://www.example.com">
         <JourneyPatterns>
@@ -88,7 +89,7 @@ def test_journey_patterns_property():
     ), "Second journey pattern ID mismatch"
 
 
-def test_get_journey_pattern_ref_by_vehicle_journey_code(m_root):
+def test_get_journey_pattern_ref_by_vehicle_journey_code(m_root: MagicMock):
     validator = BaseValidator(m_root)
     code = "Code1"
     expected_pattern = "Pattern1"
@@ -112,7 +113,7 @@ def test_get_journey_pattern_ref_by_vehicle_journey_code(m_root):
     assert pattern_ref == expected_pattern
 
 
-def test_get_journey_pattern_refs_by_line_ref(m_root):
+def test_get_journey_pattern_refs_by_line_ref(m_root: MagicMock):
     validator = BaseValidator(m_root)
     m_root.xpath.return_value = [MagicMock(), MagicMock(), MagicMock()]
 
@@ -138,7 +139,7 @@ def test_get_journey_pattern_refs_by_line_ref(m_root):
     assert set(pattern_refs) == set(expected_pattern_refs)
 
 
-def test_get_service_by_vehicle_journey(m_root):
+def test_get_service_by_vehicle_journey(m_root: MagicMock):
     validator = BaseValidator(m_root)
 
     # Mock services returned by XPath
@@ -158,7 +159,7 @@ def test_get_service_by_vehicle_journey(m_root):
     assert service == expected_service
 
 
-def test_get_stop_point_ref_from_journey_pattern_ref(m_root):
+def test_get_stop_point_ref_from_journey_pattern_ref(m_root: MagicMock):
     validator = BaseValidator(m_root)
 
     section_refs = ["Section1", "Section2"]
@@ -184,17 +185,17 @@ def test_get_stop_point_ref_from_journey_pattern_ref(m_root):
     assert set(stop_refs) == set(expected_stop_refs)
     m_root.xpath.assert_any_call(
         "//x:StandardService/x:JourneyPattern[@id='Pattern1']/x:JourneyPatternSectionRefs/text()",
-        namespaces=validator.namespaces,
+        namespaces=NAMESPACE,
     )
     m_root.xpath.assert_any_call(
         "//x:JourneyPatternSections/x:JourneyPatternSection[@id='Section1']"
         "/x:JourneyPatternTimingLink/*[local-name() = 'From' or local-name() = 'To']/x:StopPointRef/text()",
-        namespaces=validator.namespaces,
+        namespaces=NAMESPACE,
     )
     m_root.xpath.assert_any_call(
         "//x:JourneyPatternSections/x:JourneyPatternSection[@id='Section2']"
         "/x:JourneyPatternTimingLink/*[local-name() = 'From' or local-name() = 'To']/x:StopPointRef/text()",
-        namespaces=validator.namespaces,
+        namespaces=NAMESPACE,
     )
 
 
@@ -204,7 +205,7 @@ def test_get_stop_point_ref_from_journey_pattern_ref(m_root):
         pytest.param(
             "RouteLink1",
             """
-            <JourneyPatternSections xmlns="http://www.example.com">
+            <JourneyPatternSections xmlns="http://www.transxchange.org.uk/">
                 <JourneyPatternSection id="Section1">
                     <JourneyPatternTimingLink>
                         <RouteLinkRef>RouteLink1</RouteLinkRef>
@@ -218,7 +219,7 @@ def test_get_stop_point_ref_from_journey_pattern_ref(m_root):
         pytest.param(
             "RouteLink2",
             """
-            <JourneyPatternSections xmlns="http://www.example.com">
+            <JourneyPatternSections xmlns="http://www.transxchange.org.uk/">
                 <JourneyPatternSection id="Section2">
                     <JourneyPatternTimingLink>
                         <RouteLinkRef>RouteLink2</RouteLinkRef>
@@ -237,7 +238,7 @@ def test_get_stop_point_ref_from_journey_pattern_ref(m_root):
         pytest.param(
             "RouteLink3",
             """
-            <JourneyPatternSections xmlns="http://www.example.com">
+            <JourneyPatternSections xmlns="http://www.transxchange.org.uk/">
                 <JourneyPatternSection id="Section4">
                     <JourneyPatternTimingLink>
                         <RouteLinkRef>RouteLink1</RouteLinkRef>
@@ -251,8 +252,8 @@ def test_get_stop_point_ref_from_journey_pattern_ref(m_root):
     ],
 )
 def test_get_journey_pattern_section_refs_by_route_link_ref(
-    ref, xml_content, expected_section_refs
-):
+    ref: str, xml_content: str, expected_section_refs: list[str]
+) -> None:
     """
     Test the `get_journey_pattern_section_refs_by_route_link_ref` method with various cases.
     """
