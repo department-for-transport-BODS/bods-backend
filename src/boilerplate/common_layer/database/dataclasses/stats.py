@@ -1,3 +1,7 @@
+"""
+Dataclasses for reporting stats
+"""
+
 from dataclasses import dataclass
 from datetime import date, datetime
 
