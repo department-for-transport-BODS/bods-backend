@@ -303,7 +303,7 @@
             "Default": "File Validation",
             "Choices": [
               {
-                "Condition": "{% $performETLOnly = true %}",
+                "Condition": "{% $performETLOnly = false %}",
                 "Next": "File Validation"
               },
               {
@@ -513,12 +513,12 @@
             "Default": "PTI Validation",
             "Choices": [
               {
-                "Condition": "{% $performETLOnly = true %}",
-                "Next": "Timetables ETL"
+                "Condition": "{% $performETLOnly = false %}",
+                "Next": "PTI Validation"
               },
               {
                 "Condition": "{% $performETLOnly = true %}",
-                "Next": "PTI Validation"
+                "Next": "Timetables ETL"
               }
             ]
           },
