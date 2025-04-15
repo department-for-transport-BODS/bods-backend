@@ -271,7 +271,8 @@
         "mapS3Object": "{% $states.context.Map.Item.Value.Key %}",
         "mapDatasetRevisionId": "{% $datasetRevisionId %}",
         "mapDatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}",
-        "mapDatasetType": "{% $datasetType %}"
+        "mapDatasetType": "{% $datasetType %}",
+        "mapPerformETLOnly": "{% $performETLOnly %}"
       },
       "ItemReader": {
         "Resource": "arn:aws:states:::s3:listObjectsV2",
@@ -295,7 +296,8 @@
               "ObjectKey": "{% $states.input.mapS3Object %}",
               "DatasetRevisionId": "{% $states.input.mapDatasetRevisionId %}",
               "datasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}",
-              "DatasetType": "{% $states.input.mapDatasetType %}"
+              "DatasetType": "{% $states.input.mapDatasetType %}",
+              "mapPerformETLOnly": "{% $states.input.mapPerformETLOnly %}"
             }
           },
           "Check if Validations need to be Skipped": {
@@ -303,11 +305,11 @@
             "Default": "File Validation",
             "Choices": [
               {
-                "Condition": "{% $performETLOnly = false %}",
+                "Condition": "{% $mapPerformETLOnly = false %}",
                 "Next": "File Validation"
               },
               {
-                "Condition": "{% $performETLOnly = true %}",
+                "Condition": "{% $mapPerformETLOnly = true %}",
                 "Next": "FileAttributes ETL"
               }
             ]
@@ -476,7 +478,8 @@
         "mapDatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}",
         "mapDatasetFileAttributesEtl": "{% $states.context.Map.Item.Value.TxcFileAttributesId %}",
         "mapDatasetRevisionId": "{% $datasetRevisionId %}",
-        "mapDatasetType": "{% $datasetType %}"
+        "mapDatasetType": "{% $datasetType %}",
+        "mapPerformETLOnly": "{% $performETLOnly %}"
       },
       "ItemReader": {
         "Resource": "arn:aws:states:::s3:getObject",
@@ -505,7 +508,8 @@
               "datasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}",
               "DatasetRevisionId": "{% $states.input.mapDatasetRevisionId %}",
               "FileAttributesEtl": "{% $states.input.mapDatasetFileAttributesEtl %}",
-              "DatasetType": "{% $states.input.mapDatasetType %}"
+              "DatasetType": "{% $states.input.mapDatasetType %}",
+              "mapPerformETLOnly": "{% $states.input.mapPerformETLOnly %}"
             }
           },
           "Check if PTI needs to be Skipped": {
@@ -513,11 +517,11 @@
             "Default": "PTI Validation",
             "Choices": [
               {
-                "Condition": "{% $performETLOnly = false %}",
+                "Condition": "{% $mapPerformETLOnly = false %}",
                 "Next": "PTI Validation"
               },
               {
-                "Condition": "{% $performETLOnly = true %}",
+                "Condition": "{% $mapPerformETLOnly = true %}",
                 "Next": "Timetables ETL"
               }
             ]
