@@ -45,7 +45,7 @@ class BaseValidator:
         return self._vehicle_journeys
 
     @property
-    def services(self):
+    def services(self) -> list[_Element]:
         """
         Gets and caches all Service elements
         """
@@ -56,7 +56,7 @@ class BaseValidator:
         return self._services
 
     @property
-    def journey_patterns(self):
+    def journey_patterns(self) -> list[_Element]:
         """
         Gets and caches all JourneyPattern elements
         """
