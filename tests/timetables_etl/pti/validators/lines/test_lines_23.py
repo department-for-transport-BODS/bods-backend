@@ -2,7 +2,7 @@
 Lines PTI Tests
 """
 
-from unittest.mock import create_autospec, patch
+from unittest.mock import create_autospec
 
 import pytest
 from common_layer.dynamodb.client.naptan_stop_points import (
@@ -50,13 +50,13 @@ def test_validate_less_than_two_lines():
         pytest.param("relatedlinesbystops.xml", True, id="Related Lines By Stops"),
     ],
 )
-def test_related_lines(filename: str, expected: bool):
+def test_related_lines(filename: str, expected: bool) -> None:
     """Test validation of related lines in TXC files"""
     is_valid = run_validation(filename, DATA_DIR, OBSERVATION_ID)
     assert is_valid == expected
 
 
-def test_non_related_with_stop_areas():
+def test_non_related_with_stop_areas() -> None:
     """
     Test validation of non-related lines with matching stop areas
     The following atco codes come from nonrelatedlines.xml one stop in each line
