@@ -126,7 +126,7 @@ def test_revision_number_violation(
     draft_number: int,
     modification_datetime_changed: bool,
     expected_violations: int,
-):
+) -> None:
     """
     Given a Dataset with live revision and a draft revision
 
@@ -239,7 +239,7 @@ def test_revision_number_service_and_line_violation(
     live_lines: list[str],
     draft_lines: list[str],
     expected_violations: int,
-):
+) -> None:
     """
     Given a Dataset with live revision and a draft revision
 
