@@ -6,7 +6,6 @@ from lxml.etree import _Element  # type: ignore
 
 from ..models.models_pti import Line, VehicleJourney
 from ..utils import get_namespaces
-from ..xml_elements import TransXChangeElement
 
 
 class BaseValidator:
@@ -116,16 +115,11 @@ class BaseValidator:
         """
         return [vj for vj in self.vehicle_journeys if vj.journey_pattern_ref == ref]
 
-    def get_service_by_vehicle_journey(
-        self, service_ref: str
-    ) -> TransXChangeElement | None:
+    def get_service_by_vehicle_journey(self, service_ref: str) -> _Element | None:
         """Find service for vehicle journey based on service ref
 
         Args:
             service_ref (str): Service ref from vehicle journey
-
-        Returns:
-            Optional[TransXChangeElement]: service element
         """
         for service in self.services:
             service_code = service.xpath(
@@ -175,7 +169,7 @@ class BaseValidator:
         journey_pattern_refs = self.root.xpath(xpath, namespaces=self.namespaces)
         return list(set(journey_pattern_refs))
 
-    def get_stop_point_ref_from_journey_pattern_ref(self, ref: str):
+    def get_stop_point_ref_from_journey_pattern_ref(self, ref: str) -> list[str]:
         """
         Retrieves all stop point references used in a specific journey pattern.
         Includes both origin and destination stops from all timing links in the pattern.

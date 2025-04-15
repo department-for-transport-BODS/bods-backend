@@ -7,10 +7,10 @@ from typing import cast
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
 from lxml.etree import _Element  # type: ignore
+from pti.app.utils import get_namespaces
 from structlog.stdlib import get_logger
 
 from ..utils.utils_xml import extract_text
-from ..xml_elements import TransXChangeElement
 from .base import BaseValidator, VehicleJourney
 
 log = get_logger()
@@ -84,16 +84,17 @@ class StopPointValidator(BaseValidator):
         less_than_2_months = end_date <= start_date + relativedelta(months=2)
         return less_than_2_months
 
-    def has_coach_as_service_mode(self, service: TransXChangeElement) -> bool:
+    def has_coach_as_service_mode(self, service: _Element) -> bool:
         """Check whether service mode is coach or not
 
-        Args:
-            service (TransXChangeElement): service element of vj
+
 
         Returns:
             bool: True if service mode matches
         """
-        mode_value = service.xpath("string(x:Mode)")
+
+        ns = get_namespaces(service)
+        mode_value = service.xpath("string(x:Mode)", namespaces=ns)
         if not mode_value:
             return False
 

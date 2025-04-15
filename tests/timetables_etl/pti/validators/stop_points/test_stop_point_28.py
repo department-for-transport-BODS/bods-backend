@@ -77,7 +77,7 @@ def test_non_naptan_stop_points(filename: str, expected: bool):
         ),
     ],
 )
-def test_check_stop_point_two_months(filename, expected):
+def test_check_stop_point_two_months(filename: str, expected: bool):
     """
     Test stop points with different modes and operating profiles
     Within two month duration
@@ -86,5 +86,5 @@ def test_check_stop_point_two_months(filename, expected):
     with string_xml.open("r") as txc_xml:
         doc = etree.parse(txc_xml)
         elements = doc.xpath("//x:StopPoint", namespaces=NAMESPACE)
-        actual = validate_non_naptan_stop_points("", elements)
+        actual = validate_non_naptan_stop_points(None, elements)
         assert actual == expected
