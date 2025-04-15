@@ -7,7 +7,7 @@ from textual.widgets import DataTable
 from ...utils_tables import TableConfig, create_data_table
 
 
-def journey_pattern_table() -> DataTable:
+def journey_pattern_table() -> DataTable[str]:
     """Journey Pattern Details Table"""
     config = TableConfig(
         name="Journey Pattern Details",
@@ -26,11 +26,11 @@ def journey_pattern_table() -> DataTable:
     return create_data_table(config)
 
 
-def journey_pattern_sections_table() -> DataTable:
+def journey_pattern_sections_table() -> DataTable[str]:
     """
     Journey Pattern Sections Table
     """
-    table = DataTable(
+    table: DataTable[str] = DataTable(
         show_header=True,
         show_row_labels=True,
         zebra_stripes=True,
@@ -46,7 +46,7 @@ def journey_pattern_sections_table() -> DataTable:
     return table
 
 
-def vehicle_journey_timing_links_table() -> DataTable:
+def vehicle_journey_timing_links_table() -> DataTable[str]:
     """Table of Vehicle Journey Timing Links for the selected Vehicle Journey"""
     config = TableConfig(
         name="Vehicle Journey Timing Links",
@@ -67,11 +67,11 @@ def vehicle_journey_timing_links_table() -> DataTable:
     return create_data_table(config)
 
 
-def route_table() -> DataTable:
+def route_table() -> DataTable[str]:
     """
     Route Details Table
     """
-    table = DataTable(
+    table: DataTable[str] = DataTable(
         show_header=True,
         show_row_labels=True,
         zebra_stripes=True,
@@ -90,7 +90,7 @@ def route_table() -> DataTable:
     return table
 
 
-def journey_pattern_timing_link_detail_table() -> DataTable:
+def journey_pattern_timing_link_detail_table() -> DataTable[str]:
     """Table showing details of the selected Journey Pattern Timing Link"""
     config = TableConfig(
         name="Journey Pattern Timing Link Details",

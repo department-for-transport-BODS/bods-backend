@@ -22,10 +22,10 @@ class RoutesTab(Container):
     selected_route: Reactive[TXCRoute | None] = reactive(None)
     selected_route_section: Reactive[TXCRouteSection | None] = reactive(None)
 
-    def __init__(self, data: TXCData, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, data: TXCData):
+        super().__init__()
         self.data = data
-        self.routes_table: DataTable = self.routes_list()
+        self.routes_table = self.routes_list()
         if self.data.Routes:
             self.selected_route = self.data.Routes[0]
             if self.selected_route.RouteSectionRef:
@@ -46,11 +46,11 @@ class RoutesTab(Container):
             ),
         )
 
-    def routes_list(self) -> DataTable:
+    def routes_list(self) -> DataTable[str | None]:
         """
         List of Routes
         """
-        table = DataTable(
+        table: DataTable[str | None] = DataTable(
             show_header=True,
             show_row_labels=True,
             zebra_stripes=True,
@@ -139,15 +139,14 @@ class RoutesTab(Container):
         """
         Handle selecting rows in tables
         """
-        if event.data_table.id == "table-routes":
-            data = event.data_table.get_row(event.row_key)
+        if event.data_table.id == "table-routes":  # type: ignore
+            data = event.data_table.get_row(event.row_key)  # type: ignore
             self.selected_route = next(
                 (route for route in self.data.Routes if route.id == data[0]),
                 None,
             )
-            print(self.selected_route)
-        elif event.data_table.id == "table-route-sections":
-            data = event.data_table.get_row(event.row_key)
+        elif event.data_table.id == "table-route-sections":  # type: ignore
+            data = event.data_table.get_row(event.row_key)  # type: ignore
             if self.selected_route is not None:
                 self.selected_route_section = next(
                     (
