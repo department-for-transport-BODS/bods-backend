@@ -15,7 +15,7 @@ from ..utils import is_service_in_scotland
 log = get_logger()
 
 
-BANK_HOLIDAYS_COMMON = [
+BANK_HOLIDAYS_COMMON: list[str] = [
     "ChristmasEve",
     "ChristmasDay",
     "ChristmasDayHoliday",
@@ -29,24 +29,24 @@ BANK_HOLIDAYS_COMMON = [
     "MayDay",
 ]
 
-BANK_HOLIDAYS_ONLY_ENGLISH = [
+BANK_HOLIDAYS_ONLY_ENGLISH: list[str] = [
     "NewYearsEve",
     "LateSummerBankHolidayNotScotland",
 ]
-BANK_HOLIDAYS_ONLY_SCOTTISH = [
+BANK_HOLIDAYS_ONLY_SCOTTISH: list[str] = [
     "StAndrewsDayHoliday",
     "Jan2ndScotland",
     "Jan2ndScotlandHoliday",
 ]
-OLD_HOLIDAYS_ALREADY_REMOVED = [
+OLD_HOLIDAYS_ALREADY_REMOVED: list[str] = [
     "StAndrewsDay",
     "AugustBankHolidayScotland",
 ]
-OTHER_PUBLIC_HOLIDAYS = ["OtherPublicHoliday"]
-OPERATION_DAYS = ("DaysOfOperation", "DaysOfNonOperation")
+OTHER_PUBLIC_HOLIDAYS: list[str] = ["OtherPublicHoliday"]
+OPERATION_DAYS: tuple[str, ...] = ("DaysOfOperation", "DaysOfNonOperation")
 
-BANK_HOLIDAYS = BANK_HOLIDAYS_COMMON + BANK_HOLIDAYS_ONLY_ENGLISH
-SCOTTISH_BANK_HOLIDAYS = BANK_HOLIDAYS_COMMON + BANK_HOLIDAYS_ONLY_SCOTTISH
+BANK_HOLIDAYS: list[str] = BANK_HOLIDAYS_COMMON + BANK_HOLIDAYS_ONLY_ENGLISH
+SCOTTISH_BANK_HOLIDAYS: list[str] = BANK_HOLIDAYS_COMMON + BANK_HOLIDAYS_ONLY_SCOTTISH
 
 
 def get_service_ref_from_element(element: _Element | None) -> _Element | None:
