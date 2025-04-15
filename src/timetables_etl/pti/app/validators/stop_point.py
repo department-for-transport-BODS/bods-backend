@@ -2,13 +2,13 @@
 Validators related to stop points
 """
 
-from common_layer.timetables.transxchange import TransXChangeElement
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
-from lxml.etree import _Element
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 from ..utils.utils_xml import extract_text
+from ..xml_elements import TransXChangeElement
 from .base import BaseValidator
 
 log = get_logger()
@@ -27,7 +27,7 @@ class StopPointValidator(BaseValidator):
         xpath = "string(x:AtcoCode)"
         return self.root.xpath(xpath, namespaces=self.namespaces)
 
-    def get_operating_profile_by_vehicle_journey_code(self, ref):
+    def get_operating_profile_by_vehicle_journey_code(self, ref: str):
         """
         Get OperatingProfile elements by VehicleJourneyCode
         """
@@ -46,7 +46,7 @@ class StopPointValidator(BaseValidator):
         periods = self.root.xpath(xpath, namespaces=self.namespaces)
         return periods
 
-    def has_valid_operating_profile(self, ref):
+    def has_valid_operating_profile(self, ref: str) -> bool:
         """
         Check if operating profile is valid
         """
@@ -91,9 +91,7 @@ class StopPointValidator(BaseValidator):
         Returns:
             bool: True if service mode matches
         """
-        mode = service.xpath(
-            "string(x:Mode)", namespaces=self.namespaces  # pyright: ignore
-        )
+        mode: str = service.xpath("string(x:Mode)", namespaces=self.namespaces)
         if mode is not None and mode.lower() == "coach".lower():
             return True
         return False

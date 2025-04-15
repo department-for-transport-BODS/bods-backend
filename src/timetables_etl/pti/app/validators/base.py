@@ -2,9 +2,11 @@
 BaseValidator
 """
 
-from common_layer.timetables.transxchange import TransXChangeElement
+from lxml.etree import _Element  # type: ignore
 
 from ..models.models_pti import Line, VehicleJourney
+from ..utils import get_namespaces
+from ..xml_elements import TransXChangeElement
 
 
 class BaseValidator:
@@ -12,9 +14,9 @@ class BaseValidator:
     Parent class for LinesValidator and StopPointValidator
     """
 
-    def __init__(self, root):
+    def __init__(self, root: _Element):
         self.root = root
-        self.namespaces = {"x": self.root.nsmap.get(None)}
+        self.namespaces = get_namespaces(self.root)
 
         self._vehicle_journeys: list[VehicleJourney] | None = None
         self._lines: list[Line] | None = None
@@ -87,12 +89,12 @@ class BaseValidator:
             )
         return ""
 
-    def get_journey_pattern_refs_by_line_ref(self, ref: str):
+    def get_journey_pattern_refs_by_line_ref(self, ref: str) -> list[str]:
         """
         Returns all the JourneyPatternRefs that appear in the VehicleJourneys have
         LineRef equal to ref.
         """
-        jp_refs = set()
+        jp_refs: set[str] = set()
         vehicle_journeys = self.get_vehicle_journey_by_line_ref(ref)
         for journey in vehicle_journeys:
             jp_ref = self.get_journey_pattern_ref_by_vehicle_journey_code(journey.code)
@@ -133,7 +135,7 @@ class BaseValidator:
                 return service
         return None
 
-    def get_vehicle_journey_by_code(self, code) -> list[VehicleJourney]:
+    def get_vehicle_journey_by_code(self, code: str) -> list[VehicleJourney]:
         """
         Get all VehicleJourneys with matching VehicleJourneyCode
         """
