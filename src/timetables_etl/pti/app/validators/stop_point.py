@@ -2,6 +2,8 @@
 Validators related to stop points
 """
 
+from typing import cast
+
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
 from lxml.etree import _Element  # type: ignore
@@ -9,7 +11,7 @@ from structlog.stdlib import get_logger
 
 from ..utils.utils_xml import extract_text
 from ..xml_elements import TransXChangeElement
-from .base import BaseValidator
+from .base import BaseValidator, VehicleJourney
 
 log = get_logger()
 
@@ -27,7 +29,7 @@ class StopPointValidator(BaseValidator):
         xpath = "string(x:AtcoCode)"
         return self.root.xpath(xpath, namespaces=self.namespaces)
 
-    def get_operating_profile_by_vehicle_journey_code(self, ref: str):
+    def get_operating_profile_by_vehicle_journey_code(self, ref: str) -> _Element:
         """
         Get OperatingProfile elements by VehicleJourneyCode
         """
@@ -38,7 +40,7 @@ class StopPointValidator(BaseValidator):
         profiles = self.root.xpath(xpath, namespaces=self.namespaces)
         return profiles
 
-    def get_service_operating_period(self):
+    def get_service_operating_period(self) -> _Element:
         """
         Get Service OperatingPeriod elements
         """
@@ -91,12 +93,16 @@ class StopPointValidator(BaseValidator):
         Returns:
             bool: True if service mode matches
         """
-        mode: str = service.xpath("string(x:Mode)", namespaces=self.namespaces)
-        if mode is not None and mode.lower() == "coach".lower():
+        mode_value = service.xpath("string(x:Mode)")
+        if not mode_value:
+            return False
+
+        mode: str = cast(str, mode_value)
+        if mode.lower() == "coach".lower():
             return True
         return False
 
-    def validate(self):
+    def validate(self) -> bool:
         """
         Run validations
 
@@ -104,7 +110,7 @@ class StopPointValidator(BaseValidator):
             bool: True if valid, False otherwise
         """
         route_link_refs = self.get_route_section_by_stop_point_ref(self.stop_point_ref)
-        all_vj = []
+        all_vj: list[VehicleJourney] = []
 
         for link_ref in route_link_refs:
             section_refs = self.get_journey_pattern_section_refs_by_route_link_ref(
@@ -115,7 +121,7 @@ class StopPointValidator(BaseValidator):
                     section_ref
                 )
                 for jp_ref in jp_refs:
-                    jp_vjs = []
+                    jp_vjs: list[VehicleJourney] = []
                     vehicle_journies = self.get_vehicle_journey_by_pattern_journey_ref(
                         jp_ref
                     )
@@ -136,7 +142,9 @@ class StopPointValidator(BaseValidator):
         return True
 
 
-def get_stop_point_ref_list(stop_points, ns) -> list[str]:
+def get_stop_point_ref_list(
+    stop_points: list[_Element], ns: dict[str, str]
+) -> list[str]:
     """
     For each stop point in the input, the function looks for FlexibleStopUsage elements
     and extracts their StopPointRef values.
@@ -162,7 +170,7 @@ def get_stop_point_ref_list(stop_points, ns) -> list[str]:
     return stop_point_ref_list
 
 
-def validate_non_naptan_stop_points(_context, points: list[_Element]) -> bool:
+def validate_non_naptan_stop_points(_: _Element | None, points: list[_Element]) -> bool:
     """
     Runs the StopPointValidator
     """

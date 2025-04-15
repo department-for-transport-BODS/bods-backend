@@ -7,8 +7,10 @@ from decimal import Decimal
 
 from isoduration import DurationParsingException, parse_duration
 from isoduration.types import TimeDuration
-from lxml import etree
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
+
+from ..utils import get_namespaces
 
 log = get_logger()
 
@@ -30,14 +32,14 @@ class VehicleJourneyRunTimeInfo:
 
 
 def build_vehicle_journey_map(
-    root_element: etree._Element, namespaces: dict
+    root_element: _Element, namespaces: dict[str, str]
 ) -> dict[str, VehicleJourneyRunTimeInfo]:
     """
     Build a map of { <JourneyPatternTimingLinkRef> : VehicleJourneyRunTimeInfo }
     for all VehicleJourneyTimingLinks
     """
     vehicle_journeys = root_element.xpath("//x:VehicleJourney", namespaces=namespaces)
-    vehicle_journey_map = {}
+    vehicle_journey_map: dict[str, VehicleJourneyRunTimeInfo] = {}
 
     for vehicle_journey in vehicle_journeys:
         timing_links = vehicle_journey.xpath(
@@ -61,17 +63,17 @@ def build_vehicle_journey_map(
 
 
 def validate_journey_pattern_timing_links(
-    root_element: etree._Element,
-    namespaces: dict,
+    root_element: _Element,
+    namespaces: dict[str, str],
     vehicle_journey_map: dict[str, VehicleJourneyRunTimeInfo],
-) -> list[etree._Element]:
+) -> list[_Element]:
     """
     Validate JourneyPatternTimingLinks against the associated VehicleJourneyTimingLink data.
 
     If a JourneyPatternTimingLink has non-zero RunTime,
     any related VehicleJourneyTimingLink should not have To/From elements
     """
-    non_compliant_elements = []
+    non_compliant_elements: list[_Element] = []
     journey_pattern_sections = root_element.xpath(
         "//x:JourneyPatternSection", namespaces=namespaces
     )
@@ -98,7 +100,7 @@ def validate_journey_pattern_timing_links(
     return non_compliant_elements
 
 
-def validate_run_time(_context, elements: list[etree._Element]) -> list[etree._Element]:
+def validate_run_time(_: _Element | None, elements: list[_Element]) -> list[_Element]:
     """
     Validate run times between JourneyPatternTimingLinks and VehicleJourneyTimingLinks.
     """
@@ -106,14 +108,14 @@ def validate_run_time(_context, elements: list[etree._Element]) -> list[etree._E
         "Validation Start: Timing Link Stops",
     )
     root_element = elements[0]
-    namespaces = {"x": root_element.nsmap.get(None)}
+    namespaces = get_namespaces(root_element)
     vehicle_journey_map = build_vehicle_journey_map(root_element, namespaces)
     return validate_journey_pattern_timing_links(
         root_element, namespaces, vehicle_journey_map
     )
 
 
-def validate_timing_link_stops(_context, sections: list[etree._Element]) -> bool:
+def validate_timing_link_stops(_: _Element | None, sections: list[_Element]) -> bool:
     """
     Validates that all links in a section are ordered coherently by
     stop point ref.
@@ -123,7 +125,7 @@ def validate_timing_link_stops(_context, sections: list[etree._Element]) -> bool
         sections=len(sections),
     )
     section = sections[0]
-    ns: dict = {"x": section.nsmap.get(None)}
+    ns = get_namespaces(section)
     links = section.xpath("x:JourneyPatternTimingLink", namespaces=ns)
 
     prev_link = links[0]

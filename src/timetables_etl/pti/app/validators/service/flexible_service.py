@@ -6,15 +6,19 @@ from typing import Callable
 
 from common_layer.database.client import SqlDB
 from common_layer.database.repos import NaptanStopPointRepo
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
+from ...utils import get_namespaces
 from ...utils.utils_xml import extract_text
 from ..stop_point import get_stop_point_ref_list
 
 log = get_logger()
 
 
-def check_flexible_service_timing_status(_context, flexiblejourneypatterns) -> bool:
+def check_flexible_service_timing_status(
+    _: _Element | None, flexiblejourneypatterns: list[_Element]
+) -> bool:
     """
     Examines XML journey pattern data and verifies that in cases where
     both fixed and flexible stops are present in the same sequence, all fixed stops
@@ -23,9 +27,9 @@ def check_flexible_service_timing_status(_context, flexiblejourneypatterns) -> b
     log.info(
         "Validation Start: Flexible Service Timing Status",
     )
-    timing_status_value_list = []
+    timing_status_value_list: list[str | None] = []
     flexiblejourneypattern = flexiblejourneypatterns[0]
-    ns = {"x": flexiblejourneypattern.nsmap.get(None)}
+    ns = get_namespaces(flexiblejourneypattern)
     stop_points_in_seq_list = flexiblejourneypattern.xpath(
         "x:StopPointsInSequence", namespaces=ns
     )
@@ -52,21 +56,23 @@ def check_flexible_service_timing_status(_context, flexiblejourneypatterns) -> b
     return result
 
 
-def get_flexible_service_stop_point_ref_validator(db: SqlDB) -> Callable:
+def get_flexible_service_stop_point_ref_validator(
+    db: SqlDB,
+) -> Callable[[_Element | None, list[_Element]], bool]:
     """
     Creates a validator function that checks if all flexible service stop points are
     properly registered in the NAPTAN database as flexible bus stops.
     """
 
     def check_flexible_service_stop_point_ref(
-        _context, flexiblejourneypatterns
+        _: _Element | None, flexiblejourneypatterns: list[_Element]
     ) -> bool:
         log.info(
             "Validation Start: Check Flexible Service Stop Point Ref",
         )
-        atco_codes_list = []
+        atco_codes_list: list[str] = []
         flexiblejourneypattern = flexiblejourneypatterns[0]
-        ns = {"x": flexiblejourneypattern.nsmap.get(None)}
+        ns = get_namespaces(flexiblejourneypattern)
         stop_points_in_seq_list = flexiblejourneypattern.xpath(
             "x:StopPointsInSequence", namespaces=ns
         )
@@ -89,7 +95,9 @@ def get_flexible_service_stop_point_ref_validator(db: SqlDB) -> Callable:
     return check_flexible_service_stop_point_ref
 
 
-def has_flexible_service_classification(_context, services: list) -> bool:
+def has_flexible_service_classification(
+    _: _Element | None, services: list[_Element]
+) -> bool:
     """
     Check when file has detected a flexible service (includes
     FlexibleService), it has ServiceClassification and Flexible elements.
@@ -99,7 +107,7 @@ def has_flexible_service_classification(_context, services: list) -> bool:
         "Validation Start: Has Flexible Service Classification",
     )
     for service in services:
-        ns = {"x": service.nsmap.get(None)}
+        ns = get_namespaces(service)
         flexible_service_list = service.xpath("x:FlexibleService", namespaces=ns)
 
         if not flexible_service_list:
@@ -119,7 +127,9 @@ def has_flexible_service_classification(_context, services: list) -> bool:
     return False
 
 
-def check_flexible_service_times(_context, vehiclejourneys) -> bool:
+def check_flexible_service_times(
+    _: _Element | None, vehiclejourneys: list[_Element]
+) -> bool:
     """
     Check when FlexibleVehicleJourney is present, that FlexibleServiceTimes
     is also present at least once. If not present at all, then return False.
@@ -127,7 +137,7 @@ def check_flexible_service_times(_context, vehiclejourneys) -> bool:
     log.info(
         "Validation Start: Check Flexible Service Times",
     )
-    ns = {"x": vehiclejourneys[0].nsmap.get(None)}
+    ns = get_namespaces(vehiclejourneys[0])
     flexible_vehiclejourneys = vehiclejourneys[0].xpath(
         "x:FlexibleVehicleJourney", namespaces=ns
     )

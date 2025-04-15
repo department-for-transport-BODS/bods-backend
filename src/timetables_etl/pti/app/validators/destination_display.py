@@ -15,7 +15,7 @@ class DestinationDisplayValidator:
     Validate DestinationDisplay
     """
 
-    def __init__(self, journey_pattern: _Element):
+    def __init__(self, journey_pattern: _Element) -> None:
 
         self.namespaces = get_namespaces(journey_pattern)
         self.journey_pattern: _Element = journey_pattern
@@ -89,7 +89,7 @@ class DestinationDisplayValidator:
 
         return True
 
-    def validate(self):
+    def validate(self) -> bool:
         """
         True if ANY of these conditions are met in this order
            - The journey pattern has a destination display
@@ -108,7 +108,7 @@ class DestinationDisplayValidator:
         return False
 
 
-def has_destination_display(_, patterns: list[_Element]) -> bool:
+def has_destination_display(_: _Element | None, patterns: list[_Element]) -> bool:
     """
     First check if DestinationDisplay in JourneyPattern is provided.
 

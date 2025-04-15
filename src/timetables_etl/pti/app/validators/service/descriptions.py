@@ -2,12 +2,17 @@
 Inbound / Outbound Description Validation
 """
 
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
+
+from ...utils import get_namespaces
 
 log = get_logger()
 
 
-def check_inbound_outbound_description(_context, services) -> bool:
+def check_inbound_outbound_description(
+    _: _Element | None, services: list[_Element]
+) -> bool:
     """
     Check when file has detected a standard service (includes StandardService):
         - If both InboundDescription and OutboundDescription are not present, return False.
@@ -17,7 +22,7 @@ def check_inbound_outbound_description(_context, services) -> bool:
         "Validation Start: Check Inbound / Outbound Description",
     )
     for service in services:
-        ns = {"x": service.nsmap.get(None)}
+        ns = get_namespaces(service)
         standard_service_list = service.xpath(
             "x:Service/x:StandardService", namespaces=ns
         )
@@ -38,7 +43,9 @@ def check_inbound_outbound_description(_context, services) -> bool:
     return False
 
 
-def check_description_for_inbound_description(_context, services: list) -> bool:
+def check_description_for_inbound_description(
+    _: _Element | None, services: list[_Element]
+) -> bool:
     """
     Check if a StandardService has description present for InboundDescription.
 
@@ -53,8 +60,8 @@ def check_description_for_inbound_description(_context, services: list) -> bool:
         "Validation Start: Description for Inbound Description",
     )
     for service in services:
-        inbound_description_list = []
-        ns = {"x": service.nsmap.get(None)}
+        inbound_description_list: list[_Element] = []
+        ns = get_namespaces(service)
         standard_service_list = service.xpath(
             "x:Service/x:StandardService", namespaces=ns
         )
@@ -69,7 +76,9 @@ def check_description_for_inbound_description(_context, services: list) -> bool:
     return False
 
 
-def check_description_for_outbound_description(_context, services: list) -> bool:
+def check_description_for_outbound_description(
+    _: _Element | None, services: list[_Element]
+) -> bool:
     """
     Check if a StandardService has description present for OutboundDescription.
 
@@ -85,7 +94,7 @@ def check_description_for_outbound_description(_context, services: list) -> bool
     )
     for service in services:
         outbound_description_tag = []
-        ns = {"x": service.nsmap.get(None)}
+        ns = get_namespaces(service)
         standard_service_list = service.xpath(
             "x:Service/x:StandardService", namespaces=ns
         )

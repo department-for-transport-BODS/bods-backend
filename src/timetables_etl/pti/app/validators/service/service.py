@@ -4,14 +4,19 @@ Service Validations
 
 import re
 
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
+
+from ...utils import get_namespaces
 
 log = get_logger()
 registered_code_regex = re.compile("[a-zA-Z]{2}\\d{7}:[a-zA-Z0-9]+$")
 unregistered_code_regex = re.compile("UZ[a-zA-Z0-9]{7}:[a-zA-Z0-9]+$")
 
 
-def has_flexible_or_standard_service(_context, services) -> bool:
+def has_flexible_or_standard_service(
+    _: _Element | None, services: list[_Element]
+) -> bool:
     """
     If it is a non-flexible service (flexible service is not defined),
     then it should have a StandardService defined. If validation fails,
@@ -21,7 +26,7 @@ def has_flexible_or_standard_service(_context, services) -> bool:
         "Validation Start: Has Flexible or Standard Service",
     )
     for service in services:
-        ns = {"x": service.nsmap.get(None)}
+        ns = get_namespaces(service)
         service_classification = service.xpath(
             "x:ServiceClassification/x:Flexible", namespaces=ns
         )
@@ -37,7 +42,9 @@ def has_flexible_or_standard_service(_context, services) -> bool:
     return False
 
 
-def check_service_group_validations(_context, services):
+def check_service_group_validations(
+    _: _Element | None, services: list[_Element]
+) -> bool:
     """
     Enforces the following rules:
     1. A service group can contain exactly one service of any type, OR
@@ -54,9 +61,9 @@ def check_service_group_validations(_context, services):
         "Validation Start: Service Group Validations",
         count=len(services),
     )
-    services = services[0]
-    ns = {"x": services.nsmap.get(None)}
-    service_list = services.xpath("x:Service", namespaces=ns)
+    service = services[0]
+    ns = get_namespaces(services[0])
+    service_list: list[_Element] = service.xpath("x:Service", namespaces=ns)
 
     registered_standard_service = len(
         list(
