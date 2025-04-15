@@ -1,11 +1,13 @@
+"""
+Tests for the PTI XMLElement Class
+"""
+
 import unittest
 from unittest.mock import MagicMock, patch
+
+from common_layer.exceptions.xml_doc_exceptions import NoElement, TooManyElements
 from lxml import etree
-from common_layer.xmlelements import XMLElement
-from common_layer.exceptions.xml_doc_exceptions import (
-    NoElement,
-    TooManyElements,
-)
+from pti.app.xml_elements import XMLElement
 
 
 class TestXMLElement(unittest.TestCase):
@@ -66,7 +68,7 @@ class TestXMLElement(unittest.TestCase):
         expected_repr = "test(id='123', text='None')"
         self.assertEqual(repr(xml_element), expected_repr)
 
-    @patch.object(XMLElement, 'get_elements')
+    @patch.object(XMLElement, "get_elements")
     def test_get_element_raises_too_many_elements(self, mock_get_elements):
         # Set up the mock to return more than one element
         mock_get_elements.return_value = [MagicMock(), MagicMock()]
@@ -88,7 +90,7 @@ class TestXMLElement(unittest.TestCase):
         self.assertEqual(len(children), 1)
         self.assertEqual(children[0].text, "SYS001")
 
-    @patch.object(XMLElement, 'get_elements')
+    @patch.object(XMLElement, "get_elements")
     def test_get_elements_or_none_returns_elements(self, mock_get_elements):
         # Set up the mock to return a list of elements
         mock_elements = [MagicMock(), MagicMock()]  # Example elements
@@ -103,7 +105,7 @@ class TestXMLElement(unittest.TestCase):
         self.assertEqual(result, mock_elements)
         mock_get_elements.assert_called_once_with("some/xpath")
 
-    @patch.object(XMLElement, 'get_elements')
+    @patch.object(XMLElement, "get_elements")
     def test_get_elements_returns_none_on_no_element(self, mock_get_elements):
         # Set up the mock to raise a NoElement exception
         mock_get_elements.side_effect = NoElement("No elements found")
@@ -117,7 +119,7 @@ class TestXMLElement(unittest.TestCase):
         self.assertIsNone(result)
         mock_get_elements.assert_called_once_with("some/xpath")
 
-    @patch.object(XMLElement, 'get_first_element')
+    @patch.object(XMLElement, "get_first_element")
     def test_get_first_text_or_default_with_text(self, mock_get_first_element):
         # Mock get_first_element to return an element with text
         mock_element = MagicMock()
@@ -129,11 +131,13 @@ class TestXMLElement(unittest.TestCase):
         xml_element = XMLElement(element)
 
         # Call get_first_text_or_default and verify it returns the text
-        result = xml_element.get_first_text_or_default("some/xpath", default="Default Text")
+        result = xml_element.get_first_text_or_default(
+            "some/xpath", default="Default Text"
+        )
         self.assertEqual(result, "Sample Text")
         mock_get_first_element.assert_called_once_with("some/xpath")
 
-    @patch.object(XMLElement, 'get_first_element')
+    @patch.object(XMLElement, "get_first_element")
     def test_get_first_text_or_default_with_none_text(self, mock_get_first_element):
         # Mock get_first_element to return an element with None as text
         mock_element = MagicMock()
@@ -145,11 +149,13 @@ class TestXMLElement(unittest.TestCase):
         xml_element = XMLElement(element)
 
         # Call get_first_text_or_default and verify it returns the default
-        result = xml_element.get_first_text_or_default("some/xpath", default="Default Text")
+        result = xml_element.get_first_text_or_default(
+            "some/xpath", default="Default Text"
+        )
         self.assertEqual(result, "Default Text")
         mock_get_first_element.assert_called_once_with("some/xpath")
 
-    @patch.object(XMLElement, 'get_first_element')
+    @patch.object(XMLElement, "get_first_element")
     def test_get_first_text_or_default_no_element(self, mock_get_first_element):
         # Mock get_first_element to raise a NoElement exception
         mock_get_first_element.side_effect = NoElement("No elements found")
@@ -159,7 +165,9 @@ class TestXMLElement(unittest.TestCase):
         xml_element = XMLElement(element)
 
         # Call get_first_text_or_default and verify it returns the default
-        result = xml_element.get_first_text_or_default("some/xpath", default="Default Text")
+        result = xml_element.get_first_text_or_default(
+            "some/xpath", default="Default Text"
+        )
         self.assertEqual(result, "Default Text")
         mock_get_first_element.assert_called_once_with("some/xpath")
 
@@ -181,11 +189,15 @@ class TestXMLElement(unittest.TestCase):
 
     def test_get_text_or_default(self):
         # Test getting text of an existing element
-        text = self.root_element.get_text_or_default("PublicationRequest/ParticipantRef", "SYS002")
+        text = self.root_element.get_text_or_default(
+            "PublicationRequest/ParticipantRef", "SYS002"
+        )
         self.assertEqual(text, "SYS002")
 
         # Test getting default text for a non-existent element
-        default_text = self.root_element.get_text_or_default("PublicationRequest/nonexistent", "SYS002")
+        default_text = self.root_element.get_text_or_default(
+            "PublicationRequest/nonexistent", "SYS002"
+        )
         self.assertEqual(default_text, "SYS002")
 
     def test_get_attribute(self):

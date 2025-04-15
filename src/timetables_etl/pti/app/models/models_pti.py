@@ -4,9 +4,13 @@ PTI Pydantic Models
 
 import json
 from pathlib import Path
+from typing import Self
 
 from common_layer.database.models import DataQualityPTIObservation
+from lxml.etree import _Element  # type: ignore
 from pydantic import BaseModel
+
+from ..utils import get_namespaces
 
 
 class PtiRule(BaseModel):
@@ -99,11 +103,11 @@ class VehicleJourney(BaseModel):
     service_ref: str
 
     @classmethod
-    def from_xml(cls, xml):
+    def from_xml(cls, xml: _Element) -> Self:
         """
         Vehicle Journey XML Parser
         """
-        namespaces = {"x": xml.nsmap.get(None)}
+        namespaces = get_namespaces(xml)
         code = xml.xpath("string(x:VehicleJourneyCode)", namespaces=namespaces)
         line_ref = xml.xpath("string(x:LineRef)", namespaces=namespaces)
         journey_pattern_ref = xml.xpath(
@@ -131,11 +135,11 @@ class Line(BaseModel):
     line_name: str
 
     @classmethod
-    def from_xml(cls, xml):
+    def from_xml(cls, xml: _Element) -> Self:
         """
         Line XML Parser
         """
-        namespaces = {"x": xml.nsmap.get(None)}
+        namespaces = get_namespaces(xml)
         ref = xml.xpath("string(@id)", namespaces=namespaces)
         line_name = xml.xpath("string(x:LineName)", namespaces=namespaces)
         return cls(ref=ref, line_name=line_name)
