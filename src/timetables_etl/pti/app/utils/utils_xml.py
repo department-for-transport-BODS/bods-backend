@@ -35,7 +35,7 @@ def extract_text(elements: ElementsOrStr, default: str | None = None) -> str | N
     return text
 
 
-def cast_to_date(_, date: ElementsOrStr) -> float:
+def cast_to_date(_: _Element | None, date: ElementsOrStr) -> float:
     """
     Casts a lxml date element to an int.
     """
@@ -43,7 +43,7 @@ def cast_to_date(_, date: ElementsOrStr) -> float:
     return parser.parse(text).timestamp()
 
 
-def cast_to_bool(_, elements: ElementsOrStr) -> bool:
+def cast_to_bool(_: _Element | None, elements: ElementsOrStr) -> bool:
     """
     Casts either a list of str, list of Elements or a str to a boolean
     """
@@ -51,7 +51,7 @@ def cast_to_bool(_, elements: ElementsOrStr) -> bool:
     return text == "true"
 
 
-def has_prohibited_chars(_, element: ElementsOrStr) -> bool:
+def has_prohibited_chars(_: _Element | None, element: ElementsOrStr) -> bool:
     """
     Check if Element has disallowed XML characters
     """
@@ -62,7 +62,7 @@ def has_prohibited_chars(_, element: ElementsOrStr) -> bool:
     return len([c for c in chars if c in PROHIBITED_CHARS]) > 0
 
 
-def regex(_, element: ElementsOrStr, pattern: str) -> bool:
+def regex(_: _Element | None, element: ElementsOrStr, pattern: str) -> bool:
     """
     Checks if element's text content matches the provided regular expression pattern
     """
@@ -70,7 +70,9 @@ def regex(_, element: ElementsOrStr, pattern: str) -> bool:
     return re.match(pattern, chars) is not None
 
 
-def is_member_of(_, element: ElementsOrStr, *args: tuple[str, ...] | None) -> bool:
+def is_member_of(
+    _: _Element | None, element: ElementsOrStr, *args: tuple[str, ...] | None
+) -> bool:
     """
     Checks if the text content of an element is a member of the provided arguments
     """
@@ -78,7 +80,7 @@ def is_member_of(_, element: ElementsOrStr, *args: tuple[str, ...] | None) -> bo
     return text in args
 
 
-def strip(_, text: str) -> str:
+def strip(_: _Element | None, text: str) -> str:
     """
     Removes leading and trailing whitespace from element's text content
     """
@@ -86,7 +88,7 @@ def strip(_, text: str) -> str:
     return text.strip()
 
 
-def contains_date(_, text: ElementsOrStr) -> bool:
+def contains_date(_: _Element | None, text: ElementsOrStr) -> bool:
     """
     Determines if the input text contains any date-like strings.
     """
@@ -103,7 +105,9 @@ def contains_date(_, text: ElementsOrStr) -> bool:
     return False
 
 
-def has_name(_, elements: _Element | Sequence[_Element], *names: str) -> bool:
+def has_name(
+    _: _Element | None, elements: _Element | Sequence[_Element], *names: str
+) -> bool:
     """
     Checks if elements are in the list of names.
     """
