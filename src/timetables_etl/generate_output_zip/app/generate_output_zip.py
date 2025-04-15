@@ -144,8 +144,8 @@ def update_revision_metadata(revision_id: int, db: SqlDB) -> None:
     """
     Update revision metadata based on all processed TxcFileAttributes and Services
     """
-    log.info("Updating DatasetRevision metadata")
     updated_stats = build_revision_stats(revision_id, db)
+    log.info("Updating DatasetRevision with stats", stats=updated_stats)
     OrganisationDatasetRevisionRepo(db).update_stats(revision_id, updated_stats)
 
 
