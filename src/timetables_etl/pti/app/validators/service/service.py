@@ -7,7 +7,7 @@ import re
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
-from ...utils import get_namespaces
+from ...constants import NAMESPACE
 
 log = get_logger()
 registered_code_regex = re.compile("[a-zA-Z]{2}\\d{7}:[a-zA-Z0-9]+$")
@@ -26,17 +26,18 @@ def has_flexible_or_standard_service(
         "Validation Start: Has Flexible or Standard Service",
     )
     for service in services:
-        ns = get_namespaces(service)
         service_classification = service.xpath(
-            "x:ServiceClassification/x:Flexible", namespaces=ns
+            "x:ServiceClassification/x:Flexible", namespaces=NAMESPACE
         )
 
         if service_classification:
-            flexible_service_list = service.xpath("x:FlexibleService", namespaces=ns)
+            flexible_service_list = service.xpath(
+                "x:FlexibleService", namespaces=NAMESPACE
+            )
             if flexible_service_list:
                 return True
             return False
-        standard_service_list = service.xpath("x:StandardService", namespaces=ns)
+        standard_service_list = service.xpath("x:StandardService", namespaces=NAMESPACE)
         return bool(standard_service_list)
 
     return False
@@ -62,16 +63,15 @@ def check_service_group_validations(
         count=len(services),
     )
     service = services[0]
-    ns = get_namespaces(services[0])
-    service_list: list[_Element] = service.xpath("x:Service", namespaces=ns)
+    service_list: list[_Element] = service.xpath("x:Service", namespaces=NAMESPACE)
 
     registered_standard_service = len(
         list(
             filter(
                 lambda s: registered_code_regex.match(
-                    s.xpath("string(x:ServiceCode)", namespaces=ns)
+                    s.xpath("string(x:ServiceCode)", namespaces=NAMESPACE)
                 )
-                and s.xpath("x:StandardService", namespaces=ns),
+                and s.xpath("x:StandardService", namespaces=NAMESPACE),
                 service_list,
             )
         )
@@ -80,7 +80,7 @@ def check_service_group_validations(
         list(
             filter(
                 lambda s: unregistered_code_regex.match(
-                    s.xpath("string(x:ServiceCode)", namespaces=ns)
+                    s.xpath("string(x:ServiceCode)", namespaces=NAMESPACE)
                 ),
                 service_list,
             )
@@ -90,9 +90,9 @@ def check_service_group_validations(
         list(
             filter(
                 lambda s: registered_code_regex.match(
-                    s.xpath("string(x:ServiceCode)", namespaces=ns)
+                    s.xpath("string(x:ServiceCode)", namespaces=NAMESPACE)
                 )
-                and s.xpath("x:ServiceClassification/x:Flexible", namespaces=ns),
+                and s.xpath("x:ServiceClassification/x:Flexible", namespaces=NAMESPACE),
                 service_list,
             )
         )

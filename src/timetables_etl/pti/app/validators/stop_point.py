@@ -7,9 +7,9 @@ from typing import cast
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
 from lxml.etree import _Element  # type: ignore
-from pti.app.utils import get_namespaces
 from structlog.stdlib import get_logger
 
+from ..constants import NAMESPACE
 from ..utils.utils_xml import extract_text
 from .base import BaseValidator, VehicleJourney
 
@@ -27,7 +27,7 @@ class StopPointValidator(BaseValidator):
         Get AtcoCode
         """
         xpath = "string(x:AtcoCode)"
-        return self.root.xpath(xpath, namespaces=self.namespaces)
+        return self.root.xpath(xpath, namespaces=NAMESPACE)
 
     def get_operating_profile_by_vehicle_journey_code(self, ref: str) -> _Element:
         """
@@ -37,7 +37,7 @@ class StopPointValidator(BaseValidator):
             f"//x:VehicleJourney[string(x:VehicleJourneyCode) = '{ref}']"
             "//x:OperatingProfile"
         )
-        profiles = self.root.xpath(xpath, namespaces=self.namespaces)
+        profiles = self.root.xpath(xpath, namespaces=NAMESPACE)
         return profiles
 
     def get_service_operating_period(self) -> _Element:
@@ -45,7 +45,7 @@ class StopPointValidator(BaseValidator):
         Get Service OperatingPeriod elements
         """
         xpath = "//x:Service//x:OperatingPeriod"
-        periods = self.root.xpath(xpath, namespaces=self.namespaces)
+        periods = self.root.xpath(xpath, namespaces=NAMESPACE)
         return periods
 
     def has_valid_operating_profile(self, ref: str) -> bool:
@@ -58,8 +58,8 @@ class StopPointValidator(BaseValidator):
             return True
         profile = profiles[0]
 
-        start_date = profile.xpath("string(.//x:StartDate)", namespaces=self.namespaces)
-        end_date = profile.xpath("string(.//x:EndDate)", namespaces=self.namespaces)
+        start_date = profile.xpath("string(.//x:StartDate)", namespaces=NAMESPACE)
+        end_date = profile.xpath("string(.//x:EndDate)", namespaces=NAMESPACE)
 
         if start_date == "" or end_date == "":
             # If start or end date unspecified, inherit from the service's
@@ -69,12 +69,10 @@ class StopPointValidator(BaseValidator):
                 period = periods[0]
                 if start_date == "":
                     start_date = period.xpath(
-                        "string(./x:StartDate)", namespaces=self.namespaces
+                        "string(./x:StartDate)", namespaces=NAMESPACE
                     )
                 if end_date == "":
-                    end_date = period.xpath(
-                        "string(./x:EndDate)", namespaces=self.namespaces
-                    )
+                    end_date = period.xpath("string(./x:EndDate)", namespaces=NAMESPACE)
 
         if start_date == "" or end_date == "":
             return False
@@ -93,8 +91,7 @@ class StopPointValidator(BaseValidator):
             bool: True if service mode matches
         """
 
-        ns = get_namespaces(service)
-        mode_value = service.xpath("string(x:Mode)", namespaces=ns)
+        mode_value = service.xpath("string(x:Mode)", namespaces=NAMESPACE)
         if not mode_value:
             return False
 
@@ -143,9 +140,7 @@ class StopPointValidator(BaseValidator):
         return True
 
 
-def get_stop_point_ref_list(
-    stop_points: list[_Element], ns: dict[str, str]
-) -> list[str]:
+def get_stop_point_ref_list(stop_points: list[_Element]) -> list[str]:
     """
     For each stop point in the input, the function looks for FlexibleStopUsage elements
     and extracts their StopPointRef values.
@@ -153,12 +148,13 @@ def get_stop_point_ref_list(
     stop_point_ref_list: list[str] = []
     for flex_stop_point in stop_points:
         flexible_stop_usage_list = flex_stop_point.xpath(
-            "x:FlexibleStopUsage", namespaces=ns
+            "x:FlexibleStopUsage", namespaces=NAMESPACE
         )
         if len(flexible_stop_usage_list) > 0:
             for flexible_stop_usage in flexible_stop_usage_list:
                 ref = extract_text(
-                    flexible_stop_usage.xpath("x:StopPointRef", namespaces=ns), None
+                    flexible_stop_usage.xpath("x:StopPointRef", namespaces=NAMESPACE),
+                    None,
                 )
                 if ref is not None:
                     stop_point_ref_list.append(ref)

@@ -5,7 +5,7 @@ Serviced Organisation Validation
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
-from ..utils import get_namespaces
+from ..constants import NAMESPACE
 
 log = get_logger()
 
@@ -39,8 +39,7 @@ def has_servicedorganisation_working_days(
     )
     is_valid = True
     for service_organisation in service_organisations:
-        ns = get_namespaces(service_organisation)
-        working_days = service_organisation.xpath("x:WorkingDays", namespaces=ns)
+        working_days = service_organisation.xpath("x:WorkingDays", namespaces=NAMESPACE)
         if not working_days:
             is_valid = False
     return is_valid

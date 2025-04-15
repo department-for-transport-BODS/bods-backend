@@ -5,7 +5,7 @@ DestinationDisplay PTI Validator
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
-from ..utils import get_namespaces
+from ..constants import NAMESPACE
 
 log = get_logger()
 
@@ -17,7 +17,6 @@ class DestinationDisplayValidator:
 
     def __init__(self, journey_pattern: _Element) -> None:
 
-        self.namespaces = get_namespaces(journey_pattern)
         self.journey_pattern: _Element = journey_pattern
         self.journey_pattern_ref = self.journey_pattern.get("id")
 
@@ -31,7 +30,7 @@ class DestinationDisplayValidator:
             "//x:VehicleJourney[contains(x:JourneyPatternRef, "
             f"'{self.journey_pattern_ref}')]"
         )
-        return root.xpath(xpath, namespaces=self.namespaces)
+        return root.xpath(xpath, namespaces=NAMESPACE)
 
     @property
     def journey_pattern_sections(self) -> list[_Element]:
@@ -39,12 +38,12 @@ class DestinationDisplayValidator:
         Get all JourneyPatternSection elements referenced by this journey pattern.
         """
         xpath = "x:JourneyPatternSectionRefs/text()"
-        refs = self.journey_pattern.xpath(xpath, namespaces=self.namespaces)
+        refs = self.journey_pattern.xpath(xpath, namespaces=NAMESPACE)
         xpaths = [f"//x:JourneyPatternSection[@id='{ref}']" for ref in refs]
 
         sections: list[_Element] = []
         for xpath in xpaths:
-            sections += self.journey_pattern.xpath(xpath, namespaces=self.namespaces)
+            sections += self.journey_pattern.xpath(xpath, namespaces=NAMESPACE)
         return sections
 
     def journey_pattern_has_display(self) -> bool:
@@ -52,7 +51,7 @@ class DestinationDisplayValidator:
         Checks if the journey pattern has a DestinationDisplay as a direct child
         """
         displays = self.journey_pattern.xpath(
-            "x:DestinationDisplay", namespaces=self.namespaces
+            "x:DestinationDisplay", namespaces=NAMESPACE
         )
         return len(displays) > 0
 
@@ -62,15 +61,13 @@ class DestinationDisplayValidator:
         Have DynamicDestinationDisplay at both their "From" and "To" points
         """
         for section in self.journey_pattern_sections:
-            links = section.xpath(
-                "x:JourneyPatternTimingLink", namespaces=self.namespaces
-            )
+            links = section.xpath("x:JourneyPatternTimingLink", namespaces=NAMESPACE)
             for link in links:
                 from_display = link.xpath(
-                    "x:From/x:DynamicDestinationDisplay", namespaces=self.namespaces
+                    "x:From/x:DynamicDestinationDisplay", namespaces=NAMESPACE
                 )
                 to_display = link.xpath(
-                    "x:To/x:DynamicDestinationDisplay", namespaces=self.namespaces
+                    "x:To/x:DynamicDestinationDisplay", namespaces=NAMESPACE
                 )
                 if not all([to_display, from_display]):
                     return False
@@ -83,7 +80,7 @@ class DestinationDisplayValidator:
         """
         xpath = "x:DestinationDisplay"
         for journey in self.vehicle_journeys:
-            display = journey.xpath(xpath, namespaces=self.namespaces)
+            display = journey.xpath(xpath, namespaces=NAMESPACE)
             if not display:
                 return False
 

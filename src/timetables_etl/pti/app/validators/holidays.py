@@ -7,7 +7,8 @@ from common_layer.dynamodb.client import DynamoDBCache
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
-from ..utils import get_namespaces, is_service_in_scotland
+from ..constants import NAMESPACE
+from ..utils import is_service_in_scotland
 
 log = get_logger()
 
@@ -54,14 +55,16 @@ def get_service_ref_from_element(
     """
     if element is None:
         return None
-    vj = element.xpath("ancestor::x:VehicleJourney", namespaces=ns)
+    vj = element.xpath("ancestor::x:VehicleJourney", namespaces=NAMESPACE)
     service_ref = None
     if vj:
-        service_ref = vj[0].xpath("string(x:ServiceRef)", namespaces=ns)
+        service_ref = vj[0].xpath("string(x:ServiceRef)", namespaces=NAMESPACE)
     else:
-        service = element.xpath("ancestor::x:Service", namespaces=ns)
+        service = element.xpath("ancestor::x:Service", namespaces=NAMESPACE)
         if service:
-            service_ref = service[0].xpath("string(x:ServiceCode)", namespaces=ns)
+            service_ref = service[0].xpath(
+                "string(x:ServiceCode)", namespaces=NAMESPACE
+            )
 
     return service_ref
 
@@ -78,14 +81,13 @@ def get_validate_bank_holidays(dynamo: DynamoDBCache, db: SqlDB):
         Validate bank holidays
         """
         bank_holiday = bank_holidays[0]
-        ns = get_namespaces(bank_holiday)
         local_name = "local-name()"
 
         holidays: list[str] = []
         element: _Element | None = None
         for element in bank_holiday:
-            if element.xpath(local_name, namespaces=ns) in OPERATION_DAYS:
-                days = [el.xpath(local_name, namespaces=ns) for el in element]
+            if element.xpath(local_name, namespaces=NAMESPACE) in OPERATION_DAYS:
+                days = [el.xpath(local_name, namespaces=NAMESPACE) for el in element]
                 holidays += days
 
         # .getchildren() will return comments: this filters out the comments.
@@ -106,7 +108,7 @@ def get_validate_bank_holidays(dynamo: DynamoDBCache, db: SqlDB):
             )
             return False
 
-        service_ref = get_service_ref_from_element(element, ns)
+        service_ref = get_service_ref_from_element(element, NAMESPACE)
         if service_ref and is_service_in_scotland(service_ref, dynamo, db):
             english_removed = list(set(holidays) - set(BANK_HOLIDAYS_ONLY_ENGLISH))
             if sorted(SCOTTISH_BANK_HOLIDAYS) != sorted(english_removed):

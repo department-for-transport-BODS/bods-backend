@@ -12,7 +12,8 @@ from common_layer.xml.txc.models import AnnotatedStopPointRef, TXCData, TXCStopP
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
-from .base import BaseValidator, get_namespaces
+from ..constants import NAMESPACE
+from .base import BaseValidator
 
 log = get_logger()
 
@@ -199,19 +200,18 @@ def validate_line_id(_: _Element | None, lines: list[_Element]) -> bool:
         count=len(lines),
     )
     line = lines[0]
-    ns = get_namespaces(line)
 
     xpath = "string(@id)"
-    line_id = line.xpath(xpath, namespaces=ns)
+    line_id = line.xpath(xpath, namespaces=NAMESPACE)
 
     xpath = "string(//x:Operators/x:Operator/x:NationalOperatorCode)"
-    noc = line.xpath(xpath, namespaces=ns)
+    noc = line.xpath(xpath, namespaces=NAMESPACE)
 
     xpath = "string(../../x:ServiceCode)"
-    service_code = line.xpath(xpath, namespaces=ns)
+    service_code = line.xpath(xpath, namespaces=NAMESPACE)
 
     xpath = "string(x:LineName)"
-    line_name = line.xpath(xpath, namespaces=ns)
+    line_name = line.xpath(xpath, namespaces=NAMESPACE)
     line_name = line_name.replace(" ", "")
 
     expected_line_id = f"{noc}:{service_code}:{line_name}"

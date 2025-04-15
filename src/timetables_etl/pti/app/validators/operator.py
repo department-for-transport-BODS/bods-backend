@@ -5,6 +5,8 @@ Validations for Operator Section
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
+from ..constants import NAMESPACE
+
 log = get_logger()
 
 
@@ -28,14 +30,9 @@ def validate_licence_number(
         "Validation Start: Licence Number",
         count=len(elements),
     )
-    ns = {"x": elements[0].nsmap.get(None)}
     for element in elements:
-        primary_mode = element.xpath(
-            ".//x:PrimaryMode", namespaces=ns  # pyright: ignore
-        )
-        licence_number = element.xpath(
-            ".//x:LicenceNumber", namespaces=ns  # pyright: ignore
-        )
+        primary_mode = element.xpath(".//x:PrimaryMode", namespaces=NAMESPACE)
+        licence_number = element.xpath(".//x:LicenceNumber", namespaces=NAMESPACE)
 
         if primary_mode and primary_mode[0].text.lower() == "coach":
             continue

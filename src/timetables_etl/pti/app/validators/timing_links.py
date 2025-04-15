@@ -10,7 +10,7 @@ from isoduration.types import TimeDuration
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
-from ..utils import get_namespaces
+from ..constants import NAMESPACE
 
 log = get_logger()
 
@@ -32,26 +32,26 @@ class VehicleJourneyRunTimeInfo:
 
 
 def build_vehicle_journey_map(
-    root_element: _Element, namespaces: dict[str, str]
+    root_element: _Element,
 ) -> dict[str, VehicleJourneyRunTimeInfo]:
     """
     Build a map of { <JourneyPatternTimingLinkRef> : VehicleJourneyRunTimeInfo }
     for all VehicleJourneyTimingLinks
     """
-    vehicle_journeys = root_element.xpath("//x:VehicleJourney", namespaces=namespaces)
+    vehicle_journeys = root_element.xpath("//x:VehicleJourney", namespaces=NAMESPACE)
     vehicle_journey_map: dict[str, VehicleJourneyRunTimeInfo] = {}
 
     for vehicle_journey in vehicle_journeys:
         timing_links = vehicle_journey.xpath(
-            ".//x:VehicleJourneyTimingLink", namespaces=namespaces
+            ".//x:VehicleJourneyTimingLink", namespaces=NAMESPACE
         )
         for link in timing_links:
             ref = link.xpath(
-                "string(x:JourneyPatternTimingLinkRef)", namespaces=namespaces
+                "string(x:JourneyPatternTimingLinkRef)", namespaces=NAMESPACE
             )
-            run_time = link.xpath("string(x:RunTime)", namespaces=namespaces)
-            has_from = bool(link.xpath("x:From", namespaces=namespaces))
-            has_to = bool(link.xpath("x:To", namespaces=namespaces))
+            run_time = link.xpath("string(x:RunTime)", namespaces=NAMESPACE)
+            has_from = bool(link.xpath("x:From", namespaces=NAMESPACE))
+            has_to = bool(link.xpath("x:To", namespaces=NAMESPACE))
 
             vehicle_journey_map[ref] = VehicleJourneyRunTimeInfo(
                 run_time=parse_duration(run_time).time if run_time else None,
@@ -64,7 +64,6 @@ def build_vehicle_journey_map(
 
 def validate_journey_pattern_timing_links(
     root_element: _Element,
-    namespaces: dict[str, str],
     vehicle_journey_map: dict[str, VehicleJourneyRunTimeInfo],
 ) -> list[_Element]:
     """
@@ -75,15 +74,15 @@ def validate_journey_pattern_timing_links(
     """
     non_compliant_elements: list[_Element] = []
     journey_pattern_sections = root_element.xpath(
-        "//x:JourneyPatternSection", namespaces=namespaces
+        "//x:JourneyPatternSection", namespaces=NAMESPACE
     )
     for section in journey_pattern_sections:
         timing_links = section.xpath(
-            ".//x:JourneyPatternTimingLink", namespaces=namespaces
+            ".//x:JourneyPatternTimingLink", namespaces=NAMESPACE
         )
         for link in timing_links:
             link_id = link.get("id")
-            run_time = link.xpath("string(x:RunTime)", namespaces=namespaces)
+            run_time = link.xpath("string(x:RunTime)", namespaces=NAMESPACE)
 
             if not run_time:
                 continue
@@ -108,11 +107,8 @@ def validate_run_time(_: _Element | None, elements: list[_Element]) -> list[_Ele
         "Validation Start: Timing Link Stops",
     )
     root_element = elements[0]
-    namespaces = get_namespaces(root_element)
-    vehicle_journey_map = build_vehicle_journey_map(root_element, namespaces)
-    return validate_journey_pattern_timing_links(
-        root_element, namespaces, vehicle_journey_map
-    )
+    vehicle_journey_map = build_vehicle_journey_map(root_element)
+    return validate_journey_pattern_timing_links(root_element, vehicle_journey_map)
 
 
 def validate_timing_link_stops(_: _Element | None, sections: list[_Element]) -> bool:
@@ -125,13 +121,12 @@ def validate_timing_link_stops(_: _Element | None, sections: list[_Element]) -> 
         sections=len(sections),
     )
     section = sections[0]
-    ns = get_namespaces(section)
-    links = section.xpath("x:JourneyPatternTimingLink", namespaces=ns)
+    links = section.xpath("x:JourneyPatternTimingLink", namespaces=NAMESPACE)
 
     prev_link = links[0]
     for curr_link in links[1:]:
-        to_ = prev_link.xpath("string(x:To/x:StopPointRef)", namespaces=ns)
-        from_ = curr_link.xpath("string(x:From/x:StopPointRef)", namespaces=ns)
+        to_ = prev_link.xpath("string(x:To/x:StopPointRef)", namespaces=NAMESPACE)
+        from_ = curr_link.xpath("string(x:From/x:StopPointRef)", namespaces=NAMESPACE)
 
         if from_ != to_:
             return False
