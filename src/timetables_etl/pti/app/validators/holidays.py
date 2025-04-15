@@ -2,6 +2,8 @@
 Validators related to holidays
 """
 
+from typing import Callable
+
 from common_layer.database.client import SqlDB
 from common_layer.dynamodb.client import DynamoDBCache
 from lxml.etree import _Element  # type: ignore
@@ -69,7 +71,7 @@ def get_service_ref_from_element(
     return service_ref
 
 
-def get_validate_bank_holidays(dynamo: DynamoDBCache, db: SqlDB):
+def get_validate_bank_holidays(dynamo: DynamoDBCache, db: SqlDB) -> Callable[..., bool]:
     """
     Setup and return validator function for bank holidays
     """
