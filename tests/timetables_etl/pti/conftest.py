@@ -31,12 +31,11 @@ def mocked_s3_content() -> bytes:
 
 
 @pytest.fixture
-def s3_file(s3_content: str) -> StreamingBody:
+def s3_file(s3_content: bytes) -> StreamingBody:
     """
     Mocked S3 File
     """
-    bytes_content = s3_content.encode("utf-8")
-    stream = StreamingBody(BytesIO(bytes_content), len(s3_content))
+    stream = StreamingBody(BytesIO(s3_content), len(s3_content))
     return stream
 
 
