@@ -643,10 +643,24 @@
       "Choices": [
         {
           "Condition": "{% $finalResult.body.successful_files > 0 %}",
-          "Next": "Trigger DQS State Machine"
+          "Next": "Check if DQS needs to be Skipped"
         }
       ],
       "Default": "Release Lock"
+    },
+    "Check if DQS needs to be Skipped": {
+      "Type": "Choice",
+      "Default": "Trigger DQS State Machine",
+      "Choices": [
+        {
+          "Condition": "{% $performETLOnly = false %}",
+          "Next": "Trigger DQS State Machine"
+        },
+        {
+          "Condition": "{% $performETLOnly = true %}",
+          "Next": "Release Lock"
+        }
+      ]
     },
     "Trigger DQS State Machine": {
       "Type": "Task",
