@@ -7,8 +7,6 @@ import pytest
 
 from tests.timetables_etl.pti.validators.conftest import TXCFile, create_validator
 
-from .conftest import DATA_DIR
-
 OBSERVATION_ID = 25
 
 
@@ -68,7 +66,7 @@ OBSERVATION_ID = 25
         ),
     ],
 )
-def test_line_descriptions(xml: str, expected: bool):
+def test_line_descriptions(xml: str, expected: bool) -> None:
     """
     Test validation of line descriptions
     Validates that lines have proper inbound or outbound descriptions

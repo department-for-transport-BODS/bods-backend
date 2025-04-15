@@ -10,7 +10,7 @@ from freezegun import freeze_time
 from pti.app.validators.txc_revision import TXCRevisionValidator
 
 
-def test_revision_get_by_service_code_and_lines():
+def test_revision_get_by_service_code_and_lines() -> None:
     """
     GIVEN a DatasetRevision with two TXCFileAttributes with the same service_code and
     lines.
@@ -18,7 +18,6 @@ def test_revision_get_by_service_code_and_lines():
     THEN a list of TXCFileAttributes are returned ordered in ascending order by
     revision_number
     """
-    live_revision_id = 123
 
     service_code = "ABC"
     lines = ["1", "2"]

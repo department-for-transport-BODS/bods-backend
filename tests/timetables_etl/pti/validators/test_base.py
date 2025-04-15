@@ -17,7 +17,7 @@ def mocked_root() -> MagicMock:
     Mock an XML root element with namespaces and xpath methods.
     """
     root = MagicMock()
-    root.nsmap = {None: "http://www.example.com"}
+    root.nsmap = {"x": "http://www.transxchange.org.uk/"}
     root.xpath = MagicMock()
     return root
 
@@ -67,7 +67,7 @@ def test_vehicle_journeys_property(m_root: MagicMock) -> None:
 
 def test_journey_patterns_property() -> None:
     xml_content = """
-    <Root xmlns="http://www.example.com">
+    <Root xmlns="http://www.transxchange.org.uk/">
         <JourneyPatterns>
             <JourneyPattern id="Pattern1" />
             <JourneyPattern id="Pattern2" />
