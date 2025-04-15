@@ -245,7 +245,7 @@
         "DatasetRevisionId": "{% $datasetRevisionId %}",
         "DatasetType": "{% $datasetType %}",
         "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}",
-        "SkipVirusScan": "{% performETLOnly %}"
+        "SkipVirusScan": "{% $performETLOnly %}"
       },
       "Assign": {
         "ExtractedSubFolder": "{% $states.result.body.generatedPrefix %}"
