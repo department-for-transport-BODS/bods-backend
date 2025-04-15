@@ -13,7 +13,7 @@ class BaseValidator:
     Parent class for LinesValidator and StopPointValidator
     """
 
-    def __init__(self, root: _Element):
+    def __init__(self, root: _Element) -> None:
         self.root = root
 
         self._vehicle_journeys: list[VehicleJourney] | None = None
