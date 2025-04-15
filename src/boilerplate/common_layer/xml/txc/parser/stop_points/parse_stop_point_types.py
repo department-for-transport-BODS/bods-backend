@@ -2,7 +2,7 @@
 Stop Point Types
 """
 
-from typing import cast, get_args
+from typing import get_args
 
 from lxml.etree import _Element  # type: ignore
 
@@ -28,7 +28,7 @@ def parse_bay_structure(bay_xml: _Element) -> BayStructure:
     if timing_status_code:
         timing_status = TIMING_STATUS_MAPPING.get(timing_status_code)
         if timing_status and timing_status in get_args(TimingStatusT):
-            return BayStructure(TimingStatus=cast(TimingStatusT, timing_status))
+            return BayStructure(TimingStatus=timing_status)
 
     return BayStructure()
 
