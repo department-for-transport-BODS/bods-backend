@@ -17,8 +17,8 @@ class ServicesTab(Container):
 
     selected_service: Reactive[TXCService | None] = reactive(None)
 
-    def __init__(self, data: TXCData, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, data: TXCData):
+        super().__init__()
         self.data = data
         self.selected_service = self.data.Services[0]
 
@@ -39,12 +39,12 @@ class ServicesTab(Container):
             ),
         )
 
-    def services_list(self) -> DataTable:
+    def services_list(self) -> DataTable[str | None]:
         """
         List of Services
         Should be 1
         """
-        service_table = DataTable(
+        service_table: DataTable[str | None] = DataTable(
             show_header=True,
             show_row_labels=True,
             zebra_stripes=True,
@@ -106,11 +106,11 @@ class ServicesTab(Container):
 
         return service_table
 
-    def journey_patterns_table(self) -> DataTable:
+    def journey_patterns_table(self) -> DataTable[str | None]:
         """
         Table of Journey Patterns for the selected service
         """
-        journey_patterns_table = DataTable(
+        journey_patterns_table: DataTable[str | None] = DataTable(
             show_header=True,
             show_row_labels=True,
             zebra_stripes=True,
@@ -152,11 +152,11 @@ class ServicesTab(Container):
 
         return journey_patterns_table
 
-    def lines_table(self) -> DataTable:
+    def lines_table(self) -> DataTable[str | None]:
         """
         Table of Lines for the selected service
         """
-        lines_table = DataTable(
+        lines_table: DataTable[str | None] = DataTable(
             show_header=True,
             show_row_labels=True,
             zebra_stripes=True,
@@ -228,8 +228,8 @@ class ServicesTab(Container):
         """
         Handle Selecting buttons
         """
-        if event.data_table.id == "table-services":
-            data = event.data_table.get_row(event.row_key)
+        if event.data_table.id == "table-services":  # type: ignore
+            data = event.data_table.get_row(event.row_key)  # type: ignore
             self.selected_service = next(
                 (
                     service

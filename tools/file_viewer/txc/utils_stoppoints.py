@@ -2,16 +2,11 @@
 Stop Point Utils
 """
 
-from dataclasses import dataclass
-
-from common_layer.xml.txc.models.txc_stoppoint import (
-    AnnotatedStopPointRef,
-    TXCStopPoint,
-)
+from common_layer.xml.txc.models import AnnotatedStopPointRef, TXCStopPoint
+from pydantic import BaseModel
 
 
-@dataclass
-class StopPointDetails:
+class StopPointDetails(BaseModel):
     """
     Displayable datatable for stoppoint details
     """
@@ -64,7 +59,7 @@ def get_all_stop_point_details(
     """
     Function to get stop point details for all stop points
     """
-    all_stop_point_details = []
+    all_stop_point_details: list[StopPointDetails] = []
     for stop_point in stop_points:
         if isinstance(stop_point, AnnotatedStopPointRef):
             all_stop_point_details.append(
@@ -77,7 +72,7 @@ def get_all_stop_point_details(
                     LocalityQualifier=stop_point.LocalityQualifier,
                 )
             )
-        elif isinstance(stop_point, TXCStopPoint):
+        else:
             all_stop_point_details.append(
                 StopPointDetails(
                     type="Custom",

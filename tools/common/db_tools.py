@@ -59,9 +59,9 @@ def create_db_config(
         dotenv_loader()
         try:
             port = int(get_env_or_exit("POSTGRES_PORT"))
-        except ValueError:
+        except ValueError as exc:
             typer.echo("Error: POSTGRES_PORT must be a valid integer")
-            raise typer.Exit(1)
+            raise typer.Exit(1) from exc
 
         return DbConfig(
             host=get_env_or_exit("POSTGRES_HOST"),

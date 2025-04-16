@@ -6,10 +6,11 @@ from collections import defaultdict
 from datetime import date
 from typing import Literal
 
-from sqlalchemy import tuple_
+from sqlalchemy import func, select, tuple_
 from sqlalchemy.dialects.postgresql import insert
 
 from ..client import SqlDB
+from ..dataclasses import ServiceStats
 from ..models import (
     TransmodelBankHolidays,
     TransmodelService,
@@ -52,6 +53,34 @@ class TransmodelServiceRepo(BaseRepositoryWithId[TransmodelService]):
             self._model.txcfileattributes_id.in_(txcfileattributes_ids)
         )
         return self._fetch_all(statement)
+
+    def get_service_stats_by_revision_id(self, revision_id: int) -> ServiceStats:
+        """
+        Get ServiceStats for the given revision id:
+        - first_service_start
+        - first_expiring_service
+        - last_expiring_service
+        """
+        stmt = select(
+            func.min(self._model.start_date),
+            func.min(self._model.end_date),
+            func.max(self._model.end_date),
+        ).where(self._model.revision_id == revision_id)
+
+        with self._db.session_scope() as session:
+            result = session.execute(stmt).one_or_none()
+            if result is None:
+                return ServiceStats(
+                    first_service_start=None,
+                    first_expiring_service=None,
+                    last_expiring_service=None,
+                )
+            min_start, min_end, max_end = result
+            return ServiceStats(
+                first_service_start=min_start,
+                first_expiring_service=min_end,
+                last_expiring_service=max_end,
+            )
 
 
 class TransmodelServicePatternRepo(BaseRepositoryWithId[TransmodelServicePattern]):

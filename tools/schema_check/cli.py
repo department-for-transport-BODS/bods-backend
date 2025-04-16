@@ -9,6 +9,7 @@ import structlog
 import typer
 from common_layer.json_logging import configure_logging
 from lxml import etree
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 from src.common_lambdas.schema_check.app.schema_check import (
@@ -28,7 +29,7 @@ app = typer.Typer()
 log = get_logger()
 
 
-def parse_xml_from_file(file_path: Path) -> etree._Element:
+def parse_xml_from_file(file_path: Path) -> _Element:
     """Parse XML document from local file"""
     try:
         return etree.parse(str(file_path)).getroot()

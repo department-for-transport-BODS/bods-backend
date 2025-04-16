@@ -1,8 +1,13 @@
+"""
+CLI to add cProfile profiling
+"""
+
 import contextlib
 import cProfile
 import importlib
 import pstats
-from functools import partial, wraps
+from functools import wraps
+from typing import Any, Callable, TypeVar
 
 import typer
 from structlog.stdlib import get_logger
@@ -10,6 +15,8 @@ from structlog.stdlib import get_logger
 app = typer.Typer(help="Run profiling for CLI commands.", invoke_without_command=False)
 
 log = get_logger()
+T = TypeVar("T")
+CommandCallback = Callable[..., Any]
 
 
 @contextlib.contextmanager
@@ -32,13 +39,13 @@ def profiler(enable: bool = False, filename: str = "profile.prof"):
             stats.print_stats(10)
 
 
-def wrap_with_profiler(command_callback):
+def wrap_with_profiler(command_callback: CommandCallback) -> CommandCallback:
     """
     Wrap a command callback to add profiling logic
     """
 
     @wraps(command_callback)
-    def wrapped(*args, **kwargs):
+    def wrapped(*args: Any, **kwargs: Any):
         with profiler(enable=True, filename="profile.prof"):
             command_callback(*args, **kwargs)
 
@@ -53,10 +60,15 @@ def register_commands_from_module(module_name: str):
     if hasattr(module, "app") and isinstance(module.app, typer.Typer):
         for command in module.app.registered_commands:
             # Wrap the command's callback in profiling logic
+            if command.callback is None:
+                log.warning(
+                    "Command has no callback, skipping.", command_name=command.name
+                )
+                continue
             wrapped_callback = wrap_with_profiler(command.callback)
             app.command(name=command.name, help=command.help)(wrapped_callback)
     else:
-        log.error(f"Module '{module_name}' does not have a valid Typer app.")
+        log.error("Module does not have a valid Typer app.", module_name=module_name)
         raise typer.Exit(1)
 
 

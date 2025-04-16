@@ -26,12 +26,12 @@ class TableConfig(BaseModel):
     )
 
 
-def create_data_table(config: TableConfig) -> DataTable:
+def create_data_table(config: TableConfig) -> DataTable[str]:
     """
     Factory function to create a DataTable with consistent styling and configuration.
 
     """
-    table = DataTable(
+    table: DataTable[str] = DataTable(
         show_header=True,
         show_row_labels=True,
         zebra_stripes=True,

@@ -12,7 +12,7 @@ from textual.widgets import Button, Label, ListItem, ListView
 from .check_model import Check, CheckInputData, CheckOutputData
 
 
-def create_list_item(item: Check[CheckInputData, CheckOutputData]):
+def create_list_item(item: Check[CheckInputData, CheckOutputData]) -> ListItem:
     """
     The list data info
     """
@@ -32,17 +32,17 @@ class ChecksTab(Container):
     Journey Information Tab
     """
 
-    selected_check: reactive[Check | None] = reactive(None)
+    active_chk: reactive[Check[CheckInputData, CheckOutputData] | None] = reactive(  # type: ignore
+        None
+    )
     check_results: reactive[dict[str, BaseModel]] = reactive({})
 
     def __init__(
         self,
         checks: list[Check[CheckInputData, CheckOutputData]],
         data: CheckInputData,
-        *args,
-        **kwargs,
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__()
         self.data = data
         self.checks = checks
 
@@ -92,12 +92,16 @@ class ChecksTab(Container):
         """
         Sets the selected check
         """
-        self.selected_check = next(
+        self.active_chk = next(
             (item for item in self.checks if item.name == message.item.name),
             None,
         )
 
-    def watch_selected_check(self, old_check, new_check) -> None:
+    def watch_selected_check(
+        self,
+        _old_check: Check[CheckInputData, CheckOutputData],
+        _new_check: Check[CheckInputData, CheckOutputData],
+    ) -> None:
         """
         Textual Reactive Watch Function when selected_check variable changes
         """
@@ -119,11 +123,11 @@ class ChecksTab(Container):
         check_details_container = self.query_one("#check_details_container", Container)
         check_details_container.remove_children()
 
-        if self.selected_check:
-            check_output_data = self.check_results.get(self.selected_check.name)
+        if self.active_chk:
+            check_output_data = self.check_results.get(self.active_chk.name)
             if check_output_data:
                 check_details_container.mount(
-                    self.selected_check.detail_func(check_output_data)
+                    self.active_chk.detail_func(check_output_data)
                 )
             else:
                 check_details_container.mount(

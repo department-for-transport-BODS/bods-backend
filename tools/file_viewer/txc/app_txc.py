@@ -13,13 +13,13 @@ from .tabs import JourneyPatternSectionsTab, RoutesTab, ServicesTab, VehicleJour
 from .utils_stoppoints import get_all_stop_point_details
 
 
-class TXCDataApp(App):
+class TXCDataApp(App[None]):
     """
     Display ATCO-Data
     """
 
-    def __init__(self, data: TXCData, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, data: TXCData):
+        super().__init__()
         self.data: TXCData = data
 
     def compose(self) -> ComposeResult:
@@ -84,11 +84,11 @@ class TXCDataApp(App):
         columns = Container(Horizontal(left_column, right_column))
         return columns
 
-    def display_operator_details(self) -> DataTable:
+    def display_operator_details(self) -> DataTable[str | None]:
         """
         Operator ATCO-CIF Data
         """
-        table = DataTable(
+        table: DataTable[str | None] = DataTable(
             show_header=True,
             show_row_labels=True,
             zebra_stripes=True,
@@ -121,11 +121,11 @@ class TXCDataApp(App):
 
         return table
 
-    def display_service_details(self) -> DataTable:
+    def display_service_details(self) -> DataTable[str | int | None]:
         """
         Display Service Details
         """
-        table = DataTable(
+        table: DataTable[str | int | None] = DataTable(
             show_header=True,
             show_row_labels=True,
             zebra_stripes=True,
@@ -179,11 +179,11 @@ class TXCDataApp(App):
 
         return table
 
-    def display_stop_point_details(self) -> DataTable:
+    def display_stop_point_details(self) -> DataTable[str]:
         """
         Table of Stop Points from TransXChange Data
         """
-        stop_point_table = DataTable(
+        stop_point_table: DataTable[str] = DataTable(
             show_header=True,
             show_row_labels=True,
             zebra_stripes=True,

@@ -15,6 +15,7 @@
         "publishDatasetRevision": "{% $exists($states.input.publishDatasetRevision) ? $states.input.publishDatasetRevision : false %}",
         "overwriteInputDataset": "{% $exists($states.input.overwriteInputDataset) ? $states.input.overwriteInputDataset : true %}",
         "datasetETLTaskResultId": "{% $exists($states.input.datasetETLTaskResultId) ? $states.input.datasetETLTaskResultId : null %}",
+        "performETLOnly": "{% $exists($states.input.performETLOnly) ? $states.input.performETLOnly : false %}",
         "lock_name": "bods-backend-semaphore",
         "concurrency_limit": 10,
         "lock_entry": "{% $uuid() %}"
@@ -70,41 +71,32 @@
       },
       "Retry": [
         {
-          "ErrorEquals": [
-            "DynamoDB.AmazonDynamoDBException"
-          ],
+          "ErrorEquals": ["DynamoDB.AmazonDynamoDBException"],
           "MaxAttempts": 0
         },
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "MaxAttempts": 6,
           "BackoffRate": 2
         }
       ],
       "Catch": [
         {
-          "ErrorEquals": [
-            "DynamoDB.AmazonDynamoDBException"
-          ],
+          "ErrorEquals": ["DynamoDB.AmazonDynamoDBException"],
           "Next": "Initialize Lock Item",
           "Output": "$lockinfo.acquisitionerror"
         },
         {
-          "ErrorEquals": [
-            "DynamoDB.ConditionalCheckFailedException"
-          ],
+          "ErrorEquals": ["DynamoDB.ConditionalCheckFailedException"],
           "Next": "Get Current Lock Record",
           "Output": "$lockinfo.acquisitionerror"
         },
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "Next": "Parent Exception Handler",
           "Output": {
-            "errorInfo": "$.error"
+            "errorInfo": "$.error",
+            "stepName": "Acquire Lock"
           }
         }
       ],
@@ -133,9 +125,7 @@
       },
       "Catch": [
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "Next": "Acquire Lock"
         }
       ],
@@ -196,12 +186,11 @@
       },
       "Catch": [
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "Next": "Parent Exception Handler",
           "Output": {
-            "errorInfo": "{% $states.errorOutput %}"
+            "errorInfo": "{% $states.errorOutput %}",
+            "stepName": "Initialize Pipeline"
           }
         }
       ]
@@ -237,12 +226,11 @@
       },
       "Catch": [
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "Next": "Parent Exception Handler",
           "Output": {
-            "errorInfo": "{% $states.errorOutput %}"
+            "errorInfo": "{% $states.errorOutput %}",
+            "stepName": "Download Dataset"
           }
         }
       ]
@@ -256,19 +244,19 @@
         "ObjectKey": "{% $s3Object %}",
         "DatasetRevisionId": "{% $datasetRevisionId %}",
         "DatasetType": "{% $datasetType %}",
-        "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}"
+        "DatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}",
+        "SkipVirusScan": "{% $performETLOnly %}"
       },
       "Assign": {
         "ExtractedSubFolder": "{% $states.result.body.generatedPrefix %}"
       },
       "Catch": [
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "Next": "Parent Exception Handler",
           "Output": {
-            "errorInfo": "{% $states.errorOutput %}"
+            "errorInfo": "{% $states.errorOutput %}",
+            "stepName": "ClamAV and Extraction"
           }
         }
       ]
@@ -282,7 +270,9 @@
         "mapS3Bucket": "{% $s3Bucket %}",
         "mapS3Object": "{% $states.context.Map.Item.Value.Key %}",
         "mapDatasetRevisionId": "{% $datasetRevisionId %}",
-        "mapDatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}"
+        "mapDatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}",
+        "mapDatasetType": "{% $datasetType %}",
+        "mapPerformETLOnly": "{% $performETLOnly %}"
       },
       "ItemReader": {
         "Resource": "arn:aws:states:::s3:listObjectsV2",
@@ -300,13 +290,29 @@
         "States": {
           "Process Validation Map Input": {
             "Type": "Pass",
-            "Next": "File Validation",
+            "Next": "Check if Validations need to be Skipped",
             "Assign": {
               "Bucket": "{% $states.input.mapS3Bucket %}",
               "ObjectKey": "{% $states.input.mapS3Object %}",
               "DatasetRevisionId": "{% $states.input.mapDatasetRevisionId %}",
-              "datasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}"
+              "datasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}",
+              "DatasetType": "{% $states.input.mapDatasetType %}",
+              "mapPerformETLOnly": "{% $states.input.mapPerformETLOnly %}"
             }
+          },
+          "Check if Validations need to be Skipped": {
+            "Type": "Choice",
+            "Default": "File Validation",
+            "Choices": [
+              {
+                "Condition": "{% $mapPerformETLOnly = false %}",
+                "Next": "File Validation"
+              },
+              {
+                "Condition": "{% $mapPerformETLOnly = true %}",
+                "Next": "FileAttributes ETL"
+              }
+            ]
           },
           "File Validation": {
             "Type": "Task",
@@ -322,12 +328,11 @@
             },
             "Catch": [
               {
-                "ErrorEquals": [
-                  "States.ALL"
-                ],
+                "ErrorEquals": ["States.ALL"],
                 "Next": "Validation Exception Handler",
                 "Output": {
-                  "errorInfo": "{% $states.errorOutput %}"
+                  "errorInfo": "{% $states.errorOutput %}",
+                  "stepName": "File Validation"
                 }
               }
             ]
@@ -346,12 +351,11 @@
             },
             "Catch": [
               {
-                "ErrorEquals": [
-                  "States.ALL"
-                ],
+                "ErrorEquals": ["States.ALL"],
                 "Next": "Validation Exception Handler",
                 "Output": {
-                  "errorInfo": "{% $states.errorOutput %}"
+                  "errorInfo": "{% $states.errorOutput %}",
+                  "stepName": "XSD Schema Check"
                 }
               }
             ]
@@ -370,12 +374,11 @@
             },
             "Catch": [
               {
-                "ErrorEquals": [
-                  "States.ALL"
-                ],
+                "ErrorEquals": ["States.ALL"],
                 "Next": "Validation Exception Handler",
                 "Output": {
-                  "errorInfo": "{% $states.errorOutput %}"
+                  "errorInfo": "{% $states.errorOutput %}",
+                  "stepName": "Post Schema Check"
                 }
               }
             ]
@@ -394,12 +397,11 @@
             },
             "Catch": [
               {
-                "ErrorEquals": [
-                  "States.ALL"
-                ],
+                "ErrorEquals": ["States.ALL"],
                 "Next": "Validation Exception Handler",
                 "Output": {
-                  "errorInfo": "{% $states.errorOutput %}"
+                  "errorInfo": "{% $states.errorOutput %}",
+                  "stepName": "FileAttributes ETL"
                 }
               }
             ]
@@ -408,8 +410,20 @@
             "Type": "Succeed"
           },
           "Validation Exception Handler": {
-            "Type": "Pass",
-            "Next": "Validation Failed"
+            "Type": "Task",
+            "Next": "Validation Failed",
+            "Resource": "${ExceptionHandlerLambdaArn}",
+            "Arguments": {
+              "Error": "{% $states.input.errorInfo.Error %}",
+              "Cause": "{% $states.input.errorInfo.Cause %}",
+              "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}",
+              "DatasetRevisionId": "{% $DatasetRevisionId %}",
+              "DatasetType": "{% $DatasetType %}",
+              "StepName": "{% $states.input.stepName %}",
+              "ObjectKey": "{% $ObjectKey %}",
+              "FailDatasetRevision": false,
+              "FailDatasetETLTaskResult": false
+            }
           },
           "Validation Failed": {
             "Type": "Fail",
@@ -443,12 +457,11 @@
       },
       "Catch": [
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "Next": "Parent Exception Handler",
           "Output": {
-            "errorInfo": "{% $states.errorOutput %}"
+            "errorInfo": "{% $states.errorOutput %}",
+            "stepName": "Collate Files"
           }
         }
       ]
@@ -464,7 +477,9 @@
         "mapDatasetSupersededTimetable": "{% $states.context.Map.Item.Value.SupersededTimetable %}",
         "mapDatasetEtlTaskResultId": "{% $DatasetEtlTaskResultId %}",
         "mapDatasetFileAttributesEtl": "{% $states.context.Map.Item.Value.TxcFileAttributesId %}",
-        "mapDatasetRevisionId": "{% $datasetRevisionId %}"
+        "mapDatasetRevisionId": "{% $datasetRevisionId %}",
+        "mapDatasetType": "{% $datasetType %}",
+        "mapPerformETLOnly": "{% $performETLOnly %}"
       },
       "ItemReader": {
         "Resource": "arn:aws:states:::s3:getObject",
@@ -485,15 +500,31 @@
         "States": {
           "Process ETL Map Input": {
             "Type": "Pass",
-            "Next": "PTI Validation",
+            "Next": "Check if PTI needs to be Skipped",
             "Assign": {
               "Bucket": "{% $states.input.mapS3Bucket %}",
               "ObjectKey": "{% $states.input.mapS3Object %}",
               "SupersededTimetable": "{% $states.input.mapDatasetSupersededTimetable %}",
               "datasetEtlTaskResultId": "{% $states.input.mapDatasetEtlTaskResultId %}",
               "DatasetRevisionId": "{% $states.input.mapDatasetRevisionId %}",
-              "FileAttributesEtl": "{% $states.input.mapDatasetFileAttributesEtl %}"
+              "FileAttributesEtl": "{% $states.input.mapDatasetFileAttributesEtl %}",
+              "DatasetType": "{% $states.input.mapDatasetType %}",
+              "mapPerformETLOnly": "{% $states.input.mapPerformETLOnly %}"
             }
+          },
+          "Check if PTI needs to be Skipped": {
+            "Type": "Choice",
+            "Default": "PTI Validation",
+            "Choices": [
+              {
+                "Condition": "{% $mapPerformETLOnly = false %}",
+                "Next": "PTI Validation"
+              },
+              {
+                "Condition": "{% $mapPerformETLOnly = true %}",
+                "Next": "Timetables ETL"
+              }
+            ]
           },
           "PTI Validation": {
             "Type": "Task",
@@ -510,12 +541,11 @@
             },
             "Catch": [
               {
-                "ErrorEquals": [
-                  "States.ALL"
-                ],
+                "ErrorEquals": ["States.ALL"],
                 "Next": "ETL Exception Handler",
                 "Output": {
-                  "errorInfo": "{% $states.errorOutput %}"
+                  "errorInfo": "{% $states.errorOutput %}",
+                  "stepName": "PTI Validation"
                 }
               }
             ]
@@ -537,12 +567,11 @@
             },
             "Catch": [
               {
-                "ErrorEquals": [
-                  "States.ALL"
-                ],
+                "ErrorEquals": ["States.ALL"],
                 "Next": "ETL Exception Handler",
                 "Output": {
-                  "errorInfo": "{% $states.errorOutput %}"
+                  "errorInfo": "{% $states.errorOutput %}",
+                  "stepName": "Timetables ETL"
                 }
               }
             ]
@@ -551,8 +580,20 @@
             "Type": "Succeed"
           },
           "ETL Exception Handler": {
-            "Type": "Pass",
-            "Next": "PTI and ETL Failed"
+            "Type": "Task",
+            "Next": "PTI and ETL Failed",
+            "Resource": "${ExceptionHandlerLambdaArn}",
+            "Arguments": {
+              "Error": "{% $states.input.errorInfo.Error %}",
+              "Cause": "{% $states.input.errorInfo.Cause %}",
+              "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}",
+              "DatasetRevisionId": "{% $DatasetRevisionId %}",
+              "DatasetType": "{% $DatasetType %}",
+              "ObjectKey": "{% $ObjectKey %}",
+              "StepName": "{% $states.input.stepName %}",
+              "FailDatasetRevision": false,
+              "FailDatasetETLTaskResult": false
+            }
           },
           "PTI and ETL Failed": {
             "Type": "Fail"
@@ -592,12 +633,11 @@
       },
       "Catch": [
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "Next": "Parent Exception Handler",
           "Output": {
-            "errorInfo": "{% $states.errorOutput %}"
+            "errorInfo": "{% $states.errorOutput %}",
+            "stepName": "Generate Output Zip and Update Status"
           }
         }
       ]
@@ -607,10 +647,24 @@
       "Choices": [
         {
           "Condition": "{% $finalResult.body.successful_files > 0 %}",
-          "Next": "Trigger DQS State Machine"
+          "Next": "Check if DQS needs to be Skipped"
         }
       ],
       "Default": "Release Lock"
+    },
+    "Check if DQS needs to be Skipped": {
+      "Type": "Choice",
+      "Default": "Trigger DQS State Machine",
+      "Choices": [
+        {
+          "Condition": "{% $performETLOnly = false %}",
+          "Next": "Trigger DQS State Machine"
+        },
+        {
+          "Condition": "{% $performETLOnly = true %}",
+          "Next": "Release Lock"
+        }
+      ]
     },
     "Trigger DQS State Machine": {
       "Type": "Task",
@@ -621,7 +675,19 @@
         "Input": {
           "DatasetRevisionId": "{% $datasetRevisionId %}"
         }
-      }
+      },
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "Parent Exception Handler",
+          "Output": {
+            "errorInfo": "{% $states.errorOutput %}",
+            "stepName": "Trigger DQS State Machine",
+            "failDatasetRevision": false,
+            "failDatasetETLTaskResult": true
+          }
+        }
+      ]
     },
     "Release Lock": {
       "Type": "Task",
@@ -648,33 +714,26 @@
       },
       "Retry": [
         {
-          "ErrorEquals": [
-            "DynamoDB.ConditionalCheckFailedException"
-          ],
+          "ErrorEquals": ["DynamoDB.ConditionalCheckFailedException"],
           "MaxAttempts": 0
         },
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "MaxAttempts": 5,
           "BackoffRate": 1.5
         }
       ],
       "Catch": [
         {
-          "ErrorEquals": [
-            "DynamoDB.ConditionalCheckFailedException"
-          ],
+          "ErrorEquals": ["DynamoDB.ConditionalCheckFailedException"],
           "Next": "Completed"
         },
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "Next": "Parent Exception Handler",
           "Output": {
-            "errorInfo": "$.error"
+            "errorInfo": "$.error",
+            "stepName": "Release Lock"
           }
         }
       ],
@@ -687,7 +746,14 @@
       "Arguments": {
         "Error": "{% $states.input.errorInfo.Error %}",
         "Cause": "{% $states.input.errorInfo.Cause %}",
-        "DatasetEtlTaskResultId": "{% $datasetETLTaskResultId %}"
+        "DatasetEtlTaskResultId": "{% $datasetETLTaskResultId %}",
+        "DatasetRevisionId": "{% $datasetRevisionId %}",
+        "DatasetType": "{% $datasetType %}",
+        "StepName": "{% $exists($states.input.stepName) ? $states.input.stepName : 'unknown' %}",
+        "ObjectKey": "{% $s3Object %}",
+        "Url": "{% $url %}",
+        "FailDatasetRevision": "{% $exists($states.input.failDatasetRevision) ? $states.input.failDatasetRevision : true %}",
+        "FailDatasetETLTaskResult": "{% $exists($states.input.failDatasetETLTaskResult) ? $states.input.failDatasetETLTaskResult : true %}"
       }
     },
     "Release Lock Exception Handler": {
@@ -715,15 +781,11 @@
       },
       "Retry": [
         {
-          "ErrorEquals": [
-            "DynamoDB.ConditionalCheckFailedException"
-          ],
+          "ErrorEquals": ["DynamoDB.ConditionalCheckFailedException"],
           "MaxAttempts": 0
         },
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "MaxAttempts": 5,
           "BackoffRate": 1.5
         }
@@ -731,9 +793,7 @@
       "Next": "Overall State Machine Failed",
       "Catch": [
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "Next": "Overall State Machine Failed",
           "Output": "$.releaseError"
         }

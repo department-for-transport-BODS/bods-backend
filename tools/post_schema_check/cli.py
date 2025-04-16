@@ -9,11 +9,13 @@ import typer
 from common_layer.json_logging import configure_logging
 from common_layer.xml.txc.parser.parser_txc import parse_txc_file
 from lxml import etree
+from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
 from src.timetables_etl.post_schema_check.app.post_schema_check import (
     run_post_schema_validations,
 )
+from tools.common.db_tools import create_db_config, setup_db_instance
 
 structlog.configure(
     processors=[
@@ -26,7 +28,7 @@ app = typer.Typer()
 log = get_logger()
 
 
-def parse_xml_from_file(file_path: Path) -> etree._Element:
+def parse_xml_from_file(file_path: Path) -> _Element:
     """Parse XML document from local file"""
     try:
         return etree.parse(str(file_path)).getroot()
@@ -49,6 +51,36 @@ def validate(
         "--log-json",
         help="Enable structured logging output",
     ),
+    db_host: str = typer.Option(
+        "localhost",
+        "--db-host",
+        help="Database host",
+    ),
+    db_name: str = typer.Option(
+        "bods-local",
+        "--db-name",
+        help="Database name",
+    ),
+    db_user: str = typer.Option(
+        "bods-local",
+        "--db-user",
+        help="Database user",
+    ),
+    db_password: str = typer.Option(
+        "bods-local",
+        "--db-password",
+        help="Database password",
+    ),
+    db_port: int = typer.Option(
+        5432,
+        "--db-port",
+        help="Database port",
+    ),
+    use_dotenv: bool = typer.Option(
+        False,
+        "--use-dotenv",
+        help="Load database configuration from .env file",
+    ),
 ):
     """
     Validate a TXC XML file against the 2.4 schema for filename check
@@ -56,13 +88,20 @@ def validate(
     """
     if log_json:
         configure_logging()
+    try:
+        db_config = create_db_config(
+            use_dotenv, db_host, db_port, db_name, db_user, db_password
+        )
+        db = setup_db_instance(db_config)
+    except ValueError as e:
+        log.error("Database configuration error", error=str(e))
+        raise typer.Exit(1)
 
     try:
-        # Load schema and parse XML
         txc_data = parse_txc_file(xml_file)
 
         violations = [
-            v for v in run_post_schema_validations(txc_data) if not v.is_valid
+            v for v in run_post_schema_validations(txc_data, db) if not v.is_valid
         ]
 
         violation_count = len(violations)
