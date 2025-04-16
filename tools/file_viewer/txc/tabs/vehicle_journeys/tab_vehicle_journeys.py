@@ -34,6 +34,52 @@ from .tab_vehicle_journeys_tables import (
 )
 
 
+def vehicle_journeys_list(
+    vjs: list[TXCVehicleJourney | TXCFlexibleVehicleJourney],
+) -> DataTable[str | None]:
+    """
+    List of Vehicle Journeys
+    """
+    table: DataTable[str | None] = DataTable(
+        show_header=True,
+        show_row_labels=True,
+        zebra_stripes=True,
+        header_height=1,
+        show_cursor=True,
+        cursor_type="row",
+        name="Vehicle Journeys",
+        id="table-vehicle-journeys",
+    )
+    table.styles.min_height = 20
+    columns = [
+        "VJ Code",
+        "Journey Pattern Ref",
+        "Departure Time",
+        "Sequence Number",
+        "Private Code",
+        "Destination Display",
+        "Operator Ref",
+        "Service Ref",
+        "Line Ref",
+    ]
+    table.add_columns(*columns)
+
+    for journey in vjs:
+        table.add_row(
+            journey.VehicleJourneyCode,
+            journey.JourneyPatternRef if journey.JourneyPatternRef else "",
+            journey.DepartureTime if isinstance(journey, TXCVehicleJourney) else "",
+            journey.SequenceNumber if journey.SequenceNumber else "",
+            journey.PrivateCode if journey.PrivateCode else "",
+            journey.DestinationDisplay if journey.DestinationDisplay else "",
+            journey.OperatorRef if journey.OperatorRef else "",
+            journey.ServiceRef if journey.ServiceRef else "",
+            journey.LineRef if journey.LineRef else "",
+        )
+
+    return table
+
+
 class VehicleJourneysTab(Container):
     """
     TXC Vehicle Journeys Info
@@ -48,10 +94,12 @@ class VehicleJourneysTab(Container):
     selected_journey_pattern: Reactive[TXCJourneyPattern | None] = reactive(None)
     selected_route: Reactive[TXCRoute | None] = reactive(None)
 
-    def __init__(self, data: TXCData, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, data: TXCData):
+        super().__init__()
         self.data = data
-        self.vehicle_journeys_table: DataTable = self.vehicle_journeys_list()
+        self.vehicle_journeys_table: DataTable[str | None] = vehicle_journeys_list(
+            self.data.VehicleJourneys
+        )
         if self.data.VehicleJourneys:
             self.selected_vehicle_journey = self.data.VehicleJourneys[0]
             if isinstance(self.selected_vehicle_journey, TXCVehicleJourney):
@@ -81,49 +129,6 @@ class VehicleJourneysTab(Container):
                 id="vehicle-journey-details-container",
             ),
         )
-
-    def vehicle_journeys_list(self) -> DataTable:
-        """
-        List of Vehicle Journeys
-        """
-        table = DataTable(
-            show_header=True,
-            show_row_labels=True,
-            zebra_stripes=True,
-            header_height=1,
-            show_cursor=True,
-            cursor_type="row",
-            name="Vehicle Journeys",
-            id="table-vehicle-journeys",
-        )
-        table.styles.min_height = 20
-        columns = [
-            "VJ Code",
-            "Journey Pattern Ref",
-            "Departure Time",
-            "Sequence Number",
-            "Private Code",
-            "Destination Display",
-            "Operator Ref",
-            "Service Ref",
-            "Line Ref",
-        ]
-        table.add_columns(*columns)
-
-        for journey in self.data.VehicleJourneys:
-            table.add_row(
-                journey.VehicleJourneyCode,
-                journey.JourneyPatternRef if journey.JourneyPatternRef else "",
-                journey.DepartureTime if isinstance(journey, TXCVehicleJourney) else "",
-                journey.SequenceNumber if journey.SequenceNumber else "",
-                journey.PrivateCode if journey.PrivateCode else "",
-                journey.DestinationDisplay if journey.DestinationDisplay else "",
-                journey.OperatorRef if journey.OperatorRef else "",
-                journey.ServiceRef if journey.ServiceRef else "",
-                journey.LineRef if journey.LineRef else "",
-            )
-
-        return table
 
     def update_vehicle_journey_timing_links_table(
         self, journey: TXCVehicleJourney | None
@@ -288,8 +293,8 @@ class VehicleJourneysTab(Container):
         """
         Handle selecting rows in tables
         """
-        if event.data_table.id == "table-vehicle-journeys":
-            data = event.data_table.get_row(event.row_key)
+        if event.data_table.id == "table-vehicle-journeys":  # type: ignore
+            data = event.data_table.get_row(event.row_key)  # type: ignore
             self.selected_vehicle_journey = next(
                 (
                     journey
@@ -298,8 +303,8 @@ class VehicleJourneysTab(Container):
                 ),
                 None,
             )
-        elif event.data_table.id == "table-vehicle-journey-timing-links":
-            data = event.data_table.get_row(event.row_key)
+        elif event.data_table.id == "table-vehicle-journey-timing-links":  # type: ignore
+            data = event.data_table.get_row(event.row_key)  # type: ignore
             if self.selected_vehicle_journey is not None and isinstance(
                 self.selected_vehicle_journey, TXCVehicleJourney
             ):
@@ -470,9 +475,9 @@ class VehicleJourneysTab(Container):
                     from_stop.CommonName if from_stop else "",
                     to_stop.CommonName if to_stop else "",
                     jptl.RouteLinkRef if hasattr(jptl, "RouteLinkRef") else "",
-                    parse_duration(jptl.RunTime) if jptl.RunTime else "",
+                    str(parse_duration(jptl.RunTime)) if jptl.RunTime else "",
                     (
-                        parse_duration(jptl.From.WaitTime)
+                        str(parse_duration(jptl.From.WaitTime))
                         if jptl.From and jptl.From.WaitTime
                         else ""
                     ),

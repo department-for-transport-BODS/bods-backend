@@ -14,6 +14,7 @@ from ..models import (
     TXCFlexibleStopUsage,
     TXCPhone,
 )
+from .txc_types import parse_jp_direction
 
 log = get_logger()
 
@@ -71,9 +72,14 @@ def parse_flexible_journey_pattern(
 ) -> TXCFlexibleJourneyPattern | None:
     """Parse flexible journey patterns defining possible stop combinations for flexible routes"""
     pattern_id: str | None = pattern_xml.get("id")
-    direction: str | None = get_element_text(pattern_xml, "Direction")
+    direction: str | None = parse_jp_direction(pattern_xml)
 
     if not pattern_id or not direction:
+        log.warning(
+            "Flexible Journey Pattern Missing ID or Direction",
+            pattern_id=pattern_id,
+            direction=direction,
+        )
         return None
 
     stop_points: list[TXCFlexibleStopUsage | TXCFixedStopUsage] = []

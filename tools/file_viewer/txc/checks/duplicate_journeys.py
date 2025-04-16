@@ -30,7 +30,9 @@ class DuplicateJourneysCheckData(CheckResult):
     journey_details: dict[str, list[TXCVehicleJourney | TXCFlexibleVehicleJourney]]
 
 
-def get_journey_key(journey: TXCVehicleJourney | TXCFlexibleVehicleJourney) -> tuple:
+def get_journey_key(
+    journey: TXCVehicleJourney | TXCFlexibleVehicleJourney,
+) -> tuple[str, str | None, str] | tuple[None, None, None]:
     """
     Create a unique key for each journey based on its identifying attributes.
     """
@@ -44,8 +46,7 @@ def get_journey_key(journey: TXCVehicleJourney | TXCFlexibleVehicleJourney) -> t
                 else "?"
             ),
         )
-    else:
-        return (None, None, None)
+    return (None, None, None)
 
 
 def check_duplicate_journeys(data: TXCData) -> DuplicateJourneysCheckData:
@@ -53,9 +54,10 @@ def check_duplicate_journeys(data: TXCData) -> DuplicateJourneysCheckData:
     Check for duplicate journeys in the TXCData
     Return a DuplicateJourneysCheckData instance
     """
-    journey_map: dict[tuple, list[TXCVehicleJourney | TXCFlexibleVehicleJourney]] = (
-        defaultdict(list)
-    )
+    journey_map: dict[
+        tuple[str, str | None, str] | tuple[None, None, None],
+        list[TXCVehicleJourney | TXCFlexibleVehicleJourney],
+    ] = defaultdict(list)
     journey_details: dict[str, list[TXCVehicleJourney | TXCFlexibleVehicleJourney]] = {}
 
     for journey in data.VehicleJourneys:
@@ -80,11 +82,11 @@ def check_duplicate_journeys(data: TXCData) -> DuplicateJourneysCheckData:
     )
 
 
-def journey_details_table() -> DataTable:
+def journey_details_table() -> DataTable[str | None]:
     """
     Journey Details table
     """
-    table = DataTable(
+    table: DataTable[str | None] = DataTable(
         show_header=True,
         show_row_labels=True,
         zebra_stripes=True,
@@ -107,10 +109,10 @@ class DuplicateJourneysDetails(Container):
 
     selected_journey_id: Reactive[str | None] = reactive(None)
 
-    def __init__(self, data: DuplicateJourneysCheckData, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, data: DuplicateJourneysCheckData):
+        super().__init__()
         self.data = data
-        self.duplicate_journeys_table: DataTable = self.make_journeys_table()
+        self.duplicate_journeys_table = self.make_journeys_table()
 
     def compose(self) -> ComposeResult:
         yield Horizontal(
@@ -126,11 +128,11 @@ class DuplicateJourneysDetails(Container):
             ),
         )
 
-    def make_journeys_table(self) -> DataTable:
+    def make_journeys_table(self) -> DataTable[str | int]:
         """
         Table of Duplicate Journeys
         """
-        table = DataTable(
+        table: DataTable[str | int] = DataTable(
             show_header=True,
             show_row_labels=True,
             zebra_stripes=True,
@@ -192,8 +194,8 @@ class DuplicateJourneysDetails(Container):
         """
         Handle selecting rows in tables
         """
-        if event.data_table.id == "table-duplicate-journeys":
-            data = event.data_table.get_row(event.row_key)
+        if event.data_table.id == "table-duplicate-journeys":  # type: ignore
+            data = event.data_table.get_row(event.row_key)  # type: ignore
             self.selected_journey_id = data[0]
 
     # Watch Functions for Textual
