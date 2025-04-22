@@ -2,6 +2,7 @@
 Transform fares metadata items
 """
 
+from dataclasses import asdict
 from typing import Any
 
 from boto3.dynamodb.types import TypeDeserializer
@@ -68,7 +69,7 @@ def aggregate_metadata(metadata_items: list[FaresMetadata]) -> FaresMetadata:
             or item.valid_to > aggregated_metadata.valid_to
         ):
             aggregated_metadata.valid_to = item.valid_to
-
+    log.info("Aggregated Metadata", **asdict(aggregated_metadata))
     return aggregated_metadata
 
 

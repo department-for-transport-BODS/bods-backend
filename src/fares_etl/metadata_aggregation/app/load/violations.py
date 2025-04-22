@@ -13,7 +13,11 @@ def load_violations(
     fares_validation_result: FaresValidationResult,
 ) -> None:
     """
-    Load metadata
+    Load Fares Validation Results
+
+    Tables:
+        - fares_validator_faresvalidation
+        - fares_validator_faresvalidationresult
     """
     fares_validation_repo = FaresValidationRepo(db)
     fares_validation_result_repo = FaresValidationResultRepo(db)
