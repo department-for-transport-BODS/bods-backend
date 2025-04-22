@@ -264,7 +264,7 @@ Resources:
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl/file_attributes_etl
       Handler: app.file_attributes_etl.lambda_handler
-      MemorySize: 768
+      MemorySize: 1024
       Timeout: 300
       Layers:
         - !Ref BoilerplateLambdaLayerArn
