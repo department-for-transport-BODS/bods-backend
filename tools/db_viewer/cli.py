@@ -2,16 +2,10 @@
 Database View Tool to search by revision id or service ID
 """
 
+from enum import Enum
 from pathlib import Path
 
 import typer
-from common_layer.database.client import SqlDB
-from common_layer.database.models import NaptanStopPoint
-from common_layer.database.models.model_transmodel import (
-    TransmodelServicePattern,
-    TransmodelServicePatternStop,
-)
-from common_layer.database.repos import NaptanStopPointRepo
 from structlog.stdlib import get_logger
 from typer import BadParameter, Option, Typer
 
@@ -19,164 +13,20 @@ from tools.common.db_tools import DbConfig, create_db_config, setup_db_instance
 
 from .data_quality import process_data_quality_entities_by_revision_id
 from .etl_task import process_etl_entities_by_revision_id
-from .organisation import (
-    extract_dataset,
-    extract_dataset_revision,
-    extract_organisation,
-    extract_txc_attributes,
-)
-from .transmodel import (
-    extract_bookingarrangements,
-    extract_flexibleserviceoperationperiod,
-    extract_service_by_id,
-    extract_service_service_patterns,
-    extract_servicedorganisations,
-    extract_servicedorganisationvehiclejourney,
-    extract_servicedorganisationworkingdays,
-    extract_servicepattern_localities,
-    extract_servicepatterns_by_ids,
-    extract_servicepatterns_by_revision_id,
-    extract_servicepatternstop,
-    extract_services_by_revision_id,
-    extract_stopactivity,
-    extract_tracks,
-    extract_tracksvehiclejourney,
-    extract_vehiclejourney,
-)
-from .utils import csv_extractor
+from .fares import fares_from_revision_id
+from .timetables import process_from_revision_id, process_from_service_id
 
 log = get_logger()
 app = Typer()
 
 
-@csv_extractor()
-def extract_stoppoint(db: SqlDB, atco_codes: list[str]) -> list[NaptanStopPoint]:
+class DatasetType(str, Enum):
     """
-    Extract naptan stoppoint details from DB.
+    Dataset type to fetch
     """
-    repo = NaptanStopPointRepo(db)
-    stop_points, missing_stops = repo.get_by_atco_codes(atco_codes)
-    if missing_stops:
-        log.warning("Some Stops were not found in DB", missing_stops=missing_stops)
-    return stop_points
 
-
-def process_vehicle_journeys(
-    db: SqlDB,
-    service_pattern_stops: list[TransmodelServicePatternStop],
-    output_path: Path,
-):
-    """
-    Process Vehicle Journeys
-    """
-    vehicle_journey_ids = [
-        result.vehicle_journey_id for result in service_pattern_stops
-    ]
-    extract_vehiclejourney(db, vehicle_journey_ids, output_path=output_path)
-    extract_flexibleserviceoperationperiod(
-        db, vehicle_journey_ids, output_path=output_path
-    )
-    serviced_org_vj = extract_servicedorganisationvehiclejourney(
-        db, vehicle_journey_ids, output_path=output_path
-    )
-    extract_servicedorganisations(
-        db,
-        [it.serviced_organisation_id for it in serviced_org_vj],
-        output_path=output_path,
-    )
-    extract_servicedorganisationworkingdays(
-        db,
-        [it.id for it in serviced_org_vj],
-        output_path=output_path,
-    )
-    tracks_vj = extract_tracksvehiclejourney(
-        db,
-        vehicle_journey_ids,
-        output_path=output_path,
-    )
-    track_ids = {track.tracks_id for track in tracks_vj}
-    extract_tracks(db, track_ids, output_path=output_path)
-
-
-def process_service_patterns(
-    db: SqlDB,
-    tm_service_patterns: list[TransmodelServicePattern],
-    output_path: Path,
-):
-    """
-    Items dependent on service patterns
-    """
-    service_pattern_ids = [result.id for result in tm_service_patterns]
-    service_pattern_stops = extract_servicepatternstop(
-        db, service_pattern_ids, output_path=output_path
-    )
-    extract_servicepattern_localities(db, service_pattern_ids, output_path=output_path)
-    extract_stoppoint(
-        db,
-        [result.atco_code for result in service_pattern_stops],
-        output_path=output_path,
-    )
-    stop_activity_ids = [result.stop_activity_id for result in service_pattern_stops]
-
-    extract_stopactivity(db, stop_activity_ids, output_path=output_path)
-    process_vehicle_journeys(db, service_pattern_stops, output_path)
-
-
-def process_from_service_id(
-    db: SqlDB,
-    service_id: int,
-    output_path: Path,
-):
-    """
-    Process data from Service ID
-    """
-    log_ = log.bind(operation="batch_extraction")
-    service = extract_service_by_id(db, service_id, output_path=output_path)
-    if service is None:
-        log_.error("Transmodel Service Not Found")
-        raise BadParameter("Transmodel Service was not found in Database")
-    extract_bookingarrangements(db, [service.id], output_path=output_path)
-    service_service_patterns = extract_service_service_patterns(
-        db, [service.id], output_path=output_path
-    )
-    service_pattern_ids = [sp.servicepattern_id for sp in service_service_patterns]
-    service_patterns = extract_servicepatterns_by_ids(db, service_pattern_ids)
-    process_service_patterns(db, service_patterns, output_path=output_path)
-
-
-def process_from_revision_id(
-    db: SqlDB,
-    revision_id: int,
-    output_path: Path,
-):
-    """
-    Extract Data from DB and Output to CSVs based on table name
-    """
-    log_ = log.bind(operation="batch_extraction")
-    log_.info("Starting DB Data extraction and output to CSV")
-
-    # Organisation related entity
-    dataset_revision = extract_dataset_revision(
-        db, revision_id, output_path=output_path
-    )
-    dataset = extract_dataset(db, dataset_revision.dataset_id, output_path=output_path)
-    if dataset:
-        extract_organisation(db, dataset.organisation_id, output_path=output_path)
-    extract_txc_attributes(db, revision_id, output_path=output_path)
-
-    # Transmodel related entities
-    tm_services = extract_services_by_revision_id(
-        db, revision_id, output_path=output_path
-    )
-    service_ids = [it.id for it in tm_services]
-
-    extract_service_service_patterns(db, service_ids, output_path=output_path)
-
-    extract_bookingarrangements(db, service_ids, output_path=output_path)
-    service_patterns = extract_servicepatterns_by_revision_id(
-        db, revision_id, output_path=output_path
-    )
-    process_service_patterns(db, service_patterns, output_path)
+    TIMETABLES = "timetables"
+    FARES = "fares"
 
 
 def validate_params(revision_id: int | None, service_id: int | None) -> None:
@@ -194,7 +44,10 @@ def validate_params(revision_id: int | None, service_id: int | None) -> None:
 
 
 def make_default_output_path(
-    db_config: DbConfig, revision_id: int | None, service_id: int | None
+    db_config: DbConfig,
+    dataset_type: DatasetType,
+    revision_id: int | None,
+    service_id: int | None,
 ) -> Path:
     """
     Generate a default output path based on revision_id or service_id.
@@ -211,9 +64,21 @@ def make_default_output_path(
     db_host_port = f"{db_config.host}-{db_config.port}"
 
     if revision_id is not None:
-        final_path = base_path / db_host_port / "revision_id" / str(revision_id)
+        final_path = (
+            base_path
+            / db_host_port
+            / dataset_type.value
+            / "revision_id"
+            / str(revision_id)
+        )
     else:
-        final_path = base_path / db_host_port / "service_id" / str(service_id)
+        final_path = (
+            base_path
+            / db_host_port
+            / dataset_type.value
+            / "service_id"
+            / str(service_id)
+        )
 
     if not final_path.exists():
         log.info("Creating output directory", path=str(final_path))
@@ -274,7 +139,10 @@ def main(  # pylint: disable=too-many-arguments, too-many-positional-arguments
         "--use-dotenv",
         help="Load database configuration from .env file",
     ),
-):
+    dataset_type: DatasetType = Option(
+        DatasetType.TIMETABLES, "--type", help="Which type of dataset to fetch"
+    ),
+) -> None:
     """
     This tool queries a database then creates CSVs for ETL data for a
     specific revision id or service id
@@ -289,21 +157,34 @@ def main(  # pylint: disable=too-many-arguments, too-many-positional-arguments
         raise typer.Exit(1)
     db = setup_db_instance(config)
     if output_path is None:
-        output_path = make_default_output_path(config, revision_id, service_id)
-    if revision_id:
-        process_from_revision_id(
-            db=db, revision_id=revision_id, output_path=output_path
-        )
-    if service_id:
-        process_from_service_id(db, service_id, output_path)
-
-    if etl_result and revision_id:
-        process_etl_entities_by_revision_id(db, revision_id, output_path=output_path)
-        process_data_quality_entities_by_revision_id(
-            db, revision_id, output_path=output_path
+        output_path = make_default_output_path(
+            config, dataset_type, revision_id, service_id
         )
 
-    log.info("Completed Processing", output_path=output_path)
+    match dataset_type:
+        case DatasetType.TIMETABLES:
+
+            if revision_id:
+                process_from_revision_id(
+                    db=db, revision_id=revision_id, output_path=output_path
+                )
+            if service_id:
+                process_from_service_id(db, service_id, output_path)
+
+            if etl_result and revision_id:
+                process_etl_entities_by_revision_id(
+                    db, revision_id, output_path=output_path
+                )
+                process_data_quality_entities_by_revision_id(
+                    db, revision_id, output_path=output_path
+                )
+        case DatasetType.FARES:
+            log.info("Processing Fares")
+            if revision_id:
+                fares_from_revision_id(db, revision_id, output_path)
+            else:
+                log.critical("Fares Extraction Requires revision id")
+    log.info("Completed Processing", output_path=str(output_path))
 
 
 if __name__ == "__main__":
