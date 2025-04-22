@@ -4,7 +4,11 @@ Helper Functions for working with Tariffs in FareFrames
 
 from datetime import datetime
 
+from structlog.stdlib import get_logger
+
 from ..models import FareFrame, Tariff, TariffBasisT, UserProfile, UserTypeT
+
+log = get_logger()
 
 
 def get_tariffs_from_fare_frames(frames: list[FareFrame]) -> list[Tariff]:
@@ -84,5 +88,5 @@ def get_user_types(tariffs: list[Tariff]) -> list[UserTypeT]:
         for limitation in fare_structure.GenericParameterAssignment.limitations
         if isinstance(limitation, UserProfile) and limitation.UserType
     ]
-
+    log.debug("User Types found", user_types=user_types)
     return user_types

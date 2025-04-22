@@ -2,7 +2,11 @@
 ServiceFrame Parsing Helpers
 """
 
+from structlog.stdlib import get_logger
+
 from ..models import Line, ServiceFrame
+
+log = get_logger()
 
 
 def get_lines_from_service_frames(frames: list[ServiceFrame]) -> list[Line]:
@@ -40,5 +44,5 @@ def get_atco_area_codes_from_service_frames(frames: list[ServiceFrame]) -> list[
             area_code = stop_point.atco_area_code
             if area_code and area_code.isdigit():
                 area_codes.add(int(area_code))
-
+    log.debug("Atco Area Codes found", area_codes=area_codes)
     return list(area_codes)

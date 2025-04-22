@@ -3,38 +3,31 @@ Create fares data catalogue
 """
 
 from common_layer.database.models import FaresDataCatalogueMetadata
-from common_layer.xml.netex.helpers.helpers_composite_frame import (
+from common_layer.xml.netex.helpers import (
+    get_atco_area_codes_from_service_frames,
     get_composite_frame_valid_from,
     get_composite_frame_valid_to,
-)
-from common_layer.xml.netex.helpers.helpers_counts import sort_frames
-from common_layer.xml.netex.helpers.helpers_fare_frame_fare_products import (
     get_fare_products,
+    get_line_ids_from_service_frames,
+    get_line_public_codes_from_service_frames,
+    get_national_operator_codes,
     get_product_names,
     get_product_types,
-)
-from common_layer.xml.netex.helpers.helpers_fare_frame_tariff import (
     get_tariff_basis,
     get_tariffs_from_fare_frames,
     get_user_types,
+    sort_frames,
 )
-from common_layer.xml.netex.helpers.helpers_resource_frame import (
-    get_national_operator_codes,
-)
-from common_layer.xml.netex.helpers.helpers_service_frame import (
-    get_atco_area_codes_from_service_frames,
-    get_line_ids_from_service_frames,
-    get_line_public_codes_from_service_frames,
-)
-from common_layer.xml.netex.models.netex_publication_delivery import (
-    PublicationDeliveryStructure,
-)
+from common_layer.xml.netex.models import PublicationDeliveryStructure
+from structlog.stdlib import get_logger
+
+log = get_logger()
 
 
 def create_data_catalogue(
     netex: PublicationDeliveryStructure,
     file_name: str,
-):
+) -> FaresDataCatalogueMetadata:
     """
     Create FaresDataCatalogueMetadata
     """
@@ -45,7 +38,7 @@ def create_data_catalogue(
     valid_from = get_composite_frame_valid_from(sorted_frames.composite_frames)
     valid_to = get_composite_frame_valid_to(sorted_frames.composite_frames)
 
-    return FaresDataCatalogueMetadata(
+    data_catalogue = FaresDataCatalogueMetadata(
         valid_from=valid_from.date() if valid_from else None,
         valid_to=valid_to.date() if valid_to else None,
         atco_area=get_atco_area_codes_from_service_frames(sorted_frames.service_frames),
@@ -62,3 +55,5 @@ def create_data_catalogue(
         user_type=get_user_types(tariffs),
         xml_file_name=file_name,
     )
+    log.info("Generated FearesDataCatalogueMetadata", **data_catalogue.as_dict())
+    return data_catalogue

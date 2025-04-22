@@ -23,5 +23,5 @@ def get_national_operator_codes(frames: list[ResourceFrame]) -> list[str]:
                 operator_codes.add(public_code)
             else:
                 log.info("Operator Missing PublicCode", operator_id=operator.id)
-
+    log.debug("National Operator Codes Found", operator_codes=operator_codes)
     return list(operator_codes)
