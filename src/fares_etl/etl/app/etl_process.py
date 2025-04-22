@@ -34,7 +34,7 @@ def get_netex_publication_delivery(
     return xml
 
 
-@file_processing_result_to_db(step_name=StepName.ETL_PROCESS)
+@file_processing_result_to_db(step_name=StepName.FARES_ETL_PROCESS)
 def lambda_handler(event: dict[str, Any], _context: LambdaContext):
     """
     Fares ETL
