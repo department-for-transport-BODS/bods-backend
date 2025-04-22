@@ -76,7 +76,7 @@ class PostgresSettings(BaseSettings):
     @property
     def ssl_mode(self) -> str:
         """Get SSL mode based on environment."""
-        return "require" if self.use_iam_auth else "disable"
+        return "require" if self.use_iam_auth else "prefer"
 
     def get_connection_url(self, iam_token: str | None = None) -> str:
         """
