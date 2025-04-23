@@ -87,7 +87,7 @@ def map_metadata(metadata_items: list[dict[str, Any]]) -> tuple[
     stop_ids: set[int] = set()
     netex_schema_versions: set[str] = set()
     type_deserializer = TypeDeserializer()
-
+    log.info("Processing Metadata into DB Objects", count=len(metadata_items))
     for item in metadata_items:
         metadata_item = type_deserializer.deserialize(item["Metadata"])
         metadata_item.pop("datasetmetadata_ptr_id", None)
