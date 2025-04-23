@@ -5,7 +5,7 @@ Test Helper Functions
 from datetime import UTC, datetime, timedelta, timezone
 
 import pytest
-from common_layer.xml.netex.models.netex_utility import MultilingualString, VersionedRef
+from common_layer.xml.netex.models import MultilingualString, VersionedRef
 from common_layer.xml.netex.parser import parse_timestamp
 from common_layer.xml.netex.parser.netex_utility import (
     parse_multilingual_string,
@@ -64,11 +64,17 @@ from tests.xml.netex.conftest import (
             datetime(2024, 2, 14, 17, 30, 0, tzinfo=timezone(timedelta(hours=2))),
             id="Eastern European Time (EET)",
         ),
+        pytest.param(
+            """<Timestamp>2025-04-11T00:00:00</Timestamp>""",
+            "Timestamp",
+            datetime(2025, 4, 11, 0, 0, 0, tzinfo=UTC),
+            id="Timestamp without timezone info (assumed UTC)",
+        ),
     ],
 )
 def test_parse_timestamp(
     xml_str: str, element_name: str, expected_result: datetime | None
-):
+) -> None:
     """
     Test timestamp parsing for various formats and edge cases
     """

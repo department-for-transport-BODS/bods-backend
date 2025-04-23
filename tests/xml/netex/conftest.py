@@ -4,7 +4,7 @@ Netex Fixtures / Utils
 
 from common_layer.xml.netex.parser import NETEX_NS
 from lxml import etree
-from lxml.etree import _Element
+from lxml.etree import _Element  # type: ignore
 
 
 def parse_xml_str_as_netex(xml_str: str) -> _Element:
