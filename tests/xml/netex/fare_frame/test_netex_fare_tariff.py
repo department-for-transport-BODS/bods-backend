@@ -2,7 +2,7 @@
 Test Parsing a Tariff
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 from common_layer.xml.netex.models import (
@@ -58,8 +58,8 @@ from tests.xml.netex.conftest import parse_xml_str_as_netex
                 version="1.0",
                 validityConditions=[
                     FromToDate(
-                        FromDate=datetime(2025, 2, 5, 0, 0),
-                        ToDate=datetime(2125, 2, 5, 0, 0),
+                        FromDate=datetime(2025, 2, 5, 0, 0, tzinfo=UTC),
+                        ToDate=datetime(2125, 2, 5, 0, 0, tzinfo=UTC),
                     )
                 ],
                 Name=MultilingualString(
