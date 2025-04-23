@@ -61,7 +61,13 @@ def get_stop_ids(
 
     atco_ids = {stop.atco_code for stop in stop_point_refs if stop.atco_code}
     naptan_ids = {stop.naptan_code for stop in stop_point_refs if stop.naptan_code}
-
+    log.debug(
+        "Extracted ATCO / Naptan IDs from Netex",
+        atco_ids=atco_ids,
+        atco_id_count=len(atco_ids),
+        naptan_ids=naptan_ids,
+        naptan_id_count=len(naptan_ids),
+    )
     stops_from_atco_ids = dynamodb_naptan_stop_point_client.get_by_atco_codes(
         sorted(atco_ids)
     )[0]
@@ -77,4 +83,15 @@ def get_stop_ids(
         if stop.PrivateCode is not None and stop.PrivateCode.isdigit()
     }
     log.info("Generated List of Stop Private Codes in Netex", stop_ids=stop_ids)
+
+    if len(stops) != len(atco_ids | naptan_ids):
+        log.error(
+            "Not all stops were fetched from the Naptan Table",
+            fetched_stop_ids=stop_ids,
+            fetched_stop_id_count=len(stop_ids),
+            atco_ids=atco_ids,
+            naptan_ids=naptan_ids,
+            atco_id_count=len(atco_ids),
+            naptan_id_count=len(naptan_ids),
+        )
     return list(stop_ids)
