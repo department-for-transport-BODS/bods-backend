@@ -1,3 +1,7 @@
+"""
+Tests for FaresMetadata construction
+"""
+
 import os
 from datetime import datetime, timezone
 from pathlib import Path
@@ -23,8 +27,8 @@ from fares_etl.etl.app.transform.metadata import create_metadata, get_stop_ids
                 num_of_sales_offer_packages=1,
                 num_of_trip_products=1,
                 num_of_user_profiles=1,
-                valid_from=datetime(2025, 1, 14, 0, 0),
-                valid_to=datetime(2125, 1, 14, 0, 0),
+                valid_from=datetime(2025, 1, 14, 0, 0, tzinfo=timezone.utc),
+                valid_to=datetime(2125, 1, 14, 0, 0, tzinfo=timezone.utc),
             ),
         ),
         pytest.param(
@@ -46,7 +50,10 @@ from fares_etl.etl.app.transform.metadata import create_metadata, get_stop_ids
 def test_extract_metadata(
     netex_file: str,
     expected_metadata: FaresMetadata,
-):
+) -> None:
+    """
+    Test extracting FaresMetadata from a file on disk
+    """
     netex = parse_netex(
         Path(os.path.dirname(__file__) + "/../../test_data/" + netex_file)
     )
@@ -228,7 +235,10 @@ def test_extract_stop_ids(
     netex_file: str,
     expected_atco_ids: list[str],
     expected_naptan_ids: list[str],
-):
+) -> None:
+    """
+    Test Extracting Stop Ids from a file on disk
+    """
     netex = parse_netex(
         Path(os.path.dirname(__file__) + "/../../test_data/" + netex_file)
     )
