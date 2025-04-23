@@ -53,7 +53,9 @@ from lxml import etree
         ),
     ],
 )
-def test_parse_standard_service(xml_string, expected_result):
+def test_parse_standard_service(
+    xml_string: str, expected_result: TXCStandardService
+) -> None:
     """Test parsing of StandardService section"""
     xml_element = etree.fromstring(xml_string)
     result = parse_standard_service(xml_element)

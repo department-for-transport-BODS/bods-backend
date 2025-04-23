@@ -161,7 +161,7 @@ from lxml import etree
         ),
     ],
 )
-def test_parse_route_section(xml_string: str, expected: TXCRouteSection):
+def test_parse_route_section(xml_string: str, expected: TXCRouteSection) -> None:
     """
     Test the parsing of RouteSection from XML.
     """
@@ -476,7 +476,7 @@ def test_parse_route_section(xml_string: str, expected: TXCRouteSection):
         ),
     ],
 )
-def test_parse_route_sections(xml_string, expected):
+def test_parse_route_sections(xml_string: str, expected: list[TXCRouteSection]) -> None:
     """
     Test the parsing of RouteSection list from XML.
     """

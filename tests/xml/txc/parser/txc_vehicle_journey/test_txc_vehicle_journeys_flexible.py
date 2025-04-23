@@ -140,7 +140,9 @@ from tests.xml.conftest import assert_model_equal
         ),
     ],
 )
-def test_parse_flexible_service_times(xml_string, expected_result):
+def test_parse_flexible_service_times(
+    xml_string: str, expected_result: list[TXCFlexibleServiceTimes] | None
+) -> None:
     """
     Test FlexibleServiceTimes section parsing including multiple service times
     """
@@ -277,7 +279,7 @@ def test_parse_flexible_vehicle_journey(
         ),
     ],
 )
-def test_parse_flexible_vehicle_journey_validation_error(xml_string):
+def test_parse_flexible_vehicle_journey_validation_error(xml_string: str) -> None:
     """
     Test FlexibleVehicleJourney validation errors
     """

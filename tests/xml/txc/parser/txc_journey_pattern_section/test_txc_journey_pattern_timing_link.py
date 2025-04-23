@@ -149,7 +149,9 @@ from lxml import etree
         ),
     ],
 )
-def test_parse_journey_pattern_timing_link(xml_string, expected_result):
+def test_parse_journey_pattern_timing_link(
+    xml_string: str, expected_result: TXCJourneyPatternTimingLink | None
+) -> None:
     """
     Timing Link Parsing
     """
