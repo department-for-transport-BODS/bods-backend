@@ -56,21 +56,22 @@ def download_and_verify_s3_file(
 @file_processing_result_to_db(step_name=StepName.CLAM_AV_SCANNER)
 def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any]:
     """
-    Main lambda handler
+    ClamAV Virus Scan and Extract to S3 Lambda Entrypoint
     """
     input_data = ClamAVScannerInputData(**event)
     s3_handler = S3(bucket_name=input_data.s3_bucket_name)
     clam_av_config = get_clamav_config()
     db = SqlDB()
-    # Fetch the object from s3
     downloaded_file_path = download_and_verify_s3_file(
         s3_handler, input_data.s3_file_key
     )
 
     try:
-        # Calculate hash and scan file
         calculate_and_update_file_hash(db, input_data, downloaded_file_path)
-        av_scan_file(clam_av_config, downloaded_file_path)
+        if not input_data.skip_virus_scan:
+            av_scan_file(clam_av_config, downloaded_file_path)
+        else:
+            log.warning("Skipping Virus Scan")
 
         filename = get_filename_from_object_key_except(input_data.s3_file_key)
 

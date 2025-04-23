@@ -22,7 +22,10 @@ def load_metadata(
     data_catalogues: list[FaresDataCatalogueMetadata],
 ) -> None:
     """
-    Load metadata
+    Load metadata into:
+        - fares_faresmetadata
+        - fares_faresmetadata_stops
+        - fares_datacataloguemetadata
     """
     fares_metadata_repo = FaresMetadataRepo(db)
     fares_metadata_stops_repo = FaresMetadataStopsRepo(db)

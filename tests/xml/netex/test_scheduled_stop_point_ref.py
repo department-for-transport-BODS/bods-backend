@@ -37,8 +37,8 @@ from tests.xml.netex.conftest import parse_xml_str_as_netex
     ],
 )
 def test_scheduled_stop_point_reference_atco_code(
-    ref, version, name, expected_atco_code
-):
+    ref: str, version: str, name: str, expected_atco_code: str
+) -> None:
     """
     Test Parsing of the AtcoCodes
     """
@@ -61,8 +61,8 @@ def test_scheduled_stop_point_reference_atco_code(
     ],
 )
 def test_scheduled_stop_point_reference_incomplete_data(
-    ref, version, expected_atco_code
-):
+    ref: str, version: str, expected_atco_code: str
+) -> None:
     """
     Test Error case when it's not defined as atco code
     """
@@ -76,7 +76,9 @@ def test_scheduled_stop_point_reference_incomplete_data(
     [
         pytest.param(
             """
-            <ScheduledStopPointRef ref="atco:1000DINR5456" version="any">Brooke Street</ScheduledStopPointRef>
+            <ScheduledStopPointRef ref="atco:1000DINR5456" version="any">
+                Brooke Street
+            </ScheduledStopPointRef>
             """,
             ScheduledStopPointReference(
                 ref="atco:1000DINR5456",
@@ -124,8 +126,12 @@ def test_parse_scheduled_stop_point_ref(
         pytest.param(
             """
             <members>
-                <ScheduledStopPointRef ref="atco:1000DINR5456" version="any">Brooke Street</ScheduledStopPointRef>
-                <ScheduledStopPointRef ref="atco:1000DINR5491" version="any">Dale Street</ScheduledStopPointRef>
+                <ScheduledStopPointRef ref="atco:1000DINR5456" version="any">
+                    Brooke Street
+                </ScheduledStopPointRef>
+                <ScheduledStopPointRef ref="atco:1000DINR5491" version="any">
+                    Dale Street
+                </ScheduledStopPointRef>
                 <TimingPointRef ref="timing:123" version="1.0">Timing Point</TimingPointRef>
             </members>
             """,

@@ -87,7 +87,9 @@ from lxml import etree
         ),
     ],
 )
-def test_parse_line_description(xml_string, expected_result):
+def test_parse_line_description(
+    xml_string: str, expected_result: TXCLineDescription
+) -> None:
     """Test parsing of LineDescription section"""
     xml_element = etree.fromstring(xml_string)
     result = parse_line_description(xml_element)

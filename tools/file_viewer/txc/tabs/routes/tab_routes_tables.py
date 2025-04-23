@@ -4,10 +4,10 @@ Tables for Routes Tab
 
 from textual.widgets import DataTable
 
-from tools.file_viewer.txc.utils_tables import TableConfig, create_data_table
+from ...utils_tables import TableConfig, create_data_table
 
 
-def route_sections_list() -> DataTable:
+def route_sections_list() -> DataTable[str]:
     """
     Table of Route Sections for the selected route
     """
@@ -25,7 +25,7 @@ def route_sections_list() -> DataTable:
     return create_data_table(config)
 
 
-def route_links_table() -> DataTable:
+def route_links_table() -> DataTable[str]:
     """
     Route Links table
     """

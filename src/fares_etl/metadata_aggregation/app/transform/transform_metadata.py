@@ -2,6 +2,7 @@
 Transform fares metadata items
 """
 
+from dataclasses import asdict
 from typing import Any
 
 from boto3.dynamodb.types import TypeDeserializer
@@ -68,7 +69,7 @@ def aggregate_metadata(metadata_items: list[FaresMetadata]) -> FaresMetadata:
             or item.valid_to > aggregated_metadata.valid_to
         ):
             aggregated_metadata.valid_to = item.valid_to
-
+    log.info("Aggregated Metadata", **asdict(aggregated_metadata))
     return aggregated_metadata
 
 
@@ -86,7 +87,7 @@ def map_metadata(metadata_items: list[dict[str, Any]]) -> tuple[
     stop_ids: set[int] = set()
     netex_schema_versions: set[str] = set()
     type_deserializer = TypeDeserializer()
-
+    log.info("Processing Metadata into DB Objects", count=len(metadata_items))
     for item in metadata_items:
         metadata_item = type_deserializer.deserialize(item["Metadata"])
         metadata_item.pop("datasetmetadata_ptr_id", None)

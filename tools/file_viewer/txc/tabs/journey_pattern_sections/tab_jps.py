@@ -37,12 +37,10 @@ class JourneyPatternSectionsTab(Container):
     selected_jps: Reactive[TXCJourneyPatternSection | None] = reactive(None)
     selected_jptl: Reactive[TXCJourneyPatternTimingLink | None] = reactive(None)
 
-    def __init__(self, data: TXCData, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, data: TXCData) -> None:
+        super().__init__()
         self.data = data
-        self.journey_pattern_sections_table: DataTable = (
-            self.journey_pattern_sections_list()
-        )
+        self.journey_pattern_sections_table = self.journey_pattern_sections_list()
         if self.data.JourneyPatternSections:
             self.selected_jps = self.data.JourneyPatternSections[0]
             if self.selected_jps.JourneyPatternTimingLink:
@@ -70,11 +68,11 @@ class JourneyPatternSectionsTab(Container):
             ),
         )
 
-    def journey_pattern_sections_list(self) -> DataTable:
+    def journey_pattern_sections_list(self) -> DataTable[str]:
         """
         List of Journey Pattern Sections
         """
-        table = DataTable(
+        table: DataTable[str] = DataTable(
             show_header=True,
             show_row_labels=True,
             zebra_stripes=True,
@@ -126,8 +124,8 @@ class JourneyPatternSectionsTab(Container):
                     from_stop.CommonName if from_stop else "",
                     to_stop.CommonName if to_stop else "",
                     timing_link.RouteLinkRef,
-                    parse_duration(timing_link.RunTime),
-                    parse_duration(timing_link.From.WaitTime),
+                    str(parse_duration(timing_link.RunTime)),
+                    str(parse_duration(timing_link.From.WaitTime)),
                     timing_link.Distance if timing_link.Distance else "",
                     f"{timing_link.From.SequenceNumber} → {timing_link.To.SequenceNumber}",
                 )
@@ -180,7 +178,7 @@ class JourneyPatternSectionsTab(Container):
             to_stop: TXCJourneyPatternStopUsage = timing_link.To
             new_table.add_row(
                 to_stop.StopPointRef,
-                parse_duration(to_stop.WaitTime) if to_stop.WaitTime else "",
+                str(parse_duration(to_stop.WaitTime)) if to_stop.WaitTime else "",
                 to_stop.Activity,
                 to_stop.TimingStatus,
                 to_stop.SequenceNumber if to_stop.SequenceNumber else "",
@@ -234,8 +232,8 @@ class JourneyPatternSectionsTab(Container):
         """
         Handle selecting rows in tables
         """
-        if event.data_table.id == "table-journey-pattern-sections":
-            data = event.data_table.get_row(event.row_key)
+        if event.data_table.id == "table-journey-pattern-sections":  # type: ignore
+            data = event.data_table.get_row(event.row_key)  # type: ignore
             self.selected_jps = next(
                 (
                     section
@@ -244,8 +242,8 @@ class JourneyPatternSectionsTab(Container):
                 ),
                 None,
             )
-        elif event.data_table.id == "table-journey-pattern-timing-links":
-            data = event.data_table.get_row(event.row_key)
+        elif event.data_table.id == "table-journey-pattern-timing-links":  # type: ignore
+            data = event.data_table.get_row(event.row_key)  # type: ignore
             if self.selected_jps is not None:
                 self.selected_jptl = next(
                     (

@@ -5,10 +5,11 @@ SQLAlchemy Organisation Repos
 from datetime import UTC, datetime
 
 from common_layer.enums import FeedStatus
-from sqlalchemy import and_
+from sqlalchemy import and_, func, select
 from structlog.stdlib import get_logger
 
 from ..client import SqlDB
+from ..dataclasses import RevisionStats, TXCFileStats
 from ..exceptions import (
     OrganisationDatasetNotFound,
     OrganisationDatasetRevisionNotFound,
@@ -23,6 +24,7 @@ from ..models import (
 )
 from .operation_decorator import handle_repository_errors
 from .repo_common import BaseRepositoryWithId
+from .utils import date_to_datetime
 
 log = get_logger()
 
@@ -189,6 +191,34 @@ class OrganisationDatasetRevisionRepo(
 
         self._execute_update(update_record, statement)
 
+    @handle_repository_errors
+    def update_stats(self, revision_id: int, revision_stats: RevisionStats) -> None:
+        """
+        Update fields on a dataset revision using the values from RevisionStats.
+        """
+        statement = self._build_query().where(self._model.id == revision_id)
+
+        def update_record(record: OrganisationDatasetRevision) -> None:
+            log.info("Updating metadata fields for revision", revision_id=record.id)
+
+            record.publisher_creation_datetime = (
+                revision_stats.publisher_creation_datetime
+            )
+            record.publisher_modified_datetime = (
+                revision_stats.publisher_modification_datetime
+            )
+            record.first_expiring_service = date_to_datetime(
+                revision_stats.first_expiring_service
+            )
+            record.last_expiring_service = date_to_datetime(
+                revision_stats.last_expiring_service
+            )
+            record.first_service_start = date_to_datetime(
+                revision_stats.first_service_start
+            )
+
+        self._execute_update(update_record, statement)
+
 
 class OrganisationTXCFileAttributesRepo(
     BaseRepositoryWithId[OrganisationTXCFileAttributes]
@@ -241,6 +271,24 @@ class OrganisationTXCFileAttributesRepo(
             self._model.service_code.in_(service_codes)
         )
         return self._fetch_all(statement)
+
+    def get_file_datetime_stats_by_revision_id(self, revision_id: int) -> TXCFileStats:
+        """
+        Return the earliest creation_datetime and latest modification_datetime
+        across all TXC files for a given dataset revision.
+        """
+        stmt = select(
+            func.min(self._model.creation_datetime),
+            func.max(self._model.modification_datetime),
+        ).where(self._model.revision_id == revision_id)
+
+        with self._db.session_scope() as session:
+            result = session.execute(stmt).one_or_none()
+            if result is None:
+                return TXCFileStats(None, None)
+            return TXCFileStats(
+                first_creation_datetime=result[0], last_modification_datetime=result[1]
+            )
 
 
 class OrganisationOrganisationRepo(BaseRepositoryWithId[OrganisationOrganisation]):

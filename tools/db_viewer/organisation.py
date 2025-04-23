@@ -2,6 +2,8 @@
 Organisation Data fetching
 """
 
+from pathlib import Path
+
 from common_layer.database.models import (
     OrganisationDataset,
     OrganisationDatasetRevision,
@@ -66,3 +68,20 @@ def extract_txc_attributes(
     """
     repo = OrganisationTXCFileAttributesRepo(db)
     return repo.get_by_revision_id(revision_id=revision_id)
+
+
+def extract_org_info(
+    db: SqlDB,
+    revision_id: int,
+    output_path: Path,
+) -> OrganisationDatasetRevision:
+    """
+    Extract Org Info
+    """
+    dataset_revision = extract_dataset_revision(
+        db, revision_id, output_path=output_path
+    )
+    dataset = extract_dataset(db, dataset_revision.dataset_id, output_path=output_path)
+    if dataset:
+        extract_organisation(db, dataset.organisation_id, output_path=output_path)
+    return dataset_revision

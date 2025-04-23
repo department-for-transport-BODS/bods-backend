@@ -71,7 +71,9 @@ from lxml import etree
         ),
     ],
 )
-def test_parse_vehicle_journey_stop_usage(xml_string, expected_result):
+def test_parse_vehicle_journey_stop_usage(
+    xml_string: str, expected_result: TXCVehicleJourneyStopUsageStructure | None
+) -> None:
     """
     Test parsing of VehicleJourneyStopUsageStructure (From/To) section
     """
@@ -109,7 +111,9 @@ def test_parse_vehicle_journey_stop_usage(xml_string, expected_result):
         ),
     ],
 )
-def test_parse_vehicle_journey_timing_link(xml_string, expected_result):
+def test_parse_vehicle_journey_timing_link(
+    xml_string: str, expected_result: TXCVehicleJourneyTimingLink
+) -> None:
     """
     Test parsing of VehicleJourneyTimingLink section
     """
@@ -162,7 +166,9 @@ def test_parse_vehicle_journey_timing_link(xml_string, expected_result):
         ),
     ],
 )
-def test_parse_vehicle_journey_timing_links(xml_string, expected_result):
+def test_parse_vehicle_journey_timing_links(
+    xml_string: str, expected_result: list[TXCVehicleJourneyTimingLink]
+) -> None:
     """
     Test parsing of all VehicleJourneyTimingLink sections
     """

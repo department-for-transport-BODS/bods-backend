@@ -4,6 +4,7 @@ Fixtures / Helpers for XML Parsing
 
 import pytest
 from lxml import etree
+from lxml.etree import _Element  # type: ignore
 from pydantic import BaseModel
 from rich.pretty import pprint
 
@@ -37,7 +38,7 @@ def assert_model_equal(result: BaseModel, expected: BaseModel) -> None:
             raise e
 
 
-def compare_xml(result: etree._Element, expected: str):
+def compare_xml(result: _Element, expected: str):
     """
     Compare XML for Tests
     First converts to canonicalized form which standardises the output

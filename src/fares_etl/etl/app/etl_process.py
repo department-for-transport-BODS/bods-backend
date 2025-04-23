@@ -10,10 +10,8 @@ from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.s3 import S3
-from common_layer.xml.netex.models.netex_publication_delivery import (
-    PublicationDeliveryStructure,
-)
-from common_layer.xml.netex.parser.netex_publication_delivery import parse_netex
+from common_layer.xml.netex.models import PublicationDeliveryStructure
+from common_layer.xml.netex.parser import parse_netex
 from structlog.stdlib import get_logger
 
 from .load.metadata import load_metadata_into_dynamodb
@@ -36,7 +34,7 @@ def get_netex_publication_delivery(
     return xml
 
 
-@file_processing_result_to_db(step_name=StepName.ETL_PROCESS)
+@file_processing_result_to_db(step_name=StepName.FARES_ETL_PROCESS)
 def lambda_handler(event: dict[str, Any], _context: LambdaContext):
     """
     Fares ETL

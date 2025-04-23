@@ -75,7 +75,9 @@ from tests.xml.conftest import assert_model_equal
         ),
     ],
 )
-def test_parse_operational(xml_string, expected_result):
+def test_parse_operational(
+    xml_string: str, expected_result: TXCOperational | None
+) -> None:
     """
     Test Operational Section of Vehicle Journey parsing
     """
@@ -142,7 +144,9 @@ def test_parse_operational(xml_string, expected_result):
         ),
     ],
 )
-def test_parse_layover_point(xml_string, expected_result):
+def test_parse_layover_point(
+    xml_string: str, expected_result: TXCLayoverPoint | None
+) -> None:
     """
     Layover Points Parsing
     """
@@ -284,7 +288,9 @@ def test_parse_layover_point(xml_string, expected_result):
         ),
     ],
 )
-def test_parse_vehicle_journey(xml_string: str, expected_result: TXCVehicleJourney):
+def test_parse_vehicle_journey(
+    xml_string: str, expected_result: TXCVehicleJourney
+) -> None:
     """
     Parse XML for Vehicle Journey
     """
@@ -310,7 +316,7 @@ def test_parse_vehicle_journey(xml_string: str, expected_result: TXCVehicleJourn
         ),
     ],
 )
-def test_parse_vehicle_journey_exception(xml_string):
+def test_parse_vehicle_journey_exception(xml_string: str) -> None:
     """
     Parse XML for Vehicle Journey
     """

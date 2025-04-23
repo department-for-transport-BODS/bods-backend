@@ -3,8 +3,11 @@ FareZone Helpers
 """
 
 from common_layer.xml.netex.models.netex_references import ScheduledStopPointReference
+from structlog.stdlib import get_logger
 
 from ..models import FareFrame, FareZone
+
+log = get_logger()
 
 
 def get_fare_zones(frames: list[FareFrame]) -> list[FareZone]:
@@ -32,5 +35,9 @@ def get_scheduled_stop_point_refs(
         if member.ScheduledStopPointRef
         for stop_ref in member.ScheduledStopPointRef
     ]
-
+    log.debug(
+        "ScheduledStopPointRefs across Fare Frames found",
+        fare_zones=fare_zones,
+        stops=stops,
+    )
     return stops

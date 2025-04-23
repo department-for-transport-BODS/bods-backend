@@ -67,7 +67,9 @@ from tests.xml.conftest import assert_model_equal
         ),
     ],
 )
-def test_parse_date_range(xml_string, expected_result):
+def test_parse_date_range(
+    xml_string: str, expected_result: TXCServicedOrganisationDatePattern | None
+) -> None:
     """Test parsing of individual date range"""
     xml_element = etree.fromstring(xml_string)
     result = parse_date_range(xml_element)
@@ -144,7 +146,9 @@ def test_parse_date_range(xml_string, expected_result):
         ),
     ],
 )
-def test_parse_working_days(xml_string, expected_result):
+def test_parse_working_days(
+    xml_string: str, expected_result: list[TXCServicedOrganisationDatePattern] | None
+) -> None:
     """Test parsing of working days section"""
     xml_element = etree.fromstring(xml_string)
     result = parse_working_days(xml_element)
@@ -183,7 +187,9 @@ def test_parse_working_days(xml_string, expected_result):
         ),
     ],
 )
-def test_parse_holidays(xml_string, expected_result):
+def test_parse_holidays(
+    xml_string: str, expected_result: list[TXCServicedOrganisationDatePattern] | None
+) -> None:
     """Test parsing of holidays section"""
     xml_element = etree.fromstring(xml_string)
     result = parse_holidays(xml_element)
@@ -304,7 +310,9 @@ def test_parse_holidays(xml_string, expected_result):
         ),
     ],
 )
-def test_parse_serviced_organisation(xml_string, expected_result):
+def test_parse_serviced_organisation(
+    xml_string: str, expected_result: TXCServicedOrganisation | None
+) -> None:
     """Test parsing of serviced organisation"""
     xml_element = etree.fromstring(xml_string)
     result = parse_serviced_organisation(xml_element)
