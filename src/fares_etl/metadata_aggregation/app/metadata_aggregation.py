@@ -103,12 +103,12 @@ def load_metadata_to_database(
     stops: list[FaresMetadataStop],
     data_catalogues: list[FaresDataCatalogueMetadata],
     metadata_dataset_id: int,
-):
+) -> None:
     """
     Write metadata to database
     """
 
-    aggregated_fares_metadata = aggregate_metadata(metadata)
+    aggregated_fares_metadata = aggregate_metadata(metadata, data_catalogues)
     aggregated_fares_metadata.datasetmetadata_ptr_id = metadata_dataset_id
 
     for data_catalogue in data_catalogues:
