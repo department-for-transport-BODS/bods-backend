@@ -2,7 +2,7 @@
 Parsing Utilities
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
@@ -80,8 +80,11 @@ def parse_timestamp(elem: _Element, element_name: str) -> datetime | None:
     """
     text = get_netex_text(elem, element_name)
     if text is not None:
-
-        return datetime.fromisoformat(text.replace("Z", "+00:00"))
+        dt = datetime.fromisoformat(text.replace("Z", "+00:00"))
+        # If the datetime is naive (no timezone info), assume UTC
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=UTC)
+        return dt
     return None
 
 
