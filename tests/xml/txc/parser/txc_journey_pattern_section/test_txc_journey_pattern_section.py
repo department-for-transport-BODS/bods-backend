@@ -155,7 +155,9 @@ from lxml import etree
         ),
     ],
 )
-def test_parse_journey_pattern_section(xml_string, expected_result):
+def test_parse_journey_pattern_section(
+    xml_string: str, expected_result: TXCJourneyPatternSection | None
+) -> None:
     """
     JPS Parsing tests
     """
@@ -346,7 +348,9 @@ def test_parse_journey_pattern_section(xml_string, expected_result):
         ),
     ],
 )
-def test_parse_journey_pattern_sections(xml_string, expected_result):
+def test_parse_journey_pattern_sections(
+    xml_string: str, expected_result: list[TXCJourneyPatternSection]
+) -> None:
     """
     Journey Pattern Sections Parsing
     """
