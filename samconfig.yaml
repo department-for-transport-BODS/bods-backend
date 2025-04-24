@@ -52,16 +52,6 @@ dev:
         Environment='dev'
         AvlConsumerApiBaseUrl='https://x87vl7rpc0.execute-api.eu-west-2.amazonaws.com/v1'
 
-dev2:
-  deploy:
-    parameters:
-      stack_name: 'bods-backend-dev2-app-stack'
-      s3_prefix: dev2
-      capabilities: 'CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND'
-      parameter_overrides: ProjectName='bods-backend'
-        Environment='dev2'
-        AvlConsumerApiBaseUrl='https://x87vl7rpc0.execute-api.eu-west-2.amazonaws.com/v1'
-
 test:
   deploy:
     parameters:
