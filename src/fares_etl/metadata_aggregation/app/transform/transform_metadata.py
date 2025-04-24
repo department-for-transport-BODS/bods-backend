@@ -2,6 +2,7 @@
 Transform fares metadata items
 """
 
+from dataclasses import asdict
 from typing import Any
 
 from boto3.dynamodb.types import TypeDeserializer
@@ -25,9 +26,9 @@ def get_min_schema_version(schema_versions: list[str]) -> str:
     return min(schema_versions)
 
 
-def aggregate_metadata(metadata_items: list[FaresMetadata]) -> FaresMetadata:
+def sum_metadata_fields(metadata_items: list[FaresMetadata]) -> FaresMetadata:
     """
-    Aggregates metadata items into a single FaresMetadata
+    Sums the FaresMetadata and calculates the overall date range
     """
     aggregated_metadata = FaresMetadata(
         num_of_fare_products=0,
@@ -41,16 +42,15 @@ def aggregate_metadata(metadata_items: list[FaresMetadata]) -> FaresMetadata:
         valid_to=None,
     )
 
+    sum_fields = [
+        "num_of_fare_products",
+        "num_of_fare_zones",
+        "num_of_lines",
+        "num_of_sales_offer_packages",
+    ]
+
     for item in metadata_items:
-        for field in [
-            "num_of_fare_products",
-            "num_of_fare_zones",
-            "num_of_lines",
-            "num_of_pass_products",
-            "num_of_sales_offer_packages",
-            "num_of_trip_products",
-            "num_of_user_profiles",
-        ]:
+        for field in sum_fields:
             setattr(
                 aggregated_metadata,
                 field,
@@ -72,6 +72,71 @@ def aggregate_metadata(metadata_items: list[FaresMetadata]) -> FaresMetadata:
     return aggregated_metadata
 
 
+def calculate_unique_counts(
+    data_catalogues: list[FaresDataCatalogueMetadata],
+) -> tuple[int, int, int]:
+    """
+    Calculates the unique counts from data_catalogues
+    """
+    unique_product_types: set[str] = set()
+    unique_user_types: set[str] = set()
+
+    for catalogue in data_catalogues:
+        if catalogue.product_type:
+            unique_product_types.update(catalogue.product_type)
+        if catalogue.user_type:
+            unique_user_types.update(catalogue.user_type)
+
+    pass_product_values = ["dayPass", "periodPass"]
+    trip_product_values = [
+        "singleTrip",
+        "dayReturnTrip",
+        "periodReturnTrip",
+        "timeLimitedSingleTrip",
+        "shortTrip",
+    ]
+
+    unique_pass_products = [t for t in unique_product_types if t in pass_product_values]
+    unique_trip_products = [t for t in unique_product_types if t in trip_product_values]
+
+    log.info(
+        "Calculated Unique Counts across Fares Datacatalogue",
+        unique_user_types=unique_user_types,
+        unique_pass_products=unique_pass_products,
+        unique_trip_products=unique_trip_products,
+    )
+    return (
+        len(unique_user_types),
+        len(unique_pass_products),
+        len(unique_trip_products),
+    )
+
+
+def aggregate_metadata(
+    metadata_items: list[FaresMetadata],
+    data_catalogues: list[FaresDataCatalogueMetadata],
+) -> FaresMetadata:
+    """
+    Aggregates metadata items into a single FaresMetadata with unique counts for
+    user profiles, trip products, and pass products across data catalogues
+    """
+    aggregated_metadata = sum_metadata_fields(metadata_items)
+
+    user_profiles_count, pass_products_count, trip_products_count = (
+        calculate_unique_counts(data_catalogues)
+    )
+
+    aggregated_metadata.num_of_user_profiles = user_profiles_count
+    aggregated_metadata.num_of_pass_products = pass_products_count
+    aggregated_metadata.num_of_trip_products = trip_products_count
+
+    log.info(
+        "Aggregated Metadata",
+        **asdict(aggregated_metadata),
+    )
+    return aggregated_metadata
+
+
 def map_metadata(metadata_items: list[dict[str, Any]]) -> tuple[
     list[FaresMetadata],
     list[FaresDataCatalogueMetadata],
@@ -86,7 +151,7 @@ def map_metadata(metadata_items: list[dict[str, Any]]) -> tuple[
     stop_ids: set[int] = set()
     netex_schema_versions: set[str] = set()
     type_deserializer = TypeDeserializer()
-
+    log.info("Processing Metadata into DB Objects", count=len(metadata_items))
     for item in metadata_items:
         metadata_item = type_deserializer.deserialize(item["Metadata"])
         metadata_item.pop("datasetmetadata_ptr_id", None)

@@ -15,9 +15,10 @@ from common_layer.database.repos import (
     OrganisationDatasetRepo,
     OrganisationDatasetRevisionRepo,
 )
+from common_layer.db.constants import StepName
+from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.dynamodb.client.fares_metadata import DynamoDBFaresMetadata
 from common_layer.exceptions import FaresMetadataNotFound
-from common_layer.json_logging import configure_logging
 from pydantic import BaseModel, Field
 from structlog.stdlib import get_logger
 
@@ -102,12 +103,12 @@ def load_metadata_to_database(
     stops: list[FaresMetadataStop],
     data_catalogues: list[FaresDataCatalogueMetadata],
     metadata_dataset_id: int,
-):
+) -> None:
     """
     Write metadata to database
     """
 
-    aggregated_fares_metadata = aggregate_metadata(metadata)
+    aggregated_fares_metadata = aggregate_metadata(metadata, data_catalogues)
     aggregated_fares_metadata.datasetmetadata_ptr_id = metadata_dataset_id
 
     for data_catalogue in data_catalogues:
@@ -119,13 +120,13 @@ def load_metadata_to_database(
     load_metadata(db, aggregated_fares_metadata, stops, data_catalogues)
 
 
+@file_processing_result_to_db(step_name=StepName.FARES_METADATA_AGGREGATION)
 def lambda_handler(
-    event: dict[str, Any], context: LambdaContext
+    event: dict[str, Any], _context: LambdaContext
 ) -> dict[str, int | str]:
     """
     Fares Metadata Aggregation
     """
-    configure_logging(event, context)
 
     log.debug("Input Data", data=event)
     input_data = MetadataAggregationInputData(**event)

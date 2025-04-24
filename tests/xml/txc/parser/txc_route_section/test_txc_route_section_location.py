@@ -71,7 +71,7 @@ from lxml import etree
         ),
     ],
 )
-def test_parse_location(xml_string, expected):
+def test_parse_location(xml_string: str, expected: TXCLocation | None) -> None:
     """
     Test the parsing of TXCLocation from XML.
     """
@@ -158,7 +158,7 @@ def test_parse_location(xml_string, expected):
         ),
     ],
 )
-def test_parse_locations(xml_string, expected):
+def test_parse_locations(xml_string: str, expected: list[TXCLocation] | None):
     """
     Test the parsing of TXCLocation list from XML.
     """

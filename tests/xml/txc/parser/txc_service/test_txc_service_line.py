@@ -52,7 +52,7 @@ from lxml import etree
         ),
     ],
 )
-def test_parse_line(xml_string, expected_result):
+def test_parse_line(xml_string: str, expected_result: TXCLine) -> None:
     """Test parsing of Line section"""
     xml_element = etree.fromstring(xml_string)
     result = parse_line(xml_element)

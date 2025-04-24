@@ -32,6 +32,7 @@ def get_product_types(
     for product in fare_products:
         if product.ProductType is not None:
             product_types.add(product.ProductType)
+    log.debug("Product Types Calculated", product_types=product_types)
     return list(product_types)
 
 
@@ -45,4 +46,5 @@ def get_product_names(
     for product in fare_products:
         if product.Name is not None:
             product_names.add(product.Name.value)
+    log.debug("Product Names Calculated", product_types=product_names)
     return list(product_names)

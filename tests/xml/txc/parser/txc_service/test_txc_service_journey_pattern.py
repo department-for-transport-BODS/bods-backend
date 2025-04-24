@@ -1,5 +1,5 @@
 """
-Test Parsing JourneyPattern in a TXC Service 
+Test Parsing JourneyPattern in a TXC Service
 """
 
 import pytest
@@ -57,7 +57,9 @@ from lxml import etree
         ),
     ],
 )
-def test_parse_journey_pattern(xml_string, expected_result):
+def test_parse_journey_pattern(
+    xml_string: str, expected_result: TXCJourneyPattern
+) -> None:
     """Test parsing of JourneyPattern section"""
     xml_element = etree.fromstring(xml_string)
     result = parse_journey_pattern(xml_element)

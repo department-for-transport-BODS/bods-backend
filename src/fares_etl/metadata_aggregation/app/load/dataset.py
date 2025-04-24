@@ -12,6 +12,9 @@ from common_layer.database.repos import (
     FaresValidationResultRepo,
     OrganisationDatasetMetdataRepo,
 )
+from structlog.stdlib import get_logger
+
+log = get_logger()
 
 
 def load_dataset(db: SqlDB, revision_id: int, schema_version: str) -> int:
@@ -32,6 +35,10 @@ def load_dataset(db: SqlDB, revision_id: int, schema_version: str) -> int:
     fares_validation_result_repo.delete_by_revision_id(revision_id)
 
     if metadata_id:
+        log.info(
+            "Metadata ID exists, deleting Fares Data Catalogue, Stops and Metadata by Id",
+            dataset_metadata_id=metadata_id,
+        )
         fares_data_catalogue_repo.delete_by_metadata_id(metadata_id)
         fares_metadata_stops_repo.delete_by_metadata_id(metadata_id)
         fares_metadata_repo.delete_by_metadata_id(metadata_id)
@@ -41,5 +48,8 @@ def load_dataset(db: SqlDB, revision_id: int, schema_version: str) -> int:
                 revision_id=revision_id, schema_version=schema_version
             )
         ).id
-
+    log.info(
+        "Dataset Loaded",
+        dataset_metadata_id=metadata_id,
+    )
     return metadata_id

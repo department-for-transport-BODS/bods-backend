@@ -22,3 +22,5 @@ class StepName(str, Enum):
     NETEX_FILE_VALIDATOR = "NeTEx File Validator"
     TXC_ATTRIBUTE_EXTRACTION = "TxC attributes extraction"
     FILE_COLLATION = "Generating list of files to process"
+    FARES_ETL_PROCESS = "File Level ETL for Fares"
+    FARES_METADATA_AGGREGATION = "Dataset Level Aggregation and output of Fares Data"
