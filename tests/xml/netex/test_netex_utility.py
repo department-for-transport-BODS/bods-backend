@@ -3,6 +3,7 @@ Test Helper Functions
 """
 
 from datetime import UTC, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 import pytest
 from common_layer.xml.netex.models import MultilingualString, VersionedRef
@@ -67,8 +68,14 @@ from tests.xml.netex.conftest import (
         pytest.param(
             """<Timestamp>2025-04-11T00:00:00</Timestamp>""",
             "Timestamp",
-            datetime(2025, 4, 11, 0, 0, 0, tzinfo=UTC),
-            id="Timestamp without timezone info (assumed UTC)",
+            datetime(2025, 4, 11, 0, 0, 0, tzinfo=ZoneInfo("Europe/London")),
+            id="Timestamp without timezone info in BST (assumed Europe/London)",
+        ),
+        pytest.param(
+            """<Timestamp>2025-01-15T12:00:00</Timestamp>""",
+            "Timestamp",
+            datetime(2025, 1, 15, 12, 0, 0, tzinfo=UTC),
+            id="Timestamp without timezone info in GMT (assumed Europe/London)",
         ),
     ],
 )

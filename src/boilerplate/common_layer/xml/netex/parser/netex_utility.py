@@ -2,7 +2,8 @@
 Parsing Utilities
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
@@ -76,15 +77,43 @@ def find_required_netex_element(xml_data: _Element, element_name: str) -> _Eleme
 
 def parse_timestamp(elem: _Element, element_name: str) -> datetime | None:
     """
-    Parse Timestamp element
+    Parse Timestamp element, handling UK BST/GMT timezones for naive datetimes.
+    NOTE: Defaults to Europe/London if Timezone is not specified.
+    The follow block is often specified in Netex files
+    However there can be scenarios where the values are all in UTC
+    Currently using this to select the correct timezone logic is not implemented
+            <DefaultLocale>
+              <TimeZoneOffset>0</TimeZoneOffset>
+              <TimeZone>GMT</TimeZone>
+              <SummerTimeZoneOffset>+1</SummerTimeZoneOffset>
+              <SummerTimeZone>BST</SummerTimeZone>
+              <DefaultLanguage>en</DefaultLanguage>
+            </DefaultLocale>
     """
     text = get_netex_text(elem, element_name)
     if text is not None:
-        dt = datetime.fromisoformat(text.replace("Z", "+00:00"))
-        # If the datetime is naive (no timezone info), assume UTC
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=UTC)
-        return dt
+        # Handle Z notation for UTC
+        if "Z" in text:
+            dt = datetime.fromisoformat(text.replace("Z", "+00:00"))
+            return dt
+
+        # Parse the timestamp
+        try:
+            dt = datetime.fromisoformat(text)
+
+            # If the datetime already has timezone info, return it as is
+            if dt.tzinfo is not None:
+                return dt
+
+            # For naive datetimes, apply UK timezone (Europe/London)
+            # This automatically handles BST/GMT transitions
+            log.debug("Timezone not specified, parsing as Europe/London. ")
+            uk_timezone = ZoneInfo("Europe/London")
+            return dt.replace(tzinfo=uk_timezone)
+
+        except ValueError:
+            log.error("Could not Parse Timestamp returning None", text=text)
+
     return None
 
 
