@@ -6,6 +6,8 @@ AKA: Associative Entity, Junction Tables, Jump Tables
 from sqlalchemy import select
 
 from ..models import (
+    OrganisationDatasetRevisionAdminAreas,
+    OrganisationDatasetRevisionLocalities,
     TransmodelServicePatternAdminAreas,
     TransmodelServicePatternLocality,
     TransmodelServiceServicePattern,
@@ -119,6 +121,54 @@ class TransmodelServicePatternLocalityRepo(
         return self._fetch_all(statement)
 
 
+class OrganisationDatasetRevisionLocalitiesRepo(
+    BaseRepository[OrganisationDatasetRevisionLocalities]
+):
+    """
+    Repository for managing DatasetRevision-Locality associations
+    organisation_datasetrevision_localities
+    """
+
+    def __init__(self, db: SqlDB) -> None:
+        super().__init__(db, OrganisationDatasetRevisionLocalities)
+
+    @handle_repository_errors
+    def get_by_datasetrevision_id(
+        self, datasetrevision_id: int
+    ) -> list[OrganisationDatasetRevisionLocalities]:
+        """Get localities associated with a dataset revision"""
+        statement = self._build_query().where(
+            self._model.datasetrevision_id == datasetrevision_id
+        )
+        return self._fetch_all(statement)
+
+    @handle_repository_errors
+    def get_by_datasetrevision_ids(
+        self, datasetrevision_ids: list[int]
+    ) -> list[OrganisationDatasetRevisionLocalities]:
+        """Get localities associated with multiple dataset revisions"""
+        statement = self._build_query().where(
+            self._model.datasetrevision_id.in_(datasetrevision_ids)
+        )
+        return self._fetch_all(statement)
+
+    @handle_repository_errors
+    def get_by_locality_id(
+        self, locality_id: str
+    ) -> list[OrganisationDatasetRevisionLocalities]:
+        """Get dataset revisions associated with a locality"""
+        statement = self._build_query().where(self._model.locality_id == locality_id)
+        return self._fetch_all(statement)
+
+    @handle_repository_errors
+    def get_by_locality_ids(
+        self, locality_ids: list[str]
+    ) -> list[OrganisationDatasetRevisionLocalities]:
+        """Get dataset revisions associated with multiple localities"""
+        statement = self._build_query().where(self._model.locality_id.in_(locality_ids))
+        return self._fetch_all(statement)
+
+
 class TransmodelServicePatternAdminAreaRepo(
     BaseRepository[TransmodelServicePatternAdminAreas]
 ):
@@ -127,7 +177,7 @@ class TransmodelServicePatternAdminAreaRepo(
     transmodel_servicepattern_admin_areas
     """
 
-    def __init__(self, db: SqlDB):
+    def __init__(self, db: SqlDB) -> None:
         super().__init__(db, TransmodelServicePatternAdminAreas)
 
     @handle_repository_errors
@@ -163,6 +213,56 @@ class TransmodelServicePatternAdminAreaRepo(
         self, admin_area_ids: list[int]
     ) -> list[TransmodelServicePatternAdminAreas]:
         """Get service patterns associated with multiple admin areas"""
+        statement = self._build_query().where(
+            self._model.adminarea_id.in_(admin_area_ids)
+        )
+        return self._fetch_all(statement)
+
+
+class OrganisationDatasetRevisionAdminAreasRepo(
+    BaseRepository[OrganisationDatasetRevisionAdminAreas]
+):
+    """
+    Repository for managing DatasetRevision-AdminArea associations
+    organisation_datasetrevision_admin_areas
+    """
+
+    def __init__(self, db: SqlDB):
+        super().__init__(db, OrganisationDatasetRevisionAdminAreas)
+
+    @handle_repository_errors
+    def get_by_datasetrevision_id(
+        self, datasetrevision_id: int
+    ) -> list[OrganisationDatasetRevisionAdminAreas]:
+        """Get admin areas associated with a dataset revision"""
+        statement = self._build_query().where(
+            self._model.datasetrevision_id == datasetrevision_id
+        )
+        return self._fetch_all(statement)
+
+    @handle_repository_errors
+    def get_by_datasetrevision_ids(
+        self, datasetrevision_ids: list[int]
+    ) -> list[OrganisationDatasetRevisionAdminAreas]:
+        """Get admin areas associated with multiple dataset revisions"""
+        statement = self._build_query().where(
+            self._model.datasetrevision_id.in_(datasetrevision_ids)
+        )
+        return self._fetch_all(statement)
+
+    @handle_repository_errors
+    def get_by_admin_area_id(
+        self, admin_area_id: int
+    ) -> list[OrganisationDatasetRevisionAdminAreas]:
+        """Get dataset revisions associated with an admin area"""
+        statement = self._build_query().where(self._model.adminarea_id == admin_area_id)
+        return self._fetch_all(statement)
+
+    @handle_repository_errors
+    def get_by_admin_area_ids(
+        self, admin_area_ids: list[int]
+    ) -> list[OrganisationDatasetRevisionAdminAreas]:
+        """Get dataset revisions associated with multiple admin areas"""
         statement = self._build_query().where(
             self._model.adminarea_id.in_(admin_area_ids)
         )

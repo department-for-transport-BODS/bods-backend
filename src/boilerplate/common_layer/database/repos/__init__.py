@@ -22,6 +22,8 @@ from .repo_fares import (
     FaresValidationResultRepo,
 )
 from .repo_junction import (
+    OrganisationDatasetRevisionAdminAreasRepo,
+    OrganisationDatasetRevisionLocalitiesRepo,
     TransmodelServicePatternAdminAreaRepo,
     TransmodelServicePatternLocalityRepo,
     TransmodelServiceServicePatternRepo,
@@ -81,7 +83,9 @@ __all__ = [
     # Junction
     "TransmodelServiceServicePatternRepo",
     "TransmodelServiceServicePatternRepo",
+    "OrganisationDatasetRevisionAdminAreasRepo",
     "TransmodelServicePatternAdminAreaRepo",
+    "OrganisationDatasetRevisionLocalitiesRepo",
     "TransmodelServicePatternLocalityRepo",
     # Naptan
     "NaptanAdminAreaRepo",

@@ -26,6 +26,7 @@ from common_layer.xml.txc.models.txc_vehicle_journey_flexible import (
 from ..helpers import FlexibleZoneLookup, StopsLookup
 from ..helpers.dataclasses import ReferenceDataLookups
 from ..helpers.types import ServicedOrgLookup
+from ..models import TaskData
 from ..transform.service_pattern_mapping import (
     ServicePatternMapping,
     ServicePatternMetadata,
@@ -40,6 +41,7 @@ class ProcessPatternCommonContext:
     service_pattern: TransmodelServicePattern
     service_pattern_mapping: ServicePatternMapping
     lookups: ReferenceDataLookups
+    task_data: TaskData
     db: SqlDB
 
 
