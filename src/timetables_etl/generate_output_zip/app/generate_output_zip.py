@@ -19,7 +19,10 @@ from common_layer.database.repos import (
     OrganisationDatasetRevisionRepo,
 )
 from common_layer.db.constants import StepName
-from common_layer.db.file_processing_result import file_processing_result_to_db
+from common_layer.db.file_processing_result import (
+    SQLDBClientError,
+    file_processing_result_to_db,
+)
 from common_layer.s3 import S3
 from common_layer.xml.utils.hashing import get_bytes_hash
 from structlog.stdlib import get_logger
@@ -176,8 +179,19 @@ def add_geo_associations(revision_id: int, db: SqlDB) -> None:
     Aggregate Associations of Localities and Admin Areas for a Revision
     """
     log.info("Adding Revision Level Localities and Admin Area Associations")
-    OrganisationDatasetRevisionLocalitiesRepo(db).insert_from_revision_id(revision_id)
-    OrganisationDatasetRevisionAdminAreasRepo(db).insert_from_revision_id(revision_id)
+
+    try:
+        OrganisationDatasetRevisionLocalitiesRepo(db).insert_from_revision_id(
+            revision_id
+        )
+        OrganisationDatasetRevisionAdminAreasRepo(db).insert_from_revision_id(
+            revision_id
+        )
+    except SQLDBClientError:
+        log.error(
+            "Failed to Add Localities or Admin Areas to Revision Level Junction Tables",
+            exc_info=True,
+        )
 
 
 @file_processing_result_to_db(StepName.GENERATE_OUTPUT_ZIP)
