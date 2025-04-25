@@ -175,13 +175,14 @@ class OrganisationDatasetRevisionLocalitiesRepo(
         """
         Bulk insert locality associations
         Presumes that TransmodelServicePatternLocality has been populated
+        Uses a subquery to avoid loading intermediate data into the Lambda.
         """
         self._log.debug(
             "Bulk inserting locality associations from service patterns using ORM",
             revision_id=revision_id,
         )
 
-        # 1. Construct a subquery to get all relevant locality IDs
+        #  Get locality ids for a revision
         locality_subquery = (
             select(distinct(TransmodelServicePatternLocality.locality_id))
             .join(
@@ -193,7 +194,7 @@ class OrganisationDatasetRevisionLocalitiesRepo(
             .subquery()
         )
 
-        # 2. Create the values select statement with proper SQLAlchemy literals
+        # Select localities by dataset revision with our subquery
         values_select = select(
             literal(revision_id).label("datasetrevision_id"),
             locality_subquery.c.locality_id.label("locality_id"),
@@ -205,7 +206,8 @@ class OrganisationDatasetRevisionLocalitiesRepo(
             values_select,
         )
 
-        # 4. Add the ON CONFLICT DO NOTHING clause
+        # If there are conflicts it will cause an exception
+        # So if we ignore them, then all rows will be added
         insert_stmt = insert_stmt.on_conflict_do_nothing(
             index_elements=["datasetrevision_id", "locality_id"]
         )
@@ -320,13 +322,14 @@ class OrganisationDatasetRevisionAdminAreasRepo(
         """
         Bulk insert admin area associations
         Presumes that TransmodelServicePatternAdminAreas has been populated
+        Uses a subquery to avoid loading intermediate data into the Lambda.
         """
         self._log.debug(
             "Bulk inserting admin area associations from service patterns using ORM",
             revision_id=revision_id,
         )
 
-        # 1. Construct a subquery to get all relevant admin area IDs
+        # Get admin area IDs for revision
         admin_area_subquery = (
             select(distinct(TransmodelServicePatternAdminAreas.adminarea_id))
             .join(
@@ -338,19 +341,18 @@ class OrganisationDatasetRevisionAdminAreasRepo(
             .subquery()
         )
 
-        # 2. Create the values select statement with proper SQLAlchemy literals
         values_select = select(
             literal(revision_id).label("datasetrevision_id"),
             admin_area_subquery.c.adminarea_id.label("adminarea_id"),
         )
 
-        # 3. Create the insert statement using the from_select method
+        # Create the insert statement based on the selected values
         insert_stmt = insert(OrganisationDatasetRevisionAdminAreas).from_select(
             ["datasetrevision_id", "adminarea_id"],
             values_select,
         )
 
-        # 4. Add the ON CONFLICT DO NOTHING clause
+        # Just in case, ignore conflicts
         insert_stmt = insert_stmt.on_conflict_do_nothing(
             index_elements=["datasetrevision_id", "adminarea_id"]
         )
