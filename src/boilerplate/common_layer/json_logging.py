@@ -4,6 +4,7 @@ Structlog Config for JSON Logging Tailored for AWS
 
 import json
 import logging
+import os
 import sys
 from typing import Any, Callable
 
@@ -94,6 +95,28 @@ _NOISY_LOG_SOURCES = (
 )
 
 
+def get_log_level() -> int:
+    """
+    Get the log level from environment variable or use DEBUG as default.
+    Valid log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+    """
+    log_level_str = os.environ.get("LOG_LEVEL", "DEBUG").upper()
+
+    log_level_map = {
+        "DEBUG": logging.DEBUG,
+        "INFO": logging.INFO,
+        "WARNING": logging.WARNING,
+        "ERROR": logging.ERROR,
+        "CRITICAL": logging.CRITICAL,
+    }
+    log_level_int = log_level_map.get(log_level_str, logging.DEBUG)
+    logger = structlog.stdlib.get_logger()
+    logger.info(
+        "Logging Configured", log_level_int=log_level_int, log_level_str=log_level_str
+    )
+    return log_level_int
+
+
 def get_processors(
     lambda_context: LambdaContext | None = None,
 ) -> tuple[Processor, ...]:
@@ -131,6 +154,10 @@ def configure_logging(
     """
     Configure Structured JSON logging for the application
     Import and run this as the first thing in a lambda function
+
+    The log level can be set using the LOG_LEVEL environment variable
+    Valid values are: DEBUG, INFO, WARNING, WARN, ERROR, CRITICAL
+    Defaults to DEBUG if not specified or invalid
     """
     processors = get_processors(lambda_context)
     # Structlog configuration
@@ -145,11 +172,13 @@ def configure_logging(
     if event_dict:
         structlog.contextvars.bind_contextvars(**event_dict)
 
+    log_level = get_log_level()
+
     # reset the AWS-Lambda-supplied log handlers.
     logging.basicConfig(
         format="%(message)s",
         stream=sys.stdout,
-        level=logging.DEBUG,
+        level=log_level,
         force=True,
     )
     for source in _NOISY_LOG_SOURCES:
