@@ -3,9 +3,13 @@ Repos for Many to Many Relationhip Tables
 AKA: Associative Entity, Junction Tables, Jump Tables
 """
 
-from sqlalchemy import select
+from sqlalchemy import literal, select
+from sqlalchemy.dialects.postgresql import insert
 
 from ..models import (
+    OrganisationDatasetRevisionAdminAreas,
+    OrganisationDatasetRevisionLocalities,
+    TransmodelServicePattern,
     TransmodelServicePatternAdminAreas,
     TransmodelServicePatternLocality,
     TransmodelServiceServicePattern,
@@ -119,6 +123,51 @@ class TransmodelServicePatternLocalityRepo(
         return self._fetch_all(statement)
 
 
+class OrganisationDatasetRevisionLocalitiesRepo(
+    BaseRepository[OrganisationDatasetRevisionLocalities]
+):
+    """
+    Repository for managing DatasetRevision-Locality associations
+    organisation_datasetrevision_localities
+    """
+
+    def __init__(self, db: SqlDB) -> None:
+        super().__init__(db, OrganisationDatasetRevisionLocalities)
+
+    @handle_repository_errors
+    def insert_from_revision_id(self, revision_id: int) -> None:
+        """
+        Bulk insert locality associations
+        Presumes that TransmodelServicePatternLocality has been populated
+        Uses a subquery to avoid loading intermediate data into the Lambda.
+        """
+        self._log.debug(
+            "Bulk inserting locality associations from service patterns using ORM",
+            revision_id=revision_id,
+        )
+
+        insert_stmt = insert(OrganisationDatasetRevisionLocalities).from_select(
+            ["datasetrevision_id", "locality_id"],
+            select(literal(revision_id), TransmodelServicePatternLocality.locality_id)
+            .distinct()
+            .join(
+                TransmodelServicePattern,
+                TransmodelServicePatternLocality.servicepattern_id
+                == TransmodelServicePattern.id,
+            )
+            .where(TransmodelServicePattern.revision_id == revision_id),
+        )
+
+        insert_stmt = insert_stmt.on_conflict_do_nothing(
+            index_elements=["datasetrevision_id", "locality_id"]
+        )
+
+        with self._db.session_scope() as session:
+            session.execute(insert_stmt)
+
+        self._log.debug("Bulk insert of locality associations completed")
+
+
 class TransmodelServicePatternAdminAreaRepo(
     BaseRepository[TransmodelServicePatternAdminAreas]
 ):
@@ -127,7 +176,7 @@ class TransmodelServicePatternAdminAreaRepo(
     transmodel_servicepattern_admin_areas
     """
 
-    def __init__(self, db: SqlDB):
+    def __init__(self, db: SqlDB) -> None:
         super().__init__(db, TransmodelServicePatternAdminAreas)
 
     @handle_repository_errors
@@ -167,6 +216,51 @@ class TransmodelServicePatternAdminAreaRepo(
             self._model.adminarea_id.in_(admin_area_ids)
         )
         return self._fetch_all(statement)
+
+
+class OrganisationDatasetRevisionAdminAreasRepo(
+    BaseRepository[OrganisationDatasetRevisionAdminAreas]
+):
+    """
+    Repository for managing DatasetRevision-AdminArea associations
+    organisation_datasetrevision_admin_areas
+    """
+
+    def __init__(self, db: SqlDB) -> None:
+        super().__init__(db, OrganisationDatasetRevisionAdminAreas)
+
+    def insert_from_revision_id(self, revision_id: int) -> None:
+        """
+        Bulk insert admin area associations
+        Presumes that TransmodelServicePatternAdminAreas has been populated
+        """
+        self._log.debug(
+            "Bulk inserting admin area associations from service patterns using ORM",
+            revision_id=revision_id,
+        )
+
+        insert_stmt = insert(OrganisationDatasetRevisionAdminAreas).from_select(
+            ["datasetrevision_id", "adminarea_id"],
+            select(
+                literal(revision_id), TransmodelServicePatternAdminAreas.adminarea_id
+            )
+            .distinct()
+            .join(
+                TransmodelServicePattern,
+                TransmodelServicePatternAdminAreas.servicepattern_id
+                == TransmodelServicePattern.id,
+            )
+            .where(TransmodelServicePattern.revision_id == revision_id),
+        )
+
+        insert_stmt = insert_stmt.on_conflict_do_nothing(
+            index_elements=["datasetrevision_id", "adminarea_id"]
+        )
+
+        with self._db.session_scope() as session:
+            session.execute(insert_stmt)
+
+        self._log.debug("Bulk insert of admin area associations completed")
 
 
 class TransmodelTracksVehicleJourneyRepo(
