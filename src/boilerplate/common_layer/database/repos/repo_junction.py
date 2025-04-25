@@ -227,7 +227,7 @@ class OrganisationDatasetRevisionAdminAreasRepo(
     organisation_datasetrevision_admin_areas
     """
 
-    def __init__(self, db: SqlDB):
+    def __init__(self, db: SqlDB) -> None:
         super().__init__(db, OrganisationDatasetRevisionAdminAreas)
 
     @handle_repository_errors
