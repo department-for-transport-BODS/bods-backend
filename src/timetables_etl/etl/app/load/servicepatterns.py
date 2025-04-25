@@ -60,7 +60,6 @@ def process_standard_service_patterns(
             service_pattern=service_pattern,
             service_pattern_mapping=service_pattern_mapping,
             lookups=lookups,
-            task_data=task_data,
         )
 
         stats += process_pattern_common(service, common_context)

@@ -7,14 +7,11 @@ from typing import Sequence
 from common_layer.database import SqlDB
 from common_layer.database.models import (
     NaptanStopPoint,
-    OrganisationDatasetRevision,
     TransmodelServicePattern,
     TransmodelServicePatternAdminAreas,
     TransmodelServicePatternLocality,
 )
 from common_layer.database.repos import (
-    OrganisationDatasetRevisionAdminAreasRepo,
-    OrganisationDatasetRevisionLocalitiesRepo,
     TransmodelBankHolidaysRepo,
     TransmodelServicePatternAdminAreaRepo,
     TransmodelServicePatternLocalityRepo,
@@ -22,10 +19,12 @@ from common_layer.database.repos import (
 )
 from common_layer.xml.txc.models import (
     TXCFlexibleJourneyPattern,
-    TXCFlexibleVehicleJourney,
     TXCJourneyPattern,
     TXCService,
-    TXCVehicleJourney,
+)
+from common_layer.xml.txc.models.txc_vehicle_journey import TXCVehicleJourney
+from common_layer.xml.txc.models.txc_vehicle_journey_flexible import (
+    TXCFlexibleVehicleJourney,
 )
 from structlog.stdlib import get_logger
 
@@ -53,53 +52,42 @@ log = get_logger()
 def process_pattern_admin_areas(
     service_pattern: TransmodelServicePattern,
     stops: Sequence[NaptanStopPoint],
-    revision: OrganisationDatasetRevision,
     db: SqlDB,
 ) -> list[TransmodelServicePatternAdminAreas]:
     """
     Create and save admin area associations for a pattern
 
     """
-    tm_admin_areas, rev_admin_areas = generate_pattern_admin_areas(
-        service_pattern, stops, revision
-    )
-    tm_results = TransmodelServicePatternAdminAreaRepo(db).bulk_insert(tm_admin_areas)
-    OrganisationDatasetRevisionAdminAreasRepo(db).bulk_insert_ignore_duplicates(
-        rev_admin_areas
-    )
+    admin_areas = generate_pattern_admin_areas(service_pattern, stops)
+    results = TransmodelServicePatternAdminAreaRepo(db).bulk_insert(admin_areas)
 
     log.info(
         "Saved admin area associations",
-        pattern_id=tm_results[0].servicepattern_id if tm_results else None,
-        tm_admin_area_count=len(tm_results),
+        pattern_id=results[0].servicepattern_id if results else None,
+        admin_area_count=len(results),
     )
 
-    return tm_results
+    return results
 
 
 def process_pattern_localities(
     service_pattern: TransmodelServicePattern,
     stops: Sequence[NaptanStopPoint],
-    revision: OrganisationDatasetRevision,
     db: SqlDB,
 ) -> list[TransmodelServicePatternLocality]:
     """
     Create and save locality associations for a pattern
     """
-    tm_localities, rev_localities = generate_pattern_localities(
-        service_pattern, stops, revision
-    )
-    tm_results = TransmodelServicePatternLocalityRepo(db).bulk_insert(tm_localities)
-    OrganisationDatasetRevisionLocalitiesRepo(db).bulk_insert_ignore_duplicates(
-        rev_localities
-    )
+    localities = generate_pattern_localities(service_pattern, stops)
+    results = TransmodelServicePatternLocalityRepo(db).bulk_insert(localities)
+
     log.info(
         "Saved locality associations",
-        pattern_id=tm_results[0].servicepattern_id if tm_results else None,
-        tm_locality_count=len(tm_results),
+        pattern_id=results[0].servicepattern_id if results else None,
+        locality_count=len(results),
     )
 
-    return tm_results
+    return results
 
 
 def get_matching_journey_patterns(
@@ -206,16 +194,10 @@ def process_pattern_common(
         context.service_pattern.service_pattern_id
     ]
     localities = process_pattern_localities(
-        context.service_pattern,
-        sp_data.stop_sequence,
-        context.task_data.revision,
-        context.db,
+        context.service_pattern, sp_data.stop_sequence, context.db
     )
     admin_areas = process_pattern_admin_areas(
-        context.service_pattern,
-        sp_data.stop_sequence,
-        context.task_data.revision,
-        context.db,
+        context.service_pattern, sp_data.stop_sequence, context.db
     )
 
     reference_journey_pattern = get_reference_journey_pattern(

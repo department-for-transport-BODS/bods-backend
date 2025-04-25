@@ -57,7 +57,6 @@ def process_flexible_service_patterns(
             service_pattern=service_pattern,
             service_pattern_mapping=service_pattern_mapping,
             lookups=lookups,
-            task_data=task_data,
             db=db,
         )
 
