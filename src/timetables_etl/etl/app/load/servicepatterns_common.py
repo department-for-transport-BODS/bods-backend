@@ -57,10 +57,7 @@ def process_pattern_admin_areas(
     stops: Sequence[NaptanStopPoint],
     revision: OrganisationDatasetRevision,
     db: SqlDB,
-) -> tuple[
-    list[TransmodelServicePatternAdminAreas],
-    list[OrganisationDatasetRevisionAdminAreas],
-]:
+) -> list[TransmodelServicePatternAdminAreas]:
     """
     Create and save admin area associations for a pattern
 
@@ -69,7 +66,7 @@ def process_pattern_admin_areas(
         service_pattern, stops, revision
     )
     tm_results = TransmodelServicePatternAdminAreaRepo(db).bulk_insert(tm_admin_areas)
-    rev_results = OrganisationDatasetRevisionAdminAreasRepo(db).bulk_insert(
+    OrganisationDatasetRevisionAdminAreasRepo(db).bulk_insert_ignore_duplicates(
         rev_admin_areas
     )
 
@@ -77,10 +74,9 @@ def process_pattern_admin_areas(
         "Saved admin area associations",
         pattern_id=tm_results[0].servicepattern_id if tm_results else None,
         tm_admin_area_count=len(tm_results),
-        rev_admin_area_count=len(rev_results),
     )
 
-    return tm_results, rev_results
+    return tm_results
 
 
 def process_pattern_localities(
@@ -88,9 +84,7 @@ def process_pattern_localities(
     stops: Sequence[NaptanStopPoint],
     revision: OrganisationDatasetRevision,
     db: SqlDB,
-) -> tuple[
-    list[TransmodelServicePatternLocality], list[OrganisationDatasetRevisionLocalities]
-]:
+) -> list[TransmodelServicePatternLocality]:
     """
     Create and save locality associations for a pattern
     """
@@ -98,17 +92,16 @@ def process_pattern_localities(
         service_pattern, stops, revision
     )
     tm_results = TransmodelServicePatternLocalityRepo(db).bulk_insert(tm_localities)
-    rev_results = OrganisationDatasetRevisionLocalitiesRepo(db).bulk_insert(
+    OrganisationDatasetRevisionLocalitiesRepo(db).bulk_insert_ignore_duplicates(
         rev_localities
     )
     log.info(
         "Saved locality associations",
         pattern_id=tm_results[0].servicepattern_id if tm_results else None,
         tm_locality_count=len(tm_results),
-        rev_locality_count=len(rev_results),
     )
 
-    return tm_results, rev_results
+    return tm_results
 
 
 def get_matching_journey_patterns(

@@ -13,7 +13,7 @@ from typing import (
     runtime_checkable,
 )
 
-from sqlalchemy import Column, Select, Table, delete, select
+from sqlalchemy import Column, Select, Table, delete, insert, select
 from structlog.stdlib import get_logger
 
 from ..client import SqlDB
@@ -162,6 +162,34 @@ class BaseRepository(Generic[DBModelT]):
                 session.expunge(result)
             self._log.debug("Bulk inserting completed", inserted_count=len(results))
             return results
+
+    @handle_repository_errors
+    def bulk_insert_ignore_duplicates(self, records: list[DBModelT]) -> None:
+        """
+        Insert multiple records, ignoring any that would violate unique constraints.
+        This method doesn't return the inserted records
+        """
+        if not records:
+            return
+
+        self._log.debug(
+            "Bulk inserting records with duplicate handling",
+            record_count=len(records),
+            model=self._model.__name__,
+        )
+
+        with self._db.session_scope() as session:
+            stmt = insert(self._model).values([record.__dict__ for record in records])
+
+            stmt = stmt.prefix_with("ON CONFLICT DO NOTHING")
+
+            result = session.execute(stmt)
+            self._log.debug(
+                "Bulk insert with duplicate handling completed",
+                attempted=len(records),
+                result=result,
+                result_str=str(result),
+            )
 
 
 class BaseRepositoryWithId(BaseRepository[DBModelT]):
