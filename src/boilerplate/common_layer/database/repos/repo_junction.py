@@ -3,12 +3,13 @@ Repos for Many to Many Relationhip Tables
 AKA: Associative Entity, Junction Tables, Jump Tables
 """
 
-from sqlalchemy import select
+from sqlalchemy import distinct, literal, select
 from sqlalchemy.dialects.postgresql import insert
 
 from ..models import (
     OrganisationDatasetRevisionAdminAreas,
     OrganisationDatasetRevisionLocalities,
+    TransmodelServicePattern,
     TransmodelServicePatternAdminAreas,
     TransmodelServicePatternLocality,
     TransmodelServiceServicePattern,
@@ -170,40 +171,49 @@ class OrganisationDatasetRevisionLocalitiesRepo(
         return self._fetch_all(statement)
 
     @handle_repository_errors
-    def bulk_insert_ignore_duplicates(
-        self, records: list[OrganisationDatasetRevisionLocalities]
-    ) -> None:
+    def insert_from_revision_id(self, revision_id: int) -> None:
         """
-        Insert multiple DatasetRevision-Locality associations, ignoring duplicates.
-        Uses PostgreSQL's ON CONFLICT DO NOTHING for the unique constraint on
-        (datasetrevision_id, locality_id).
+        Bulk insert locality associations
+        Presumes that TransmodelServicePatternLocality has been populated
         """
-        if not records:
-            return
-
         self._log.debug(
-            "Bulk inserting locality associations with duplicate handling",
-            record_count=len(records),
+            "Bulk inserting locality associations from service patterns using ORM",
+            revision_id=revision_id,
         )
 
-        values = [
-            {
-                "datasetrevision_id": record.datasetrevision_id,
-                "locality_id": record.locality_id,
-            }
-            for record in records
-        ]
+        # 1. Construct a subquery to get all relevant locality IDs
+        locality_subquery = (
+            select(distinct(TransmodelServicePatternLocality.locality_id))
+            .join(
+                TransmodelServicePattern,
+                TransmodelServicePatternLocality.servicepattern_id
+                == TransmodelServicePattern.id,
+            )
+            .where(TransmodelServicePattern.revision_id == revision_id)
+            .subquery()
+        )
+
+        # 2. Create the values select statement with proper SQLAlchemy literals
+        values_select = select(
+            literal(revision_id).label("datasetrevision_id"),
+            locality_subquery.c.locality_id.label("locality_id"),
+        )
+
+        # 3. Create the insert statement using the from_select method
+        insert_stmt = insert(OrganisationDatasetRevisionLocalities).from_select(
+            ["datasetrevision_id", "locality_id"],
+            values_select,
+        )
+
+        # 4. Add the ON CONFLICT DO NOTHING clause
+        insert_stmt = insert_stmt.on_conflict_do_nothing(
+            index_elements=["datasetrevision_id", "locality_id"]
+        )
 
         with self._db.session_scope() as session:
-            stmt = insert(self._model).values(values)
-            stmt = stmt.on_conflict_do_nothing(
-                index_elements=["datasetrevision_id", "locality_id"]
-            )
-            session.execute(stmt)
+            session.execute(insert_stmt)
 
-        self._log.debug(
-            "Bulk insert of locality associations completed", attempted=len(records)
-        )
+        self._log.debug("Bulk insert of locality associations completed")
 
 
 class TransmodelServicePatternAdminAreaRepo(
@@ -306,40 +316,49 @@ class OrganisationDatasetRevisionAdminAreasRepo(
         return self._fetch_all(statement)
 
     @handle_repository_errors
-    def bulk_insert_ignore_duplicates(
-        self, records: list[OrganisationDatasetRevisionAdminAreas]
-    ) -> None:
+    def insert_from_revision_id(self, revision_id: int) -> None:
         """
-        Insert multiple DatasetRevision-AdminArea associations, ignoring duplicates.
-        Uses PostgreSQL's ON CONFLICT DO NOTHING for the unique constraint on
-        (datasetrevision_id, adminarea_id).
+        Bulk insert admin area associations
+        Presumes that TransmodelServicePatternAdminAreas has been populated
         """
-        if not records:
-            return
-
         self._log.debug(
-            "Bulk inserting admin area associations with duplicate handling",
-            record_count=len(records),
+            "Bulk inserting admin area associations from service patterns using ORM",
+            revision_id=revision_id,
         )
 
-        values = [
-            {
-                "datasetrevision_id": record.datasetrevision_id,
-                "adminarea_id": record.adminarea_id,
-            }
-            for record in records
-        ]
+        # 1. Construct a subquery to get all relevant admin area IDs
+        admin_area_subquery = (
+            select(distinct(TransmodelServicePatternAdminAreas.adminarea_id))
+            .join(
+                TransmodelServicePattern,
+                TransmodelServicePatternAdminAreas.servicepattern_id
+                == TransmodelServicePattern.id,
+            )
+            .where(TransmodelServicePattern.revision_id == revision_id)
+            .subquery()
+        )
+
+        # 2. Create the values select statement with proper SQLAlchemy literals
+        values_select = select(
+            literal(revision_id).label("datasetrevision_id"),
+            admin_area_subquery.c.adminarea_id.label("adminarea_id"),
+        )
+
+        # 3. Create the insert statement using the from_select method
+        insert_stmt = insert(OrganisationDatasetRevisionAdminAreas).from_select(
+            ["datasetrevision_id", "adminarea_id"],
+            values_select,
+        )
+
+        # 4. Add the ON CONFLICT DO NOTHING clause
+        insert_stmt = insert_stmt.on_conflict_do_nothing(
+            index_elements=["datasetrevision_id", "adminarea_id"]
+        )
 
         with self._db.session_scope() as session:
-            stmt = insert(self._model).values(values)
-            stmt = stmt.on_conflict_do_nothing(
-                index_elements=["datasetrevision_id", "adminarea_id"]
-            )
-            session.execute(stmt)
+            session.execute(insert_stmt)
 
-        self._log.debug(
-            "Bulk insert of admin area associations completed", attempted=len(records)
-        )
+        self._log.debug("Bulk insert of admin area associations completed")
 
 
 class TransmodelTracksVehicleJourneyRepo(
