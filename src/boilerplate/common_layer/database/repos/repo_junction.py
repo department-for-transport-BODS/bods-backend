@@ -4,6 +4,7 @@ AKA: Associative Entity, Junction Tables, Jump Tables
 """
 
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert
 
 from ..models import (
     OrganisationDatasetRevisionAdminAreas,
@@ -168,6 +169,42 @@ class OrganisationDatasetRevisionLocalitiesRepo(
         statement = self._build_query().where(self._model.locality_id.in_(locality_ids))
         return self._fetch_all(statement)
 
+    @handle_repository_errors
+    def bulk_insert_ignore_duplicates(
+        self, records: list[OrganisationDatasetRevisionLocalities]
+    ) -> None:
+        """
+        Insert multiple DatasetRevision-Locality associations, ignoring duplicates.
+        Uses PostgreSQL's ON CONFLICT DO NOTHING for the unique constraint on
+        (datasetrevision_id, locality_id).
+        """
+        if not records:
+            return
+
+        self._log.debug(
+            "Bulk inserting locality associations with duplicate handling",
+            record_count=len(records),
+        )
+
+        values = [
+            {
+                "datasetrevision_id": record.datasetrevision_id,
+                "locality_id": record.locality_id,
+            }
+            for record in records
+        ]
+
+        with self._db.session_scope() as session:
+            stmt = insert(self._model).values(values)
+            stmt = stmt.on_conflict_do_nothing(
+                index_elements=["datasetrevision_id", "locality_id"]
+            )
+            session.execute(stmt)
+
+        self._log.debug(
+            "Bulk insert of locality associations completed", attempted=len(records)
+        )
+
 
 class TransmodelServicePatternAdminAreaRepo(
     BaseRepository[TransmodelServicePatternAdminAreas]
@@ -267,6 +304,42 @@ class OrganisationDatasetRevisionAdminAreasRepo(
             self._model.adminarea_id.in_(admin_area_ids)
         )
         return self._fetch_all(statement)
+
+    @handle_repository_errors
+    def bulk_insert_ignore_duplicates(
+        self, records: list[OrganisationDatasetRevisionAdminAreas]
+    ) -> None:
+        """
+        Insert multiple DatasetRevision-AdminArea associations, ignoring duplicates.
+        Uses PostgreSQL's ON CONFLICT DO NOTHING for the unique constraint on
+        (datasetrevision_id, adminarea_id).
+        """
+        if not records:
+            return
+
+        self._log.debug(
+            "Bulk inserting admin area associations with duplicate handling",
+            record_count=len(records),
+        )
+
+        values = [
+            {
+                "datasetrevision_id": record.datasetrevision_id,
+                "adminarea_id": record.adminarea_id,
+            }
+            for record in records
+        ]
+
+        with self._db.session_scope() as session:
+            stmt = insert(self._model).values(values)
+            stmt = stmt.on_conflict_do_nothing(
+                index_elements=["datasetrevision_id", "adminarea_id"]
+            )
+            session.execute(stmt)
+
+        self._log.debug(
+            "Bulk insert of admin area associations completed", attempted=len(records)
+        )
 
 
 class TransmodelTracksVehicleJourneyRepo(
