@@ -112,7 +112,7 @@ def get_log_level() -> int:
     log_level_int = log_level_map.get(log_level_str, logging.DEBUG)
     logger = structlog.stdlib.get_logger()
     logger.info(
-        "Logging Configured", log_level_int=log_level_int, log_level_str=log_level_str
+        "Log Level Determined", log_level_int=log_level_int, log_level_str=log_level_str
     )
     return log_level_int
 
