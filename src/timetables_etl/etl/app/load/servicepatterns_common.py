@@ -8,8 +8,6 @@ from common_layer.database import SqlDB
 from common_layer.database.models import (
     NaptanStopPoint,
     OrganisationDatasetRevision,
-    OrganisationDatasetRevisionAdminAreas,
-    OrganisationDatasetRevisionLocalities,
     TransmodelServicePattern,
     TransmodelServicePatternAdminAreas,
     TransmodelServicePatternLocality,
