@@ -3,7 +3,7 @@ Repos for Many to Many Relationhip Tables
 AKA: Associative Entity, Junction Tables, Jump Tables
 """
 
-from sqlalchemy import distinct, literal, select
+from sqlalchemy import literal, select
 from sqlalchemy.dialects.postgresql import insert
 
 from ..models import (
@@ -182,32 +182,18 @@ class OrganisationDatasetRevisionLocalitiesRepo(
             revision_id=revision_id,
         )
 
-        #  Get locality ids for a revision
-        locality_subquery = (
-            select(distinct(TransmodelServicePatternLocality.locality_id))
+        insert_stmt = insert(OrganisationDatasetRevisionLocalities).from_select(
+            ["datasetrevision_id", "locality_id"],
+            select(literal(revision_id), TransmodelServicePatternLocality.locality_id)
+            .distinct()
             .join(
                 TransmodelServicePattern,
                 TransmodelServicePatternLocality.servicepattern_id
                 == TransmodelServicePattern.id,
             )
-            .where(TransmodelServicePattern.revision_id == revision_id)
-            .subquery()
+            .where(TransmodelServicePattern.revision_id == revision_id),
         )
 
-        # Select localities by dataset revision with our subquery
-        values_select = select(
-            literal(revision_id).label("datasetrevision_id"),
-            locality_subquery.c.locality_id.label("locality_id"),
-        )
-
-        # 3. Create the insert statement using the from_select method
-        insert_stmt = insert(OrganisationDatasetRevisionLocalities).from_select(
-            ["datasetrevision_id", "locality_id"],
-            values_select,
-        )
-
-        # If there are conflicts it will cause an exception
-        # So if we ignore them, then all rows will be added
         insert_stmt = insert_stmt.on_conflict_do_nothing(
             index_elements=["datasetrevision_id", "locality_id"]
         )
@@ -317,42 +303,30 @@ class OrganisationDatasetRevisionAdminAreasRepo(
         )
         return self._fetch_all(statement)
 
-    @handle_repository_errors
     def insert_from_revision_id(self, revision_id: int) -> None:
         """
         Bulk insert admin area associations
         Presumes that TransmodelServicePatternAdminAreas has been populated
-        Uses a subquery to avoid loading intermediate data into the Lambda.
         """
         self._log.debug(
             "Bulk inserting admin area associations from service patterns using ORM",
             revision_id=revision_id,
         )
 
-        # Get admin area IDs for revision
-        admin_area_subquery = (
-            select(distinct(TransmodelServicePatternAdminAreas.adminarea_id))
+        insert_stmt = insert(OrganisationDatasetRevisionAdminAreas).from_select(
+            ["datasetrevision_id", "adminarea_id"],
+            select(
+                literal(revision_id), TransmodelServicePatternAdminAreas.adminarea_id
+            )
+            .distinct()
             .join(
                 TransmodelServicePattern,
                 TransmodelServicePatternAdminAreas.servicepattern_id
                 == TransmodelServicePattern.id,
             )
-            .where(TransmodelServicePattern.revision_id == revision_id)
-            .subquery()
+            .where(TransmodelServicePattern.revision_id == revision_id),
         )
 
-        values_select = select(
-            literal(revision_id).label("datasetrevision_id"),
-            admin_area_subquery.c.adminarea_id.label("adminarea_id"),
-        )
-
-        # Create the insert statement based on the selected values
-        insert_stmt = insert(OrganisationDatasetRevisionAdminAreas).from_select(
-            ["datasetrevision_id", "adminarea_id"],
-            values_select,
-        )
-
-        # Just in case, ignore conflicts
         insert_stmt = insert_stmt.on_conflict_do_nothing(
             index_elements=["datasetrevision_id", "adminarea_id"]
         )
