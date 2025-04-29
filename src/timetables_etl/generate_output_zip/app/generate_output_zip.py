@@ -14,10 +14,15 @@ from common_layer.aws.step import MapExecutionSucceeded, get_map_processing_resu
 from common_layer.database.client import SqlDB
 from common_layer.database.repos import (
     ETLTaskResultRepo,
+    OrganisationDatasetRevisionAdminAreasRepo,
+    OrganisationDatasetRevisionLocalitiesRepo,
     OrganisationDatasetRevisionRepo,
 )
 from common_layer.db.constants import StepName
-from common_layer.db.file_processing_result import file_processing_result_to_db
+from common_layer.db.file_processing_result import (
+    SQLDBClientError,
+    file_processing_result_to_db,
+)
 from common_layer.s3 import S3
 from common_layer.xml.utils.hashing import get_bytes_hash
 from structlog.stdlib import get_logger
@@ -169,6 +174,26 @@ def calculate_duration(timestamp: str | None):
         return None
 
 
+def add_geo_associations(revision_id: int, db: SqlDB) -> None:
+    """
+    Aggregate Associations of Localities and Admin Areas for a Revision
+    """
+    log.info("Adding Revision Level Localities and Admin Area Associations")
+
+    try:
+        OrganisationDatasetRevisionLocalitiesRepo(db).insert_from_revision_id(
+            revision_id
+        )
+        OrganisationDatasetRevisionAdminAreasRepo(db).insert_from_revision_id(
+            revision_id
+        )
+    except SQLDBClientError:
+        log.error(
+            "Failed to Add Localities or Admin Areas to Revision Level Junction Tables",
+            exc_info=True,
+        )
+
+
 @file_processing_result_to_db(StepName.GENERATE_OUTPUT_ZIP)
 def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, Any]:
     """
@@ -178,6 +203,7 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, 
     db = SqlDB()
     ETLTaskResultRepo(db).update_progress(input_data.dataset_etl_task_result_id, 90)
     update_revision_metadata(input_data.dataset_revision_id, db)
+    add_geo_associations(input_data.dataset_revision_id, db)
     result = process_map_results(input_data, db)
     ETLTaskResultRepo(db).update_progress(input_data.dataset_etl_task_result_id, 100)
     log.info(

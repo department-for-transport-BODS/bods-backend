@@ -18,6 +18,8 @@ from .model_fares import (
     FaresValidationResult,
 )
 from .model_junction import (
+    OrganisationDatasetRevisionAdminAreas,
+    OrganisationDatasetRevisionLocalities,
     TransmodelServicePatternAdminAreas,
     TransmodelServicePatternLocality,
     TransmodelServiceServicePattern,
@@ -98,13 +100,9 @@ __all__ = [
     "TransmodelServicedOrganisationVehicleJourney",
     "TransmodelServicedOrganisationWorkingDays",
     "TransmodelServicePattern",
-    "TransmodelServicePatternAdminAreas",
-    "TransmodelServicePatternLocality",
     "TransmodelServicePatternStop",
-    "TransmodelServiceServicePattern",
     "TransmodelStopActivity",
     "TransmodelTracks",
-    "TransmodelTracksVehicleJourney",
     "TransmodelVehicleJourney",
     # Users
     "UsersUser",
@@ -129,4 +127,11 @@ __all__ = [
     "FaresMetadataStop",
     "FaresValidation",
     "FaresValidationResult",
+    # Junction
+    "OrganisationDatasetRevisionAdminAreas",
+    "TransmodelServicePatternAdminAreas",
+    "OrganisationDatasetRevisionLocalities",
+    "TransmodelServicePatternLocality",
+    "TransmodelServiceServicePattern",
+    "TransmodelTracksVehicleJourney",
 ]
