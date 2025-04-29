@@ -2,7 +2,6 @@
 Handling Journey Durations and WaitTimes
 """
 
-import re
 from datetime import timedelta
 
 from common_layer.xml.txc.models import (
@@ -11,33 +10,12 @@ from common_layer.xml.txc.models import (
     TXCVehicleJourney,
     TXCVehicleJourneyTimingLink,
 )
+from common_layer.xml.utils import parse_duration
 from structlog.stdlib import get_logger
 
 from .models_context import LinkContext
 
 log = get_logger()
-
-
-DURATION_PATTERN = re.compile(r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?")
-
-
-def parse_duration(duration: str | None) -> timedelta:
-    """
-    Convert ISO 8601 duration to timedelta, returns 0 if None
-    Compiling the regex pattern outside of the function is about 10x faster
-    """
-    if not duration:
-        return timedelta(0)
-
-    match = DURATION_PATTERN.match(duration)
-    if not match:
-        return timedelta(0)
-
-    hours = int(match.group(1) or 0)
-    minutes = int(match.group(2) or 0)
-    seconds = int(match.group(3) or 0)
-
-    return timedelta(hours=hours, minutes=minutes, seconds=seconds)
 
 
 def apply_wait_time_rules(

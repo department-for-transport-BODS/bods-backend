@@ -3,6 +3,7 @@ Exports
 """
 
 from .hashing import get_bytes_hash, get_file_hash
+from .xml_duration import parse_duration
 from .xml_utils import find_section, load_xml_tree
 from .xml_utils_attributes import (
     parse_creation_datetime,
@@ -52,4 +53,6 @@ __all__ = [
     # Hashing Functions
     "get_file_hash",
     "get_bytes_hash",
+    # Timedelta Duration
+    "parse_duration",
 ]
