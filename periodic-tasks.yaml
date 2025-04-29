@@ -166,8 +166,8 @@ Resources:
           Type: Schedule
           Properties:
             Name: !Sub '${ProjectName}-${Environment}-${SubFunction}-naptan-cache-sm-daily'
-            Description: 'Trigger Naptan cache update state machine every 24 hours'
-            Schedule: 'rate(24 hours)'
+            Description: 'Trigger Naptan cache update state machine every day at 1am UTC'
+            Schedule: 'cron(0 1 * * ? *)'
             Input: !Sub |
               {
                 "naptan_url": "https://naptan.api.dft.gov.uk/v1/access-nodes?dataFormat=xml",
@@ -189,8 +189,12 @@ Resources:
               'max_concurrent_batches.$': '$.max_concurrent_batches'
               'write_mode.$': '$.write_mode'
             ResultPath: '$.populate_result'
+            Retry:
+              - ErrorEquals: ['States.ALL']
+                IntervalSeconds: 0
+                MaxAttempts: 3
             Catch:
-              - ErrorEquals: ['States.TaskFailed']
+              - ErrorEquals: ['States.ALL']
                 Next: FailureState
             Next: UpdateIDsDynamodbNaptanCache
           UpdateIDsDynamodbNaptanCache:
