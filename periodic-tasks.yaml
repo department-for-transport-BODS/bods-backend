@@ -190,11 +190,11 @@ Resources:
               'write_mode.$': '$.write_mode'
             ResultPath: '$.populate_result'
             Retry:
-              - ErrorEquals: ['States.ALL']
+              - ErrorEquals: ['Lambda.Unknown']
                 IntervalSeconds: 0
                 MaxAttempts: 3
             Catch:
-              - ErrorEquals: ['States.ALL']
+              - ErrorEquals: ['States.TaskFailed']
                 Next: FailureState
             Next: UpdateIDsDynamodbNaptanCache
           UpdateIDsDynamodbNaptanCache:
