@@ -20,8 +20,10 @@ from pti.app.validators.xml_file import XmlFilePTIValidator
 @patch("builtins.open", new_callable=mock_open, read_data='{"key": "value"}')
 @patch("pti.app.validators.factory.XmlFilePTIValidator")
 def test_get_xml_file_pti_validator(
-    mock_validator_class, mock_open_fn, mock_schema_path
-):
+    mock_validator_class: MagicMock,
+    mock_open_fn: MagicMock,
+    mock_schema_path: MagicMock,
+) -> None:
     """
     Test the `get_xml_file_pti_validator` function initializes and returns
     the XmlFilePTIValidator with the expected arguments

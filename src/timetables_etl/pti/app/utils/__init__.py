@@ -2,6 +2,7 @@
 Utils Exports
 """
 
+from .utils_namespace import get_namespaces
 from .utils_scotland import get_service_in_scotland_from_db, is_service_in_scotland
 from .utils_time import to_days, today
 from .utils_xml import (
@@ -33,4 +34,6 @@ __all__ = [
     # Time
     "today",
     "to_days",
+    # Namespace
+    "get_namespaces",
 ]

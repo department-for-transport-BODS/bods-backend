@@ -17,7 +17,7 @@ from tests.factories.database.organisation import OrganisationDatasetRevisionFac
 
 
 @patch("pti.app.validators.xml_file.PTIValidator")
-def test_get_violations_validates_file(m_pti_validator):
+def test_get_violations_validates_file(m_pti_validator: MagicMock) -> None:
     revision = OrganisationDatasetRevisionFactory(dataset_id=123)
     xml_file = MagicMock(spec=StreamingBody)
     xml_file.read.return_value = b"dummycontent"

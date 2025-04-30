@@ -49,7 +49,9 @@ from pti.app.validators.metadata import validate_modification_date_time
         ),
     ],
 )
-def test_validate_modification_date_time(root_attributes: dict, expected: bool):
+def test_validate_modification_date_time(
+    root_attributes: dict[str, str], expected: bool
+) -> None:
     """
     Test Validating Modification datatime
     """

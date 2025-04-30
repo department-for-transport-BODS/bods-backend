@@ -25,7 +25,7 @@ class XmlFilePTIValidator:
         schema: IO[Any],
         db_clients: DbClients,
         txc_data: TXCData,
-    ):
+    ) -> None:
         self._validator = PTIValidator(schema, db_clients, txc_data)
 
     def get_violations(
