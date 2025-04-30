@@ -5,6 +5,7 @@ Parser for Top Level PublicationDelivery
 from io import BytesIO
 from pathlib import Path
 
+from common_layer.xml.utils import parse_duration
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
@@ -17,7 +18,6 @@ from .netex_utility import (
     get_netex_element,
     get_netex_text,
     parse_multilingual_string,
-    parse_timedelta,
     parse_timestamp,
 )
 
@@ -47,7 +47,9 @@ def parse_publication_delivery(elem: _Element) -> PublicationDeliveryStructure:
         else None
     )
 
-    refresh_interval = parse_timedelta(elem, "PublicationRefreshInterval")
+    refresh_interval = parse_duration(
+        get_netex_text(elem, "PublicationRefreshInterval")
+    )
 
     description = parse_multilingual_string(elem, "Description")
 

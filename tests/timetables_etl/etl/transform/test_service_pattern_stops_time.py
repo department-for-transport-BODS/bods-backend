@@ -10,50 +10,6 @@ from timetables_etl.etl.app.transform.service_pattern_stops import (
     calculate_next_time,
     parse_time,
 )
-from timetables_etl.etl.app.transform.service_pattern_stops_durations import (
-    parse_duration,
-)
-
-
-@pytest.mark.parametrize(
-    "duration_str,expected",
-    [
-        pytest.param(
-            "PT1H30M",
-            timedelta(hours=1, minutes=30),
-            id="Hours and minutes",
-        ),
-        pytest.param(
-            "PT45M",
-            timedelta(minutes=45),
-            id="Minutes only",
-        ),
-        pytest.param(
-            "PT2H",
-            timedelta(hours=2),
-            id="Hours only",
-        ),
-        pytest.param(
-            "PT1H20M30S",
-            timedelta(hours=1, minutes=20, seconds=30),
-            id="Hours, minutes and seconds",
-        ),
-        pytest.param(
-            None,
-            timedelta(0),
-            id="None returns zero duration",
-        ),
-        pytest.param(
-            "invalid",
-            timedelta(0),
-            id="Invalid format returns zero duration",
-        ),
-    ],
-)
-def test_parse_duration(duration_str: str | None, expected: timedelta) -> None:
-    """Test parsing of ISO 8601 duration strings"""
-    result = parse_duration(duration_str)
-    assert result == expected
 
 
 @pytest.mark.parametrize(
