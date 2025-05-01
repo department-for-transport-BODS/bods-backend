@@ -29,6 +29,7 @@ class Observation(BaseModel):
     category: str
     context: str
     rules: list[Rule]
+    experimental: bool = False
 
 
 class Header(BaseModel):
