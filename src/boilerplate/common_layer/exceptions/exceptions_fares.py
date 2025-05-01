@@ -9,7 +9,7 @@ from .exceptions_common import ETLException
 
 class FaresMetadataNotFound(ETLException):
     """
-    Fares Metadata not from in DynamoDB for aggregation
+    Fares Metadata not found in DynamoDB for aggregation
     """
 
-    code = ETLErrorCode.FARES_METADATA_NOT_FOUND
+    code = ETLErrorCode.NO_VALID_FILE_TO_PROCESS

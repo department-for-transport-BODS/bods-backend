@@ -12,13 +12,14 @@ from common_layer.database.models import (
     FaresMetadataStop,
 )
 from common_layer.database.repos import (
+    DataQualitySchemaViolationRepo,
     OrganisationDatasetRepo,
     OrganisationDatasetRevisionRepo,
 )
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.dynamodb.client.fares_metadata import DynamoDBFaresMetadata
-from common_layer.exceptions import FaresMetadataNotFound
+from common_layer.exceptions import FaresMetadataNotFound, SchemaViolationsFound
 from pydantic import BaseModel, Field
 from structlog.stdlib import get_logger
 
@@ -60,7 +61,7 @@ def get_organisation_id_from_revision_id(db: SqlDB, revision_id: int) -> int:
 
 
 def get_data_from_dynamodb(
-    task_id: int,
+    task_id: int, revision_id: int, db: SqlDB
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """
     Get data from dynamodb
@@ -78,6 +79,13 @@ def get_data_from_dynamodb(
     ]
 
     if len(dynamodb_metadata) == 0:
+        schema_violations = DataQualitySchemaViolationRepo(db).get_by_revision_id(
+            revision_id
+        )
+
+        if schema_violations and len(schema_violations) > 0:
+            raise SchemaViolationsFound(task_id=task_id)
+
         log.error("No Fares metadata found in dynamodb for task", task_id=task_id)
         raise FaresMetadataNotFound(task_id=task_id)
 
@@ -135,7 +143,11 @@ def lambda_handler(
 
     organisation_id = get_organisation_id_from_revision_id(db, input_data.revision_id)
 
-    dynamodb_metadata, dynamodb_violations = get_data_from_dynamodb(input_data.task_id)
+    dynamodb_metadata, dynamodb_violations = get_data_from_dynamodb(
+        input_data.task_id,
+        input_data.revision_id,
+        db,
+    )
 
     fares_metadata, data_catalogues, stops, schema_versions = map_metadata(
         dynamodb_metadata

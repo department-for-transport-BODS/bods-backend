@@ -363,7 +363,8 @@
         {
           "test": "validate_cappeddiscountright_rules(.)"
         }
-      ]
+      ],
+      "experimental": true
     }
   ]
 }
