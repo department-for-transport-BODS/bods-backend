@@ -10,6 +10,7 @@ from .helpers_composite_frame import (
 )
 from .helpers_counts import (
     number_of_distinct_user_profiles,
+    number_of_fare_products,
     number_of_fare_zones,
     number_of_lines,
     number_of_pass_fare_products,
@@ -48,6 +49,7 @@ __all__ = [
     "number_of_pass_fare_products",
     "number_of_sales_offer_packages",
     "number_of_trip_fare_products",
+    "number_of_fare_products",
     "sort_frames",
     # From helpers_fare_frame_fare_products
     "get_fare_products",

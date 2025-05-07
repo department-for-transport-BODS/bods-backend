@@ -108,6 +108,7 @@ def parse_service_frame(elem: _Element) -> ServiceFrame:
 
     # Parse lists
     lines = get_netex_element(elem, "lines")
+    num_of_lines = len(lines) if lines is not None else 0
     parsed_lines = parse_lines(lines) if lines is not None else []
 
     stop_points = get_netex_element(elem, "scheduledStopPoints")
@@ -124,4 +125,5 @@ def parse_service_frame(elem: _Element) -> ServiceFrame:
         TypeOfFrameRef=type_of_frame_ref,
         lines=parsed_lines,
         scheduledStopPoints=parsed_stop_points,
+        numOfLines=num_of_lines,
     )

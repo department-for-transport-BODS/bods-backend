@@ -120,3 +120,8 @@ class ServiceFrame(BaseModel):
     scheduledStopPoints: Annotated[
         list[ScheduledStopPoint], Field(description="List of scheduled stop points")
     ]
+
+    numOfLines: Annotated[
+        int,
+        Field(description="Number of lines in the service frame", default=0),
+    ]
