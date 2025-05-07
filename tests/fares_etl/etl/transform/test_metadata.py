@@ -20,7 +20,7 @@ from fares_etl.etl.app.transform.metadata import create_metadata, get_stop_ids
         pytest.param(
             "netex1.xml",
             FaresMetadata(
-                num_of_fare_products=1,
+                num_of_fare_products=2,
                 num_of_fare_zones=28,
                 num_of_lines=1,
                 num_of_pass_products=0,
@@ -36,7 +36,7 @@ from fares_etl.etl.app.transform.metadata import create_metadata, get_stop_ids
             FaresMetadata(
                 num_of_fare_products=1,
                 num_of_fare_zones=8,
-                num_of_lines=1,
+                num_of_lines=2,
                 num_of_pass_products=0,
                 num_of_sales_offer_packages=2,
                 num_of_trip_products=1,

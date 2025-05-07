@@ -257,7 +257,7 @@ Resources:
             - !Ref RdsDbName
           POSTGRES_USER: !If
             - IsNotLocal
-            - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
+            - !Sub '{{resolve:secretsmanager:bodds/${Environment}/rds/user/bodds_rw:SecretString:username}}'
             - !Ref RdsDbUsername
 
       LoggingConfig:
@@ -291,7 +291,7 @@ Resources:
             - !Ref RdsDbName
           POSTGRES_USER: !If
             - IsNotLocal
-            - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
+            - !Sub '{{resolve:secretsmanager:bodds/${Environment}/rds/user/bodds_rw:SecretString:username}}'
             - !Ref RdsDbUsername
       LoggingConfig:
         LogGroup: !Ref GenerateSiriVmLambdaLogGroup
@@ -324,7 +324,7 @@ Resources:
             - !Ref RdsDbName
           POSTGRES_USER: !If
             - IsNotLocal
-            - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
+            - !Sub '{{resolve:secretsmanager:bodds/${Environment}/rds/user/bodds_rw:SecretString:username}}'
             - !Ref RdsDbUsername
       LoggingConfig:
         LogGroup: !Ref GenerateSiriVmTflLambdaLogGroup
@@ -367,7 +367,7 @@ Resources:
             - !Ref RdsDbName
           POSTGRES_USER: !If
             - IsNotLocal
-            - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
+            - !Sub '{{resolve:secretsmanager:bodds/${Environment}/rds/user/bodds_rw:SecretString:username}}'
             - !Ref RdsDbUsername
       Timeout: 900
       MemorySize: 1280

@@ -11,6 +11,7 @@ from common_layer.xml.netex.helpers import (
     get_tariffs_from_fare_frames,
     latest_tariff_to_date,
     number_of_distinct_user_profiles,
+    number_of_fare_products,
     number_of_fare_zones,
     number_of_lines,
     number_of_pass_fare_products,
@@ -38,7 +39,7 @@ def create_metadata(netex: PublicationDeliveryStructure) -> FaresMetadata:
         num_of_sales_offer_packages=number_of_sales_offer_packages(
             sorted_frames.fare_frames
         ),
-        num_of_fare_products=len(fare_products),
+        num_of_fare_products=number_of_fare_products(sorted_frames.fare_frames),
         num_of_user_profiles=number_of_distinct_user_profiles(tariffs),
         num_of_pass_products=number_of_pass_fare_products(fare_products),
         num_of_trip_products=number_of_trip_fare_products(fare_products),
