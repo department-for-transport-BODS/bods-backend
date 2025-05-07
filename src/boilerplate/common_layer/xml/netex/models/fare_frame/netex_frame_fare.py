@@ -198,3 +198,6 @@ class FareFrame(BaseModel):
         list[SalesOfferPackage] | None,
         Field(description="list of sales offer packages", default=None),
     ]
+    numOfFareProducts: Annotated[
+        int, Field(description="Number of fare products", default=0)
+    ]

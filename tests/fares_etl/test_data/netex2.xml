@@ -149,6 +149,9 @@
                             <OperatorRef version="1.0" ref="noc:LNUD">noc:136947</OperatorRef>
                             <LineType>local</LineType>
                         </Line>
+                        <FlexibleLine version="1.0" id="LNUD:PC0005248:1:152:Flex">
+                            <Name>Flexible</Name>
+                        </FlexibleLine>
                     </lines>
                     <scheduledStopPoints>
                         <ScheduledStopPoint version="any" id="atco:2500JB78">
