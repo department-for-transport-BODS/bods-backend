@@ -104,7 +104,7 @@ Globals:
           - !Ref RdsDbName
         POSTGRES_USER: !If
           - IsNotLocal
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/pg-rw-user}}'
+          - !Sub '{{resolve:secretsmanager:bodds/${Environment}/rds/user/bodds_rw:SecretString:username}}'
           - !Ref RdsDbUsername
         DD_MERGE_XRAY_TRACES: true
         DD_RUNTIME_METRICS_ENABLED: true
