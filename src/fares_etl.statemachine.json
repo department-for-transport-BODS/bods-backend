@@ -275,7 +275,7 @@
     "FileLevelProcessing": {
       "Type": "Map",
       "Next": "MetadataAggregation",
-      "MaxConcurrency": 100,
+      "MaxConcurrency": 250,
       "ToleratedFailurePercentage": 100,
       "Output": {
         "mapResults": "{% $states.result %}"
