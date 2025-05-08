@@ -12,7 +12,6 @@ from .helpers_fare_frame_fare_products import get_product_types
 from .helpers_fare_frame_sales_offer_packages import get_sales_offer_packages
 from .helpers_fare_frame_tariff import get_user_types
 from .helpers_fare_frame_zones import get_fare_zones
-from .helpers_service_frame import get_lines_from_service_frames
 
 
 class SortedFrames(BaseModel):
@@ -56,8 +55,7 @@ def number_of_lines(frames: list[ServiceFrame]) -> int:
     """
     Number of Lines in a Netex Doc
     """
-    lines = get_lines_from_service_frames(frames)
-    return len(lines)
+    return sum(frame.numOfLines for frame in frames)
 
 
 def number_of_fare_zones(frames: list[FareFrame]) -> int:
@@ -109,3 +107,12 @@ def number_of_sales_offer_packages(frames: list[FareFrame]) -> int:
     Number of sales offer packages
     """
     return len(get_sales_offer_packages(frames))
+
+
+def number_of_fare_products(
+    fare_frames: list[FareFrame],
+) -> int:
+    """
+    Get number of fare products across all Fare Frames
+    """
+    return sum(frame.numOfFareProducts for frame in fare_frames)

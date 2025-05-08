@@ -253,8 +253,14 @@ class FaresValidator:
         """
         Checks a given source file against the json schema
         """
+        experimental_observations_enabled = (
+            os.getenv("EXPERIMENTAL_OBSERVATIONS_ENABLED", "false").lower() == "true"
+        )
         document = etree.parse(source)
         for observation in self.schema.observations:
+            if observation.experimental and not experimental_observations_enabled:
+                continue
+
             elements = document.xpath(observation.context, namespaces=self.namespaces)
             for element in elements:
                 self.check_observation(observation, element)

@@ -5280,6 +5280,24 @@
                             </accessRightsInProduct>
                             <ProductType>dayReturnTrip</ProductType>
                         </PreassignedFareProduct>
+                        <CappedDiscountRight id="op:Cap:@trip" version="1.0">
+                            <Name>Cap noc:FSYO</Name>
+                            <cappingRules>
+                                <CappingRule version="1.0" id="op:Tap_and_Cap_Day@flatFare_trip">
+                                    <Name>Tap and Cap Day</Name>
+                                    <CappingPeriod>day</CappingPeriod>
+                                    <ValidableElementRef version="1.0"
+                                        ref="Trip@ADRTN@travel" />
+                                    <GenericParameterAssignment version="1.0"
+                                        id="Tap_and_Cap_Day@Flat_Single"
+                                        order="1">
+                                        <Name>limit a adult to 1 day</Name>
+                                        <PreassignedFareProductRef version="1.0"
+                                            ref="Trip@ADRTN" />
+                                    </GenericParameterAssignment>
+                                </CappingRule>
+                            </cappingRules>
+                        </CappedDiscountRight>
                     </fareProducts>
                     <salesOfferPackages>
                         <SalesOfferPackage id="Trip@ADRTN-SOP@Onboard" version="1.0">

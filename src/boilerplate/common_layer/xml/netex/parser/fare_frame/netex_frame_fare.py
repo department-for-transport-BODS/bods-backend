@@ -61,7 +61,7 @@ class FareFrameCoreAttributes:
 
 
 @dataclass
-class FareFrameContent:
+class FareFrameContent:  # pylint: disable=too-many-instance-attributes
     """
     Complex Context
     """
@@ -73,6 +73,7 @@ class FareFrameContent:
     tariffs: list[Tariff]
     fare_zones: list[FareZone]
     sales_offer_packages: list[SalesOfferPackage]
+    num_of_fare_products: int
 
 
 def parse_fare_frame_core_attributes(elem: _Element) -> FareFrameCoreAttributes:
@@ -95,6 +96,7 @@ def parse_fare_frame_content(elem: _Element) -> FareFrameContent:
         tariffs=[],
         fare_zones=[],
         sales_offer_packages=[],
+        num_of_fare_products=0,
     )
 
     for child in elem:
@@ -107,6 +109,7 @@ def parse_fare_frame_content(elem: _Element) -> FareFrameContent:
             case "fareTables":
                 content.fare_tables = parse_fare_tables(child)
             case "fareProducts":
+                content.num_of_fare_products = len(child)
                 content.fare_products = parse_preassigned_fare_products(child)
             case "tariffs":
                 content.tariffs = parse_tariffs(child)
@@ -152,4 +155,5 @@ def parse_fare_frame(elem: _Element) -> FareFrame:
         salesOfferPackages=(
             content.sales_offer_packages if content.sales_offer_packages else None
         ),
+        numOfFareProducts=content.num_of_fare_products,
     )
