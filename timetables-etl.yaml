@@ -162,6 +162,7 @@ Resources:
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl/initialize_pipeline
       Handler: app.initialize_pipeline.lambda_handler
+      MemorySize: 512
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
@@ -178,7 +179,7 @@ Resources:
       Handler: app.clamav_scanner.lambda_handler
       Layers:
         - !Ref BoilerplateLambdaLayerArn
-      MemorySize: 2048
+      MemorySize: 2560
       EphemeralStorage:
         Size: 1024
       Timeout: 900
@@ -197,7 +198,7 @@ Resources:
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl/download_dataset
       Handler: app.download_dataset.lambda_handler
-      MemorySize: 512
+      MemorySize: 1024
       EphemeralStorage:
         Size: 1024
       Layers:
@@ -233,7 +234,7 @@ Resources:
       Timeout: 600
       Layers:
         - !Ref BoilerplateLambdaLayerArn
-      MemorySize: 768
+      MemorySize: 1024
       LoggingConfig:
         LogGroup: !Ref SchemaCheckLambdaLogGroup
 
@@ -246,7 +247,7 @@ Resources:
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl/post_schema_check
       Handler: app.post_schema_check.lambda_handler
-      MemorySize: 768
+      MemorySize: 1024
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       Environment:
@@ -264,7 +265,7 @@ Resources:
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl/file_attributes_etl
       Handler: app.file_attributes_etl.lambda_handler
-      MemorySize: 1024
+      MemorySize: 1280
       Timeout: 300
       Layers:
         - !Ref BoilerplateLambdaLayerArn
@@ -313,7 +314,7 @@ Resources:
       CodeUri: ./src/timetables_etl/etl
       Handler: app.etl_process.lambda_handler
       Timeout: 900
-      MemorySize: 1280
+      MemorySize: 1600
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
@@ -343,6 +344,7 @@ Resources:
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl/exception_handler
       Handler: app.exception_handler.lambda_handler
+      MemorySize: 512
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
