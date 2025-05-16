@@ -33,7 +33,6 @@ class ProjectEnvironment(str, Enum):
     STAGING = "staging"
     TEST = "test"
     UAT = "uat"
-    UAT2 = "uat2"
     PRODUCTION = "prod"
 
 

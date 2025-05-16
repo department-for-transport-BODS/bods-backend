@@ -33,7 +33,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
 
-      # Configure AWS credentials against the BODS Shared-Services Account
+      # Configure AWS credentials against the BODS Shared Services account
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -112,7 +112,7 @@ jobs:
         with:
           use-installer: true
 
-      # Configure AWS credentials against the BODS Shared-Services Account
+      # Configure AWS credentials against the BODS Shared Services account
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
