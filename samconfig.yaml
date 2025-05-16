@@ -74,17 +74,6 @@ uat:
         AvlConsumerApiBaseUrl='https://x87vl7rpc0.execute-api.eu-west-2.amazonaws.com/v1'
         CavlConsumerUrl='https://api-consumer-cavl-staging.itoworld.com'
 
-uat2:
-  deploy:
-    parameters:
-      stack_name: 'bods-backend-uat2-app-stack'
-      s3_prefix: uat2
-      capabilities: 'CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND'
-      parameter_overrides: ProjectName='bods-backend'
-        Environment='uat2'
-        AvlConsumerApiBaseUrl='https://x87vl7rpc0.execute-api.eu-west-2.amazonaws.com/v1'
-        CavlConsumerUrl='https://api-consumer-cavl-staging.itoworld.com'
-
 prod:
   sync:
     parameters:

@@ -17,7 +17,7 @@
         "datasetETLTaskResultId": "{% $exists($states.input.datasetETLTaskResultId) ? $states.input.datasetETLTaskResultId : null %}",
         "performETLOnly": "{% $exists($states.input.performETLOnly) ? $states.input.performETLOnly : false %}",
         "lock_name": "bods-backend-semaphore",
-        "concurrency_limit": 10,
+        "concurrency_limit": 5,
         "lock_entry": "{% $uuid() %}"
       }
     },

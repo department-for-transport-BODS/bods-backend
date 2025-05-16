@@ -26,7 +26,7 @@ log = get_logger()
 
 
 def download_and_verify_s3_file(
-    s3_handler: S3, file_key: str, max_size_bytes: int = 400_000_000
+    s3_handler: S3, file_key: str, max_size_bytes: int = 800_000_000
 ) -> Path:
     """
     Check file does not exceed max file size and then download it to temp dir
