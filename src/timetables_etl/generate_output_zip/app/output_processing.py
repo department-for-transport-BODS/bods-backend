@@ -7,7 +7,7 @@ import threading
 import zipfile
 from datetime import datetime
 from io import BytesIO
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
 from common_layer.aws.step import MapExecutionSucceeded
 from common_layer.s3 import S3
