@@ -114,33 +114,6 @@ def add_file_to_zip(
         return False
 
 
-def upload_file_to_s3(
-    bucket_name: str, file_name: str, object_name: Optional[str], s3_client: S3
-) -> None:
-    """
-    Upload a file to an S3 bucket.
-
-    Args:
-        bucket_name (str): The name of the S3 bucket.
-        file_name (str): The local file name to upload.
-        object_name (Optional[str]): The name of the object in the S3 bucket.
-        s3_client (S3): S3 client for interacting with AWS S3.
-    """
-    try:
-        with open(file_name, "rb") as file_obj:
-            s3_client.put_object(
-                file_path=object_name or file_name, file_data=file_obj.read()
-            )
-        log.info(
-            "Uploaded file to S3",
-            file_name=file_name,
-            bucket_name=bucket_name,
-            object_name=object_name,
-        )
-    except (OSError, IOError) as exc:
-        log.error("Failed to upload file to S3", file_name=file_name, exc_info=exc)
-
-
 def generate_zip_file(
     s3_client: S3,
     successful_files: List[MapExecutionSucceeded],
