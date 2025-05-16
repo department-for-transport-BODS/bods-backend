@@ -5,11 +5,9 @@ Functions to create and upload zip files.
 import queue
 import threading
 import zipfile
-import threading
-import queue
 from datetime import datetime
 from io import BytesIO
-from typing import Tuple, List, Optional
+from typing import List, Optional, Tuple
 
 from common_layer.aws.step import MapExecutionSucceeded
 from common_layer.s3 import S3
@@ -105,11 +103,11 @@ def add_file_to_zip(
             filename = file_key.split("/")[-1]
             with zip_lock:
                 zip_file.writestr(filename, stream.read())
-                print(f"Added file to zip: {filename}")
+                log.info("Added file to zip", filename=filename)
                 return True
-    except Exception:
+    except (OSError, IOError, AttributeError):
         log.error(
-            "Failed to Add file to Zip",
+            "Failed to add file to zip",
             filename=file_key,
             exc_info=True,
         )
@@ -129,10 +127,18 @@ def upload_file_to_s3(
         s3_client (S3): S3 client for interacting with AWS S3.
     """
     try:
-        s3_client.upload_file(file_name, bucket_name, object_name or file_name)
-        print(f"Uploaded {file_name} to S3 bucket {bucket_name} as {object_name}.")
-    except Exception as e:
-        print(f"Failed to upload {file_name} to S3: {e}")
+        with open(file_name, "rb") as file_obj:
+            s3_client.put_object(
+                file_path=object_name or file_name, file_data=file_obj.read()
+            )
+        log.info(
+            "Uploaded file to S3",
+            file_name=file_name,
+            bucket_name=bucket_name,
+            object_name=object_name,
+        )
+    except (OSError, IOError) as exc:
+        log.error("Failed to upload file to S3", file_name=file_name, exc_info=exc)
 
 
 def generate_zip_file(
@@ -154,7 +160,7 @@ def generate_zip_file(
         Tuple[int, int]: A tuple containing the number of successfully added files
         and the number of failed files.
     """
-    file_queue = queue.Queue()
+    file_queue: queue.Queue[str] = queue.Queue()
     zip_lock = threading.Lock()
     success_count = 0
     failure_count = 0
@@ -208,7 +214,7 @@ def process_files(
 
     current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_zip_filename = f"/tmp/my_large_multizip_{current_time}.zip"
-    print(f"Found {len(successful_files)} files.")
+    log.info("Processing multiple files", file_count=len(successful_files))
     zip_file = create_zip_file(output_zip_filename)
     success_count, failed_count = generate_zip_file(
         s3_client=s3_client,
@@ -217,7 +223,12 @@ def process_files(
         num_threads=10,
     )
     zip_file.close()
-    with open(output_zip_filename, "rb") as f:
-        zip_buffer = BytesIO(f.read())
-    print(f"Zipping completed: {success_count} files zipped, {failed_count} failed.")
+    with open(output_zip_filename, "rb") as file_obj:
+        zip_buffer = BytesIO(file_obj.read())
+    log.info(
+        "Zipping completed",
+        success_count=success_count,
+        failed_count=failed_count,
+        output_zip_filename=output_zip_filename,
+    )
     return zip_buffer, success_count, failed_count, ".zip"
