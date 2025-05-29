@@ -210,6 +210,46 @@ Resources:
           FailureState:
             Type: Fail
 
+  ##########################################
+  #### CONSOLIDATE TRACKS STATE MACHINE ####
+  ##########################################
+  ConsolidateTracksStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Name: !Sub '${ProjectName}-${Environment}-${SubFunction}-naptan-cache-sm'
+      Role: !GetAtt ConsolidateTracksStateMachineRole.Arn
+      Events:
+        # DailySchedule:
+        #   Type: Schedule
+        #   Properties:
+        #     Name: !Sub '${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-sm-daily'
+        #     Description: 'Trigger Consolidate Tracks job every day at 2am UTC'
+        #     Schedule: 'cron(0 2 * * ? *)'
+        #     Input: !Sub |
+        #       {
+        #         "threshold_meters": "20.0",
+        #         "dry_run": true
+        #       }
+      Definition:
+        StartAt: ConsolidateTracks
+        States:
+          ConsolidateTracks:
+            Type: Task
+            Resource: !GetAtt ConsolidateTracksLambda.Arn
+            Parameters:
+              'threshold_meters.$': '$.threshold_meters'
+              'dry_run.$': '$.dry_run'
+            Retry:
+              - ErrorEquals: ['Lambda.Unknown']
+                IntervalSeconds: 0
+                MaxAttempts: 3
+            Catch:
+              - ErrorEquals: ['States.TaskFailed']
+                Next: FailureState
+            End: true
+          FailureState:
+            Type: Fail
+
   ##########################
   #### LAMBDA FUNCTIONS ####
   ##########################
@@ -371,6 +411,31 @@ Resources:
             - !Ref RdsDbUsername
       Timeout: 900
       MemorySize: 1280
+
+  ConsolidateTracksLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-lambda'
+      Description: Consolidate duplicated Tracks data in the BODS DB
+      CodeUri: ./src/periodic_tasks/consolidate_tracks
+      Handler: app.handler_consolidate_tracks.lambda_handler
+      Role: !GetAtt ConsolidateTracksLambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          POSTGRES_HOST: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
+            - !Ref RdsDbHostAddr
+          POSTGRES_PORT: !Ref RdsDbPort
+          POSTGRES_DB: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
+            - !Ref RdsDbName
+          POSTGRES_USER: !If
+            - IsNotLocal
+            - !Sub '{{resolve:secretsmanager:bodds/${Environment}/rds/user/bodds_rw:SecretString:username}}'
+            - !Ref RdsDbUsername
+      Timeout: 900
 
   #########################
   #### DYNAMODB TABLES ####
@@ -570,6 +635,74 @@ Resources:
                   - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
                   - '*'
 
+  ConsolidateTracksStateMachineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-sm-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: states.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+      Policies:
+        - PolicyName: StateMachineLambdaInvokePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource:
+                  - !GetAtt ConsolidateTrakcsLambda.Arn
+        - PolicyName: CloudWatchLogsPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-sm:*'
+                  - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-sm'
+
+  ConsolidateTracksLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-lambda-execution-role
+      Description: Role for Naptan Cache Lambda with basic permissions
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+        - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
+        - !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
+          - arn:aws:iam::aws:policy/AmazonRDSFullAccess
+        - PolicyName: KMSAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:GenerateDataKey
+                Resource: !If
+                  - IsNotLocal
+                  - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+                  - '*'
+
   #########################
   #### SECURITY GROUPS ####
   #########################
@@ -651,6 +784,16 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-naptan-cache-sm'
+      KmsKeyId: !If
+        - IsNotLocal
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Ref AWS::NoValue
+      RetentionInDays: 30
+
+  CosnolidateTracksStateMachineLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-sm'
       KmsKeyId: !If
         - IsNotLocal
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
