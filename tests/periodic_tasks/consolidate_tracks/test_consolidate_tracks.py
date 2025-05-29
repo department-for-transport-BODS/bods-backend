@@ -21,7 +21,9 @@ def test_consolidate_tracks_deletes_duplicates(mocker: MockerFixture):
     similar_tracks_result: Iterator[tuple[tuple[str, str], list[tuple[int, int]]]] = (
         iter(similar_tracks_data)
     )
-    m_track_repo.stream_similar_track_pairs_json.return_value = similar_tracks_result
+    m_track_repo.stream_similar_track_pairs_by_stop_points.return_value = (
+        similar_tracks_result
+    )
 
     start_time = int(time.perf_counter())
     stats = consolidate_tracks(
