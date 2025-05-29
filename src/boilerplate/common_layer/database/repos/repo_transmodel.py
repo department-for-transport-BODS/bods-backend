@@ -254,36 +254,37 @@ class TransmodelTrackRepo(BaseRepositoryWithId[TransmodelTracks]):
     ) -> Iterator[tuple[tuple[str, str], list[tuple[int, int]]]]:
         """
         Stream similar pairs of (track_a, track_b) grouped by (from_atco_code, to_atco_code)
-        where similarity is calculated by Hausdorff Distance within the given threshold
+        where similarity is calculated by Hausdorff Distance within the given threshold in meters
         """
         raw_conn: PsycopgConnection = self._db.engine.raw_connection()  # type: ignore[assignment]
         try:
             with raw_conn.cursor(name="similar_track_cursor") as cursor:
                 cursor.itersize = 10000
-                log.info("Executing cursor to fetch 10000 results")
-                cursor.execute(
-                    """
+                log.info("Fetching similar tracks")
+                table_name = self._model.__tablename__
+                query = f"""
                     SELECT
                     a.from_atco_code,
                     a.to_atco_code,
                     json_agg(
                         json_build_object('track_a', a.id, 'track_b', b.id)
                     ) AS similar_pairs
-                    FROM transmodel_tracks a
-                    JOIN transmodel_tracks b
+                    FROM {table_name} a
+                    JOIN {table_name} b
                     ON a.from_atco_code = b.from_atco_code
                     AND a.to_atco_code = b.to_atco_code
                     AND a.id < b.id
                     WHERE ST_HausdorffDistance(
-                        ST_Transform(a.geometry, 27700),
+                        ST_Transform(a.geometry, 27700), -- Convert to BNG for meter comparison
                         ST_Transform(b.geometry, 27700)
                     ) < %s
                     GROUP BY a.from_atco_code, a.to_atco_code
                     ORDER BY a.from_atco_code, a.to_atco_code
-                    """,
+                """
+                cursor.execute(
+                    query,
                     (threshold,),
                 )
-                log.info("Cursor executed")
 
                 for from_code, to_code, json_data_raw in cursor:
                     json_data: list[dict[str, int]] = json_data_raw or []
