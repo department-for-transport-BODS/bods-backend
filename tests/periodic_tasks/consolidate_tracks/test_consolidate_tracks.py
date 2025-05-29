@@ -25,7 +25,7 @@ def test_consolidate_tracks_deletes_duplicates(mocker: MockerFixture):
 
     start_time = int(time.perf_counter())
     stats = consolidate_tracks(
-        track_repo=m_track_repo, start_time=start_time, dry_run=False
+        track_repo=m_track_repo, threshold=20.0, start_time=start_time, dry_run=False
     )
 
     # Duplicated tracks should be deleted
