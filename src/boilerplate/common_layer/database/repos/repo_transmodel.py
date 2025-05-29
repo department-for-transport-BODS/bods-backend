@@ -248,7 +248,7 @@ class TransmodelTrackRepo(BaseRepositoryWithId[TransmodelTracks]):
             session.execute(insert_stmt, [record.__dict__ for record in records])
         return
 
-    def stream_similar_track_pairs_json(
+    def stream_similar_track_pairs_by_stop_points(
         self, threshold: float = 20.0
     ) -> Iterator[tuple[tuple[str, str], list[tuple[int, int]]]]:
         """

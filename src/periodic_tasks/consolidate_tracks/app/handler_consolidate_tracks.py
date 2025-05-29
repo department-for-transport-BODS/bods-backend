@@ -1,3 +1,7 @@
+"""
+Lambda handler for consolidating duplicated Tracks data
+"""
+
 import json
 import time
 from typing import Any
@@ -23,6 +27,9 @@ def consolidate_tracks(
     start_time: int,
     dry_run: bool = False,
 ) -> dict[str, int]:
+    """
+    Find and consolidate duplicated Tracks data
+    """
     if dry_run:
         print("Dry run mode enabled — no changes will be written to the database.")
 
@@ -37,12 +44,19 @@ def consolidate_tracks(
     for (
         from_code,
         to_code,
-    ), similar_pairs in track_repo.stream_similar_track_pairs_json(threshold=threshold):
+    ), similar_pairs in track_repo.stream_similar_track_pairs_by_stop_points(
+        threshold=threshold
+    ):
+        log.debug(
+            "Checking stop point pair", from_atco_code=from_code, to_atco_code=to_code
+        )
         stats["total_pairs_checked"] += 1
 
         if stats["total_pairs_checked"] % 100 == 0:
             log.info(
-                f"Pairs checked: {stats['total_pairs_checked']}, duration: {int(time.perf_counter() - start_time)}"
+                "Pairs checked",
+                count=stats["total_pairs_checked"],
+                duration={int(time.perf_counter() - start_time)},
             )
 
         if not similar_pairs:
@@ -66,7 +80,7 @@ def consolidate_tracks(
                 stats["tracks_deleted"] += 1
 
                 if not dry_run:
-                    # TODO: Implement once we have the service pattern track junction table
+                    # TODO: Implement once we have the service pattern track junction table # pylint: disable=fixme
                     # replace_vehicle_journey_track(track_id, canonical_id)
                     track_repo.delete_by_id(track_id)
 
@@ -120,3 +134,7 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
 
     log.info("Stats", **stats)
     return {}
+
+
+if __name__ == "__main__":
+    lambda_handler({"dry_run": True, "threshold_meters": 20.0}, {})
