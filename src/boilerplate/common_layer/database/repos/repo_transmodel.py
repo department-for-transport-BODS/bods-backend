@@ -4,11 +4,10 @@ Transmodel table repos
 
 from collections import defaultdict
 from datetime import date
-from typing import Any, Iterator, Literal
+from typing import Iterator, Literal
 
 from psycopg2.extensions import connection as PsycopgConnection
-from psycopg2.extensions import cursor as PsycopgCursor
-from sqlalchemy import func, select, text, tuple_
+from sqlalchemy import func, select, tuple_
 from sqlalchemy.dialects.postgresql import insert
 from structlog.stdlib import get_logger
 
