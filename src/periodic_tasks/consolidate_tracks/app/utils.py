@@ -1,3 +1,7 @@
+"""
+Utils module for track consolidation logic
+"""
+
 from collections import defaultdict
 
 from aws_lambda_powertools import Tracer
