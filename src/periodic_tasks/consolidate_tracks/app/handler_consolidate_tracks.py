@@ -1,3 +1,4 @@
+import json
 import time
 from typing import Any
 
@@ -7,6 +8,7 @@ from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.database import SqlDB
 from common_layer.database.repos import TransmodelTrackRepo
 from common_layer.json_logging import configure_logging
+from pydantic import BaseModel, ValidationError
 from structlog.stdlib import get_logger
 
 from .utils import build_duplicate_groups
@@ -70,6 +72,12 @@ def consolidate_tracks(
     return stats
 
 
+class ConsolidateTracksInput(BaseModel):
+    """Input schema for Consolidate Tracks Lambda."""
+
+    dry_run: bool
+
+
 @tracer.capture_lambda_handler
 def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any]:
     """
@@ -77,13 +85,25 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
     Compares tracks between the same from/to atco codes and removes duplicates
     """
     configure_logging(event, context)
+
+    try:
+        input_data = ConsolidateTracksInput.model_validate(event)
+    except ValidationError as e:
+        log.error("Invalid input data", error=str(e))
+        return {
+            "statusCode": 400,
+            "body": json.dumps({"message": "Invalid input data", "errors": e.errors()}),
+        }
+
     db = SqlDB()
     track_repo = TransmodelTrackRepo(db)
     process = psutil.Process()
     start = time.perf_counter()
     mem_before = process.memory_info().rss
 
-    stats = consolidate_tracks(track_repo, dry_run=True, start_time=int(start))
+    stats = consolidate_tracks(
+        track_repo, dry_run=input_data.dry_run, start_time=int(start)
+    )
 
     mem_after = process.memory_info().rss
     duration = int(time.perf_counter() - start)
@@ -95,7 +115,3 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
 
     log.info("Stats", **stats)
     return {}
-
-
-if __name__ == "__main__":
-    lambda_handler({}, {})
