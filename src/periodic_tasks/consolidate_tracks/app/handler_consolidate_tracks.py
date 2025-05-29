@@ -19,6 +19,7 @@ log = get_logger()
 
 def consolidate_tracks(
     track_repo: TransmodelTrackRepo,
+    threshold: float,
     start_time: int,
     dry_run: bool = False,
 ) -> dict[str, int]:
@@ -36,7 +37,7 @@ def consolidate_tracks(
     for (
         from_code,
         to_code,
-    ), similar_pairs in track_repo.stream_similar_track_pairs_json(threshold=20.0):
+    ), similar_pairs in track_repo.stream_similar_track_pairs_json(threshold=threshold):
         stats["total_pairs_checked"] += 1
 
         if stats["total_pairs_checked"] % 100 == 0:
@@ -76,6 +77,7 @@ class ConsolidateTracksInput(BaseModel):
     """Input schema for Consolidate Tracks Lambda."""
 
     dry_run: bool
+    threshold_meters: float = 20.0
 
 
 @tracer.capture_lambda_handler
@@ -102,7 +104,10 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
     mem_before = process.memory_info().rss
 
     stats = consolidate_tracks(
-        track_repo, dry_run=input_data.dry_run, start_time=int(start)
+        track_repo,
+        threshold=input_data.threshold_meters,
+        dry_run=input_data.dry_run,
+        start_time=int(start),
     )
 
     mem_after = process.memory_info().rss
