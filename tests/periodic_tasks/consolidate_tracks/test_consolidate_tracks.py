@@ -14,8 +14,8 @@ def test_consolidate_tracks_deletes_duplicates(mocker: MockerFixture):
 
     # Two stop point pairs containing duplicated tracks
     similar_tracks_data: list[tuple[tuple[str, str], list[tuple[int, int]]]] = [
-        (("A", "B"), [(1, 2), (2, 3)]),
-        (("C", "D"), [(4, 5)]),
+        (("A", "B"), [(1, 2), (2, 3), (4, 5)]),
+        (("C", "D"), [(6, 7)]),
         (("E", "F"), []),
     ]
     similar_tracks_result: Iterator[tuple[tuple[str, str], list[tuple[int, int]]]] = (
@@ -29,7 +29,7 @@ def test_consolidate_tracks_deletes_duplicates(mocker: MockerFixture):
     )
 
     # Duplicated tracks should be deleted
-    expected_deletions = [2, 3, 5]
+    expected_deletions = [2, 3, 5, 7]
     actual_calls = m_track_repo.delete_by_id.call_args_list
     deleted_ids = [call_args.args[0] for call_args in actual_calls]
 
@@ -37,6 +37,6 @@ def test_consolidate_tracks_deletes_duplicates(mocker: MockerFixture):
 
     # Check stats
     assert stats["total_pairs_checked"] == 3
-    assert stats["pairs_with_duplicates"] == 2
-    assert stats["tracks_deleted"] == 3
-    assert stats["vehicle_journey_fks_updated"] == 3
+    assert stats["pairs_with_duplicates"] == 3
+    assert stats["tracks_deleted"] == 4
+    assert stats["vehicle_journey_fks_updated"] == 4
