@@ -4,10 +4,13 @@ Transmodel table repos
 
 from collections import defaultdict
 from datetime import date
-from typing import Literal
+from typing import Any, Iterator, Literal
 
-from sqlalchemy import func, select, tuple_
+from psycopg2.extensions import connection as PsycopgConnection
+from psycopg2.extensions import cursor as PsycopgCursor
+from sqlalchemy import func, select, text, tuple_
 from sqlalchemy.dialects.postgresql import insert
+from structlog.stdlib import get_logger
 
 from ..client import SqlDB
 from ..dataclasses import ServiceStats
@@ -22,6 +25,8 @@ from ..models import (
 )
 from .operation_decorator import handle_repository_errors
 from .repo_common import BaseRepository, BaseRepositoryWithId
+
+log = get_logger()
 
 
 class TransmodelServiceRepo(BaseRepositoryWithId[TransmodelService]):
@@ -241,6 +246,53 @@ class TransmodelTrackRepo(BaseRepositoryWithId[TransmodelTracks]):
             tracks = {(row[1], row[2]): row[0] for row in results.fetchall()}
             return tracks
 
+            session.execute(insert_stmt, [record.__dict__ for record in records])
+        return
+
+    def stream_similar_track_pairs_json(
+        self, threshold: float = 20.0
+    ) -> Iterator[tuple[tuple[str, str], list[tuple[int, int]]]]:
+        """
+        Stream similar pairs of (track_a, track_b) grouped by (from_atco_code, to_atco_code)
+        where similarity is calculated by Hausdorff Distance within the given threshold
+        """
+        raw_conn: PsycopgConnection = self._db.engine.raw_connection()  # type: ignore[assignment]
+        try:
+            with raw_conn.cursor(name="similar_track_cursor") as cursor:
+                cursor.itersize = 10000
+                log.info("Executing cursor to fetch 10000 results")
+                cursor.execute(
+                    """
+                    SELECT
+                    a.from_atco_code,
+                    a.to_atco_code,
+                    json_agg(
+                        json_build_object('track_a', a.id, 'track_b', b.id)
+                    ) AS similar_pairs
+                    FROM transmodel_tracks a
+                    JOIN transmodel_tracks b
+                    ON a.from_atco_code = b.from_atco_code
+                    AND a.to_atco_code = b.to_atco_code
+                    AND a.id < b.id
+                    WHERE ST_HausdorffDistance(
+                        ST_Transform(a.geometry, 27700),
+                        ST_Transform(b.geometry, 27700)
+                    ) < %s
+                    GROUP BY a.from_atco_code, a.to_atco_code
+                    ORDER BY a.from_atco_code, a.to_atco_code
+                    """,
+                    (threshold,),
+                )
+                log.info("Cursor executed")
+
+                for from_code, to_code, json_data_raw in cursor:
+                    json_data: list[dict[str, int]] = json_data_raw or []
+                    pairs = [
+                        (pair["track_a"], pair["track_b"]) for pair in json_data or []
+                    ]
+                    yield (from_code, to_code), pairs
+        finally:
+            raw_conn.close()
 
 class TransmodelServicePatternDistanceRepo(
     BaseRepositoryWithId[TransmodelServicePatternDistance]
