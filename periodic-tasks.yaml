@@ -656,7 +656,7 @@ Resources:
               - Effect: Allow
                 Action: lambda:InvokeFunction
                 Resource:
-                  - !GetAtt ConsolidateTrakcsLambda.Arn
+                  - !GetAtt ConsolidateTracksLambda.Arn
         - PolicyName: CloudWatchLogsPolicy
           PolicyDocument:
             Version: '2012-10-17'
