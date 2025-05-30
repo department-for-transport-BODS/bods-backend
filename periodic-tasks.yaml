@@ -673,7 +673,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       RoleName: !Sub ${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-lambda-execution-role
-      Description: Role for Naptan Cache Lambda with basic permissions
+      Description: Role for Consolidate Tracks Lambda with basic permissions
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -690,6 +690,7 @@ Resources:
           - IsNotLocal
           - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
           - arn:aws:iam::aws:policy/AmazonRDSFullAccess
+      Policies:
         - PolicyName: KMSAccessPolicy
           PolicyDocument:
             Version: '2012-10-17'
