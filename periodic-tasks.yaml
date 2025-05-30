@@ -761,6 +761,7 @@ Resources:
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
         - !Ref AWS::NoValue
       RetentionInDays: 30
+
   GenerateSiriVmLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -791,16 +792,6 @@ Resources:
         - !Ref AWS::NoValue
       RetentionInDays: 30
 
-  CosnolidateTracksStateMachineLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub '/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-sm'
-      KmsKeyId: !If
-        - IsNotLocal
-        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
-        - !Ref AWS::NoValue
-      RetentionInDays: 30
-
   PopulateDynamodbNaptanCacheLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -815,6 +806,26 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-update-ids-dynamodb-naptan-cache-lambda'
+      KmsKeyId: !If
+        - IsNotLocal
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Ref AWS::NoValue
+      RetentionInDays: 30
+
+  ConsolidateTracksStateMachineLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-sm'
+      KmsKeyId: !If
+        - IsNotLocal
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Ref AWS::NoValue
+      RetentionInDays: 30
+
+  ConsolidateTracksLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-lambda'
       KmsKeyId: !If
         - IsNotLocal
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
