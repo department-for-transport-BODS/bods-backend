@@ -216,7 +216,7 @@ Resources:
   ConsolidateTracksStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
-      Name: !Sub '${ProjectName}-${Environment}-${SubFunction}-naptan-cache-sm'
+      Name: !Sub '${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-sm'
       Role: !GetAtt ConsolidateTracksStateMachineRole.Arn
       Events:
         # DailySchedule:
