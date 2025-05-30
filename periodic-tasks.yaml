@@ -213,42 +213,6 @@ Resources:
   ##########################################
   #### CONSOLIDATE TRACKS STATE MACHINE ####
   ##########################################
-  ConsolidateTracksStateMachine:
-    Type: AWS::Serverless::StateMachine
-    Properties:
-      Name: !Sub '${ProjectName}-${Environment}-${SubFunction}-naptan-cache-sm'
-      Role: !GetAtt ConsolidateTracksStateMachineRole.Arn
-      Events:
-        # DailySchedule:
-        #   Type: Schedule
-        #   Properties:
-        #     Name: !Sub '${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-sm-daily'
-        #     Description: 'Trigger Consolidate Tracks job every day at 2am UTC'
-        #     Schedule: 'cron(0 2 * * ? *)'
-        #     Input: !Sub |
-        #       {
-        #         "threshold_meters": "20.0",
-        #         "dry_run": true
-        #       }
-      Definition:
-        StartAt: ConsolidateTracks
-        States:
-          ConsolidateTracks:
-            Type: Task
-            Resource: !GetAtt ConsolidateTracksLambda.Arn
-            Parameters:
-              'threshold_meters.$': '$.threshold_meters'
-              'dry_run.$': '$.dry_run'
-            Retry:
-              - ErrorEquals: ['Lambda.Unknown']
-                IntervalSeconds: 0
-                MaxAttempts: 3
-            Catch:
-              - ErrorEquals: ['States.TaskFailed']
-                Next: FailureState
-            End: true
-          FailureState:
-            Type: Fail
 
   ##########################
   #### LAMBDA FUNCTIONS ####
