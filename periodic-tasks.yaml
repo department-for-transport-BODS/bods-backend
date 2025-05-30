@@ -420,6 +420,8 @@ Resources:
       CodeUri: ./src/periodic_tasks/consolidate_tracks
       Handler: app.handler_consolidate_tracks.lambda_handler
       Role: !GetAtt ConsolidateTracksLambdaExecutionRole.Arn
+      Layers:
+        - !Ref BoilerplateLambdaLayerArn
       Environment:
         Variables:
           POSTGRES_HOST: !If
