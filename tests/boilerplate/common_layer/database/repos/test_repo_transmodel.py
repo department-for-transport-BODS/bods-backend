@@ -139,7 +139,7 @@ def test_transmodel_tracks_stream_similar_track_pairs_by_stop_points(
         track1_id = track1.id
         similar_track_id = similar_track.id
 
-    result = list(repo.stream_similar_track_pairs_by_stop_points(20))
+    result = list(repo.stream_similar_track_pairs_by_stop_points(21))
 
     assert len(result) == 1
     stop_point_pair, track_pairs = result[0]
