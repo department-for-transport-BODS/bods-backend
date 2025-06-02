@@ -91,7 +91,7 @@ def test_transmodel_tracks_stream_similar_track_pairs_by_stop_points(
     ]
 
     route_2_coords = [
-        (-1.42148, 55.01789 + 0.000171),  # offset ~19m north (~19m)
+        (-1.42148, 55.01789 + 0.000169),  # offest ~19m north
         (-1.42370, 55.01755),
         (-1.42542, 55.01784),
         (-1.42838, 55.01877),
@@ -99,7 +99,7 @@ def test_transmodel_tracks_stream_similar_track_pairs_by_stop_points(
     ]
 
     route_3_coords = [
-        (-1.42148, 55.01789 + 0.000189),  # offset ~21m north (~21m)
+        (-1.42148, 55.01789 + 0.000189),  # offset ~21m north
         (-1.42370, 55.01755),
         (-1.42542, 55.01784),
         (-1.43034, 55.01957),
@@ -108,26 +108,32 @@ def test_transmodel_tracks_stream_similar_track_pairs_by_stop_points(
         (-1.42865, 55.02075),
     ]
 
-    track1 = TransmodelTracksFactory.build(
+    track1 = TransmodelTracksFactory.create(
         from_atco_code="A",
         to_atco_code="B",
         geometry=from_shape(LineString(route_1_coords), srid=4326),
     )
-    similar_track = TransmodelTracksFactory.build(
+    similar_track = TransmodelTracksFactory.create(
         from_atco_code="A",
         to_atco_code="B",
         geometry=from_shape(LineString(route_2_coords), srid=4326),
     )
-    different_route = TransmodelTracksFactory.build(
+    different_route = TransmodelTracksFactory.create(
         from_atco_code="A",
         to_atco_code="B",
         geometry=from_shape(LineString(route_3_coords), srid=4326),
     )
 
+    different_stop_points = TransmodelTracksFactory.create(
+        from_atco_code="A",
+        to_atco_code="C",
+        geometry=from_shape(LineString(route_2_coords), srid=4326),
+    )
+
     repo = TransmodelTrackRepo(test_db)
 
     with test_db.session_scope() as session:
-        session.add_all([track1, similar_track, different_route])
+        session.add_all([track1, similar_track, different_route, different_stop_points])
         session.commit()
 
         track1_id = track1.id
