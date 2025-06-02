@@ -5,6 +5,7 @@ from common_layer.database.dataclasses import ServiceStats
 from common_layer.database.repos import TransmodelServiceRepo, TransmodelTrackRepo
 from geoalchemy2.shape import from_shape
 from shapely.geometry import LineString
+from sqlalchemy import text
 
 from tests.factories.database import TransmodelServiceFactory, TransmodelTracksFactory
 
@@ -71,6 +72,14 @@ def test_service_repo_get_service_stats_by_revision_id(test_db: SqlDB):
 def test_transmodel_tracks_stream_similar_track_pairs_by_stop_points(
     test_db: SqlDB,
 ) -> None:
+
+    # TODO: Remove this once the unique constraint has been removed from the table # pylint: disable=fixme
+    with test_db.engine.begin() as conn:
+        conn.execute(
+            text(
+                "ALTER TABLE transmodel_tracks DROP CONSTRAINT IF EXISTS unique_from_to_atco_code"
+            )
+        )
 
     # Base route geometry
     route_1_coords = [
