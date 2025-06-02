@@ -1,13 +1,13 @@
+from contextlib import contextmanager
 from datetime import date, datetime, timedelta
+from typing import Any, Generator
 
 from common_layer.database.client import SqlDB
 from common_layer.database.dataclasses import ServiceStats
 from common_layer.database.repos import TransmodelServiceRepo, TransmodelTrackRepo
-from geoalchemy2.shape import from_shape
-from shapely.geometry import LineString
-from sqlalchemy import text
+from sqlalchemy import bindparam, text
 
-from tests.factories.database import TransmodelServiceFactory, TransmodelTracksFactory
+from tests.factories.database import TransmodelServiceFactory
 
 
 def test_service_repo_get_service_stats_by_revision_id(test_db: SqlDB):
@@ -69,6 +69,60 @@ def test_service_repo_get_service_stats_by_revision_id(test_db: SqlDB):
     )
 
 
+def coords_to_wkt_line(coords: list[tuple[float, float]]) -> str:
+    """
+    Convert a list of (lon, lat) tuples to a WKT LINESTRING
+    """
+    coord_str = ", ".join(f"{lon} {lat}" for lon, lat in coords)
+    return f"LINESTRING({coord_str})"
+
+
+def insert_track_raw(
+    db: SqlDB, from_code: str, to_code: str, coords: list[tuple[float, float]]
+) -> int:
+    """
+    Inserts a track directly using a committed connection, bypassing the test session.
+
+    This is necessary because stream_similar_track_pairs_by_stop_points uses a raw
+    named cursor, which operates outside the test session transaction.
+    """
+    wkt = coords_to_wkt_line(coords)
+    with db.engine.begin() as conn:
+        result = conn.execute(
+            text(
+                """
+                INSERT INTO transmodel_tracks (from_atco_code, to_atco_code, geometry)
+                VALUES (:from_code, :to_code, ST_GeomFromText(:wkt, 4326))
+                RETURNING id
+            """
+            ),
+            {"from_code": from_code, "to_code": to_code, "wkt": wkt},
+        )
+        return result.scalar_one()
+
+
+@contextmanager
+def insert_and_cleanup_tracks(
+    db: SqlDB, tracks: list[tuple[str, str, list[tuple[float, float]]]]
+) -> Generator[list[Any], Any, None]:
+    """
+    Wrapper for ensuring inserts are cleaned up after test runs
+    """
+    ids: list[int] = []
+    try:
+        for from_code, to_code, coords in tracks:
+            ids.append(insert_track_raw(db, from_code, to_code, coords))
+        yield ids
+    finally:
+        with db.engine.begin() as conn:
+            conn.execute(
+                text("DELETE FROM transmodel_tracks WHERE id IN :ids").bindparams(
+                    bindparam("ids", expanding=True)
+                ),
+                {"ids": ids},
+            )
+
+
 def test_transmodel_tracks_stream_similar_track_pairs_by_stop_points(
     test_db: SqlDB,
 ) -> None:
@@ -100,67 +154,23 @@ def test_transmodel_tracks_stream_similar_track_pairs_by_stop_points(
         (-1.42534, 55.01920),
         (-1.42542, 55.01784),
     ]
-
-    track1 = TransmodelTracksFactory.create(
-        from_atco_code="A",
-        to_atco_code="B",
-        geometry=from_shape(LineString(route_1_coords), srid=4326),
-    )
-    similar_track = TransmodelTracksFactory.create(
-        from_atco_code="A",
-        to_atco_code="B",
-        geometry=from_shape(LineString(route_2_coords), srid=4326),
-    )
-    different_route = TransmodelTracksFactory.create(
-        from_atco_code="A",
-        to_atco_code="B",
-        geometry=from_shape(LineString(route_3_coords), srid=4326),
-    )
-
-    different_stop_points = TransmodelTracksFactory.create(
-        from_atco_code="A",
-        to_atco_code="C",
-        geometry=from_shape(LineString(route_2_coords), srid=4326),
-    )
-
     repo = TransmodelTrackRepo(test_db)
 
-    with test_db.session_scope() as session:
-        session.add_all([track1, similar_track, different_route, different_stop_points])
-        session.commit()
+    with insert_and_cleanup_tracks(
+        test_db,
+        [
+            ("A", "B", route_1_coords),
+            ("A", "B", route_2_coords),
+            ("A", "B", route_3_coords),  # Diverging track
+            ("A", "C", route_1_coords),  # Different stop points
+        ],
+    ) as [track1_id, similar_track_id, _, _]:
+        result = list(repo.stream_similar_track_pairs_by_stop_points(threshold=20))
 
-        track1_id = track1.id
-        similar_track_id = similar_track.id
+        assert len(result) == 1
+        stop_point_pair, track_pairs = result[0]
+        assert stop_point_pair == ("A", "B")
 
-        geoms = session.execute(
-            text(
-                """
-                SELECT
-                a.from_atco_code,
-                a.to_atco_code,
-                ST_HausdorffDistance(
-                    ST_Transform(a.geometry, 27700), -- Convert to BNG for meter comparison
-                    ST_Transform(b.geometry, 27700)
-                )
-                FROM transmodel_tracks a
-                JOIN transmodel_tracks b
-                ON a.from_atco_code = b.from_atco_code
-                AND a.to_atco_code = b.to_atco_code
-                AND a.id < b.id
-                ORDER BY a.from_atco_code, a.to_atco_code;
-        """
-            )
-        ).fetchall()
-
-        assert geoms
-        assert len(geoms) == 3
-
-    result = list(repo.stream_similar_track_pairs_by_stop_points(21))
-
-    assert len(result) == 1
-    stop_point_pair, track_pairs = result[0]
-    assert stop_point_pair == ("A", "B")
-
-    assert set(track_pairs) == {(track1_id, similar_track_id)} or {
-        (similar_track_id, track1_id)
-    }
+        assert len(track_pairs) == 1
+        assert track1_id in track_pairs[0]
+        assert similar_track_id in track_pairs[0]
