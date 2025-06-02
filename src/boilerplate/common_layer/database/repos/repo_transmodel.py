@@ -257,7 +257,7 @@ class TransmodelTrackRepo(BaseRepositoryWithId[TransmodelTracks]):
         """
         raw_conn: PsycopgConnection = self._db.engine.raw_connection()  # type: ignore[assignment]
         try:
-            with raw_conn.cursor(name="similar_track_cursor") as cursor:
+            with raw_conn.cursor() as cursor:
                 cursor.itersize = 10000
                 log.info("Fetching similar tracks")
                 table_name = self._model.__tablename__
