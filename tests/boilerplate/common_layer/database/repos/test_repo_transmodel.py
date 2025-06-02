@@ -2,9 +2,11 @@ from datetime import date, datetime, timedelta
 
 from common_layer.database.client import SqlDB
 from common_layer.database.dataclasses import ServiceStats
-from common_layer.database.repos import TransmodelServiceRepo
+from common_layer.database.repos import TransmodelServiceRepo, TransmodelTrackRepo
+from geoalchemy2.shape import from_shape
+from shapely.geometry import LineString
 
-from tests.factories.database import TransmodelServiceFactory
+from tests.factories.database import TransmodelServiceFactory, TransmodelTracksFactory
 
 
 def test_service_repo_get_service_stats_by_revision_id(test_db: SqlDB):
@@ -64,3 +66,70 @@ def test_service_repo_get_service_stats_by_revision_id(test_db: SqlDB):
         first_expiring_service=earliest_end_date,
         last_expiring_service=latest_end_date,
     )
+
+
+def test_transmodel_tracks_stream_similar_track_pairs_by_stop_points(
+    test_db: SqlDB,
+) -> None:
+
+    # Base route geometry
+    route_1_coords = [
+        (-1.42148, 55.01789),
+        (-1.42370, 55.01755),
+        (-1.42542, 55.01784),
+        (-1.42838, 55.01877),
+        (-1.43034, 55.01957),
+    ]
+
+    route_2_coords = [
+        (-1.42148, 55.01789 + 0.000171),  # offset ~19m north (~19m)
+        (-1.42370, 55.01755),
+        (-1.42542, 55.01784),
+        (-1.42838, 55.01877),
+        (-1.43034, 55.01957),
+    ]
+
+    route_3_coords = [
+        (-1.42148, 55.01789 + 0.000189),  # offset ~21m north (~21m)
+        (-1.42370, 55.01755),
+        (-1.42542, 55.01784),
+        (-1.43034, 55.01957),
+        (-1.42534, 55.01920),
+        (-1.42697, 55.01986),
+        (-1.42865, 55.02075),
+    ]
+
+    track1 = TransmodelTracksFactory.build(
+        from_atco_code="A",
+        to_atco_code="B",
+        geometry=from_shape(LineString(route_1_coords), srid=4326),
+    )
+    similar_track = TransmodelTracksFactory.build(
+        from_atco_code="A",
+        to_atco_code="B",
+        geometry=from_shape(LineString(route_2_coords), srid=4326),
+    )
+    different_route = TransmodelTracksFactory.build(
+        from_atco_code="A",
+        to_atco_code="B",
+        geometry=from_shape(LineString(route_3_coords), srid=4326),
+    )
+
+    repo = TransmodelTrackRepo(test_db)
+
+    with test_db.session_scope() as session:
+        session.add_all([track1, similar_track, different_route])
+        session.commit()
+
+        track1_id = track1.id
+        similar_track_id = similar_track.id
+
+    result = list(repo.stream_similar_track_pairs_by_stop_points(20))
+
+    assert len(result) == 1
+    stop_point_pair, track_pairs = result[0]
+    assert stop_point_pair == ("A", "B")
+
+    assert set(track_pairs) == {(track1_id, similar_track_id)} or {
+        (similar_track_id, track1_id)
+    }
