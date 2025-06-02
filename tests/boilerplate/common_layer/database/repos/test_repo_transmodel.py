@@ -86,26 +86,19 @@ def test_transmodel_tracks_stream_similar_track_pairs_by_stop_points(
         (-1.42148, 55.01789),
         (-1.42370, 55.01755),
         (-1.42542, 55.01784),
-        (-1.42838, 55.01877),
-        (-1.43034, 55.01957),
     ]
 
     route_2_coords = [
-        (-1.42148, 55.01789 + 0.000169),  # offest ~19m north
+        (-1.42148, 55.01789 + 0.000169),  # offset ~19m north
         (-1.42370, 55.01755),
         (-1.42542, 55.01784),
-        (-1.42838, 55.01877),
-        (-1.43034, 55.01957),
     ]
 
+    # Track diverges
     route_3_coords = [
-        (-1.42148, 55.01789 + 0.000189),  # offset ~21m north
-        (-1.42370, 55.01755),
-        (-1.42542, 55.01784),
-        (-1.43034, 55.01957),
+        (-1.42148, 55.01789),
         (-1.42534, 55.01920),
-        (-1.42697, 55.01986),
-        (-1.42865, 55.02075),
+        (-1.42542, 55.01784),
     ]
 
     track1 = TransmodelTracksFactory.create(
@@ -138,6 +131,29 @@ def test_transmodel_tracks_stream_similar_track_pairs_by_stop_points(
 
         track1_id = track1.id
         similar_track_id = similar_track.id
+
+        geoms = session.execute(
+            text(
+                """
+                SELECT
+                a.from_atco_code,
+                a.to_atco_code,
+                ST_HausdorffDistance(
+                    ST_Transform(a.geometry, 27700), -- Convert to BNG for meter comparison
+                    ST_Transform(b.geometry, 27700)
+                )
+                FROM transmodel_tracks a
+                JOIN transmodel_tracks b
+                ON a.from_atco_code = b.from_atco_code
+                AND a.to_atco_code = b.to_atco_code
+                AND a.id < b.id
+                ORDER BY a.from_atco_code, a.to_atco_code;
+        """
+            )
+        ).fetchall()
+
+        assert geoms
+        assert len(geoms) == 3
 
     result = list(repo.stream_similar_track_pairs_by_stop_points(21))
 
