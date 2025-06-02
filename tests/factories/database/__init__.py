@@ -10,5 +10,6 @@ from .organisation import (
 from .transmodel import (
     TransmodelBookingArrangementsFactory,
     TransmodelServiceFactory,
+    TransmodelTracksFactory,
     TransmodelVehicleJourneyFactory,
 )
