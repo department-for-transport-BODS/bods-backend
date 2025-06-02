@@ -65,6 +65,10 @@ pyproj = "^3.7.0"
 [tool.poetry.group.naptan_cache_id_updater.dependencies]
 pyproj = "^3.7.0"
 
+[tool.poetry.group.consolidate_tracks.dependencies]
+pyproj = "^3.7.0"
+psutil = "^7.0.0"
+
 # Timetables ETL Lambda Dependencies
 [tool.poetry.group.etl.dependencies]
 pyproj = "^3.7.0"
