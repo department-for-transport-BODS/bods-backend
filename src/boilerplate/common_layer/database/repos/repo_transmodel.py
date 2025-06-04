@@ -6,7 +6,7 @@ from collections import defaultdict
 from datetime import date
 from typing import Literal
 
-from sqlalchemy import func, select, tuple_
+from sqlalchemy import func, select, text, tuple_
 from sqlalchemy.dialects.postgresql import insert
 
 from ..client import SqlDB
@@ -221,6 +221,24 @@ class TransmodelTrackRepo(BaseRepositoryWithId[TransmodelTracks]):
         return self._fetch_all(statement)
 
     @handle_repository_errors
+    def has_unique_index_for_from_to(self) -> bool:
+        with self._db.session_scope() as session:
+            result = session.execute(
+                text(
+                    """
+                    SELECT 1
+                    FROM pg_indexes
+                    WHERE tablename = 'transmodel_tracks'
+                    AND indexdef ILIKE '%UNIQUE%'
+                    AND indexdef ILIKE '%from_atco_code%'
+                    AND indexdef ILIKE '%to_atco_code%'
+                    LIMIT 1;
+                """
+                )
+            ).scalar()
+            return bool(result)
+
+    @handle_repository_errors
     def bulk_insert_ignore_duplicates(self, records: list[TransmodelTracks]) -> None:
         """
         Insert multiple records using PostgreSQL's ON CONFLICT DO NOTHING syntax.
@@ -231,9 +249,11 @@ class TransmodelTrackRepo(BaseRepositoryWithId[TransmodelTracks]):
 
         with self._db.session_scope() as session:
             insert_stmt = insert(self._model)
-            insert_stmt = insert_stmt.on_conflict_do_nothing(
-                constraint="unique_from_to_atco_code"
-            )
+            if self.has_unique_index_for_from_to():
+                insert_stmt = insert_stmt.on_conflict_do_nothing(
+                    index_elements=["from_atco_code", "to_atco_code"]
+                )
 
-            session.execute(insert_stmt, [record.__dict__ for record in records])
+            records_to_create = [record.__dict__ for record in records]
+            session.execute(insert_stmt, records_to_create)
         return
