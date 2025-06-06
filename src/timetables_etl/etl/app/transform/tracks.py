@@ -129,16 +129,15 @@ def create_track_mapping(
     Create a mapping from (from_code, to_code) pairs to their corresponding
     Track and Distance information.
     """
-    all_route_links = [
-        route_link for section in route_sections for route_link in section.RouteLink
+
+    route_links_with_track = [
+        route_link
+        for section in route_sections
+        for route_link in section.RouteLink
+        if route_link.Track
     ]
-
-    total_links = len(all_route_links)
-    links_with_track = sum(1 for route_link in all_route_links if route_link.Track)
-    links_without_track = total_links - links_with_track
-
     track_mapping: dict[tuple[str, str], tuple[TXCTrack, int | None]] = {}
-    for route_link in all_route_links:
+    for route_link in route_links_with_track:
         if route_link.Track:
             track_mapping[(route_link.From, route_link.To)] = (
                 route_link.Track,
@@ -147,13 +146,8 @@ def create_track_mapping(
 
     log.info(
         "Created track mapping",
-        total_route_links=total_links,
-        links_with_track=links_with_track,
-        links_without_track=links_without_track,
         total_mappings=len(track_mapping),
-        duplicate_pairs_with_track=links_with_track - len(track_mapping),
     )
-
     return track_mapping
 
 
