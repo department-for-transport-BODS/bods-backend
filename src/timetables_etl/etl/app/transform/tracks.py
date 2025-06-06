@@ -191,6 +191,9 @@ def create_new_tracks(route_sections: list[TXCRouteSection]) -> list[TransmodelT
         total_tracks=len(new_tracks),
         with_geometry=sum(1 for t in new_tracks if t.geometry is not None),
         with_distance=sum(1 for t in new_tracks if t.distance is not None),
+    )
+    log.debug(
+        "Stop point pairs for inserted tracks",
         new_atco_pairs=[(t.from_atco_code, t.to_atco_code) for t in new_tracks],
     )
 
