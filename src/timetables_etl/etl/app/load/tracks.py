@@ -22,8 +22,7 @@ def load_tracks(route_sections: list[TXCRouteSection], db: SqlDB) -> TrackLookup
     Returns a lookup dictionary mapping (from_atco, to_atco) to TransmodelTracks
     """
     log_ctx = log.bind()
-    route_pairs = extract_stop_point_pairs_from_route_sections(route_sections)
-    new_tracks = create_new_tracks(route_pairs, route_sections)
+    new_tracks = create_new_tracks(route_sections)
 
     track_repo = TransmodelTrackRepo(db)
     track_repo.bulk_insert_ignore_duplicates(new_tracks)

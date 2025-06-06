@@ -151,50 +151,47 @@ def create_track_mapping(
     return track_mapping
 
 
-def create_new_tracks(
-    pairs: list[tuple[str, str]], route_sections: list[TXCRouteSection]
-) -> list[TransmodelTracks]:
+def create_new_tracks(route_sections: list[TXCRouteSection]) -> list[TransmodelTracks]:
     """
     Create new TransmodelTrack objects with geometry and distance where available.
     """
-    log.debug("Creating New Tracks for Tracks not in DB", new_atco_pairs=pairs)
-    track_mapping = create_track_mapping(route_sections)
-
+    log.debug("Creating New Tracks")
     new_tracks: list[TransmodelTracks] = []
-    for from_code, to_code in pairs:
-        mapping = track_mapping.get((from_code, to_code))
-        if mapping:
-            txc_track, provided_distance = mapping
+    for section in route_sections:
+        for route_link in section.RouteLink:
+            if not route_link.Track:
+                continue
+
+            from_code = route_link.From
+            to_code = route_link.To
+            txc_track = route_link.Track
+            provided_distance = route_link.Distance
+
             track_geom = process_track_geometry(txc_track)
+            if not track_geom:
+                continue
 
-            if track_geom:
-                # Calculate distance from LineString if not provided
-                distance = (
-                    provided_distance
-                    if provided_distance is not None
-                    else calculate_distance_from_geometry(track_geom.line)
-                )
-
-                new_tracks.append(
-                    TransmodelTracks(
-                        from_atco_code=from_code,
-                        to_atco_code=to_code,
-                        geometry=track_geom.geometry,
-                        distance=distance,
-                    )
-                )
-        else:
-            log.warning(
-                "Track Pair was not Found in Route Link Mapping",
-                from_atco=from_code,
-                to_atco=to_code,
-                track_mapping_keys=track_mapping.keys(),
+            distance = (
+                provided_distance
+                if provided_distance is not None
+                else calculate_distance_from_geometry(track_geom.line)
             )
+
+            new_tracks.append(
+                TransmodelTracks(
+                    from_atco_code=from_code,
+                    to_atco_code=to_code,
+                    geometry=track_geom.geometry,
+                    distance=distance,
+                )
+            )
+
     log.info(
         "Created new tracks",
         total_tracks=len(new_tracks),
         with_geometry=sum(1 for t in new_tracks if t.geometry is not None),
         with_distance=sum(1 for t in new_tracks if t.distance is not None),
+        new_atco_pairs=[(t.from_atco_code, t.to_atco_code) for t in new_tracks],
     )
 
     return new_tracks
