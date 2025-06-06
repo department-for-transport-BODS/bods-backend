@@ -22,6 +22,7 @@ from .model_junction import (
     OrganisationDatasetRevisionLocalities,
     TransmodelServicePatternAdminAreas,
     TransmodelServicePatternLocality,
+    TransmodelServicePatternTracks,
     TransmodelServiceServicePattern,
     TransmodelTracksVehicleJourney,
 )
@@ -134,4 +135,5 @@ __all__ = [
     "TransmodelServicePatternLocality",
     "TransmodelServiceServicePattern",
     "TransmodelTracksVehicleJourney",
+    "TransmodelServicePatternTracks",
 ]

@@ -129,3 +129,29 @@ class TransmodelTracksVehicleJourney(BaseSQLModel):
         ),
         nullable=False,
     )
+
+
+class TransmodelServicePatternTracks(BaseSQLModel):
+    """
+    Association table between Tracks and Service Patterns
+    Represents which Tracks are used by which Service Patterns in sequence
+    """
+
+    __tablename__ = "transmodel_servicepattern_tracks"
+
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, init=False, autoincrement=True
+    )
+    sequence_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    tracks_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("transmodel_tracks.id", deferrable=True, initially="DEFERRED"),
+        nullable=False,
+    )
+    service_pattern_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey(
+            "transmodel_servicepattern.id", deferrable=True, initially="DEFERRED"
+        ),
+        nullable=False,
+    )
