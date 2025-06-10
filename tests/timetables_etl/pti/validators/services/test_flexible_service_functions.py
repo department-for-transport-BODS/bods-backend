@@ -6,14 +6,13 @@ from unittest.mock import MagicMock
 
 import pytest
 from lxml import etree
+from pti.app.constants import NAMESPACE
 from pti.app.validators.service.flexible_service import (
     check_flexible_service_times,
     check_flexible_service_timing_status,
     get_flexible_service_stop_point_ref_validator,
     has_flexible_service_classification,
 )
-
-NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
 
 
 @pytest.mark.parametrize(
@@ -33,7 +32,7 @@ NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
 )
 def test_check_flexible_service_timing_status(
     timing_status_values: list[str], expected: bool
-):
+) -> None:
     """
     Timing Status Test
     """
@@ -70,7 +69,7 @@ def test_check_flexible_service_timing_status(
     elements = doc.xpath(
         "//x:Service/x:FlexibleService/x:FlexibleJourneyPattern", namespaces=NAMESPACE
     )
-    actual = check_flexible_service_timing_status("", elements)
+    actual = check_flexible_service_timing_status(None, elements)
     assert actual == expected
 
 
@@ -93,7 +92,7 @@ def test_check_flexible_stops(
     stop_refs: list[str],
     compliant_count: int,
     expected: bool,
-):
+) -> None:
     """
     Test Spots of Flexible Service
     """
@@ -125,7 +124,7 @@ def test_check_flexible_stops(
     )
 
     validator = get_flexible_service_stop_point_ref_validator(db=MagicMock())
-    result = validator("", elements)
+    result = validator(None, elements)
 
     assert result == expected
     assert m_stop_point_repo.return_value.get_count.call_count == 1
@@ -166,7 +165,7 @@ def test_check_flexible_service_stop_points(
     stop_point_refs: list[str],
     compliant_count: int,
     expected: bool,
-):
+) -> None:
     """
     Service Sto Points Test
     """
@@ -198,7 +197,7 @@ def test_check_flexible_service_stop_points(
     )
 
     validator = get_flexible_service_stop_point_ref_validator(db=MagicMock())
-    result = validator("", elements)
+    result = validator(None, elements)
 
     assert result == expected
     assert m_stop_point_repo.return_value.get_count.call_count == 1
@@ -254,11 +253,11 @@ def test_has_flexible_service_classification(
     """
     doc = etree.fromstring(xml)
     elements = doc.xpath("//x:Service", namespaces=NAMESPACE)
-    actual = has_flexible_service_classification("", elements)
+    actual = has_flexible_service_classification(None, elements)
     assert actual == expected
 
 
-def test_check_flexible_service_times():
+def test_check_flexible_service_times() -> None:
     """
     Flexible Service Times Check test
     """
@@ -285,11 +284,11 @@ def test_check_flexible_service_times():
     """
     doc = etree.fromstring(xml)
     elements = doc.xpath("//x:VehicleJourneys", namespaces=NAMESPACE)
-    actual = check_flexible_service_times("", elements)
+    actual = check_flexible_service_times(None, elements)
     assert actual is True
 
 
-def test_check_no_flexible_service_times():
+def test_check_no_flexible_service_times() -> None:
     """
     Test no flexible service times
     """
@@ -324,5 +323,5 @@ def test_check_no_flexible_service_times():
 
     doc = etree.fromstring(vehicle_journeys)
     elements = doc.xpath("//x:VehicleJourneys", namespaces=NAMESPACE)
-    actual = check_flexible_service_times("", elements)
+    actual = check_flexible_service_times(None, elements)
     assert actual is False

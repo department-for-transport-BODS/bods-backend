@@ -12,7 +12,7 @@ def test_vehicle_journey_from_xml():
     """
     # Mock XML string representing a VehicleJourney
     xml_string = """
-    <VehicleJourney xmlns="http://www.example.com">
+    <VehicleJourney xmlns="http://www.transxchange.org.uk/">
         <VehicleJourneyCode>VJ123</VehicleJourneyCode>
         <LineRef>Line456</LineRef>
         <JourneyPatternRef>JP789</JourneyPatternRef>

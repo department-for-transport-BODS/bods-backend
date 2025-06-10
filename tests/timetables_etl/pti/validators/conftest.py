@@ -1,11 +1,16 @@
+"""
+PTI Validators Conftest
+"""
+
 from io import BytesIO, StringIO
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
 from common_layer.database.client import SqlDB
-from common_layer.dynamodb.client import DynamoDB, NaptanStopPointDynamoDBClient
-from common_layer.dynamodb.client.cache import DynamoDBCache, DynamoDbCacheSettings
+from common_layer.dynamodb.client import NaptanStopPointDynamoDBClient
+from common_layer.dynamodb.client.cache import DynamoDBCache
 from common_layer.xml.txc.models.txc_data import TXCData
 from pti.app.constants import PTI_SCHEMA_PATH
 from pti.app.models.models_pti import PtiJsonSchema
@@ -17,7 +22,7 @@ from tests.timetables_etl.pti.validators.constants import TXC_END, TXC_START
 
 
 class XMLFile(BytesIO):
-    def __init__(self, str_, **kwargs):
+    def __init__(self, str_: str, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.write(str_.encode("utf-8"))
         self.name = "file.xml"
@@ -25,14 +30,14 @@ class XMLFile(BytesIO):
 
 
 class TXCFile(XMLFile):
-    def __init__(self, str_, **kwargs):
+    def __init__(self, str_: str, **kwargs: Any) -> None:
         s = TXC_START + str_ + TXC_END
         super().__init__(s, **kwargs)
         self.name = "txc.xml"
 
 
 class JSONFile(StringIO):
-    def __init__(self, str_, **kwargs):
+    def __init__(self, str_: str, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.write(str_)
         self.seek(0)

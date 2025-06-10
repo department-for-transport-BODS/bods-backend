@@ -4,12 +4,12 @@ PTI Validator class
 
 import json
 from io import BytesIO
-from typing import IO, Any, Callable
+from typing import IO, Any, Callable, Literal
 
 from common_layer.xml.txc.models import TXCData
 from common_layer.xml.txc.parser.metadata import parse_metadata
 from common_layer.xml.utils.xml_utils import load_xml_tree
-from lxml import etree
+from lxml.etree import FunctionNamespace, _Element, _ElementTree  # type: ignore
 from structlog.stdlib import get_logger
 
 from ..models import DbClients, PtiJsonSchema, PtiObservation, PtiViolation
@@ -70,7 +70,7 @@ class PTIValidator:
         self.namespaces = self.schema.header.namespaces
         self.violations: list[PtiViolation] = []
 
-        self.fns = etree.FunctionNamespace(None)
+        self.fns = FunctionNamespace(None)
         self.register_function("bool", cast_to_bool)
         self.register_function("contains_date", contains_date)
         self.register_function(
@@ -144,14 +144,14 @@ class PTIValidator:
             has_servicedorganisation_working_days,
         )
 
-    def register_function(self, key: str, function: Callable) -> None:
+    def register_function(self, key: str, function: Callable[..., Any]) -> None:
         """
         Register validator function
         """
         self.fns[key] = function
 
     def add_violation(
-        self, element: etree._Element, observation: PtiObservation, filename: str
+        self, element: _Element, observation: PtiObservation, filename: str
     ) -> None:
         """
         Create and add a Violation for the given element and observation
@@ -169,13 +169,15 @@ class PTIValidator:
         )
 
     def check_observation(
-        self, observation: PtiObservation, element: etree._Element, filename: str
+        self, observation: PtiObservation, element: _Element, filename: str
     ) -> None:
         """
         Check for violations of the given observation
         """
         for rule in observation.rules:
-            result = element.xpath(rule.test, namespaces=self.namespaces)
+            result: list[_Element] | bool = element.xpath(
+                rule.test, namespaces=self.namespaces
+            )
             # XPath query will return a boolean or a list of non-compliant elements.
             if isinstance(result, bool) and result is False:
                 self.add_violation(element, observation, filename)
@@ -185,7 +187,9 @@ class PTIValidator:
                     self.add_violation(element_with_violation, observation, filename)
                 break
 
-    def check_service_type(self, document):
+    def check_service_type(
+        self, document: _ElementTree
+    ) -> Literal["FlexibleService"] | Literal["StandardService"]:
         """
         Check service type of given document
         """

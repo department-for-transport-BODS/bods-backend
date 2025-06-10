@@ -2,8 +2,9 @@
 BaseValidator
 """
 
-from common_layer.timetables.transxchange import TransXChangeElement
+from lxml.etree import _Element  # type: ignore
 
+from ..constants import NAMESPACE
 from ..models.models_pti import Line, VehicleJourney
 
 
@@ -12,9 +13,8 @@ class BaseValidator:
     Parent class for LinesValidator and StopPointValidator
     """
 
-    def __init__(self, root):
+    def __init__(self, root: _Element) -> None:
         self.root = root
-        self.namespaces = {"x": self.root.nsmap.get(None)}
 
         self._vehicle_journeys: list[VehicleJourney] | None = None
         self._lines: list[Line] | None = None
@@ -28,7 +28,7 @@ class BaseValidator:
         """
         if self._lines is not None:
             return self._lines
-        lines = self.root.xpath("//x:Line", namespaces=self.namespaces)
+        lines = self.root.xpath("//x:Line", namespaces=NAMESPACE)
         self._lines = [Line.from_xml(line) for line in lines]
         return self._lines
 
@@ -40,23 +40,23 @@ class BaseValidator:
         if self._vehicle_journeys is not None:
             return self._vehicle_journeys
         xpath = "//x:VehicleJourneys/x:VehicleJourney"
-        journeys = self.root.xpath(xpath, namespaces=self.namespaces)
+        journeys = self.root.xpath(xpath, namespaces=NAMESPACE)
         self._vehicle_journeys = [VehicleJourney.from_xml(vj) for vj in journeys]
         return self._vehicle_journeys
 
     @property
-    def services(self):
+    def services(self) -> list[_Element]:
         """
         Gets and caches all Service elements
         """
         if self._services is not None:
             return self._services
         xpath = "//x:Services/x:Service"
-        self._services = self.root.xpath(xpath, namespaces=self.namespaces)
+        self._services = self.root.xpath(xpath, namespaces=NAMESPACE)
         return self._services
 
     @property
-    def journey_patterns(self):
+    def journey_patterns(self) -> list[_Element]:
         """
         Gets and caches all JourneyPattern elements
         """
@@ -64,7 +64,7 @@ class BaseValidator:
             return self._journey_patterns
 
         xpath = "//x:JourneyPatterns/x:JourneyPattern"
-        patterns = self.root.xpath(xpath, namespaces=self.namespaces)
+        patterns = self.root.xpath(xpath, namespaces=NAMESPACE)
         self._journey_patterns = patterns
         return self._journey_patterns
 
@@ -87,12 +87,12 @@ class BaseValidator:
             )
         return ""
 
-    def get_journey_pattern_refs_by_line_ref(self, ref: str):
+    def get_journey_pattern_refs_by_line_ref(self, ref: str) -> list[str]:
         """
         Returns all the JourneyPatternRefs that appear in the VehicleJourneys have
         LineRef equal to ref.
         """
-        jp_refs = set()
+        jp_refs: set[str] = set()
         vehicle_journeys = self.get_vehicle_journey_by_line_ref(ref)
         for journey in vehicle_journeys:
             jp_ref = self.get_journey_pattern_ref_by_vehicle_journey_code(journey.code)
@@ -114,26 +114,19 @@ class BaseValidator:
         """
         return [vj for vj in self.vehicle_journeys if vj.journey_pattern_ref == ref]
 
-    def get_service_by_vehicle_journey(
-        self, service_ref: str
-    ) -> TransXChangeElement | None:
+    def get_service_by_vehicle_journey(self, service_ref: str) -> _Element | None:
         """Find service for vehicle journey based on service ref
 
         Args:
             service_ref (str): Service ref from vehicle journey
-
-        Returns:
-            Optional[TransXChangeElement]: service element
         """
         for service in self.services:
-            service_code = service.xpath(
-                "string(x:ServiceCode)", namespaces=self.namespaces
-            )
+            service_code = service.xpath("string(x:ServiceCode)", namespaces=NAMESPACE)
             if service_code is not None and service_ref == service_code:
                 return service
         return None
 
-    def get_vehicle_journey_by_code(self, code) -> list[VehicleJourney]:
+    def get_vehicle_journey_by_code(self, code: str) -> list[VehicleJourney]:
         """
         Get all VehicleJourneys with matching VehicleJourneyCode
         """
@@ -149,7 +142,7 @@ class BaseValidator:
             f"x:RouteLink[string(x:From/x:StopPointRef) = '{ref}' "
             f"or string(x:To/x:StopPointRef) = '{ref}']/@id"
         )
-        link_refs = self.root.xpath(xpath, namespaces=self.namespaces)
+        link_refs = self.root.xpath(xpath, namespaces=NAMESPACE)
         return list(set(link_refs))
 
     def get_journey_pattern_section_refs_by_route_link_ref(self, ref: str) -> list[str]:
@@ -160,7 +153,7 @@ class BaseValidator:
             "//x:JourneyPatternSections/x:JourneyPatternSection"
             f"[x:JourneyPatternTimingLink[string(x:RouteLinkRef) = '{ref}']]/@id"
         )
-        section_refs = self.root.xpath(xpath, namespaces=self.namespaces)
+        section_refs = self.root.xpath(xpath, namespaces=NAMESPACE)
         return list(set(section_refs))
 
     def get_journey_pattern_ref_by_journey_pattern_section_ref(
@@ -170,10 +163,10 @@ class BaseValidator:
         Finds journey pattern IDs that contain a specific journey pattern section reference.
         """
         xpath = f"//x:JourneyPattern[string(x:JourneyPatternSectionRefs) = '{ref}']/@id"
-        journey_pattern_refs = self.root.xpath(xpath, namespaces=self.namespaces)
+        journey_pattern_refs = self.root.xpath(xpath, namespaces=NAMESPACE)
         return list(set(journey_pattern_refs))
 
-    def get_stop_point_ref_from_journey_pattern_ref(self, ref: str):
+    def get_stop_point_ref_from_journey_pattern_ref(self, ref: str) -> list[str]:
         """
         Retrieves all stop point references used in a specific journey pattern.
         Includes both origin and destination stops from all timing links in the pattern.
@@ -182,7 +175,7 @@ class BaseValidator:
             f"//x:StandardService/x:JourneyPattern[@id='{ref}']"
             "/x:JourneyPatternSectionRefs/text()"
         )
-        section_refs = self.root.xpath(xpath, namespaces=self.namespaces)
+        section_refs = self.root.xpath(xpath, namespaces=NAMESPACE)
 
         all_stop_refs: list[str] = []
         for section_ref in section_refs:
@@ -191,7 +184,7 @@ class BaseValidator:
                 f"[@id='{section_ref}']/x:JourneyPatternTimingLink/*"
                 "[local-name() = 'From' or local-name() = 'To']/x:StopPointRef/text()"
             )
-            stop_refs = self.root.xpath(xpath, namespaces=self.namespaces)
+            stop_refs = self.root.xpath(xpath, namespaces=NAMESPACE)
             all_stop_refs += stop_refs
 
         return list(set(all_stop_refs))

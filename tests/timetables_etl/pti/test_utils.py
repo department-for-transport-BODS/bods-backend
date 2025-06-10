@@ -10,7 +10,7 @@ from pti.app.utils import get_service_in_scotland_from_db, is_service_in_scotlan
 from pti.app.utils.utils_scotland import SCOTLAND_TRAVELINE_REGIONS
 
 
-def test_is_service_in_scotland():
+def test_is_service_in_scotland() -> None:
     """
     Test if a service is in Scotland
     """
@@ -52,7 +52,7 @@ def test_is_service_in_scotland():
     ],
 )
 def test_get_service_in_scotland_from_db(
-    m_service_repo, traveline_region, expected_result
+    m_service_repo: MagicMock, traveline_region: str, expected_result: bool
 ):
     """
     Test Getting Service in scotland from DB

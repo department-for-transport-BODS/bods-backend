@@ -6,10 +6,10 @@ from pathlib import Path
 
 import pytest
 from lxml import etree
+from pti.app.constants import NAMESPACE
 from pti.app.validators.operator import validate_licence_number
 
 DATA_DIR = Path(__file__).parent / "data/coaches"
-NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
 
 
 @pytest.mark.parametrize(
@@ -30,10 +30,10 @@ NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
         ),
     ],
 )
-def test_validate_licence_number(filename: str, expected: bool):
+def test_validate_licence_number(filename: str, expected: bool) -> None:
     """Tests license number validation for coach and non-coach operators"""
     filepath = DATA_DIR / filename
     with filepath.open("r") as txc_xml:
         doc = etree.parse(txc_xml)
         elements = doc.xpath("//x:Operator", namespaces=NAMESPACE)
-        assert validate_licence_number("", elements) == expected
+        assert validate_licence_number(None, elements) == expected

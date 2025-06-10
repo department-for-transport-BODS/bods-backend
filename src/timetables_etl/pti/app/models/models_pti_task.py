@@ -7,10 +7,7 @@ from io import BytesIO
 from attr import dataclass
 from common_layer.database.client import SqlDB
 from common_layer.database.models import OrganisationDatasetRevision
-from common_layer.dynamodb.client.cache import DynamoDBCache
-from common_layer.dynamodb.client.naptan_stop_points import (
-    NaptanStopPointDynamoDBClient,
-)
+from common_layer.dynamodb.client import DynamoDBCache, NaptanStopPointDynamoDBClient
 from common_layer.dynamodb.models import TXCFileAttributes
 from common_layer.xml.txc.models import TXCData
 from pydantic import BaseModel, ConfigDict

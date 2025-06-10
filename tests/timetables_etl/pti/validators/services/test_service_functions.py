@@ -4,12 +4,11 @@ Test Service Functions
 
 import pytest
 from lxml import etree
+from pti.app.constants import NAMESPACE
 from pti.app.validators.service.service import (
     check_service_group_validations,
     has_flexible_or_standard_service,
 )
-
-NAMESPACE = {"x": "http://www.transxchange.org.uk/"}
 
 
 @pytest.mark.parametrize(
@@ -105,7 +104,7 @@ def test_has_flexible_or_standard_service(
 
     doc = etree.fromstring(xml)
     elements = doc.xpath("//x:Service", namespaces=NAMESPACE)
-    actual = has_flexible_or_standard_service("", elements)
+    actual = has_flexible_or_standard_service(None, elements)
     assert actual == expected
 
 
@@ -218,7 +217,7 @@ def test_has_flexible_or_standard_service(
         ),
     ],
 )
-def test_check_service_group_validations(services_xml: str, expected: bool):
+def test_check_service_group_validations(services_xml: str, expected: bool) -> None:
     """
     Test Validating Services Groups of Standard or Flexible Services
     """
@@ -232,5 +231,5 @@ def test_check_service_group_validations(services_xml: str, expected: bool):
 
     doc = etree.fromstring(xml)
     elements = doc.xpath("//x:Services", namespaces=NAMESPACE)
-    actual = check_service_group_validations("", elements)
+    actual = check_service_group_validations(None, elements)
     assert actual == expected
