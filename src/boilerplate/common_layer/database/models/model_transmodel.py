@@ -8,7 +8,16 @@ from datetime import date, time
 from typing import Literal
 
 from geoalchemy2 import Geometry, WKBElement
-from sqlalchemy import Boolean, Date, Integer, String, Text, Time, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    Date,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    Time,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -134,4 +143,29 @@ class TransmodelTracks(BaseSQLModel):
         UniqueConstraint(
             "from_atco_code", "to_atco_code", name="unique_from_to_atco_code"
         ),
+    )
+
+
+class TransmodelServicePatternDistance(BaseSQLModel):
+    """
+    Transmodel ServicePatternDistance table
+    Represents a track segment between two stops with geometry and distance
+    """
+
+    __tablename__ = "transmodel_servicepatterndistance"
+
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, init=False, autoincrement=True
+    )
+    geom: Mapped[WKBElement | None] = mapped_column(
+        Geometry("LINESTRING", 4326), nullable=True
+    )
+    distance: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    service_pattern_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey(
+            "transmodel_servicepattern.id", deferrable=True, initially="DEFERRED"
+        ),
+        nullable=False,
     )
