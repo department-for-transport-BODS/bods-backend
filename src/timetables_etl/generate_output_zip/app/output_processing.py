@@ -2,13 +2,9 @@
 Functions to create and upload zip files.
 """
 
-# import queue
-import threading
-# from concurrent.futures import ThreadPoolExecutor, as_completed
 import zipfile
-# from datetime import datetime
 from io import BytesIO
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 
 from common_layer.aws.step import MapExecutionSucceeded
 from common_layer.s3 import S3
