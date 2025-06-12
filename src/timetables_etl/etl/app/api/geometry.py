@@ -23,7 +23,7 @@ class OSRMGeometryAPISettings(BaseSettings):
 
     model_config = SettingsConfigDict(case_sensitive=False, extra="allow")
 
-    OSRM_BASE_URL: str = Field(
+    OSRM_API_HOST: str = Field(
         default="http://localhost:5001", description="Host URL for OSRM API"
     )
 
@@ -35,7 +35,7 @@ class OSRMGeometryAPI:
 
     def __init__(self, settings: OSRMGeometryAPISettings | None = None):
         settings = settings or OSRMGeometryAPISettings()
-        self.base_url = settings.OSRM_BASE_URL
+        self.base_url = settings.OSRM_API_HOST
 
     def _make_route_request(
         self, coords_list: list[tuple[float, float]]

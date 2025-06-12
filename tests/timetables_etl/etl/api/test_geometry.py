@@ -26,7 +26,7 @@ def test_osrm_geometry_api_get_geometry_and_distance_success(m_get: MagicMock) -
     expected_url = f"{base_url}/route/v1/driving/0.0,0.0;0.02,0.01;0.03,0.02"
     expected_params = {"overview": "full", "geometries": "geojson"}
 
-    config = OSRMGeometryAPISettings(OSRM_BASE_URL=base_url)
+    config = OSRMGeometryAPISettings(OSRM_API_HOST=base_url)
     api = OSRMGeometryAPI(config)
     geom, distance = api.get_geometry_and_distance(coords)
 

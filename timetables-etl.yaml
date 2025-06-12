@@ -321,7 +321,7 @@ Resources:
         LogGroup: !Ref EtlProcessLambdaLogGroup
     Environment:
       Variables:
-        OSRM_BASE_URL: ''
+        OSRM_API_HOST: 'http://osrm.bodds.dev:5000'
 
   GenerateOutputZipLambda:
     Type: AWS::Serverless::Function
