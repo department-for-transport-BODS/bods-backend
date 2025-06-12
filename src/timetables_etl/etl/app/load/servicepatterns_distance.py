@@ -71,9 +71,7 @@ def get_geometry_and_distance_from_tracks(
     Calculate the full service geometry and distance using track data
     """
 
-    total_distance = sum(
-        [track.distance for track in tracks.values() if track.distance]
-    )
+    total_distance = sum(track.distance for track in tracks.values() if track.distance)
     geometry: WKBElement | None = None
 
     track_linestrings: list[LineString] = []
