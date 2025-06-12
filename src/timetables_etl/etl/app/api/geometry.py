@@ -1,3 +1,7 @@
+"""
+OSRM Geometry API Client
+"""
+
 import requests
 from geoalchemy2 import WKBElement
 from geoalchemy2.shape import from_shape  # type:ignore
@@ -42,7 +46,7 @@ class OSRMGeometryAPI:
         coords: str = ";".join(f"{lon},{lat}" for lon, lat in coords_list)
         url = f"{self.base_url}/route/v1/driving/{coords}"
         params = {"overview": "full", "geometries": "geojson"}
-        res = requests.get(url, params=params).json()
+        res = requests.get(url, params=params, timeout=60).json()
         route_response = RouteResponse(**res)
 
         if not route_response.code.lower() == "ok":
@@ -63,6 +67,10 @@ class OSRMGeometryAPI:
     def get_geometry_and_distance(
         self, coords: list[tuple[float, float]]
     ) -> tuple[None, None] | tuple[WKBElement, int]:
+        """
+        Get a road-based route and distance for the given coords
+        using the OSRM API
+        """
         route = self._make_route_request(coords)
         if not route:
             return None, None
