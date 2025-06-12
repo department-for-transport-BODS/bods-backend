@@ -67,40 +67,45 @@ def get_geometry_and_distance_from_tracks(
     tracks: TrackLookup,
     stop_sequence: list[NaptanStopPoint],
 ) -> tuple[WKBElement | None, int]:
+    """
+    Calculate the full service geometry and distance using track data
+    """
 
     total_distance = sum(
         [track.distance for track in tracks.values() if track.distance]
     )
     geometry: WKBElement | None = None
 
-    ordered_tracks: list[TransmodelTracks] = []
+    track_linestrings: list[LineString] = []
     for i in range(len(stop_sequence) - 1):
         from_stop = stop_sequence[i]
         to_stop = stop_sequence[i + 1]
+
         track = tracks.get((from_stop.atco_code, to_stop.atco_code))
-        if track:
-            ordered_tracks.append(track)
+        if not track:
+            raise ValueError(
+                "No track found for stop point pair",
+            )
+        if not track.geometry:
+            raise ValueError("Missing geometry for track")
 
-    shapely_linestrings: list[LineString] = []
-    for track in ordered_tracks:
-        if track.geometry:
-            shapely_geom = to_shape(track.geometry)
-            if isinstance(shapely_geom, LineString):
-                shapely_linestrings.append(shapely_geom)
-            elif isinstance(shapely_geom, MultiLineString):
-                # If a track's geometry is a MultiLineString, extract individual LineStrings
-                shapely_linestrings.extend(shapely_geom.geoms)
-            else:
-                log.warning(
-                    "Track has unexpected geometry type",
-                    track_id=track.id,
-                    geom_type=shapely_geom.geom_type,
-                )
+        shapely_geom = to_shape(track.geometry)
 
-    if shapely_linestrings:
-        # Merge linestrings from all tracks into single linestring
-        merged_linestring = linemerge(shapely_linestrings)
-        geometry = from_shape(merged_linestring, srid=4326)
+        if isinstance(shapely_geom, LineString):
+            track_linestrings.append(shapely_geom)
+        elif isinstance(shapely_geom, MultiLineString):
+            track_linestrings.extend(shapely_geom.geoms)
+        else:
+            log.warning(
+                "Track has unexpected geometry type",
+                track_id=track.id,
+                geom_type=shapely_geom.geom_type,
+            )
+
+        if track_linestrings:
+            # Merge linestrings from all tracks into single linestring
+            merged_linestring = linemerge(track_linestrings)
+            geometry = from_shape(merged_linestring, srid=4326)
 
     return geometry, total_distance
 
