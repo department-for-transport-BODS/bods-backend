@@ -131,10 +131,10 @@ def test_process_service_pattern_distance_uses_tracks_data_when_sufficient(
     m_distance_repo: MagicMock,
     sufficient_tracks: dict[tuple[str, str], TransmodelTracks],
     stop_sequence: list[NaptanStopPoint],
-):
+) -> None:
     mock_service = MagicMock()
     mock_service.FlexibleService = False
-    mock_db = MagicMock()
+    mock_db = create_autospec(SqlDB, instance=True)
 
     expected_distance = 200  # 2 tracks * 100 each
 
@@ -194,3 +194,28 @@ def test_process_service_pattern_distance_uses_osrm_geom_api(
     assert inserted_obj.service_pattern_id == 123
     assert inserted_obj.distance == expected_distance
     assert inserted_obj.geom == mock_geom
+
+
+@patch(
+    "timetables_etl.etl.app.load.servicepatterns_distance.TransmodelServicePatternDistanceRepo"
+)
+@patch("timetables_etl.etl.app.load.servicepatterns_distance.OSRMGeometryAPI")
+def test_process_service_pattern_distance_skips_creation_for_flexible_services(
+    m_geometry_api: MagicMock,
+    m_distance_repo: MagicMock,
+    sufficient_tracks: dict[tuple[str, str], TransmodelTracks],
+    stop_sequence: list[NaptanStopPoint],
+) -> None:
+    mock_service = MagicMock()
+    mock_service.FlexibleService = True
+    mock_db = create_autospec(SqlDB, instance=True)
+
+    distance = process_service_pattern_distance(
+        service=mock_service,
+        service_pattern_id=123,
+        tracks=sufficient_tracks,
+        stop_sequence=stop_sequence,
+        db=mock_db,
+    )
+    assert distance is None
+    m_distance_repo.return_value.insert.assert_not_called()

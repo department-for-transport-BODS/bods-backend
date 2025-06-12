@@ -119,7 +119,7 @@ def process_service_pattern_distance(
     Uses tracks data if available in the file, else uses distance service
     """
     if service.FlexibleService:
-        return 0
+        return None
 
     distance: int | None = None
     geometry: WKBElement | None = None
