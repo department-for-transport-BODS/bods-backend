@@ -41,6 +41,7 @@ from .models_context import (
     ServicePatternMapping,
     ServicePatternVehicleJourneyContext,
 )
+from .servicepatterns_distance import process_service_pattern_distance
 from .service_pattern_tracks import load_service_pattern_tracks
 from .vehicle_journey import (
     process_service_pattern_vehicle_journeys,
@@ -240,12 +241,21 @@ def process_pattern_common(
         context.db,
     )
 
+    distance = process_service_pattern_distance(
+        service,
+        context.service_pattern.id,
+        context.lookups.tracks,
+        sp_data.stop_sequence,
+        context.db,
+    )
+
     return PatternCommonStats(
         localities=len(localities),
         admin_areas=len(admin_areas),
         vehicle_journeys=len(tm_vjs),
         pattern_stops=len(tm_pattern_stops),
         tracks=len(tracks),
+        distance=distance,
     )
 
 
