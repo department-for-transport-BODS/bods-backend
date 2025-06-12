@@ -6,7 +6,6 @@ from common_layer.database import SqlDB
 from common_layer.database.models import (
     NaptanStopPoint,
     TransmodelServicePatternDistance,
-    TransmodelTracks,
 )
 from common_layer.database.repos import TransmodelServicePatternDistanceRepo
 from common_layer.xml.txc.models import TXCService
