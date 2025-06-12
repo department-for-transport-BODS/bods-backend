@@ -137,7 +137,7 @@ class TransmodelServicePatternTracks(BaseSQLModel):
     Represents which Tracks are used by which Service Patterns in sequence
     """
 
-    __tablename__ = "transmodel_servicepattern_tracks"
+    __tablename__ = "transmodel_servicepatterntracks"
 
     id: Mapped[int] = mapped_column(
         Integer, primary_key=True, init=False, autoincrement=True

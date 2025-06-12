@@ -239,13 +239,13 @@ class TransmodelTrackRepo(BaseRepositoryWithId[TransmodelTracks]):
             return bool(result)
 
     @handle_repository_errors
-    def bulk_insert_ignore_duplicates(self, records: list[TransmodelTracks]) -> None:
+    def bulk_insert_ignore_duplicates(self, records: list[TransmodelTracks]) -> dict[tuple[str, str], int]:
         """
         Insert multiple records using PostgreSQL's ON CONFLICT DO NOTHING syntax.
         Returns count of records inserted
         """
         if not records:
-            return
+            return {}
 
         with self._db.session_scope() as session:
             insert_stmt = insert(self._model)
@@ -253,7 +253,8 @@ class TransmodelTrackRepo(BaseRepositoryWithId[TransmodelTracks]):
                 insert_stmt = insert_stmt.on_conflict_do_nothing(
                     index_elements=["from_atco_code", "to_atco_code"]
                 )
-
+            insert_stmt = insert_stmt.returning(self._model.id, self._model.from_atco_code, self._model.to_atco_code)
             records_to_create = [record.__dict__ for record in records]
-            session.execute(insert_stmt, records_to_create)
-        return
+            results = session.execute(insert_stmt, records_to_create)
+            tracks = {(row[1], row[2]): row[0]  for row in results.fetchall()}
+            return tracks

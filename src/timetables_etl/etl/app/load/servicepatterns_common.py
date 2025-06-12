@@ -41,6 +41,7 @@ from .models_context import (
     ServicePatternMapping,
     ServicePatternVehicleJourneyContext,
 )
+from .service_pattern_tracks import load_service_pattern_tracks
 from .vehicle_journey import (
     load_vehicle_journey_tracks,
     process_service_pattern_vehicle_journeys,
@@ -232,12 +233,9 @@ def process_pattern_common(
         vj_context,
     )
 
-    # This is where we create the links between Tracks and Vehicle Journeys
-    # We now want to create the link between service pattern and the tracks instead
-    # Link context.service_pattern.service_pattern_id -> tracks
-    tracks = load_vehicle_journey_tracks(
+    tracks = load_service_pattern_tracks(
         reference_journey_pattern,
-        tm_vjs,
+        context.service_pattern.id,
         context.lookups.tracks,
         sp_data.stop_sequence,
         context.db,
