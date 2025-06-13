@@ -52,22 +52,12 @@ class TXCFileAttributes:
         """
         Conversion of TXCFileAttributes from DB into the PTI Model
         """
-        if isinstance(obj.modification_datetime, Decimal):
-            mod_ts_int = int(obj.modification_datetime)
-            modification_dt_formatted = datetime.fromtimestamp(
-                mod_ts_int, tz=timezone.utc
-            )
-        else:
-            modification_dt_formatted = (
-                obj.modification_datetime
-            )  # If it's already a datetime
-
         return TXCFileAttributes(
             id=obj.id,
             revision_number=obj.revision_number,
             service_code=obj.service_code,
             line_names=obj.line_names,
-            modification_datetime=modification_dt_formatted,
+            modification_datetime=obj.modification_datetime,
             hash=obj.hash,
             filename=obj.filename,
         )
