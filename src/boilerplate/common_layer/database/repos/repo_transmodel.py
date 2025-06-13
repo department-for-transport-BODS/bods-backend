@@ -6,7 +6,7 @@ from collections import defaultdict
 from datetime import date
 from typing import Literal
 
-from sqlalchemy import func, select, text, tuple_
+from sqlalchemy import func, select, tuple_
 from sqlalchemy.dialects.postgresql import insert
 
 from ..client import SqlDB
