@@ -2,7 +2,10 @@
 BaseValidator
 """
 
+from typing import Optional
+
 from common_layer.timetables.transxchange import TransXChangeElement
+from lxml.etree import _Element
 
 from ..models.models_pti import Line, VehicleJourney
 
@@ -12,7 +15,9 @@ class BaseValidator:
     Parent class for LinesValidator and StopPointValidator
     """
 
-    def __init__(self, root):
+    namespaces = None
+
+    def __init__(self, root: _Element):
         self.root = root
         self.namespaces = {"x": self.root.nsmap.get(None)}  # type: ignore
 
@@ -20,7 +25,7 @@ class BaseValidator:
         self._lines: list[Line] | None = None
         self._journey_patterns = None
         self._services = None
-        self._indexes = None
+        self._indexes: Optional[dict[str, dict[str, list[str]]]] = None
 
     def _build_indexes(self):
         if self._indexes is None:
