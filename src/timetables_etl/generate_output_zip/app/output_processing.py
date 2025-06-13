@@ -15,6 +15,11 @@ log = get_logger()
 COMPRESSION_TYPE = zipfile.ZIP_DEFLATED
 COMPRESSION_LEVEL = 9
 
+@dataclass
+class Counts:
+    """Track success and failure counts for zip processing."""
+    success: int = 0
+    failure: int = 0
 
 def process_single_file(
     s3_client: S3, file: MapExecutionSucceeded
@@ -114,11 +119,10 @@ def generate_zip_file(
         for file in successful_files
         if file.parsed_input and file.parsed_input.Key
     ]
-
+    counts = Counts()
+    zip_buffer = BytesIO()
     filename = original_object_key.split("/")[-1]
     file_path = f"/tmp/{filename}"
-    zip_count = 0
-    failed_count = 0
 
     try:
         success = get_original_zip(s3_client, original_object_key, file_path)
@@ -128,7 +132,6 @@ def generate_zip_file(
 
         zip_file_keys = [key.split("/")[-1] for key in file_keys]
 
-        zip_buffer = BytesIO()
         with zipfile.ZipFile(file_path, "r") as source_zip:
             zip_file_list = source_zip.namelist()
             missing_files = [key for key in zip_file_keys if key not in zip_file_list]
@@ -147,18 +150,18 @@ def generate_zip_file(
                         log.info(f"Copying {file_key} to new in-memory zip")
                         file_content = source_zip.read(file_key)
                         output_zip.writestr(file_key, file_content)
-                        zip_count += 1
+                        counts.success += 1
                     except (zipfile.BadZipFile, IOError) as e:
                         log.error(
                             f"Failed to add file to zip: {file_key}: {str(e)}",
                             exc_info=True,
                         )
-                        failed_count += 1
+                        counts.failure += 1
                         continue
 
         zip_buffer.seek(0)
         log.info(f"Successfully created in-memory zip with {len(file_keys)} files")
-        return (zip_buffer, zip_count, failed_count)
+        return (zip_buffer, counts.success, counts.failure)
 
     except zipfile.BadZipFile:
         log.error(f"Invalid zip file: {file_path}", exc_info=True)
@@ -198,7 +201,7 @@ def process_files(
 
     zip_count = 0
     failed_count = 0
-    output_zip = generate_zip_file(
+    output_zip, zip_count, failed_count = generate_zip_file(
         s3_client=s3_client,
         successful_files=successful_files,
         original_object_key=original_object_key,
@@ -208,6 +211,6 @@ def process_files(
         "Zipping completed",
         success_count=zip_count,
         failed_count=failed_count,
-        output_zip_size=len(output_zip[0].getbuffer()),
+        output_zip_size=len(output_zip.getbuffer()),
     )
     return output_zip, zip_count, failed_count, ".zip"
