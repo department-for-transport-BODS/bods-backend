@@ -72,15 +72,17 @@ def get_original_zip(s3_client: S3, file_key: str, file_path: str) -> bool:
     try:
         response = s3_client.get_object(file_key)
         filename = file_key.split("/")[-1]
-        with open(file_path, 'wb') as f:
+        with open(file_path, "wb") as f:
             for chunk in response:
                 f.write(chunk)
-        
+
         log.info(f"Successfully downloaded {filename} to {file_path}")
         return True
 
     except Exception as e:
-        log.error(f"Unexpected error while downloading {file_key}: {str(e)}", exc_info=True)
+        log.error(
+            f"Unexpected error while downloading {file_key}: {str(e)}", exc_info=True
+        )
         return False
 
 
@@ -103,7 +105,11 @@ def generate_zip_file(
     Raises:
         zipfile.BadZipFile: If the source zip file is invalid or corrupted.
     """
-    file_keys = [file.parsed_input.Key for file in successful_files if file.parsed_input and file.parsed_input.Key]
+    file_keys = [
+        file.parsed_input.Key
+        for file in successful_files
+        if file.parsed_input and file.parsed_input.Key
+    ]
 
     filename = original_object_key.split("/")[-1]
     file_path = f"/tmp/{filename}"
@@ -112,7 +118,7 @@ def generate_zip_file(
 
     compression_type = zipfile.ZIP_DEFLATED
     compression_level = 9
-    
+
     try:
         success = get_original_zip(s3_client, original_object_key, file_path)
         if not success:
@@ -122,14 +128,19 @@ def generate_zip_file(
         zip_file_keys = [key.split("/")[-1] for key in file_keys]
 
         zip_buffer = BytesIO()
-        with zipfile.ZipFile(file_path, 'r') as source_zip:
+        with zipfile.ZipFile(file_path, "r") as source_zip:
             zip_file_list = source_zip.namelist()
             missing_files = [key for key in zip_file_keys if key not in zip_file_list]
             if missing_files:
                 log.error(f"Files not found in source zip: {missing_files}")
                 return (BytesIO(), 0, 0)
-        
-            with zipfile.ZipFile(zip_buffer, 'w', compression=compression_type, compresslevel=compression_level) as output_zip:
+
+            with zipfile.ZipFile(
+                zip_buffer,
+                "w",
+                compression=compression_type,
+                compresslevel=compression_level,
+            ) as output_zip:
                 for file_key in zip_file_keys:
                     try:
                         log.info(f"Copying {file_key} to new in-memory zip")
@@ -152,12 +163,17 @@ def generate_zip_file(
         log.error(f"Invalid zip file: {file_path}", exc_info=True)
         return (BytesIO(), 0, 0)
     except Exception as e:
-        log.error(f"Unexpected error while processing {original_object_key}: {str(e)}", exc_info=True)
+        log.error(
+            f"Unexpected error while processing {original_object_key}: {str(e)}",
+            exc_info=True,
+        )
         return (BytesIO(), 0, 0)
 
 
 def process_files(
-    s3_client: S3, successful_files: List[MapExecutionSucceeded], original_object_key: str,
+    s3_client: S3,
+    successful_files: List[MapExecutionSucceeded],
+    original_object_key: str,
 ) -> Tuple[BytesIO, int, int, str]:
     """
     Process files based on count - single file returns XML, multiple files return ZIP.
@@ -176,17 +192,17 @@ def process_files(
     if len(successful_files) == 1:
         file_content, _ = process_single_file(s3_client, successful_files[0])
         return file_content, 1, 0, ".xml"
-    
+
     log.info("Processing multiple files", file_count=len(successful_files))
-    
+
     zip_count = 0
     failed_count = 0
     output_zip = generate_zip_file(
-            s3_client=s3_client,
-            successful_files=successful_files,
-            original_object_key = original_object_key,
-        )
-    
+        s3_client=s3_client,
+        successful_files=successful_files,
+        original_object_key=original_object_key,
+    )
+
     log.info(
         "Zipping completed",
         success_count=zip_count,

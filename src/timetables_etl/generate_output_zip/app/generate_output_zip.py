@@ -53,7 +53,10 @@ def upload_output_to_s3(
 
 
 def process_and_upload_successful_files(
-    s3_client: S3, successful_files: list[MapExecutionSucceeded], output_key_base: str, original_object_key: str,
+    s3_client: S3,
+    successful_files: list[MapExecutionSucceeded],
+    output_key_base: str,
+    original_object_key: str,
 ) -> ProcessingResult:
     """
     Process files and upload to S3 - either as single XML or ZIP file depending on count
@@ -124,7 +127,10 @@ def process_map_results(
         input_data.original_object_key, input_data.overwrite_input_dataset
     )
     processing_result = process_and_upload_successful_files(
-        s3_client, map_results.succeeded, output_key_base, input_data.original_object_key
+        s3_client,
+        map_results.succeeded,
+        output_key_base,
+        input_data.original_object_key,
     )
     update_revision_hash(
         db, input_data.dataset_revision_id, processing_result.file_hash
