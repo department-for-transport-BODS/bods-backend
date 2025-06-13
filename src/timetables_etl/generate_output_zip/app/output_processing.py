@@ -128,7 +128,7 @@ def generate_zip_file(
     counts = Counts()
     zip_buffer = BytesIO()
     file_path = f"/tmp/{original_object_key.split('/')[-1]}"
-    
+
     try:
         if not get_original_zip(s3_client, original_object_key, file_path):
             log.error(f"Failed to download source zip: {original_object_key}")
