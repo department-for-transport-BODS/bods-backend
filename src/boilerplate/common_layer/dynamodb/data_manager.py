@@ -100,7 +100,7 @@ class FileProcessingDataManager:
             return None
 
         return [
-            TXCFileAttributes(**cached_attribute)  # type: ignore
+            TXCFileAttributes.from_dict(cached_attribute)  # type: ignore
             for cached_attribute in cached_attributes
         ]
 
