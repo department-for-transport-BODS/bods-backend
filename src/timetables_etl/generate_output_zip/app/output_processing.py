@@ -9,17 +9,21 @@ from typing import List, Tuple
 from common_layer.aws.step import MapExecutionSucceeded
 from common_layer.s3 import S3
 from structlog.stdlib import get_logger
+from dataclasses import dataclass
 
 log = get_logger()
 
 COMPRESSION_TYPE = zipfile.ZIP_DEFLATED
 COMPRESSION_LEVEL = 9
 
+
 @dataclass
 class Counts:
     """Track success and failure counts for zip processing."""
+
     success: int = 0
     failure: int = 0
+
 
 def process_single_file(
     s3_client: S3, file: MapExecutionSucceeded
@@ -89,7 +93,8 @@ def get_original_zip(s3_client: S3, file_key: str, file_path: str) -> bool:
 
     except Exception as e:  # pylint: disable=broad-exception-caught
         log.error(
-            f"Unexpected error while downloading {file_key}: {str(e)}", exc_info=True
+            f"Unexpected error while downloading {file_key}: {str(e)}",
+            exc_info=True,
         )
         return False
 
