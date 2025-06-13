@@ -242,8 +242,8 @@ def test_get_stop_point_ref_from_journey_pattern_ref_indexed(m_root):
 
     # Mock the prebuilt dictionaries directly
     validator.section_to_stop_refs = {
-        "Section1": ["StopPointRef1", "StopPointRef2"],
-        "Section2": ["StopPointRef3", "StopPointRef4"],
+        "Section1": ["StopPointRef2", "StopPointRef1"],
+        "Section2": ["StopPointRef4", "StopPointRef3"],
     }
     validator.jp_to_section_refs = {
         "Pattern1": ["Section1", "Section2"],

@@ -14,16 +14,20 @@ class BaseValidator:
 
     def __init__(self, root):
         self.root = root
-        self.namespaces = {"x": self.root.nsmap.get(None)}
+        self.namespaces = {"x": self.root.nsmap.get(None)}  # type: ignore
 
         self._vehicle_journeys: list[VehicleJourney] | None = None
         self._lines: list[Line] | None = None
         self._journey_patterns = None
         self._services = None
-        self._indexes = {
-            "section_to_stop_refs": self._index_jp_sections(),
-            "jp_to_section_refs": self._index_journey_patterns(),
-        }
+        self._indexes = None
+
+    def _build_indexes(self):
+        if self._indexes is None:
+            self._indexes = {
+                "section_to_stop_refs": self._index_jp_sections(),
+                "jp_to_section_refs": self._index_journey_patterns(),
+            }
 
     @property
     def lines(self) -> list[Line]:
@@ -216,6 +220,7 @@ class BaseValidator:
         """
         Quickly get all unique stop points for a journey pattern by looking up prebuilt indexes.
         """
+        self._build_indexes()  # build once if needed
         all_stop_refs = []
         for section_ref in self._indexes["jp_to_section_refs"].get(ref, []):
             all_stop_refs.extend(
