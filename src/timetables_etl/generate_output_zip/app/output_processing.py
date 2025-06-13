@@ -12,6 +12,9 @@ from structlog.stdlib import get_logger
 
 log = get_logger()
 
+COMPRESSION_TYPE = zipfile.ZIP_DEFLATED
+COMPRESSION_LEVEL = 9
+
 
 def process_single_file(
     s3_client: S3, file: MapExecutionSucceeded
@@ -79,7 +82,7 @@ def get_original_zip(s3_client: S3, file_key: str, file_path: str) -> bool:
         log.info(f"Successfully downloaded {filename} to {file_path}")
         return True
 
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         log.error(
             f"Unexpected error while downloading {file_key}: {str(e)}", exc_info=True
         )
@@ -96,7 +99,8 @@ def generate_zip_file(
 
     Args:
         s3_client: Custom S3 class instance for interacting with AWS S3.
-        successful_files: List of MapExecutionSucceeded objects, each containing parsed_input with an S3 Key.
+        successful_files: List of MapExecutionSucceeded objects,
+        each containing parsed_input with an S3 Key.
         original_object_key: S3 key of the source zip file to process.
 
     Returns:
@@ -115,9 +119,6 @@ def generate_zip_file(
     file_path = f"/tmp/{filename}"
     zip_count = 0
     failed_count = 0
-
-    compression_type = zipfile.ZIP_DEFLATED
-    compression_level = 9
 
     try:
         success = get_original_zip(s3_client, original_object_key, file_path)
@@ -138,8 +139,8 @@ def generate_zip_file(
             with zipfile.ZipFile(
                 zip_buffer,
                 "w",
-                compression=compression_type,
-                compresslevel=compression_level,
+                compression=COMPRESSION_TYPE,
+                compresslevel=COMPRESSION_LEVEL,
             ) as output_zip:
                 for file_key in zip_file_keys:
                     try:
@@ -149,7 +150,7 @@ def generate_zip_file(
                         zip_count += 1
                     except (zipfile.BadZipFile, IOError) as e:
                         log.error(
-                            f"Failed to add file to zip: {file_key}",
+                            f"Failed to add file to zip: {file_key}: {str(e)}",
                             exc_info=True,
                         )
                         failed_count += 1
@@ -162,7 +163,7 @@ def generate_zip_file(
     except zipfile.BadZipFile:
         log.error(f"Invalid zip file: {file_path}", exc_info=True)
         return (BytesIO(), 0, 0)
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         log.error(
             f"Unexpected error while processing {original_object_key}: {str(e)}",
             exc_info=True,
@@ -207,6 +208,6 @@ def process_files(
         "Zipping completed",
         success_count=zip_count,
         failed_count=failed_count,
-        output_zip_size=len(output_zip.getbuffer()),
+        output_zip_size=len(output_zip[0].getbuffer()),
     )
     return output_zip, zip_count, failed_count, ".zip"
