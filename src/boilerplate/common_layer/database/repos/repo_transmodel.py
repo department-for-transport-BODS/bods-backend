@@ -221,24 +221,6 @@ class TransmodelTrackRepo(BaseRepositoryWithId[TransmodelTracks]):
         return self._fetch_all(statement)
 
     @handle_repository_errors
-    def has_unique_index_for_from_to(self) -> bool:
-        with self._db.session_scope() as session:
-            result = session.execute(
-                text(
-                    """
-                    SELECT 1
-                    FROM pg_indexes
-                    WHERE tablename = 'transmodel_tracks'
-                    AND indexdef ILIKE '%UNIQUE%'
-                    AND indexdef ILIKE '%from_atco_code%'
-                    AND indexdef ILIKE '%to_atco_code%'
-                    LIMIT 1;
-                """
-                )
-            ).scalar()
-            return bool(result)
-
-    @handle_repository_errors
     def bulk_insert_ignore_duplicates(
         self, records: list[TransmodelTracks]
     ) -> dict[tuple[str, str], int]:
@@ -250,12 +232,7 @@ class TransmodelTrackRepo(BaseRepositoryWithId[TransmodelTracks]):
             return {}
 
         with self._db.session_scope() as session:
-            insert_stmt = insert(self._model)
-            if self.has_unique_index_for_from_to():
-                insert_stmt = insert_stmt.on_conflict_do_nothing(
-                    index_elements=["from_atco_code", "to_atco_code"]
-                )
-            insert_stmt = insert_stmt.returning(
+            insert_stmt = insert(self._model).returning(
                 self._model.id, self._model.from_atco_code, self._model.to_atco_code
             )
             records_to_create = [record.__dict__ for record in records]
