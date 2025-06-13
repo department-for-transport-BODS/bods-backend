@@ -16,6 +16,7 @@ from ..transform.tracks import create_new_tracks
 
 log = get_logger()
 
+
 def load_tracks(route_sections: list[TXCRouteSection], db: SqlDB) -> TrackLookup:
     """
     Process tracks from route sections, creating new ones if they don't exist.
@@ -32,4 +33,14 @@ def load_tracks(route_sections: list[TXCRouteSection], db: SqlDB) -> TrackLookup
         new_tracks_count=len(new_tracks),
     )
 
-    return {(track.from_atco_code, track.to_atco_code): (setattr(track, "id", track_ids.get((track.from_atco_code, track.to_atco_code), None)) or track) for track in new_tracks}
+    return {
+        (track.from_atco_code, track.to_atco_code): (
+            setattr(
+                track,
+                "id",
+                track_ids.get((track.from_atco_code, track.to_atco_code), None),
+            )
+            or track
+        )
+        for track in new_tracks
+    }

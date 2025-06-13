@@ -1,4 +1,3 @@
-
 """
 Vehicle Journey Tracks Generation
 """
@@ -57,9 +56,10 @@ def generate_flexible_service_tracks(_journey_pattern: TXCFlexibleJourneyPattern
     """
     log.error("Flexible Service Tracks Not Implemented!")
 
+
 def generate_service_pattern_tracks(
     journey_pattern: TXCJourneyPattern | TXCFlexibleJourneyPattern,
-    service_pattern_id:int,
+    service_pattern_id: int,
     track_lookup: TrackLookup,
     stop_sequence: list[NaptanStopPoint],
 ) -> list[TransmodelServicePatternTracks]:
