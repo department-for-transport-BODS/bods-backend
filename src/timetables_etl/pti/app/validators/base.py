@@ -20,8 +20,10 @@ class BaseValidator:
         self._lines: list[Line] | None = None
         self._journey_patterns = None
         self._services = None
-        self.section_to_stop_refs = self._index_sections()
-        self.jp_to_section_refs = self._index_journey_patterns()
+        self._indexes = {
+            "section_to_stop_refs": self._index_jp_sections(),
+            "jp_to_section_refs": self._index_journey_patterns(),
+        }
 
     @property
     def lines(self) -> list[Line]:
@@ -175,7 +177,7 @@ class BaseValidator:
         journey_pattern_refs = self.root.xpath(xpath, namespaces=self.namespaces)
         return list(set(journey_pattern_refs))
 
-    def _index_sections(self) -> dict[str, list[str]]:
+    def _index_jp_sections(self) -> dict[str, list[str]]:
         """
         Build a map from JourneyPatternSection ID to all stop point refs used in its timing links.
         """
@@ -187,7 +189,8 @@ class BaseValidator:
         for section in sections:
             section_id = section.get("id")
             stop_refs = section.xpath(
-                "./x:JourneyPatternTimingLink/*[local-name()='From' or local-name()='To']/x:StopPointRef/text()",
+                "./x:JourneyPatternTimingLink/*[local-name()='From' or local-name()='To']"
+                "/x:StopPointRef/text()",
                 namespaces=self.namespaces,
             )
             section_to_stop_refs[section_id] = stop_refs
@@ -214,6 +217,8 @@ class BaseValidator:
         Quickly get all unique stop points for a journey pattern by looking up prebuilt indexes.
         """
         all_stop_refs = []
-        for section_ref in self.jp_to_section_refs.get(ref, []):
-            all_stop_refs.extend(self.section_to_stop_refs.get(section_ref, []))
+        for section_ref in self._indexes["jp_to_section_refs"].get(ref, []):
+            all_stop_refs.extend(
+                self._indexes["section_to_stop_refs"].get(section_ref, [])
+            )
         return list(set(all_stop_refs))
