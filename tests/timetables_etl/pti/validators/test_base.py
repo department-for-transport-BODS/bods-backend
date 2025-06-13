@@ -158,13 +158,12 @@ def test_get_service_by_vehicle_journey(m_root):
     assert service == expected_service
 
 
-def test_index_sections(m_root):
+def test_index_jp_sections(m_root):
     """
-    Test _index_sections method by mocking journey pattern section elements
+    Test _index_jp_sections method by mocking journey pattern section elements
     """
     validator = BaseValidator(m_root)
 
-    # Mock section elements with id and xpath method
     section1 = MagicMock()
     section1.get.return_value = "Section1"
     section1.xpath.return_value = ["StopPointRef1", "StopPointRef2"]
@@ -175,8 +174,7 @@ def test_index_sections(m_root):
 
     m_root.xpath.return_value = [section1, section2]
 
-    # Call the _index_sections method
-    result = validator._index_sections()
+    result = validator._index_jp_sections()
 
     expected = {
         "Section1": ["StopPointRef1", "StopPointRef2"],
@@ -234,32 +232,57 @@ def test_index_journey_patterns(m_root):
     )
 
 
-def test_get_stop_point_ref_from_journey_pattern_ref_indexed(m_root):
+def test_get_stop_point_ref_from_journey_pattern_ref_lazy_indexes(m_root):
     """
-    Test the `get_stop_point_ref_from_journey_pattern_ref` method with pre-defined dict.
+    Test get_stop_point_ref_from_journey_pattern_ref builds indexes lazily
+    and returns correct unique stop point refs.
     """
     validator = BaseValidator(m_root)
 
-    # Mock the prebuilt dictionaries directly
-    validator.section_to_stop_refs = {
-        "Section1": ["StopPointRef2", "StopPointRef1"],
-        "Section2": ["StopPointRef4", "StopPointRef3"],
-    }
-    validator.jp_to_section_refs = {
-        "Pattern1": ["Section1", "Section2"],
-    }
+    # Patch the indexing methods to return mocked data and track calls
+    with patch.object(
+        validator,
+        "_index_jp_sections",
+        return_value={
+            "Section1": ["StopPointRef2", "StopPointRef1"],
+            "Section2": ["StopPointRef4", "StopPointRef3"],
+        },
+    ) as mock_index_sections, patch.object(
+        validator,
+        "_index_journey_patterns",
+        return_value={
+            "Pattern1": ["Section1", "Section2"],
+        },
+    ) as mock_index_patterns:
 
-    pattern_ref = "Pattern1"
-    expected_stop_refs = [
-        "StopPointRef1",
-        "StopPointRef2",
-        "StopPointRef3",
-        "StopPointRef4",
-    ]
+        pattern_ref = "Pattern1"
+        expected_stop_refs = [
+            "StopPointRef1",
+            "StopPointRef2",
+            "StopPointRef3",
+            "StopPointRef4",
+        ]
 
-    stop_refs = validator.get_stop_point_ref_from_journey_pattern_ref(pattern_ref)
+        # Call the method under test, which should trigger _build_indexes and caching
+        stop_refs_first_call = validator.get_stop_point_ref_from_journey_pattern_ref(
+            pattern_ref
+        )
+        stop_refs_second_call = validator.get_stop_point_ref_from_journey_pattern_ref(
+            pattern_ref
+        )
 
-    assert set(stop_refs) == set(expected_stop_refs)
+        # Verify result correctness
+        assert set(stop_refs_first_call) == set(expected_stop_refs)
+        assert set(stop_refs_second_call) == set(expected_stop_refs)
+
+        # The indexing methods should be called only once despite multiple calls
+        mock_index_sections.assert_called_once()
+        mock_index_patterns.assert_called_once()
+
+        # Also verify the internal _indexes cache is populated
+        assert validator._indexes is not None
+        assert "section_to_stop_refs" in validator._indexes
+        assert "jp_to_section_refs" in validator._indexes
 
 
 @pytest.mark.parametrize(
