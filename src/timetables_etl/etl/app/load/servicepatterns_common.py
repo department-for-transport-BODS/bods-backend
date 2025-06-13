@@ -43,7 +43,6 @@ from .models_context import (
 )
 from .service_pattern_tracks import load_service_pattern_tracks
 from .vehicle_journey import (
-    load_vehicle_journey_tracks,
     process_service_pattern_vehicle_journeys,
 )
 

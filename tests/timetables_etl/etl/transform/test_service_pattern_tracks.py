@@ -22,15 +22,20 @@ from timetables_etl.etl.app.transform.service_pattern_tracks import (
 )
 
 
-@patch("timetables_etl.etl.app.transform.service_pattern_tracks.generate_standard_service_tracks")
+@patch(
+    "timetables_etl.etl.app.transform.service_pattern_tracks.generate_standard_service_tracks"
+)
 def test_generate_service_pattern_tracks_standard_service(standard_service_mock: Mock):
     standard_service_mock.return_value = "return_value"
     journey_pattern: TXCJourneyPattern = TXCJourneyPatternFactory()
     tracks = generate_service_pattern_tracks(journey_pattern, 21, {}, [])
     standard_service_mock.assert_called_once()
     assert tracks == "return_value"
-    
-@patch("timetables_etl.etl.app.transform.service_pattern_tracks.generate_flexible_service_tracks")
+
+
+@patch(
+    "timetables_etl.etl.app.transform.service_pattern_tracks.generate_flexible_service_tracks"
+)
 def test_generate_service_pattern_tracks_flexible_service(flexible_service_mock: Mock):
     flexible_service_mock.return_type = None
     journey_pattern: TXCJourneyPattern = TXCFlexibleJourneyPatternFactory()
@@ -38,13 +43,16 @@ def test_generate_service_pattern_tracks_flexible_service(flexible_service_mock:
     flexible_service_mock.assert_called_once()
     assert return_value == []
 
+
 def test_generate_service_pattern_tracks_nonstandard_service():
     with pytest.raises(ValueError):
         generate_service_pattern_tracks("randompattern", 21, {}, [])
 
+
 def test_generate_flexible_service_tracks(caplog: pytest.LogCaptureFixture):
     with caplog.at_level("ERROR"):
         generate_flexible_service_tracks(TXCFlexibleJourneyPatternFactory())
+
 
 def test_generate_standard_service_tracks():
     journey_pattern = TXCJourneyPatternFactory()
@@ -71,25 +79,32 @@ def test_generate_standard_service_tracks():
             location=from_shape(Point(-1.3, 51.3), srid=4326),
         ),
     ]
-    track_lookup:TrackLookup = {
-        ("490001", "490002"): TransmodelTracksFactory(from_atco_code="490001", to_atco_code="490002"),
-        ("490003", "490004"): TransmodelTracksFactory(from_atco_code="490003", to_atco_code="490004")
+    track_lookup: TrackLookup = {
+        ("490001", "490002"): TransmodelTracksFactory(
+            from_atco_code="490001", to_atco_code="490002"
+        ),
+        ("490003", "490004"): TransmodelTracksFactory(
+            from_atco_code="490003", to_atco_code="490004"
+        ),
     }
 
-    sp_tracks = generate_standard_service_tracks(journey_pattern, service_pattern_id, stop_sequence, track_lookup)
-    
+    sp_tracks = generate_standard_service_tracks(
+        journey_pattern, service_pattern_id, stop_sequence, track_lookup
+    )
+
     assert len(sp_tracks) == 2
     assert isinstance(sp_tracks, list)
     assert all(isinstance(track, TransmodelServicePatternTracks) for track in sp_tracks)
-    
+
+
 def test_generate_standard_service_track_with_no_tracks():
     journey_pattern = TXCJourneyPatternFactory()
     service_pattern_id = 21
     stop_sequence: list[NaptanStopPoint] = []
-    track_lookup:TrackLookup = {}
+    track_lookup: TrackLookup = {}
 
-    sp_tracks = generate_standard_service_tracks(journey_pattern, service_pattern_id, stop_sequence, track_lookup)
-    
+    sp_tracks = generate_standard_service_tracks(
+        journey_pattern, service_pattern_id, stop_sequence, track_lookup
+    )
+
     assert len(sp_tracks) == 0
-
-    

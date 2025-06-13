@@ -188,14 +188,12 @@ class TransmodelServicePatternStopFactory(factory.Factory):
 class TransmodelTracksFactory(factory.Factory):
     """Factory for TransmodelTracks"""
 
-    class Meta: # type: ignore[misc]
+    class Meta:  # type: ignore[misc]
         model = TransmodelTracks
 
     from_atco_code = factory.Faker("ATCO001")
     to_atco_code = factory.Faker("ATCO001")
-    geometry = factory.LazyFunction(lambda: from_shape(
-        ShapelyLineString([(0, 0), (1, 1), (2, 2)]),
-        srid=4326
-    ))
+    geometry = factory.LazyFunction(
+        lambda: from_shape(ShapelyLineString([(0, 0), (1, 1), (2, 2)]), srid=4326)
+    )
     distance = 10
-

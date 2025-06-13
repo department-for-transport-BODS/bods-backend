@@ -3,11 +3,7 @@ Tracks Generation
 """
 
 from common_layer.database import SqlDB
-from common_layer.database.models.model_transmodel import TransmodelTracks
 from common_layer.database.repos import TransmodelTrackRepo
-from common_layer.xml.txc.helpers.routes import (
-    extract_stop_point_pairs_from_route_sections,
-)
 from common_layer.xml.txc.models import TXCRouteSection
 from structlog.stdlib import get_logger
 
