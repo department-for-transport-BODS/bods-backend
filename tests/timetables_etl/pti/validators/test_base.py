@@ -158,18 +158,96 @@ def test_get_service_by_vehicle_journey(m_root):
     assert service == expected_service
 
 
-def test_get_stop_point_ref_from_journey_pattern_ref(m_root):
+def test_index_sections(m_root):
+    """
+    Test _index_sections method by mocking journey pattern section elements
+    """
     validator = BaseValidator(m_root)
 
-    section_refs = ["Section1", "Section2"]
-    stop_refs_section_1 = ["StopPointRef1", "StopPointRef2"]
-    stop_refs_section_2 = ["StopPointRef3", "StopPointRef4"]
+    # Mock section elements with id and xpath method
+    section1 = MagicMock()
+    section1.get.return_value = "Section1"
+    section1.xpath.return_value = ["StopPointRef1", "StopPointRef2"]
 
-    m_root.xpath.side_effect = [
-        section_refs,  # First call: JourneyPatternSectionRefs
-        stop_refs_section_1,  # Second call: StopPointRefs for Section1
-        stop_refs_section_2,  # Second call: StopPointRefs for Section2
-    ]
+    section2 = MagicMock()
+    section2.get.return_value = "Section2"
+    section2.xpath.return_value = ["StopPointRef3", "StopPointRef4"]
+
+    m_root.xpath.return_value = [section1, section2]
+
+    # Call the _index_sections method
+    result = validator._index_sections()
+
+    expected = {
+        "Section1": ["StopPointRef1", "StopPointRef2"],
+        "Section2": ["StopPointRef3", "StopPointRef4"],
+    }
+
+    assert result == expected
+    m_root.xpath.assert_called_once_with(
+        "//x:JourneyPatternSections/x:JourneyPatternSection",
+        namespaces=validator.namespaces,
+    )
+    section1.xpath.assert_called_once_with(
+        "./x:JourneyPatternTimingLink/*[local-name()='From' or local-name()='To']/x:StopPointRef/text()",
+        namespaces=validator.namespaces,
+    )
+    section2.xpath.assert_called_once_with(
+        "./x:JourneyPatternTimingLink/*[local-name()='From' or local-name()='To']/x:StopPointRef/text()",
+        namespaces=validator.namespaces,
+    )
+
+
+def test_index_journey_patterns(m_root):
+    """
+    Test _index_journey_patterns method by mocking journey pattern elements.
+    """
+    validator = BaseValidator(m_root)
+
+    jp1 = MagicMock()
+    jp1.get.return_value = "Pattern1"
+    jp1.xpath.return_value = ["Section1", "Section2"]
+
+    jp2 = MagicMock()
+    jp2.get.return_value = "Pattern2"
+    jp2.xpath.return_value = ["Section3"]
+
+    m_root.xpath.return_value = [jp1, jp2]
+
+    result = validator._index_journey_patterns()
+
+    expected = {
+        "Pattern1": ["Section1", "Section2"],
+        "Pattern2": ["Section3"],
+    }
+
+    assert result == expected
+    m_root.xpath.assert_called_once_with(
+        "//x:StandardService/x:JourneyPattern",
+        namespaces=validator.namespaces,
+    )
+    jp1.xpath.assert_called_once_with(
+        "./x:JourneyPatternSectionRefs/text()", namespaces=validator.namespaces
+    )
+    jp2.xpath.assert_called_once_with(
+        "./x:JourneyPatternSectionRefs/text()", namespaces=validator.namespaces
+    )
+
+
+def test_get_stop_point_ref_from_journey_pattern_ref_indexed(m_root):
+    """
+    Test the `get_stop_point_ref_from_journey_pattern_ref` method with pre-defined dict.
+    """
+    validator = BaseValidator(m_root)
+
+    # Mock the prebuilt dictionaries directly
+    validator.section_to_stop_refs = {
+        "Section1": ["StopPointRef1", "StopPointRef2"],
+        "Section2": ["StopPointRef3", "StopPointRef4"],
+    }
+    validator.jp_to_section_refs = {
+        "Pattern1": ["Section1", "Section2"],
+    }
 
     pattern_ref = "Pattern1"
     expected_stop_refs = [
@@ -182,20 +260,6 @@ def test_get_stop_point_ref_from_journey_pattern_ref(m_root):
     stop_refs = validator.get_stop_point_ref_from_journey_pattern_ref(pattern_ref)
 
     assert set(stop_refs) == set(expected_stop_refs)
-    m_root.xpath.assert_any_call(
-        "//x:StandardService/x:JourneyPattern[@id='Pattern1']/x:JourneyPatternSectionRefs/text()",
-        namespaces=validator.namespaces,
-    )
-    m_root.xpath.assert_any_call(
-        "//x:JourneyPatternSections/x:JourneyPatternSection[@id='Section1']"
-        "/x:JourneyPatternTimingLink/*[local-name() = 'From' or local-name() = 'To']/x:StopPointRef/text()",
-        namespaces=validator.namespaces,
-    )
-    m_root.xpath.assert_any_call(
-        "//x:JourneyPatternSections/x:JourneyPatternSection[@id='Section2']"
-        "/x:JourneyPatternTimingLink/*[local-name() = 'From' or local-name() = 'To']/x:StopPointRef/text()",
-        namespaces=validator.namespaces,
-    )
 
 
 @pytest.mark.parametrize(

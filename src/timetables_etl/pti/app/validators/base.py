@@ -20,6 +20,8 @@ class BaseValidator:
         self._lines: list[Line] | None = None
         self._journey_patterns = None
         self._services = None
+        self.section_to_stop_refs = self._index_sections()
+        self.jp_to_section_refs = self._index_journey_patterns()
 
     @property
     def lines(self) -> list[Line]:
@@ -173,25 +175,45 @@ class BaseValidator:
         journey_pattern_refs = self.root.xpath(xpath, namespaces=self.namespaces)
         return list(set(journey_pattern_refs))
 
-    def get_stop_point_ref_from_journey_pattern_ref(self, ref: str):
+    def _index_sections(self) -> dict[str, list[str]]:
         """
-        Retrieves all stop point references used in a specific journey pattern.
-        Includes both origin and destination stops from all timing links in the pattern.
+        Build a map from JourneyPatternSection ID to all stop point refs used in its timing links.
         """
-        xpath = (
-            f"//x:StandardService/x:JourneyPattern[@id='{ref}']"
-            "/x:JourneyPatternSectionRefs/text()"
+        section_to_stop_refs = {}
+        sections = self.root.xpath(
+            "//x:JourneyPatternSections/x:JourneyPatternSection",
+            namespaces=self.namespaces,
         )
-        section_refs = self.root.xpath(xpath, namespaces=self.namespaces)
-
-        all_stop_refs: list[str] = []
-        for section_ref in section_refs:
-            xpath = (
-                "//x:JourneyPatternSections/x:JourneyPatternSection"
-                f"[@id='{section_ref}']/x:JourneyPatternTimingLink/*"
-                "[local-name() = 'From' or local-name() = 'To']/x:StopPointRef/text()"
+        for section in sections:
+            section_id = section.get("id")
+            stop_refs = section.xpath(
+                "./x:JourneyPatternTimingLink/*[local-name()='From' or local-name()='To']/x:StopPointRef/text()",
+                namespaces=self.namespaces,
             )
-            stop_refs = self.root.xpath(xpath, namespaces=self.namespaces)
-            all_stop_refs += stop_refs
+            section_to_stop_refs[section_id] = stop_refs
+        return section_to_stop_refs
 
+    def _index_journey_patterns(self) -> dict[str, list[str]]:
+        """
+        Build a map from JourneyPattern ID to its list of JourneyPatternSectionRefs.
+        """
+        jp_to_section_refs = {}
+        journey_patterns = self.root.xpath(
+            "//x:StandardService/x:JourneyPattern", namespaces=self.namespaces
+        )
+        for jp in journey_patterns:
+            jp_id = jp.get("id")
+            section_refs = jp.xpath(
+                "./x:JourneyPatternSectionRefs/text()", namespaces=self.namespaces
+            )
+            jp_to_section_refs[jp_id] = section_refs
+        return jp_to_section_refs
+
+    def get_stop_point_ref_from_journey_pattern_ref(self, ref: str) -> list[str]:
+        """
+        Quickly get all unique stop points for a journey pattern by looking up prebuilt indexes.
+        """
+        all_stop_refs = []
+        for section_ref in self.jp_to_section_refs.get(ref, []):
+            all_stop_refs.extend(self.section_to_stop_refs.get(section_ref, []))
         return list(set(all_stop_refs))
