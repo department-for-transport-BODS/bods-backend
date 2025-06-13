@@ -5,7 +5,7 @@ BaseValidator
 from typing import Optional
 
 from common_layer.timetables.transxchange import TransXChangeElement
-from lxml.etree import _Element
+from lxml.etree import _Element  # type: ignore
 
 from ..models.models_pti import Line, VehicleJourney
 
@@ -15,11 +15,10 @@ class BaseValidator:
     Parent class for LinesValidator and StopPointValidator
     """
 
-    namespaces = None
-
     def __init__(self, root: _Element):
         self.root = root
-        self.namespaces = {"x": self.root.nsmap.get(None)}  # type: ignore
+        ns = self.root.nsmap.get(None)
+        self.namespaces: dict[str, str] | None = {"x": ns} if ns else None
 
         self._vehicle_journeys: list[VehicleJourney] | None = None
         self._lines: list[Line] | None = None
@@ -100,12 +99,12 @@ class BaseValidator:
             )
         return ""
 
-    def get_journey_pattern_refs_by_line_ref(self, ref: str):
+    def get_journey_pattern_refs_by_line_ref(self, ref: str) -> list[str]:
         """
         Returns all the JourneyPatternRefs that appear in the VehicleJourneys have
         LineRef equal to ref.
         """
-        jp_refs = set()
+        jp_refs: set[str] = set()
         vehicle_journeys = self.get_vehicle_journey_by_line_ref(ref)
         for journey in vehicle_journeys:
             jp_ref = self.get_journey_pattern_ref_by_vehicle_journey_code(journey.code)
@@ -146,7 +145,7 @@ class BaseValidator:
                 return service
         return None
 
-    def get_vehicle_journey_by_code(self, code) -> list[VehicleJourney]:
+    def get_vehicle_journey_by_code(self, code: str) -> list[VehicleJourney]:
         """
         Get all VehicleJourneys with matching VehicleJourneyCode
         """
@@ -190,7 +189,7 @@ class BaseValidator:
         """
         Build a map from JourneyPatternSection ID to all stop point refs used in its timing links.
         """
-        section_to_stop_refs = {}
+        section_to_stop_refs: dict[str, list[str]] = {}
         sections = self.root.xpath(
             "//x:JourneyPatternSections/x:JourneyPatternSection",
             namespaces=self.namespaces,
@@ -209,7 +208,7 @@ class BaseValidator:
         """
         Build a map from JourneyPattern ID to its list of JourneyPatternSectionRefs.
         """
-        jp_to_section_refs = {}
+        jp_to_section_refs: dict[str, list[str]] = {}
         journey_patterns = self.root.xpath(
             "//x:StandardService/x:JourneyPattern", namespaces=self.namespaces
         )
@@ -226,7 +225,10 @@ class BaseValidator:
         Quickly get all unique stop points for a journey pattern by looking up prebuilt indexes.
         """
         self._build_indexes()  # build once if needed
-        all_stop_refs = []
+        if self._indexes is None:
+            raise ValueError("No index found after building indexes")
+
+        all_stop_refs: list[str] = []
         for section_ref in self._indexes["jp_to_section_refs"].get(ref, []):
             all_stop_refs.extend(
                 self._indexes["section_to_stop_refs"].get(section_ref, [])
