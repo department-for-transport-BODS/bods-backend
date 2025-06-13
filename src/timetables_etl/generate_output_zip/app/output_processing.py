@@ -57,7 +57,7 @@ def process_single_file(
         raise exc
 
 
-def get_original_zip(s3_client, file_key: str, file_path: str) -> bool:
+def get_original_zip(s3_client: S3, file_key: str, file_path: str) -> bool:
     """
     Download a zip file from S3 and save it locally.
 
@@ -76,7 +76,7 @@ def get_original_zip(s3_client, file_key: str, file_path: str) -> bool:
             for chunk in response:
                 f.write(chunk)
         
-        log.info(f"Successfully downloaded {filename} from bucket {s3_client._bucket_name} to {file_path}")
+        log.info(f"Successfully downloaded {filename} to {file_path}")
         return True
 
     except Exception as e:
@@ -117,7 +117,7 @@ def generate_zip_file(
         success = get_original_zip(s3_client, original_object_key, file_path)
         if not success:
             log.error(f"Failed to download source zip: {original_object_key}")
-            return None
+            return (BytesIO(), 0, 0)
 
         zip_file_keys = [key.split("/")[-1] for key in file_keys]
 
@@ -127,7 +127,7 @@ def generate_zip_file(
             missing_files = [key for key in zip_file_keys if key not in zip_file_list]
             if missing_files:
                 log.error(f"Files not found in source zip: {missing_files}")
-                return None
+                return (BytesIO(), 0, 0)
         
             with zipfile.ZipFile(zip_buffer, 'w', compression=compression_type, compresslevel=compression_level) as output_zip:
                 for file_key in zip_file_keys:
