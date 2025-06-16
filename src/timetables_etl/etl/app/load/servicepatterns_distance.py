@@ -1,3 +1,4 @@
+# pyright: reportUnusedImport=false
 """
 Functions for loading Service Pattern Distance
 """
