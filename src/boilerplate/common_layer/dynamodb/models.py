@@ -2,8 +2,12 @@
 TXC File Attributes Models
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
+from decimal import Decimal
+from typing import Any
 
 from common_layer.database.models.model_organisation import (
     OrganisationTXCFileAttributes,
@@ -23,6 +27,25 @@ class TXCFileAttributes:
     modification_datetime: datetime
     hash: str
     filename: str
+
+    @classmethod
+    def from_dict(cls, txcfileattributes: dict[str, Any]) -> TXCFileAttributes:
+        """
+        Create a TXCFileAttributes instance from a dictionary.
+        Converts Unix timestamp to datetime if needed.
+
+        Args:
+            txcfileattributes: Dictionary with TXC file attributes, where
+            'modification_datetime' is a Unix timestamp (Decimal).
+
+        Returns:
+            TXCFileAttributes: A fully populated instance.
+        """
+        raw_dt: Decimal = txcfileattributes["modification_datetime"]
+        txcfileattributes["modification_datetime"] = datetime.fromtimestamp(
+            float(raw_dt), tz=timezone.utc
+        )
+        return cls(**txcfileattributes)
 
     @staticmethod
     def from_orm(obj: OrganisationTXCFileAttributes):

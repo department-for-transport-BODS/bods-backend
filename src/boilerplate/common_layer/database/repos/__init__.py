@@ -26,6 +26,7 @@ from .repo_junction import (
     OrganisationDatasetRevisionLocalitiesRepo,
     TransmodelServicePatternAdminAreaRepo,
     TransmodelServicePatternLocalityRepo,
+    TransmodelServicePatternTracksRepo,
     TransmodelServiceServicePatternRepo,
     TransmodelTracksVehicleJourneyRepo,
 )
@@ -119,4 +120,5 @@ __all__ = [
     "TransmodelOperatingDatesExceptionsRepo",
     "TransmodelOperatingProfileRepo",
     "TransmodelVehicleJourneyRepo",
+    "TransmodelServicePatternTracksRepo",
 ]

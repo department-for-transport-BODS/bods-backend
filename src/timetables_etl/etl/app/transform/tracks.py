@@ -129,16 +129,15 @@ def create_track_mapping(
     Create a mapping from (from_code, to_code) pairs to their corresponding
     Track and Distance information.
     """
-    all_route_links = [
-        route_link for section in route_sections for route_link in section.RouteLink
+
+    route_links_with_track = [
+        route_link
+        for section in route_sections
+        for route_link in section.RouteLink
+        if route_link.Track
     ]
-
-    total_links = len(all_route_links)
-    links_with_track = sum(1 for route_link in all_route_links if route_link.Track)
-    links_without_track = total_links - links_with_track
-
     track_mapping: dict[tuple[str, str], tuple[TXCTrack, int | None]] = {}
-    for route_link in all_route_links:
+    for route_link in route_links_with_track:
         if route_link.Track:
             track_mapping[(route_link.From, route_link.To)] = (
                 route_link.Track,
@@ -147,60 +146,55 @@ def create_track_mapping(
 
     log.info(
         "Created track mapping",
-        total_route_links=total_links,
-        links_with_track=links_with_track,
-        links_without_track=links_without_track,
         total_mappings=len(track_mapping),
-        duplicate_pairs_with_track=links_with_track - len(track_mapping),
     )
-
     return track_mapping
 
 
-def create_new_tracks(
-    pairs: list[tuple[str, str]], route_sections: list[TXCRouteSection]
-) -> list[TransmodelTracks]:
+def create_new_tracks(route_sections: list[TXCRouteSection]) -> list[TransmodelTracks]:
     """
     Create new TransmodelTrack objects with geometry and distance where available.
     """
-    log.debug("Creating New Tracks for Tracks not in DB", new_atco_pairs=pairs)
-    track_mapping = create_track_mapping(route_sections)
-
+    log.debug("Creating New Tracks")
     new_tracks: list[TransmodelTracks] = []
-    for from_code, to_code in pairs:
-        mapping = track_mapping.get((from_code, to_code))
-        if mapping:
-            txc_track, provided_distance = mapping
+    for section in route_sections:
+        for route_link in section.RouteLink:
+            if not route_link.Track:
+                continue
+
+            from_code = route_link.From
+            to_code = route_link.To
+            txc_track = route_link.Track
+            provided_distance = route_link.Distance
+
             track_geom = process_track_geometry(txc_track)
+            if not track_geom:
+                continue
 
-            if track_geom:
-                # Calculate distance from LineString if not provided
-                distance = (
-                    provided_distance
-                    if provided_distance is not None
-                    else calculate_distance_from_geometry(track_geom.line)
-                )
-
-                new_tracks.append(
-                    TransmodelTracks(
-                        from_atco_code=from_code,
-                        to_atco_code=to_code,
-                        geometry=track_geom.geometry,
-                        distance=distance,
-                    )
-                )
-        else:
-            log.warning(
-                "Track Pair was not Found in Route Link Mapping",
-                from_atco=from_code,
-                to_atco=to_code,
-                track_mapping_keys=track_mapping.keys(),
+            distance = (
+                provided_distance
+                if provided_distance is not None
+                else calculate_distance_from_geometry(track_geom.line)
             )
+
+            new_tracks.append(
+                TransmodelTracks(
+                    from_atco_code=from_code,
+                    to_atco_code=to_code,
+                    geometry=track_geom.geometry,
+                    distance=distance,
+                )
+            )
+
     log.info(
         "Created new tracks",
         total_tracks=len(new_tracks),
         with_geometry=sum(1 for t in new_tracks if t.geometry is not None),
         with_distance=sum(1 for t in new_tracks if t.distance is not None),
+    )
+    log.debug(
+        "Stop point pairs for inserted tracks",
+        new_atco_pairs=[(t.from_atco_code, t.to_atco_code) for t in new_tracks],
     )
 
     return new_tracks
