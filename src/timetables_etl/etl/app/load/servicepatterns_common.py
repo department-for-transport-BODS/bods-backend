@@ -41,11 +41,9 @@ from .models_context import (
     ServicePatternMapping,
     ServicePatternVehicleJourneyContext,
 )
-from .servicepatterns_distance import process_service_pattern_distance
 from .service_pattern_tracks import load_service_pattern_tracks
-from .vehicle_journey import (
-    process_service_pattern_vehicle_journeys,
-)
+from .servicepatterns_distance import process_service_pattern_distance
+from .vehicle_journey import process_service_pattern_vehicle_journeys
 
 log = get_logger()
 

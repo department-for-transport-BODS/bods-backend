@@ -99,16 +99,17 @@ def get_geometry_and_distance_from_tracks(
                 geom_type=shapely_geom.geom_type,
             )
 
-        if track_linestrings:
-            merged = linemerge(track_linestrings)
+    if track_linestrings:
+        merged = linemerge(track_linestrings)
 
-            if isinstance(merged, MultiLineString):
-                # Flatten all coordinates into a single LineString
-                coords: list[tuple[float, float]] = []
-                for line in merged.geoms:
-                    coords.extend(list(line.coords))  # type: ignore
+        if isinstance(merged, MultiLineString):
+            # Flatten all coordinates into a single LineString
+            coords: list[tuple[float, float]] = []
+            for line in merged.geoms:
+                coords.extend(list(line.coords))  # type: ignore
+            merged = LineString(coords)
 
-            geometry = from_shape(merged, srid=4326)
+        geometry = from_shape(merged, srid=4326)
 
     return geometry, total_distance
 
