@@ -9,15 +9,12 @@ import factory
 from common_layer.database.models import (
     TransmodelBookingArrangements,
     TransmodelService,
-    TransmodelServicePattern,
     TransmodelServicePatternStop,
     TransmodelTracks,
     TransmodelVehicleJourney,
 )
 from geoalchemy2.shape import from_shape  # type: ignore
-from shapely.geometry import LineString as ShapelyLineString
-
-from .organisation import OrganisationDatasetRevisionFactory
+from shapely.geometry import LineString
 
 
 class TransmodelVehicleJourneyFactory(factory.Factory):

@@ -2,10 +2,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 from common_layer.database.models import NaptanStopPoint, TransmodelServicePatternTracks
-from common_layer.xml.txc.models import (
-    TXCJourneyPattern,
-)
-from geoalchemy2.shape import from_shape
+from common_layer.xml.txc.models import TXCJourneyPattern
+from geoalchemy2.shape import from_shape  # type: ignore
 from shapely import Point
 
 from tests.factories.database import NaptanStopPointFactory
