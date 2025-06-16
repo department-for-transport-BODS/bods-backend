@@ -15,6 +15,7 @@ from shapely import LineString, MultiLineString
 from shapely.ops import linemerge
 from structlog.stdlib import get_logger
 
+from ..api.geometry import OSRMGeometryAPI  # pylint: disable=unused-import
 from ..helpers import TrackLookup
 
 log = get_logger()
