@@ -95,6 +95,8 @@ class OrganisationDatasetRevisionFactory(factory.Factory):
     modified = LazyFunction(lambda: datetime.now(UTC))
     modified_file_hash = factory.Faker("sha1")
     original_file_hash = factory.Faker("sha1")
+    modified_before_reprocessing = None
+    status_before_reprocessing = ""
 
     @classmethod
     def create_with_id(cls, id_number: int, **kwargs) -> OrganisationDatasetRevision:

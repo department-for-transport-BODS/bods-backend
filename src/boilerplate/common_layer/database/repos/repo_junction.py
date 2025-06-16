@@ -12,6 +12,7 @@ from ..models import (
     TransmodelServicePattern,
     TransmodelServicePatternAdminAreas,
     TransmodelServicePatternLocality,
+    TransmodelServicePatternTracks,
     TransmodelServiceServicePattern,
     TransmodelTracksVehicleJourney,
 )
@@ -284,3 +285,12 @@ class TransmodelTracksVehicleJourneyRepo(
             self._model.vehicle_journey_id.in_(vehicle_journey_ids)
         )
         return self._fetch_all(statement)
+
+
+class TransmodelServicePatternTracksRepo(
+    BaseRepository[TransmodelServicePatternTracks]
+):
+    """Repository for managing Tracks to Service Pattern associations"""
+
+    def __init__(self, db: SqlDB):
+        super().__init__(db, TransmodelServicePatternTracks)
