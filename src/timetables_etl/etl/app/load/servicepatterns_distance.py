@@ -1,3 +1,4 @@
+# pyright: reportUnusedImport=false
 """
 Functions for loading Service Pattern Distance
 """
@@ -15,7 +16,7 @@ from shapely import LineString, MultiLineString
 from shapely.ops import linemerge
 from structlog.stdlib import get_logger
 
-from ..api.geometry import OSRMGeometryAPI
+from ..api.geometry import OSRMGeometryAPI  # pylint: disable=unused-import
 from ..helpers import TrackLookup
 
 log = get_logger()
@@ -70,7 +71,7 @@ def get_geometry_and_distance_from_tracks(
     Calculate the full service geometry and distance using track data
     """
 
-    total_distance = sum(track.distance for track in tracks.values() if track.distance)
+    total_distance: int = 0
     geometry: WKBElement | None = None
 
     track_linestrings: list[LineString] = []
@@ -85,6 +86,9 @@ def get_geometry_and_distance_from_tracks(
             )
         if not track.geometry:
             raise ValueError("Missing geometry for track")
+
+        if track.distance:
+            total_distance += track.distance
 
         shapely_geom = to_shape(track.geometry)
 
@@ -135,9 +139,12 @@ def process_service_pattern_distance(
             tracks, stop_sequence
         )
     else:
-        api = OSRMGeometryAPI()
-        coords = [(stop.shape.x, stop.shape.y) for stop in stop_sequence]
-        geometry, distance = api.get_geometry_and_distance(coords)
+        return None
+        # pylint: disable=fixme
+        # TODO: Re-enable once OSRM API deployed
+        # api = OSRMGeometryAPI()
+        # coords = [(stop.shape.x, stop.shape.y) for stop in stop_sequence]
+        # geometry, distance = api.get_geometry_and_distance(coords)
 
     repo = TransmodelServicePatternDistanceRepo(db)
     service_pattern_distance = TransmodelServicePatternDistance(
