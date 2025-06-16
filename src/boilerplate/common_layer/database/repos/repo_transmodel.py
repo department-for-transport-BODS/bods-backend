@@ -241,9 +241,6 @@ class TransmodelTrackRepo(BaseRepositoryWithId[TransmodelTracks]):
             tracks = {(row[1], row[2]): row[0] for row in results.fetchall()}
             return tracks
 
-            session.execute(insert_stmt, [record.__dict__ for record in records])
-        return
-
 
 class TransmodelServicePatternDistanceRepo(
     BaseRepositoryWithId[TransmodelServicePatternDistance]
