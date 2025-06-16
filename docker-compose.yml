@@ -41,6 +41,19 @@ services:
     networks:
       - lambda-local
 
+  osrm:
+    image: 390403896175.dkr.ecr.eu-west-2.amazonaws.com/osrmuk:latest
+    container_name: osrm
+    platform: linux/amd64
+    command: >
+      osrm-routed
+      --algorithm mld
+      --max-matching-size 5000
+      /data/united-kingdom-latest.osrm
+    ports:
+      - "5001:5000"
+    restart: unless-stopped
+
 volumes:
   clamav-store:
   localstack-data:

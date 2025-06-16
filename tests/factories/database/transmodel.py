@@ -9,15 +9,12 @@ import factory
 from common_layer.database.models import (
     TransmodelBookingArrangements,
     TransmodelService,
-    TransmodelServicePattern,
     TransmodelServicePatternStop,
     TransmodelTracks,
     TransmodelVehicleJourney,
 )
-from geoalchemy2.shape import from_shape
-from shapely.geometry import LineString as ShapelyLineString
-
-from .organisation import OrganisationDatasetRevisionFactory
+from geoalchemy2.shape import from_shape  # type: ignore
+from shapely.geometry import LineString
 
 
 class TransmodelVehicleJourneyFactory(factory.Factory):
@@ -186,14 +183,17 @@ class TransmodelServicePatternStopFactory(factory.Factory):
 
 
 class TransmodelTracksFactory(factory.Factory):
-    """Factory for TransmodelTracks"""
-
-    class Meta:  # type: ignore[misc]
+    class Meta:
         model = TransmodelTracks
 
-    from_atco_code = factory.Faker("ATCO001")
-    to_atco_code = factory.Faker("ATCO001")
+    from_atco_code = factory.Sequence(lambda n: f"ATCO00{n}")
+    to_atco_code = factory.Sequence(lambda n: f"ATCO00{n+1}")
     geometry = factory.LazyFunction(
-        lambda: from_shape(ShapelyLineString([(0, 0), (1, 1), (2, 2)]), srid=4326)
+        lambda: from_shape(
+            LineString(
+                [[-1.435, 55.025], [-1.435, 55.025], [-1.435, 55.025], [-1.435, 55.025]]
+            ),
+            srid=4326,
+        )
     )
-    distance = 10
+    distance = 100
