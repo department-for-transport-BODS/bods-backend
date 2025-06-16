@@ -138,9 +138,11 @@ def process_service_pattern_distance(
             tracks, stop_sequence
         )
     else:
-        api = OSRMGeometryAPI()
-        coords = [(stop.shape.x, stop.shape.y) for stop in stop_sequence]
-        geometry, distance = api.get_geometry_and_distance(coords)
+        return None
+        # TODO: Re-enable once OSRM API deployed
+        # api = OSRMGeometryAPI()
+        # coords = [(stop.shape.x, stop.shape.y) for stop in stop_sequence]
+        # geometry, distance = api.get_geometry_and_distance(coords)
 
     repo = TransmodelServicePatternDistanceRepo(db)
     service_pattern_distance = TransmodelServicePatternDistance(

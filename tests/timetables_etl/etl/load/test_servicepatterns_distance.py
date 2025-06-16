@@ -166,6 +166,7 @@ def test_process_service_pattern_distance_uses_tracks_data_when_sufficient(
     assert isinstance(inserted_obj.geom, WKBElement)
 
 
+@pytest.mark.skip
 @patch(
     "timetables_etl.etl.app.load.servicepatterns_distance.TransmodelServicePatternDistanceRepo"
 )
