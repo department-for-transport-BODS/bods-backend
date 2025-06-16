@@ -100,9 +100,15 @@ def get_geometry_and_distance_from_tracks(
             )
 
         if track_linestrings:
-            # Merge linestrings from all tracks into single linestring
-            merged_linestring = linemerge(track_linestrings)
-            geometry = from_shape(merged_linestring, srid=4326)
+            merged = linemerge(track_linestrings)
+
+            if isinstance(merged, MultiLineString):
+                # Flatten all coordinates into a single LineString
+                coords: list[tuple[float, float]] = []
+                for line in merged.geoms:
+                    coords.extend(list(line.coords))  # type: ignore
+
+            geometry = from_shape(merged, srid=4326)
 
     return geometry, total_distance
 
