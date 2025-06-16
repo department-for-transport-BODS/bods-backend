@@ -70,7 +70,7 @@ def get_geometry_and_distance_from_tracks(
     Calculate the full service geometry and distance using track data
     """
 
-    total_distance = sum(track.distance for track in tracks.values() if track.distance)
+    total_distance: int = 0
     geometry: WKBElement | None = None
 
     track_linestrings: list[LineString] = []
@@ -85,6 +85,9 @@ def get_geometry_and_distance_from_tracks(
             )
         if not track.geometry:
             raise ValueError("Missing geometry for track")
+
+        if track.distance:
+            total_distance += track.distance
 
         shapely_geom = to_shape(track.geometry)
 
