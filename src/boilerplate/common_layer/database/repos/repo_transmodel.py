@@ -15,6 +15,7 @@ from ..models import (
     TransmodelBankHolidays,
     TransmodelService,
     TransmodelServicePattern,
+    TransmodelServicePatternDistance,
     TransmodelServicePatternStop,
     TransmodelStopActivity,
     TransmodelTracks,
@@ -239,3 +240,12 @@ class TransmodelTrackRepo(BaseRepositoryWithId[TransmodelTracks]):
             results = session.execute(insert_stmt, records_to_create)
             tracks = {(row[1], row[2]): row[0] for row in results.fetchall()}
             return tracks
+
+
+class TransmodelServicePatternDistanceRepo(
+    BaseRepositoryWithId[TransmodelServicePatternDistance]
+):
+    """Repository for managing ServicePatternDistance entities"""
+
+    def __init__(self, db: SqlDB):
+        super().__init__(db, TransmodelServicePatternDistance)

@@ -68,6 +68,7 @@ class PatternCommonStats(BaseModel):
     vehicle_journeys: int = 0
     pattern_stops: int = 0
     tracks: int = 0
+    distance: int | None = None
 
     def __iadd__(self, other: Self) -> Self:
         """

@@ -41,6 +41,7 @@ from .repo_organisation import (
 from .repo_otc import OtcServiceRepo
 from .repo_transmodel import (
     TransmodelBankHolidaysRepo,
+    TransmodelServicePatternDistanceRepo,
     TransmodelServicePatternRepo,
     TransmodelServicePatternStopRepo,
     TransmodelServiceRepo,
@@ -103,6 +104,7 @@ __all__ = [
     # Transmodel
     "TransmodelBankHolidaysRepo",
     "TransmodelServicePatternRepo",
+    "TransmodelServicePatternDistanceRepo",
     "TransmodelServicePatternStopRepo",
     "TransmodelServiceRepo",
     "TransmodelStopActivityRepo",
