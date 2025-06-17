@@ -107,6 +107,35 @@ def test_parse_location(xml_string: str, expected: TXCLocation | None) -> None:
             """
         <Track>
             <Mapping>
+                <Location id="loc1">
+                    <Easting>097910</Easting>
+                    <Northing>960550</Northing>
+                </Location>
+                <Location id="loc2">
+                    <Easting>097460</Easting>
+                    <Northing>960340</Northing>
+                </Location>
+            </Mapping>
+        </Track>
+        """,
+            [
+                TXCLocation(
+                    id="loc1",
+                    Longitude="58.42846940467045",
+                    Latitude="-7.177380811839908",
+                ),
+                TXCLocation(
+                    id="loc2",
+                    Longitude="58.426280107812424",
+                    Latitude="-7.184777481473526",
+                ),
+            ],
+            id="Multiple Valid Locations with Easting and Northing",
+        ),
+        pytest.param(
+            """
+        <Track>
+            <Mapping>
                 <Location>
                     <Longitude>-0.1234567</Longitude>
                     <Latitude>51.9876543</Latitude>

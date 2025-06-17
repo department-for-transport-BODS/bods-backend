@@ -5,27 +5,29 @@ EPSG:4326 = WGS84 (Logitude / Latitude)
 Instantiate Transformer once
 """
 
-from pyproj import Transformer
+from pyproj import CRS, Transformer
 
+BNG = CRS("EPSG:27700")
+WGS84 = CRS("EPSG:4326")
 osgrid_to_lonlat_transformer = Transformer.from_crs(
-    "EPSG:27700",
-    "EPSG:4326",
+    BNG,
+    WGS84,
     always_xy=True,
 )
 lonlat_to_osgrid_transformer = Transformer.from_crs(
-    "EPSG:4326",
-    "EPSG:27700",
+    WGS84,
+    BNG,
     always_xy=True,
 )
 
 
 def osgrid_to_lonlat(easting: float, northing: float) -> tuple[float, float]:
     """
-    Convert OSGB36 coordinates to WGS84 lat/lon
+    Convert OSGB36 (BNG) coordinates to WGS84 lat/lon
 
     Returns a Tuple of Floats with Longitude,Latitude in that order
     """
-    lon, lat = osgrid_to_lonlat_transformer.transform(easting, northing)
+    lat, lon = osgrid_to_lonlat_transformer.transform(easting, northing)
     return lon, lat
 
 
