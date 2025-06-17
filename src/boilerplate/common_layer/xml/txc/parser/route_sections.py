@@ -2,6 +2,7 @@
 Parse Route Sections XML into Pydantic Models
 """
 
+from common_layer.utils_location import osgrid_to_lonlat
 from lxml.etree import _Element  # type: ignore
 from structlog.stdlib import get_logger
 
@@ -24,12 +25,21 @@ def parse_location(location_xml: _Element) -> TXCLocation | None:
     Create TXC Location from XML
     """
     location_id = location_xml.get("id")
+    if not location_id:
+        return None
 
     longitude = get_element_text(location_xml, "Longitude")
     latitude = get_element_text(location_xml, "Latitude")
-    if not location_id or not longitude or not latitude:
-        return None
-    return TXCLocation(id=location_id, Longitude=longitude, Latitude=latitude)
+    if longitude and latitude:
+        return TXCLocation(id=location_id, Longitude=longitude, Latitude=latitude)
+
+    easting = get_element_text(location_xml, "Easting")
+    northing = get_element_text(location_xml, "Northing")
+    if easting and northing:
+        lon, lat = osgrid_to_lonlat(float(easting), float(northing))
+        return TXCLocation(id=location_id, Longitude=str(lon), Latitude=str(lat))
+
+    return None
 
 
 def parse_locations(track_xml: _Element) -> list[TXCLocation] | None:
@@ -88,6 +98,8 @@ def parse_route_link(
     revision_number = parse_revision_number(route_link_xml)
     distance = get_element_int(route_link_xml, "Distance")
 
+    track = parse_track(route_link_xml) if parse_track_data else None
+
     return TXCRouteLink(
         id=route_link_id,
         From=from_stop_point_ref,
@@ -97,7 +109,7 @@ def parse_route_link(
         Modification=modification,
         RevisionNumber=revision_number,
         Distance=distance,
-        Track=parse_track(route_link_xml) if parse_track_data else None,
+        Track=track,
     )
 
 
