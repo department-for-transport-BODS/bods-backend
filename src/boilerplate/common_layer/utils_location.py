@@ -27,7 +27,7 @@ def osgrid_to_lonlat(easting: float, northing: float) -> tuple[float, float]:
 
     Returns a Tuple of Floats with Longitude,Latitude in that order
     """
-    lat, lon = osgrid_to_lonlat_transformer.transform(easting, northing)
+    lon, lat = osgrid_to_lonlat_transformer.transform(easting, northing)
     return lon, lat
 
 
