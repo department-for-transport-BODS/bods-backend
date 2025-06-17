@@ -319,6 +319,9 @@ Resources:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
         LogGroup: !Ref EtlProcessLambdaLogGroup
+      Environment:
+        Variables:
+          OSRM_API_HOST: !Sub 'http://osrm.bodds.${Environment}:5000'
 
   GenerateOutputZipLambda:
     Type: AWS::Serverless::Function

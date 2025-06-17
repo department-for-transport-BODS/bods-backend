@@ -104,6 +104,12 @@ class OrganisationDatasetRevision(TimeStampedMixin, BaseSQLModel):
     num_of_timing_points: Mapped[int | None] = mapped_column(Integer, nullable=True)
     modified_file_hash: Mapped[str] = mapped_column(String(40), nullable=False)
     original_file_hash: Mapped[str] = mapped_column(String(40), nullable=False)
+    modified_before_reprocessing: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    status_before_reprocessing: Mapped[str] = mapped_column(
+        String(20), nullable=False, default=""
+    )
 
 
 class OrganisationDatasetMetadata(BaseSQLModel):

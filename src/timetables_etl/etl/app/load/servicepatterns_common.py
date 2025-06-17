@@ -41,10 +41,9 @@ from .models_context import (
     ServicePatternMapping,
     ServicePatternVehicleJourneyContext,
 )
-from .vehicle_journey import (
-    load_vehicle_journey_tracks,
-    process_service_pattern_vehicle_journeys,
-)
+from .service_pattern_tracks import load_service_pattern_tracks
+from .servicepatterns_distance import process_service_pattern_distance
+from .vehicle_journey import process_service_pattern_vehicle_journeys
 
 log = get_logger()
 
@@ -232,9 +231,17 @@ def process_pattern_common(
         vj_context,
     )
 
-    tracks = load_vehicle_journey_tracks(
+    tracks = load_service_pattern_tracks(
         reference_journey_pattern,
-        tm_vjs,
+        context.service_pattern.id,
+        context.lookups.tracks,
+        sp_data.stop_sequence,
+        context.db,
+    )
+
+    distance = process_service_pattern_distance(
+        service,
+        context.service_pattern.id,
         context.lookups.tracks,
         sp_data.stop_sequence,
         context.db,
@@ -246,6 +253,7 @@ def process_pattern_common(
         vehicle_journeys=len(tm_vjs),
         pattern_stops=len(tm_pattern_stops),
         tracks=len(tracks),
+        distance=distance,
     )
 
 

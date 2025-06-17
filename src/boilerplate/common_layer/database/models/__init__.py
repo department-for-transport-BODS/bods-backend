@@ -22,6 +22,7 @@ from .model_junction import (
     OrganisationDatasetRevisionLocalities,
     TransmodelServicePatternAdminAreas,
     TransmodelServicePatternLocality,
+    TransmodelServicePatternTracks,
     TransmodelServiceServicePattern,
     TransmodelTracksVehicleJourney,
 )
@@ -49,6 +50,7 @@ from .model_transmodel import (
     TransmodelBankHolidays,
     TransmodelService,
     TransmodelServicePattern,
+    TransmodelServicePatternDistance,
     TransmodelServicePatternStop,
     TransmodelStopActivity,
     TransmodelTracks,
@@ -100,6 +102,7 @@ __all__ = [
     "TransmodelServicedOrganisationVehicleJourney",
     "TransmodelServicedOrganisationWorkingDays",
     "TransmodelServicePattern",
+    "TransmodelServicePatternDistance",
     "TransmodelServicePatternStop",
     "TransmodelStopActivity",
     "TransmodelTracks",
@@ -134,4 +137,5 @@ __all__ = [
     "TransmodelServicePatternLocality",
     "TransmodelServiceServicePattern",
     "TransmodelTracksVehicleJourney",
+    "TransmodelServicePatternTracks",
 ]

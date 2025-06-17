@@ -1,5 +1,5 @@
 """
-Functions to create and upload zip files.
+Functions to Create and upload zip
 """
 
 import zipfile
@@ -28,21 +28,14 @@ class Counts:
 
 def process_single_file(
     s3_client: S3, file: MapExecutionSucceeded
-) -> Tuple[BytesIO, str]:
+) -> tuple[BytesIO, str]:
     """
-    Process a single file and return it as an XML.
-
-    Args:
-        s3_client (S3): S3 client for interacting with AWS S3.
-        file (MapExecutionSucceeded): Metadata of the file to process.
+    Process a single file and return it as an XML
 
     Returns:
-        Tuple[BytesIO, str]: A tuple containing the file content as a BytesIO object
-        and the filename of the processed file.
-
-    Raises:
-        ValueError: If the file is missing parsed input data.
-        Exception: If there is an error while processing the file.
+        tuple containing:
+        - BytesIO object containing the file content
+        - filename of the processed file
     """
     if not file.parsed_input or not file.parsed_input.Key:
         log.warning(
@@ -61,13 +54,13 @@ def process_single_file(
                 filename=filename,
             )
             return file_content, filename
-    except Exception as exc:
+    except Exception as e:
         log.error(
             "Failed to process XML file",
             filename=file.parsed_input.Key,
             exc_info=True,
         )
-        raise exc
+        raise e
 
 
 def get_original_zip(s3_client: S3, file_key: str, file_path: str) -> bool:
@@ -190,7 +183,7 @@ def process_files(
         successful_files (List[MapExecutionSucceeded]): List of successfully processed files.
 
     Returns:
-        Tuple[BytesIO, int, int, str]: A tuple containing:
+        tuple containing:
         - BytesIO object containing the file content
         - Number of successfully processed files
         - Number of failed files
