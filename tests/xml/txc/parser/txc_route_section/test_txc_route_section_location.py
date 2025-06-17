@@ -121,13 +121,13 @@ def test_parse_location(xml_string: str, expected: TXCLocation | None) -> None:
             [
                 TXCLocation(
                     id="loc1",
-                    Longitude="58.42846940467045",
-                    Latitude="-7.177380811839908",
+                    Longitude="-7.177380811839908",
+                    Latitude="58.42846940467045",
                 ),
                 TXCLocation(
                     id="loc2",
-                    Longitude="58.426280107812424",
-                    Latitude="-7.184777481473526",
+                    Longitude="-7.184777481473526",
+                    Latitude="58.426280107812424",
                 ),
             ],
             id="Multiple Valid Locations with Easting and Northing",
