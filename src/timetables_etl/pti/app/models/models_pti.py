@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 from common_layer.database.models import DataQualityPTIObservation
+from lxml.etree import _Element  # type: ignore
 from pydantic import BaseModel
 
 
@@ -99,11 +100,13 @@ class VehicleJourney(BaseModel):
     service_ref: str
 
     @classmethod
-    def from_xml(cls, xml):
+    def from_xml(cls, xml: _Element):
         """
         Vehicle Journey XML Parser
         """
-        namespaces = {"x": xml.nsmap.get(None)}
+        ns = xml.nsmap.get(None)
+        namespaces: dict[str, str] | None = {"x": ns} if ns else None
+
         code = xml.xpath("string(x:VehicleJourneyCode)", namespaces=namespaces)
         line_ref = xml.xpath("string(x:LineRef)", namespaces=namespaces)
         journey_pattern_ref = xml.xpath(
@@ -131,11 +134,12 @@ class Line(BaseModel):
     line_name: str
 
     @classmethod
-    def from_xml(cls, xml):
+    def from_xml(cls, xml: _Element) -> "Line":
         """
         Line XML Parser
         """
-        namespaces = {"x": xml.nsmap.get(None)}
+        ns = xml.nsmap.get(None)
+        namespaces: dict[str, str] | None = {"x": ns} if ns else None
         ref = xml.xpath("string(@id)", namespaces=namespaces)
         line_name = xml.xpath("string(x:LineName)", namespaces=namespaces)
         return cls(ref=ref, line_name=line_name)

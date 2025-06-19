@@ -158,44 +158,131 @@ def test_get_service_by_vehicle_journey(m_root):
     assert service == expected_service
 
 
-def test_get_stop_point_ref_from_journey_pattern_ref(m_root):
+def test_index_jp_sections(m_root):
+    """
+    Test _index_jp_sections method by mocking journey pattern section elements
+    """
     validator = BaseValidator(m_root)
 
-    section_refs = ["Section1", "Section2"]
-    stop_refs_section_1 = ["StopPointRef1", "StopPointRef2"]
-    stop_refs_section_2 = ["StopPointRef3", "StopPointRef4"]
+    section1 = MagicMock()
+    section1.get.return_value = "Section1"
+    section1.xpath.return_value = ["StopPointRef1", "StopPointRef2"]
 
-    m_root.xpath.side_effect = [
-        section_refs,  # First call: JourneyPatternSectionRefs
-        stop_refs_section_1,  # Second call: StopPointRefs for Section1
-        stop_refs_section_2,  # Second call: StopPointRefs for Section2
-    ]
+    section2 = MagicMock()
+    section2.get.return_value = "Section2"
+    section2.xpath.return_value = ["StopPointRef3", "StopPointRef4"]
 
-    pattern_ref = "Pattern1"
-    expected_stop_refs = [
-        "StopPointRef1",
-        "StopPointRef2",
-        "StopPointRef3",
-        "StopPointRef4",
-    ]
+    m_root.xpath.return_value = [section1, section2]
 
-    stop_refs = validator.get_stop_point_ref_from_journey_pattern_ref(pattern_ref)
+    result = validator._index_jp_sections()
 
-    assert set(stop_refs) == set(expected_stop_refs)
-    m_root.xpath.assert_any_call(
-        "//x:StandardService/x:JourneyPattern[@id='Pattern1']/x:JourneyPatternSectionRefs/text()",
+    expected = {
+        "Section1": ["StopPointRef1", "StopPointRef2"],
+        "Section2": ["StopPointRef3", "StopPointRef4"],
+    }
+
+    assert result == expected
+    m_root.xpath.assert_called_once_with(
+        "//x:JourneyPatternSections/x:JourneyPatternSection",
         namespaces=validator.namespaces,
     )
-    m_root.xpath.assert_any_call(
-        "//x:JourneyPatternSections/x:JourneyPatternSection[@id='Section1']"
-        "/x:JourneyPatternTimingLink/*[local-name() = 'From' or local-name() = 'To']/x:StopPointRef/text()",
+    section1.xpath.assert_called_once_with(
+        "./x:JourneyPatternTimingLink/*[local-name()='From' or local-name()='To']/x:StopPointRef/text()",
         namespaces=validator.namespaces,
     )
-    m_root.xpath.assert_any_call(
-        "//x:JourneyPatternSections/x:JourneyPatternSection[@id='Section2']"
-        "/x:JourneyPatternTimingLink/*[local-name() = 'From' or local-name() = 'To']/x:StopPointRef/text()",
+    section2.xpath.assert_called_once_with(
+        "./x:JourneyPatternTimingLink/*[local-name()='From' or local-name()='To']/x:StopPointRef/text()",
         namespaces=validator.namespaces,
     )
+
+
+def test_index_journey_patterns(m_root):
+    """
+    Test _index_journey_patterns method by mocking journey pattern elements.
+    """
+    validator = BaseValidator(m_root)
+
+    jp1 = MagicMock()
+    jp1.get.return_value = "Pattern1"
+    jp1.xpath.return_value = ["Section1", "Section2"]
+
+    jp2 = MagicMock()
+    jp2.get.return_value = "Pattern2"
+    jp2.xpath.return_value = ["Section3"]
+
+    m_root.xpath.return_value = [jp1, jp2]
+
+    result = validator._index_journey_patterns()
+
+    expected = {
+        "Pattern1": ["Section1", "Section2"],
+        "Pattern2": ["Section3"],
+    }
+
+    assert result == expected
+    m_root.xpath.assert_called_once_with(
+        "//x:StandardService/x:JourneyPattern",
+        namespaces=validator.namespaces,
+    )
+    jp1.xpath.assert_called_once_with(
+        "./x:JourneyPatternSectionRefs/text()", namespaces=validator.namespaces
+    )
+    jp2.xpath.assert_called_once_with(
+        "./x:JourneyPatternSectionRefs/text()", namespaces=validator.namespaces
+    )
+
+
+def test_get_stop_point_ref_from_journey_pattern_ref_lazy_indexes(m_root):
+    """
+    Test get_stop_point_ref_from_journey_pattern_ref builds indexes lazily
+    and returns correct unique stop point refs.
+    """
+    validator = BaseValidator(m_root)
+
+    # Patch the indexing methods to return mocked data and track calls
+    with patch.object(
+        validator,
+        "_index_jp_sections",
+        return_value={
+            "Section1": ["StopPointRef2", "StopPointRef1"],
+            "Section2": ["StopPointRef4", "StopPointRef3"],
+        },
+    ) as mock_index_sections, patch.object(
+        validator,
+        "_index_journey_patterns",
+        return_value={
+            "Pattern1": ["Section1", "Section2"],
+        },
+    ) as mock_index_patterns:
+
+        pattern_ref = "Pattern1"
+        expected_stop_refs = [
+            "StopPointRef1",
+            "StopPointRef2",
+            "StopPointRef3",
+            "StopPointRef4",
+        ]
+
+        # Call the method under test, which should trigger _build_indexes and caching
+        stop_refs_first_call = validator.get_stop_point_ref_from_journey_pattern_ref(
+            pattern_ref
+        )
+        stop_refs_second_call = validator.get_stop_point_ref_from_journey_pattern_ref(
+            pattern_ref
+        )
+
+        # Verify result correctness
+        assert set(stop_refs_first_call) == set(expected_stop_refs)
+        assert set(stop_refs_second_call) == set(expected_stop_refs)
+
+        # The indexing methods should be called only once despite multiple calls
+        mock_index_sections.assert_called_once()
+        mock_index_patterns.assert_called_once()
+
+        # Also verify the internal _indexes cache is populated
+        assert validator._indexes is not None
+        assert "section_to_stop_refs" in validator._indexes
+        assert "jp_to_section_refs" in validator._indexes
 
 
 @pytest.mark.parametrize(
