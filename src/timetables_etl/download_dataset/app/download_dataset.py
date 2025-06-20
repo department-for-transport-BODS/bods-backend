@@ -57,7 +57,7 @@ def make_remote_file_name(
 
 def cleanup_temp_folder(path: Path, url: str):
     """Clean up temporary file on error."""
-    log.error(
+    log.info(
         "Upload to S3 complete, removing temp file for cleanup.", url=url, exc_info=True
     )
     if path.exists():
