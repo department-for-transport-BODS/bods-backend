@@ -54,6 +54,11 @@ def make_remote_file_name(
 
     return name
 
+def cleanup_temp_folder(path: Path, url: str):
+    """Clean up temporary file on error."""
+    log.error("Upload to S3 complete, removing temp file for cleanup.", url=url, exc_info=True)
+    if path.exists():
+        path.unlink()
 
 def download_and_upload_dataset(db: SqlDB, input_data: DownloadDatasetInputData) -> str:
     """
@@ -66,6 +71,7 @@ def download_and_upload_dataset(db: SqlDB, input_data: DownloadDatasetInputData)
     s3_object_path = make_remote_file_name(revision, result.filetype)
 
     upload_file_to_s3(result.path, input_data.s3_bucket_name, s3_object_path)
+    cleanup_temp_folder(result.path, str(input_data.remote_dataset_url_link))
     update_dataset_revision(db, revision, s3_object_path)
     return s3_object_path
 
