@@ -55,7 +55,6 @@ def make_remote_file_name(
     return name
 
 
-# pylint: disable=duplicate-code
 def cleanup_temp_folder(path: Path, url: str):
     """Clean up temporary file on error."""
     log.error(
