@@ -54,11 +54,16 @@ def make_remote_file_name(
 
     return name
 
+
+# pylint: disable=duplicate-code
 def cleanup_temp_folder(path: Path, url: str):
     """Clean up temporary file on error."""
-    log.error("Upload to S3 complete, removing temp file for cleanup.", url=url, exc_info=True)
+    log.error(
+        "Upload to S3 complete, removing temp file for cleanup.", url=url, exc_info=True
+    )
     if path.exists():
         path.unlink()
+
 
 def download_and_upload_dataset(db: SqlDB, input_data: DownloadDatasetInputData) -> str:
     """
