@@ -18,16 +18,13 @@ def test_consolidate_tracks_deletes_duplicates(mocker: MockerFixture):
         TransmodelServicePatternTracksRepo, instance=True
     )
 
-    # Two stop point pairs containing duplicated tracks
+    # Simulate similar track pairs grouped by stop point pair
     similar_tracks_data: list[tuple[tuple[str, str], list[tuple[int, int]]]] = [
-        (("A", "B"), [(1, 2), (2, 3), (4, 5)]),
-        (("C", "D"), [(6, 7)]),
-        (("E", "F"), []),
+        (("A", "B"), [(1, 2), (2, 3), (4, 5)]),  # Grouped: [1,2,3], [4,5]
+        (("C", "D"), [(6, 7)]),  # Grouped: [6,7]
+        (("E", "F"), []),  # No duplicates
     ]
-    duplicate_tracks = [2, 3, 5, 7]
-    similar_tracks_result: Iterator[tuple[tuple[str, str], list[tuple[int, int]]]] = (
-        iter(similar_tracks_data)
-    )
+    similar_tracks_result = iter(similar_tracks_data)
     m_track_repo.stream_similar_track_pairs_by_stop_points.return_value = (
         similar_tracks_result
     )
@@ -41,22 +38,26 @@ def test_consolidate_tracks_deletes_duplicates(mocker: MockerFixture):
         dry_run=False,
     )
 
-    # ServicePatternTracks referencing duplicated tracks should be updated
-    expected_replace_calls = [(2, 1), (3, 1), (5, 4), (7, 6)]
-    replace_calls = m_sp_track_repo.replace_service_pattern_track.call_args_list
-    replace_calls = [
-        (call_args.args[0], call_args.args[1]) for call_args in replace_calls
+    # Expected groups -> canonical ID : [duplicate IDs]
+    expected_bulk_replace_calls = [
+        ([2, 3], 1),
+        ([5], 4),
+        ([7], 6),
     ]
-    assert sorted(replace_calls) == sorted(expected_replace_calls)
 
-    # Duplicated tracks should be deleted
-    delete_calls = m_track_repo.delete_by_id.call_args_list
-    deleted_ids = [call_args.args[0] for call_args in delete_calls]
+    # Check bulk_replace_service_pattern_tracks calls
+    replace_calls = m_sp_track_repo.bulk_replace_service_pattern_tracks.call_args_list
+    parsed_replace_calls = [(args.args[0], args.args[1]) for args in replace_calls]
+    assert sorted(parsed_replace_calls) == sorted(expected_bulk_replace_calls)
 
-    assert sorted(deleted_ids) == sorted(duplicate_tracks)
+    # Check bulk deletes
+    expected_deleted_ids = [2, 3, 5, 7]
+    delete_calls = m_track_repo.bulk_delete_by_ids.call_args_list
+    deleted_id_lists = [args.args[0] for args in delete_calls]
+    flattened_ids = [track_id for sublist in deleted_id_lists for track_id in sublist]
+    assert sorted(flattened_ids) == sorted(expected_deleted_ids)
 
-    # Check stats
+    # Stats assertions
     assert stats["total_pairs_checked"] == 3
     assert stats["pairs_with_duplicates"] == 3
     assert stats["tracks_deleted"] == 4
-    assert stats["service_pattern_track_fks_updated"] == 4

@@ -4,7 +4,7 @@ AKA: Associative Entity, Junction Tables, Jump Tables
 """
 
 from common_layer.database import SqlDB
-from sqlalchemy import literal, select
+from sqlalchemy import literal, select, update
 from sqlalchemy.dialects.postgresql import insert
 
 from ..models import (
@@ -296,15 +296,20 @@ class TransmodelServicePatternTracksRepo(
     def __init__(self, db: SqlDB):
         super().__init__(db, TransmodelServicePatternTracks)
 
-    def replace_service_pattern_track(self, track_id_to_replace: int, track_id: int):
+    @handle_repository_errors
+    def bulk_replace_service_pattern_tracks(
+        self, old_ids: list[int], new_id: int
+    ) -> None:
         """
-        Updates any entries referencing track_id_to_replace to reference track_id
+        Bulk replace track references in transmodel_servicepatterntracks table.
+        Any row with tracks_id in `old_ids` will be updated to `new_id`.
         """
+        if not old_ids:
+            return
 
-        def update_func(sp_track: TransmodelServicePatternTracks) -> None:
-            sp_track.tracks_id = track_id
-
-        statement = self._build_query().where(
-            self._model.tracks_id == track_id_to_replace
-        )
-        self._update_many(statement, update_func)
+        with self._db.session_scope() as session:
+            session.execute(
+                update(self._model)
+                .where(self._model.tracks_id.in_(old_ids))
+                .values(tracks_id=new_id)
+            )

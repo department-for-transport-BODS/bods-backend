@@ -41,7 +41,6 @@ def consolidate_tracks(
         "total_pairs_checked": 0,
         "pairs_with_duplicates": 0,
         "tracks_deleted": 0,
-        "service_pattern_track_fks_updated": 0,
     }
 
     log.info("Streaming similar track pairs")
@@ -76,16 +75,18 @@ def consolidate_tracks(
             stats["pairs_with_duplicates"] += 1
             # Select track with lowest ID (first created) as the canonical track
             canonical_id = min(group)
-            for track_id in group:
-                if track_id == canonical_id:
-                    continue
 
-                stats["service_pattern_track_fks_updated"] += 1
-                stats["tracks_deleted"] += 1
+            tracks_to_consolidate = [
+                track_id for track_id in group if track_id != canonical_id
+            ]
 
-                if not dry_run:
-                    sp_track_repo.replace_service_pattern_track(track_id, canonical_id)
-                    track_repo.delete_by_id(track_id)
+            if not dry_run:
+                sp_track_repo.bulk_replace_service_pattern_tracks(
+                    tracks_to_consolidate, canonical_id
+                )
+                track_repo.bulk_delete_by_ids(tracks_to_consolidate)
+
+            stats["tracks_deleted"] += len(tracks_to_consolidate)
 
     return stats
 

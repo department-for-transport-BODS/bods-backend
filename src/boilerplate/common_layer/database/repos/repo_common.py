@@ -219,3 +219,21 @@ class BaseRepositoryWithId(BaseRepository[DBModelT]):
             statement = delete(table).where(self._model.id == id_column_id)
             result = session.execute(statement)
             return result.rowcount > 0
+
+    @handle_repository_errors
+    def bulk_delete_by_ids(self, ids: list[int]) -> int:
+        """
+        Bulk delete records by the given IDs.
+
+        Returns number of deleted records
+        """
+        if not isinstance(self._model, HasId):
+            raise TypeError(
+                f"Model {self._model.__name__} must have an 'id' field to delete by id"
+            )
+
+        with self._db.session_scope() as session:
+            table = cast(Table, self._model.__table__)
+            statement = delete(table).where(self._model.id.in_(ids))
+            result = session.execute(statement)
+            return result.rowcount
