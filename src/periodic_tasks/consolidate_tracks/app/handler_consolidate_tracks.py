@@ -41,7 +41,7 @@ def consolidate_tracks(
         "total_pairs_checked": 0,
         "pairs_with_duplicates": 0,
         "tracks_deleted": 0,
-        "vehicle_journey_fks_updated": 0,
+        "service_pattern_track_fks_updated": 0,
     }
 
     log.info("Streaming similar track pairs")

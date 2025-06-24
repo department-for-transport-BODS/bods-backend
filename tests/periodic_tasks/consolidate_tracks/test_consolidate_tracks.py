@@ -59,4 +59,4 @@ def test_consolidate_tracks_deletes_duplicates(mocker: MockerFixture):
     assert stats["total_pairs_checked"] == 3
     assert stats["pairs_with_duplicates"] == 3
     assert stats["tracks_deleted"] == 4
-    assert stats["vehicle_journey_fks_updated"] == 4
+    assert stats["service_pattern_track_fks_updated"] == 4
