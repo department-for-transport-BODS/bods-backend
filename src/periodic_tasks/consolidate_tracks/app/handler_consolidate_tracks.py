@@ -80,7 +80,7 @@ def consolidate_tracks(
                 if track_id == canonical_id:
                     continue
 
-                stats["vehicle_journey_fks_updated"] += 1
+                stats["service_pattern_track_fks_updated"] += 1
                 stats["tracks_deleted"] += 1
 
                 if not dry_run:
