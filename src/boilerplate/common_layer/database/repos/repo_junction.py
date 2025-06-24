@@ -294,3 +294,14 @@ class TransmodelServicePatternTracksRepo(
 
     def __init__(self, db: SqlDB):
         super().__init__(db, TransmodelServicePatternTracks)
+
+    def replace_service_pattern_track(self, track_id_to_replace: int, track_id: int):
+        """
+        Updates any entries referencing track_id_to_replace to reference track_id
+        """
+
+        def update_func(sp_track: TransmodelServicePatternTracks) -> None:
+            sp_track.tracks_id = track_id
+
+        statement = self._build_query().where(self._model.id == track_id_to_replace)
+        self._update_one(statement, update_func)

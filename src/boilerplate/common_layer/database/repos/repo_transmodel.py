@@ -245,9 +245,6 @@ class TransmodelTrackRepo(BaseRepositoryWithId[TransmodelTracks]):
             tracks = {(row[1], row[2]): row[0] for row in results.fetchall()}
             return tracks
 
-            session.execute(insert_stmt, [record.__dict__ for record in records])
-        return
-
     def stream_similar_track_pairs_by_stop_points(
         self, threshold: float = 20.0
     ) -> Iterator[tuple[tuple[str, str], list[tuple[int, int]]]]:
@@ -293,6 +290,7 @@ class TransmodelTrackRepo(BaseRepositoryWithId[TransmodelTracks]):
                     yield (from_code, to_code), pairs
         finally:
             raw_conn.close()
+
 
 class TransmodelServicePatternDistanceRepo(
     BaseRepositoryWithId[TransmodelServicePatternDistance]

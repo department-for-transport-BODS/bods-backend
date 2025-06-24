@@ -10,7 +10,10 @@ import psutil
 from aws_lambda_powertools import Tracer
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.database import SqlDB
-from common_layer.database.repos import TransmodelTrackRepo
+from common_layer.database.repos import (
+    TransmodelServicePatternTracksRepo,
+    TransmodelTrackRepo,
+)
 from common_layer.json_logging import configure_logging
 from pydantic import BaseModel, ValidationError
 from structlog.stdlib import get_logger
@@ -23,6 +26,7 @@ log = get_logger()
 
 def consolidate_tracks(
     track_repo: TransmodelTrackRepo,
+    sp_track_repo: TransmodelServicePatternTracksRepo,
     threshold: float,
     start_time: int,
     dry_run: bool = False,
@@ -31,7 +35,7 @@ def consolidate_tracks(
     Find and consolidate duplicated Tracks data
     """
     if dry_run:
-        print("Dry run mode enabled — no changes will be written to the database.")
+        log.info("Dry run mode enabled — no changes will be written to the database.")
 
     stats = {
         "total_pairs_checked": 0,
@@ -80,8 +84,7 @@ def consolidate_tracks(
                 stats["tracks_deleted"] += 1
 
                 if not dry_run:
-                    # TODO: Implement once we have the service pattern track junction table # pylint: disable=fixme
-                    # replace_vehicle_journey_track(track_id, canonical_id)
+                    sp_track_repo.replace_service_pattern_track(track_id, canonical_id)
                     track_repo.delete_by_id(track_id)
 
     return stats
@@ -113,12 +116,14 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
 
     db = SqlDB()
     track_repo = TransmodelTrackRepo(db)
+    sp_track_repo = TransmodelServicePatternTracksRepo(db)
     process = psutil.Process()
     start = time.perf_counter()
     mem_before = process.memory_info().rss
 
     stats = consolidate_tracks(
         track_repo,
+        sp_track_repo,
         threshold=input_data.threshold_meters,
         dry_run=input_data.dry_run,
         start_time=int(start),
