@@ -8,16 +8,7 @@ from datetime import date, time
 from typing import Literal
 
 from geoalchemy2 import Geometry, WKBElement
-from sqlalchemy import (
-    Boolean,
-    Date,
-    ForeignKey,
-    Integer,
-    String,
-    Text,
-    Time,
-    UniqueConstraint,
-)
+from sqlalchemy import Boolean, Date, ForeignKey, Integer, String, Text, Time
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column
 
