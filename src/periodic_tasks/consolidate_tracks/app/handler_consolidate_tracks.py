@@ -56,7 +56,7 @@ def consolidate_tracks(
         )
         stats["total_pairs_checked"] += 1
 
-        if stats["total_pairs_checked"] % 100 == 0:
+        if stats["total_pairs_checked"] % 1000 == 0:
             log.info(
                 "Pairs checked",
                 count=stats["total_pairs_checked"],
