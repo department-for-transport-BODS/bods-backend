@@ -126,15 +126,6 @@ def insert_and_cleanup_tracks(
 def test_transmodel_tracks_stream_similar_track_pairs_by_stop_points(
     test_db: SqlDB,
 ) -> None:
-
-    # TODO: Remove this once the unique constraint has been removed from the table # pylint: disable=fixme
-    with test_db.engine.begin() as conn:
-        conn.execute(
-            text(
-                "ALTER TABLE transmodel_tracks DROP CONSTRAINT IF EXISTS unique_from_to_atco_code"
-            )
-        )
-
     # Base route geometry
     route_1_coords = [
         (-1.42148, 55.01789),

@@ -139,13 +139,6 @@ class TransmodelTracks(BaseSQLModel):
     )
     distance: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
-    # TODO: Remove this once the unique constraint has been removed from the table in BODS # pylint: disable=fixme
-    __table_args__ = (
-        UniqueConstraint(
-            "from_atco_code", "to_atco_code", name="unique_from_to_atco_code"
-        ),
-    )
-
 
 class TransmodelServicePatternDistance(BaseSQLModel):
     """
