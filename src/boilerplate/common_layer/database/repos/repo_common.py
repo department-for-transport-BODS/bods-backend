@@ -103,6 +103,19 @@ class BaseRepository(Generic[DBModelT]):
             session.merge(record)
 
     @handle_repository_errors
+    def _update_many(
+        self,
+        statement: Select[tuple[DBModelT]],
+        update_func: Callable[[DBModelT], None],
+    ) -> None:
+        """Execute an update on multiple records"""
+        with self._db.session_scope() as session:
+            records = session.execute(statement).scalars().all()
+            for record in records:
+                update_func(record)
+                session.merge(record)
+
+    @handle_repository_errors
     def _execute_update(
         self, callback: Callable[[DBModelT], None], statement: Select[tuple[DBModelT]]
     ) -> None:

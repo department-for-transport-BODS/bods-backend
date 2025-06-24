@@ -3,6 +3,7 @@ Repos for Many to Many Relationhip Tables
 AKA: Associative Entity, Junction Tables, Jump Tables
 """
 
+from common_layer.database import SqlDB
 from sqlalchemy import literal, select
 from sqlalchemy.dialects.postgresql import insert
 
@@ -17,7 +18,7 @@ from ..models import (
     TransmodelTracksVehicleJourney,
 )
 from .operation_decorator import handle_repository_errors
-from .repo_common import BaseRepository, SqlDB
+from .repo_common import BaseRepository, BaseRepositoryWithId
 
 
 class TransmodelServiceServicePatternRepo(
@@ -288,7 +289,7 @@ class TransmodelTracksVehicleJourneyRepo(
 
 
 class TransmodelServicePatternTracksRepo(
-    BaseRepository[TransmodelServicePatternTracks]
+    BaseRepositoryWithId[TransmodelServicePatternTracks]
 ):
     """Repository for managing Tracks to Service Pattern associations"""
 
@@ -303,5 +304,7 @@ class TransmodelServicePatternTracksRepo(
         def update_func(sp_track: TransmodelServicePatternTracks) -> None:
             sp_track.tracks_id = track_id
 
-        statement = self._build_query().where(self._model.id == track_id_to_replace)
-        self._update_one(statement, update_func)
+        statement = self._build_query().where(
+            self._model.tracks_id == track_id_to_replace
+        )
+        self._update_many(statement, update_func)
