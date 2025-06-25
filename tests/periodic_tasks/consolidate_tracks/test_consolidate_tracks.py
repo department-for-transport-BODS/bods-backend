@@ -1,5 +1,4 @@
 import time
-from typing import Iterator
 
 from common_layer.database.repos import (
     TransmodelServicePatternTracksRepo,
@@ -28,6 +27,10 @@ def test_consolidate_tracks_deletes_duplicates(mocker: MockerFixture):
     m_track_repo.stream_similar_track_pairs_by_stop_points.return_value = (
         similar_tracks_result
     )
+
+    # mock responses used for stats
+    m_track_repo.bulk_delete_by_ids.return_value = 1
+    m_sp_track_repo.bulk_replace_service_pattern_tracks.return_value = 1
 
     start_time = int(time.perf_counter())
     stats = consolidate_tracks(
@@ -60,4 +63,6 @@ def test_consolidate_tracks_deletes_duplicates(mocker: MockerFixture):
     # Stats assertions
     assert stats["total_pairs_checked"] == 3
     assert stats["pairs_with_duplicates"] == 3
-    assert stats["tracks_deleted"] == 4
+    assert stats["tracks_to_delete"] == 4
+    assert stats["tracks_deleted"] == 3
+    assert stats["fks_updated"] == 3

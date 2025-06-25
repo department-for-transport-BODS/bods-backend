@@ -40,7 +40,9 @@ def consolidate_tracks(
     stats = {
         "total_pairs_checked": 0,
         "pairs_with_duplicates": 0,
+        "tracks_to_delete": 0,
         "tracks_deleted": 0,
+        "fks_updated": 0,
     }
 
     log.info("Streaming similar track pairs")
@@ -81,12 +83,15 @@ def consolidate_tracks(
             ]
 
             if not dry_run:
-                sp_track_repo.bulk_replace_service_pattern_tracks(
+                fk_updated_count = sp_track_repo.bulk_replace_service_pattern_tracks(
                     tracks_to_consolidate, canonical_id
                 )
-                track_repo.bulk_delete_by_ids(tracks_to_consolidate)
+                deleted_count = track_repo.bulk_delete_by_ids(tracks_to_consolidate)
 
-            stats["tracks_deleted"] += len(tracks_to_consolidate)
+                stats["fks_updated"] += fk_updated_count if fk_updated_count else 0
+                stats["tracks_deleted"] += deleted_count if deleted_count else 0
+
+            stats["tracks_to_delete"] += len(tracks_to_consolidate)
 
     return stats
 
