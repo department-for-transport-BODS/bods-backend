@@ -139,4 +139,4 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
     stats["memory_mb_used"] = round((mem_after - mem_before) / 1024 / 1024, 2)
 
     log.info("Stats", **stats)
-    return {}
+    return stats
