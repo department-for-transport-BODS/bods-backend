@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+from common_layer.database.client import SqlDB
 from common_layer.database.repos.repo_naptan import NaptanStopPointRepo
 from common_layer.exceptions.pipeline_exceptions import PipelineException
 
@@ -72,7 +73,7 @@ def test_get_count_exception(test_db):
             repo.get_count(atco_codes=[])
 
 
-def test_stream_naptan_ids(test_db):
+def test_stream_naptan_ids(test_db: SqlDB):
 
     # Create 5 stop points
     stop_points = [

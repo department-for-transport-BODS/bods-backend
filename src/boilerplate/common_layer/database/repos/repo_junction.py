@@ -3,7 +3,8 @@ Repos for Many to Many Relationhip Tables
 AKA: Associative Entity, Junction Tables, Jump Tables
 """
 
-from sqlalchemy import literal, select
+from common_layer.database import SqlDB
+from sqlalchemy import literal, select, update
 from sqlalchemy.dialects.postgresql import insert
 
 from ..models import (
@@ -17,7 +18,7 @@ from ..models import (
     TransmodelTracksVehicleJourney,
 )
 from .operation_decorator import handle_repository_errors
-from .repo_common import BaseRepository, SqlDB
+from .repo_common import BaseRepository, BaseRepositoryWithId
 
 
 class TransmodelServiceServicePatternRepo(
@@ -288,9 +289,27 @@ class TransmodelTracksVehicleJourneyRepo(
 
 
 class TransmodelServicePatternTracksRepo(
-    BaseRepository[TransmodelServicePatternTracks]
+    BaseRepositoryWithId[TransmodelServicePatternTracks]
 ):
     """Repository for managing Tracks to Service Pattern associations"""
 
     def __init__(self, db: SqlDB):
         super().__init__(db, TransmodelServicePatternTracks)
+
+    @handle_repository_errors
+    def bulk_replace_service_pattern_tracks(
+        self, old_ids: list[int], new_id: int
+    ) -> None:
+        """
+        Bulk replace track references in transmodel_servicepatterntracks table.
+        Any row with tracks_id in `old_ids` will be updated to `new_id`.
+        """
+        if not old_ids:
+            return
+
+        with self._db.session_scope() as session:
+            session.execute(
+                update(self._model)
+                .where(self._model.tracks_id.in_(old_ids))
+                .values(tracks_id=new_id)
+            )
