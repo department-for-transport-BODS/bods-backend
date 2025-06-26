@@ -71,7 +71,7 @@ def process_single_file(config: TestConfig, file_path: Path) -> TimingStats:
             dynamo_data_manager=dynamo_data_manager,
         )
         log.info("✅ Setup Complete, starting ETL Task")
-        transform_data(txc, task_data, task_clients, skip_track_inserts=True)
+        transform_data(txc, task_data, task_clients)
         stats.transform_time = time.time() - transform_start
 
     except Exception as e:  # pylint: disable=broad-exception-caught
