@@ -32,7 +32,7 @@ class MissingLines(Exception):
 
 
 def build_lookup_data(
-    txc: TXCData, task_clients: ETLTaskClients
+    txc: TXCData, task_clients: ETLTaskClients, skip_track_inserts: bool = False
 ) -> ReferenceDataLookups:
     """
     Get from DB with inserts of reference data used accross the workflow
@@ -50,7 +50,9 @@ def build_lookup_data(
     serviced_orgs = load_serviced_organizations(
         txc.ServicedOrganisations, task_clients.db
     )
-    track_lookup = load_tracks(txc.RouteSections, task_clients.db)
+    track_lookup = load_tracks(
+        txc.RouteSections, task_clients.db, skip_inserts=skip_track_inserts
+    )
 
     return ReferenceDataLookups(
         stops=stop_mapping,
@@ -65,15 +67,17 @@ def transform_data(
     txc: TXCData,
     task_data: TaskData,
     task_clients: ETLTaskClients,
+    skip_track_inserts: bool = False,
 ) -> ETLProcessStats:
     """
     Transform Parsed TXC XML Data into SQLAlchmeny Database Models to apply
     """
     stats = ETLProcessStats()
-    reference_data = build_lookup_data(txc, task_clients)
+    reference_data = build_lookup_data(
+        txc, task_clients, skip_track_inserts=skip_track_inserts
+    )
     db = task_clients.db
     for service in txc.Services:
-
         tm_service = load_transmodel_service(service, task_data, db)
         stats.services += 1
         if not task_data.input_data.superseded_timetable:
