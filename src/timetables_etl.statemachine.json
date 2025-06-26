@@ -480,7 +480,7 @@
         "mapDatasetFileAttributesEtl": "{% $states.context.Map.Item.Value.TxcFileAttributesId %}",
         "mapDatasetRevisionId": "{% $datasetRevisionId %}",
         "mapDatasetType": "{% $datasetType %}",
-        "mapPerformETLOnly": "{% $performETLOnly %}"
+        "mapPerformETLOnly": "{% $performETLOnly %}",
         "mapSkipTrackInserts": "{% $skipTrackInserts %}"
       },
       "ItemReader": {
@@ -511,7 +511,7 @@
               "DatasetRevisionId": "{% $states.input.mapDatasetRevisionId %}",
               "FileAttributesEtl": "{% $states.input.mapDatasetFileAttributesEtl %}",
               "DatasetType": "{% $states.input.mapDatasetType %}",
-              "mapPerformETLOnly": "{% $states.input.mapPerformETLOnly %}"
+              "mapPerformETLOnly": "{% $states.input.mapPerformETLOnly %}",
               "mapSkipTrackInserts": "{% $states.input.mapSkipTrackInserts %}"
             }
           },
