@@ -67,14 +67,13 @@ def transform_data(
     txc: TXCData,
     task_data: TaskData,
     task_clients: ETLTaskClients,
-    skip_track_inserts: bool = False,
 ) -> ETLProcessStats:
     """
     Transform Parsed TXC XML Data into SQLAlchmeny Database Models to apply
     """
     stats = ETLProcessStats()
     reference_data = build_lookup_data(
-        txc, task_clients, skip_track_inserts=skip_track_inserts
+        txc, task_clients, skip_track_inserts=task_data.input_data.skip_track_inserts
     )
     db = task_clients.db
     for service in txc.Services:
