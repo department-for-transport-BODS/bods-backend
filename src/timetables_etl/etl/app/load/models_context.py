@@ -41,6 +41,7 @@ class ProcessPatternCommonContext:
     service_pattern_mapping: ServicePatternMapping
     lookups: ReferenceDataLookups
     db: SqlDB
+    skip_track_inserts: bool = False
 
 
 # pylint: disable=too-many-instance-attributes

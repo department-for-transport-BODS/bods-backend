@@ -100,7 +100,9 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, 
         input_data.s3_bucket_name, input_data.s3_file_key, PARSER_CONFIG
     )
     task_data = get_task_data(input_data, db)
-    stats = transform_data(txc_data, task_data, task_clients)
+    stats = transform_data(
+        txc_data, task_data, task_clients, skip_tracks=input_data.skip_track_inserts
+    )
     create_datadog_metrics(metrics, stats)
     return {
         "status_code": 200,
