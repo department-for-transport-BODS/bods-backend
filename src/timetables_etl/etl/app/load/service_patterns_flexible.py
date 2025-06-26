@@ -58,6 +58,7 @@ def process_flexible_service_patterns(
             service_pattern_mapping=service_pattern_mapping,
             lookups=lookups,
             db=db,
+            skip_track_inserts=task_data.input_data.skip_track_inserts,
         )
 
         stats += process_pattern_common(service, context)

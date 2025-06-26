@@ -16,6 +16,7 @@
         "overwriteInputDataset": "{% $exists($states.input.overwriteInputDataset) ? $states.input.overwriteInputDataset : true %}",
         "datasetETLTaskResultId": "{% $exists($states.input.datasetETLTaskResultId) ? $states.input.datasetETLTaskResultId : null %}",
         "performETLOnly": "{% $exists($states.input.performETLOnly) ? $states.input.performETLOnly : false %}",
+        "skipTrackInserts": "{% $exists($states.input.skipTrackInserts) ? $states.input.skipTrackInserts : false %}",
         "lock_name": "bods-backend-semaphore",
         "concurrency_limit": 5,
         "lock_entry": "{% $uuid() %}"
@@ -480,6 +481,7 @@
         "mapDatasetRevisionId": "{% $datasetRevisionId %}",
         "mapDatasetType": "{% $datasetType %}",
         "mapPerformETLOnly": "{% $performETLOnly %}"
+        "mapSkipTrackInserts": "{% $skipTrackInserts %}"
       },
       "ItemReader": {
         "Resource": "arn:aws:states:::s3:getObject",
@@ -510,6 +512,7 @@
               "FileAttributesEtl": "{% $states.input.mapDatasetFileAttributesEtl %}",
               "DatasetType": "{% $states.input.mapDatasetType %}",
               "mapPerformETLOnly": "{% $states.input.mapPerformETLOnly %}"
+              "mapSkipTrackInserts": "{% $states.input.mapSkipTrackInserts %}"
             }
           },
           "Check if PTI needs to be Skipped": {
@@ -560,7 +563,8 @@
               "DatasetRevisionId": "{% $DatasetRevisionId %}",
               "TxcFileAttributesId": "{% $FileAttributesEtl %}",
               "SupersededTimetable": "{% $SupersededTimetable %}",
-              "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}"
+              "DatasetEtlTaskResultId": "{% $datasetEtlTaskResultId %}",
+              "SkipTrackInserts": "{% $mapSkipTrackInserts %}"
             },
             "Output": {
               "etlProcess": "{% $states.result %}"
