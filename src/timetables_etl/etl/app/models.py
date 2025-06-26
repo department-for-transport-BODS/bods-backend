@@ -32,6 +32,14 @@ class ETLInputData(BaseModel):
     superseded_timetable: Annotated[
         bool, Field(alias="SupersededTimetable", default=False)
     ]
+    skip_track_inserts: Annotated[
+        bool,
+        Field(
+            alias="SkipTrackInserts",
+            default=False,
+            description="Skip the insertion of tracks data (used for reprocessing)",
+        ),
+    ]
 
 
 class TaskData(BaseModel):
