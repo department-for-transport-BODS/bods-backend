@@ -68,6 +68,7 @@ def create_task_data_from_inputs(
             s3_bucket_name="test",
             s3_file_key="test",
             superseded_timetable=False,
+            skip_track_inserts=False,
         )
         return get_task_data(input_data, db)
 
@@ -99,6 +100,7 @@ def create_task_data_from_inputs(
             s3_bucket_name="test",
             s3_file_key="test",
             superseded_timetable=False,
+            skip_track_inserts=False,
         )
 
         return TaskData(

@@ -231,13 +231,15 @@ def process_pattern_common(
         vj_context,
     )
 
-    tracks = load_service_pattern_tracks(
-        reference_journey_pattern,
-        context.service_pattern.id,
-        context.lookups.tracks,
-        sp_data.stop_sequence,
-        context.db,
-    )
+    tracks = []
+    if not context.skip_track_inserts:
+        tracks = load_service_pattern_tracks(
+            reference_journey_pattern,
+            context.service_pattern.id,
+            context.lookups.tracks,
+            sp_data.stop_sequence,
+            context.db,
+        )
 
     distance = process_service_pattern_distance(
         service,
