@@ -2,7 +2,6 @@
 Tracks Generation
 """
 
-from common_layer.database import SqlDB
 from common_layer.xml.txc.models import TXCRouteSection
 from structlog.stdlib import get_logger
 
@@ -12,9 +11,7 @@ from ..transform.tracks import create_new_tracks
 log = get_logger()
 
 
-def build_track_lookup(
-    route_sections: list[TXCRouteSection], db: SqlDB, skip_inserts: bool = False
-) -> TrackLookup:
+def build_track_lookup(route_sections: list[TXCRouteSection]) -> TrackLookup:
     """
     Process tracks from route sections
     Returns a lookup dictionary mapping (from_atco, to_atco) to TransmodelTracks

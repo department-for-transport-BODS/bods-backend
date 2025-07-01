@@ -50,7 +50,7 @@ def build_lookup_data(
     serviced_orgs = load_serviced_organizations(
         txc.ServicedOrganisations, task_clients.db
     )
-    track_lookup = build_track_lookup(txc.RouteSections, task_clients.db)
+    track_lookup = build_track_lookup(txc.RouteSections)
 
     return ReferenceDataLookups(
         stops=stop_mapping,
