@@ -245,7 +245,7 @@ def process_pattern_common(
     distance = process_service_pattern_distance(
         service,
         context.service_pattern.id,
-        tracks_lookup,
+        context.lookups.tracks,
         sp_data.stop_sequence,
         context.db,
     )
