@@ -20,7 +20,6 @@ from common_layer.database.repos import (
 from common_layer.xml.txc.models import (
     TXCFlexibleJourneyPattern,
     TXCJourneyPattern,
-    TXCRouteSection,
     TXCService,
 )
 from common_layer.xml.txc.models.txc_vehicle_journey import TXCVehicleJourney
