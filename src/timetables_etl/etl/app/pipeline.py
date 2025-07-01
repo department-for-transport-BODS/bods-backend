@@ -7,9 +7,9 @@ from structlog.stdlib import get_logger
 
 from .helpers import ReferenceDataLookups
 from .load import (
+    build_track_lookup,
     link_service_to_service_patterns,
     load_serviced_organizations,
-    load_tracks,
     load_transmodel_service,
     process_booking_arrangements,
 )
@@ -50,9 +50,7 @@ def build_lookup_data(
     serviced_orgs = load_serviced_organizations(
         txc.ServicedOrganisations, task_clients.db
     )
-    track_lookup = load_tracks(
-        txc.RouteSections, task_clients.db, skip_inserts=skip_track_inserts
-    )
+    track_lookup = build_track_lookup(txc.RouteSections, task_clients.db)
 
     return ReferenceDataLookups(
         stops=stop_mapping,
