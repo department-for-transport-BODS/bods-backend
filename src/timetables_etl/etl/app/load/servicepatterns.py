@@ -63,7 +63,7 @@ def process_standard_service_patterns(
             skip_track_inserts=task_data.input_data.skip_track_inserts,
         )
 
-        stats += process_pattern_common(service, txc.RouteSections, common_context)
+        stats += process_pattern_common(service, common_context)
         patterns.append(service_pattern)
 
     return patterns, stats

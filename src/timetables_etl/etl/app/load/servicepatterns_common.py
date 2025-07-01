@@ -180,7 +180,6 @@ def filter_vehicle_journeys(
 
 def process_pattern_common(
     service: TXCService,
-    route_sections: list[TXCRouteSection],
     context: ProcessPatternCommonContext,
 ) -> PatternCommonStats:
     """

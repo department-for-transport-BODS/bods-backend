@@ -61,7 +61,7 @@ def process_flexible_service_patterns(
             skip_track_inserts=task_data.input_data.skip_track_inserts,
         )
 
-        stats += process_pattern_common(service, txc.RouteSections, context)
+        stats += process_pattern_common(service, context)
         patterns.append(service_pattern)
 
     log.info("Flexible Service Patterns Created", count=len(patterns))

@@ -18,6 +18,7 @@ from ..transform.service_pattern_tracks import generate_service_pattern_tracks
 log = get_logger()
 
 
+# pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
 def load_service_pattern_tracks(
     journey_pattern: TXCJourneyPattern | TXCFlexibleJourneyPattern,
     service_pattern_id: int,
