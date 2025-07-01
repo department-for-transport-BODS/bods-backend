@@ -61,11 +61,11 @@ def test_generate_standard_service_tracks():
         ("490003", "490004"),
     ]
     track_lookup: TrackLookup = {
-        ("490001", "490002"): TransmodelTracksFactory(
-            from_atco_code="490001", to_atco_code="490002"
+        ("490001", "490002"): TransmodelTracksFactory.create_with_id(
+            id_number=123, from_atco_code="490001", to_atco_code="490002"
         ),
-        ("490003", "490004"): TransmodelTracksFactory(
-            from_atco_code="490003", to_atco_code="490004"
+        ("490003", "490004"): TransmodelTracksFactory.create_with_id(
+            id_number=124, from_atco_code="490003", to_atco_code="490004"
         ),
     }
 
