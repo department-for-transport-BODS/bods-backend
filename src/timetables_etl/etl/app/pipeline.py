@@ -7,9 +7,9 @@ from structlog.stdlib import get_logger
 
 from .helpers import ReferenceDataLookups
 from .load import (
+    build_track_lookup,
     link_service_to_service_patterns,
     load_serviced_organizations,
-    load_tracks,
     load_transmodel_service,
     process_booking_arrangements,
 )
@@ -32,7 +32,7 @@ class MissingLines(Exception):
 
 
 def build_lookup_data(
-    txc: TXCData, task_clients: ETLTaskClients, skip_track_inserts: bool = False
+    txc: TXCData, task_clients: ETLTaskClients
 ) -> ReferenceDataLookups:
     """
     Get from DB with inserts of reference data used accross the workflow
@@ -50,9 +50,7 @@ def build_lookup_data(
     serviced_orgs = load_serviced_organizations(
         txc.ServicedOrganisations, task_clients.db
     )
-    track_lookup = load_tracks(
-        txc.RouteSections, task_clients.db, skip_inserts=skip_track_inserts
-    )
+    track_lookup = build_track_lookup(txc.RouteSections)
 
     return ReferenceDataLookups(
         stops=stop_mapping,
@@ -72,9 +70,7 @@ def transform_data(
     Transform Parsed TXC XML Data into SQLAlchmeny Database Models to apply
     """
     stats = ETLProcessStats()
-    reference_data = build_lookup_data(
-        txc, task_clients, skip_track_inserts=task_data.input_data.skip_track_inserts
-    )
+    reference_data = build_lookup_data(txc, task_clients)
     db = task_clients.db
     for service in txc.Services:
         tm_service = load_transmodel_service(service, task_data, db)
