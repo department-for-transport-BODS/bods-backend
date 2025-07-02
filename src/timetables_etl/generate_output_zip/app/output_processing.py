@@ -132,7 +132,9 @@ def generate_zip_file(
 
         zip_file_keys = [key.split("/")[-1] for key in file_keys]
         with zipfile.ZipFile(file_path, "r") as source_zip:
-            zip_file_list = [key.split("/")[-1] for key in source_zip.namelist()]
+            zip_file_list: dict[str, str] = {
+                key.split("/")[-1]: key for key in source_zip.namelist()
+            }
             missing_files = [key for key in zip_file_keys if key not in zip_file_list]
             if missing_files:
                 log.error(
@@ -155,7 +157,7 @@ def generate_zip_file(
                 for file_key in zip_file_keys:
                     try:
                         log.info(f"Copying {file_key} to new in-memory zip")
-                        file_content = source_zip.read(file_key)
+                        file_content = source_zip.read(zip_file_list[file_key])
                         output_zip.writestr(file_key, file_content)
                         counts.success += 1
                     except (zipfile.BadZipFile, IOError) as e:
