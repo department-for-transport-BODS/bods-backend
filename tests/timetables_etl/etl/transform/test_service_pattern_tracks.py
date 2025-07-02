@@ -55,39 +55,22 @@ def test_generate_flexible_service_tracks(caplog: pytest.LogCaptureFixture):
 def test_generate_standard_service_tracks():
     journey_pattern = TXCJourneyPatternFactory()
     service_pattern_id = 21
-    stop_sequence: list[NaptanStopPoint] = [
-        NaptanStopPointFactory.create(
-            atco_code="490001",
-            common_name="Origin Stop",
-            location=from_shape(Point(-1.0, 51.0), srid=4326),
-        ),
-        NaptanStopPointFactory.create(
-            atco_code="490002",
-            common_name="Middle Stop",
-            location=from_shape(Point(-1.1, 51.1), srid=4326),
-        ),
-        NaptanStopPointFactory.create(
-            atco_code="490003",
-            common_name="Middle Stop 1",
-            location=from_shape(Point(-1.2, 51.2), srid=4326),
-        ),
-        NaptanStopPointFactory.create(
-            atco_code="490004",
-            common_name="Destination Stop",
-            location=from_shape(Point(-1.3, 51.3), srid=4326),
-        ),
+    stop_point_pairs = [
+        ("490001", "490002"),
+        ("490002", "490003"),
+        ("490003", "490004"),
     ]
     track_lookup: TrackLookup = {
-        ("490001", "490002"): TransmodelTracksFactory(
-            from_atco_code="490001", to_atco_code="490002"
+        ("490001", "490002"): TransmodelTracksFactory.create_with_id(
+            id_number=123, from_atco_code="490001", to_atco_code="490002"
         ),
-        ("490003", "490004"): TransmodelTracksFactory(
-            from_atco_code="490003", to_atco_code="490004"
+        ("490003", "490004"): TransmodelTracksFactory.create_with_id(
+            id_number=124, from_atco_code="490003", to_atco_code="490004"
         ),
     }
 
     sp_tracks = generate_standard_service_tracks(
-        journey_pattern, service_pattern_id, stop_sequence, track_lookup
+        journey_pattern, service_pattern_id, stop_point_pairs, track_lookup
     )
 
     assert len(sp_tracks) == 2
@@ -98,7 +81,7 @@ def test_generate_standard_service_tracks():
 def test_generate_standard_service_track_with_no_tracks():
     journey_pattern = TXCJourneyPatternFactory()
     service_pattern_id = 21
-    stop_sequence: list[NaptanStopPoint] = []
+    stop_sequence: list[tuple[str, str]] = []
     track_lookup: TrackLookup = {}
 
     sp_tracks = generate_standard_service_tracks(

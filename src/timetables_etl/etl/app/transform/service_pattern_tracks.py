@@ -2,11 +2,7 @@
 Vehicle Journey Tracks Generation
 """
 
-from common_layer.database.models import (
-    NaptanStopPoint,
-    TransmodelServicePatternTracks,
-)
-from common_layer.xml.txc.helpers.routes import extract_stop_point_pairs
+from common_layer.database.models import TransmodelServicePatternTracks
 from common_layer.xml.txc.models import TXCFlexibleJourneyPattern, TXCJourneyPattern
 from structlog.stdlib import get_logger
 
@@ -18,7 +14,7 @@ log = get_logger()
 def generate_standard_service_tracks(
     journey_pattern: TXCJourneyPattern,
     service_pattern_id: int,
-    stop_sequence: list[NaptanStopPoint],
+    stop_point_pairs: list[tuple[str, str]],
     track_lookup: TrackLookup,
 ) -> list[TransmodelServicePatternTracks]:
     """
@@ -27,12 +23,11 @@ def generate_standard_service_tracks(
     log_ctx = log.bind(
         journey_pattern_id=journey_pattern.id,
     )
-    ordered_pairs = extract_stop_point_pairs(stop_sequence)
     sp_tracks: list[TransmodelServicePatternTracks] = []
 
-    for sequence_number, (from_code, to_code) in enumerate(ordered_pairs):
+    for sequence_number, (from_code, to_code) in enumerate(stop_point_pairs):
         track = track_lookup.get((from_code, to_code))
-        if track:
+        if track and track.id:
             sp_tracks.append(
                 TransmodelServicePatternTracks(
                     sequence_number=sequence_number,
@@ -44,7 +39,7 @@ def generate_standard_service_tracks(
     log_ctx.info(
         "Generated service pattern tracks",
         tracks_created=len(sp_tracks),
-        stop_sequence_count=len(stop_sequence),
+        stop_sequence_count=len(stop_point_pairs),
     )
 
     return sp_tracks
@@ -61,7 +56,7 @@ def generate_service_pattern_tracks(
     journey_pattern: TXCJourneyPattern | TXCFlexibleJourneyPattern,
     service_pattern_id: int,
     track_lookup: TrackLookup,
-    stop_sequence: list[NaptanStopPoint],
+    stop_point_pairs: list[tuple[str, str]],
 ) -> list[TransmodelServicePatternTracks]:
     """
     Create Vehicle Journey Tracks
@@ -71,7 +66,7 @@ def generate_service_pattern_tracks(
             return generate_standard_service_tracks(
                 journey_pattern=journey_pattern,
                 service_pattern_id=service_pattern_id,
-                stop_sequence=stop_sequence,
+                stop_point_pairs=stop_point_pairs,
                 track_lookup=track_lookup,
             )
         case TXCFlexibleJourneyPattern():
