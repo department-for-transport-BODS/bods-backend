@@ -4,7 +4,7 @@ Transform:
   - Name: DatadogServerless
     Parameters:
       stackName: !Ref 'AWS::StackName'
-      apiKey: '{{resolve:secretsmanager:bodds/shared/datadog/api-key}}'
+      apiKey: '{{resolve:secretsmanager:bodds/shared/datadog/api-key:SecretString:api_key}}'
       pythonLayerVersion: 105
       extensionLayerVersion: 69
       site: datadoghq.eu
@@ -366,7 +366,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action: secretsmanager:GetSecretValue
-                Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:bodds/shared/datadog/api-key-*'
+                Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:bodds/shared/datadog/api-key:SecretString:api_key-*'
 
   FaresStateMachineRole:
     Type: AWS::IAM::Role
