@@ -3,14 +3,13 @@ Functions to Create and upload zip
 """
 
 import zipfile
+from dataclasses import dataclass
 from io import BytesIO
 from typing import List, Tuple
-from dataclasses import dataclass
 
 from common_layer.aws.step import MapExecutionSucceeded
 from common_layer.s3 import S3
 from structlog.stdlib import get_logger
-
 
 log = get_logger()
 
@@ -130,7 +129,8 @@ def generate_zip_file(
         zip_file_keys = [key.split("/")[-1] for key in file_keys]
 
         with zipfile.ZipFile(file_path, "r") as source_zip:
-            zip_file_list = source_zip.namelist()
+            zip_file_list = [key.split("/")[-1] for key in source_zip.namelist()]
+            log.info("Files found in the source zip file", source_files=zip_file_list)
             missing_files = [key for key in zip_file_keys if key not in zip_file_list]
             if missing_files:
                 log.error(f"Files not found in source zip: {missing_files}")
