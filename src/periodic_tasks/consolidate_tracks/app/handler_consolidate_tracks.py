@@ -159,7 +159,3 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
 
     log.info("Stats", **stats)
     return stats
-
-
-if __name__ == "__main__":
-    lambda_handler({"threshold_meters": "20.0", "dry_run": True}, {})
