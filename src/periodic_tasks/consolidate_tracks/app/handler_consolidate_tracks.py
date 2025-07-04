@@ -24,6 +24,7 @@ tracer = Tracer()
 log = get_logger()
 
 
+# pylint: disable=too-many-locals
 def consolidate_tracks(
     track_repo: TransmodelTrackRepo,
     sp_track_repo: TransmodelServicePatternTracksRepo,
@@ -61,6 +62,11 @@ def consolidate_tracks(
         ), similar_pairs in track_repo.stream_similar_track_pairs_by_stop_points(
             stop_point_pairs=stop_point_pairs, threshold=threshold
         ):
+            log.debug(
+                "Checking stop point pair",
+                from_atco_code=from_code,
+                to_atco_code=to_code,
+            )
             if stats["total_pairs_checked"] % 1000 == 0:
                 log.info(
                     "Pairs checked",
