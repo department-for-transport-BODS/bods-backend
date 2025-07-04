@@ -156,7 +156,11 @@ def test_transmodel_tracks_stream_similar_track_pairs_by_stop_points(
             ("A", "C", route_1_coords),  # Different stop points
         ],
     ) as [track1_id, similar_track_id, _, _]:
-        result = list(repo.stream_similar_track_pairs_by_stop_points(threshold=20))
+        result = list(
+            repo.stream_similar_track_pairs_by_stop_points(
+                stop_point_pairs=[("A", "B")], threshold=20
+            )
+        )
 
         assert len(result) == 1
         stop_point_pair, track_pairs = result[0]
