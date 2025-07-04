@@ -51,13 +51,14 @@ class TXCFileAttributes:
     def from_orm(obj: OrganisationTXCFileAttributes):
         """
         Conversion of TXCFileAttributes from DB into the PTI Model
+        normalizing modification_datetime by removing microseconds.
         """
         return TXCFileAttributes(
             id=obj.id,
             revision_number=obj.revision_number,
             service_code=obj.service_code,
             line_names=obj.line_names,
-            modification_datetime=obj.modification_datetime,
+            modification_datetime=obj.modification_datetime.replace(microsecond=0),
             hash=obj.hash,
             filename=obj.filename,
         )
