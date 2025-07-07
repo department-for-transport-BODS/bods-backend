@@ -17,7 +17,12 @@ def test_consolidate_tracks_deletes_duplicates(mocker: MockerFixture):
         TransmodelServicePatternTracksRepo, instance=True
     )
 
-    # Simulate similar track pairs grouped by stop point pair
+    # Mock stop point pairs used for batching
+    m_track_repo.stream_distinct_stop_points_with_multiple_rows.return_value = iter(
+        [[("A", "B"), ("C", "D"), ("E", "F")]]  # One batch with all 3
+    )
+
+    # Mock similar track pairs grouped by stop point pair
     similar_tracks_data: list[tuple[tuple[str, str], list[tuple[int, int]]]] = [
         (("A", "B"), [(1, 2), (2, 3), (4, 5)]),  # Grouped: [1,2,3], [4,5]
         (("C", "D"), [(6, 7)]),  # Grouped: [6,7]

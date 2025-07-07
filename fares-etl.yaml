@@ -4,7 +4,7 @@ Transform:
   - Name: DatadogServerless
     Parameters:
       stackName: !Ref 'AWS::StackName'
-      apiKey: '{{resolve:secretsmanager:bodds/shared/datadog/api-key}}'
+      apiKey: '{{resolve:secretsmanager:bodds/shared/datadog/api-key:SecretString:api_key}}'
       pythonLayerVersion: 105
       extensionLayerVersion: 69
       site: datadoghq.eu
