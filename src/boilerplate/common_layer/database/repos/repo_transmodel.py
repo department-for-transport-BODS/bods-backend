@@ -7,7 +7,7 @@ from datetime import date
 from typing import Iterator, Literal
 
 from psycopg2.extensions import connection as PsycopgConnection
-from sqlalchemy import func, select, tuple_
+from sqlalchemy import func, select, text, tuple_
 from sqlalchemy.dialects.postgresql import insert
 from structlog.stdlib import get_logger
 
@@ -249,31 +249,25 @@ class TransmodelTrackRepo(BaseRepositoryWithId[TransmodelTracks]):
         self, batch_size: int = 10000
     ) -> Iterator[list[tuple[str, str]]]:
         """
-        Stream batches of distinct stop point pairs (from_atco_code, to_atco_code)
-        that occur more than once.
+        Fetch all distinct stop point pairs with more than one row,
+        and yield them in batches of batch_size
         """
-        raw_conn: PsycopgConnection = self._db.engine.raw_connection()  # type: ignore[assignment]
-        try:
-            with raw_conn.cursor() as cursor:
-                cursor.itersize = batch_size
-                query = """
+        with self._db.session_scope() as session:
+            result = session.execute(
+                text(
+                    """
                     SELECT from_atco_code, to_atco_code
                     FROM transmodel_tracks
                     GROUP BY from_atco_code, to_atco_code
                     HAVING COUNT(*) > 1
-                    ORDER BY from_atco_code, to_atco_code
-                """
-                cursor.execute(query)
-                batch: list[tuple[str, str]] = []
-                for from_code, to_code in cursor:
-                    batch.append((from_code, to_code))
-                    if len(batch) >= batch_size:
-                        yield batch
-                        batch = []
-                if batch:
-                    yield batch
-        finally:
-            raw_conn.close()
+                    ORDER BY COUNT(*) DESC
+                    """
+                )
+            )
+            all_pairs = [(row[0], row[1]) for row in result]
+
+        for i in range(0, len(all_pairs), batch_size):
+            yield all_pairs[i : i + batch_size]
 
     def stream_similar_track_pairs_by_stop_points(
         self, stop_point_pairs: list[tuple[str, str]], threshold: float = 20.0

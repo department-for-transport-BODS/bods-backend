@@ -3,14 +3,14 @@ Functions to Create and upload zip
 """
 
 import zipfile
+from dataclasses import dataclass
 from io import BytesIO
 from typing import List, Tuple
-from dataclasses import dataclass
 
 from common_layer.aws.step import MapExecutionSucceeded
+from common_layer.exceptions.pipeline_exceptions import PipelineException
 from common_layer.s3 import S3
 from structlog.stdlib import get_logger
-
 
 log = get_logger()
 
@@ -125,16 +125,28 @@ def generate_zip_file(
     try:
         if not get_original_zip(s3_client, original_object_key, file_path):
             log.error(f"Failed to download source zip: {original_object_key}")
-            return (BytesIO(), 0, 0)
+            raise PipelineException(
+                f"Failed to download source zip: {original_object_key}",
+                "Generate output zipfile",
+            )
 
         zip_file_keys = [key.split("/")[-1] for key in file_keys]
-
         with zipfile.ZipFile(file_path, "r") as source_zip:
-            zip_file_list = source_zip.namelist()
+            zip_file_list: dict[str, str] = {
+                key.split("/")[-1]: key for key in source_zip.namelist()
+            }
             missing_files = [key for key in zip_file_keys if key not in zip_file_list]
             if missing_files:
-                log.error(f"Files not found in source zip: {missing_files}")
-                return (BytesIO(), 0, 0)
+                log.error(
+                    "Files found in the source zip file", source_files=zip_file_list
+                )
+                log.error(
+                    "Files not found in source zip: ", missing_files=missing_files
+                )
+                raise PipelineException(
+                    f"Files not found in source zip: {missing_files}",
+                    "Generate output zipfile",
+                )
 
             with zipfile.ZipFile(
                 zip_buffer,
@@ -145,7 +157,7 @@ def generate_zip_file(
                 for file_key in zip_file_keys:
                     try:
                         log.info(f"Copying {file_key} to new in-memory zip")
-                        file_content = source_zip.read(file_key)
+                        file_content = source_zip.read(zip_file_list[file_key])
                         output_zip.writestr(file_key, file_content)
                         counts.success += 1
                     except (zipfile.BadZipFile, IOError) as e:
@@ -160,15 +172,15 @@ def generate_zip_file(
         log.info(f"Successfully created in-memory zip with {len(file_keys)} files")
         return (zip_buffer, counts.success, counts.failure)
 
-    except zipfile.BadZipFile:
+    except zipfile.BadZipFile as e:
         log.error(f"Invalid zip file: {file_path}", exc_info=True)
-        return (BytesIO(), 0, 0)
+        raise e
     except Exception as e:  # pylint: disable=broad-exception-caught
         log.error(
             f"Unexpected error while processing {original_object_key}: {str(e)}",
             exc_info=True,
         )
-        return (BytesIO(), 0, 0)
+        raise e
 
 
 def process_files(

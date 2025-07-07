@@ -46,7 +46,7 @@ def consolidate_tracks(
         "fks_updated": 0,
     }
 
-    batch_size = 10000
+    batch_size = 5000
     for batch_idx, stop_point_pairs in enumerate(
         track_repo.stream_distinct_stop_points_with_multiple_rows(batch_size=batch_size)
     ):
