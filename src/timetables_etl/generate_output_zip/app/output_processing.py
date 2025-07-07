@@ -144,7 +144,7 @@ def generate_zip_file(
                     "Files not found in source zip: ", missing_files=missing_files
                 )
                 raise PipelineException(
-                    f"Files not found in source zip: {missing_files}",
+                    f"Total Files not found in source zip: {len(missing_files)}",
                     "Generate output zipfile",
                 )
 
