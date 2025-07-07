@@ -250,7 +250,7 @@ class TransmodelTrackRepo(BaseRepositoryWithId[TransmodelTracks]):
     ) -> Iterator[list[tuple[str, str]]]:
         """
         Fetch all distinct stop point pairs with more than one row,
-        and yield them in memory batches using session_scope.
+        and yield them in batches of batch_size
         """
         with self._db.session_scope() as session:
             result = session.execute(
