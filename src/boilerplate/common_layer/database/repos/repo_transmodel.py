@@ -7,7 +7,7 @@ from datetime import date
 from typing import Iterator, Literal
 
 from psycopg2.extensions import connection as PsycopgConnection
-from sqlalchemy import func, select, tuple_
+from sqlalchemy import func, select, text, tuple_
 from sqlalchemy.dialects.postgresql import insert
 from structlog.stdlib import get_logger
 
@@ -245,8 +245,32 @@ class TransmodelTrackRepo(BaseRepositoryWithId[TransmodelTracks]):
             tracks = {(row[1], row[2]): row[0] for row in results.fetchall()}
             return tracks
 
+    def stream_distinct_stop_points_with_multiple_rows(
+        self, batch_size: int = 10000
+    ) -> Iterator[list[tuple[str, str]]]:
+        """
+        Fetch all distinct stop point pairs with more than one row,
+        and yield them in batches of batch_size
+        """
+        with self._db.session_scope() as session:
+            result = session.execute(
+                text(
+                    """
+                    SELECT from_atco_code, to_atco_code
+                    FROM transmodel_tracks
+                    GROUP BY from_atco_code, to_atco_code
+                    HAVING COUNT(*) > 1
+                    ORDER BY COUNT(*) DESC
+                    """
+                )
+            )
+            all_pairs = [(row[0], row[1]) for row in result]
+
+        for i in range(0, len(all_pairs), batch_size):
+            yield all_pairs[i : i + batch_size]
+
     def stream_similar_track_pairs_by_stop_points(
-        self, threshold: float = 20.0
+        self, stop_point_pairs: list[tuple[str, str]], threshold: float = 20.0
     ) -> Iterator[tuple[tuple[str, str], list[tuple[int, int]]]]:
         """
         Stream similar pairs of (track_a, track_b) grouped by (from_atco_code, to_atco_code)
@@ -258,20 +282,32 @@ class TransmodelTrackRepo(BaseRepositoryWithId[TransmodelTracks]):
                 cursor.itersize = 10000
                 log.info("Fetching similar tracks")
                 table_name = self._model.__tablename__
+
+                # Prepare a VALUES list for the stop point pairs
+                stop_point_values = ",".join(
+                    cursor.mogrify("(%s, %s)", pair).decode("utf-8")
+                    for pair in stop_point_pairs
+                )
+
                 query = f"""
+                    WITH stop_pairs(from_code, to_code) AS (
+                        VALUES {stop_point_values}
+                    )
                     SELECT
-                    a.from_atco_code,
-                    a.to_atco_code,
-                    json_agg(
-                        json_build_object('track_a', a.id, 'track_b', b.id)
-                    ) AS similar_pairs
+                        a.from_atco_code,
+                        a.to_atco_code,
+                        json_agg(
+                            json_build_object('track_a', a.id, 'track_b', b.id)
+                        ) AS similar_pairs
                     FROM {table_name} a
                     JOIN {table_name} b
-                    ON a.from_atco_code = b.from_atco_code
-                    AND a.to_atco_code = b.to_atco_code
-                    AND a.id < b.id
+                        ON a.from_atco_code = b.from_atco_code
+                        AND a.to_atco_code = b.to_atco_code
+                        AND a.id < b.id
+                    JOIN stop_pairs sp
+                        ON a.from_atco_code = sp.from_code AND a.to_atco_code = sp.to_code
                     WHERE ST_HausdorffDistance(
-                        ST_Transform(a.geometry, 27700), -- Convert to BNG for meter comparison
+                        ST_Transform(a.geometry, 27700),
                         ST_Transform(b.geometry, 27700)
                     ) < %s
                     GROUP BY a.from_atco_code, a.to_atco_code
