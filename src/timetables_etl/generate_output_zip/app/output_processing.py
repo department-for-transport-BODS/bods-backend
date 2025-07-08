@@ -138,11 +138,11 @@ def generate_zip_file(
             missing_files = [key for key in zip_file_keys if key not in zip_file_list]
             if missing_files:
                 log.error(
-                    "Files found in the source zip file", source_files=zip_file_list
+                    "Not all expected files found in source zip",
+                    zip_file_list=zip_file_list,
+                    missing_files=missing_files,
                 )
-                log.error(
-                    "Files not found in source zip: ", missing_files=missing_files
-                )
+
                 raise PipelineException(
                     f"Total Files not found in source zip: {len(missing_files)}",
                     "Generate output zipfile",
