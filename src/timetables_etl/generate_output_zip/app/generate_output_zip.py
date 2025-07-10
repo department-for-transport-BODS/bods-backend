@@ -126,15 +126,23 @@ def process_map_results(
     output_key_base = construct_output_path(
         input_data.original_object_key, input_data.overwrite_input_dataset
     )
-    processing_result = process_and_upload_successful_files(
-        s3_client,
-        map_results.succeeded,
-        output_key_base,
-        input_data.original_object_key,
-    )
-    update_revision_hash(
-        db, input_data.dataset_revision_id, processing_result.file_hash
-    )
+    if not len(map_results.succeeded) == 0:
+        processing_result = process_and_upload_successful_files(
+            s3_client,
+            map_results.succeeded,
+            output_key_base,
+            input_data.original_object_key,
+        )
+        update_revision_hash(
+            db, input_data.dataset_revision_id, processing_result.file_hash
+        )
+    else:
+        processing_result = ProcessingResult(
+            successful_files=0,
+            failed_files=0,
+            output_location=input_data.original_object_key,
+            file_hash="",
+        )
 
     revision = update_task_and_revision_status(
         db,
