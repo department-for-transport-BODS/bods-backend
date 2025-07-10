@@ -10,18 +10,25 @@ if TYPE_CHECKING:
 log = get_logger()
 
 
-def send_email(emails: list[str], step: str, subject: str, content: str) -> bool:
+def send_email(
+    emails: list[str],
+    step: str,
+    subject: str,
+    content: str = "",
+    is_html: bool = False,
+) -> bool:
     """Send Email for serverless lambdas for ETL pipeline, AWS SES service will
     be utilised in order to send the emails
 
     Args:
-        emails (list[str]): list of recepients email ids 
+        emails (list[str]): list of recepients email ids
         step (str): From which step did we triggered the email from
         subject (str): Subject content of the email
-        content (str): Body content of the email
+        content (str): Body content of the email can be html or text content
+        is_html (bool): true is content is html content
 
     Returns:
-        bool: Returns true always, because if failed to send an email, it should 
+        bool: Returns true always, because if failed to send an email, it should
         log the error but shouldn't raise an exception
     """
     try:
@@ -29,6 +36,10 @@ def send_email(emails: list[str], step: str, subject: str, content: str) -> bool
         from_email = environ.get(
             "DEFAULT_FROM_EMAIL", "Bus Open Data Service <noreply@bods.com>"
         )
+
+        content_type = "Text"
+        if is_html:
+            content_type = "Html"
 
         ses_client.send_email(
             Source=from_email,
@@ -38,7 +49,7 @@ def send_email(emails: list[str], step: str, subject: str, content: str) -> bool
             Message={
                 "Subject": {"Data": subject, "Charset": "UTF-8"},
                 "Body": {
-                    "Text": {"Data": content, "Charset": "UTF-8"},
+                    content_type: {"Data": content, "Charset": "UTF-8"},
                 },
             },
         )
