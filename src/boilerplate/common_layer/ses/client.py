@@ -38,7 +38,7 @@ def send_email(
         log the error but shouldn't raise an exception
     """
     try:
-        ses_client: SESClient = boto3.client(  # type: ignore
+        ses_client: SESClient = boto3.client(
             "ses", region_name=environ.get("AWS_REGION", "eu-west-2")
         )
         from_email = environ.get(
