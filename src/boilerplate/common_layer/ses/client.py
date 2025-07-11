@@ -3,15 +3,12 @@ Email client for ETL Serverless lambdas
 """
 
 from os import environ
-from typing import TYPE_CHECKING
 
 import boto3
 from botocore.exceptions import ClientError
 from common_layer.exceptions.exception_email import SESEmailException
+from mypy_boto3_ses import SESClient
 from structlog.stdlib import get_logger
-
-if TYPE_CHECKING:
-    from mypy_boto3_ses import SESClient
 
 log = get_logger()
 
@@ -38,7 +35,7 @@ def send_email(
         log the error but shouldn't raise an exception
     """
     try:
-        ses_client: SESClient = boto3.client(
+        ses_client: SESClient = boto3.client(  # type: ignore
             "ses", region_name=environ.get("AWS_REGION", "eu-west-2")
         )
         from_email = environ.get(
@@ -61,6 +58,7 @@ def send_email(
                 },
             },
         )
+        log.info("Email sent successfully from server less.")
     except ClientError:
         log.error(
             "botocore exceptions error ocurred while sending an email for ETL failure for step: ",
