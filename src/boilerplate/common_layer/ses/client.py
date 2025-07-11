@@ -6,6 +6,8 @@ from os import environ
 from typing import TYPE_CHECKING
 
 import boto3
+from botocore.exceptions import ClientError
+from common_layer.exceptions.exception_email import SESEmailException
 from structlog.stdlib import get_logger
 
 if TYPE_CHECKING:
@@ -59,7 +61,13 @@ def send_email(
                 },
             },
         )
-    except Exception:
+    except ClientError:
+        log.error(
+            "botocore exceptions error ocurred while sending an email for ETL failure for step: ",
+            step=step,
+            exc_info=True,
+        )
+    except SESEmailException:
         log.error(
             "Error ocurred while sending an email for ETL failure for step: ",
             step=step,
