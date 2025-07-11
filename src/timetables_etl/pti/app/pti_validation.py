@@ -21,6 +21,7 @@ from common_layer.dynamodb.client.naptan_stop_points import (
 from common_layer.dynamodb.data_manager import FileProcessingDataManager
 from common_layer.dynamodb.models import TXCFileAttributes
 from common_layer.s3 import S3
+from common_layer.ses.client import send_email
 from common_layer.xml.txc.models import TXCData
 from common_layer.xml.txc.parser.parser_txc import (
     TXCParserConfig,
@@ -125,5 +126,19 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, 
     )
     task_data = get_task_data(parsed_event, xml_file_object, db_clients)
     run_validation(task_data, db_clients)
+
+    send_email(
+        ["amitsingh27@kpmg.com"],
+        "PTI Validation",
+        "PTI Validation for the step has failed",
+        "Hi This is a test email",
+    )
+    send_email(
+        ["amitsingh27@kpmg.com"],
+        "PTI Validation",
+        "PTI Validation for the step has failed",
+        "<p>Hi</p> <p>This is a test <b>email</b></p>",
+        True,
+    )
 
     return {"statusCode": 200}

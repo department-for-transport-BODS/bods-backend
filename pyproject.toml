@@ -107,6 +107,7 @@ aws-lambda-powertools = { extras = ["all"], version = "^3.4.0" }
 pytest-mock = "^3.11.1"
 textual = "^2.1.2"
 ddtrace = "^3.2.1"
+mypy-boto3-ses = "^1.39.0"
 
 [build-system]
 requires = ["poetry-core"]
