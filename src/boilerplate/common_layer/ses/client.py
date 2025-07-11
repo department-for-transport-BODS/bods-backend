@@ -37,9 +37,9 @@ def send_email(
             "DEFAULT_FROM_EMAIL", "Bus Open Data Service <noreply@bods.com>"
         )
 
-        content_type = "Text"
+        content_type: str = "Text"
         if is_html:
-            content_type = "Html"
+            content_type: str = "Html"
 
         ses_client.send_email(
             Source=from_email,
@@ -48,7 +48,7 @@ def send_email(
             },
             Message={
                 "Subject": {"Data": subject, "Charset": "UTF-8"},
-                "Body": {
+                "Body": {  # type: ignore
                     content_type: {"Data": content, "Charset": "UTF-8"},
                 },
             },
