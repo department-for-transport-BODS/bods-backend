@@ -3,6 +3,7 @@ GovUkNotifyEmail class to send emails via Gov UK portal
 """
 
 from os import environ
+from typing import Any
 
 from common_layer.exceptions.exception_email import GovUkEmailException
 from common_layer.notification.base import NotificationBase
@@ -27,10 +28,14 @@ class GovUKNotifyEmail(NotificationBase):
         )
 
     def _send_mail(
-        self, feature: str, template_id: str, email: str, subject: str, **kwargs
+        self,
+        feature: str,
+        template_id: str,
+        email: str,
+        **kwargs: dict[str, Any],
     ) -> None:
         try:
-            self._notification_client.send_email_notification(
+            self._notification_client.send_email_notification(  # type: ignore
                 email_address=email,
                 template_id=template_id,
                 personalisation=kwargs,
