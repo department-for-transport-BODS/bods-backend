@@ -54,7 +54,7 @@ class INotifications(Protocol):
 
     def send_custom_email(
         self,
-        template: str,
+        template_id: str,
         subject: str,
         body: str,
         contact_email: str,
