@@ -6,7 +6,7 @@ be sent from the server less
 import datetime
 from abc import abstractmethod
 from os import environ
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 from common_layer.notification.emails import data_end_point_error_publishing
 from common_layer.notification.local_time import localize_datetime_and_convert_to_string
@@ -28,8 +28,12 @@ class NotificationBase:
 
     @abstractmethod
     def _send_mail(
-        self, feature: str, template_id: str, email: str, subject: str, **kwargs
-    ):
+        self,
+        feature: str,
+        template_id: str,
+        email: str,
+        **kwargs: dict[str, Any],
+    ) -> None:
         """Send email method, must be implemented by the inheriting class
 
         Args:
@@ -46,11 +50,11 @@ class NotificationBase:
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def send_data_endpoint_validation_error_notification(
         self,
-        contact_email,
+        contact_email: str,
         published_at: Optional[datetime.datetime],
         with_pti_violations: bool = False,
-        **kwargs,
-    ):
+        **kwargs: dict[str, Any],
+    ) -> None:
         """Sends notification to Publisher that the Publication has validation errors
         Args:
             dataset_id: id (primary key) of the dataset model
@@ -70,7 +74,7 @@ class NotificationBase:
             f"Dataset<id={kwargs['dataset_id']}> has entered error state due to validation"
         )
         subject = "Error publishing data set"
-        published_on = (
+        published_on: str = (
             "Not published"
             if published_at is None
             else localize_datetime_and_convert_to_string(published_at)
@@ -92,8 +96,8 @@ class NotificationBase:
         contact_email: str,
         published_at: Optional[datetime.datetime],
         with_pti_violations: bool = False,
-        **kwargs,
-    ):
+        **kwargs: dict[str, Any],
+    ) -> None:
         """Sends notification to Agent that the Publication has validation errors
         Args:
             dataset_id: id (primary key) of the dataset model

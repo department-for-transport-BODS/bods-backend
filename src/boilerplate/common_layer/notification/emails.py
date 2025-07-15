@@ -3,14 +3,15 @@
 from typing import Any, cast
 
 
-def data_end_point_error_publishing(**kwargs: dict[str, Any]) -> str:
+def data_end_point_error_publishing(
+    published_time: str, user_type: str, **kwargs: dict[str, Any]
+) -> str:
     """Prepares the content of email
 
     Returns:
         str: Email prepared content
     """
     dataset_type: int = cast(int, kwargs.get("dataset_type", 0))
-    user_type: int = cast(int, kwargs.get("user_type", 0))
     content = "Hello, \n\n"
     content += (
         "The following data set has failed to upload on the Bus Open Data "
@@ -20,7 +21,7 @@ def data_end_point_error_publishing(**kwargs: dict[str, Any]) -> str:
         content += " supplied in the Validation report"
     content += "\n\n"
 
-    if user_type == 5:
+    if user_type == "5":
         content += f"Operator: { kwargs['organisation'] } \n"
         content += f"Data set/ feed: {kwargs['feed_name']} \n"
         content += f"Data set/ feed id: {kwargs['feed_id']}\n"
@@ -29,7 +30,7 @@ def data_end_point_error_publishing(**kwargs: dict[str, Any]) -> str:
         content += f"Data set ID: {kwargs['feed_id']}\n"
 
     content += f"Short Description: {kwargs['feed_short_description']} \n"
-    content += f"Published: {kwargs['published_time']} \n"
+    content += f"Published: {published_time} \n"
     content += f"Comments: {kwargs['comments']} \n"
     content += f"Link to data set: {kwargs['link']} \n"
     if dataset_type == 1:
