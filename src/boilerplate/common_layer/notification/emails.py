@@ -1,22 +1,26 @@
 """Email content for the emails being sent as part of the ETL process"""
 
+from typing import Any, cast
 
-def data_end_point_error_publishing(**kwargs) -> str:
+
+def data_end_point_error_publishing(**kwargs: dict[str, Any]) -> str:
     """Prepares the content of email
 
     Returns:
         str: Email prepared content
     """
+    dataset_type: int = cast(int, kwargs.get("dataset_type", 0))
+    user_type: int = cast(int, kwargs.get("user_type", 0))
     content = "Hello, \n\n"
     content += (
         "The following data set has failed to upload on the Bus Open Data "
         "Service due to validation errors"
     )
-    if kwargs["dataset_type"] == 1:
+    if dataset_type == 1:
         content += " supplied in the Validation report"
     content += "\n\n"
 
-    if kwargs["user_type"] == "5":
+    if user_type == 5:
         content += f"Operator: { kwargs['organisation'] } \n"
         content += f"Data set/ feed: {kwargs['feed_name']} \n"
         content += f"Data set/ feed id: {kwargs['feed_id']}\n"
@@ -28,7 +32,7 @@ def data_end_point_error_publishing(**kwargs) -> str:
     content += f"Published: {kwargs['published_time']} \n"
     content += f"Comments: {kwargs['comments']} \n"
     content += f"Link to data set: {kwargs['link']} \n"
-    if kwargs["dataset_type"] == 1:
+    if dataset_type == 1:
         content += f"The validation report is available here: {kwargs['report_link']}"
     content += (
         "Action required: \n"
