@@ -151,10 +151,6 @@ class NotificationBase:
         """
         logger.debug(f"sending custom email with template id: {template_id}")
 
-        self._send_mail(
-            "custom_email",
-            template_id,
-            contact_email,
-            subject=subject,
-            body=body,
-        )
+        kwargs: dict[str, Any] = {"subject": subject, "body": body}
+
+        self._send_mail("custom_email", template_id, contact_email, **kwargs)
