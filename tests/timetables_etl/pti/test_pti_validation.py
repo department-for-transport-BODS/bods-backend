@@ -42,7 +42,6 @@ class MockImports(Protocol):
     PTIValidationService: MagicMock
     file_processing: MagicMock
     parse_txc_file: MagicMock
-    send_email: MagicMock
 
 
 @pytest.fixture(autouse=True)
@@ -76,7 +75,6 @@ def mock_imports() -> Generator[MockImports, None, None]:
             "common_layer.db.file_processing_result.file_processing_result_to_db"
         ),
         "parse_txc_file": patch("pti.app.pti_validation.parse_txc_from_element"),
-        "send_email": patch("pti.app.pti_validation.send_email"),
     }
 
     mocks: dict[str, MagicMock | AsyncMock] = {}
@@ -146,7 +144,6 @@ def test_lambda_handler_success(
 
     mock_imports.S3.return_value.get_object.return_value = s3_file
     mock_imports.parse_txc_file.return_value = txc_data
-    mock_imports.send_email.return_value = True
 
     result = lambda_handler(event, lambda_context)
     assert result == {"statusCode": expected_status}
@@ -204,7 +201,6 @@ def test_lambda_handler_error(
 
     mock_imports.S3.return_value.get_object.return_value = s3_file
     mock_imports.parse_txc_file.return_value = txc_data
-    mock_imports.send_email.return_value = True
 
     with pytest.raises(PipelineException):
         lambda_handler(event, lambda_context)
