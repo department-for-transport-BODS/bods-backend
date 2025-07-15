@@ -1,3 +1,7 @@
+"""
+Notification module initialisation for email integration
+"""
+
 from common_layer.notification.govuk_notify import (
     GovUKNotifyEmail,
 )

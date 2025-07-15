@@ -1,3 +1,8 @@
+"""
+Notification base class for writting all the emails implementations which can
+be sent from the server less
+"""
+
 import datetime
 from abc import abstractmethod
 from os import environ
@@ -17,34 +22,52 @@ TEMPLATE_LOOKUP: Dict[str, str] = {
 
 
 class NotificationBase:
-    @property
-    @abstractmethod
-    def templates(self) -> dict:
-        raise NotImplementedError
+    """
+    Notification base class with methods implementation
+    """
 
     @abstractmethod
-    def _send_mail(self, template: str, email: str, subject: str, **kwargs):
+    def _send_mail(
+        self, feature: str, template_id: str, email: str, subject: str, **kwargs
+    ):
+        """Send email method, must be implemented by the inheriting class
+
+        Args:
+            feature (str): Name of the email
+            template_id (str): id of the template in case
+            email (str): email id of receiver
+            subject (str): subject of the email
+
+        Raises:
+            NotImplementedError: Exception if not implemented
+        """
         raise NotImplementedError
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def send_data_endpoint_validation_error_notification(
         self,
-        dataset_id: int,
-        dataset_name: str,
-        short_description: str,
-        dataset_type: int,
+        contact_email,
         published_at: Optional[datetime.datetime],
-        comments: str,
-        feed_detail_link: str,
-        report_link: str,
-        contact_email: str,
         with_pti_violations: bool = False,
+        **kwargs,
     ):
+        """Sends notification to Publisher that the Publication has validation errors
+        Args:
+            dataset_id: id (primary key) of the dataset model
+            dataset_name: name assigned to the revision
+            short_description: short description of the revision
+            dataset_type: type of dataset: avl, fares or timetables
+            published_at: date and time of publish
+            comments: any comments on the revision
+            feed_detail_link: link to the feed-detail or revision-publish page
+            contact_email: email address of agent working on behalf of organisation
+            with_pti_violations: boolean to indicate whether dataset has pti violations
+        """
         feature = "OPERATOR_PUBLISH_ERROR"
         template_id = environ.get("GENERIC_TEMPLATE_ID", "-")
         logger.debug(
             f"[notify_{feature.lower()}] notifying organisation staff/admin dataset "
-            f"Dataset<id={dataset_id}> has entered error state due to validation"
+            f"Dataset<id={kwargs['dataset_id']}> has entered error state due to validation"
         )
         subject = "Error publishing data set"
         published_on = (
@@ -53,104 +76,80 @@ class NotificationBase:
             else localize_datetime_and_convert_to_string(published_at)
         )
         body = data_end_point_error_publishing(
-            feed_name=dataset_name,
-            feed_id=dataset_id,
-            feed_short_description=short_description,
-            published_time=published_on,
-            comments=comments,
-            link=feed_detail_link,
-            report_link=report_link,
-            dataset_type=dataset_type,
-            user_type="organisation",
+            published_time=published_on, user_type="organisation", **kwargs
         )
 
-        self._send_mail(
-            feature,
-            template_id,
-            contact_email,
-            subject=subject,
-            body=body,
-            feed_name=dataset_name,
-            feed_id=dataset_id,
-            feed_short_description=short_description,
-            published_time=published_on,
-            comments=comments,
-            link=feed_detail_link,
-            report_link=report_link,
-            dataset_type=dataset_type,
-            with_pti_violations=with_pti_violations,
-        )
+        kwargs["body"] = body
+        kwargs["subject"] = subject
+        kwargs["with_pti_violations"] = with_pti_violations
+        kwargs["published_on"] = published_on
+
+        self._send_mail(feature, template_id, contact_email, **kwargs)
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def send_agent_data_endpoint_validation_error_notification(
         self,
-        dataset_id: int,
-        dataset_name: str,
-        short_description: str,
-        dataset_type: int,
-        published_at: Optional[datetime.datetime],
-        operator_name: str,
-        comments: str,
-        feed_detail_link: str,
-        report_link: str,
         contact_email: str,
+        published_at: Optional[datetime.datetime],
         with_pti_violations: bool = False,
+        **kwargs,
     ):
+        """Sends notification to Agent that the Publication has validation errors
+        Args:
+            dataset_id: id (primary key) of the dataset model
+            dataset_name: name assigned to the revision
+            short_description: short description of the revision
+            dataset_type: type of dataset: avl, fares or timetables
+            published_at: date and time of publish
+            operator_name: name of the operator that published the dataset
+            comments: any comments on the revision
+            feed_detail_link: link to the feed-detail or revision-publish page
+            contact_email: email address of agent working on behalf of organisation
+            with_pti_violations: boolean to indicate whether dataset has pti violations
+        """
         feature = "AGENT_PUBLISH_ERROR"
         template_id = environ.get("GENERIC_TEMPLATE_ID", "-")
         logger.debug(
             f"[notify_{feature.lower()}] notifying organisation agent dataset "
-            f"Dataset<id={dataset_id}> has entered error state due to validation"
+            f"Dataset<id={kwargs['dataset_id']}> has entered error state due to validation"
         )
-        subject = "Error publishing data set"
+        kwargs["subject"] = "Error publishing data set"
 
-        if published_at is None:
-            published_on = "Not published"
-        else:
-            published_on = localize_datetime_and_convert_to_string(published_at)
-
-        body = data_end_point_error_publishing(
-            feed_name=dataset_name,
-            feed_id=dataset_id,
-            feed_short_description=short_description,
-            published_time=published_on,
-            comments=comments,
-            link=feed_detail_link,
-            report_link=report_link,
-            dataset_type=dataset_type,
-            user_type="agent",
+        published_on = (
+            "Not published"
+            if published_at is None
+            else localize_datetime_and_convert_to_string(published_at)
         )
 
-        self._send_mail(
-            feature,
-            template_id,
-            contact_email,
-            subject=subject,
-            body=body,
-            feed_name=dataset_name,
-            feed_id=dataset_id,
-            organisation=operator_name,
-            feed_short_description=short_description,
-            published_time=published_on,
-            comments=comments,
-            link=feed_detail_link,
-            report_link=report_link,
-            dataset_type=dataset_type,
-            with_pti_violations=with_pti_violations,
+        kwargs["body"] = data_end_point_error_publishing(
+            published_time=published_on, user_type="agent", **kwargs
         )
+        kwargs["with_pti_violations"] = with_pti_violations
+        kwargs["published_on"] = published_on
+
+        self._send_mail(feature, template_id, contact_email, **kwargs)
 
     @validate_call
     def send_custom_email(
         self,
-        template: str,
+        template_id: str,
         subject: str,
         body: str,
         contact_email: str,
     ):
-        logger.debug(f"sending custom email with template id: {template}")
+        """Method for sending the custom emails
+
+        Args:
+            template_id (str): Template id
+            subject (str): Subject of email
+            body (str): body content of email
+            contact_email (str): Receivers email id
+        """
+        logger.debug(f"sending custom email with template id: {template_id}")
 
         self._send_mail(
-            template,
+            "custom_email",
+            template_id,
             contact_email,
             subject=subject,
             body=body,

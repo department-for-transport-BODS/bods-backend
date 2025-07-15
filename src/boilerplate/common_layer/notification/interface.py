@@ -13,16 +13,10 @@ class INotifications(Protocol):
 
     def send_data_endpoint_validation_error_notification(
         self,
-        dataset_id: int,
-        dataset_name: str,
-        short_description: str,
-        dataset_type: int,
+        contact_email,
         published_at: datetime.datetime,
-        comments: str,
-        feed_detail_link: str,
-        report_link: str,
-        contact_email: str,
         with_pti_violations: bool = False,
+        **kwargs
     ):
         """Sends notification to Publisher that the Publication has validation errors
         Args:
@@ -36,21 +30,13 @@ class INotifications(Protocol):
             contact_email: email address of agent working on behalf of organisation
             with_pti_violations: boolean to indicate whether dataset has pti violations
         """
-        ...
 
     def send_agent_data_endpoint_validation_error_notification(
         self,
-        dataset_id: int,
-        dataset_name: str,
-        short_description: str,
-        dataset_type: int,
+        contact_email,
         published_at: datetime.datetime,
-        operator_name: str,
-        comments: str,
-        feed_detail_link: str,
-        report_link: str,
-        contact_email: str,
         with_pti_violations: bool = False,
+        **kwargs
     ):
         """Sends notification to Agent that the Publication has validation errors
         Args:
@@ -65,7 +51,6 @@ class INotifications(Protocol):
             contact_email: email address of agent working on behalf of organisation
             with_pti_violations: boolean to indicate whether dataset has pti violations
         """
-        ...
 
     def send_custom_email(
         self,
@@ -81,4 +66,3 @@ class INotifications(Protocol):
             body: body of email
             contact_email: email address of datasets key contact
         """
-        ...

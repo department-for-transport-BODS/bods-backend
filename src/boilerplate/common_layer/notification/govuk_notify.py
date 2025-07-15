@@ -3,7 +3,6 @@ GovUkNotifyEmail class to send emails via Gov UK portal
 """
 
 from os import environ
-from typing import Any, Dict
 
 from common_layer.exceptions.exception_email import GovUkEmailException
 from common_layer.notification.base import NotificationBase
@@ -14,6 +13,13 @@ log = get_logger()
 
 
 class GovUKNotifyEmail(NotificationBase):
+    """Gov UK implementation for email, inherits the notification base
+    and implements send email method
+
+    Args:
+        NotificationBase (INotifications): Notification definitions
+    """
+
     def __init__(self):
         super().__init__()
         self._notification_client = NotificationsAPIClient(
