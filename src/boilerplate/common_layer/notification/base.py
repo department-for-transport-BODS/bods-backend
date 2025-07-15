@@ -32,7 +32,7 @@ class NotificationBase:
         feature: str,
         template_id: str,
         email: str,
-        **kwargs: dict[str, Any],
+        **kwargs: Any,
     ) -> None:
         """Send email method, must be implemented by the inheriting class
 
@@ -53,7 +53,7 @@ class NotificationBase:
         contact_email: str,
         published_at: Optional[datetime.datetime],
         with_pti_violations: bool = False,
-        **kwargs: dict[str, Any],
+        **kwargs: Any,
     ) -> None:
         """Sends notification to Publisher that the Publication has validation errors
         Args:
@@ -80,7 +80,7 @@ class NotificationBase:
             else localize_datetime_and_convert_to_string(published_at)
         )
         body = data_end_point_error_publishing(
-            published_time=published_on, user_type="organisation", **kwargs
+            published_time=published_on, user_type="organisation", kwargs=kwargs
         )
 
         kwargs["body"] = body
@@ -96,7 +96,7 @@ class NotificationBase:
         contact_email: str,
         published_at: Optional[datetime.datetime],
         with_pti_violations: bool = False,
-        **kwargs: dict[str, Any],
+        **kwargs: Any,
     ) -> None:
         """Sends notification to Agent that the Publication has validation errors
         Args:

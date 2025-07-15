@@ -4,7 +4,7 @@ from typing import Any, cast
 
 
 def data_end_point_error_publishing(
-    published_time: str, user_type: str, **kwargs: dict[str, Any]
+    published_time: str, user_type: str, kwargs: Any
 ) -> str:
     """Prepares the content of email
 

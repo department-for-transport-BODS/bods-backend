@@ -16,7 +16,7 @@ class INotifications(Protocol):
         contact_email: str,
         published_at: datetime.datetime,
         with_pti_violations: bool = False,
-        **kwargs: dict[str, Any]
+        **kwargs: Any
     ):
         """Sends notification to Publisher that the Publication has validation errors
         Args:
@@ -36,7 +36,7 @@ class INotifications(Protocol):
         contact_email: str,
         published_at: datetime.datetime,
         with_pti_violations: bool = False,
-        **kwargs: dict[str, Any]
+        **kwargs: Any
     ):
         """Sends notification to Agent that the Publication has validation errors
         Args:
