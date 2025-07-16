@@ -246,7 +246,7 @@ class TransmodelTrackRepo(BaseRepositoryWithId[TransmodelTracks]):
             return tracks
 
     def stream_distinct_stop_points_with_multiple_rows(
-        self, batch_size: int = 10000
+        self, batch_size: int = 1000
     ) -> Iterator[list[tuple[str, str]]]:
         """
         Fetch all distinct stop point pairs with more than one row,
@@ -292,24 +292,25 @@ class TransmodelTrackRepo(BaseRepositoryWithId[TransmodelTracks]):
                 query = f"""
                     WITH stop_pairs(from_code, to_code) AS (
                         VALUES {stop_point_values}
-                    )
+                    ),
+                    transformed AS (
+                        SELECT id, from_atco_code, to_atco_code,
+                                ST_Transform(geometry, 27700) AS geom_27700
+                        FROM {table_name} a JOIN stop_pairs sp
+                        ON a.from_atco_code = sp.from_code AND a.to_atco_code = sp.to_code
+                        )
                     SELECT
                         a.from_atco_code,
                         a.to_atco_code,
                         json_agg(
                             json_build_object('track_a', a.id, 'track_b', b.id)
                         ) AS similar_pairs
-                    FROM {table_name} a
-                    JOIN {table_name} b
+                    FROM transformed a
+                    JOIN transformed b
                         ON a.from_atco_code = b.from_atco_code
                         AND a.to_atco_code = b.to_atco_code
                         AND a.id < b.id
-                    JOIN stop_pairs sp
-                        ON a.from_atco_code = sp.from_code AND a.to_atco_code = sp.to_code
-                    WHERE ST_HausdorffDistance(
-                        ST_Transform(a.geometry, 27700),
-                        ST_Transform(b.geometry, 27700)
-                    ) < %s
+                    WHERE ST_HausdorffDistance(a.geom_27700, b.geom_27700) < %s
                     GROUP BY a.from_atco_code, a.to_atco_code
                     ORDER BY a.from_atco_code, a.to_atco_code
                 """
