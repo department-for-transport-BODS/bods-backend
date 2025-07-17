@@ -77,9 +77,8 @@ def main(
         dataset_type=dataset_type,
         comments=comments,
         feed_detail_link=feed_detail_link,
-        dry_run=dry_run,
-        link=dataset_link,
         report_link=dataset_link,
+        dry_run=dry_run,
     )
 
 

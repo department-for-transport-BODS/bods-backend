@@ -32,7 +32,7 @@ def data_end_point_error_publishing(
     content += f"Short Description: {kwargs['feed_short_description']} \n"
     content += f"Published: {published_time} \n"
     content += f"Comments: {kwargs['comments']} \n"
-    content += f"Link to data set: {kwargs['link']} \n"
+    content += f"Link to data set: {kwargs['feed_detail_link']} \n"
     if dataset_type == 1:
         content += f"The validation report is available here: {kwargs['report_link']}"
     content += (
