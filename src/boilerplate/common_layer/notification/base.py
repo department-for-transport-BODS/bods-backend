@@ -57,9 +57,9 @@ class NotificationBase:
     ) -> None:
         """Sends notification to Publisher that the Publication has validation errors
         Args:
-            dataset_id: id (primary key) of the dataset model
+            feed_id: id (primary key) of the dataset model
             dataset_name: name assigned to the revision
-            short_description: short description of the revision
+            feed_short_description: short description of the revision
             dataset_type: type of dataset: avl, fares or timetables
             published_at: date and time of publish
             comments: any comments on the revision
