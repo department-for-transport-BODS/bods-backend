@@ -100,9 +100,9 @@ class NotificationBase:
     ) -> None:
         """Sends notification to Agent that the Publication has validation errors
         Args:
-            dataset_id: id (primary key) of the dataset model
+            feed_id: id (primary key) of the dataset model
             dataset_name: name assigned to the revision
-            short_description: short description of the revision
+            feed_short_description: short description of the revision
             dataset_type: type of dataset: avl, fares or timetables
             published_at: date and time of publish
             operator_name: name of the operator that published the dataset
@@ -115,7 +115,7 @@ class NotificationBase:
         template_id = environ.get("GENERIC_TEMPLATE_ID", "-")
         logger.debug(
             f"[notify_{feature.lower()}] notifying organisation agent dataset "
-            f"Dataset<id={kwargs['dataset_id']}> has entered error state due to validation"
+            f"Dataset<id={kwargs['feed_id']}> has entered error state due to validation"
         )
         kwargs["subject"] = "Error publishing data set"
 
@@ -126,7 +126,7 @@ class NotificationBase:
         )
 
         kwargs["body"] = data_end_point_error_publishing(
-            published_time=published_on, user_type="agent", **kwargs
+            published_time=published_on, user_type="agent", kwargs=kwargs
         )
         kwargs["with_pti_violations"] = with_pti_violations
         kwargs["published_on"] = published_on

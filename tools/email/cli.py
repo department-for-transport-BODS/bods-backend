@@ -81,6 +81,21 @@ def main(
         dry_run=dry_run,
     )
 
+    notification.send_agent_data_endpoint_validation_error_notification(
+        contact_email,
+        published_at,
+        with_pti_violations=with_pti_violations,
+        feed_id=dataset_id,
+        feed_name=dataset_name,
+        feed_short_description=short_description,
+        dataset_type=dataset_type,
+        comments=comments,
+        feed_detail_link=feed_detail_link,
+        report_link=dataset_link,
+        dry_run=dry_run,
+        operator_name="operator-name",
+    )
+
 
 if __name__ == "__main__":
     app()
