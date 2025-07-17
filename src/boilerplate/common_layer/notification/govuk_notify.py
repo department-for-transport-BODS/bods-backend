@@ -35,11 +35,22 @@ class GovUKNotifyEmail(NotificationBase):
         **kwargs: dict[str, Any],
     ) -> None:
         try:
-            self._notification_client.send_email_notification(  # type: ignore
-                email_address=email,
-                template_id=template_id,
-                personalisation=kwargs,
-            )
+            dry_run = kwargs.get("dry_run", False)
+            if dry_run:
+                log.debug(
+                    "Following args were recevied",
+                    kwargs=kwargs,
+                    email=email,
+                    template_id=template_id,
+                    feature=feature,
+                )
+            else:
+                self._notification_client.send_email_notification(  # type: ignore
+                    email_address=email,
+                    template_id=template_id,
+                    personalisation=kwargs,
+                )
+
         except GovUkEmailException:
             name = feature.lower()
             log.error(

@@ -71,7 +71,7 @@ class NotificationBase:
         template_id = environ.get("GENERIC_TEMPLATE_ID", "-")
         logger.debug(
             f"[notify_{feature.lower()}] notifying organisation staff/admin dataset "
-            f"Dataset<id={kwargs['dataset_id']}> has entered error state due to validation"
+            f"Dataset<id={kwargs['feed_id']}> has entered error state due to validation"
         )
         subject = "Error publishing data set"
         published_on: str = (
