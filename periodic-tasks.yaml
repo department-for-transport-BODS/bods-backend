@@ -233,7 +233,7 @@ Resources:
       DefinitionUri: './src/consolidate_tracks.statemachine.json'
       DefinitionSubstitutions:
         ConsolidateTracksBatcherLambdaArn: !GetAtt ConsolidateTracksBatcherLambda.Arn
-        ConsolidateTracksUpdaterLambdaArn: !GetAtt ConsolidateTracksBatcherLambda.Arn
+        ConsolidateTracksUpdaterLambdaArn: !GetAtt ConsolidateTracksUpdaterLambda.Arn
         S3BucketName: !Sub 'bodds-${Environment}'
 
   ##########################
@@ -671,7 +671,7 @@ Resources:
               - Effect: Allow
                 Action: lambda:InvokeFunction
                 Resource:
-                  - !GetAtt ConsolidateTracksBatcher.Arn
+                  - !GetAtt ConsolidateTracksBatcherLambda.Arn
               - Effect: Allow
                 Action: lambda:InvokeFunction
                 Resource:
