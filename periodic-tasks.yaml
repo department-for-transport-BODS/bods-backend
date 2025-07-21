@@ -230,25 +230,11 @@ Resources:
         #         "threshold_meters": "20.0",
         #         "dry_run": true
         #       }
-      Definition:
-        StartAt: ConsolidateTracks
-        States:
-          ConsolidateTracks:
-            Type: Task
-            Resource: !GetAtt ConsolidateTracksLambda.Arn
-            Parameters:
-              'threshold_meters.$': '$.threshold_meters'
-              'dry_run.$': '$.dry_run'
-            Retry:
-              - ErrorEquals: ['Lambda.Unknown']
-                IntervalSeconds: 0
-                MaxAttempts: 3
-            Catch:
-              - ErrorEquals: ['States.TaskFailed']
-                Next: FailureState
-            End: true
-          FailureState:
-            Type: Fail
+      DefinitionUri: './src/consolidate_tracks.statemachine.json'
+      DefinitionSubstitutions:
+        ConsolidateTracksBatcherLambdaArn: !GetAtt ConsolidateTracksBatcherLambda.Arn
+        ConsolidateTracksUpdaterLambdaArn: !GetAtt ConsolidateTracksBatcherLambda.Arn
+        S3BucketName: !Sub 'bodds-${Environment}'
 
   ##########################
   #### LAMBDA FUNCTIONS ####
@@ -412,14 +398,41 @@ Resources:
       Timeout: 900
       MemorySize: 1280
 
-  ConsolidateTracksLambda:
+  ConsolidateTracksBatcherLambda:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-lambda'
+      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-batcher-lambda'
       Description: Consolidate duplicated Tracks data in the BODS DB
-      CodeUri: ./src/periodic_tasks/consolidate_tracks
-      Handler: app.handler_consolidate_tracks.lambda_handler
-      Role: !GetAtt ConsolidateTracksLambdaExecutionRole.Arn
+      CodeUri: ./src/periodic_tasks/consolidate_tracks_batcher
+      Handler: app.handler_consolidate_tracks_batcher.lambda_handler
+      Role: !GetAtt ConsolidateTracksBatcherExecutionRole.Arn
+      Layers:
+        - !Ref BoilerplateLambdaLayerArn
+      Environment:
+        Variables:
+          POSTGRES_HOST: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
+            - !Ref RdsDbHostAddr
+          POSTGRES_PORT: !Ref RdsDbPort
+          POSTGRES_DB: !If
+            - IsNotLocal
+            - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
+            - !Ref RdsDbName
+          POSTGRES_USER: !If
+            - IsNotLocal
+            - !Sub '{{resolve:secretsmanager:bodds/${Environment}/rds/user/bodds_rw:SecretString:username}}'
+            - !Ref RdsDbUsername
+      Timeout: 900
+
+  ConsolidateTracksUpdaterLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-updater-lambda'
+      Description: Consolidate duplicated Tracks data in the BODS DB
+      CodeUri: ./src/periodic_tasks/consolidate_tracks_updater
+      Handler: app.handler_consolidate_tracks_updater.lambda_handler
+      Role: !GetAtt ConsolidateTracksUpdaterExecutionRole.Arn
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       Environment:
@@ -658,7 +671,11 @@ Resources:
               - Effect: Allow
                 Action: lambda:InvokeFunction
                 Resource:
-                  - !GetAtt ConsolidateTracksLambda.Arn
+                  - !GetAtt ConsolidateTracksBatcher.Arn
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource:
+                  - !GetAtt ConsolidateTracksUpdater.Arn
         - PolicyName: CloudWatchLogsPolicy
           PolicyDocument:
             Version: '2012-10-17'
@@ -671,11 +688,46 @@ Resources:
                   - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-sm:*'
                   - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-sm'
 
-  ConsolidateTracksLambdaExecutionRole:
+  ConsolidateTracksBatcherExecutionRole:
     Type: AWS::IAM::Role
     Properties:
       RoleName: !Sub ${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-lambda-execution-role
-      Description: Role for Consolidate Tracks Lambda with basic permissions
+      Description: Role for Consolidate Tracks Batcher Lambda with basic permissions
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+        - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
+        - !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-rw-user-access-policy-arn}}'
+          - arn:aws:iam::aws:policy/AmazonRDSFullAccess
+      Policies:
+        - PolicyName: KMSAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:GenerateDataKey
+                Resource: !If
+                  - IsNotLocal
+                  - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+                  - '*'
+
+  ConsolidateTracksUpdaterExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-lambda-execution-role
+      Description: Role for Consolidate Tracks Updater Lambda with basic permissions
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -824,10 +876,20 @@ Resources:
         - !Ref AWS::NoValue
       RetentionInDays: 30
 
-  ConsolidateTracksLambdaLogGroup:
+  ConsolidateTracksBatcherLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-lambda'
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-batcher-lambda'
+      KmsKeyId: !If
+        - IsNotLocal
+        - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+        - !Ref AWS::NoValue
+      RetentionInDays: 30
+
+  ConsolidateTracksUpdaterLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-updater-lambda'
       KmsKeyId: !If
         - IsNotLocal
         - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
