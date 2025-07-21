@@ -1,6 +1,9 @@
 import pytest
 
-from periodic_tasks.consolidate_tracks.app.utils import build_duplicate_groups, union
+from periodic_tasks.consolidate_tracks_updater.app.utils import (
+    build_duplicate_groups,
+    union,
+)
 
 
 @pytest.mark.parametrize(

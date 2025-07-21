@@ -6,7 +6,7 @@ from common_layer.database.repos import (
 )
 from pytest_mock import MockerFixture
 
-from periodic_tasks.consolidate_tracks.app.handler_consolidate_tracks import (
+from periodic_tasks.consolidate_tracks_updater.app.handler_consolidate_tracks_updater import (
     consolidate_tracks,
 )
 
@@ -17,10 +17,8 @@ def test_consolidate_tracks_deletes_duplicates(mocker: MockerFixture):
         TransmodelServicePatternTracksRepo, instance=True
     )
 
-    # Mock stop point pairs used for batching
-    m_track_repo.stream_distinct_stop_points_with_multiple_rows.return_value = iter(
-        [[("A", "B"), ("C", "D"), ("E", "F")]]  # One batch with all 3
-    )
+    # Stop point pairs to consolidate
+    stop_point_pairs = [("A", "B"), ("C", "D"), ("E", "F")]
 
     # Mock similar track pairs grouped by stop point pair
     similar_tracks_data: list[tuple[tuple[str, str], list[tuple[int, int]]]] = [
@@ -39,6 +37,7 @@ def test_consolidate_tracks_deletes_duplicates(mocker: MockerFixture):
 
     start_time = int(time.perf_counter())
     stats = consolidate_tracks(
+        stop_point_pairs=stop_point_pairs,
         track_repo=m_track_repo,
         sp_track_repo=m_sp_track_repo,
         threshold=20.0,
