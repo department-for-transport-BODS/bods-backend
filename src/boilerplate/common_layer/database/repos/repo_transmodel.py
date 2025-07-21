@@ -245,12 +245,9 @@ class TransmodelTrackRepo(BaseRepositoryWithId[TransmodelTracks]):
             tracks = {(row[1], row[2]): row[0] for row in results.fetchall()}
             return tracks
 
-    def stream_distinct_stop_points_with_multiple_rows(
-        self, batch_size: int = 1000
-    ) -> Iterator[list[tuple[str, str]]]:
+    def get_distinct_stop_points_with_multiple_rows(self) -> list[tuple[str, str]]:
         """
-        Fetch all distinct stop point pairs with more than one row,
-        and yield them in batches of batch_size
+        Fetch all distinct stop point pairs with more than one row
         """
         with self._db.session_scope() as session:
             result = session.execute(
@@ -266,8 +263,7 @@ class TransmodelTrackRepo(BaseRepositoryWithId[TransmodelTracks]):
             )
             all_pairs = [(row[0], row[1]) for row in result]
 
-        for i in range(0, len(all_pairs), batch_size):
-            yield all_pairs[i : i + batch_size]
+            return all_pairs
 
     def stream_similar_track_pairs_by_stop_points(
         self, stop_point_pairs: list[tuple[str, str]], threshold: float = 20.0
