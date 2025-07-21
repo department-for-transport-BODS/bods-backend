@@ -1,0 +1,90 @@
+{
+  "StartAt": "Process Input",
+  "QueryLanguage": "JSONata",
+  "States": {
+    "Process Input": {
+      "Type": "Pass",
+      "Next": "Batch StopPoints",
+      "Assign": {
+        "batchSize": "{% $exists($states.input.batch_size) ? $states.input.batch_size : 500 %}",
+        "thresholdMeters": "{% $exists($states.input.threshold_meters) ? $states.input.threshold_meters : 20.0 %}",
+        "dryRun": "{% $exists($states.input.dry_run) ? $states.input.dry_run : true %}",
+        "s3Bucket": "${S3BucketName}"
+      }
+    },
+    "Batch StopPoints": {
+      "Type": "Task",
+      "Next": "Failed",
+      "Resource": "${ConsolidateTracksBatcherLambda}",
+      "Arguments": {
+        "batch_size": "{% $batchSize %}"
+      },
+      "ResultWriter": {
+        "Resource": "arn:aws:states:::s3:putObject",
+        "Arguments": {
+          "Bucket": "{% $s3Bucket %}",
+          "Prefix": "consolidate-tracks-batch"
+        }
+      },
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "Failed"
+        }
+      ]
+    },
+    "Process StopPoint Batches": {
+      "Type": "Map",
+      "Next": "Succeeded",
+      "ItemReader": {
+        "Resource": "arn:aws:states:::s3:getObject",
+        "ReaderConfig": {
+          "InputType": "JSON"
+        },
+        "Parameters": {
+          "Bucket.$": "$.ResultWriter.S3Bucket",
+          "Key.$": "$.ResultWriter.S3Key"
+        }
+      },
+      "ItemSelector": {
+        "stop_point_pairs": "{% $mapItem.Value %}",
+        "threshold_meters": "{% $thresholdMeters %}",
+        "dry_run": "{% $dryRun %}"
+      },
+      "MaxConcurrency": 100,
+      "ItemProcessor": {
+        "ProcessorConfig": {
+          "Mode": "DISTRIBUTED",
+          "ExecutionType": "STANDARD"
+        },
+        "StartAt": "Consolidate Tracks",
+        "States": {
+          "Consolidate Tracks": {
+            "Type": "Task",
+            "Next": "Failed",
+            "Resource": "${ConsolidateTracksUpdaterLambda}",
+            "Arguments": {
+              "stop_point_pairs": "{% $stop_point_pairs %}",
+              "threshold_meters": "{% $threshold_meters %}",
+              "dry_run": "{% $dry_run %}"
+            },
+            "ResultWriter": {
+              "Resource": "arn:aws:states:::s3:putObject",
+              "Arguments": {
+                "Bucket": "{% $s3Bucket %}",
+                "Prefix": "consolidate-tracks-result"
+              }
+            }
+          }
+        }
+      }
+    },
+    "Succeeded": {
+      "Type": "Succeed"
+    },
+    "Failed": {
+      "Type": "Fail",
+      "Comment": "Track Consolidation Failed"
+    }
+  }
+}
