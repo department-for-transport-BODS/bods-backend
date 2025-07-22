@@ -14,17 +14,11 @@
     },
     "Batch StopPoints": {
       "Type": "Task",
-      "Next": "Failed",
+      "Next": "Process StopPoint Batches",
       "Resource": "${ConsolidateTracksBatcherLambda}",
       "Arguments": {
-        "batch_size": "{% $batchSize %}"
-      },
-      "ResultWriter": {
-        "Resource": "arn:aws:states:::s3:putObject",
-        "Arguments": {
-          "Bucket": "{% $s3Bucket %}",
-          "Prefix": "consolidate-tracks-batch"
-        }
+        "batch_size": "{% $batchSize %}",
+        "s3_bucket": "{% $s3Bucket %}"
       },
       "Catch": [
         {
@@ -41,15 +35,16 @@
         "ReaderConfig": {
           "InputType": "JSON"
         },
-        "Parameters": {
-          "Bucket.$": "$.ResultWriter.S3Bucket",
-          "Key.$": "$.ResultWriter.S3Key"
+        "Arguments": {
+          "Bucket": "{% $s3Bucket %}",
+          "Key.$": "$.s3Key"
         }
       },
       "ItemSelector": {
         "stop_point_pairs": "{% $mapItem.Value %}",
         "threshold_meters": "{% $thresholdMeters %}",
-        "dry_run": "{% $dryRun %}"
+        "dry_run": "{% $dryRun %}",
+        "s3_bucket": "{% $s3Bucket %}"
       },
       "MaxConcurrency": 100,
       "ItemProcessor": {
@@ -61,7 +56,7 @@
         "States": {
           "Consolidate Tracks": {
             "Type": "Task",
-            "Next": "Failed",
+            "End": true,
             "Resource": "${ConsolidateTracksUpdaterLambda}",
             "Arguments": {
               "stop_point_pairs": "{% $stop_point_pairs %}",
@@ -71,7 +66,7 @@
             "ResultWriter": {
               "Resource": "arn:aws:states:::s3:putObject",
               "Arguments": {
-                "Bucket": "{% $s3Bucket %}",
+                "Bucket": "{% $s3_bucket %}",
                 "Prefix": "consolidate-tracks-result"
               }
             }
