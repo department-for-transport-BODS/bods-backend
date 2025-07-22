@@ -62,9 +62,9 @@
             "End": true,
             "Resource": "${ConsolidateTracksUpdaterLambdaArn}",
             "Arguments": {
-              "stop_point_pairs": "{% $stop_point_pairs %}",
-              "threshold_meters": "{% $threshold_meters %}",
-              "dry_run": "{% $dry_run %}"
+              "stop_point_pairs": "{% $states.input.stop_point_pairs %}",
+              "threshold_meters": "{% $states.input.threshold_meters %}",
+              "dry_run": "{% $states.input.dry_run %}"
             }
           }
         }
