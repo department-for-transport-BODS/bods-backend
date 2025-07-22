@@ -705,6 +705,18 @@ Resources:
                   - IsNotLocal
                   - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/app/arn}}/*'
                   - '*'
+        - PolicyName: KMSAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:GenerateDataKey
+                Resource: !If
+                  - IsNotLocal
+                  - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+                  - '*'
 
   ConsolidateTracksBatcherExecutionRole:
     Type: AWS::IAM::Role
