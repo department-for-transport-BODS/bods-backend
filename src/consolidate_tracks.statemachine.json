@@ -69,7 +69,7 @@
       "ResultWriter": {
         "Resource": "arn:aws:states:::s3:putObject",
         "Arguments": {
-          "Bucket": "{% $s3_bucket %}",
+          "Bucket": "{% $s3Bucket %}",
           "Prefix": "consolidate-tracks-result"
         }
       }
