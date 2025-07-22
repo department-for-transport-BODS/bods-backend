@@ -15,7 +15,7 @@
     "Batch StopPoints": {
       "Type": "Task",
       "Next": "Process StopPoint Batches",
-      "Resource": "${ConsolidateTracksBatcherLambda}",
+      "Resource": "${ConsolidateTracksBatcherLambdaArn}",
       "Arguments": {
         "batch_size": "{% $batchSize %}",
         "s3_bucket": "{% $s3Bucket %}"
@@ -37,7 +37,7 @@
         },
         "Arguments": {
           "Bucket": "{% $s3Bucket %}",
-          "Key.$": "$.s3Key"
+          "Key": "$.s3Key"
         }
       },
       "ItemSelector": {
@@ -52,23 +52,23 @@
           "Mode": "DISTRIBUTED",
           "ExecutionType": "STANDARD"
         },
+        "ResultWriter": {
+          "Resource": "arn:aws:states:::s3:putObject",
+          "Arguments": {
+            "Bucket": "{% $s3_bucket %}",
+            "Prefix": "consolidate-tracks-result"
+          }
+        },
         "StartAt": "Consolidate Tracks",
         "States": {
           "Consolidate Tracks": {
             "Type": "Task",
             "End": true,
-            "Resource": "${ConsolidateTracksUpdaterLambda}",
+            "Resource": "${ConsolidateTracksUpdaterLambdaArn}",
             "Arguments": {
               "stop_point_pairs": "{% $stop_point_pairs %}",
               "threshold_meters": "{% $threshold_meters %}",
               "dry_run": "{% $dry_run %}"
-            },
-            "ResultWriter": {
-              "Resource": "arn:aws:states:::s3:putObject",
-              "Arguments": {
-                "Bucket": "{% $s3_bucket %}",
-                "Prefix": "consolidate-tracks-result"
-              }
             }
           }
         }
