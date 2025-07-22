@@ -676,6 +676,14 @@ Resources:
                 Action: lambda:InvokeFunction
                 Resource:
                   - !GetAtt ConsolidateTracksUpdaterLambda.Arn
+        - PolicyName: StateMachineSfInvokePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: states:StartExecution
+                Resource:
+                  - !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-sm'
         - PolicyName: CloudWatchLogsPolicy
           PolicyDocument:
             Version: '2012-10-17'
