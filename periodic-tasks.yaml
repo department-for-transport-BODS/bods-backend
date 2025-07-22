@@ -687,6 +687,24 @@ Resources:
                 Resource:
                   - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-sm:*'
                   - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/stepfunctions/${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-sm'
+        - PolicyName: S3AccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !If
+                  - IsNotLocal
+                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/app/arn}}'
+                  - '*'
+              - Effect: Allow
+                Action:
+                  - s3:GetObject*
+                  - s3:PutObject*
+                Resource: !If
+                  - IsNotLocal
+                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/app/arn}}/*'
+                  - '*'
 
   ConsolidateTracksBatcherExecutionRole:
     Type: AWS::IAM::Role
@@ -722,6 +740,24 @@ Resources:
                   - IsNotLocal
                   - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
                   - '*'
+        - PolicyName: S3AccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !If
+                  - IsNotLocal
+                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/app/arn}}'
+                  - '*'
+              - Effect: Allow
+                Action:
+                  - s3:GetObject*
+                  - s3:PutObject*
+                Resource: !If
+                  - IsNotLocal
+                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/app/arn}}/*'
+                  - '*'
 
   ConsolidateTracksUpdaterExecutionRole:
     Type: AWS::IAM::Role
@@ -756,6 +792,24 @@ Resources:
                 Resource: !If
                   - IsNotLocal
                   - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+                  - '*'
+        - PolicyName: S3AccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !If
+                  - IsNotLocal
+                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/app/arn}}'
+                  - '*'
+              - Effect: Allow
+                Action:
+                  - s3:GetObject*
+                  - s3:PutObject*
+                Resource: !If
+                  - IsNotLocal
+                  - !Sub '{{resolve:ssm:/bodds/${Environment}/s3/app/arn}}/*'
                   - '*'
 
   #########################
