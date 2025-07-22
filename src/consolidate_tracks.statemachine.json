@@ -44,7 +44,7 @@
         }
       },
       "ItemSelector": {
-        "stop_point_pairs": "{% $states.context.Map.Item %}",
+        "stop_point_pairs": "{% $states.context.Map.Item.Value %}",
         "threshold_meters": "{% $thresholdMeters %}",
         "dry_run": "{% $dryRun %}",
         "s3_bucket": "{% $s3Bucket %}"
