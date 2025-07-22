@@ -691,7 +691,7 @@ Resources:
   ConsolidateTracksBatcherExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-lambda-execution-role
+      RoleName: !Sub ${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-batcher-lambda-execution-role
       Description: Role for Consolidate Tracks Batcher Lambda with basic permissions
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -726,7 +726,7 @@ Resources:
   ConsolidateTracksUpdaterExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-lambda-execution-role
+      RoleName: !Sub ${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-updater-lambda-execution-role
       Description: Role for Consolidate Tracks Updater Lambda with basic permissions
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
