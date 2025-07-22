@@ -52,13 +52,6 @@
           "Mode": "DISTRIBUTED",
           "ExecutionType": "STANDARD"
         },
-        "ResultWriter": {
-          "Resource": "arn:aws:states:::s3:putObject",
-          "Arguments": {
-            "Bucket": "{% $s3_bucket %}",
-            "Prefix": "consolidate-tracks-result"
-          }
-        },
         "StartAt": "Consolidate Tracks",
         "States": {
           "Consolidate Tracks": {
@@ -71,6 +64,13 @@
               "dry_run": "{% $dry_run %}"
             }
           }
+        }
+      },
+      "ResultWriter": {
+        "Resource": "arn:aws:states:::s3:putObject",
+        "Arguments": {
+          "Bucket": "{% $s3_bucket %}",
+          "Prefix": "consolidate-tracks-result"
         }
       }
     },
