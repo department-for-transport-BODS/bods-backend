@@ -87,8 +87,7 @@
       "Arguments": {
         "MapRunArn": "{% $states.input.processMapResults.MapRunArn %}",
         "MapRunPrefix": "consolidate-tracks-map-results",
-        "Bucket": "{% $s3Bucket %}",
-        "DatasetRevisionId": "{% $datasetRevisionId %}"
+        "Bucket": "{% $s3Bucket %}"
       }
     },
     "Succeeded": {
