@@ -32,7 +32,7 @@
     },
     "Process StopPoint Batches": {
       "Type": "Map",
-      "Next": "Aggregate Stats",
+      "Next": "Report Stats",
       "ItemReader": {
         "Resource": "arn:aws:states:::s3:getObject",
         "ReaderConfig": {
