@@ -32,7 +32,7 @@
     },
     "Process StopPoint Batches": {
       "Type": "Map",
-      "Next": "Succeeded",
+      "Next": "Aggregate Stats",
       "ItemReader": {
         "Resource": "arn:aws:states:::s3:getObject",
         "ReaderConfig": {
@@ -69,12 +69,26 @@
           }
         }
       },
+      "Output": {
+        "processMapResults": "{% $states.result %}"
+      },
       "ResultWriter": {
         "Resource": "arn:aws:states:::s3:putObject",
         "Arguments": {
           "Bucket": "{% $s3Bucket %}",
-          "Prefix": "consolidate-tracks-result"
+          "Prefix": "consolidate-tracks-map-results"
         }
+      }
+    },
+    "Report Stats": {
+      "Type": "Task",
+      "Next": "Succeeded",
+      "Resource": "${ConsolidateTracksReporterLambdaArn}",
+      "Arguments": {
+        "MapRunArn": "{% $states.input.processMapResults.MapRunArn %}",
+        "MapRunPrefix": "consolidate-tracks-map-results",
+        "Bucket": "{% $s3Bucket %}",
+        "DatasetRevisionId": "{% $datasetRevisionId %}"
       }
     },
     "Succeeded": {
