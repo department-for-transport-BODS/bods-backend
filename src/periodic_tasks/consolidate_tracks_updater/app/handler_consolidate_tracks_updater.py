@@ -23,7 +23,7 @@ tracer = Tracer()
 log = get_logger()
 
 
-# pylint: disable=too-many-locals
+# pylint: disable=too-many-locals, too-many-arguments, too-many-positional-arguments
 def consolidate_tracks(
     stop_point_pairs: list[tuple[str, str]],
     track_repo: TransmodelTrackRepo,

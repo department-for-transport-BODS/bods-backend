@@ -53,7 +53,7 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, i
             output_dict = json.loads(result.Output)
             stats = output_dict.get("stats", {})
             stats_counter.update(stats)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             log.warning(
                 "Failed to parse result output", error=str(e), output=result.Output
             )

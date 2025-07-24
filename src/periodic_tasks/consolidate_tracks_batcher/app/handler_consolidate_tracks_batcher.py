@@ -26,8 +26,13 @@ class ConsolidateTracksBatcherInput(BaseModel):
     s3_bucket: str
 
 
-def write_batches_to_s3(bucket_name: str, batches: list[list[tuple[str, str]]]) -> str:
-    json_data = json.dumps(batches).encode("utf-8")
+def write_batches_to_s3(
+    bucket_name: str, stop_point_batches: list[list[tuple[str, str]]]
+) -> str:
+    """
+    Write batched stop point pairs to S3 to be used by MapRun
+    """
+    json_data = json.dumps(stop_point_batches).encode("utf-8")
     s3_key = f"consolidate-tracks-batch/{uuid4()}.json"
     s3_handler = S3(bucket_name=bucket_name)
     s3_handler.put_object(s3_key, json_data)
