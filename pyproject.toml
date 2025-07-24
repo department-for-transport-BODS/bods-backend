@@ -67,11 +67,12 @@ pyproj = "^3.7.0"
 
 [tool.poetry.group.consolidate_tracks_batcher.dependencies]
 pyproj = "^3.7.0"
-psutil = "^7.0.0"
 
 [tool.poetry.group.consolidate_tracks_updater.dependencies]
 pyproj = "^3.7.0"
-psutil = "^7.0.0"
+
+[tool.poetry.group.consolidate_tracks_stat_reporter.dependencies]
+pyproj = "^3.7.0"
 
 # Timetables ETL Lambda Dependencies
 [tool.poetry.group.etl.dependencies]
