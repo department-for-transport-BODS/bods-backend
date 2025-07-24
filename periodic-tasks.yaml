@@ -434,6 +434,7 @@ Resources:
       CodeUri: ./src/periodic_tasks/consolidate_tracks_updater
       Handler: app.handler_consolidate_tracks_updater.lambda_handler
       Role: !GetAtt ConsolidateTracksUpdaterExecutionRole.Arn
+      ReservedConcurrentExecutions: !Ref 'AWS::NoValue' # disable global ReservedConcurrentExecutions
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       Environment:
