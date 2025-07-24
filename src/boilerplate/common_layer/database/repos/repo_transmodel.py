@@ -2,11 +2,11 @@
 Transmodel table repos
 """
 
+import json
 from collections import defaultdict
 from datetime import date
 from typing import Iterator, Literal
 
-from psycopg2.extensions import connection as PsycopgConnection
 from sqlalchemy import func, select, text, tuple_
 from sqlalchemy.dialects.postgresql import insert
 from structlog.stdlib import get_logger
@@ -272,57 +272,61 @@ class TransmodelTrackRepo(BaseRepositoryWithId[TransmodelTracks]):
         Stream similar pairs of (track_a, track_b) grouped by (from_atco_code, to_atco_code)
         where similarity is calculated by Hausdorff Distance within the given threshold in meters
         """
-        raw_conn: PsycopgConnection = self._db.engine.raw_connection()  # type: ignore[assignment]
-        try:
-            with raw_conn.cursor() as cursor:
-                cursor.itersize = 10000
-                log.info("Fetching similar tracks")
-                table_name = self._model.__tablename__
+        with self._db.session_scope() as session:
+            log.info("Fetching similar tracks")
+            table_name = self._model.__tablename__
 
-                # Prepare a VALUES list for the stop point pairs
-                stop_point_values = ",".join(
-                    cursor.mogrify("(%s, %s)", pair).decode("utf-8")
-                    for pair in stop_point_pairs
-                )
-
-                query = f"""
-                    WITH stop_pairs(from_code, to_code) AS (
-                        VALUES {stop_point_values}
-                    ),
-                    transformed AS (
-                        SELECT id, from_atco_code, to_atco_code,
-                                ST_Transform(geometry, 27700) AS geom_27700
-                        FROM {table_name} a JOIN stop_pairs sp
-                        ON a.from_atco_code = sp.from_code AND a.to_atco_code = sp.to_code
-                        )
+            create_function = f"""
+                CREATE OR REPLACE FUNCTION pg_temp.find_duplicate_tracks(stop_point_pairs json, threshold float)
+                RETURNS table (from_atco_code text, to_atco_code text, similar_pairs text)
+                AS $$
+                declare i json;
+                begin
+                for i in select * from json_array_elements(stop_point_pairs)
+                loop
+                    return query with transformed AS (
+                        SELECT
+                            tt.id,
+                            tt.from_atco_code,
+                            tt.to_atco_code,
+                            ST_Transform(tt.geometry, 27700) AS geom_27700
+                        FROM {table_name} tt
+                        WHERE tt.from_atco_code = i ->> 0
+                        AND tt.to_atco_code = i ->> 1
+                    )
                     SELECT
-                        a.from_atco_code,
-                        a.to_atco_code,
+                        a.from_atco_code::text,
+                        a.to_atco_code::text,
                         json_agg(
                             json_build_object('track_a', a.id, 'track_b', b.id)
-                        ) AS similar_pairs
+                        )::text AS similar_pairs
                     FROM transformed a
                     JOIN transformed b
-                        ON a.from_atco_code = b.from_atco_code
-                        AND a.to_atco_code = b.to_atco_code
-                        AND a.id < b.id
-                    WHERE ST_HausdorffDistance(a.geom_27700, b.geom_27700) < %s
+                    ON a.from_atco_code = b.from_atco_code
+                    AND a.to_atco_code = b.to_atco_code
+                    AND a.id < b.id
+                    WHERE ST_HausdorffDistance(a.geom_27700, b.geom_27700) < threshold
                     GROUP BY a.from_atco_code, a.to_atco_code
-                    ORDER BY a.from_atco_code, a.to_atco_code
-                """
-                cursor.execute(
-                    query,
-                    (threshold,),
-                )
+                    ORDER BY a.from_atco_code, a.to_atco_code;
+                end loop;
+                end;
+                $$
+                language 'plpgsql';
+            """
+            session.execute(
+                text(create_function),
+            )
 
-                for from_code, to_code, json_data_raw in cursor:
-                    json_data: list[dict[str, int]] = json_data_raw or []
-                    pairs = [
-                        (pair["track_a"], pair["track_b"]) for pair in json_data or []
-                    ]
-                    yield (from_code, to_code), pairs
-        finally:
-            raw_conn.close()
+            result = session.execute(
+                text("SELECT * FROM pg_temp.find_duplicate_tracks(:pairs, :threshold)"),
+                {"pairs": json.dumps(stop_point_pairs), "threshold": threshold},
+            )
+            rows = result.fetchall()
+
+            for from_code, to_code, json_data_raw in rows:
+                json_data: list[dict[str, int]] = json.loads(json_data_raw) or []
+                pairs = [(pair["track_a"], pair["track_b"]) for pair in json_data or []]
+                yield (from_code, to_code), pairs
 
 
 class TransmodelServicePatternDistanceRepo(
