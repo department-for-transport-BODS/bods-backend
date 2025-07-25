@@ -50,7 +50,7 @@
         "dry_run": "{% $dryRun %}",
         "s3_bucket": "{% $s3Bucket %}"
       },
-      "MaxConcurrency": 100,
+      "MaxConcurrency": 6,
       "ItemProcessor": {
         "ProcessorConfig": {
           "Mode": "DISTRIBUTED",
