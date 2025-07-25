@@ -29,10 +29,12 @@ def test_bulk_replace_service_pattern_tracks(test_db: SqlDB):
         session.commit()
 
     repo = TransmodelServicePatternTracksRepo(test_db)
-    repo.bulk_replace_service_pattern_tracks(
+    updated_count = repo.bulk_replace_service_pattern_tracks(
         old_ids=[track_id_to_replace_1, track_id_to_replace_2],
         new_id=replacement_id,
     )
+
+    assert updated_count == 2
 
     spt1_updated = repo.get_by_id(spt_1_id)
     spt2_updated = repo.get_by_id(spt_2_id)
