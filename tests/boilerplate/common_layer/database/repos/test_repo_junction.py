@@ -34,7 +34,7 @@ def test_bulk_replace_service_pattern_tracks(test_db: SqlDB):
         new_id=replacement_id,
     )
 
-    assert updated_count == 2
+    assert updated_count == 3, "spt_1, spt_2, spt_3 updated"
 
     spt1_updated = repo.get_by_id(spt_1_id)
     spt2_updated = repo.get_by_id(spt_2_id)
