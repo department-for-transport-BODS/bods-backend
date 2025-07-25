@@ -137,5 +137,4 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, A
         dry_run=input_data.dry_run,
         start_time=int(start),
     )
-    log.info("Stats", **stats)
     return {"stats": stats}
