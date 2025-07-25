@@ -40,7 +40,6 @@ def consolidate_tracks(
 
     stats = {
         "total_pairs_checked": 0,
-        "pairs_with_duplicates": 0,
         "tracks_to_delete": 0,
         "tracks_deleted": 0,
         "fks_updated": 0,
@@ -76,7 +75,6 @@ def consolidate_tracks(
             if len(group) <= 1:
                 continue
 
-            stats["pairs_with_duplicates"] += 1
             # Select track with lowest ID (first created) as the canonical track
             canonical_id = min(group)
 
