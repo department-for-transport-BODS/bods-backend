@@ -1,0 +1,102 @@
+{
+  "StartAt": "Process Input",
+  "QueryLanguage": "JSONata",
+  "States": {
+    "Process Input": {
+      "Type": "Pass",
+      "Next": "Batch StopPoints",
+      "Assign": {
+        "batchSize": "{% $exists($states.input.batch_size) ? $states.input.batch_size : 500 %}",
+        "thresholdMeters": "{% $exists($states.input.threshold_meters) ? $states.input.threshold_meters : 20.0 %}",
+        "dryRun": "{% $exists($states.input.dry_run) ? $states.input.dry_run : true %}",
+        "s3Bucket": "${S3BucketName}"
+      }
+    },
+    "Batch StopPoints": {
+      "Type": "Task",
+      "Next": "Process StopPoint Batches",
+      "Resource": "${ConsolidateTracksBatcherLambdaArn}",
+      "Arguments": {
+        "batch_size": "{% $batchSize %}",
+        "s3_bucket": "{% $s3Bucket %}"
+      },
+      "Assign": {
+        "BatchesS3ObjectKey": "{% $states.result.s3Key %}"
+      },
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "Failed"
+        }
+      ]
+    },
+    "Process StopPoint Batches": {
+      "Type": "Map",
+      "ToleratedFailurePercentage": 100,
+      "Next": "Report Stats",
+      "ItemReader": {
+        "Resource": "arn:aws:states:::s3:getObject",
+        "ReaderConfig": {
+          "InputType": "JSON"
+        },
+        "Arguments": {
+          "Bucket": "{% $s3Bucket %}",
+          "Key": "{% $BatchesS3ObjectKey %}"
+        }
+      },
+      "ItemSelector": {
+        "stop_point_pairs": "{% $states.context.Map.Item.Value %}",
+        "threshold_meters": "{% $thresholdMeters %}",
+        "dry_run": "{% $dryRun %}",
+        "s3_bucket": "{% $s3Bucket %}"
+      },
+      "MaxConcurrency": 6,
+      "ItemProcessor": {
+        "ProcessorConfig": {
+          "Mode": "DISTRIBUTED",
+          "ExecutionType": "STANDARD"
+        },
+        "StartAt": "Consolidate Tracks",
+        "States": {
+          "Consolidate Tracks": {
+            "Type": "Task",
+            "End": true,
+            "Resource": "${ConsolidateTracksUpdaterLambdaArn}",
+            "Arguments": {
+              "stop_point_pairs": "{% $states.input.stop_point_pairs %}",
+              "threshold_meters": "{% $states.input.threshold_meters %}",
+              "dry_run": "{% $states.input.dry_run %}"
+            }
+          }
+        }
+      },
+      "Output": {
+        "processMapResults": "{% $states.result %}"
+      },
+      "ResultWriter": {
+        "Resource": "arn:aws:states:::s3:putObject",
+        "Arguments": {
+          "Bucket": "{% $s3Bucket %}",
+          "Prefix": "consolidate-tracks-map-results"
+        }
+      }
+    },
+    "Report Stats": {
+      "Type": "Task",
+      "Next": "Succeeded",
+      "Resource": "${ConsolidateTracksReporterLambdaArn}",
+      "Arguments": {
+        "MapRunArn": "{% $states.input.processMapResults.MapRunArn %}",
+        "MapRunPrefix": "consolidate-tracks-map-results",
+        "Bucket": "{% $s3Bucket %}"
+      }
+    },
+    "Succeeded": {
+      "Type": "Succeed"
+    },
+    "Failed": {
+      "Type": "Fail",
+      "Comment": "Track Consolidation Failed"
+    }
+  }
+}
