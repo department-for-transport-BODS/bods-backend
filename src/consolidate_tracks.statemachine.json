@@ -32,6 +32,7 @@
     },
     "Process StopPoint Batches": {
       "Type": "Map",
+      "ToleratedFailurePercentage": 100,
       "Next": "Report Stats",
       "ItemReader": {
         "Resource": "arn:aws:states:::s3:getObject",
