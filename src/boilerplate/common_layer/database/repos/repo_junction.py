@@ -299,17 +299,19 @@ class TransmodelServicePatternTracksRepo(
     @handle_repository_errors
     def bulk_replace_service_pattern_tracks(
         self, old_ids: list[int], new_id: int
-    ) -> None:
+    ) -> int:
         """
         Bulk replace track references in transmodel_servicepatterntracks table.
         Any row with tracks_id in `old_ids` will be updated to `new_id`.
+        Returns number of updated rows
         """
         if not old_ids:
-            return
+            return 0
 
         with self._db.session_scope() as session:
-            session.execute(
+            result = session.execute(
                 update(self._model)
                 .where(self._model.tracks_id.in_(old_ids))
                 .values(tracks_id=new_id)
             )
+            return result.rowcount
