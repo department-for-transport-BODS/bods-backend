@@ -166,6 +166,24 @@ def test_parse_location(xml_string: str, expected: TXCLocation | None) -> None:
         ),
         pytest.param(
             """
+        <Track>
+        <Mapping>
+            <Location id="loc2">
+            <Translation>
+                <Easting>495966</Easting>
+                <Northing>201754</Northing>
+                <Longitude>-0.612551</Longitude>
+                <Latitude>51.706335</Latitude>
+            </Translation>
+            </Location>
+        </Mapping>
+        </Track>
+        """,
+            [TXCLocation(id="loc2", Longitude="-0.612551", Latitude="51.706335")],
+            id="Location with translation element",
+        ),
+        pytest.param(
+            """
         <InvalidTopLevel>
             <Mapping>
                 <Location id="loc1">

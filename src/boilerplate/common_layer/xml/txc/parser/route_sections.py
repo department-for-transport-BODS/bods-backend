@@ -20,6 +20,26 @@ from ..models import TXCLocation, TXCMapping, TXCRouteLink, TXCRouteSection, TXC
 log = get_logger()
 
 
+def get_lon_lat_from_location(
+    element: _Element,
+) -> tuple[str, str] | tuple[None, None]:
+    """
+    Get (lon, lat) from given location element
+    """
+    longitude = get_element_text(element, "Longitude")
+    latitude = get_element_text(element, "Latitude")
+    if longitude and latitude:
+        return longitude, latitude
+
+    easting = get_element_text(element, "Easting")
+    northing = get_element_text(element, "Northing")
+    if easting and northing:
+        lon, lat = osgrid_to_lonlat(float(easting), float(northing))
+        return str(lon), str(lat)
+
+    return None, None
+
+
 def parse_location(location_xml: _Element) -> TXCLocation | None:
     """
     Create TXC Location from XML
@@ -28,16 +48,15 @@ def parse_location(location_xml: _Element) -> TXCLocation | None:
     if not location_id:
         return None
 
-    longitude = get_element_text(location_xml, "Longitude")
-    latitude = get_element_text(location_xml, "Latitude")
-    if longitude and latitude:
-        return TXCLocation(id=location_id, Longitude=longitude, Latitude=latitude)
+    lon, lat = None, None
+    translation = location_xml.find("Translation", None)
+    if translation:
+        lon, lat = get_lon_lat_from_location(translation)
+    else:
+        lon, lat = get_lon_lat_from_location(location_xml)
 
-    easting = get_element_text(location_xml, "Easting")
-    northing = get_element_text(location_xml, "Northing")
-    if easting and northing:
-        lon, lat = osgrid_to_lonlat(float(easting), float(northing))
-        return TXCLocation(id=location_id, Longitude=str(lon), Latitude=str(lat))
+    if lon and lat:
+        return TXCLocation(id=location_id, Longitude=lon, Latitude=lat)
 
     return None
 
