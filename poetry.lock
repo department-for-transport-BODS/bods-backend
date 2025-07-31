@@ -828,7 +828,7 @@ version = "2024.8.30"
 description = "Python package for providing Mozilla's CA Bundle."
 optional = false
 python-versions = ">=3.6"
-groups = ["boilerplate", "consolidate_tracks_batcher", "consolidate_tracks_stat_reporter", "consolidate_tracks_updater", "dev", "etl", "naptan_cache_id_updater", "naptan_cache_populator"]
+groups = ["main", "boilerplate", "consolidate_tracks_batcher", "consolidate_tracks_stat_reporter", "consolidate_tracks_updater", "dev", "etl", "naptan_cache_id_updater", "naptan_cache_populator"]
 files = [
     {file = "certifi-2024.8.30-py3-none-any.whl", hash = "sha256:922820b53db7a7257ffbda3f597266d435245903d80737e34f8a45ff3e3230d8"},
     {file = "certifi-2024.8.30.tar.gz", hash = "sha256:bec941d2aa8195e248a60b31ff9f0558284cf01a52591ceda73ea9afffd69fd9"},
@@ -4344,4 +4344,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "fd648987df610597d0aafd0188e82a583e3e72e4020a4dcf81cd54bbf6b0d4d7"
+content-hash = "2555e2ec60a78d1267113601f70b6ccea5aeef15352f274f61d24539410fd2e7"
