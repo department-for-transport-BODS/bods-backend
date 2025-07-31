@@ -3,7 +3,7 @@ Interface for email notifications to handle all the parameters
 """
 
 import datetime
-from typing import Any, Protocol
+from typing import Any, Optional, Protocol
 
 
 class INotifications(Protocol):
@@ -14,7 +14,7 @@ class INotifications(Protocol):
     def send_data_endpoint_validation_error_notification(
         self,
         contact_email: str,
-        published_at: datetime.datetime,
+        published_at: Optional[datetime.datetime],
         with_pti_violations: bool = False,
         **kwargs: Any
     ):
@@ -34,7 +34,7 @@ class INotifications(Protocol):
     def send_agent_data_endpoint_validation_error_notification(
         self,
         contact_email: str,
-        published_at: datetime.datetime,
+        published_at: Optional[datetime.datetime],
         with_pti_violations: bool = False,
         **kwargs: Any
     ):
