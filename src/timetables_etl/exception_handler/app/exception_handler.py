@@ -41,10 +41,6 @@ def send_failure_email(db: SqlDB, revision_id: int):
     revision_repo = OrganisationDatasetRevisionRepo(db)
     revision = revision_repo.require_by_id(revision_id)
 
-    if revision is None:
-        log.error("Unable to send email, revision not found", revision_id=revision_id)
-        return
-
     dataset_repo = OrganisationDatasetRepo(db)
     dataset = dataset_repo.get_by_id(revision.dataset_id)
 
@@ -54,10 +50,6 @@ def send_failure_email(db: SqlDB, revision_id: int):
 
     user_repo = UsersUserRepo(db)
     modified_by = user_repo.require_by_id(revision.last_modified_user_id)
-
-    if modified_by is None:
-        log.error("Unable to send email, user not found", revision_id=revision_id)
-        return
 
     base_url = environ.get("FRONTEND_BASE_URL", "bus-data.dft.gov.uk")
     dataset_page_path = (
