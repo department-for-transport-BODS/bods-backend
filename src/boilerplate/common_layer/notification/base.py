@@ -51,7 +51,7 @@ class NotificationBase:
     def send_data_endpoint_validation_error_notification(
         self,
         contact_email: str,
-        published_at: Optional[datetime.datetime],
+        published_at: datetime.datetime | None,
         with_pti_violations: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -94,7 +94,7 @@ class NotificationBase:
     def send_agent_data_endpoint_validation_error_notification(
         self,
         contact_email: str,
-        published_at: Optional[datetime.datetime],
+        published_at: datetime.datetime | None,
         with_pti_violations: bool = False,
         **kwargs: Any,
     ) -> None:
