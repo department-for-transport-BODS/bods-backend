@@ -2,7 +2,6 @@
 Timetables ETL Statemachine Exception Handler
 """
 
-from ast import mod
 from os import environ
 from typing import Any
 
@@ -53,7 +52,6 @@ def send_failure_email(db: SqlDB, revision_id: int):
         f"org/{dataset.organisation_id}/dataset/timetable/{dataset.id}/review"
     )
     feed_details_link = f"https://publish.{base_url}/{dataset_page_path}"
-    report_link = f"{feed_details_link}/pti-csv"
 
     payload = {
         "feed_id": revision.dataset_id,
@@ -61,7 +59,7 @@ def send_failure_email(db: SqlDB, revision_id: int):
         "feed_short_description": revision.description,
         "dataset_type": dataset.dataset_type,
         "feed_detail_link": feed_details_link,
-        "report_link": report_link,
+        "report_link": f"{feed_details_link}/pti-csv",
         "user_type": modified_by.account_type,
         "comments": revision.comment,
     }
