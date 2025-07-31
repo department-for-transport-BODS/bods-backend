@@ -74,15 +74,18 @@ def send_failure_email(db: SqlDB, revision_id: int):
 
     notification = get_notifications()
     if modified_by.account_type == AGENT_USER:
+        org_name = "-"
         organisation_repo = OrganisationOrganisationRepo(db)
         organisation = organisation_repo.get_by_id(dataset.organisation_id)
-        payload["organisation"] = organisation.name
+        if organisation:
+            org_name = organisation.name
+        payload["organisation"] = org_name
         notification.send_agent_data_endpoint_validation_error_notification(
-            modified_by.email, revision.modified, False, **payload
+            modified_by.email, revision.published_at, False, **payload
         )
     else:
         notification.send_data_endpoint_validation_error_notification(
-            modified_by.email, revision.modified, False, **payload
+            modified_by.email, revision.published_at, False, **payload
         )
 
 
