@@ -48,6 +48,10 @@ def send_failure_email(db: SqlDB, revision_id: int):
         log.error("Unable to send email, dataset not found", revision_id=revision_id)
         return
 
+    if revision.last_modified_user_id is None:
+        log.error("Unable to send email, user not found", revision_id=revision_id)
+        return
+
     user_repo = UsersUserRepo(db)
     modified_by = user_repo.require_by_id(revision.last_modified_user_id)
 
