@@ -223,8 +223,8 @@ Resources:
           Type: Schedule
           Properties:
             Name: !Sub '${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-sm-daily'
-            Description: 'Trigger Consolidate Tracks job every day at 2am UTC'
-            Schedule: 'cron(0 2 * * ? *)'
+            Description: 'Trigger Consolidate Tracks job every day at 00:30 UTC'
+            Schedule: 'cron(30 0 * * ? *)'
             Input: !Sub |
               {
                 "threshold_meters": "20.0",
