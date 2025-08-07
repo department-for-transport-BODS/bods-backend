@@ -32,6 +32,8 @@ create-requirements-files = "tools.build_scripts.create_requirements_files:main"
 file-viewer = "tools.file_viewer.cli:run_cli"
 step-function-viewer = "tools.state_machine_viewer.step_function_viewer:app"
 zip-tools = "tools.zip_tools.cli:app"
+send-email = "tools.email.cli:app"
+exception-handler = "tools.exception_handler.cli:app"
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -39,7 +41,6 @@ lxml = "^5.3.0"
 pydantic = "^2.9.2"
 boto3 = "^1.35.57"
 structlog = "^24.4.0"
-notifications-python-client = "^10.0.1"
 
 [tool.poetry.group.database.dependencies]
 sqlalchemy = "^2.0.36"
@@ -58,6 +59,7 @@ lxml = "^5.3.0"
 structlog = "^24.4.0"
 shapely = "^2.0.6"
 pydantic-settings = "^2.7.1"
+notifications-python-client = "^10.0.1"
 
 # Periodic Task Lamaba Dependencies
 [tool.poetry.group.naptan_cache_populator.dependencies]
