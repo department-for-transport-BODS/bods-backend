@@ -131,6 +131,8 @@ class NotificationBase:
         kwargs["with_pti_violations"] = with_pti_violations
         kwargs["published_on"] = published_on
 
+        print(kwargs["body"])
+
         self._send_mail(feature, template_id, contact_email, **kwargs)
 
     @validate_call
