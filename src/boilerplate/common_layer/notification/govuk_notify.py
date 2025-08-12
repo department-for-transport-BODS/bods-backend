@@ -2,9 +2,12 @@
 GovUkNotifyEmail class to send emails via Gov UK portal
 """
 
+import json
 from os import environ
 from typing import Any
 
+import boto3
+from botocore.exceptions import ClientError
 from common_layer.exceptions.exception_email import GovUkEmailException
 from common_layer.notification.base import NotificationBase
 from notifications_python_client.notifications import NotificationsAPIClient
@@ -23,9 +26,6 @@ class GovUKNotifyEmail(NotificationBase):
 
     def __init__(self):
         super().__init__()
-        self._notification_client = NotificationsAPIClient(
-            api_key=environ.get("GOV_NOTIFY_API_KEY", "-")
-        )
 
     def _send_mail(
         self,
@@ -45,6 +45,10 @@ class GovUKNotifyEmail(NotificationBase):
                     feature=feature,
                 )
             else:
+                gov_uk_api_key = self._get_api_key()
+                self._notification_client = NotificationsAPIClient(
+                    api_key=gov_uk_api_key
+                )
                 self._notification_client.send_email_notification(  # type: ignore
                     email_address=email,
                     template_id=template_id,
@@ -57,3 +61,31 @@ class GovUKNotifyEmail(NotificationBase):
                 f"[notify_{name}] has encountered an exception while sending ",
                 exc_info=True,
             )
+
+    def _get_api_key(self) -> str:
+        """
+        Retrieves the value of a secret specified by its ARN.
+
+        Parameters:
+        - secret_arn (str): The ARN of the secret to retrieve.
+
+        Returns:
+        - str: The value of the retrieved secret.
+        """
+        try:
+            session = boto3.session.Session()
+            client = session.client(  # type: ignore
+                service_name="secretsmanager",
+                region_name=environ.get("AWS_REGION", "eu-west-2"),
+            )
+            response = client.get_secret_value(
+                SecretId=environ.get("GOV_NOTIFY_API_KEY", "-")
+            )
+            log.info("The specified secret was successfully retrieved")
+            return json.loads(response["SecretString"])
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "ResourceNotFoundException":  # type: ignore
+                log.error("The specified secret was not found")
+            else:
+                log.error(f'The error "{e}" occurred when retrieving the secret')
+            raise
