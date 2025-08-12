@@ -79,7 +79,7 @@ class GovUKNotifyEmail(NotificationBase):
                 region_name=environ.get("AWS_REGION", "eu-west-2"),
             )
             response = client.get_secret_value(
-                SecretId=environ.get("GOV_NOTIFY_API_KEY", "-")
+                SecretId=environ.get("GOV_NOTIFY_API_ARN", "-")
             )
             log.info("The specified secret was successfully retrieved")
             return json.loads(response["SecretString"])

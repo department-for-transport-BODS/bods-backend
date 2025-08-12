@@ -100,7 +100,7 @@ Globals:
           - IsNotLocal
           - !Sub '{{resolve:ssm:/bodds/${Environment}/generic-template-id}}'
           - !Ref AWS::NoValue
-        GOV_NOTIFY_API_KEY: !If
+        GOV_NOTIFY_API_ARN: !If
           - IsNotLocal
           - !Sub '{{resolve:ssm:/bodds/${Environment}/secretsmanager/govuk-notify-api-key/arn}}'
           - !Ref AWS::NoValue
