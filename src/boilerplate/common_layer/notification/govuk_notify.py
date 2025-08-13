@@ -83,9 +83,6 @@ class GovUKNotifyEmail(NotificationBase):
             )
             log.info(
                 "The specified secret was successfully retrieved",
-                response=response,
-                secret_id=environ.get("GOV_NOTIFY_API_ARN", "-"),
-                response_type=type(response),
             )
             return str(response["SecretString"])
         except ClientError as e:
