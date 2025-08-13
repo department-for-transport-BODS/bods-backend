@@ -85,8 +85,9 @@ class GovUKNotifyEmail(NotificationBase):
                 "The specified secret was successfully retrieved",
                 response=response,
                 secret_id=environ.get("GOV_NOTIFY_API_ARN", "-"),
+                response_type=type(response),
             )
-            return json.loads(response["SecretString"])
+            return str(response["SecretString"])
         except ClientError as e:
             if e.response["Error"]["Code"] == "ResourceNotFoundException":  # type: ignore
                 log.error("The specified secret was not found")
