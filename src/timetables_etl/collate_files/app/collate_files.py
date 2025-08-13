@@ -50,7 +50,7 @@ def get_file_attributes(
 
 def count_and_log_file_status(
     map_inputs: list[ETLMapInputData],
-) -> tuple[int, int, int]:
+) -> tuple[int, int]:
     """
     Count superceded and active files in map inputs and log the results.
     """
@@ -65,7 +65,7 @@ def count_and_log_file_status(
         total_files=len(map_inputs),
     )
 
-    return superceded_count, active_count, len(map_inputs)
+    return superceded_count, active_count
 
 
 def upload_map_input_to_s3(
@@ -118,9 +118,10 @@ def collate_files(
         filtered_files=filtered_files,
         map_results=map_results,
     )
-    superseded, active, total = count_and_log_file_status(map_inputs)
 
-    if (superseded + active) < total:
+    count_and_log_file_status(map_inputs)
+    log.info("Map Result", map_results=map_results)
+    if map_results.failed:
         log.info("Sending the error email", revision_id=input_data.revision_id)
         send_failure_email(db, input_data.revision_id)
 
@@ -137,7 +138,7 @@ def generate_response(
     """
     Generate Lambda Response with Stats
     """
-    superseded, active, _ = count_and_log_file_status(map_inputs)
+    superseded, active = count_and_log_file_status(map_inputs)
 
     if superseded == 0:
         message = "All TXC Files that completed TXC File Attributes Step are active"
