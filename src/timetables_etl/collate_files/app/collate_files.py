@@ -15,6 +15,7 @@ from common_layer.database.repos import OrganisationTXCFileAttributesRepo
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.s3 import S3
+from common_layer.utils import send_failure_email
 from pydantic import RootModel
 from structlog.stdlib import get_logger
 
@@ -49,7 +50,7 @@ def get_file_attributes(
 
 def count_and_log_file_status(
     map_inputs: list[ETLMapInputData],
-) -> tuple[int, int]:
+) -> tuple[int, int, int]:
     """
     Count superceded and active files in map inputs and log the results.
     """
@@ -64,7 +65,7 @@ def count_and_log_file_status(
         total_files=len(map_inputs),
     )
 
-    return superceded_count, active_count
+    return superceded_count, active_count, len(map_inputs)
 
 
 def upload_map_input_to_s3(
@@ -117,7 +118,11 @@ def collate_files(
         filtered_files=filtered_files,
         map_results=map_results,
     )
-    count_and_log_file_status(map_inputs)
+    superseded, active, total = count_and_log_file_status(map_inputs)
+
+    if (superseded + active) < total:
+        log.info("Sending the error email", revision_id=input_data.revision_id)
+        send_failure_email(db, input_data.revision_id)
 
     output_prefix = get_map_run_base_path(
         input_data.map_run_arn, input_data.map_run_prefix
@@ -132,7 +137,7 @@ def generate_response(
     """
     Generate Lambda Response with Stats
     """
-    superseded, active = count_and_log_file_status(map_inputs)
+    superseded, active, _ = count_and_log_file_status(map_inputs)
 
     if superseded == 0:
         message = "All TXC Files that completed TXC File Attributes Step are active"
