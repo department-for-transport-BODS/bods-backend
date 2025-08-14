@@ -20,6 +20,7 @@ from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.dynamodb.client.fares_metadata import DynamoDBFaresMetadata
 from common_layer.exceptions import FaresMetadataNotFound, SchemaViolationsFound
+from common_layer.utils import send_failure_email
 from pydantic import BaseModel, Field
 from structlog.stdlib import get_logger
 
@@ -168,6 +169,9 @@ def lambda_handler(
         data_catalogues,
         metadata_dataset_id,
     )
+
+    if violations and len(violations) > 0:
+        send_failure_email(db, input_data.revision_id)
 
     load_violations(db, violations, fares_validation_result)
 
