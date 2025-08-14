@@ -51,6 +51,10 @@ Parameters:
     Type: String
     Default: 'unknown'
     Description: 'Version to pass to Datadog APM'
+  FrontendBaseUrl:
+    Type: String
+    Default: 'https://bus-data.dft.gov.uk'
+    Description: 'Frontend Base Url'
 Conditions:
   IsNotLocal: !Not [!Equals [!Ref Environment, 'local']]
   IsNotProd: !Not [!Equals [!Ref Environment, 'prod']]
@@ -118,6 +122,7 @@ Globals:
         POWERTOOLS_SERVICE_NAME: fares-etl
         PROJECT_ENV: !Ref Environment
         PROJECT_NAME: !Ref ProjectName
+        FRONTEND_BASE_URL: !Ref FrontendBaseUrl
 
 Resources:
   #######################

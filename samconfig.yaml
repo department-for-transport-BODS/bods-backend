@@ -51,6 +51,7 @@ dev:
       parameter_overrides: ProjectName='bods-backend'
         Environment='dev'
         AvlConsumerApiBaseUrl='https://x87vl7rpc0.execute-api.eu-west-2.amazonaws.com/v1'
+        FrontendBaseUrl='dev.bus-data.dft.gov.uk'
 
 test:
   deploy:
@@ -62,6 +63,7 @@ test:
         Environment='test'
         AvlConsumerApiBaseUrl='https://x87vl7rpc0.execute-api.eu-west-2.amazonaws.com/v1'
         CavlConsumerUrl='https://api-consumer-cavl-preprod.itoworld.com'
+        FrontendBaseUrl='test.bus-data.dft.gov.uk'
 
 uat:
   deploy:
@@ -73,6 +75,7 @@ uat:
         Environment='uat'
         AvlConsumerApiBaseUrl='https://x87vl7rpc0.execute-api.eu-west-2.amazonaws.com/v1'
         CavlConsumerUrl='https://api-consumer-cavl-staging.itoworld.com'
+        FrontendBaseUrl='uat.bus-data.dft.gov.uk'
 
 prod:
   sync:
@@ -87,3 +90,4 @@ prod:
         Environment='prod'
         AvlConsumerApiBaseUrl='https://obg8kxwhq9.execute-api.eu-west-2.amazonaws.com/v1'
         CavlConsumerUrl='https://api-consumer-cavl.itoworld.com'
+        FrontendBaseUrl='bus-data.dft.gov.uk'
