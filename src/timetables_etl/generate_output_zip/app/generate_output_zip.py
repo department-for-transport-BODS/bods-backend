@@ -211,6 +211,12 @@ def add_geo_associations(revision_id: int, db: SqlDB) -> None:
 
 
 def validate_and_send_pti_email(revision_id: int, db: SqlDB) -> None:
+    """Validate PTI report in db and send email if there are files
+
+    Args:
+        revision_id (int): Revision id for the dataset
+        db (SqlDB): DQ connection
+    """
     observation_repo = DataQualityPTIObservationRepo(db)
     pti_observations = observation_repo.get_by_revision_id(revision_id)
     if pti_observations:

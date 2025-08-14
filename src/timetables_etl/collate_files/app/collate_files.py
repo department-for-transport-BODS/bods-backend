@@ -120,7 +120,7 @@ def collate_files(
     )
 
     count_and_log_file_status(map_inputs)
-    log.info("Map Result", map_results=map_results)
+
     if map_results.failed:
         log.info("Sending the error email", revision_id=input_data.revision_id)
         send_failure_email(db, input_data.revision_id)
