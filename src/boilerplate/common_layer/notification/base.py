@@ -15,11 +15,6 @@ from structlog.stdlib import get_logger
 
 logger = get_logger()
 
-TEMPLATE_LOOKUP: Dict[str, str] = {
-    "OPERATOR_PUBLISH_ERROR": "notifications/data_end_point_error_publishing.txt",
-    "AGENT_PUBLISH_ERROR": "notifications/data_end_point_error_publishing_agent.txt",
-}
-
 
 class NotificationBase:
     """

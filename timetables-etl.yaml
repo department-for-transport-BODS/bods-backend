@@ -53,7 +53,7 @@ Parameters:
     Description: 'Version to pass to Datadog APM'
   FrontendBaseUrl:
     Type: String
-    Default: 'https://bus-data.dft.gov.uk'
+    Default: 'bus-data.dft.gov.uk'
     Description: 'Frontend Base Url'
 Conditions:
   IsNotLocal: !Not [!Equals [!Ref Environment, 'local']]
