@@ -57,11 +57,9 @@ def send_failure_email(db: SqlDB, revision_id: int):
     user_repo = UsersUserRepo(db)
     modified_by = user_repo.require_by_id(revision.last_modified_user_id)
 
-    base_url = environ.get("FRONTEND_BASE_URL", "bus-data.dft.gov.uk")
-    dataset_page_path = (
-        f"org/{dataset.organisation_id}/dataset/timetable/{dataset.id}/review"
+    feed_details_link = get_timetable_base_url(
+        dataset.dataset_type, dataset.organisation_id, dataset.id
     )
-    feed_details_link = f"https://publish.{base_url}/{dataset_page_path}"
 
     payload = {
         "feed_id": revision.dataset_id,
@@ -92,3 +90,26 @@ def send_failure_email(db: SqlDB, revision_id: int):
         notification.send_data_endpoint_validation_error_notification(
             modified_by.email, revision.published_at, False, **payload
         )
+
+
+def get_timetable_base_url(
+    dataset_type: int, organisation_id: int, dataset_id: int
+) -> str:
+    """Get the base path for timetable
+
+    Args:
+        dataset_type (int): fares or timetable
+        organisation_id (int): organisation_id
+        dataset_id (int): dataset id
+
+    Returns:
+        str: url for the details page
+    """
+    base_url = environ.get("FRONTEND_BASE_URL", "bus-data.dft.gov.uk")
+    type = "timetable"
+    if dataset_type == DATASET_FARES:
+        type = "fares"
+
+    dataset_page_path = f"org/{organisation_id}/dataset/{type}/{dataset_id}/review"
+
+    return f"https://publish.{base_url}/{dataset_page_path}"
