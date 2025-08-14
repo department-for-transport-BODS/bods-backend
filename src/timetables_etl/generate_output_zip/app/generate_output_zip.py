@@ -13,6 +13,7 @@ from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.aws.step import MapExecutionSucceeded, get_map_processing_results
 from common_layer.database.client import SqlDB
 from common_layer.database.repos import (
+    DataQualityPTIObservationRepo,
     ETLTaskResultRepo,
     OrganisationDatasetRevisionAdminAreasRepo,
     OrganisationDatasetRevisionLocalitiesRepo,
@@ -24,6 +25,7 @@ from common_layer.db.file_processing_result import (
     file_processing_result_to_db,
 )
 from common_layer.s3 import S3
+from common_layer.utils import send_failure_email
 from common_layer.xml.utils.hashing import get_bytes_hash
 from structlog.stdlib import get_logger
 
@@ -208,6 +210,17 @@ def add_geo_associations(revision_id: int, db: SqlDB) -> None:
         )
 
 
+def validate_and_send_pti_email(revision_id: int, db: SqlDB) -> None:
+    observation_repo = DataQualityPTIObservationRepo(db)
+    pti_observations = observation_repo.get_by_revision_id(revision_id)
+    if pti_observations:
+        log.info(
+            "Found PTI validations for the given revision, sending the email",
+            revision_id=revision_id,
+        )
+        send_failure_email(db, revision_id)
+
+
 @file_processing_result_to_db(StepName.GENERATE_OUTPUT_ZIP)
 def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, Any]:
     """
@@ -218,6 +231,7 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, 
     ETLTaskResultRepo(db).update_progress(input_data.dataset_etl_task_result_id, 90)
     update_revision_metadata(input_data.dataset_revision_id, db)
     add_geo_associations(input_data.dataset_revision_id, db)
+    validate_and_send_pti_email(input_data.dataset_revision_id, db)
     result = process_map_results(input_data, db)
     ETLTaskResultRepo(db).update_progress(input_data.dataset_etl_task_result_id, 100)
     log.info(
