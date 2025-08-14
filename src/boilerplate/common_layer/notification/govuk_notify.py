@@ -2,7 +2,6 @@
 GovUkNotifyEmail class to send emails via Gov UK portal
 """
 
-import json
 from os import environ
 from typing import Any
 
@@ -24,9 +23,6 @@ class GovUKNotifyEmail(NotificationBase):
         NotificationBase (INotifications): Notification definitions
     """
 
-    def __init__(self):
-        super().__init__()
-
     def _send_mail(
         self,
         feature: str,
@@ -46,10 +42,8 @@ class GovUKNotifyEmail(NotificationBase):
                 )
             else:
                 gov_uk_api_key = self._get_api_key()
-                self._notification_client = NotificationsAPIClient(
-                    api_key=gov_uk_api_key
-                )
-                self._notification_client.send_email_notification(  # type: ignore
+                notification_client = NotificationsAPIClient(api_key=gov_uk_api_key)
+                notification_client.send_email_notification(  # type: ignore
                     email_address=email,
                     template_id=template_id,
                     personalisation=kwargs,

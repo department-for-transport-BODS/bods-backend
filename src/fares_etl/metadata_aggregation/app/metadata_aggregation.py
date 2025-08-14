@@ -135,7 +135,7 @@ def load_metadata_to_database(
 
 
 def verify_and_send_error_email(
-    db: SqlDB, revision_id: int, violations: list[FaresValidation] = []
+    db: SqlDB, revision_id: int, violations: list[FaresValidation]
 ):
     """Send email based of fares validation error or schema error
 

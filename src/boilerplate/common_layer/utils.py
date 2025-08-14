@@ -106,10 +106,10 @@ def get_timetable_base_url(
         str: url for the details page
     """
     base_url = environ.get("FRONTEND_BASE_URL", "bus-data.dft.gov.uk")
-    type = "timetable"
+    d_type = "timetable"
     if dataset_type == DATASET_FARES:
-        type = "fares"
+        d_type = "fares"
 
-    dataset_page_path = f"org/{organisation_id}/dataset/{type}/{dataset_id}/review"
+    dataset_page_path = f"org/{organisation_id}/dataset/{d_type}/{dataset_id}/review"
 
     return f"https://publish.{base_url}/{dataset_page_path}"
