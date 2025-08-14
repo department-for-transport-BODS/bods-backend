@@ -69,7 +69,11 @@ def send_failure_email(db: SqlDB, revision_id: int):
         "feed_short_description": revision.description,
         "dataset_type": dataset.dataset_type,
         "feed_detail_link": feed_details_link,
-        "report_link": f"{feed_details_link}/pti-csv",
+        "report_link": (
+            ""
+            if dataset.dataset_type == DATASET_FARES
+            else f"{feed_details_link}/pti-csv"
+        ),
         "user_type": modified_by.account_type,
         "comments": revision.comment,
         "organisation": "-",
