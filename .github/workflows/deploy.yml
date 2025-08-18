@@ -61,7 +61,7 @@ jobs:
     steps:
       - name: checkout
         if: ${{ env.RC_VER == 'null' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # Configure AWS credentials against the BODS Shared Services account
       - name: configure aws credentials
