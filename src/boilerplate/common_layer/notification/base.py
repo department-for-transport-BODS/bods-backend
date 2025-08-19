@@ -6,7 +6,7 @@ be sent from the server less
 import datetime
 from abc import abstractmethod
 from os import environ
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from common_layer.notification.emails import data_end_point_error_publishing
 from common_layer.notification.local_time import localize_datetime_and_convert_to_string
