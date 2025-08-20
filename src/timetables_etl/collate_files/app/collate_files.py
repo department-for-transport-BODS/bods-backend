@@ -103,7 +103,7 @@ def collate_files(
     """
     - Get the File Attributes for the Revision ID
     - Get the Map Processing Results from S3
-    - Process using the BODs filtering logic by Service ID / Start Date
+    - Process using the BODS filtering logic by Service ID / Start Date
     - Generate the PTI+ETL Map Input Data
     - Upload to S3 and return Object Key
     """
@@ -120,10 +120,6 @@ def collate_files(
     )
 
     count_and_log_file_status(map_inputs)
-
-    if map_results.failed:
-        log.info("Sending the error email", revision_id=input_data.revision_id)
-        send_failure_email(db, input_data.revision_id)
 
     output_prefix = get_map_run_base_path(
         input_data.map_run_arn, input_data.map_run_prefix

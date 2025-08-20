@@ -13,6 +13,8 @@ from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.aws.step import MapExecutionSucceeded, get_map_processing_results
 from common_layer.database.client import SqlDB
 from common_layer.database.repos import (
+    DataQualitySchemaViolationRepo,
+    DataQualityPostSchemaViolationRepo,
     DataQualityPTIObservationRepo,
     ETLTaskResultRepo,
     OrganisationDatasetRevisionAdminAreasRepo,
@@ -210,16 +212,22 @@ def add_geo_associations(revision_id: int, db: SqlDB) -> None:
         )
 
 
-def validate_and_send_pti_email(revision_id: int, db: SqlDB) -> None:
-    """Validate PTI report in db and send email if there are files
+def validate_and_send_error_email(revision_id: int, db: SqlDB) -> None:
+    """Validate PTI report, Schema report in db and send email if there are files
 
     Args:
         revision_id (int): Revision id for the dataset
         db (SqlDB): DQ connection
     """
     observation_repo = DataQualityPTIObservationRepo(db)
+    schema_violation_repo = DataQualitySchemaViolationRepo(db)
+    post_schema_violation_repo = DataQualityPostSchemaViolationRepo(db)
+
+    schema_check_observations = schema_violation_repo.get_by_revision_id(revision_id)
+    post_schema_check_observations = post_schema_violation_repo.get_by_revision_id(revision_id)
     pti_observations = observation_repo.get_by_revision_id(revision_id)
-    if pti_observations:
+
+    if pti_observations or schema_check_observations or post_schema_check_observations:
         log.info(
             "Found PTI validations for the given revision, sending the email",
             revision_id=revision_id,
@@ -237,7 +245,7 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, 
     ETLTaskResultRepo(db).update_progress(input_data.dataset_etl_task_result_id, 90)
     update_revision_metadata(input_data.dataset_revision_id, db)
     add_geo_associations(input_data.dataset_revision_id, db)
-    validate_and_send_pti_email(input_data.dataset_revision_id, db)
+    validate_and_send_error_email(input_data.dataset_revision_id, db)
     result = process_map_results(input_data, db)
     ETLTaskResultRepo(db).update_progress(input_data.dataset_etl_task_result_id, 100)
     log.info(
