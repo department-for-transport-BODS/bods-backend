@@ -224,7 +224,9 @@ def validate_and_send_error_email(revision_id: int, db: SqlDB) -> None:
     post_schema_violation_repo = DataQualityPostSchemaViolationRepo(db)
 
     schema_check_observations = schema_violation_repo.get_by_revision_id(revision_id)
-    post_schema_check_observations = post_schema_violation_repo.get_by_revision_id(revision_id)
+    post_schema_check_observations = post_schema_violation_repo.get_by_revision_id(
+        revision_id
+    )
     pti_observations = observation_repo.get_by_revision_id(revision_id)
 
     if pti_observations or schema_check_observations or post_schema_check_observations:
