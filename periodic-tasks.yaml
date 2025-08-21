@@ -219,17 +219,18 @@ Resources:
       Name: !Sub '${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-sm'
       Role: !GetAtt ConsolidateTracksStateMachineRole.Arn
       Events:
-        # DailySchedule:
-        #   Type: Schedule
-        #   Properties:
-        #     Name: !Sub '${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-sm-daily'
-        #     Description: 'Trigger Consolidate Tracks job every day at 2am UTC'
-        #     Schedule: 'cron(0 2 * * ? *)'
-        #     Input: !Sub |
-        #       {
-        #         "threshold_meters": "20.0",
-        #         "dry_run": true
-        #       }
+        DailySchedule:
+          Type: Schedule
+          Properties:
+            Name: !Sub '${ProjectName}-${Environment}-${SubFunction}-consolidate-tracks-sm-daily'
+            Description: 'Trigger Consolidate Tracks job every day at 00:30 UTC'
+            Schedule: 'cron(30 0 * * ? *)'
+            Input: !Sub |
+              {
+                "threshold_meters": "20.0",
+                "dry_run": false,
+                "batch_size": 500
+              }
       DefinitionUri: './src/consolidate_tracks.statemachine.json'
       DefinitionSubstitutions:
         ConsolidateTracksBatcherLambdaArn: !GetAtt ConsolidateTracksBatcherLambda.Arn
