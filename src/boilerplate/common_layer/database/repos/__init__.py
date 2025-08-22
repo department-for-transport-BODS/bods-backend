@@ -63,7 +63,6 @@ from .repo_transmodel_vehicle_journey import (
     TransmodelOperatingProfileRepo,
     TransmodelVehicleJourneyRepo,
 )
-from .repo_user import UsersUserRepo
 
 __all__ = [
     # AVL
@@ -124,5 +123,4 @@ __all__ = [
     "TransmodelOperatingProfileRepo",
     "TransmodelVehicleJourneyRepo",
     "TransmodelServicePatternTracksRepo",
-    "UsersUserRepo",
 ]

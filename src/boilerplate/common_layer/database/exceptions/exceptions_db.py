@@ -37,11 +37,3 @@ class PipelinesDatasetETLTaskResultNotFound(ETLException):
     """
 
     code = ETLErrorCode.PIPELINES_DATASET_ETL_TASK_RESULT_NOT_FOUND
-
-
-class DatasetPublishedByUserNotFound(ETLException):
-    """
-    Step Requiring the Organisation dataset publisher failed to find the referenced one
-    """
-
-    code = ETLErrorCode.USER_NOT_FOUND

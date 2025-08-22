@@ -3,7 +3,6 @@ Exceptions exports
 """
 
 from .exceptions_db import (
-    DatasetPublishedByUserNotFound,
     OrganisationDatasetNotFound,
     OrganisationDatasetRevisionNotFound,
     OrganisationTXCFileAttributesNotFound,
@@ -15,5 +14,4 @@ __all__ = [
     "OrganisationTXCFileAttributesNotFound",
     "PipelinesDatasetETLTaskResultNotFound",
     "OrganisationDatasetNotFound",
-    "DatasetPublishedByUserNotFound",
 ]
