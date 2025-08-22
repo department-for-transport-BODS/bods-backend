@@ -51,6 +51,10 @@ Parameters:
     Type: String
     Default: 'unknown'
     Description: 'Version to pass to Datadog APM'
+  FrontendBaseUrl:
+    Type: String
+    Default: 'bus-data.dft.gov.uk'
+    Description: 'Frontend Base Url'
 Conditions:
   IsNotLocal: !Not [!Equals [!Ref Environment, 'local']]
   IsNotProd: !Not [!Equals [!Ref Environment, 'prod']]
@@ -84,35 +88,44 @@ Globals:
       - !Ref AWS::NoValue
     Environment:
       Variables:
-        POWERTOOLS_METRICS_NAMESPACE: bods
-        POWERTOOLS_SERVICE_NAME: timetables-etl
+        DD_DBM_PROPAGATION_MODE: full
+        DD_EXTENSION_VERSION: compatibility
+        DD_MERGE_XRAY_TRACES: true
+        DD_RUNTIME_METRICS_ENABLED: true
+        DYNAMODB_CACHE_TABLE_NAME: !Ref TimetablesCache
+        DYNAMODB_NAPTAN_STOP_POINT_TABLE_NAME:
+          Fn::ImportValue: !Sub '${ProjectName}-${Environment}-naptan-stop-points-table-name'
         HTTPS_PROXY: !If
           - IsNotLocal
           - !Sub 'http://squid.bodds.${Environment}:3128'
           - !Ref AWS::NoValue
         NO_PROXY: 'localhost,127.0.0.1,secretsmanager.eu-west-2.amazonaws.com,s3.eu-west-2.amazonaws.com,dynamodb.eu-west-2.amazonaws.com,instrumentation-telemetry-intake.datadoghq.eu,7-63-3-app.agent.datadoghq.eu,http-intake.logs.datadoghq.eu,trace.agent.datadoghq.eu'
-        PROJECT_ENV: !Ref Environment
-        PROJECT_NAME: !Ref ProjectName
+        GENERIC_TEMPLATE_ID: !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/generic-template-id}}'
+          - !Ref AWS::NoValue
+        GOV_NOTIFY_API_ARN: !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/secretsmanager/govuk-notify-api-key/arn}}'
+          - !Ref AWS::NoValue
+        POSTGRES_DB: !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
+          - !Ref RdsDbName
         POSTGRES_HOST: !If
           - IsNotLocal
           - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-proxy-endpoint}}'
           - !Ref RdsDbHostAddr
         POSTGRES_PORT: !Ref RdsDbPort
-        POSTGRES_DB: !If
-          - IsNotLocal
-          - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
-          - !Ref RdsDbName
         POSTGRES_USER: !If
           - IsNotLocal
           - !Sub '{{resolve:secretsmanager:bodds/${Environment}/rds/user/bodds_rw:SecretString:username}}'
           - !Ref RdsDbUsername
-        DYNAMODB_CACHE_TABLE_NAME: !Ref TimetablesCache
-        DYNAMODB_NAPTAN_STOP_POINT_TABLE_NAME:
-          Fn::ImportValue: !Sub '${ProjectName}-${Environment}-naptan-stop-points-table-name'
-        DD_MERGE_XRAY_TRACES: true
-        DD_RUNTIME_METRICS_ENABLED: true
-        DD_DBM_PROPAGATION_MODE: full
-        DD_EXTENSION_VERSION: compatibility
+        POWERTOOLS_METRICS_NAMESPACE: bods
+        POWERTOOLS_SERVICE_NAME: timetables-etl
+        PROJECT_ENV: !Ref Environment
+        PROJECT_NAME: !Ref ProjectName
+        FRONTEND_BASE_URL: !Ref FrontendBaseUrl
 
 Resources:
   #######################
@@ -475,7 +488,8 @@ Resources:
                   - kms:Encrypt
                 Resource: !If
                   - IsNotLocal
-                  - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
+                  - - !Sub '{{resolve:ssm:/bodds/shared/kms-key-arn}}'
+                    - !Sub '{{resolve:ssm:/bodds/${Environment}/kms-key-arn}}'
                   - '*'
         - PolicyName: DynamoDBAccessPolicy
           PolicyDocument:
@@ -495,13 +509,17 @@ Resources:
                   - dynamodb:BatchGetItem
                 Resource:
                   Fn::ImportValue: !Sub '${ProjectName}-${Environment}-naptan-stop-points-table-arn'
-        - PolicyName: DataDogAPIAccess
+        - PolicyName: SecretsManagerAccessPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action: secretsmanager:GetSecretValue
-                Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:bodds/shared/datadog/api-key-*'
+                Resource: !If
+                  - IsNotLocal
+                  - - !Sub '{{resolve:ssm:/bodds/shared/secretsmanager/datadog-api-key/arn}}'
+                    - !Sub '{{resolve:ssm:/bodds/${Environment}/secretsmanager/govuk-notify-api-key/arn}}'
+                  - '*'
 
   TimetablesStateMachineRole:
     Type: AWS::IAM::Role
