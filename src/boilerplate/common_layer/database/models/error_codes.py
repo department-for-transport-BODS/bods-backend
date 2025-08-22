@@ -67,7 +67,6 @@ class ETLErrorCode(str, Enum):
     PIPELINES_DATASET_ETL_TASK_RESULT_NOT_FOUND = (
         "The DatasetETLTaskResult was not found in DB"
     )
-    USER_NOT_FOUND = "User not found in database"
 
     # Fares
     FARES_METADATA_NOT_FOUND = "No Metadata found in DynamoDB for Aggregation"

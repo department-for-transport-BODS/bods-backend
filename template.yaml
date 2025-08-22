@@ -29,10 +29,6 @@ Parameters:
     Type: String
     Default: 'unknown'
     Description: 'Version to pass to Datadog APM'
-  FrontendBaseUrl:
-    Type: String
-    Default: 'https://bus-data.dft.gov.uk'
-    Description: 'Frontend Base Url'
 
 Resources:
   PeriodicTasks:
@@ -66,7 +62,6 @@ Resources:
         BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
         DDGitData: !Ref DDGitData
         Version: !Ref Version
-        FrontendBaseUrl: !Ref FrontendBaseUrl
       Tags:
         env: !Ref Environment
         service: !Sub '${ProjectName}-timetables-etl'
@@ -84,7 +79,6 @@ Resources:
         BoilerplateLambdaLayerArn: !Ref BoilerplateLambdaLayer
         DDGitData: !Ref DDGitData
         Version: !Ref Version
-        FrontendBaseUrl: !Ref FrontendBaseUrl
       Tags:
         env: !Ref Environment
         service: !Sub '${ProjectName}-fares-etl'
