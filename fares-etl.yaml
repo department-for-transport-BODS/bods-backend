@@ -217,7 +217,7 @@ Resources:
       CodeUri: ./src/fares_etl/metadata_aggregation
       Handler: app.metadata_aggregation.lambda_handler
       Timeout: 900
-      MemorySize: 1024
+      MemorySize: 2500
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
