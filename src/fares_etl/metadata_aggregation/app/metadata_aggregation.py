@@ -10,6 +10,7 @@ from common_layer.database.models import (
     FaresDataCatalogueMetadata,
     FaresMetadata,
     FaresMetadataStop,
+    FaresValidation,
 )
 from common_layer.database.repos import (
     DataQualitySchemaViolationRepo,
@@ -20,6 +21,7 @@ from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.dynamodb.client.fares_metadata import DynamoDBFaresMetadata
 from common_layer.exceptions import FaresMetadataNotFound, SchemaViolationsFound
+from common_layer.utils import send_failure_email
 from pydantic import BaseModel, Field
 from structlog.stdlib import get_logger
 
@@ -84,6 +86,10 @@ def get_data_from_dynamodb(
         )
 
         if schema_violations and len(schema_violations) > 0:
+            log.info(
+                "Sending Fares validation email for revision", revision_id=revision_id
+            )
+            send_failure_email(db, revision_id)
             raise SchemaViolationsFound(task_id=task_id)
 
         log.error("No Fares metadata found in dynamodb for task", task_id=task_id)
@@ -128,6 +134,27 @@ def load_metadata_to_database(
     load_metadata(db, aggregated_fares_metadata, stops, data_catalogues)
 
 
+def verify_and_send_error_email(
+    db: SqlDB, revision_id: int, violations: list[FaresValidation]
+):
+    """Send email based of fares validation error or schema error
+
+    Args:
+        db (SqlDB): DB instance for query
+        revision_id (int): revision id for dataset
+        violations (list[FaresValidation]): violations for fares dataset
+    """
+    schema_violations = DataQualitySchemaViolationRepo(db).get_by_revision_id(
+        revision_id
+    )
+
+    if (schema_violations and len(schema_violations) > 0) or (
+        violations and len(violations) > 0
+    ):
+        log.info("Sending Fares validation email for revision", revision_id=revision_id)
+        send_failure_email(db, revision_id)
+
+
 @file_processing_result_to_db(step_name=StepName.FARES_METADATA_AGGREGATION)
 def lambda_handler(
     event: dict[str, Any], _context: LambdaContext
@@ -168,6 +195,8 @@ def lambda_handler(
         data_catalogues,
         metadata_dataset_id,
     )
+
+    verify_and_send_error_email(db, input_data.revision_id, violations)
 
     load_violations(db, violations, fares_validation_result)
 
