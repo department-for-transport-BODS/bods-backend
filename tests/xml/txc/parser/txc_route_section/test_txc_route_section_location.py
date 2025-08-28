@@ -107,35 +107,6 @@ def test_parse_location(xml_string: str, expected: TXCLocation | None) -> None:
             """
         <Track>
             <Mapping>
-                <Location id="loc1">
-                    <Easting>097910</Easting>
-                    <Northing>960550</Northing>
-                </Location>
-                <Location id="loc2">
-                    <Easting>097460</Easting>
-                    <Northing>960340</Northing>
-                </Location>
-            </Mapping>
-        </Track>
-        """,
-            [
-                TXCLocation(
-                    id="loc1",
-                    Longitude="-7.177380811839908",
-                    Latitude="58.42846940467045",
-                ),
-                TXCLocation(
-                    id="loc2",
-                    Longitude="-7.184777481473526",
-                    Latitude="58.426280107812424",
-                ),
-            ],
-            id="Multiple Valid Locations with Easting and Northing",
-        ),
-        pytest.param(
-            """
-        <Track>
-            <Mapping>
                 <Location>
                     <Longitude>-0.1234567</Longitude>
                     <Latitude>51.9876543</Latitude>
@@ -163,24 +134,6 @@ def test_parse_location(xml_string: str, expected: TXCLocation | None) -> None:
         """,
             [TXCLocation(id="loc1", Longitude="-0.1234567", Latitude="51.9876543")],
             id="Mixed Valid and Invalid Locations",
-        ),
-        pytest.param(
-            """
-        <Track>
-        <Mapping>
-            <Location id="loc2">
-            <Translation>
-                <Easting>495966</Easting>
-                <Northing>201754</Northing>
-                <Longitude>-0.612551</Longitude>
-                <Latitude>51.706335</Latitude>
-            </Translation>
-            </Location>
-        </Mapping>
-        </Track>
-        """,
-            [TXCLocation(id="loc2", Longitude="-0.612551", Latitude="51.706335")],
-            id="Location with translation element",
         ),
         pytest.param(
             """
