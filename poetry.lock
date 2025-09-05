@@ -305,20 +305,20 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.36.8"
+version = "1.40.24"
 description = "The AWS SDK for Python"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["main", "boilerplate", "dev"]
 files = [
-    {file = "boto3-1.36.8-py3-none-any.whl", hash = "sha256:7f61c9d0ea64f484a17c1e3115fdf90fd7b17ab6771e07cb4549f42b9fd28fb9"},
-    {file = "boto3-1.36.8.tar.gz", hash = "sha256:ac47215d320b0c2534340db58d6d5284cb1860b7bff172b4dd6eee2dee1d5779"},
+    {file = "boto3-1.40.24-py3-none-any.whl", hash = "sha256:24a19e275d33e918afc22a78c6a1e20c14d02cc00e2f786b05e2a4a32191457e"},
+    {file = "boto3-1.40.24.tar.gz", hash = "sha256:cc147ad13e8edf7ec69cbb4df8fe60f187f8b2c9ab8befa0fd1fbcfa4fc80b1f"},
 ]
 
 [package.dependencies]
-botocore = ">=1.36.8,<1.37.0"
+botocore = ">=1.40.24,<1.41.0"
 jmespath = ">=0.7.1,<2.0.0"
-s3transfer = ">=0.11.0,<0.12.0"
+s3transfer = ">=0.13.0,<0.14.0"
 
 [package.extras]
 crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
@@ -774,14 +774,14 @@ xray = ["mypy-boto3-xray (>=1.35.0,<1.36.0)"]
 
 [[package]]
 name = "botocore"
-version = "1.36.8"
+version = "1.40.24"
 description = "Low-level, data-driven core of boto 3."
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["main", "boilerplate", "dev"]
 files = [
-    {file = "botocore-1.36.8-py3-none-any.whl", hash = "sha256:59d3fdfbae6d916b046e973bebcbeb70a102f9e570ca86d5ba512f1854b78fc2"},
-    {file = "botocore-1.36.8.tar.gz", hash = "sha256:81c88e5566cf018e1411a68304dc1fb9e4156ca2b50a3a0f0befc274299e67fa"},
+    {file = "botocore-1.40.24-py3-none-any.whl", hash = "sha256:d566840f2291bb5df1c0903ad385c61c865927d562d41dcf6468c9cee4cc313a"},
+    {file = "botocore-1.40.24.tar.gz", hash = "sha256:af2b49e52950a12229440d7c297aaad0a7b75fd1c4f8700b164948b207a08cf0"},
 ]
 
 [package.dependencies]
@@ -790,7 +790,7 @@ python-dateutil = ">=2.1,<3.0.0"
 urllib3 = {version = ">=1.25.4,<2.2.0 || >2.2.0,<3", markers = "python_version >= \"3.10\""}
 
 [package.extras]
-crt = ["awscrt (==0.23.4)"]
+crt = ["awscrt (==0.27.6)"]
 
 [[package]]
 name = "botocore-stubs"
@@ -1115,7 +1115,7 @@ description = "Cross-platform colored terminal text."
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7"
 groups = ["dev"]
-markers = "sys_platform == \"win32\" or platform_system == \"Windows\""
+markers = "platform_system == \"Windows\" or sys_platform == \"win32\""
 files = [
     {file = "colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"},
     {file = "colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44"},
@@ -1599,7 +1599,7 @@ description = "Lightweight in-process concurrent programming"
 optional = false
 python-versions = ">=3.7"
 groups = ["boilerplate", "database", "model_gen"]
-markers = "(python_version ~= \"3.12.0\" or python_version ~= \"3.11.0\") and (platform_machine == \"aarch64\" or platform_machine == \"ppc64le\" or platform_machine == \"x86_64\" or platform_machine == \"amd64\" or platform_machine == \"AMD64\" or platform_machine == \"win32\" or platform_machine == \"WIN32\")"
+markers = "(python_version ~= \"3.12.0\" or python_version == \"3.11\") and (platform_machine == \"aarch64\" or platform_machine == \"ppc64le\" or platform_machine == \"x86_64\" or platform_machine == \"amd64\" or platform_machine == \"AMD64\" or platform_machine == \"win32\" or platform_machine == \"WIN32\")"
 files = [
     {file = "greenlet-3.1.1-cp310-cp310-macosx_11_0_universal2.whl", hash = "sha256:0bbae94a29c9e5c7e4a2b7f0aae5c17e8e90acbfd3bf6270eeba60c39fce3563"},
     {file = "greenlet-3.1.1-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:0fde093fb93f35ca72a556cf72c92ea3ebfda3d79fc35bb19fbe685853869a83"},
@@ -3015,7 +3015,7 @@ astroid = ">=3.3.8,<=3.4.0-dev0"
 colorama = {version = ">=0.4.5", markers = "sys_platform == \"win32\""}
 dill = [
     {version = ">=0.3.7", markers = "python_version >= \"3.12\""},
-    {version = ">=0.3.6", markers = "python_version >= \"3.11\""},
+    {version = ">=0.3.6", markers = "python_version == \"3.11\""},
 ]
 isort = ">=4.2.5,<5.13.0 || >5.13.0,<7"
 mccabe = ">=0.6,<0.8"
@@ -3612,7 +3612,7 @@ description = "C version of reader, parser and emitter for ruamel.yaml derived f
 optional = false
 python-versions = ">=3.9"
 groups = ["dev"]
-markers = "(python_version ~= \"3.12.0\" or python_version ~= \"3.11.0\") and platform_python_implementation == \"CPython\""
+markers = "platform_python_implementation == \"CPython\" and (python_version ~= \"3.12.0\" or python_version == \"3.11\")"
 files = [
     {file = "ruamel.yaml.clib-0.2.12-cp310-cp310-macosx_13_0_arm64.whl", hash = "sha256:11f891336688faf5156a36293a9c362bdc7c88f03a8a027c2c1d8e0bcde998e5"},
     {file = "ruamel.yaml.clib-0.2.12-cp310-cp310-manylinux2014_aarch64.whl", hash = "sha256:a606ef75a60ecf3d924613892cc603b154178ee25abb3055db5062da811fd969"},
@@ -3664,21 +3664,21 @@ files = [
 
 [[package]]
 name = "s3transfer"
-version = "0.11.2"
+version = "0.13.1"
 description = "An Amazon S3 Transfer Manager"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["main", "boilerplate", "dev"]
 files = [
-    {file = "s3transfer-0.11.2-py3-none-any.whl", hash = "sha256:be6ecb39fadd986ef1701097771f87e4d2f821f27f6071c872143884d2950fbc"},
-    {file = "s3transfer-0.11.2.tar.gz", hash = "sha256:3b39185cb72f5acc77db1a58b6e25b977f28d20496b6e58d6813d75f464d632f"},
+    {file = "s3transfer-0.13.1-py3-none-any.whl", hash = "sha256:a981aa7429be23fe6dfc13e80e4020057cbab622b08c0315288758d67cabc724"},
+    {file = "s3transfer-0.13.1.tar.gz", hash = "sha256:c3fdba22ba1bd367922f27ec8032d6a1cf5f10c934fb5d68cf60fd5a23d936cf"},
 ]
 
 [package.dependencies]
-botocore = ">=1.36.0,<2.0a.0"
+botocore = ">=1.37.4,<2.0a.0"
 
 [package.extras]
-crt = ["botocore[crt] (>=1.36.0,<2.0a.0)"]
+crt = ["botocore[crt] (>=1.37.4,<2.0a.0)"]
 
 [[package]]
 name = "setuptools"
@@ -4344,4 +4344,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "dadb0a6cd6295cd4f6c08e6a1c73b809059562900f64de9c32a58fa2bbcd16c2"
+content-hash = "f4cec581ba6e140b1afab35223f859c5e8ea47b39f27d7ed54434e0c7ccc52c8"
