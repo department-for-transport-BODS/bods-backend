@@ -90,6 +90,10 @@ clamd = "^1.0.2"
 
 [tool.poetry.group.file_validation.dependencies]
 defusedxml = "^0.7.1"
+pyproj = "^3.7.0"
+
+[tool.poetry.group.post_schema_check.dependencies]
+pyproj = "^3.7.0"
 
 [tool.poetry.group.post_schema_check.dependencies]
 pyproj = "^3.7.0"
