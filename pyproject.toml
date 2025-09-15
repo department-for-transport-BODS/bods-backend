@@ -42,11 +42,13 @@ pydantic = "^2.9.2"
 boto3 = "^1.35.57"
 structlog = "^24.4.0"
 notifications-python-client = "^10.0.1"
+pyproj = "^3.7.0"
 
 [tool.poetry.group.database.dependencies]
 sqlalchemy = "^2.0.36"
 geoalchemy2 = "^0.16.0"
 psycopg2-binary = "^2.9.10"
+pyproj = "^3.7.0"
 
 [tool.poetry.group.boilerplate.dependencies]
 boto3 = "^1.35.92"
@@ -61,6 +63,7 @@ structlog = "^24.4.0"
 shapely = "^2.0.6"
 pydantic-settings = "^2.7.1"
 notifications-python-client = "^10.0.1"
+pyproj = "^3.7.0"
 
 # Periodic Task Lamaba Dependencies
 [tool.poetry.group.naptan_cache_populator.dependencies]
@@ -84,15 +87,14 @@ pyproj = "^3.7.0"
 
 [tool.poetry.group.pti.dependencies]
 isoduration = "^20.11.0"
+pyproj = "^3.7.0"
 
 [tool.poetry.group.clamav_scanner.dependencies]
 clamd = "^1.0.2"
+pyproj = "^3.7.0"
 
 [tool.poetry.group.file_validation.dependencies]
 defusedxml = "^0.7.1"
-pyproj = "^3.7.0"
-
-[tool.poetry.group.post_schema_check.dependencies]
 pyproj = "^3.7.0"
 
 [tool.poetry.group.post_schema_check.dependencies]
@@ -102,6 +104,7 @@ pyproj = "^3.7.0"
 [tool.poetry.group.model_gen.dependencies]
 sqlalchemy-citext = "^1.8.0"
 pgvector = "^0.3.6"
+pyproj = "^3.7.0"
 
 [tool.poetry.group.dev.dependencies]
 pylint = "^3.3.4"
@@ -123,16 +126,19 @@ aws-lambda-powertools = { extras = ["all"], version = "^3.4.0" }
 pytest-mock = "^3.11.1"
 textual = "^2.1.2"
 ddtrace = "^3.2.1"
+pyproj = "^3.7.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+pyproj = "^3.7.0"
 
 [tool.pylint.MAIN]
 source-roots = ["./src/timetables_etl", "./src/boilerplate"]
 extension-pkg-allow-list = ["lxml", "pydantic", "pydantic_core"]
 [tool.pylint."MESSAGES CONTROL"]
 disable = ["too-few-public-methods"]
+pyproj = "^3.7.0"
 
 [tool.pyright]
 include = ["src", "tests", "tools"]
