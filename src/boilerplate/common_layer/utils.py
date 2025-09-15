@@ -68,7 +68,7 @@ def send_failure_email(db: SqlDB, revision_id: int):
         "dataset_type": dataset.dataset_type,
         "feed_detail_link": feed_details_link,
         "report_link": (
-            ""
+            f"{feed_details_link}/fares-csv"
             if dataset.dataset_type == DATASET_FARES
             else f"{feed_details_link}/pti-csv"
         ),
