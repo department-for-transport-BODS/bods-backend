@@ -65,7 +65,7 @@ pydantic-settings = "^2.7.1"
 notifications-python-client = "^10.0.1"
 pyproj = "^3.7.0"
 
-# Periodic Task Lamaba Dependencies
+# Periodic Task Lambda Dependencies
 [tool.poetry.group.naptan_cache_populator.dependencies]
 pyproj = "^3.7.0"
 
