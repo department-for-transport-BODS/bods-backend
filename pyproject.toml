@@ -48,7 +48,6 @@ pyproj = "^3.7.0"
 sqlalchemy = "^2.0.36"
 geoalchemy2 = "^0.16.0"
 psycopg2-binary = "^2.9.10"
-pyproj = "^3.7.0"
 
 [tool.poetry.group.boilerplate.dependencies]
 boto3 = "^1.35.92"
@@ -104,7 +103,6 @@ pyproj = "^3.7.0"
 [tool.poetry.group.model_gen.dependencies]
 sqlalchemy-citext = "^1.8.0"
 pgvector = "^0.3.6"
-pyproj = "^3.7.0"
 
 [tool.poetry.group.dev.dependencies]
 pylint = "^3.3.4"
