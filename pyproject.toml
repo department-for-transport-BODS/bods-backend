@@ -42,6 +42,7 @@ pydantic = "^2.9.2"
 boto3 = "^1.35.57"
 structlog = "^24.4.0"
 notifications-python-client = "^10.0.1"
+pyproj = "^3.7.0"
 
 [tool.poetry.group.database.dependencies]
 sqlalchemy = "^2.0.36"
