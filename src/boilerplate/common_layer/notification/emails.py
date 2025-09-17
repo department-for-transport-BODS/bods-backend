@@ -33,8 +33,7 @@ def data_end_point_error_publishing(
     content += f"Published: {published_time} \n"
     content += f"Comments: {kwargs['comments']} \n"
     content += f"Link to data set: {kwargs['feed_detail_link']} \n"
-    if dataset_type == 1:
-        content += f"\nThe validation report is available here: {kwargs['report_link']}"
+    content += f"\nThe validation report is available here: {kwargs['report_link']}"
     content += (
         "\n\nAction required: \n"
         "\t 1) Share or forward this email to your supplier so "
