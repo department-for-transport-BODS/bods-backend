@@ -101,7 +101,7 @@ def snap_linestrings(
         )
         curr_coords = list(curr.coords)
         if dist <= tolerance:
-            curr_coords[0] = prev_end  # type: ignore
+            curr_coords[0] = tuple(prev_end)
         snapped.append(LineString(curr_coords))
     return snapped
 
