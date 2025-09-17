@@ -71,25 +71,26 @@ def haversine(lon1: float, lat1: float, lon2: float, lat2: float) -> float:
     """
     Calculate the great-circle distance in meters between two points (lon/lat).
     """
-    R = 6371000  # Earth radius in meters
+    earth_radius = 6371000  # Earth radius in meters
     lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
     dlon = lon2 - lon1
     dlat = lat2 - lat1
     a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
     c = 2 * asin(sqrt(a))
-    return R * c
+    return earth_radius * c
 
 
 def snap_linestrings(
     lines: list[LineString], tolerance: float = 15.0
 ) -> list[LineString]:
     """
-    Snap the end of each linestring to the start of the next if they're within the given tolerance (meters).
+    Snap the end of each linestring to the start of the next if they're
+    within the given tolerance (meters).
     """
     if not lines:
         return []
     snapped: list[LineString] = [LineString(lines[0].coords)]
-    for idx, curr in enumerate(lines[1:], start=1):
+    for _idx, curr in enumerate(lines[1:], start=1):
         prev: LineString = snapped[-1]
         prev_end = prev.coords[-1]
         curr_start = curr.coords[0]
@@ -122,7 +123,8 @@ def get_geometry_and_distance_from_tracks(
         track = tracks.get((from_stop.atco_code, to_stop.atco_code))
         if not track or not track.geometry:
             raise ValueError(
-                f"No track or geometry found for stop point pair {from_stop.atco_code} -> {to_stop.atco_code} at index {i}"
+                f"No track or geometry found for stop point \
+                pair {from_stop.atco_code} -> {to_stop.atco_code} at index {i}"
             )
         if track.distance:
             total_distance += track.distance
