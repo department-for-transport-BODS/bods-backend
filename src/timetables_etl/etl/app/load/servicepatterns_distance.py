@@ -135,7 +135,7 @@ def get_geometry_and_distance_from_tracks(
         else:
             log.warning(
                 "Track has unexpected geometry type",
-                track_id=getattr(track, "id", "unknown"),
+                track_id=track.id,
                 geom_type=shapely_geom.geom_type,
             )
 
