@@ -94,10 +94,10 @@ def snap_linestrings(
         prev_end = prev.coords[-1]
         curr_start = curr.coords[0]
         dist: float = haversine(
-            float(prev_end[0]),
-            float(prev_end[1]),
-            float(curr_start[0]),
-            float(curr_start[1]),
+            prev_end[0],
+            prev_end[1],
+            curr_start[0],
+            curr_start[1],
         )
         curr_coords = list(curr.coords)
         if dist <= tolerance:
