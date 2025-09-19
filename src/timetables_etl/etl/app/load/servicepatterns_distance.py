@@ -81,29 +81,39 @@ def haversine(lon1: float, lat1: float, lon2: float, lat2: float) -> float:
 
 
 def snap_linestrings(
-    lines: list[LineString], tolerance: float = 15.0
+    lines: list[LineString], tolerance: float | None = 15.0
 ) -> list[LineString]:
     """
-    Snap the end of each linestring to the start of the next if they're
-    within the given tolerance (meters).
+    Snap the end of each linestring to the start of the next.
+    If tolerance is None, always snap regardless of distance.
+    Otherwise, snap only when distance <= tolerance (meters).
     """
     if not lines:
         return []
+
     snapped: list[LineString] = [LineString(lines[0].coords)]
     for _idx, curr in enumerate(lines[1:], start=1):
         prev: LineString = snapped[-1]
         prev_end = prev.coords[-1]
         curr_start = curr.coords[0]
-        dist: float = haversine(
-            prev_end[0],
-            prev_end[1],
-            curr_start[0],
-            curr_start[1],
-        )
+
         curr_coords = list(curr.coords)
-        if dist <= tolerance:
+
+        if tolerance is None:
+            # Always snap, skip distance check
             curr_coords[0] = tuple(prev_end)
+        else:
+            dist: float = haversine(
+                prev_end[0],
+                prev_end[1],
+                curr_start[0],
+                curr_start[1],
+            )
+            if dist <= tolerance:
+                curr_coords[0] = tuple(prev_end)
+
         snapped.append(LineString(curr_coords))
+
     return snapped
 
 
@@ -146,7 +156,7 @@ def get_geometry_and_distance_from_tracks(
         return None, 0
 
     # Snap endpoints within 15 meters before merging
-    snapped_lines = snap_linestrings(track_linestrings, tolerance=15)
+    snapped_lines = snap_linestrings(track_linestrings, tolerance=None)
     merged = linemerge(snapped_lines)
     if isinstance(merged, MultiLineString):
         # Flatten all coordinates into a single LineString
