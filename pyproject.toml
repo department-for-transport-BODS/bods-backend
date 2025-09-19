@@ -67,23 +67,23 @@ pyproj = "3.7.0"
 
 # Periodic Task Lamaba Dependencies
 [tool.poetry.group.naptan_cache_populator.dependencies]
-pyproj = "^3.7.0"
+pyproj = "3.7.0"
 
 [tool.poetry.group.naptan_cache_id_updater.dependencies]
-pyproj = "^3.7.0"
+pyproj = "3.7.0"
 
 [tool.poetry.group.consolidate_tracks_batcher.dependencies]
-pyproj = "^3.7.0"
+pyproj = "3.7.0"
 
 [tool.poetry.group.consolidate_tracks_updater.dependencies]
-pyproj = "^3.7.0"
+pyproj = "3.7.0"
 
 [tool.poetry.group.consolidate_tracks_stat_reporter.dependencies]
-pyproj = "^3.7.0"
+pyproj = "3.7.0"
 
 # Timetables ETL Lambda Dependencies
 [tool.poetry.group.etl.dependencies]
-pyproj = "^3.7.0"
+pyproj = "3.7.0"
 
 [tool.poetry.group.pti.dependencies]
 isoduration = "^20.11.0"
