@@ -95,6 +95,10 @@ defusedxml = "^0.7.1"
 [tool.poetry.group.post_schema_check.dependencies]
 pyproj = "^3.7.0"
 
+# Post Schema Task Lamaba Dependencies
+[tool.poetry.group.file_attributes.dependencies]
+pyproj = "^3.7.0"
+
 # Dev & Tooling Dependencies
 [tool.poetry.group.model_gen.dependencies]
 sqlalchemy-citext = "^1.8.0"
