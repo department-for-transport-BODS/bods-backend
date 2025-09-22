@@ -42,8 +42,6 @@ pydantic = "^2.9.2"
 boto3 = "^1.35.57"
 structlog = "^24.4.0"
 notifications-python-client = "^10.0.1"
-numpy = "2.2.0"
-pyproj = "3.7.0"
 
 [tool.poetry.group.database.dependencies]
 sqlalchemy = "^2.0.36"
@@ -92,6 +90,10 @@ clamd = "^1.0.2"
 
 [tool.poetry.group.file_validation.dependencies]
 defusedxml = "^0.7.1"
+
+# Post Schema Task Lamaba Dependencies
+[tool.poetry.group.post_schema_check.dependencies]
+pyproj = "^3.7.0"
 
 # Dev & Tooling Dependencies
 [tool.poetry.group.model_gen.dependencies]
