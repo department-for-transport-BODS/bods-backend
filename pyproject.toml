@@ -42,8 +42,6 @@ pydantic = "^2.9.2"
 boto3 = "^1.35.57"
 structlog = "^24.4.0"
 notifications-python-client = "^10.0.1"
-pyproj = "3.7.0"
-numpy = "2.2.0"
 
 [tool.poetry.group.database.dependencies]
 sqlalchemy = "^2.0.36"
@@ -66,23 +64,23 @@ notifications-python-client = "^10.0.1"
 
 # Periodic Task Lamaba Dependencies
 [tool.poetry.group.naptan_cache_populator.dependencies]
-pyproj = "3.7.0"
+pyproj = "^3.7.0"
 
 [tool.poetry.group.naptan_cache_id_updater.dependencies]
-pyproj = "3.7.0"
+pyproj = "^3.7.0"
 
 [tool.poetry.group.consolidate_tracks_batcher.dependencies]
-pyproj = "3.7.0"
+pyproj = "^3.7.0"
 
 [tool.poetry.group.consolidate_tracks_updater.dependencies]
-pyproj = "3.7.0"
+pyproj = "^3.7.0"
 
 [tool.poetry.group.consolidate_tracks_stat_reporter.dependencies]
-pyproj = "3.7.0"
+pyproj = "^3.7.0"
 
 # Timetables ETL Lambda Dependencies
 [tool.poetry.group.etl.dependencies]
-pyproj = "3.7.0"
+pyproj = "^3.7.0"
 
 [tool.poetry.group.pti.dependencies]
 isoduration = "^20.11.0"
