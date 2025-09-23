@@ -96,7 +96,7 @@ defusedxml = "^0.7.1"
 [tool.poetry.group.post_schema_check.dependencies]
 pyproj = "^3.7.0"
 
-# Post Schema Task Lambda Dependencies
+# File Attributes Lambda Dependencies
 [tool.poetry.group.file_attributes_etl.dependencies]
 pyproj = "^3.7.0"
 
