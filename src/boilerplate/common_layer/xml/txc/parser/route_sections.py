@@ -50,7 +50,7 @@ def parse_location(location_xml: _Element) -> TXCLocation | None:
 
     lon, lat = None, None
     translation = location_xml.find("Translation", None)
-    if translation:Check warningCheck warning: The behavior of this method will change in future versions. Use specific 'len(elem)' or 'elem is not None' test instead.pytest / pytestView detailsCode has alerts. Press enter to view.
+    if translation:
         lon, lat = get_lon_lat_from_location(translation)
     else:
         lon, lat = get_lon_lat_from_location(location_xml)
