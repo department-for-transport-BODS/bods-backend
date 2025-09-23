@@ -125,11 +125,12 @@ def test_has_sufficient_track_data_insufficient_cases(
 def test_get_geometry_and_distance_from_tracks(
     sufficient_tracks: TrackLookup, stop_sequence: list[NaptanStopPoint]
 ) -> None:
-    geom, distance = get_geometry_and_distance_from_tracks(
+    geom, distance, txc_distance = get_geometry_and_distance_from_tracks(
         sufficient_tracks, stop_sequence
     )
     assert isinstance(geom, WKBElement)
-    assert distance == 250, "total distance = 100 + 150"
+    assert txc_distance == 250, "total distance = 100 + 150"
+    assert distance == 3138
 
 
 @patch(

@@ -146,6 +146,7 @@ class TransmodelServicePatternDistance(BaseSQLModel):
         Geometry("LINESTRING", 4326), nullable=True
     )
     distance: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    txc_distance: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # pylint: disable=duplicate-code
     service_pattern_id: Mapped[int] = mapped_column(
         Integer,
