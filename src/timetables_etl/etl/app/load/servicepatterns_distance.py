@@ -5,6 +5,7 @@ Functions for loading Service Pattern Distance
 
 from math import asin, cos, radians, sin, sqrt
 
+import pyproj
 from common_layer.database import SqlDB
 from common_layer.database.models import (
     NaptanStopPoint,
@@ -15,7 +16,7 @@ from common_layer.xml.txc.models import TXCService
 from geoalchemy2 import WKBElement
 from geoalchemy2.shape import from_shape, to_shape  # type: ignore
 from shapely import LineString, MultiLineString
-from shapely.ops import linemerge
+from shapely.ops import linemerge, transform
 from structlog.stdlib import get_logger
 
 from ..api.geometry import OSRMGeometryAPI
@@ -120,14 +121,20 @@ def snap_linestrings(
 def get_geometry_and_distance_from_tracks(
     tracks: TrackLookup,
     stop_sequence: list[NaptanStopPoint],
-) -> tuple[WKBElement | None, int]:
+) -> tuple[WKBElement | None, int, int]:
     """
     Calculate the full service geometry and distance using track data,
     snapping endpoints together within 15 meters.
     """
     total_distance = 0
+    txc_total_distance = 0
     track_linestrings: list[LineString] = []
     snapped_lines: list[LineString] = []
+
+    # Define a projection transformer if your data is in lat/lon (WGS84)
+    project = pyproj.Transformer.from_crs(
+        "EPSG:4326", "EPSG:27700", always_xy=True
+    ).transform
 
     for i, (from_stop, to_stop) in enumerate(zip(stop_sequence, stop_sequence[1:])):
         track = tracks.get((from_stop.atco_code, to_stop.atco_code))
@@ -137,25 +144,34 @@ def get_geometry_and_distance_from_tracks(
                 pair {from_stop.atco_code} -> {to_stop.atco_code} at index {i}"
             )
         if track.distance:
-            total_distance += track.distance
+            txc_total_distance += track.distance
 
         shapely_geom = to_shape(track.geometry)
+        segment_length = 0.0
+        geom_metric = transform(project, shapely_geom)
         if isinstance(shapely_geom, LineString):
             track_linestrings.append(shapely_geom)
+            segment_length = float(geom_metric.length)
         elif isinstance(shapely_geom, MultiLineString):
             track_linestrings.extend(shapely_geom.geoms)
+            segment_length = sum(
+                float(line.length)
+                for line in geom_metric.geoms
+                if isinstance(line, LineString)
+            )
         else:
             log.warning(
                 "Track has unexpected geometry type",
                 track_id=track.id,
                 geom_type=shapely_geom.geom_type,
             )
+        total_distance += segment_length
 
-    if not track_linestrings:
-        log.warning("No valid track geometries found for stop sequence.")
-        return None, 0
+        if not track_linestrings:
+            log.warning("No valid track geometries found for stop sequence.")
+            return None, 0, 0
 
-    # Snap endpoints within 15 meters before merging
+    # Snap endpoints before merging
     snapped_lines = snap_linestrings(track_linestrings, tolerance=None)
     merged = linemerge(snapped_lines)
     if isinstance(merged, MultiLineString):
@@ -166,7 +182,7 @@ def get_geometry_and_distance_from_tracks(
         merged = LineString(coords)
 
     geometry = from_shape(merged, srid=SRID)
-    return geometry, total_distance
+    return geometry, int(total_distance), txc_total_distance
 
 
 def process_service_pattern_distance(
@@ -184,9 +200,10 @@ def process_service_pattern_distance(
         return None
 
     distance: int | None = None
+    txc_distance: int | None = None
     geometry: WKBElement | None = None
     if tracks and has_sufficient_track_data(tracks, stop_sequence):
-        geometry, distance = get_geometry_and_distance_from_tracks(
+        geometry, distance, txc_distance = get_geometry_and_distance_from_tracks(
             tracks, stop_sequence
         )
     else:
@@ -196,7 +213,10 @@ def process_service_pattern_distance(
 
     repo = TransmodelServicePatternDistanceRepo(db)
     service_pattern_distance = TransmodelServicePatternDistance(
-        service_pattern_id=service_pattern_id, distance=distance, geom=geometry
+        service_pattern_id=service_pattern_id,
+        distance=distance,
+        txc_distance=txc_distance,
+        geom=geometry,
     )
     repo.insert(service_pattern_distance)
 
