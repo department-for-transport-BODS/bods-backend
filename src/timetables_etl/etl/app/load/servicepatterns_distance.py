@@ -5,7 +5,6 @@ Functions for loading Service Pattern Distance
 
 from math import asin, cos, radians, sin, sqrt
 
-import pyproj
 from common_layer.database import SqlDB
 from common_layer.database.models import (
     NaptanStopPoint,
@@ -16,7 +15,7 @@ from common_layer.xml.txc.models import TXCService
 from geoalchemy2 import WKBElement
 from geoalchemy2.shape import from_shape, to_shape  # type: ignore
 from shapely import LineString, MultiLineString
-from shapely.ops import linemerge, transform
+from shapely.ops import linemerge
 from structlog.stdlib import get_logger
 
 from ..api.geometry import OSRMGeometryAPI
@@ -127,14 +126,11 @@ def get_geometry_and_distance_from_tracks(
     snapping endpoints together within 15 meters.
     """
     total_distance = 0
-    txc_total_distance = 0
+    total_line_distance = 0
     track_linestrings: list[LineString] = []
     snapped_lines: list[LineString] = []
 
     # Define a projection transformer if your data is in lat/lon (WGS84)
-    project = pyproj.Transformer.from_crs(
-        "EPSG:4326", "EPSG:27700", always_xy=True
-    ).transform
 
     for i, (from_stop, to_stop) in enumerate(zip(stop_sequence, stop_sequence[1:])):
         track = tracks.get((from_stop.atco_code, to_stop.atco_code))
@@ -144,28 +140,21 @@ def get_geometry_and_distance_from_tracks(
                 pair {from_stop.atco_code} -> {to_stop.atco_code} at index {i}"
             )
         if track.distance:
-            txc_total_distance += track.distance
+            total_distance += track.distance
+        if track.line_distance:
+            total_line_distance += track.line_distance
 
         shapely_geom = to_shape(track.geometry)
-        segment_length = 0.0
-        geom_metric = transform(project, shapely_geom)
         if isinstance(shapely_geom, LineString):
             track_linestrings.append(shapely_geom)
-            segment_length = float(geom_metric.length)
         elif isinstance(shapely_geom, MultiLineString):
             track_linestrings.extend(shapely_geom.geoms)
-            segment_length = sum(
-                float(line.length)
-                for line in geom_metric.geoms
-                if isinstance(line, LineString)
-            )
         else:
             log.warning(
                 "Track has unexpected geometry type",
                 track_id=track.id,
                 geom_type=shapely_geom.geom_type,
             )
-        total_distance += segment_length
 
         if not track_linestrings:
             log.warning("No valid track geometries found for stop sequence.")
@@ -182,7 +171,7 @@ def get_geometry_and_distance_from_tracks(
         merged = LineString(coords)
 
     geometry = from_shape(merged, srid=SRID)
-    return geometry, int(total_distance), txc_total_distance
+    return geometry, total_line_distance, total_distance
 
 
 def process_service_pattern_distance(
@@ -200,10 +189,10 @@ def process_service_pattern_distance(
         return None
 
     distance: int | None = None
-    txc_distance: int | None = None
+    line_distance: int | None = None
     geometry: WKBElement | None = None
     if tracks and has_sufficient_track_data(tracks, stop_sequence):
-        geometry, distance, txc_distance = get_geometry_and_distance_from_tracks(
+        geometry, line_distance, distance = get_geometry_and_distance_from_tracks(
             tracks, stop_sequence
         )
     else:
@@ -215,7 +204,7 @@ def process_service_pattern_distance(
     service_pattern_distance = TransmodelServicePatternDistance(
         service_pattern_id=service_pattern_id,
         distance=distance,
-        txc_distance=txc_distance,
+        line_distance=line_distance,
         geom=geometry,
     )
     repo.insert(service_pattern_distance)
