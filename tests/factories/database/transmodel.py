@@ -196,6 +196,7 @@ class TransmodelTracksFactory(factory.Factory):
     )
 
     distance = factory.LazyFunction(lambda: 1000)  # in meters
+    coord_distance = factory.LazyFunction(lambda: 1000)  # in meters
 
     @classmethod
     def create_with_id(cls, id_number: int, **kwargs) -> TransmodelTracks:

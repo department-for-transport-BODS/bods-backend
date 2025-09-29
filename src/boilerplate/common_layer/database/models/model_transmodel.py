@@ -129,7 +129,7 @@ class TransmodelTracks(BaseSQLModel):
         Geometry("LINESTRING", 4326), nullable=True
     )
     distance: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    line_distance: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    coord_distance: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
 
 class TransmodelServicePatternDistance(BaseSQLModel):
@@ -147,7 +147,7 @@ class TransmodelServicePatternDistance(BaseSQLModel):
         Geometry("LINESTRING", 4326), nullable=True
     )
     distance: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    line_distance: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    coord_track_distance: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # pylint: disable=duplicate-code
     service_pattern_id: Mapped[int] = mapped_column(
         Integer,

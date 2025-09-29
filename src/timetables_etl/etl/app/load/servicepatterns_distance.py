@@ -126,7 +126,7 @@ def get_geometry_and_distance_from_tracks(
     snapping endpoints together within 15 meters.
     """
     total_distance = 0
-    total_line_distance = 0
+    total_coord_distance = 0
     track_linestrings: list[LineString] = []
     snapped_lines: list[LineString] = []
 
@@ -141,8 +141,8 @@ def get_geometry_and_distance_from_tracks(
             )
         if track.distance:
             total_distance += track.distance
-        if track.line_distance:
-            total_line_distance += track.line_distance
+        if track.coord_distance:
+            total_coord_distance += track.coord_distance
 
         shapely_geom = to_shape(track.geometry)
         if isinstance(shapely_geom, LineString):
@@ -171,7 +171,7 @@ def get_geometry_and_distance_from_tracks(
         merged = LineString(coords)
 
     geometry = from_shape(merged, srid=SRID)
-    return geometry, total_line_distance, total_distance
+    return geometry, total_coord_distance, total_distance
 
 
 def process_service_pattern_distance(
@@ -189,11 +189,11 @@ def process_service_pattern_distance(
         return None
 
     distance: int | None = None
-    line_distance: int | None = None
+    coord_track_distance: int | None = None
     geometry: WKBElement | None = None
     if tracks and has_sufficient_track_data(tracks, stop_sequence):
-        geometry, line_distance, distance = get_geometry_and_distance_from_tracks(
-            tracks, stop_sequence
+        geometry, coord_track_distance, distance = (
+            get_geometry_and_distance_from_tracks(tracks, stop_sequence)
         )
     else:
         api = OSRMGeometryAPI()
@@ -204,7 +204,7 @@ def process_service_pattern_distance(
     service_pattern_distance = TransmodelServicePatternDistance(
         service_pattern_id=service_pattern_id,
         distance=distance,
-        line_distance=line_distance,
+        coord_track_distance=coord_track_distance,
         geom=geometry,
     )
     repo.insert(service_pattern_distance)
