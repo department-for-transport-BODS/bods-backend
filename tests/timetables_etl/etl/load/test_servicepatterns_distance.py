@@ -43,6 +43,7 @@ def sufficient_tracks() -> TrackLookup:
                 LineString([(0, 0), (0.005, 0.005), (0.01, 0.01)]), srid=4326
             ),
             distance=100,
+            coord_distance=120,
         ),
         ("B", "C"): TransmodelTracksFactory.create(
             from_atco_code="B",
@@ -51,6 +52,7 @@ def sufficient_tracks() -> TrackLookup:
                 LineString([(0.01, 0.01), (0.015, 0.015), (0.02, 0.02)]), srid=4326
             ),
             distance=150,
+            coord_distance=90,
         ),
         # Track from another RouteSection
         # (should not be used because its not in stop_sequence)
@@ -61,6 +63,7 @@ def sufficient_tracks() -> TrackLookup:
                 LineString([(0.01, 0.01), (0.015, 0.015), (0.02, 0.02)]), srid=4326
             ),
             distance=150,
+            coord_distance=110,
         ),
     }
 
@@ -86,6 +89,7 @@ def test_has_sufficient_track_data_true(
                         srid=4326,
                     ),
                     distance=100,
+                    coord_distance=120,
                 ),
             },
             id="missing-track-between-stops",
@@ -100,6 +104,7 @@ def test_has_sufficient_track_data_true(
                         LineString([(0, 0), (0.005, 0.005)]), srid=4326
                     ),
                     distance=100,
+                    coord_distance=120,
                 ),
                 ("B", "C"): TransmodelTracksFactory.create(
                     from_atco_code="B",
@@ -109,6 +114,7 @@ def test_has_sufficient_track_data_true(
                         srid=4326,
                     ),
                     distance=100,
+                    coord_distance=90,
                 ),
             },
             id="insufficient-points-in-track-geometry",
@@ -125,11 +131,12 @@ def test_has_sufficient_track_data_insufficient_cases(
 def test_get_geometry_and_distance_from_tracks(
     sufficient_tracks: TrackLookup, stop_sequence: list[NaptanStopPoint]
 ) -> None:
-    geom, distance = get_geometry_and_distance_from_tracks(
+    geom, total_coord_distance, distance = get_geometry_and_distance_from_tracks(
         sufficient_tracks, stop_sequence
     )
     assert isinstance(geom, WKBElement)
     assert distance == 250, "total distance = 100 + 150"
+    assert total_coord_distance == 210
 
 
 @patch(
@@ -147,6 +154,7 @@ def test_process_service_pattern_distance_uses_tracks_data_when_sufficient(
     mock_db = create_autospec(SqlDB, instance=True)
 
     expected_distance = 250  # 2 tracks, distances 100 + 150
+    expected_coord_distance = 210  # 2 tracks, coord distance 120 + 90
 
     distance = process_service_pattern_distance(
         service=mock_service,
@@ -163,6 +171,7 @@ def test_process_service_pattern_distance_uses_tracks_data_when_sufficient(
     inserted_obj = insert_args[0]
     assert inserted_obj.service_pattern_id == 123
     assert inserted_obj.distance == expected_distance
+    assert inserted_obj.coord_track_distance == expected_coord_distance
     assert isinstance(inserted_obj.geom, WKBElement)
 
 
@@ -203,6 +212,7 @@ def test_process_service_pattern_distance_uses_osrm_geom_api(
     inserted_obj = insert_args[0]
     assert inserted_obj.service_pattern_id == 123
     assert inserted_obj.distance == expected_distance
+    assert inserted_obj.coord_track_distance is None
     assert inserted_obj.geom == mock_geom
 
 

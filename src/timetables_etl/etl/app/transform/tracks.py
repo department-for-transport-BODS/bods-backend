@@ -176,6 +176,7 @@ def create_new_tracks(route_sections: list[TXCRouteSection]) -> list[TransmodelT
                 if provided_distance is not None
                 else calculate_distance_from_geometry(track_geom.line)
             )
+            coord_distance = calculate_distance_from_geometry(track_geom.line)
 
             new_tracks.append(
                 TransmodelTracks(
@@ -183,6 +184,7 @@ def create_new_tracks(route_sections: list[TXCRouteSection]) -> list[TransmodelT
                     to_atco_code=to_code,
                     geometry=track_geom.geometry,
                     distance=distance,
+                    coord_distance=coord_distance,
                 )
             )
 
