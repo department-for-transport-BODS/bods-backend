@@ -23,6 +23,7 @@ from common_layer.database.repos import (
 from common_layer.database.repos.repo_data_quality import (
     DataQualityPTIValidationResultRepo,
 )
+from common_layer.exceptions.exception_email import GovUkEmailException
 from common_layer.notification import get_notifications
 from structlog.stdlib import get_logger
 
@@ -50,7 +51,7 @@ def send_failure_email(db: SqlDB, revision_id: int):
     """
     log.info("Sending the email for the failure", revision_id=revision_id)
     revision, dataset = get_dataset_details(db, revision_id)
-    is_pti_compliant = get_dataset_pti_compliance(db, revision)
+    is_pti_compliant = not get_dataset_pti_compliance(db, revision)
 
     if dataset is None:
         log.error("Unable to send email, dataset not found", revision_id=revision_id)
@@ -199,7 +200,7 @@ def send_revision_published_notification(db: SqlDB, revision_id: int) -> None:
             revision_id=revision_id,
         )
         revision, dataset = get_dataset_details(db, revision_id)
-        is_pti_compliant = get_dataset_pti_compliance(db, revision)
+        is_pti_compliant = not get_dataset_pti_compliance(db, revision)
 
         if dataset is None:
             log.error(
@@ -226,12 +227,11 @@ def send_revision_published_notification(db: SqlDB, revision_id: int) -> None:
         if organisation:
             operator_name = organisation.name
 
-        live_revision = False
-        if dataset.live_revision_id:
-            live_revision = True
-
         feed_details_link = get_dataset_base_url(
-            dataset.dataset_type, dataset.organisation_id, dataset.id, live_revision
+            dataset.dataset_type,
+            dataset.organisation_id,
+            dataset.id,
+            bool(dataset.live_revision_id),
         )
 
         if operator.account_type != AGENT_USER and operator.is_active:
@@ -267,7 +267,7 @@ def send_revision_published_notification(db: SqlDB, revision_id: int) -> None:
                 operator_name=operator_name,
                 last_updated=revision.published_at,
             )
-    except Exception as e:
+    except GovUkEmailException as e:
         log.info(
             "Error occured while sending email for revision auto publish",
             error=str(e),

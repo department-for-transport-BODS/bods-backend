@@ -1,6 +1,8 @@
 """Email content for the emails being sent as part of the ETL process"""
 
 import os
+from datetime import datetime
+from os import environ
 from pathlib import Path
 from typing import Any, cast
 
@@ -78,5 +80,11 @@ def get_email_body_from_text_file(template_path: str, args: Any) -> str:
     for key, value in args.items():
         placeholder = f"{{{{ {key} }}}}"
         content = content.replace(placeholder, str(value))
+
+    pti_enforce_date = datetime.strptime(
+        environ.get("PTI_START_DATE", "2021-08-02"), "%Y-%m-%d"
+    )
+    pti_enforce_date = pti_enforce_date.strftime("%d %B, %Y")
+    content = content.replace("{{ pti_enforced_date }}", pti_enforce_date)
 
     return content
