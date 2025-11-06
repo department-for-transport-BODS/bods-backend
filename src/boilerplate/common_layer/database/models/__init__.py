@@ -9,6 +9,7 @@ from .model_avl import AvlCavlDataArchive
 from .model_data_quality import (
     DataQualityPostSchemaViolation,
     DataQualityPTIObservation,
+    DataQualityPTIValidationResult,
     DataQualitySchemaViolation,
 )
 from .model_fares import (
@@ -127,6 +128,7 @@ __all__ = [
     "DataQualitySchemaViolation",
     "DataQualityPostSchemaViolation",
     "DataQualityPTIObservation",
+    "DataQualityPTIValidationResult",
     # Fares
     "FaresDataCatalogueMetadata",
     "FaresMetadata",

@@ -1,3 +1,7 @@
+"""
+GovUkNotifyEmail constants to map template
+"""
+
 from typing import Dict
 
 TEMPLATE_LOOKUP: Dict[str, str] = {

@@ -3,6 +3,7 @@ Description: Utility functions for boilerplate
 """
 
 import hashlib
+from datetime import datetime
 from os import environ
 from typing import Union
 
@@ -13,10 +14,14 @@ from common_layer.database.models import (
     OrganisationDatasetRevision,
 )
 from common_layer.database.repos import (
+    DataQualityPTIObservationRepo,
     OrganisationDatasetRepo,
     OrganisationDatasetRevisionRepo,
     OrganisationOrganisationRepo,
     UsersUserRepo,
+)
+from common_layer.database.repos.repo_data_quality import (
+    DataQualityPTIValidationResultRepo,
 )
 from common_layer.notification import get_notifications
 from structlog.stdlib import get_logger
@@ -45,6 +50,7 @@ def send_failure_email(db: SqlDB, revision_id: int):
     """
     log.info("Sending the email for the failure", revision_id=revision_id)
     revision, dataset = get_dataset_details(db, revision_id)
+    is_pti_compliant = get_dataset_pti_compliance(db, revision)
 
     if dataset is None:
         log.error("Unable to send email, dataset not found", revision_id=revision_id)
@@ -84,11 +90,11 @@ def send_failure_email(db: SqlDB, revision_id: int):
         if organisation:
             payload["organisation"] = organisation.name
         notification.send_agent_data_endpoint_validation_error_notification(
-            modified_by.email, revision.published_at, False, **payload
+            modified_by.email, revision.published_at, is_pti_compliant, **payload
         )
     else:
         notification.send_data_endpoint_validation_error_notification(
-            modified_by.email, revision.published_at, False, **payload
+            modified_by.email, revision.published_at, is_pti_compliant, **payload
         )
 
 
@@ -131,7 +137,8 @@ def get_dataset_details(
         revision_id (int): revision id of dataset
 
     Returns:
-        tuple[OrganisationDatasetRevision, OrganisationDataset | None]: Tuple containing the db objects
+        tuple[OrganisationDatasetRevision, OrganisationDataset | None]:
+        Tuple containing the db objects
     """
     revision_repo = OrganisationDatasetRevisionRepo(db)
     revision = revision_repo.require_by_id(revision_id)
@@ -142,6 +149,42 @@ def get_dataset_details(
     return (revision, dataset)
 
 
+def get_dataset_pti_compliance(
+    db: SqlDB, revision: OrganisationDatasetRevision
+) -> bool:
+    """Method will find it revision is published using PTI compliance or not
+
+    Args:
+        revision_id (int): revision id of the dataset
+
+    Returns:
+        bool: True if compliant/False is not compliant
+    """
+    pti_start_date = datetime.strptime(
+        environ.get("PTI_START_DATE", "2021-04-01"), "%Y-%m-%d"
+    )
+
+    if revision.modified.date() < pti_start_date.date():
+        return False
+
+    # compare if the date is less than today
+    pti_validation_result_repo = DataQualityPTIValidationResultRepo(db)
+    pti_validation_result = pti_validation_result_repo.get_by_revision_id(revision.id)
+
+    pti_observation_result_repo = DataQualityPTIObservationRepo(db)
+    pti_observation_results = pti_observation_result_repo.get_by_revision_id(
+        revision.id
+    )
+
+    if pti_validation_result:
+        return pti_validation_result.count == 0
+
+    if pti_observation_results is None:
+        pti_observation_results = []
+
+    return len(pti_observation_results) == 0
+
+
 def send_revision_published_notification(db: SqlDB, revision_id: int) -> None:
     """Method will trigger notifications to Operator/Agent and the sbscribers of the dataset
     On Successful publishing of the database
@@ -150,7 +193,12 @@ def send_revision_published_notification(db: SqlDB, revision_id: int) -> None:
         db (SqlDB): Database object for queries execution
         revision_id (int): Revision id of the dataset published
     """
+    log.info(
+        "Sending dataset published revision notification for revision:",
+        revision_id=revision_id,
+    )
     revision, dataset = get_dataset_details(db, revision_id)
+
     if dataset is None:
         log.error("Unable to send email, dataset not found", revision_id=revision_id)
         return
@@ -178,10 +226,6 @@ def send_revision_published_notification(db: SqlDB, revision_id: int) -> None:
     feed_details_link = get_dataset_base_url(
         dataset.dataset_type, dataset.organisation_id, dataset.id, live_revision
     )
-    log.info(
-        "Sending dataset published revision notification for revision: ",
-        revision_id=revision_id,
-    )
 
     if operator.account_type != AGENT_USER and operator.is_active:
         notification.send_data_endpoint_publish_notification(
@@ -192,11 +236,10 @@ def send_revision_published_notification(db: SqlDB, revision_id: int) -> None:
             published_at=revision.published_at,
             comments=revision.comment,
             feed_detail_link=feed_details_link,
-            with_pti_violations=False,
+            with_pti_violations=is_pti_compliant,
         )
 
-    agents_list = user_repo.fetch_agents_for_org(dataset.organisation_id)
-    for agent in agents_list:
+    for agent in user_repo.fetch_agents_for_org(dataset.organisation_id):
         notification.send_agent_data_endpoint_publish_notification(
             agent.email,
             dataset_id=dataset.id,
@@ -206,11 +249,10 @@ def send_revision_published_notification(db: SqlDB, revision_id: int) -> None:
             comments=revision.comment,
             feed_detail_link=feed_details_link,
             operator_name=operator_name,
-            with_pti_violations=False,
+            with_pti_violations=is_pti_compliant,
         )
 
-    developers_list = user_repo.fetch_dataset_subscribers(dataset.id)
-    for developer in developers_list:
+    for developer in user_repo.fetch_dataset_subscribers(dataset.id):
         notification.send_developer_data_endpoint_change_notification(
             developer.email,
             dataset_id=dataset.id,
