@@ -87,7 +87,6 @@ def publish_revision(db: SqlDB, revision: OrganisationDatasetRevision):
     Publish the given revision
     """
     if revision.status == FeedStatus.SUCCESS:
-        log.info("Revision will be published", revision=revision)
         repo = OrganisationDatasetRevisionRepo(db)
         repo.publish_revision(revision.id)
         send_revision_published_notification(db, revision.id)
