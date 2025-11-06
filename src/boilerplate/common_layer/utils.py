@@ -164,7 +164,7 @@ def get_dataset_pti_compliance(
         environ.get("PTI_START_DATE", "2021-04-01"), "%Y-%m-%d"
     )
 
-    if revision.modified.date() < pti_start_date.date():
+    if revision.modified.date() < pti_start_date.date():  # type: ignore
         return False
 
     # compare if the date is less than today
