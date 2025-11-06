@@ -198,6 +198,7 @@ def send_revision_published_notification(db: SqlDB, revision_id: int) -> None:
         revision_id=revision_id,
     )
     revision, dataset = get_dataset_details(db, revision_id)
+    is_pti_compliant = get_dataset_pti_compliance(db, revision)
 
     if dataset is None:
         log.error("Unable to send email, dataset not found", revision_id=revision_id)
