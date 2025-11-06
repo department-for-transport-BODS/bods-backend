@@ -13,9 +13,9 @@ from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.aws.step import MapExecutionSucceeded, get_map_processing_results
 from common_layer.database.client import SqlDB
 from common_layer.database.repos import (
-    DataQualitySchemaViolationRepo,
     DataQualityPostSchemaViolationRepo,
     DataQualityPTIObservationRepo,
+    DataQualitySchemaViolationRepo,
     ETLTaskResultRepo,
     OrganisationDatasetRevisionAdminAreasRepo,
     OrganisationDatasetRevisionLocalitiesRepo,
@@ -156,7 +156,9 @@ def process_map_results(
         input_data.dataset_revision_id,
     )
 
+    log.info("Log from process map result", revision=revision)
     if input_data.publish_dataset_revision:
+        log.info("Log inside publish dataset revision", revision=revision)
         publish_revision(db, revision)
         update_live_revision(db, revision.id)
 
