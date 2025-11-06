@@ -193,71 +193,83 @@ def send_revision_published_notification(db: SqlDB, revision_id: int) -> None:
         db (SqlDB): Database object for queries execution
         revision_id (int): Revision id of the dataset published
     """
-    log.info(
-        "Sending dataset published revision notification for revision:",
-        revision_id=revision_id,
-    )
-    revision, dataset = get_dataset_details(db, revision_id)
-    is_pti_compliant = get_dataset_pti_compliance(db, revision)
+    try:
+        log.info(
+            "Sending dataset published revision notification for revision:",
+            revision_id=revision_id,
+        )
+        revision, dataset = get_dataset_details(db, revision_id)
+        is_pti_compliant = get_dataset_pti_compliance(db, revision)
 
-    if dataset is None:
-        log.error("Unable to send email, dataset not found", revision_id=revision_id)
-        return
+        if dataset is None:
+            log.error(
+                "Unable to send email, dataset not found", revision_id=revision_id
+            )
+            return
 
-    if revision.last_modified_user_id is None:
-        log.error("Unable to send email, user not found", revision_id=revision_id)
-        return
+        if not revision.is_published:
+            log.error(
+                "Revision is not published, skipping email notification.",
+                revision_id=revision_id,
+            )
+            return
 
-    notification = get_notifications()
+        notification = get_notifications()
 
-    user_repo = UsersUserRepo(db)
-    operator = user_repo.require_by_id(dataset.contact_id)
+        user_repo = UsersUserRepo(db)
+        operator = user_repo.require_by_id(dataset.contact_id)
 
-    organisation_repo = OrganisationOrganisationRepo(db)
-    organisation = organisation_repo.get_by_id(dataset.organisation_id)
+        organisation_repo = OrganisationOrganisationRepo(db)
+        organisation = organisation_repo.get_by_id(dataset.organisation_id)
 
-    operator_name = "-"
-    if organisation:
-        operator_name = organisation.name
+        operator_name = "-"
+        if organisation:
+            operator_name = organisation.name
 
-    live_revision = False
-    if dataset.live_revision_id:
-        live_revision = True
+        live_revision = False
+        if dataset.live_revision_id:
+            live_revision = True
 
-    feed_details_link = get_dataset_base_url(
-        dataset.dataset_type, dataset.organisation_id, dataset.id, live_revision
-    )
-
-    if operator.account_type != AGENT_USER and operator.is_active:
-        notification.send_data_endpoint_publish_notification(
-            contact_email=operator.email,
-            dataset_id=dataset.id,
-            dataset_name=revision.name,
-            short_description=revision.short_description,
-            published_at=revision.published_at,
-            comments=revision.comment,
-            feed_detail_link=feed_details_link,
-            with_pti_violations=is_pti_compliant,
+        feed_details_link = get_dataset_base_url(
+            dataset.dataset_type, dataset.organisation_id, dataset.id, live_revision
         )
 
-    for agent in user_repo.fetch_agents_for_org(dataset.organisation_id):
-        notification.send_agent_data_endpoint_publish_notification(
-            agent.email,
-            dataset_id=dataset.id,
-            dataset_name=revision.name,
-            short_description=revision.short_description,
-            published_at=revision.published_at,
-            comments=revision.comment,
-            feed_detail_link=feed_details_link,
-            operator_name=operator_name,
-            with_pti_violations=is_pti_compliant,
-        )
+        if operator.account_type != AGENT_USER and operator.is_active:
+            notification.send_data_endpoint_publish_notification(
+                contact_email=operator.email,
+                dataset_id=dataset.id,
+                dataset_name=revision.name,
+                short_description=revision.short_description,
+                published_at=revision.published_at,
+                comments=revision.comment,
+                feed_detail_link=feed_details_link,
+                with_pti_violations=is_pti_compliant,
+            )
 
-    for developer in user_repo.fetch_dataset_subscribers(dataset.id):
-        notification.send_developer_data_endpoint_change_notification(
-            developer.email,
-            dataset_id=dataset.id,
-            dataset_name=revision.name,
-            operator_name=operator_name,
-            last_updated=revision.published_at,
+        for agent in user_repo.fetch_agents_for_org(dataset.organisation_id):
+            notification.send_agent_data_endpoint_publish_notification(
+                agent.email,
+                dataset_id=dataset.id,
+                dataset_name=revision.name,
+                short_description=revision.short_description,
+                published_at=revision.published_at,
+                comments=revision.comment,
+                feed_detail_link=feed_details_link,
+                operator_name=operator_name,
+                with_pti_violations=is_pti_compliant,
+            )
+
+        for developer in user_repo.fetch_dataset_subscribers(dataset.id):
+            notification.send_developer_data_endpoint_change_notification(
+                developer.email,
+                dataset_id=dataset.id,
+                dataset_name=revision.name,
+                operator_name=operator_name,
+                last_updated=revision.published_at,
+            )
+    except Exception as e:
+        log.info(
+            "Error occured while sending email for revision auto publish",
+            error=str(e),
+            revision_id=revision_id,
         )
