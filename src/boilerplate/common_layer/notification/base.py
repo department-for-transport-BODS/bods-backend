@@ -177,13 +177,6 @@ class NotificationBase:
             feature = "OPERATOR_PUBLISH_LIVE"
             subject = "Data set published"
 
-        logger.info(
-            "Following details were passed",
-            contact_email=contact_email,
-            published_at=published_at,
-            with_pti_violations=with_pti_violations,
-            kwargs=kwargs,
-        )
         template_id = environ.get("GENERIC_TEMPLATE_ID", "-")
         logger.debug(
             f"[notify_{feature.lower()}] notifying organisation staff/admin dataset "
