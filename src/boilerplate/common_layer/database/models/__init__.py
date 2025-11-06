@@ -4,6 +4,7 @@ Export models for DB queries
 """
 
 from .error_codes import ETLErrorCode
+from .model_agentuserinvite import AgentUserInvite
 from .model_avl import AvlCavlDataArchive
 from .model_data_quality import (
     DataQualityPostSchemaViolation,
@@ -72,7 +73,7 @@ from .model_transmodel_vehicle_journey import (
     TransmodelVehicleJourney,
 )
 from .model_ui import UiLta
-from .model_users import UsersUser
+from .model_users import UserSettings, UsersUser
 
 __all__ = [
     # Enums
@@ -109,6 +110,8 @@ __all__ = [
     "TransmodelVehicleJourney",
     # Users
     "UsersUser",
+    "AgentUserInvite",
+    "UserSettings",
     # OTC Models
     "OtcLocalAuthority",
     "OtcLocalAuthorityRegistrationNumbers",

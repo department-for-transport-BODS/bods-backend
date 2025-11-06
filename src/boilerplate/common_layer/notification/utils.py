@@ -1,5 +1,7 @@
 """Email content for the emails being sent as part of the ETL process"""
 
+import os
+from pathlib import Path
 from typing import Any, cast
 
 
@@ -54,5 +56,27 @@ def data_end_point_error_publishing(
 
     content += "Kind Regards,\n"
     content += "The Bus Open Data Team\n"
+
+    return content
+
+
+def get_email_body_from_text_file(template_path: str, args: Any) -> str:
+    """Common method which will read content from the email text file
+
+    Args:
+        template_path (str): Path of the text file
+        args (Any): Args to be replaced
+
+    Returns:
+        str: string body for email
+    """
+    file_path = Path(f"{os.path.dirname(os.path.realpath(__file__))}/{template_path}")
+
+    with open(file_path, "r", encoding="utf-8") as file:
+        content = file.read()
+
+    for key, value in args.items():
+        placeholder = f"{{{{ {key} }}}}"
+        content = content.replace(placeholder, str(value))
 
     return content

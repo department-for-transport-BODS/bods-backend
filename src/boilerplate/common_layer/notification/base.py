@@ -8,8 +8,12 @@ from abc import abstractmethod
 from os import environ
 from typing import Any, Optional
 
-from common_layer.notification.emails import data_end_point_error_publishing
+from common_layer.notification.constants import TEMPLATE_LOOKUP
 from common_layer.notification.local_time import localize_datetime_and_convert_to_string
+from common_layer.notification.utils import (
+    data_end_point_error_publishing,
+    get_email_body_from_text_file,
+)
 from pydantic import ConfigDict, validate_call
 from structlog.stdlib import get_logger
 
@@ -82,7 +86,6 @@ class NotificationBase:
         kwargs["subject"] = subject
         kwargs["with_pti_violations"] = with_pti_violations
         kwargs["published_on"] = published_on
-
         self._send_mail(feature, template_id, contact_email, **kwargs)
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
@@ -119,15 +122,11 @@ class NotificationBase:
             if published_at is None
             else localize_datetime_and_convert_to_string(published_at)
         )
-
         kwargs["body"] = data_end_point_error_publishing(
             published_time=published_on, user_type="agent", kwargs=kwargs
         )
         kwargs["with_pti_violations"] = with_pti_violations
         kwargs["published_on"] = published_on
-
-        print(kwargs["body"])
-
         self._send_mail(feature, template_id, contact_email, **kwargs)
 
     @validate_call
@@ -147,7 +146,137 @@ class NotificationBase:
             contact_email (str): Receivers email id
         """
         logger.debug(f"sending custom email with template id: {template_id}")
-
         kwargs: dict[str, Any] = {"subject": subject, "body": body}
-
         self._send_mail("custom_email", template_id, contact_email, **kwargs)
+
+    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
+    def send_data_endpoint_publish_notification(
+        self,
+        contact_email: str,
+        published_at: Optional[datetime.datetime],
+        with_pti_violations: bool,
+        **kwargs: Any,
+    ):
+        """Send email notification to agent after successful publish of dataset
+
+        Args:
+            contact_email (str): Agent email id for the notification
+            dataset_id (int): published dataset id
+            dataset_name (str): published dataset name
+            short_description (str): short description of the dataset
+            published_at (Optional[datetime.datetime]): dataset published at
+            comments (str): comments
+            feed_detail_link (str): dataset details page link
+            operator_name (str): operator name
+            with_pti_violations (bool): boolean to indicate whether dataset has pti violations
+        """
+        if with_pti_violations:
+            feature = "OPERATOR_PUBLISH_LIVE_WITH_PTI_VIOLATIONS"
+            subject = "Action required – PTI validation report requires resolution"
+        else:
+            feature = "OPERATOR_PUBLISH_LIVE"
+            subject = "Data set published"
+
+        logger.info(
+            "Following details were passed",
+            contact_email=contact_email,
+            published_at=published_at,
+            with_pti_violations=with_pti_violations,
+            kwargs=kwargs,
+        )
+        template_id = environ.get("GENERIC_TEMPLATE_ID", "-")
+        logger.debug(
+            f"[notify_{feature.lower()}] notifying organisation staff/admin dataset "
+            f"Dataset<id={kwargs['dataset_id']}> successfully published"
+        )
+        kwargs["published_on"] = (
+            "Not published"
+            if published_at is None
+            else localize_datetime_and_convert_to_string(published_at)
+        )
+
+        kwargs["subject"] = subject
+        kwargs["with_pti_violations"] = with_pti_violations
+
+        kwargs["body"] = get_email_body_from_text_file(
+            TEMPLATE_LOOKUP[feature], args=kwargs
+        )
+        self._send_mail(feature, template_id, contact_email, **kwargs)
+
+    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
+    def send_agent_data_endpoint_publish_notification(
+        self,
+        contact_email: str,
+        published_at: Optional[datetime.datetime],
+        **kwargs: Any,
+    ):
+        """Send email notification to agent after successful publish of dataset
+
+        Args:
+            contact_email (str): Agent email id for the notification
+            dataset_id (int): published dataset id
+            dataset_name (str): published dataset name
+            short_description (str): short description of the dataset
+            published_at (Optional[datetime.datetime]): dataset published at
+            comments (str): comments
+            feed_detail_link (str): dataset details page link
+            operator_name (str): operator name
+            with_pti_violations (bool): boolean to indicate whether dataset has pti violations
+        """
+        template_id = environ.get("GENERIC_TEMPLATE_ID", "-")
+        if kwargs["with_pti_violations"]:
+            feature = "AGENT_PUBLISH_LIVE_WITH_PTI_VIOLATIONS"
+            subject = "Action required - PTI validation report requires resolution"
+
+        else:
+            feature = "AGENT_PUBLISH_LIVE"
+            subject = "Data set published"
+
+        logger.debug(
+            f"[notify_{feature.lower()}] notifying agent {contact_email} dataset "
+            f"Dataset<id={kwargs['dataset_id']}> successfully published"
+        )
+        kwargs["published_on"] = (
+            "-"
+            if published_at is None
+            else localize_datetime_and_convert_to_string(published_at)
+        )
+
+        kwargs["subject"] = subject
+        kwargs["body"] = get_email_body_from_text_file(
+            TEMPLATE_LOOKUP[feature], args=kwargs
+        )
+        self._send_mail(feature, template_id, contact_email, **kwargs)
+
+    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
+    def send_developer_data_endpoint_change_notification(
+        self,
+        contact_email: str,
+        last_updated: Optional[datetime.datetime],
+        **kwargs: Any,
+    ):
+        """Send email to dataset subscribers after successful publishing
+
+        Args:
+            contact_email (str): Email address of subscriber
+            dataset_id (int): Published dataset id
+            dataset_name (str): Published dataset name
+            operator_name (str): Operator name
+            last_updated (Optional[datetime.datetime]): Dataset last updated
+        """
+        feature = "DEVELOPER_DATA_CHANGED"
+        template_id = environ.get("GENERIC_TEMPLATE_ID", "-")
+        logger.debug(
+            f"[notify_{feature.lower()}] notifying all subscribers "
+            f"that dataset<id={kwargs['dataset_id']} has changed>"
+        )
+        kwargs["subject"] = "Data set status changed"
+        kwargs["updated_time"] = (
+            "-"
+            if last_updated is None
+            else localize_datetime_and_convert_to_string(last_updated)
+        )
+
+        kwargs["body"] = get_email_body_from_text_file(TEMPLATE_LOOKUP[feature], kwargs)
+
+        self._send_mail(feature, template_id, contact_email, **kwargs)

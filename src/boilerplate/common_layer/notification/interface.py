@@ -66,3 +66,71 @@ class INotifications(Protocol):
             body: body of email
             contact_email: email address of datasets key contact
         """
+
+    def send_data_endpoint_publish_notification(
+        self,
+        contact_email: str,
+        dataset_id: int,
+        dataset_name: str,
+        short_description: str,
+        published_at: Optional[datetime.datetime],
+        comments: str,
+        feed_detail_link: str,
+        with_pti_violations: bool,
+    ):
+        """Send notification to operator for successful publish of dataset
+
+        Args:
+            contact_email (str): Email of the operator
+            dataset_id (int): dataset id
+            datast_name (str): dataset name
+            short_description (str): description of the file
+            published_at (Optional[datetime.datetime]): dataset published at
+            comments (str): comments
+            feed_detail_link (str): link of the timetable details
+            with_pti_violations (bool): boolean to indicate whether dataset has pti violations
+        """
+
+    def send_agent_data_endpoint_publish_notification(
+        self,
+        contact_email: str,
+        dataset_id: int,
+        dataset_name: str,
+        short_description: str,
+        published_at: Optional[datetime.datetime],
+        comments: str,
+        feed_detail_link: str,
+        operator_name: str,
+        with_pti_violations: bool,
+    ):
+        """Send email notification to agent after successful publish of dataset
+
+        Args:
+            contact_email (str): Agent email id for the notification
+            dataset_id (int): published dataset id
+            dataset_name (str): published dataset name
+            short_description (str): short description of the dataset
+            published_at (Optional[datetime.datetime]): dataset published at
+            comments (str): comments
+            feed_detail_link (str): dataset details page link
+            operator_name (str): operator name
+            with_pti_violations (bool): boolean to indicate whether dataset has pti violations
+        """
+
+    def send_developer_data_endpoint_change_notification(
+        self,
+        contact_email: str,
+        dataset_id: int,
+        dataset_name: str,
+        operator_name: str,
+        last_updated: Optional[datetime.datetime],
+    ):
+        """Send email to dataset subscribers after successful publishing
+
+        Args:
+            contact_email (str): Email address of subscriber
+            dataset_id (int): Published dataset id
+            dataset_name (str): Published dataset name
+            operator_name (str): Operator name
+            last_updated (Optional[datetime.datetime]): Dataset last updated
+        """

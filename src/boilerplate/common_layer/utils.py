@@ -8,6 +8,10 @@ from typing import Union
 
 import common_layer.aws.datadog.tracing  # type: ignore # pylint: disable=unused-import
 from common_layer.database.client import SqlDB
+from common_layer.database.models import (
+    OrganisationDataset,
+    OrganisationDatasetRevision,
+)
 from common_layer.database.repos import (
     OrganisationDatasetRepo,
     OrganisationDatasetRevisionRepo,
@@ -40,11 +44,7 @@ def send_failure_email(db: SqlDB, revision_id: int):
         event_data (ExceptionHandlerInputData): Event data object with all the information
     """
     log.info("Sending the email for the failure", revision_id=revision_id)
-    revision_repo = OrganisationDatasetRevisionRepo(db)
-    revision = revision_repo.require_by_id(revision_id)
-
-    dataset_repo = OrganisationDatasetRepo(db)
-    dataset = dataset_repo.get_by_id(revision.dataset_id)
+    revision, dataset = get_dataset_details(db, revision_id)
 
     if dataset is None:
         log.error("Unable to send email, dataset not found", revision_id=revision_id)
@@ -57,7 +57,7 @@ def send_failure_email(db: SqlDB, revision_id: int):
     user_repo = UsersUserRepo(db)
     modified_by = user_repo.require_by_id(revision.last_modified_user_id)
 
-    feed_details_link = get_timetable_base_url(
+    feed_details_link = get_dataset_base_url(
         dataset.dataset_type, dataset.organisation_id, dataset.id
     )
 
@@ -92,8 +92,11 @@ def send_failure_email(db: SqlDB, revision_id: int):
         )
 
 
-def get_timetable_base_url(
-    dataset_type: int, organisation_id: int, dataset_id: int
+def get_dataset_base_url(
+    dataset_type: int,
+    organisation_id: int,
+    dataset_id: int,
+    revision_publish: bool = True,
 ) -> str:
     """Get the base path for timetable
 
@@ -110,6 +113,108 @@ def get_timetable_base_url(
     if dataset_type == DATASET_FARES:
         d_type = "fares"
 
-    dataset_page_path = f"org/{organisation_id}/dataset/{d_type}/{dataset_id}/review"
+    dataset_page_path = f"org/{organisation_id}/dataset/{d_type}/{dataset_id}/"
+
+    if revision_publish:
+        dataset_page_path += "review"
 
     return f"https://publish.{base_url}/{dataset_page_path}"
+
+
+def get_dataset_details(
+    db: SqlDB, revision_id: int
+) -> tuple[OrganisationDatasetRevision, OrganisationDataset | None]:
+    """Method to get base dataset details
+
+    Args:
+        db (SqlDB): Database instance
+        revision_id (int): revision id of dataset
+
+    Returns:
+        tuple[OrganisationDatasetRevision, OrganisationDataset | None]: Tuple containing the db objects
+    """
+    revision_repo = OrganisationDatasetRevisionRepo(db)
+    revision = revision_repo.require_by_id(revision_id)
+
+    dataset_repo = OrganisationDatasetRepo(db)
+    dataset = dataset_repo.get_by_id(int(revision.dataset_id))
+
+    return (revision, dataset)
+
+
+def send_revision_published_notification(db: SqlDB, revision_id: int) -> None:
+    """Method will trigger notifications to Operator/Agent and the sbscribers of the dataset
+    On Successful publishing of the database
+
+    Args:
+        db (SqlDB): Database object for queries execution
+        revision_id (int): Revision id of the dataset published
+    """
+    revision, dataset = get_dataset_details(db, revision_id)
+    if dataset is None:
+        log.error("Unable to send email, dataset not found", revision_id=revision_id)
+        return
+
+    if revision.last_modified_user_id is None:
+        log.error("Unable to send email, user not found", revision_id=revision_id)
+        return
+
+    notification = get_notifications()
+
+    user_repo = UsersUserRepo(db)
+    operator = user_repo.require_by_id(dataset.contact_id)
+
+    organisation_repo = OrganisationOrganisationRepo(db)
+    organisation = organisation_repo.get_by_id(dataset.organisation_id)
+
+    operator_name = "-"
+    if organisation:
+        operator_name = organisation.name
+
+    live_revision = False
+    if dataset.live_revision_id:
+        live_revision = True
+
+    feed_details_link = get_dataset_base_url(
+        dataset.dataset_type, dataset.organisation_id, dataset.id, live_revision
+    )
+    log.info(
+        "Sending dataset published revision notification for revision: ",
+        revision_id=revision_id,
+    )
+
+    if operator.account_type != AGENT_USER and operator.is_active:
+        notification.send_data_endpoint_publish_notification(
+            contact_email=operator.email,
+            dataset_id=dataset.id,
+            dataset_name=revision.name,
+            short_description=revision.short_description,
+            published_at=revision.published_at,
+            comments=revision.comment,
+            feed_detail_link=feed_details_link,
+            with_pti_violations=False,
+        )
+
+    agents_list = user_repo.fetch_agents_for_org(dataset.organisation_id)
+    for agent in agents_list:
+        notification.send_agent_data_endpoint_publish_notification(
+            agent.email,
+            dataset_id=dataset.id,
+            dataset_name=revision.name,
+            short_description=revision.short_description,
+            published_at=revision.published_at,
+            comments=revision.comment,
+            feed_detail_link=feed_details_link,
+            operator_name=operator_name,
+            with_pti_violations=False,
+        )
+
+    developers_list = user_repo.fetch_dataset_subscribers(dataset.id)
+    for developer in developers_list:
+        notification.send_developer_data_endpoint_change_notification(
+            developer.email,
+            dataset_id=dataset.id,
+            dataset_name=revision.name,
+            operator_name=operator_name,
+            last_updated=revision.published_at,
+        )
