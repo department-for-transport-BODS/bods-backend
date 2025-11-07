@@ -13,9 +13,9 @@ from aws_lambda_powertools.utilities.typing import LambdaContext
 from common_layer.aws.step import MapExecutionSucceeded, get_map_processing_results
 from common_layer.database.client import SqlDB
 from common_layer.database.repos import (
-    DataQualitySchemaViolationRepo,
     DataQualityPostSchemaViolationRepo,
     DataQualityPTIObservationRepo,
+    DataQualitySchemaViolationRepo,
     ETLTaskResultRepo,
     OrganisationDatasetRevisionAdminAreasRepo,
     OrganisationDatasetRevisionLocalitiesRepo,

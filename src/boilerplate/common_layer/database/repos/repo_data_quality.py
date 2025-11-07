@@ -8,6 +8,7 @@ from ..client import SqlDB
 from ..models import (
     DataQualityPostSchemaViolation,
     DataQualityPTIObservation,
+    DataQualityPTIValidationResult,
     DataQualitySchemaViolation,
 )
 from .operation_decorator import handle_repository_errors
@@ -69,3 +70,24 @@ class DataQualityPTIObservationRepo(BaseRepositoryWithId[DataQualityPTIObservati
         """
         statement = self._build_query().where(self._model.revision_id == revision_id)
         return self._fetch_all(statement)
+
+
+class DataQualityPTIValidationResultRepo(
+    BaseRepositoryWithId[DataQualityPTIValidationResult]
+):
+    """
+    Data Quality PTI Validation Result
+    """
+
+    def __init__(self, db: SqlDB):
+        super().__init__(db, DataQualityPTIValidationResult)
+
+    @handle_repository_errors
+    def get_by_revision_id(
+        self, revision_id: int
+    ) -> DataQualityPTIValidationResult | None:
+        """
+        Retrieve all DataQualityPTIValidationResult for a specific revision
+        """
+        statement = self._build_query().where(self._model.revision_id == revision_id)
+        return self._fetch_first(statement)

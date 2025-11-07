@@ -1,0 +1,16 @@
+Congratulations!
+
+Timetable/Fares/AVL dataset has been published successfully to the Bus Open Data Service.
+
+Operator: {{ operator_name }}
+Dataset: {{ dataset_name }}
+Dataset ID: {{ dataset_id }}
+Short Description: {{ short_description }}
+Published: {{ published_on }}
+Comments: {{ comments }}
+Link to dataset: {{ feed_detail_link }}
+
+For support, please contact us on 0800 028 8531, or by email at bodshelpdesk@kpmg.co.uk.
+
+Kind Regards,
+The Bus Open Data Team

@@ -12,6 +12,7 @@ from common_layer.database.repos import (
 )
 from common_layer.db.constants import StepName
 from common_layer.enums import FeedStatus
+from common_layer.utils import send_revision_published_notification
 from structlog.stdlib import get_logger
 
 from .models import ProcessingResult
@@ -88,6 +89,7 @@ def publish_revision(db: SqlDB, revision: OrganisationDatasetRevision):
     if revision.status == FeedStatus.SUCCESS:
         repo = OrganisationDatasetRevisionRepo(db)
         repo.publish_revision(revision.id)
+        send_revision_published_notification(db, revision.id)
     else:
         log.info(
             "Skipping publishing because revision status is not success",
