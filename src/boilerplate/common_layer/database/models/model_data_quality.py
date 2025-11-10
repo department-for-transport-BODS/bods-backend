@@ -7,7 +7,7 @@ from datetime import datetime
 from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .common import BaseSQLModel, TimeStampedMixin
+from .common import BaseSQLModel, CreatedTimeStampMixin, TimeStampedMixin
 
 
 class DataQualitySchemaViolation(BaseSQLModel):
@@ -65,3 +65,19 @@ class DataQualityPTIObservation(TimeStampedMixin, BaseSQLModel):
     category: Mapped[str] = mapped_column(String(1024))
     revision_id: Mapped[int] = mapped_column(Integer)
     reference: Mapped[str] = mapped_column(String(64))
+
+
+class DataQualityPTIValidationResult(CreatedTimeStampMixin, BaseSQLModel):
+    """Data Quality PTI Validation Result Table"""
+
+    __tablename__ = "data_quality_ptivalidationresult"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
+
+    revision_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("organisation_datasetrevision.id", deferrable=True),
+        nullable=False,
+    )
+    count: Mapped[int] = mapped_column(Integer)
+    report: Mapped[str] = mapped_column(String(1024))
