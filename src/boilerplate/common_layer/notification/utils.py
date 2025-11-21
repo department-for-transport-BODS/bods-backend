@@ -46,14 +46,17 @@ def data_end_point_error_publishing(
         "\t 3) Update the dataset on BODS and review the updated validation response. \n\n"
     )
 
+    support_email = environ.get("SUPPORT_EMAIL")
+    support_phone = environ.get("SUPPORT_PHONE")
+
     content += "Important: \n"
     content += (
         "You are legally obliged to supply data according to "
         " the standards, and you must resolve all issues listed immediately.\n"
     )
     content += (
-        "For support, please contact us on 0800 028 8531, "
-        "or by email at bodshelpdesk@kpmg.co.uk.\n\n"
+        f"For support, please contact us on {support_phone}, "
+        f"or by email at {support_email}.\n\n"
     )
 
     content += "Kind Regards,\n"
@@ -86,5 +89,10 @@ def get_email_body_from_text_file(template_path: str, args: Any) -> str:
     )
     pti_enforce_date = pti_enforce_date.strftime("%d %B, %Y")
     content = content.replace("{{ pti_enforced_date }}", pti_enforce_date)
+
+    support_email = environ.get("SUPPORT_EMAIL")
+    support_phone = environ.get("SUPPORT_PHONE")
+    content = content.replace("{{ SUPPORT_EMAIL }}", support_email)
+    content = content.replace("{{ SUPPORT_PHONE }}", support_phone)
 
     return content
