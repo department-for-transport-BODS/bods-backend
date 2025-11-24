@@ -90,8 +90,12 @@ def get_email_body_from_text_file(template_path: str, args: Any) -> str:
     pti_enforce_date = pti_enforce_date.strftime("%d %B, %Y")
     content = content.replace("{{ pti_enforced_date }}", pti_enforce_date)
 
-    support_email = environ.get("SUPPORT_EMAIL")
-    support_phone = environ.get("SUPPORT_PHONE")
+    support_email = environ.get(
+        "SUPPORT_EMAIL", "Support Email Env variable does not exist"
+    )
+    support_phone = environ.get(
+        "SUPPORT_PHONE", "Support Phone Env variable does not exist"
+    )
     content = content.replace("{{ SUPPORT_EMAIL }}", support_email)
     content = content.replace("{{ SUPPORT_PHONE }}", support_phone)
 
