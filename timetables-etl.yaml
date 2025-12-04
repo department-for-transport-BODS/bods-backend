@@ -211,9 +211,9 @@ Resources:
       Role: !GetAtt CommonLambdaExecutionRole.Arn
       CodeUri: ./src/timetables_etl/download_dataset
       Handler: app.download_dataset.lambda_handler
-      MemorySize: 1024
+      MemorySize: 5120
       EphemeralStorage:
-        Size: 1024
+        Size: 10240
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
@@ -346,7 +346,9 @@ Resources:
       CodeUri: ./src/timetables_etl/generate_output_zip
       Handler: app.generate_output_zip.lambda_handler
       Timeout: 900
-      MemorySize: 1024
+      MemorySize: 5120
+      EphemeralStorage:
+        Size: 10240
       Layers:
         - !Ref BoilerplateLambdaLayerArn
       LoggingConfig:
