@@ -108,6 +108,14 @@ Globals:
           - IsNotLocal
           - !Sub '{{resolve:ssm:/bodds/${Environment}/secretsmanager/govuk-notify-api-key/arn}}'
           - !Ref AWS::NoValue
+        SUPPORT_EMAIL: !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/support_email}}'
+          - !Ref AWS::NoValue
+        SUPPORT_PHONE: !If
+          - IsNotLocal
+          - !Sub '{{resolve:ssm:/bodds/${Environment}/support_phone}}'
+          - !Ref AWS::NoValue
         POSTGRES_DB: !If
           - IsNotLocal
           - !Sub '{{resolve:ssm:/bodds/${Environment}/rds-db-name}}'
