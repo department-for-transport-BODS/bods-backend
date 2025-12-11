@@ -9,6 +9,7 @@ from common_layer.database import SqlDB
 from common_layer.database.models import (
     NaptanStopPoint,
     TransmodelServicePatternDistance,
+    TransmodelTracks,
 )
 from common_layer.database.repos import TransmodelServicePatternDistanceRepo
 from common_layer.xml.txc.models import TXCService
@@ -26,45 +27,30 @@ log = get_logger()
 SRID = 4326
 
 
-def has_sufficient_track_data(
+AnalyzedSegment = tuple[NaptanStopPoint, NaptanStopPoint, TransmodelTracks | None]
+
+
+def analyze_track_segments(
     tracks: TrackLookup,
     stop_sequence: list[NaptanStopPoint],
-) -> bool:
+) -> list[AnalyzedSegment]:
     """
-    Check that there is sufficient track data for storing distance info
+    Analyze track data for each stop pair in route order.
 
-    Validates that:
-    - A track exists between every stop in sequence
-    - Each track has a geometry with at least 3 points
+    Returns an ordered list of segments. Each segment includes the track
+    if it exists and has geometry with 3+ points, otherwise None.
     """
-    expected_track_count = len(stop_sequence) - 1
-    for i in range(expected_track_count):
-        from_stop = stop_sequence[i]
-        to_stop = stop_sequence[i + 1]
+    segments: list[AnalyzedSegment] = []
+
+    for from_stop, to_stop in zip(stop_sequence, stop_sequence[1:]):
         track = tracks.get((from_stop.atco_code, to_stop.atco_code))
 
-        if not track:
-            log.warning(
-                "No track data for stop point pair",
-                from_atco_code=from_stop.atco_code,
-                to_atco_code=to_stop.atco_code,
-            )
-            return False
+        if track and track.geometry and len(list(to_shape(track.geometry).coords)) >= 3:
+            segments.append((from_stop, to_stop, track))
+        else:
+            segments.append((from_stop, to_stop, None))
 
-        if not track.geometry:
-            log.warning(
-                "Track has no geometry",
-                track_id=track.id,
-            )
-            return False
-
-        shapely_geom = to_shape(track.geometry)
-        coords = list(shapely_geom.coords)
-        if len(coords) < 3:
-            log.debug(f"Track has insufficient points: {len(coords)}")
-            return False
-
-    return True
+    return segments
 
 
 def haversine(lon1: float, lat1: float, lon2: float, lat2: float) -> float:
@@ -118,57 +104,57 @@ def snap_linestrings(
 
 
 def get_geometry_and_distance_from_tracks(
-    tracks: TrackLookup,
-    stop_sequence: list[NaptanStopPoint],
+    segments: list[AnalyzedSegment],
 ) -> tuple[WKBElement | None, int, int]:
     """
-    Calculate the full service geometry and distance using track data,
-    snapping endpoints together within 15 meters.
+    Calculate the full service geometry and distance in route order.
+    Uses track data for good segments, OSRM for bad segments.
+    Returns (geometry, coord_track_distance, distance).
     """
     total_distance = 0
     total_coord_distance = 0
-    track_linestrings: list[LineString] = []
-    snapped_lines: list[LineString] = []
+    linestrings: list[LineString] = []
+    api: OSRMGeometryAPI | None = None
 
-    # Define a projection transformer if your data is in lat/lon (WGS84)
-
-    for i, (from_stop, to_stop) in enumerate(zip(stop_sequence, stop_sequence[1:])):
-        track = tracks.get((from_stop.atco_code, to_stop.atco_code))
-        if not track or not track.geometry:
-            raise ValueError(
-                f"No track or geometry found for stop point \
-                pair {from_stop.atco_code} -> {to_stop.atco_code} at index {i}"
-            )
-        if track.distance:
-            total_distance += track.distance
-        if track.coord_distance:
-            total_coord_distance += track.coord_distance
-
-        shapely_geom = to_shape(track.geometry)
-        if isinstance(shapely_geom, LineString):
-            track_linestrings.append(shapely_geom)
-        elif isinstance(shapely_geom, MultiLineString):
-            track_linestrings.extend(shapely_geom.geoms)
+    for from_stop, to_stop, track in segments:
+        if track:
+            shapely_geom = to_shape(track.geometry)
+            if isinstance(shapely_geom, LineString):
+                linestrings.append(shapely_geom)
+            elif isinstance(shapely_geom, MultiLineString):
+                linestrings.extend(shapely_geom.geoms)
+            if track.distance:
+                total_distance += track.distance
+            if track.coord_distance:
+                total_coord_distance += track.coord_distance
         else:
-            log.warning(
-                "Track has unexpected geometry type",
-                track_id=track.id,
-                geom_type=shapely_geom.geom_type,
+            if api is None:
+                api = OSRMGeometryAPI()
+            seg_geometry, seg_distance = api.get_geometry_and_distance(
+                [
+                    (from_stop.shape.x, from_stop.shape.y),
+                    (to_stop.shape.x, to_stop.shape.y),
+                ]
             )
+            if seg_geometry:
+                shapely_geom = to_shape(seg_geometry)
+                if isinstance(shapely_geom, LineString):
+                    linestrings.append(shapely_geom)
+                elif isinstance(shapely_geom, MultiLineString):
+                    linestrings.extend(shapely_geom.geoms)
+            if seg_distance:
+                total_distance += seg_distance
 
-        if not track_linestrings:
-            log.warning("No valid track geometries found for stop sequence.")
-            return None, 0, 0
+    if not linestrings:
+        return None, 0, 0
 
-    # Snap endpoints before merging
-    snapped_lines = snap_linestrings(track_linestrings, tolerance=None)
-    merged = linemerge(snapped_lines)
+    snapped = snap_linestrings(linestrings, tolerance=None)
+    merged = linemerge(snapped)
     if isinstance(merged, MultiLineString):
-        # Flatten all coordinates into a single LineString
-        coords: list[tuple[float, float]] = []
+        all_coords: list[tuple[float, float]] = []
         for line in merged.geoms:
-            coords.extend(list(line.coords))  # type: ignore
-        merged = LineString(coords)
+            all_coords.extend(list(line.coords))  # type: ignore
+        merged = LineString(all_coords)
 
     geometry = from_shape(merged, srid=SRID)
     return geometry, total_coord_distance, total_distance
@@ -182,8 +168,8 @@ def process_service_pattern_distance(
     db: SqlDB,
 ) -> int | None:
     """
-    Calculate and store the total distance of this service pattern
-    Uses tracks data if available in the file, else uses distance service
+    Calculate and store the total distance of this service pattern.
+    Uses track data where sufficient, falls back to OSRM per-segment otherwise.
     """
     if service.FlexibleService:
         return None
@@ -191,9 +177,11 @@ def process_service_pattern_distance(
     distance: int | None = None
     coord_track_distance: int | None = None
     geometry: WKBElement | None = None
-    if tracks and has_sufficient_track_data(tracks, stop_sequence):
+
+    if tracks:
+        segments = analyze_track_segments(tracks, stop_sequence)
         geometry, coord_track_distance, distance = (
-            get_geometry_and_distance_from_tracks(tracks, stop_sequence)
+            get_geometry_and_distance_from_tracks(segments)
         )
     else:
         api = OSRMGeometryAPI()

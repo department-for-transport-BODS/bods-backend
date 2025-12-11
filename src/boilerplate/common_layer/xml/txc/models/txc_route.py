@@ -72,7 +72,9 @@ class TXCRouteLink(BaseModel):
         default=None,
         description=("Distance in metres along the track of the link."),
     )
-    Track: TXCTrack | None = Field(default=None)
+    Tracks: list[TXCTrack] = Field(
+        default=[], description="Track Segments in route link - List"
+    )
 
 
 class TXCRouteSection(BaseModel):

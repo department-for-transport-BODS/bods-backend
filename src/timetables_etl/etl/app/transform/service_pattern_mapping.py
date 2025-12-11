@@ -290,13 +290,14 @@ def process_journey_pattern(
     service_code: str,
     stops_lookup: StopsLookup,
     collections: ServicePatternCollections,
+    txc: TXCData | None = None,
 ) -> None:
     """
     Process a single journey pattern and update the collections
     """
 
     stops = (
-        get_pattern_stops(txc_jp, jps_list, stops_lookup)
+        get_pattern_stops(txc_jp, jps_list, stops_lookup, txc)
         if isinstance(txc_jp, TXCJourneyPattern)
         else get_flexible_pattern_stops(txc_jp, stops_lookup)
     )
@@ -339,7 +340,12 @@ def identify_unique_patterns(
         if service.StandardService:
             for txc_jp in service.StandardService.JourneyPattern:
                 process_journey_pattern(
-                    txc_jp, jps_list, service.ServiceCode, lookups.stops, collections
+                    txc_jp,
+                    jps_list,
+                    service.ServiceCode,
+                    lookups.stops,
+                    collections,
+                    txc,
                 )
 
         if service.FlexibleService:
@@ -350,6 +356,7 @@ def identify_unique_patterns(
                     service.ServiceCode,
                     lookups.stops,
                     collections,
+                    txc,
                 )
 
     return collections

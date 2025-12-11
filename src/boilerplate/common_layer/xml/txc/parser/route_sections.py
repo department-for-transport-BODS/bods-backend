@@ -91,6 +91,20 @@ def parse_track(route_link_xml: _Element) -> TXCTrack | None:
     return None
 
 
+def parse_tracks(route_link_xml: _Element) -> list[TXCTrack]:
+    """
+    Create list of all Tracks for a route link.
+    Handles RouteLinks with multiple Track elements.
+    """
+    tracks: list[TXCTrack] = []
+    track_xmls = route_link_xml.findall("Track")
+    for track_xml in track_xmls:
+        track = parse_track(track_xml)
+        if track:
+            tracks.append(track)
+    return tracks
+
+
 def parse_route_link(
     route_link_xml: _Element, parse_track_data: bool
 ) -> TXCRouteLink | None:
@@ -117,7 +131,7 @@ def parse_route_link(
     revision_number = parse_revision_number(route_link_xml)
     distance = get_element_int(route_link_xml, "Distance")
 
-    track = parse_track(route_link_xml) if parse_track_data else None
+    tracks = parse_tracks(route_link_xml) if parse_track_data else []
 
     return TXCRouteLink(
         id=route_link_id,
@@ -128,7 +142,7 @@ def parse_route_link(
         Modification=modification,
         RevisionNumber=revision_number,
         Distance=distance,
-        Track=track,
+        Tracks=tracks,
     )
 
 
