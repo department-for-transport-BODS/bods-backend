@@ -40,7 +40,7 @@ def check_for_nested_zips(zip_path: Path) -> tuple[bool, list[str]]:
 
 
 def check_zip_uncompressed_size(
-    zip_path: Path, max_size_bytes: int = 10_000_000_000  # 10GB in bytes
+    zip_path: Path, max_size_bytes: int = 15_000_000_000  # 15GB in bytes
 ) -> tuple[bool, int]:
     """
     Check if the total uncompressed size of files in a ZIP would exceed a maximum size.
