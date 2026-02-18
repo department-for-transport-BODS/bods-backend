@@ -99,9 +99,10 @@ def parse_tracks(route_link_xml: _Element) -> list[TXCTrack]:
     tracks: list[TXCTrack] = []
     track_xmls = route_link_xml.findall("Track")
     for track_xml in track_xmls:
-        track = parse_track(track_xml)
-        if track:
-            tracks.append(track)
+        locations = parse_locations(track_xml)
+        if locations:
+            mapping = TXCMapping(Location=locations)
+            tracks.append(TXCTrack(Mapping=mapping))
     return tracks
 
 
