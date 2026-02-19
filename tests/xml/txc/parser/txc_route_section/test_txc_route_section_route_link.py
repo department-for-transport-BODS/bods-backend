@@ -34,16 +34,18 @@ from lxml import etree
             </Track>
         </RouteLink>
         """,
-            TXCTrack(
-                Mapping=TXCMapping(
-                    Location=[
-                        TXCLocation(
-                            id="loc1", Longitude="-0.1234567", Latitude="51.9876543"
-                        ),
-                        TXCLocation(id="loc2", Longitude="0.0", Latitude="0.0"),
-                    ]
+            [
+                TXCTrack(
+                    Mapping=TXCMapping(
+                        Location=[
+                            TXCLocation(
+                                id="loc1", Longitude="-0.1234567", Latitude="51.9876543"
+                            ),
+                            TXCLocation(id="loc2", Longitude="0.0", Latitude="0.0"),
+                        ]
+                    )
                 )
-            ),
+            ],
             id="Valid Track",
         ),
         pytest.param(
@@ -59,7 +61,7 @@ from lxml import etree
             </Track>
         </RouteLink>
         """,
-            None,
+            [],
             id="Missing Location ID",
         ),
         pytest.param(
@@ -79,15 +81,17 @@ from lxml import etree
             </Track>
         </RouteLink>
         """,
-            TXCTrack(
-                Mapping=TXCMapping(
-                    Location=[
-                        TXCLocation(
-                            id="loc1", Longitude="-0.1234567", Latitude="51.9876543"
-                        ),
-                    ]
+            [
+                TXCTrack(
+                    Mapping=TXCMapping(
+                        Location=[
+                            TXCLocation(
+                                id="loc1", Longitude="-0.1234567", Latitude="51.9876543"
+                            ),
+                        ]
+                    )
                 )
-            ),
+            ],
             id="Mixed Valid and Invalid Locations",
         ),
         pytest.param(
@@ -103,24 +107,24 @@ from lxml import etree
             </InvalidElement>
         </RouteLink>
         """,
-            None,
+            [],
             id="Invalid Track Element",
         ),
         pytest.param(
             """
         <RouteLink></RouteLink>
         """,
-            None,
+            [],
             id="No Track Element",
         ),
     ],
 )
-def test_parse_track(xml_string: str, expected: TXCTrack | None):
+def test_parse_tracks(xml_string: str, expected: list[TXCTrack]):
     """
     Test the parsing of TXCTrack from XML.
     """
     root = etree.fromstring(xml_string)
-    assert parse_track(root) == expected
+    assert parse_tracks(root) == expected
 
 
 @pytest.mark.parametrize(
