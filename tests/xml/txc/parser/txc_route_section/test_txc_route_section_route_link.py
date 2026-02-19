@@ -10,6 +10,7 @@ from common_layer.xml.txc.parser.route_sections import (
     parse_route_link,
     parse_route_links,
     parse_track,
+    parse_tracks,
 )
 from lxml import etree
 
@@ -163,16 +164,18 @@ def test_parse_track(xml_string: str, expected: TXCTrack | None):
                 Modification="revise",
                 RevisionNumber=5,
                 Distance=1000,
-                Track=TXCTrack(
-                    Mapping=TXCMapping(
-                        Location=[
-                            TXCLocation(
-                                id="loc1", Longitude="-0.1234567", Latitude="51.9876543"
-                            ),
-                            TXCLocation(id="loc2", Longitude="0.0", Latitude="0.0"),
-                        ]
+                Tracks=[
+                    TXCTrack(
+                        Mapping=TXCMapping(
+                            Location=[
+                                TXCLocation(
+                                    id="loc1", Longitude="-0.1234567", Latitude="51.9876543"
+                                ),
+                                TXCLocation(id="loc2", Longitude="0.0", Latitude="0.0"),
+                            ]
+                        )
                     )
-                ),
+                ],
             ),
             id="Valid RouteLink",
         ),
@@ -242,7 +245,7 @@ def test_parse_track(xml_string: str, expected: TXCTrack | None):
                 Modification=None,
                 RevisionNumber=None,
                 Distance=None,
-                Track=None,
+                Tracks=[],
             ),
             id="Invalid Track Element",
         ),
@@ -301,18 +304,20 @@ def test_parse_route_link(xml_string: str, expected: TXCRouteLink | None):
                     Modification="revise",
                     RevisionNumber=5,
                     Distance=1000,
-                    Track=TXCTrack(
-                        Mapping=TXCMapping(
-                            Location=[
-                                TXCLocation(
-                                    id="loc1",
-                                    Longitude="-0.1234567",
-                                    Latitude="51.9876543",
-                                ),
-                                TXCLocation(id="loc2", Longitude="0.0", Latitude="0.0"),
-                            ]
+                    Tracks=[
+                        TXCTrack(
+                            Mapping=TXCMapping(
+                                Location=[
+                                    TXCLocation(
+                                        id="loc1",
+                                        Longitude="-0.1234567",
+                                        Latitude="51.9876543",
+                                    ),
+                                    TXCLocation(id="loc2", Longitude="0.0", Latitude="0.0"),
+                                ]
+                            )
                         )
-                    ),
+                    ],
                 )
             ],
             id="Single Valid RouteLink",
@@ -353,7 +358,7 @@ def test_parse_route_link(xml_string: str, expected: TXCRouteLink | None):
                     Modification=None,
                     RevisionNumber=None,
                     Distance=None,
-                    Track=None,
+                    Tracks=[],
                 ),
                 TXCRouteLink(
                     id="RL2",
@@ -366,7 +371,7 @@ def test_parse_route_link(xml_string: str, expected: TXCRouteLink | None):
                     Modification="new",
                     RevisionNumber=1,
                     Distance=800,
-                    Track=None,
+                    Tracks=[],
                 ),
             ],
             id="Multiple RouteLinks",
