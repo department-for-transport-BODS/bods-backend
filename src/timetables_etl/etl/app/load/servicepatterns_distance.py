@@ -122,7 +122,7 @@ def _to_linestring(
 ) -> LineString:
     """Convert geometry to a single LineString, merging if needed."""
     if isinstance(shapely_geom, MultiLineString):
-        all_coords = []
+        all_coords: list[tuple[float, float]] = []
         for line in shapely_geom.geoms:
             all_coords.extend(list(line.coords))  # type: ignore
         return LineString(all_coords)
@@ -140,7 +140,7 @@ def _process_track_segment(
             linestrings.append(_to_linestring(shapely_geom))
         else:
             raise TypeError(
-                f"Expected LineString or MultiLineString from track geometry, got {type(shapely_geom).__name__}"
+                "Expected LineString or MultiLineString from track geometry"
             )
     return track.distance or 0, track.coord_distance or 0
 
@@ -162,9 +162,7 @@ def _process_osrm_segment(
         if isinstance(shapely_geom, (LineString, MultiLineString)):
             linestrings.append(_to_linestring(shapely_geom))
         else:
-            raise TypeError(
-                f"Expected LineString or MultiLineString from OSRM geometry, got {type(shapely_geom).__name__}"
-            )
+            raise TypeError("Expected LineString or MultiLineString from OSRM geometry")
     return seg_distance or 0
 
 
