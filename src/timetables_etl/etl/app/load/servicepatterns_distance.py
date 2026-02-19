@@ -103,6 +103,56 @@ def snap_linestrings(
     return snapped
 
 
+def _add_geometry_to_linestrings(
+    shapely_geom: LineString | MultiLineString, linestrings: list[LineString]
+) -> None:
+    """Add geometry to linestrings list, handling both LineString and MultiLineString."""
+    if isinstance(shapely_geom, LineString):
+        linestrings.append(shapely_geom)
+    elif isinstance(shapely_geom, MultiLineString):
+        linestrings.extend(shapely_geom.geoms)
+
+
+def _process_track_segment(
+    track: TransmodelTracks,
+    linestrings: list[LineString],
+) -> tuple[int, int]:
+    """Process a segment with track data. Returns (distance, coord_distance)."""
+    shapely_geom = to_shape(track.geometry)
+    _add_geometry_to_linestrings(shapely_geom, linestrings)
+    return track.distance or 0, track.coord_distance or 0
+
+
+def _process_osrm_segment(
+    from_stop: NaptanStopPoint,
+    to_stop: NaptanStopPoint,
+    api: OSRMGeometryAPI,
+    linestrings: list[LineString],
+) -> int:
+    """Process a segment without track data using OSRM. Returns distance."""
+    coords = [
+        (from_stop.shape.x, from_stop.shape.y),
+        (to_stop.shape.x, to_stop.shape.y),
+    ]
+    seg_geometry, seg_distance = api.get_geometry_and_distance(coords)
+    if seg_geometry:
+        shapely_geom = to_shape(seg_geometry)
+        _add_geometry_to_linestrings(shapely_geom, linestrings)
+    return seg_distance or 0
+
+
+def _merge_linestrings(linestrings: list[LineString]) -> LineString:
+    """Merge and snap linestrings into a single LineString."""
+    snapped = snap_linestrings(linestrings, tolerance=None)
+    merged = linemerge(snapped)
+    if isinstance(merged, MultiLineString):
+        all_coords: list[tuple[float, float]] = []
+        for line in merged.geoms:
+            all_coords.extend(list(line.coords))  # type: ignore
+        merged = LineString(all_coords)
+    return merged
+
+
 def get_geometry_and_distance_from_tracks(
     segments: list[AnalyzedSegment],
 ) -> tuple[WKBElement | None, int, int]:
@@ -118,44 +168,20 @@ def get_geometry_and_distance_from_tracks(
 
     for from_stop, to_stop, track in segments:
         if track:
-            shapely_geom = to_shape(track.geometry)
-            if isinstance(shapely_geom, LineString):
-                linestrings.append(shapely_geom)
-            elif isinstance(shapely_geom, MultiLineString):
-                linestrings.extend(shapely_geom.geoms)
-            if track.distance:
-                total_distance += track.distance
-            if track.coord_distance:
-                total_coord_distance += track.coord_distance
+            distance, coord_distance = _process_track_segment(track, linestrings)
+            total_distance += distance
+            total_coord_distance += coord_distance
         else:
             if api is None:
                 api = OSRMGeometryAPI()
-            seg_geometry, seg_distance = api.get_geometry_and_distance(
-                [
-                    (from_stop.shape.x, from_stop.shape.y),
-                    (to_stop.shape.x, to_stop.shape.y),
-                ]
+            total_distance += _process_osrm_segment(
+                from_stop, to_stop, api, linestrings
             )
-            if seg_geometry:
-                shapely_geom = to_shape(seg_geometry)
-                if isinstance(shapely_geom, LineString):
-                    linestrings.append(shapely_geom)
-                elif isinstance(shapely_geom, MultiLineString):
-                    linestrings.extend(shapely_geom.geoms)
-            if seg_distance:
-                total_distance += seg_distance
 
     if not linestrings:
         return None, 0, 0
 
-    snapped = snap_linestrings(linestrings, tolerance=None)
-    merged = linemerge(snapped)
-    if isinstance(merged, MultiLineString):
-        all_coords: list[tuple[float, float]] = []
-        for line in merged.geoms:
-            all_coords.extend(list(line.coords))  # type: ignore
-        merged = LineString(all_coords)
-
+    merged = _merge_linestrings(linestrings)
     geometry = from_shape(merged, srid=SRID)
     return geometry, total_coord_distance, total_distance
 
