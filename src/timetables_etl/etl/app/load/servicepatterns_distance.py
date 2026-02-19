@@ -54,7 +54,10 @@ def analyze_track_segments(
 
         if track and track.geometry:
             shapely_geom = to_shape(track.geometry)
-            if isinstance(shapely_geom, (LineString, MultiLineString)) and _count_geometry_coords(shapely_geom) >= 3:
+            if (
+                isinstance(shapely_geom, (LineString, MultiLineString))
+                and _count_geometry_coords(shapely_geom) >= 3
+            ):
                 segments.append((from_stop, to_stop, track))
             else:
                 segments.append((from_stop, to_stop, None))
