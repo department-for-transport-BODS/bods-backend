@@ -30,6 +30,13 @@ SRID = 4326
 AnalyzedSegment = tuple[NaptanStopPoint, NaptanStopPoint, TransmodelTracks | None]
 
 
+def _count_geometry_coords(geom: LineString | MultiLineString) -> int:
+    """Count total coordinate points in a geometry (handles both LineString and MultiLineString)."""
+    if isinstance(geom, MultiLineString):
+        return sum(len(line.coords) for line in geom.geoms)
+    return len(geom.coords)
+
+
 def analyze_track_segments(
     tracks: TrackLookup,
     stop_sequence: list[NaptanStopPoint],
@@ -45,8 +52,12 @@ def analyze_track_segments(
     for from_stop, to_stop in zip(stop_sequence, stop_sequence[1:]):
         track = tracks.get((from_stop.atco_code, to_stop.atco_code))
 
-        if track and track.geometry and len(list(to_shape(track.geometry).coords)) >= 3:
-            segments.append((from_stop, to_stop, track))
+        if track and track.geometry:
+            shapely_geom = to_shape(track.geometry)
+            if isinstance(shapely_geom, (LineString, MultiLineString)) and _count_geometry_coords(shapely_geom) >= 3:
+                segments.append((from_stop, to_stop, track))
+            else:
+                segments.append((from_stop, to_stop, None))
         else:
             segments.append((from_stop, to_stop, None))
 
@@ -103,14 +114,16 @@ def snap_linestrings(
     return snapped
 
 
-def _add_geometry_to_linestrings(
-    shapely_geom: LineString | MultiLineString, linestrings: list[LineString]
-) -> None:
-    """Add geometry to linestrings list, handling both LineString and MultiLineString."""
-    if isinstance(shapely_geom, LineString):
-        linestrings.append(shapely_geom)
-    elif isinstance(shapely_geom, MultiLineString):
-        linestrings.extend(shapely_geom.geoms)
+def _to_linestring(
+    shapely_geom: LineString | MultiLineString,
+) -> LineString:
+    """Convert geometry to a single LineString, merging if needed."""
+    if isinstance(shapely_geom, MultiLineString):
+        all_coords = []
+        for line in shapely_geom.geoms:
+            all_coords.extend(list(line.coords))  # type: ignore
+        return LineString(all_coords)
+    return shapely_geom
 
 
 def _process_track_segment(
@@ -120,7 +133,12 @@ def _process_track_segment(
     """Process a segment with track data. Returns (distance, coord_distance)."""
     if track.geometry is not None:
         shapely_geom = to_shape(track.geometry)
-        _add_geometry_to_linestrings(shapely_geom, linestrings)
+        if isinstance(shapely_geom, (LineString, MultiLineString)):
+            linestrings.append(_to_linestring(shapely_geom))
+        else:
+            raise TypeError(
+                f"Expected LineString or MultiLineString from track geometry, got {type(shapely_geom).__name__}"
+            )
     return track.distance or 0, track.coord_distance or 0
 
 
@@ -138,7 +156,12 @@ def _process_osrm_segment(
     seg_geometry, seg_distance = api.get_geometry_and_distance(coords)
     if seg_geometry:
         shapely_geom = to_shape(seg_geometry)
-        _add_geometry_to_linestrings(shapely_geom, linestrings)
+        if isinstance(shapely_geom, (LineString, MultiLineString)):
+            linestrings.append(_to_linestring(shapely_geom))
+        else:
+            raise TypeError(
+                f"Expected LineString or MultiLineString from OSRM geometry, got {type(shapely_geom).__name__}"
+            )
     return seg_distance or 0
 
 

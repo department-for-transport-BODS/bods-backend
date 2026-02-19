@@ -75,9 +75,7 @@ class TXCRouteLink(BaseModel):
     )
     Tracks: Annotated[
         list[TXCTrack],
-        Field(
-            default_factory=list, description="Track Segments in route link - List"
-        ),
+        Field(default_factory=list, description="Track Segments in route link - List"),
     ]
 
 
