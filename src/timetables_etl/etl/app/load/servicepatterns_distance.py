@@ -118,8 +118,9 @@ def _process_track_segment(
     linestrings: list[LineString],
 ) -> tuple[int, int]:
     """Process a segment with track data. Returns (distance, coord_distance)."""
-    shapely_geom = to_shape(track.geometry)
-    _add_geometry_to_linestrings(shapely_geom, linestrings)
+    if track.geometry is not None:
+        shapely_geom = to_shape(track.geometry)
+        _add_geometry_to_linestrings(shapely_geom, linestrings)
     return track.distance or 0, track.coord_distance or 0
 
 

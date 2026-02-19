@@ -130,7 +130,7 @@ def merge_track_geometries(tracks: list[TXCTrack]) -> TrackGeometry | None:
     if not tracks:
         return None
 
-    all_points: list[Point] = []
+    all_points: list[tuple[float, ...]] = []
 
     for track in tracks:
         track_geom = process_track_geometry(track)
