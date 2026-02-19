@@ -9,7 +9,6 @@ from common_layer.xml.txc.models import TXCLocation, TXCMapping, TXCRouteLink, T
 from common_layer.xml.txc.parser.route_sections import (
     parse_route_link,
     parse_route_links,
-    parse_track,
     parse_tracks,
 )
 from lxml import etree
@@ -169,7 +168,9 @@ def test_parse_track(xml_string: str, expected: TXCTrack | None):
                         Mapping=TXCMapping(
                             Location=[
                                 TXCLocation(
-                                    id="loc1", Longitude="-0.1234567", Latitude="51.9876543"
+                                    id="loc1",
+                                    Longitude="-0.1234567",
+                                    Latitude="51.9876543",
                                 ),
                                 TXCLocation(id="loc2", Longitude="0.0", Latitude="0.0"),
                             ]
@@ -313,7 +314,9 @@ def test_parse_route_link(xml_string: str, expected: TXCRouteLink | None):
                                         Longitude="-0.1234567",
                                         Latitude="51.9876543",
                                     ),
-                                    TXCLocation(id="loc2", Longitude="0.0", Latitude="0.0"),
+                                    TXCLocation(
+                                        id="loc2", Longitude="0.0", Latitude="0.0"
+                                    ),
                                 ]
                             )
                         )

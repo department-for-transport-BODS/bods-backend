@@ -78,19 +78,6 @@ def parse_locations(track_xml: _Element) -> list[TXCLocation] | None:
     return None
 
 
-def parse_track(route_link_xml: _Element) -> TXCTrack | None:
-    """
-    Create Track
-    """
-    track_xml = route_link_xml.find("Track")
-    if track_xml is not None:
-        locations = parse_locations(track_xml)
-        if locations:
-            mapping = TXCMapping(Location=locations)
-            return TXCTrack(Mapping=mapping)
-    return None
-
-
 def parse_tracks(route_link_xml: _Element) -> list[TXCTrack]:
     """
     Create list of all Tracks for a route link.
