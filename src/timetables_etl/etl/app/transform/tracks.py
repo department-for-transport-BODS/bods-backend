@@ -156,35 +156,6 @@ def merge_track_geometries(tracks: list[TXCTrack]) -> TrackGeometry | None:
         return None
 
 
-def create_track_mapping(
-    route_sections: list[TXCRouteSection],
-) -> dict[tuple[str, str], tuple[TXCTrack, int | None]]:
-    """
-    Create a mapping from (from_code, to_code) pairs to their corresponding
-    Track and Distance information.
-    """
-
-    route_links_with_track = [
-        route_link
-        for section in route_sections
-        for route_link in section.RouteLink
-        if route_link.Tracks
-    ]
-    track_mapping: dict[tuple[str, str], tuple[TXCTrack, int | None]] = {}
-    for route_link in route_links_with_track:
-        if route_link.Tracks:
-            track_mapping[(route_link.From, route_link.To)] = (
-                route_link.Tracks[0],
-                route_link.Distance,
-            )
-
-    log.info(
-        "Created track mapping",
-        total_mappings=len(track_mapping),
-    )
-    return track_mapping
-
-
 def create_new_tracks(route_sections: list[TXCRouteSection]) -> list[TransmodelTracks]:
     """
     Create new TransmodelTrack objects with geometry and distance where available.
