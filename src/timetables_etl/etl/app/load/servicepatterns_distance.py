@@ -131,27 +131,26 @@ def _to_linestring(
 
 def _process_track_segment(
     track: TransmodelTracks,
-    linestrings: list[LineString],
-) -> tuple[int, int]:
-    """Process a segment with track data. Returns (distance, coord_distance)."""
+ ) -> tuple[LineString | None, int, int]:
+    """Process a segment with track data. Returns (geometry, distance, coord_distance)."""
     if track.geometry is not None:
         shapely_geom = to_shape(track.geometry)
         if isinstance(shapely_geom, (LineString, MultiLineString)):
-            linestrings.append(_to_linestring(shapely_geom))
+            seg_linestring = _to_linestring(shapely_geom)
         else:
             raise TypeError(
                 "Expected LineString or MultiLineString from track geometry"
             )
-    return track.distance or 0, track.coord_distance or 0
+        return seg_linestring, track.distance or 0, track.coord_distance or 0
+    return None, track.distance or 0, track.coord_distance or 0
 
 
 def _process_osrm_segment(
     from_stop: NaptanStopPoint,
     to_stop: NaptanStopPoint,
     api: OSRMGeometryAPI,
-    linestrings: list[LineString],
-) -> int:
-    """Process a segment without track data using OSRM. Returns distance."""
+) -> tuple[LineString | None, int]:
+    """Process a segment without track data using OSRM. Returns (geometry, distance)."""
     coords = [
         (from_stop.shape.x, from_stop.shape.y),
         (to_stop.shape.x, to_stop.shape.y),
@@ -160,10 +159,10 @@ def _process_osrm_segment(
     if seg_geometry:
         shapely_geom = to_shape(seg_geometry)
         if isinstance(shapely_geom, (LineString, MultiLineString)):
-            linestrings.append(_to_linestring(shapely_geom))
+            return _to_linestring(shapely_geom), seg_distance or 0
         else:
             raise TypeError("Expected LineString or MultiLineString from OSRM geometry")
-    return seg_distance or 0
+    return None, seg_distance or 0
 
 
 def _merge_linestrings(linestrings: list[LineString]) -> LineString:
@@ -193,15 +192,20 @@ def get_geometry_and_distance_from_tracks(
 
     for from_stop, to_stop, track in segments:
         if track:
-            distance, coord_distance = _process_track_segment(track, linestrings)
+            segment_geometry, distance, coord_distance = _process_track_segment(track)
+            if segment_geometry is not None:
+                linestrings.append(segment_geometry)
             total_distance += distance
             total_coord_distance += coord_distance
         else:
             if api is None:
                 api = OSRMGeometryAPI()
-            total_distance += _process_osrm_segment(
-                from_stop, to_stop, api, linestrings
+            segment_geometry, segment_distance = _process_osrm_segment(
+                from_stop, to_stop, api
             )
+            if segment_geometry is not None:
+                linestrings.append(segment_geometry)
+            total_distance += segment_distance
 
     if not linestrings:
         return None, 0, 0
