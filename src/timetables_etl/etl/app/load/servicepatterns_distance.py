@@ -131,7 +131,7 @@ def _to_linestring(
 
 def _process_track_segment(
     track: TransmodelTracks,
- ) -> tuple[LineString | None, int, int]:
+) -> tuple[LineString | None, int, int]:
     """Process a segment with track data. Returns (geometry, distance, coord_distance)."""
     if track.geometry is not None:
         shapely_geom = to_shape(track.geometry)
@@ -160,8 +160,7 @@ def _process_osrm_segment(
         shapely_geom = to_shape(seg_geometry)
         if isinstance(shapely_geom, (LineString, MultiLineString)):
             return _to_linestring(shapely_geom), seg_distance or 0
-        else:
-            raise TypeError("Expected LineString or MultiLineString from OSRM geometry")
+        raise TypeError("Expected LineString or MultiLineString from OSRM geometry")
     return None, seg_distance or 0
 
 
