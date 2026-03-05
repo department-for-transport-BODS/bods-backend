@@ -12,8 +12,8 @@ from tests.factories.database.naptan import NaptanStopPointFactory
 from tests.factories.database.transmodel import TransmodelTracksFactory
 from timetables_etl.etl.app.helpers import TrackLookup
 from timetables_etl.etl.app.load.servicepatterns_distance import (
+    analyze_track_segments,
     get_geometry_and_distance_from_tracks,
-    has_sufficient_track_data,
     process_service_pattern_distance,
 )
 
@@ -68,11 +68,17 @@ def sufficient_tracks() -> TrackLookup:
     }
 
 
-def test_has_sufficient_track_data_true(
+def test_analyze_track_segments_all_sufficient(
     sufficient_tracks: TrackLookup,
     stop_sequence: list[NaptanStopPoint],
 ) -> None:
-    assert has_sufficient_track_data(sufficient_tracks, stop_sequence) is True
+    segments = analyze_track_segments(sufficient_tracks, stop_sequence)
+
+    # Should have 2 segments (A->B, B->C)
+    assert len(segments) == 2
+
+    # All segments should have track data (not None)
+    assert all(track is not None for _, _, track in segments)
 
 
 @pytest.mark.parametrize(
@@ -121,18 +127,25 @@ def test_has_sufficient_track_data_true(
         ),
     ],
 )
-def test_has_sufficient_track_data_insufficient_cases(
+def test_analyze_track_segments_insufficient_cases(
     tracks: TrackLookup,
     stop_sequence: list[NaptanStopPoint],
 ) -> None:
-    assert has_sufficient_track_data(tracks, stop_sequence) is False
+    segments = analyze_track_segments(tracks, stop_sequence)
+
+    # Should have 2 segments (A->B, B->C)
+    assert len(segments) == 2
+
+    # At least one segment should have None track (insufficient data)
+    assert any(track is None for _, _, track in segments)
 
 
 def test_get_geometry_and_distance_from_tracks(
     sufficient_tracks: TrackLookup, stop_sequence: list[NaptanStopPoint]
 ) -> None:
+    segments = analyze_track_segments(sufficient_tracks, stop_sequence)
     geom, total_coord_distance, distance = get_geometry_and_distance_from_tracks(
-        sufficient_tracks, stop_sequence
+        segments
     )
     assert isinstance(geom, WKBElement)
     assert distance == 250, "total distance = 100 + 150"

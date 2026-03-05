@@ -97,7 +97,7 @@ def process_track_geometry(track: TXCTrack) -> TrackGeometry | None:
     if len(track.Mapping.Location) < 2:
         log.warning(
             "At least two points are required to make a LineString",
-            point_count=track.Mapping.Location,
+            point_count=len(track.Mapping.Location),
         )
         return None
 
@@ -122,52 +122,57 @@ def process_track_geometry(track: TXCTrack) -> TrackGeometry | None:
         return None
 
 
-def create_track_mapping(
-    route_sections: list[TXCRouteSection],
-) -> dict[tuple[str, str], tuple[TXCTrack, int | None]]:
+def merge_track_geometries(tracks: list[TXCTrack]) -> TrackGeometry | None:
     """
-    Create a mapping from (from_code, to_code) pairs to their corresponding
-    Track and Distance information.
+    Merge multiple track geometries into a single combined geometry.
+    Used when a RouteLink has multiple Track elements.
     """
+    if not tracks:
+        return None
 
-    route_links_with_track = [
-        route_link
-        for section in route_sections
-        for route_link in section.RouteLink
-        if route_link.Track
-    ]
-    track_mapping: dict[tuple[str, str], tuple[TXCTrack, int | None]] = {}
-    for route_link in route_links_with_track:
-        if route_link.Track:
-            track_mapping[(route_link.From, route_link.To)] = (
-                route_link.Track,
-                route_link.Distance,
-            )
+    all_points: list[tuple[float, ...]] = []
 
-    log.info(
-        "Created track mapping",
-        total_mappings=len(track_mapping),
-    )
-    return track_mapping
+    for track in tracks:
+        track_geom = process_track_geometry(track)
+        if track_geom:
+            all_points.extend(track_geom.line.coords)
+
+    if len(all_points) < 2:
+        log.warning(
+            "Not enough points after merging tracks", total_points=len(all_points)
+        )
+        return None
+
+    try:
+        merged_line = LineString(all_points)
+        geometry = from_shape(merged_line, srid=4326)
+        return TrackGeometry(geometry=geometry, line=merged_line, distance=None)
+    except (ValueError, TypeError) as e:
+        log.warning(
+            "Failed to merge track geometries",
+            error=str(e),
+            track_count=len(tracks),
+        )
+        return None
 
 
 def create_new_tracks(route_sections: list[TXCRouteSection]) -> list[TransmodelTracks]:
     """
     Create new TransmodelTrack objects with geometry and distance where available.
+    Merges multiple Track elements per RouteLink into a single geometry.
     """
     log.debug("Creating New Tracks")
     new_tracks: list[TransmodelTracks] = []
     for section in route_sections:
         for route_link in section.RouteLink:
-            if not route_link.Track:
+            if not route_link.Tracks:
                 continue
 
             from_code = route_link.From
             to_code = route_link.To
-            txc_track = route_link.Track
             provided_distance = route_link.Distance
 
-            track_geom = process_track_geometry(txc_track)
+            track_geom = merge_track_geometries(route_link.Tracks)
             if not track_geom:
                 continue
 
