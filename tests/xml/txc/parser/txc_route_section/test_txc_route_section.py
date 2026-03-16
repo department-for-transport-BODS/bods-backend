@@ -72,20 +72,22 @@ from lxml import etree
                         Modification="revise",
                         RevisionNumber=5,
                         Distance=1000,
-                        Track=TXCTrack(
-                            Mapping=TXCMapping(
-                                Location=[
-                                    TXCLocation(
-                                        id="loc1",
-                                        Longitude="-0.1234567",
-                                        Latitude="51.9876543",
-                                    ),
-                                    TXCLocation(
-                                        id="loc2", Longitude="0.0", Latitude="0.0"
-                                    ),
-                                ]
+                        Tracks=[
+                            TXCTrack(
+                                Mapping=TXCMapping(
+                                    Location=[
+                                        TXCLocation(
+                                            id="loc1",
+                                            Longitude="-0.1234567",
+                                            Latitude="51.9876543",
+                                        ),
+                                        TXCLocation(
+                                            id="loc2", Longitude="0.0", Latitude="0.0"
+                                        ),
+                                    ]
+                                )
                             )
-                        ),
+                        ],
                     )
                 ],
             ),
@@ -131,7 +133,7 @@ from lxml import etree
                         Modification=None,
                         RevisionNumber=None,
                         Distance=None,
-                        Track=None,
+                        Tracks=[],
                     ),
                     TXCRouteLink(
                         id="RL2",
@@ -146,7 +148,7 @@ from lxml import etree
                         Modification="new",
                         RevisionNumber=1,
                         Distance=800,
-                        Track=None,
+                        Tracks=[],
                     ),
                 ],
             ),
@@ -369,20 +371,22 @@ def test_parse_route_section(xml_string: str, expected: TXCRouteSection) -> None
                             Modification="revise",
                             RevisionNumber=5,
                             Distance=1000,
-                            Track=TXCTrack(
-                                Mapping=TXCMapping(
-                                    Location=[
-                                        TXCLocation(
-                                            id="loc1",
-                                            Longitude="-0.1234567",
-                                            Latitude="51.9876543",
-                                        ),
-                                        TXCLocation(
-                                            id="loc2", Longitude="0.0", Latitude="0.0"
-                                        ),
-                                    ]
+                            Tracks=[
+                                TXCTrack(
+                                    Mapping=TXCMapping(
+                                        Location=[
+                                            TXCLocation(
+                                                id="loc1",
+                                                Longitude="-0.1234567",
+                                                Latitude="51.9876543",
+                                            ),
+                                            TXCLocation(
+                                                id="loc2", Longitude="0.0", Latitude="0.0"
+                                            ),
+                                        ]
+                                    )
                                 )
-                            ),
+                            ],
                         )
                     ],
                 )
@@ -436,7 +440,7 @@ def test_parse_route_section(xml_string: str, expected: TXCRouteSection) -> None
                             Modification=None,
                             RevisionNumber=None,
                             Distance=None,
-                            Track=None,
+                            Tracks=[],
                         )
                     ],
                 ),
@@ -458,7 +462,7 @@ def test_parse_route_section(xml_string: str, expected: TXCRouteSection) -> None
                             Modification="new",
                             RevisionNumber=1,
                             Distance=800,
-                            Track=None,
+                            Tracks=[],
                         )
                     ],
                 ),

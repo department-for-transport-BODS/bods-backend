@@ -4,6 +4,7 @@ Stop Point
 """
 
 from datetime import datetime
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -72,7 +73,10 @@ class TXCRouteLink(BaseModel):
         default=None,
         description=("Distance in metres along the track of the link."),
     )
-    Track: TXCTrack | None = Field(default=None)
+    Tracks: Annotated[
+        list[TXCTrack],
+        Field(default_factory=list, description="Track Segments in route link - List"),
+    ]
 
 
 class TXCRouteSection(BaseModel):
@@ -90,7 +94,7 @@ class TXCRouteSection(BaseModel):
         default=None,
         description="Last modification date and time of the route link.",
     )
-    RouteLink: list[TXCRouteLink] = Field(default=[])
+    RouteLink: Annotated[list[TXCRouteLink], Field(default_factory=list)]
 
 
 class TXCRoute(FrozenBaseModel):
