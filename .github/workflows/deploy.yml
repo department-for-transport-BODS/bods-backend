@@ -61,11 +61,11 @@ jobs:
     steps:
       - name: checkout
         if: ${{ env.RC_VER == 'null' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Configure AWS credentials against the BODS Shared Services account
       - name: configure aws credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-region: ${{ env.AWS_REGION }}
           role-to-assume: ${{ env.BODS_DEFAULT_GITHUB_ACTIONS_ASSUME_ROLE_ARN }}
@@ -75,7 +75,7 @@ jobs:
 
       # Assume a role into the BODS-PROD account
       - name: Configure AWS Credentials in bodds-prod
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-region: ${{ env.AWS_REGION }}
           role-to-assume: ${{ env.PROD_ASSUME_ROLE_ARN }}
@@ -137,13 +137,13 @@ jobs:
 
     steps:
       - name: setup sam
-        uses: aws-actions/setup-sam@v2
+        uses: aws-actions/setup-sam@v3
         with:
           use-installer: true
 
       # Configure AWS credentials against the BODS Shared Services account
       - name: configure aws credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-region: ${{ env.AWS_REGION }}
           role-to-assume: ${{ env.BODS_DEFAULT_GITHUB_ACTIONS_ASSUME_ROLE_ARN }}
@@ -153,7 +153,7 @@ jobs:
 
       # Now assume a role in the Environment Specific account
       - name: Configure AWS Credentials in the environment specific account
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-region: ${{ env.AWS_REGION }}
           role-to-assume: ${{ vars.ASSUME_ROLE_ARN }}
@@ -174,7 +174,7 @@ jobs:
 
       - name: get stack name
         id: get-stack
-        uses: mikefarah/yq@v4.45.1
+        uses: mikefarah/yq@v4.53.2
         with:
           cmd: yq -r '."${{ env.RC_ENV }}".deploy.parameters.stack_name' samconfig.yaml
 
