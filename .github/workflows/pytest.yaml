@@ -20,7 +20,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Start Docker
         run: |
@@ -36,7 +36,7 @@ jobs:
         run: pipx install poetry
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: 3.11
           cache: 'poetry'
@@ -53,7 +53,7 @@ jobs:
 
       - name: Generate Test Summary
         id: test-summary
-        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # v2.4
+        uses: test-summary/action@v2
         if: always()
         with:
           paths: junit/*.xml
