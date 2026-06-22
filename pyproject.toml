@@ -103,7 +103,7 @@ pyproj = "^3.7.0"
 # Dev & Tooling Dependencies
 [tool.poetry.group.model_gen.dependencies]
 sqlalchemy-citext = "^1.8.0"
-pgvector = "^0.3.6"
+pgvector = ">=0.3.6,<0.5.0"
 
 [tool.poetry.group.dev.dependencies]
 pylint = "^3.3.4"
