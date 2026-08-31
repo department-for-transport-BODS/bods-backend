@@ -116,7 +116,7 @@ factory-boy = "^3.3.1"
 mypy-boto3-s3 = "^1.35.76"
 boto3-stubs = { extras = ["essential"], version = "^1.35.0" }
 pytest-cov = "^6.0.0"
-rich = "^13.9.4"
+rich = ">=13.9.4,<15.0.0"
 aws-sam-cli = "^1.134.0"
 aws-sam-cli-local = "^1.70.0"
 python-dotenv = "^1.0.1"
