@@ -28,6 +28,22 @@ def create_violation_from_error(
     )
 
 
+def create_violation_from_parse_error(
+    exc: Exception, revision_id: int, filename: str
+) -> DataQualitySchemaViolation:
+    """
+    Create a DataQualitySchemaViolation from a parse error (XMLSyntaxError or similar).
+    Uses defensive getattr because not all exceptions have .lineno or .msg.
+    """
+    return DataQualitySchemaViolation(
+        filename=filename,
+        line=getattr(exc, "lineno", 0) or 0,
+        details=getattr(exc, "msg", None) or str(exc),
+        created=datetime.now(UTC),
+        revision_id=revision_id,
+    )
+
+
 def add_violations_to_db(
     db: SqlDB, violations: list[DataQualitySchemaViolation]
 ) -> list[DataQualitySchemaViolation]:

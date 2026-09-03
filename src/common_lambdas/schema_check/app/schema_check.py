@@ -20,7 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from structlog.stdlib import get_logger
 
 from .constants import XMLDataType, XMLSchemaType
-from .db_operations import add_violations_to_db, create_violation_from_error
+from .db_operations import add_violations_to_db, create_violation_from_error, create_violation_from_parse_error
 from .schema_loader import load_schema
 from .utils import get_xml_type
 
@@ -120,14 +120,26 @@ def process_schema_check(
     """
     Process Schema Check
     """
-    xml_root = parse_xml_from_s3(input_data)
+    filename = get_filename_from_object_key_except(input_data.s3_file_key)
+
+    try:
+        xml_root = parse_xml_from_s3(input_data)
+    except Exception as exc:
+        log.error(
+            "XML Parsing Failed",
+            s3_key=input_data.s3_file_key,
+            exc_info=True,
+        )
+        violation = create_violation_from_parse_error(
+            exc, input_data.revision_id, filename
+        )
+        return [violation]
+
     schema_type, schema_version = get_xml_type(xml_root)
 
     validate_schema_type(input_data.dataset_type, schema_type)
 
     xml_schema = load_schema(schema_type, schema_version)
-
-    filename = get_filename_from_object_key_except(input_data.s3_file_key)
 
     return get_schema_violations(xml_schema, xml_root, input_data.revision_id, filename)
 
