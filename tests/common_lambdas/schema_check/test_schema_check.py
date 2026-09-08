@@ -288,8 +288,8 @@ def test_process_schema_check_with_parse_error():
     frozen_time = datetime(2024, 1, 3, 12, 0, 0, tzinfo=UTC)
     filename = "file.xml"
 
-    # Create a mock exception that mimics XMLSyntaxError
-    parse_error = Mock()
+    # Create an exception that mimics XMLSyntaxError
+    parse_error = Exception("Start tag expected, '<' not found")
     parse_error.lineno = 15
     parse_error.msg = "Start tag expected, '<' not found"
 
