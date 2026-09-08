@@ -3,7 +3,7 @@ Tests for Schema Check logic
 """
 
 from datetime import UTC, datetime
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from common_layer.exceptions import ETLException, SchemaMismatch, SchemaUnknown
@@ -257,7 +257,7 @@ def test_create_violation_from_parse_error(
     filename = "malformed.xml"
 
     # Create mock exception with optional attributes
-    mock_exc = Mock()
+    mock_exc = MagicMock()
     if "lineno" in exc_params:
         mock_exc.lineno = exc_params["lineno"]
     if "msg" in exc_params:
