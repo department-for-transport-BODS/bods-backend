@@ -45,7 +45,6 @@ jobs:
         with:
           options: '--check --verbose'
           src: ${{ needs.changes.outputs.py_files }}
-          use_pyproject: true
 
   pyright:
     name: pyright type checking (VS Code's Pylance Backend)
