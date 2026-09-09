@@ -20,10 +20,10 @@ jobs:
       py_files: ${{ steps.changed-files.outputs.all_changed_files }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # 6.0.3
       - name: Get changed files
         id: changed-files
-        uses: tj-actions/changed-files@v46
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # 47.0.6
         with:
           files: |
             src/**/*.py
@@ -35,9 +35,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # 6.0.3
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # 6.2.0
         with:
           python-version: '3.11'
       - name: Run Black
@@ -45,6 +45,7 @@ jobs:
         with:
           options: '--check --verbose'
           src: ${{ needs.changes.outputs.py_files }}
+          version: '25.1.0'
 
   pyright:
     name: pyright type checking (VS Code's Pylance Backend)
@@ -61,15 +62,15 @@ jobs:
       checks: write
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # 6.0.3
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # 6.2.0
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install poetry
         run: pipx install poetry
       - name: Cache Poetry dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # 5.0.5
         with:
           path: ~/.cache/pypoetry
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
@@ -80,7 +81,7 @@ jobs:
       - name: Add poetry env to PATH to allow pyright to use it
         run: echo "$(poetry env info --path)/bin" >> $GITHUB_PATH
       - name: pyright
-        uses: jakebailey/pyright-action@v2
+        uses: jakebailey/pyright-action@8ec14b5cfe41f26e5f41686a31eb6012758217ef # 3.0.2
         with:
           pylance-version: latest-release
           extra-args: ${{ needs.changes.outputs.py_files }}
@@ -100,10 +101,10 @@ jobs:
       checks: write
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # 6.0.3
       - name: Setup Python
         id: python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # 6.2.0
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install poetry
@@ -111,7 +112,7 @@ jobs:
         env:
           PIPX_DEFAULT_PYTHON: ${{ steps.python.outputs.python-path }}
       - name: Cache Poetry dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # 5.0.5
         with:
           path: ~/.cache/pypoetry
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
