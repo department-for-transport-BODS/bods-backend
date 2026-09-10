@@ -67,7 +67,7 @@
           }
         },
         "UpdateExpression": "SET #currentlockcount = #currentlockcount + :increase, #lockownerid = :lockacquiredtime",
-        "ConditionExpression": "currentlockcount <> :limit and attribute_not_exists(#lockownerid)",
+        "ConditionExpression": "currentlockcount < :limit and attribute_not_exists(#lockownerid)",
         "ReturnValues": "UPDATED_NEW"
       },
       "Retry": [
@@ -758,7 +758,24 @@
         "Url": "{% $url %}",
         "FailDatasetRevision": "{% $exists($states.input.failDatasetRevision) ? $states.input.failDatasetRevision : true %}",
         "FailDatasetETLTaskResult": "{% $exists($states.input.failDatasetETLTaskResult) ? $states.input.failDatasetETLTaskResult : true %}"
-      }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "Release Lock Exception Handler",
+          "Output": {
+            "errorInfo": "$.error",
+            "stepName": "Parent Exception Handler"
+          }
+        }
+      ]
     },
     "Release Lock Exception Handler": {
       "Type": "Task",
