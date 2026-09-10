@@ -572,7 +572,7 @@
         "ObjectKey": "{% $s3Object %}",
         "Url": "{% $url %}",
         "FailDatasetRevision": "{% $exists($states.input.failDatasetRevision) ? $states.input.failDatasetRevision : true %}",
-        "FailDatasetETLTaskResult": "{% $exists($states.input.failDatasetETLTaskResult) ? $states.input.failDatasetRevision : true %}"
+        "FailDatasetETLTaskResult": "{% $exists($states.input.failDatasetETLTaskResult) ? $states.input.failDatasetETLTaskResult : true %}"
       },
       "Retry": [
         {
