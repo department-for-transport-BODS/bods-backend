@@ -7,11 +7,17 @@ from typing import Any
 
 import common_layer.aws.datadog.tracing  # type: ignore # pylint: disable=unused-import
 from aws_lambda_powertools.utilities.typing import LambdaContext
+from common_layer.database.client import SqlDB
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
-from common_layer.s3 import S3
+from common_layer.exceptions import XMLSyntaxError
+from common_layer.s3 import S3, get_filename_from_object_key_except
 from structlog.stdlib import get_logger
 
+from .db_operations import (
+    add_violations_to_db,
+    create_violation_from_parse_error,
+)
 from .models import FileValidationInputData
 from .xml_checks import dangerous_xml_check, validate_is_xml_file
 
@@ -32,6 +38,17 @@ def get_xml_file_object(s3_bucket: str, s3_key: str) -> BytesIO:
     return file_obj
 
 
+def handle_xml_syntax_error(
+    exc: XMLSyntaxError, input_data: FileValidationInputData
+) -> None:
+    """Create and insert a violation for an XML syntax error."""
+    filename = get_filename_from_object_key_except(input_data.s3_file_key)
+    violation = create_violation_from_parse_error(
+        exc, input_data.revision_id, filename
+    )
+    add_violations_to_db(SqlDB(), [violation])
+
+
 def process_file_validation(input_data: FileValidationInputData) -> None:
     """
     Process the file validation
@@ -41,7 +58,13 @@ def process_file_validation(input_data: FileValidationInputData) -> None:
     xml_file_data = get_xml_file_object(
         input_data.s3_bucket_name, input_data.s3_file_key
     )
-    dangerous_xml_check(xml_file_data, file_name=input_data.s3_file_key)
+    try:
+        dangerous_xml_check(xml_file_data, file_name=input_data.s3_file_key)
+    except XMLSyntaxError as exc:
+        log.error("XML Parsing failed", file_name=input_data.s3_file_key)
+        handle_xml_syntax_error(exc, input_data)
+        return
+
     log.info("File validation passed", file_name=input_data.s3_file_key)
 
 
