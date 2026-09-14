@@ -43,9 +43,7 @@ def handle_xml_syntax_error(
 ) -> None:
     """Create and insert a violation for an XML syntax error."""
     filename = get_filename_from_object_key_except(input_data.s3_file_key)
-    violation = create_violation_from_parse_error(
-        exc, input_data.revision_id, filename
-    )
+    violation = create_violation_from_parse_error(exc, input_data.revision_id, filename)
     add_violations_to_db(SqlDB(), [violation])
 
 
