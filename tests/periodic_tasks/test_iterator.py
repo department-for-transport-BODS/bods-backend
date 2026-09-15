@@ -90,10 +90,12 @@ class TestPtIterator(unittest.TestCase):
 
     def test_lambda_handler_waiting(self, ock_logger, mock_client):
         with patch("time.sleep", return_value=None) as mock_sleep:
-            mock_client.invoke.return_value = MagicMock(
-                Payload=MagicMock(read=lambda: b"Mock response")
-            )
-            result = lambda_handler(self.event, self.context)
+            with patch("periodic_tasks.iterator.time.mktime", return_value=0):
+                with patch("periodic_tasks.iterator.time.time", return_value=0):
+                    mock_client.invoke.return_value = MagicMock(
+                        Payload=MagicMock(read=lambda: b"Mock response")
+                    )
+                    result = lambda_handler(self.event, self.context)
             self.assertEqual(mock_sleep.call_count, 2)
             self.assertEqual(
                 result,

@@ -61,11 +61,11 @@ jobs:
     steps:
       - name: checkout
         if: ${{ env.RC_VER == 'null' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # 6.0.3
 
       # Configure AWS credentials against the BODS Shared Services account
       - name: configure aws credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # 6.2.0
         with:
           aws-region: ${{ env.AWS_REGION }}
           role-to-assume: ${{ env.BODS_DEFAULT_GITHUB_ACTIONS_ASSUME_ROLE_ARN }}
@@ -75,7 +75,7 @@ jobs:
 
       # Assume a role into the BODS-PROD account
       - name: Configure AWS Credentials in bodds-prod
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # 6.2.0
         with:
           aws-region: ${{ env.AWS_REGION }}
           role-to-assume: ${{ env.PROD_ASSUME_ROLE_ARN }}
@@ -137,13 +137,13 @@ jobs:
 
     steps:
       - name: setup sam
-        uses: aws-actions/setup-sam@v2
+        uses: aws-actions/setup-sam@89ddb14d60e682855e3fea4be85b3c56485de310 # 3
         with:
           use-installer: true
 
       # Configure AWS credentials against the BODS Shared Services account
       - name: configure aws credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # 6.2.0
         with:
           aws-region: ${{ env.AWS_REGION }}
           role-to-assume: ${{ env.BODS_DEFAULT_GITHUB_ACTIONS_ASSUME_ROLE_ARN }}
@@ -153,7 +153,7 @@ jobs:
 
       # Now assume a role in the Environment Specific account
       - name: Configure AWS Credentials in the environment specific account
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # 6.2.0
         with:
           aws-region: ${{ env.AWS_REGION }}
           role-to-assume: ${{ vars.ASSUME_ROLE_ARN }}
@@ -174,7 +174,7 @@ jobs:
 
       - name: get stack name
         id: get-stack
-        uses: mikefarah/yq@v4.45.1
+        uses: mikefarah/yq@1b9b4ac5187171d2e5e3129be0cfa827c7f9d53d # 4.53.3
         with:
           cmd: yq -r '."${{ env.RC_ENV }}".deploy.parameters.stack_name' samconfig.yaml
 
@@ -206,15 +206,3 @@ jobs:
             --s3-bucket $RC_SRC --s3-prefix bods-backend/deployments/$RC_ENV \
             --tags "BuiltFrom=${VERSION} version=${VERSION} ProjectName=${{ vars.PROJECT_NAME }} Environment=${RC_ENV} AppManagerCFNStackKey=${{ steps.get-stack.outputs.result }}"
           echo "[INFO] Application with version [${VERSION}] successfully deployed into ${RC_ENV^^}"
-
-      - name: update confluence page
-        uses: robsteel24/update-confluence@v1
-        with:
-          confluence_base_url: ${{ vars.CONFLUENCE_BASE_URL }}
-          confluence_page_id: ${{ vars.CONFLUENCE_PAGE_ID }}
-          atlassian_username: ${{ secrets.ATLASSIAN_USERNAME }}
-          atlassian_api_token: ${{ secrets.ATLASSIAN_API_TOKEN }}
-          component: 'bods-backend'
-          environment: ${{ env.RC_ENV }}
-          version: ${{ needs.validation.outputs.VERSION }}
-        continue-on-error: true

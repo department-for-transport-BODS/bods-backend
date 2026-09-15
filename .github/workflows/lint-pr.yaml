@@ -19,7 +19,7 @@ jobs:
     steps:
       - name: Check PR Title is in Conventional Commit format and the Type is allowed
         id: lint_pr_title
-        uses: amannn/action-semantic-pull-request@0723387faaf9b38adef4775cd42cfd5155ed6017 # v5.5.3
+        uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # 6.1.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -36,7 +36,7 @@ jobs:
             tools
             release
       - name: Comment on Incorrect PR Title
-        uses: marocchino/sticky-pull-request-comment@67d0dec7b07ed060a405f9b2a64b8ab319fdd7db #v2.9.2
+        uses: marocchino/sticky-pull-request-comment@0ea0beb66eb9baf113663a64ec522f60e49231c0 # 3.0.4
         if: always() && (steps.lint_pr_title.outputs.error_message != null)
         with:
           header: pr-title-lint-error
@@ -51,14 +51,14 @@ jobs:
             ${{ steps.lint_pr_title.outputs.error_message }}
 
       - name: Remove Comment about Incorrect PR Title if fixed
-        uses: marocchino/sticky-pull-request-comment@67d0dec7b07ed060a405f9b2a64b8ab319fdd7db #v2.9.2
+        uses: marocchino/sticky-pull-request-comment@0ea0beb66eb9baf113663a64ec522f60e49231c0 # 3.0.4
         if: ${{ steps.lint_pr_title.outputs.error_message == null }}
         with:
           header: pr-title-lint-error
           delete: true
       - name: Add PR Type Label to allow easy filtering
         if: steps.lint_pr_title.outcome == 'success'
-        uses: actions/github-script@v7
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # 9.0.0
         with:
           script: |
             const pr = await github.rest.pulls.get({

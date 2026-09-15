@@ -2,6 +2,7 @@
 ExceptionHandler Tests
 """
 
+import json
 from typing import Any
 
 import pytest
@@ -100,6 +101,22 @@ ZIP_NOT_FOUND_CAUSE_RAW = (
             ETLErrorCode.SYSTEM_ERROR,
             'The cause could not be determined because Lambda did not return an error type. Returned payload: {"errorMessage":"2025-03-25T14:59:02.758Z 92f6dcea-87c0-4e89-9a9e-294239bffbb9 Task timed out after 902.11 seconds"}',
             id="Unexpected Lambda Timeout",
+        ),
+        pytest.param(
+            {
+                "Error": "Runtime.ExitError",
+                "Cause": json.dumps(
+                    {
+                        "errorType": "Runtime.ExitError",
+                        "errorMessage": "x" * 600,
+                    }
+                ),
+                "DatasetEtlTaskResultId": 72119,
+                "StepName": "Download Dataset",
+            },
+            ETLErrorCode.SYSTEM_ERROR,
+            "x" * 512,
+            id="Message longer than 512 chars is truncated",
         ),
     ],
 )

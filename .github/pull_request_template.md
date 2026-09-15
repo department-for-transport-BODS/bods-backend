@@ -7,4 +7,4 @@ Key Details:
   - More information about change 1
 - Details of Change 2
 
-JIRA: https://kpmgengineering.atlassian.net/browse/BODS-
+JIRA: https://busopendataservice.atlassian.net/browse/DBODS-

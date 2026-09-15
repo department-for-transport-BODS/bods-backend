@@ -19,6 +19,8 @@ from .models import ExceptionHandlerInputData
 
 log = get_logger()
 
+ADDITIONAL_INFO_MAX_LENGTH = 512
+
 
 def handle_error(db: SqlDB, event_data: ExceptionHandlerInputData):
     """
@@ -32,7 +34,9 @@ def handle_error(db: SqlDB, event_data: ExceptionHandlerInputData):
             task_id=event_data.dataset_etl_task_result_id,
             task_name=event_data.step_name,
             error_code=event_data.cause.error_code,
-            additional_info=event_data.cause.extracted_message,
+            additional_info=event_data.cause.extracted_message[
+                :ADDITIONAL_INFO_MAX_LENGTH
+            ],
         )
 
     if event_data.fail_dataset_revision:
