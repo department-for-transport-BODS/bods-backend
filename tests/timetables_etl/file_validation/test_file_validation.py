@@ -42,7 +42,7 @@ def test_add_violations_to_db_bulk_inserts_violations() -> None:
     inserted = [Mock()]
 
     with patch(
-        "file_validation.app.db_operations.DataQualitySchemaViolationRepo"
+        "common_layer.database.repos.repo_data_quality.DataQualitySchemaViolationRepo"
     ) as repo_type:
         repo_type.return_value.bulk_insert.return_value = inserted
         result = add_violations_to_db(db, [violation])

@@ -7,6 +7,8 @@ from .repo_data_quality import (
     DataQualityPostSchemaViolationRepo,
     DataQualityPTIObservationRepo,
     DataQualitySchemaViolationRepo,
+    add_schema_violations_to_db,
+    create_violation_from_parse_error,
 )
 from .repo_etl_task import (
     ETLTaskResultRepo,
@@ -72,6 +74,8 @@ __all__ = [
     "DataQualitySchemaViolationRepo",
     "DataQualityPostSchemaViolationRepo",
     "DataQualityPTIObservationRepo",
+    "add_schema_violations_to_db",
+    "create_violation_from_parse_error",
     # ETL Task
     "ETLTaskResultRepo",
     "FileProcessingResultRepo",
