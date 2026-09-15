@@ -2,6 +2,8 @@
 SQL Alchemy Repos for Tables prefixed with data_quality_
 """
 
+from datetime import UTC, datetime
+
 from structlog.stdlib import get_logger
 
 from ..client import SqlDB
@@ -32,6 +34,40 @@ class DataQualitySchemaViolationRepo(BaseRepositoryWithId[DataQualitySchemaViola
         """
         statement = self._build_query().where(self._model.revision_id == revision_id)
         return self._fetch_all(statement)
+
+
+def create_violation_from_parse_error(
+    exc: Exception, revision_id: int, filename: str
+) -> DataQualitySchemaViolation:
+    """
+    Create a DataQualitySchemaViolation from a parse error (XMLSyntaxError or similar).
+    Uses defensive getattr because not all exceptions have .lineno or .msg.
+    """
+    line_number = getattr(exc, "lineno", None)
+    message = getattr(exc, "msg", None)
+
+    return DataQualitySchemaViolation(
+        filename=filename,
+        line=line_number if isinstance(line_number, int) else 0,
+        details=message if isinstance(message, str) else str(exc),
+        created=datetime.now(UTC),
+        revision_id=revision_id,
+    )
+
+
+def add_schema_violations_to_db(
+    db: SqlDB, violations: list[DataQualitySchemaViolation]
+) -> list[DataQualitySchemaViolation]:
+    """
+    Add Schema Violations Found to Database
+    """
+    if not violations:
+        logger.info("No Violations found. Skipping Database Insert of Violations")
+        return []
+    logger.info("Adding Violations to DB", count=len(violations))
+    result = DataQualitySchemaViolationRepo(db).bulk_insert(violations)
+    logger.info("Successfully added violations to DB", count=len(result))
+    return result
 
 
 class DataQualityPostSchemaViolationRepo(
