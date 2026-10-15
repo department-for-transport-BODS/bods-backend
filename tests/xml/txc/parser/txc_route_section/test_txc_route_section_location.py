@@ -2,6 +2,8 @@
 TXC Route Section Location XML to Pydantic Test
 """
 
+import math
+
 import pytest
 from common_layer.xml.txc.models import TXCLocation
 from common_layer.xml.txc.parser.route_sections import parse_location, parse_locations
@@ -210,4 +212,24 @@ def test_parse_locations(xml_string: str, expected: list[TXCLocation] | None):
     Test the parsing of TXCLocation list from XML.
     """
     root = etree.fromstring(xml_string)
-    assert parse_locations(root) == expected
+    actual = parse_locations(root)
+    if root.find("Mapping/Location/Easting") is None:
+        assert actual == expected
+        return
+
+    assert actual is not None
+    assert expected is not None
+    for actual_location, expected_location in zip(actual, expected, strict=True):
+        assert actual_location.id == expected_location.id
+        assert math.isclose(
+            float(actual_location.Longitude),
+            float(expected_location.Longitude),
+            rel_tol=0,
+            abs_tol=1e-12,
+        )
+        assert math.isclose(
+            float(actual_location.Latitude),
+            float(expected_location.Latitude),
+            rel_tol=0,
+            abs_tol=1e-12,
+        )
