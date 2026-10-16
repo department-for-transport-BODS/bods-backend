@@ -95,6 +95,6 @@ Resources:
       LayerName: !Sub '${ProjectName}-${Environment}-boilerplate-layer'
       ContentUri: ./src/boilerplate
       CompatibleRuntimes:
-        - python3.11
+        - python3.14
     Metadata:
-      BuildMethod: python3.11
+      BuildMethod: python3.14

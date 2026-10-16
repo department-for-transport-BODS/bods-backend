@@ -107,4 +107,4 @@ class PointRefs(BaseModel):
             description="Generic points of any type in the network",
             default_factory=list,
         ),
-    ] = []
+    ]
