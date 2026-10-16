@@ -62,7 +62,7 @@ Globals:
   Function:
     Architectures:
       - x86_64
-    Runtime: python3.11
+    Runtime: python3.14
     Timeout: 60
     MemorySize: 1024
     ReservedConcurrentExecutions: 3

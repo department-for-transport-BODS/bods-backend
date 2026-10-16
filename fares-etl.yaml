@@ -63,7 +63,7 @@ Globals:
   Function:
     Architectures:
       - x86_64
-    Runtime: python3.11
+    Runtime: python3.14
     Timeout: 300
     MemorySize: 384
     Layers:
