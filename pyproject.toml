@@ -61,6 +61,7 @@ structlog = "^24.4.0"
 shapely = "^2.0.6"
 pydantic-settings = "^2.7.1"
 notifications-python-client = "^10.0.1"
+ddtrace = "^3.2.1"
 
 # Periodic Task Lambda Dependencies
 [tool.poetry.group.naptan_cache_populator.dependencies]
