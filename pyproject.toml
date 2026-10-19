@@ -61,6 +61,7 @@ structlog = "^24.4.0"
 shapely = "^2.0.6"
 pydantic-settings = "^2.7.1"
 notifications-python-client = "^10.0.1"
+ddtrace = "^4.16.0"
 
 # Periodic Task Lambda Dependencies
 [tool.poetry.group.naptan_cache_populator.dependencies]
@@ -124,7 +125,7 @@ typer = "^0.15.2"
 aws-lambda-powertools = { extras = ["all"], version = "^3.4.0" }
 pytest-mock = "^3.11.1"
 textual = "^2.1.2"
-ddtrace = "^3.2.1"
+ddtrace = "^4.16.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -170,6 +171,7 @@ addopts = [
   "--cov-report=term-missing",
   "--cov-fail-under=75",
 ]
+filterwarnings = ["error::ddtrace.DDTraceDeprecationWarning"]
 testpaths = ["./tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
