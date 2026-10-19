@@ -19,6 +19,9 @@ LAMBDA_BASE_DIRS = [
     ROOT_DIR / "src/common_lambdas",
 ]
 BOILERPLATE_LAYER_DIR = ROOT_DIR / "src/boilerplate"
+LAMBDA_DEPENDENCY_GROUP_OVERRIDES = {
+    ROOT_DIR / "src/fares_etl/etl": "fares_etl",
+}
 
 
 def get_dependency_groups() -> set[str]:
@@ -78,7 +81,10 @@ def export_requirements_for_lambdas(poetry_dependency_groups: set[str]):
     for base_dir, lambda_dependency_groups in lambda_groups.items():
         for lambda_name in lambda_dependency_groups:
             lambda_path = base_dir / lambda_name
-            export_requirements(lambda_name, lambda_path)
+            dependency_group = LAMBDA_DEPENDENCY_GROUP_OVERRIDES.get(
+                lambda_path, lambda_name
+            )
+            export_requirements(dependency_group, lambda_path)
 
 
 def export_requirements_for_layer(poetry_dependency_groups: set[str]):

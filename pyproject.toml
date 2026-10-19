@@ -60,7 +60,7 @@ structlog = "^24.4.0"
 shapely = "^2.0.6"
 pydantic-settings = "^2.7.1"
 notifications-python-client = "^10.0.1"
-ddtrace = "^4.16.0"
+aws-lambda-powertools = { extras = ["tracer"], version = "^3.34.0" }
 
 # Periodic Task Lambda Dependencies
 [tool.poetry.group.naptan_cache_populator.dependencies]
@@ -83,38 +83,65 @@ pyproj = "^3.7.0"
 [tool.poetry.group.etl.dependencies]
 pyproj = "^3.7.0"
 lxml = "^6.0.0"
+ddtrace = "^4.16.0"
+
+[tool.poetry.group.fares_etl.dependencies]
+lxml = "^6.0.0"
+ddtrace = "^4.16.0"
 
 [tool.poetry.group.pti.dependencies]
 isoduration = "^20.11.0"
 pyproj = "^3.7.0"
 lxml = "^6.0.0"
+ddtrace = "^4.16.0"
 
 [tool.poetry.group.clamav_scanner.dependencies]
 clamd = "^1.0.2"
 lxml = "^6.0.0"
+ddtrace = "^4.16.0"
 
 [tool.poetry.group.file_validation.dependencies]
 defusedxml = "^0.7.1"
 lxml = "^6.0.0"
+ddtrace = "^4.16.0"
 
 # Post Schema Task Lambda Dependencies
 [tool.poetry.group.post_schema_check.dependencies]
 pyproj = "^3.7.0"
 lxml = "^6.0.0"
+ddtrace = "^4.16.0"
 
 # File Attributes Lambda Dependencies
 [tool.poetry.group.file_attributes_etl.dependencies]
 pyproj = "^3.7.0"
 lxml = "^6.0.0"
+ddtrace = "^4.16.0"
 
 [tool.poetry.group.schema_check.dependencies]
 lxml = "^6.0.0"
+ddtrace = "^4.16.0"
 
 [tool.poetry.group.validation.dependencies]
 lxml = "^6.0.0"
 
 [tool.poetry.group.generate_output_zip.dependencies]
 lxml = "^6.0.0"
+ddtrace = "^4.16.0"
+
+[tool.poetry.group.collate_files.dependencies]
+ddtrace = "^4.16.0"
+
+[tool.poetry.group.download_dataset.dependencies]
+ddtrace = "^4.16.0"
+
+[tool.poetry.group.exception_handler.dependencies]
+ddtrace = "^4.16.0"
+
+[tool.poetry.group.initialize_pipeline.dependencies]
+ddtrace = "^4.16.0"
+
+[tool.poetry.group.metadata_aggregation.dependencies]
+ddtrace = "^4.16.0"
 
 # Dev & Tooling Dependencies
 [tool.poetry.group.model_gen.dependencies]
