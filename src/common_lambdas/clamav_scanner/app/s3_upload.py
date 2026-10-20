@@ -61,8 +61,7 @@ def unzip_and_upload_files(
     }
     if file_path.suffix.lower() == ".zip":
         log.info("Input File is a Zip. Processing...", file_path=str(file_path))
-        loop = asyncio.get_event_loop()
-        return loop.run_until_complete(
+        return asyncio.run(
             process_zip_to_s3_async(
                 s3_client=s3_handler,
                 zip_path=file_path,
