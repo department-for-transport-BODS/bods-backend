@@ -1256,7 +1256,7 @@ description = "Cross-platform colored terminal text."
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7"
 groups = ["dev"]
-markers = "sys_platform == \"win32\" or platform_system == \"Windows\""
+markers = "platform_system == \"Windows\" or sys_platform == \"win32\""
 files = [
     {file = "colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"},
     {file = "colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44"},
@@ -2665,13 +2665,13 @@ test = ["pytest (>=7.2)", "pytest-cov (>=4.0)"]
 
 [[package]]
 name = "notifications-python-client"
-version = "10.0.1"
+version = "12.2.0"
 description = "Python API client for GOV.UK Notify."
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["main", "boilerplate"]
 files = [
-    {file = "notifications_python_client-10.0.1-py3-none-any.whl", hash = "sha256:00d88eacb6fd6eb0467d7396a7e23677194cfebe0ebd88de2efa031fb51eb23f"},
+    {file = "notifications_python_client-12.2.0-py3-none-any.whl", hash = "sha256:5552f83d26ca0bba2b69b8477c8db691645bfd53fd6e591421318c81fa077b7a"},
 ]
 
 [package.dependencies]
@@ -4536,4 +4536,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "~3.14"
-content-hash = "33ebbb4743c3265dd73ddee6ae4696e244965807509dbc4563956558ead9ffbe"
+content-hash = "2592e10ee3a917f037bf10604187d99bf02383cf4fba03f0993add12b52b4fe2"
