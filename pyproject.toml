@@ -164,7 +164,7 @@ rich = "^14.3.3"
 aws-sam-cli = "^1.169.0"
 aws-sam-cli-local = "^1.70.0"
 python-dotenv = "^1.0.1"
-typer = "^0.15.2"
+typer = ">=0.15.2,<0.28.0"
 aws-lambda-powertools = { extras = ["all"], version = "^3.4.0" }
 pytest-mock = "^3.11.1"
 textual = "^2.1.2"
