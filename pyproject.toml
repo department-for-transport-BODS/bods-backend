@@ -90,6 +90,7 @@ lxml = "^6.0.0"
 ddtrace = "^4.16.0"
 
 [tool.poetry.group.pti.dependencies]
+attrs = "^24.2.0"
 isoduration = "^20.11.0"
 pyproj = "^3.7.0"
 lxml = "^6.0.0"
