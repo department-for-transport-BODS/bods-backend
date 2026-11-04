@@ -33,6 +33,7 @@ class LinkContext:
     next_link: TXCJourneyPatternTimingLink | None
     is_first_stop: bool
     is_last_stop: bool
+    previous_link: TXCJourneyPatternTimingLink | None = None
 
 
 @dataclass
@@ -81,3 +82,4 @@ class SectionProcessingState:
     current_time: time | None
     auto_sequence: int
     pattern_stops: list[TransmodelServicePatternStop]
+    previous_link: TXCJourneyPatternTimingLink | None = None
