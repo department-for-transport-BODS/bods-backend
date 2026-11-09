@@ -11,6 +11,7 @@ class TXCVersion(Enum):
     """Supported TransXChange schema versions."""
 
     V2_4 = "2.4"
+    V2_4_1 = "2.4.1"
 
 
 class NeTExVersion(Enum):
@@ -48,6 +49,11 @@ class SchemaSpec:
 SCHEMA_SPECS: Dict[Tuple[XMLSchemaType, str], SchemaSpec] = {
     (XMLSchemaType.TRANSXCHANGE, "2.4"): SchemaSpec(
         TXCVersion.V2_4,
+        XMLSchemaType.TRANSXCHANGE,
+        "TransXChange_general.xsd",
+    ),
+    (XMLSchemaType.TRANSXCHANGE, "2.4.1"): SchemaSpec(
+        TXCVersion.V2_4_1,
         XMLSchemaType.TRANSXCHANGE,
         "TransXChange_general.xsd",
     ),
