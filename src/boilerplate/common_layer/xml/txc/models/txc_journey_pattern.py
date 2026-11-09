@@ -23,7 +23,7 @@ class TXCJourneyPatternStopUsage(BaseModel):
     )
     Activity: ActivityT = Field(
         ...,
-        description="The activity at the stop, such as pickup, setDown, pickUpAndSetDown, or pass.",
+        description="The boarding/alighting activity at the stop, including driver-request activities.",
     )
     DynamicDestinationDisplay: str | None = Field(
         default=None,
