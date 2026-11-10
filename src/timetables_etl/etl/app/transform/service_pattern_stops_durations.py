@@ -27,7 +27,7 @@ def apply_wait_time_rules(
     """
     Apply the common rules for determining which wait time to use.
 
-    1. Add WaitTime either from the From or the To depending on where it is present
+    1. Resolve outgoing From and incoming To WaitTime for the same stop
     2. If both From and To are present, pick the <To> WaitTime
     3. The first stop will always take the <From> WaitTime
         (there cannot be a <To> WaitTime for the first stop)
@@ -38,17 +38,18 @@ def apply_wait_time_rules(
     Returns:
         The WaitTime to use (string format like 'PT20M') or None if no wait time should be applied
     """
+    if from_wait is not None and parse_duration(from_wait) == timedelta(0):
+        from_wait = None
+    if to_wait is not None and parse_duration(to_wait) == timedelta(0):
+        to_wait = None
+
     # For the first stop, we only care about the From WaitTime
     if is_first_stop:
-        return None if from_wait == "PT0S" else from_wait
+        return from_wait
 
     # For the last stop, we don't apply any wait time (we capture arrival time only)
     if is_last_stop:
         return None
-
-    # Treat PT0S as not present
-    if to_wait == "PT0S":
-        to_wait = None
 
     # If both are present, prioritize the To WaitTime
     if to_wait is not None:
@@ -65,15 +66,16 @@ def determine_wait_time(
     current_link: TXCJourneyPatternTimingLink,
     is_first_stop: bool,
     is_last_stop: bool,
+    previous_link: TXCJourneyPatternTimingLink | None = None,
 ) -> str | None:
     """
-    Determine which WaitTime to use for JourneyPatternTimingLink
+    Resolve the current From stop's wait using adjacent journey pattern links.
 
     Returns:
         The WaitTime to use (string format like 'PT20M') or None if no wait time should be applied
     """
     from_wait = current_link.From.WaitTime if current_link.From else None
-    to_wait = current_link.To.WaitTime if current_link.To else None
+    to_wait = previous_link.To.WaitTime if previous_link else None
 
     return apply_wait_time_rules(from_wait, to_wait, is_first_stop, is_last_stop)
 
@@ -82,18 +84,18 @@ def determine_vehicle_journey_wait_time(
     matching_link: TXCVehicleJourneyTimingLink | None,
     is_first_stop: bool,
     is_last_stop: bool,
+    previous_link: TXCVehicleJourneyTimingLink | None = None,
 ) -> str | None:
     """
-    Determine wait time from VehicleJourneyTimingLink
+    Resolve the current From stop's wait using adjacent vehicle journey links.
 
     Returns:
         The WaitTime to use (string format like 'PT20M') or None if no wait time should be applied
     """
-    if not matching_link:
-        return None
-
-    from_wait = matching_link.From.WaitTime if matching_link.From else None
-    to_wait = matching_link.To.WaitTime if matching_link.To else None
+    from_wait = (
+        matching_link.From.WaitTime if matching_link and matching_link.From else None
+    )
+    to_wait = previous_link.To.WaitTime if previous_link and previous_link.To else None
 
     return apply_wait_time_rules(from_wait, to_wait, is_first_stop, is_last_stop)
 
@@ -157,11 +159,18 @@ def get_pattern_timing(
     if matching_vj_link:
         runtime = vj_runtime
 
+    previous_vj_link = None
+    if link_context.previous_link:
+        previous_vj_link, _ = find_vehicle_journey_timing_links(
+            txc_vehicle_journey, link_context.previous_link.id
+        )
+
     # First try to get wait time from VehicleJourneyTimingLink
     wait_time_str = determine_vehicle_journey_wait_time(
         matching_vj_link,
         link_context.is_first_stop,
         link_context.is_last_stop,
+        previous_link=previous_vj_link,
     )
 
     # If no wait time found in VehicleJourneyTimingLink, fall back to JourneyPatternTimingLink
@@ -170,6 +179,7 @@ def get_pattern_timing(
             current_link=link_context.current_link,
             is_first_stop=link_context.is_first_stop,
             is_last_stop=link_context.is_last_stop,
+            previous_link=link_context.previous_link,
         )
 
     wait_time = parse_duration(wait_time_str)
