@@ -3,6 +3,7 @@ Processing for transmodel_servicepatternstop
 """
 
 from datetime import datetime, time, timedelta
+from typing import Literal
 
 from common_layer.database.models import (
     NaptanStopPoint,
@@ -16,6 +17,7 @@ from common_layer.xml.txc.models import (
     TXCJourneyPatternTimingLink,
     TXCVehicleJourney,
 )
+from common_layer.xml.txc.models.txc_types import ActivityT
 from structlog.stdlib import get_logger
 
 from .models_context import (
@@ -65,15 +67,18 @@ def create_stop(
     """
     Create a TransmodelServicePatternStop for a single stop in the vehicle journey
     """
-    activity_id = stop_activity_id_map.get(stop_data.stop_usage.Activity)
+    activity = stop_data.activity_override or stop_data.stop_usage.Activity
+    activity_id = stop_activity_id_map.get(activity)
     if not activity_id:
         log.error(
-            "Stop activity not found - skipping stop",
-            requested_activity=stop_data.stop_usage.Activity,
+            "Stop activity not found",
+            requested_activity=activity,
             available_activities=list(stop_activity_id_map.keys()),
             stop_point=stop_data.stop_usage.StopPointRef,
             vehicle_journey_id=context.vehicle_journey.id,
         )
+        if stop_data.activity_override is not None:
+            raise ValueError(f"Stop activity override not found in lookup: {activity}")
         return None
 
     naptan_stop_id = (
@@ -139,6 +144,20 @@ def create_pattern_stop(
     return None
 
 
+def get_vehicle_journey_activity(
+    vehicle_journey: TXCVehicleJourney | TXCFlexibleVehicleJourney,
+    link_id: str,
+    endpoint: Literal["From", "To"],
+) -> ActivityT | None:
+    """Resolve an activity override by timing-link reference, not stop code."""
+    if isinstance(vehicle_journey, TXCVehicleJourney):
+        for link in vehicle_journey.VehicleJourneyTimingLink:
+            if link.JourneyPatternTimingLinkRef == link_id:
+                stop_usage = link.From if endpoint == "From" else link.To
+                return stop_usage.Activity if stop_usage is not None else None
+    return None
+
+
 def process_journey_pattern_section(
     section: TXCJourneyPatternSection,
     state: SectionProcessingState,
@@ -191,18 +210,34 @@ def process_journey_pattern_section(
             wait_time,
         )
 
+        from_activity = get_vehicle_journey_activity(
+            context.txc_vehicle_journey, link.id, "From"
+        )
+        # A stop can be specified by incoming To, outgoing From, or both.
+        # Prefer an explicit outgoing From; otherwise inherit the incoming override.
+        if (
+            from_activity is None
+            and state.previous_link is not None
+            and state.previous_link.To.StopPointRef == link.From.StopPointRef
+        ):
+            from_activity = get_vehicle_journey_activity(
+                context.txc_vehicle_journey, state.previous_link.id, "To"
+            )
+
         # Handle 'From' stop
         previous_link = links[i - 1] if i > 0 else None
-        if not is_duplicate_stop(
+        duplicate_stop = is_duplicate_stop(
             current_stop_ref=link.From.StopPointRef,
             current_sequence=state.auto_sequence,
             previous_stop=state.pattern_stops[-1] if state.pattern_stops else None,
             previous_link=previous_link,
-        ):
+        )
+        if not duplicate_stop or from_activity is not None:
             if stop := create_pattern_stop(
                 StopData(
                     stop_usage=link.From,
                     naptan_stop=context.naptan_stops_lookup[link.From.StopPointRef],
+                    activity_override=from_activity,
                 ),
                 StopContext(
                     service_pattern=context.service_pattern,
@@ -212,9 +247,12 @@ def process_journey_pattern_section(
                 ),
                 context.pattern_context.stop_activity_id_map,
             ):
-                state.pattern_stops.append(stop)
-                state.auto_sequence += 1
-        else:
+                if duplicate_stop:
+                    state.pattern_stops[-1].stop_activity_id = stop.stop_activity_id
+                else:
+                    state.pattern_stops.append(stop)
+                    state.auto_sequence += 1
+        if duplicate_stop:
             state.pattern_stops[-1].departure_time = state.current_time
             log.debug(
                 "Skipping duplicate stop at section boundary",
@@ -245,6 +283,9 @@ def process_journey_pattern_section(
                 StopData(
                     stop_usage=link.To,
                     naptan_stop=context.naptan_stops_lookup[link.To.StopPointRef],
+                    activity_override=get_vehicle_journey_activity(
+                        context.txc_vehicle_journey, link.id, "To"
+                    ),
                 ),
                 StopContext(
                     service_pattern=context.service_pattern,

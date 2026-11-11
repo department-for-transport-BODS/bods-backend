@@ -3,6 +3,7 @@ Test Parsing Vehicle Journey Timing Links
 """
 
 import pytest
+from common_layer.xml.txc.models.txc_types import ActivityT
 from common_layer.xml.txc.models import (
     TXCVehicleJourneyStopUsageStructure,
     TXCVehicleJourneyTimingLink,
@@ -13,6 +14,7 @@ from common_layer.xml.txc.parser.vehicle_journeys import (
     parse_vehicle_journey_timing_links,
 )
 from lxml import etree
+from pydantic import ValidationError
 
 
 @pytest.mark.parametrize(
@@ -29,6 +31,7 @@ from lxml import etree
             TXCVehicleJourneyStopUsageStructure(
                 WaitTime="PT5M",
                 DynamicDestinationDisplay="Destination 1",
+                Activity="pickUp",
             ),
             id="Valid stop usage with all fields",
         ),
@@ -58,8 +61,8 @@ from lxml import etree
                 <Activity>setDown</Activity>
             </To>
             """,
-            TXCVehicleJourneyStopUsageStructure(),
-            id="Valid stop usage with only activity (Not allowed in PTI)",
+            TXCVehicleJourneyStopUsageStructure(Activity="setDown"),
+            id="Valid stop usage with only activity",
         ),
         pytest.param(
             """
@@ -105,7 +108,7 @@ def test_parse_vehicle_journey_stop_usage(
                 VehicleJourneyRef="VJ1",
                 RunTime="PT30M",
                 From=TXCVehicleJourneyStopUsageStructure(WaitTime="PT5M"),
-                To=TXCVehicleJourneyStopUsageStructure(),
+                To=TXCVehicleJourneyStopUsageStructure(Activity="setDown"),
             ),
             id="Valid timing link with all fields",
         ),
@@ -175,3 +178,34 @@ def test_parse_vehicle_journey_timing_links(
     xml_element = etree.fromstring(xml_string)
     result = parse_vehicle_journey_timing_links(xml_element)
     assert result == expected_result
+
+
+@pytest.mark.parametrize(
+    "activity",
+    [
+        "pickUpDriverRequest",
+        "setDownDriverRequest",
+        "pickUpAndSetDownDriverRequest",
+        "noPickUpAndSetDown",
+    ],
+)
+def test_parse_vehicle_journey_activity_override(activity: ActivityT) -> None:
+    """Activity-only overrides must survive parsing and model serialization."""
+    xml = etree.fromstring(f"<From><Activity>{activity}</Activity></From>")
+
+    result = parse_vehicle_journey_stop_usage(xml)
+
+    assert result is not None
+    assert result.Activity == activity
+    restored = TXCVehicleJourneyStopUsageStructure.model_validate_json(
+        result.model_dump_json()
+    )
+    assert restored.Activity == activity
+
+
+def test_parse_invalid_vehicle_journey_activity() -> None:
+    """Do not silently replace an unsupported activity with a default."""
+    xml = etree.fromstring("<From><Activity>invalid</Activity></From>")
+
+    with pytest.raises(ValidationError, match="Activity"):
+        parse_vehicle_journey_stop_usage(xml)
