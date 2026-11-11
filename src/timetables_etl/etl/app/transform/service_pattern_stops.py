@@ -225,12 +225,11 @@ def process_journey_pattern_section(
             )
 
         # Handle 'From' stop
-        previous_link = links[i - 1] if i > 0 else None
         duplicate_stop = is_duplicate_stop(
             current_stop_ref=link.From.StopPointRef,
             current_sequence=state.auto_sequence,
             previous_stop=state.pattern_stops[-1] if state.pattern_stops else None,
-            previous_link=previous_link,
+            previous_link=links[i - 1] if i > 0 else None,
         )
         if not duplicate_stop or from_activity is not None:
             if stop := create_pattern_stop(
