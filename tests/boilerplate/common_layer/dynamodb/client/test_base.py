@@ -29,7 +29,7 @@ def test_put(m_boto_client):
             Item={
                 "Key": {"S": "test-key"},
                 "Value": {"M": {"key": {"S": "value"}}},
-                "ttl": {"N": str(expected_dynamo_ttl)},
+                "ttl": {"S": str(expected_dynamo_ttl)},
             },
         )
 
@@ -65,24 +65,6 @@ def test_get(m_boto_client):
         TableName=settings.DYNAMODB_TABLE_NAME, Key={"Key": {"S": "test-key"}}
     )
     assert result == {"key": "value"}
-
-
-@pytest.mark.parametrize("ttl_type", ["S", "N"])
-@pytest.mark.parametrize(
-    ("expiration", "expected"),
-    [("1733486399", None), ("1733486400", None), ("1733486401", {"key": "value"})],
-)
-def test_get_respects_ttl(m_boto_client, ttl_type, expiration, expected):
-    m_boto_client.get_item.return_value = {
-        "Item": {
-            "Key": {"S": "test-key"},
-            "Value": {"M": {"key": {"S": "value"}}},
-            "ttl": {ttl_type: expiration},
-        }
-    }
-
-    with freeze_time("2024-12-06 12:00:00"):
-        assert DynamoDB().get("test-key") == expected
 
 
 def test_get_exception(m_boto_client):

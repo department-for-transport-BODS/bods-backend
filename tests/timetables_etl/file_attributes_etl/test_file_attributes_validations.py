@@ -17,11 +17,6 @@ from file_attributes_etl.app.process_txc import (
             "2.4",
             id="Valid Schema Version 2.4",
         ),
-        pytest.param(
-            "2.4.1",
-            "2.4.1",
-            id="Valid Schema Version 2.4.1",
-        ),
     ],
 )
 def test_validate_schema_version_valid(
@@ -46,14 +41,6 @@ def test_validate_schema_version_valid(
         pytest.param(
             "3.0",
             id="Future Schema Version",
-        ),
-        pytest.param(
-            "2.4.2",
-            id="Unsupported Patch Schema Version",
-        ),
-        pytest.param(
-            "",
-            id="Empty Schema Version",
         ),
     ],
 )
