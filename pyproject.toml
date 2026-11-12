@@ -36,15 +36,15 @@ send-email = "tools.email.cli:app"
 exception-handler = "tools.exception_handler.cli:app"
 
 [tool.poetry.dependencies]
-python = "^3.11"
-lxml = "^5.3.0"
+python = "~3.14"
+lxml = "^6.0.0"
 pydantic = "^2.9.2"
 boto3 = "^1.35.57"
 structlog = "^24.4.0"
 notifications-python-client = "^10.0.1"
 
 [tool.poetry.group.database.dependencies]
-sqlalchemy = "^2.0.36"
+sqlalchemy = "~2.0.36"
 geoalchemy2 = "^0.16.0"
 psycopg2-binary = "^2.9.10"
 
@@ -53,18 +53,19 @@ boto3 = "^1.35.92"
 psycopg2-binary = "^2.9.10"
 pydantic = "^2.10.4"
 requests = "^2.32.3 "
-SQLAlchemy = "^2.0.36"
+SQLAlchemy = "~2.0.36"
 urllib3 = "^2.3.0"
 GeoAlchemy2 = "^0.16.0"
-lxml = "^5.3.0"
 structlog = "^24.4.0"
 shapely = "^2.0.6"
 pydantic-settings = "^2.7.1"
 notifications-python-client = "^10.0.1"
+aws-lambda-powertools = { extras = ["tracer"], version = "^3.34.0" }
 
 # Periodic Task Lambda Dependencies
 [tool.poetry.group.naptan_cache_populator.dependencies]
 pyproj = "^3.7.0"
+lxml = "^6.0.0"
 
 [tool.poetry.group.naptan_cache_id_updater.dependencies]
 pyproj = "^3.7.0"
@@ -81,24 +82,67 @@ pyproj = "^3.7.0"
 # Timetables ETL Lambda Dependencies
 [tool.poetry.group.etl.dependencies]
 pyproj = "^3.7.0"
+lxml = "^6.0.0"
+ddtrace = "^4.16.0"
+
+[tool.poetry.group.fares_etl.dependencies]
+lxml = "^6.0.0"
+ddtrace = "^4.16.0"
 
 [tool.poetry.group.pti.dependencies]
+attrs = "^24.2.0"
 isoduration = "^20.11.0"
 pyproj = "^3.7.0"
+lxml = "^6.0.0"
+ddtrace = "^4.16.0"
 
 [tool.poetry.group.clamav_scanner.dependencies]
 clamd = "^1.0.2"
+lxml = "^6.0.0"
+ddtrace = "^4.16.0"
 
 [tool.poetry.group.file_validation.dependencies]
 defusedxml = "^0.7.1"
+lxml = "^6.0.0"
+ddtrace = "^4.16.0"
 
 # Post Schema Task Lambda Dependencies
 [tool.poetry.group.post_schema_check.dependencies]
 pyproj = "^3.7.0"
+lxml = "^6.0.0"
+ddtrace = "^4.16.0"
 
 # File Attributes Lambda Dependencies
 [tool.poetry.group.file_attributes_etl.dependencies]
 pyproj = "^3.7.0"
+lxml = "^6.0.0"
+ddtrace = "^4.16.0"
+
+[tool.poetry.group.schema_check.dependencies]
+lxml = "^6.0.0"
+ddtrace = "^4.16.0"
+
+[tool.poetry.group.validation.dependencies]
+lxml = "^6.0.0"
+
+[tool.poetry.group.generate_output_zip.dependencies]
+lxml = "^6.0.0"
+ddtrace = "^4.16.0"
+
+[tool.poetry.group.collate_files.dependencies]
+ddtrace = "^4.16.0"
+
+[tool.poetry.group.download_dataset.dependencies]
+ddtrace = "^4.16.0"
+
+[tool.poetry.group.exception_handler.dependencies]
+ddtrace = "^4.16.0"
+
+[tool.poetry.group.initialize_pipeline.dependencies]
+ddtrace = "^4.16.0"
+
+[tool.poetry.group.metadata_aggregation.dependencies]
+ddtrace = "^4.16.0"
 
 # Dev & Tooling Dependencies
 [tool.poetry.group.model_gen.dependencies]
@@ -116,15 +160,15 @@ factory-boy = "^3.3.1"
 mypy-boto3-s3 = "^1.35.76"
 boto3-stubs = { extras = ["essential"], version = "^1.35.0" }
 pytest-cov = "^6.0.0"
-rich = "^13.9.4"
-aws-sam-cli = "^1.134.0"
+rich = "^14.3.3"
+aws-sam-cli = "^1.169.0"
 aws-sam-cli-local = "^1.70.0"
 python-dotenv = "^1.0.1"
 typer = "^0.15.2"
 aws-lambda-powertools = { extras = ["all"], version = "^3.4.0" }
 pytest-mock = "^3.11.1"
 textual = "^2.1.2"
-ddtrace = "^3.2.1"
+ddtrace = "^4.16.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -170,6 +214,7 @@ addopts = [
   "--cov-report=term-missing",
   "--cov-fail-under=75",
 ]
+filterwarnings = ["error::ddtrace.DDTraceDeprecationWarning"]
 testpaths = ["./tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]

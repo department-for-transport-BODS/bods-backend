@@ -8,6 +8,14 @@ on:
     paths:
       - 'src/**'
       - 'tests/**'
+      - 'pyproject.toml'
+      - 'poetry.lock'
+      - '.tool-versions'
+      - 'template.yaml'
+      - 'fares-etl.yaml'
+      - 'timetables-etl.yaml'
+      - 'periodic-tasks.yaml'
+      - '.github/workflows/pytest.yaml'
 
 jobs:
   pytest:
@@ -38,7 +46,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # 6.2.0
         with:
-          python-version: 3.11
+          python-version: '3.14'
           cache: 'poetry'
 
       - name: Install Dependencies [Poetry]

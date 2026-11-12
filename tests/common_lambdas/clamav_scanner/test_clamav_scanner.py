@@ -3,7 +3,7 @@ Clam AV Scanner Lambda Tests
 """
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from common_layer.exceptions import SuspiciousFile
@@ -11,6 +11,7 @@ from common_layer.s3.upload import process_file_to_s3
 
 from common_lambdas.clamav_scanner.app.av_scan import FileScanner, get_clamav_config
 from common_lambdas.clamav_scanner.app.models import ClamAVConfig
+from common_lambdas.clamav_scanner.app.s3_upload import unzip_and_upload_files
 
 
 @pytest.mark.parametrize(
@@ -87,6 +88,26 @@ def test_process_file_to_s3(
     mock_s3.put_object.assert_called_once()
     args = mock_s3.put_object.call_args[0]
     assert args[0] == file_prefix
+
+
+def test_unzip_and_upload_files_runs_without_existing_event_loop(tmp_path: Path):
+    """ZIP processing should create its own event loop in a sync Lambda handler."""
+    zip_path = tmp_path / "test.zip"
+    zip_path.touch()
+    expected_result = ("ext/", MagicMock())
+    async_upload = AsyncMock(return_value=expected_result)
+
+    with (
+        patch("common_lambdas.clamav_scanner.app.s3_upload.verify_zip_file"),
+        patch(
+            "common_lambdas.clamav_scanner.app.s3_upload.process_zip_to_s3_async",
+            async_upload,
+        ),
+    ):
+        result = unzip_and_upload_files(MagicMock(), zip_path, "ext/")
+
+    assert result == expected_result
+    async_upload.assert_awaited_once()
 
 
 def test_scan_file_no_threats_found(tmp_path: Path):

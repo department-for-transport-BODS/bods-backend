@@ -1,11 +1,22 @@
 # Prerequisites
-* [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html)
-* [Node (v18.x.x) / npm (v9.x.x)](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
-* [nodemon (npm Package)](https://www.npmjs.com/package//nodemon)
-* [PostgreSQL Client (psql)](https://www.postgresql.org/download/)
-* [Docker Desktop](https://www.docker.com/get-started/) **or another container runtime of your choosing**
+
+- Python 3.14 (the development patch version is pinned in `.tool-versions`)
+- Poetry 2 with the export plugin declared in `pyproject.toml`
+- [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html)
+- [Node (v18.x.x) / npm (v9.x.x)](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
+- [nodemon (npm Package)](https://www.npmjs.com/package//nodemon)
+- [PostgreSQL Client (psql)](https://www.postgresql.org/download/)
+- [Docker Desktop](https://www.docker.com/get-started/) **or another container runtime of your choosing**
 
 ## Installation
+
+Install the pinned Python version with your version manager, then install the
+project dependencies:
+
+```sh
+poetry env use python3.14
+poetry install
+```
 
 ### Step 1: Set up docker compose
 
@@ -13,7 +24,7 @@ Environment configuration when using Docker Compose is achieved using a `.env`
 file that is passed to the docker containers. A template for the `.env` file is
 provided in the repository (`.env.template`).
 
-First copy the `.env.template` file to `.env` within the _config/_ 
+First copy the `.env.template` file to `.env` within the _config/_
 directory:
 
 ```sh
@@ -23,10 +34,10 @@ cp .env.template .env
 
 ### Step 2: Start supporting services
 
-There are different options available when it comes to running the services 
-locally. For database administration, this is managed using the previously 
-configured docker compose, and both a PostgreSQL, pgAdmin, and localstack 
-container instance can be managed easily by running a combination of the 
+There are different options available when it comes to running the services
+locally. For database administration, this is managed using the previously
+configured docker compose, and both a PostgreSQL, pgAdmin, and localstack
+container instance can be managed easily by running a combination of the
 following:
 
 ```sh
@@ -40,13 +51,13 @@ make stop-services
 make clean-services
 ```
 
-As part of the startup of PostgreSQL, the initial project database will be created 
+As part of the startup of PostgreSQL, the initial project database will be created
 with roles defined within the `./sql/local` directory.
 
 ### Step 3: Initialise the database schema
 
-Whilst the application database and users themselves are created as part of 
-the PostgreSQL startup, creation of the schema and any further database 
+Whilst the application database and users themselves are created as part of
+the PostgreSQL startup, creation of the schema and any further database
 migrations requires that a subsequent _make_ command is executed:
 
 ```sh
@@ -57,10 +68,9 @@ make run-db-migrations
 This will fully initialise the database and populate it with the necessary
 tables/triggers that allow for storage of data by the application.
 
-
 ### Step 4: Run the application backend functions
 
-The backend functions are written in Python and use AWS SAM for deployment into 
+The backend functions are written in Python and use AWS SAM for deployment into
 any target environment. For local testing AWS SAM provides an option to run
 these services locally (using Docker on the backend, although this process
 is hidden from the end user).
@@ -81,8 +91,8 @@ make build-backend-sync
 FUNC=$FUNCTION_NAME make run-backend-function
 ```
 
-It is advisable (and at times necessary) to run each service in separate 
+It is advisable (and at times necessary) to run each service in separate
 terminals to be able to take full advantage of any debug logging that may
-occur as a result of running these applications. It is worth noting that 
+occur as a result of running these applications. It is worth noting that
 changes to the underlying codebase should be reflected in the already
 running application(s), without the need for additional rebuilding.
