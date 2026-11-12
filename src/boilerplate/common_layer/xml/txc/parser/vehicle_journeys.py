@@ -50,12 +50,9 @@ def parse_vehicle_journey_stop_usage(
     if not any([wait_time, dynamic_destination_display, activity]):
         return None
 
-    return TXCVehicleJourneyStopUsageStructure.model_validate(
-        {
-            "Activity": activity,
-            "WaitTime": wait_time,
-            "DynamicDestinationDisplay": dynamic_destination_display,
-        }
+    return TXCVehicleJourneyStopUsageStructure(
+        WaitTime=wait_time,
+        DynamicDestinationDisplay=dynamic_destination_display,
     )
 
 
