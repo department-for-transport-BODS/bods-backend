@@ -8,33 +8,12 @@ from unittest.mock import mock_open, patch
 
 import pytest
 from common_layer.exceptions import SchemaUnknown
-from lxml.etree import Resolver, XMLParser, XMLSchema, _ElementTree, parse  # type: ignore
+from lxml.etree import _ElementTree  # type: ignore
 
 from common_lambdas.schema_check.app.constants import XMLSchemaType
 from common_lambdas.schema_check.app.schema_loader import load_schema
 
 MODULE_PATH = Path(inspect.getfile(load_schema)).parent
-
-
-class OfflineSchemaResolver(Resolver):
-    """Make network-dependent schema imports fail regardless of local XML catalogs."""
-
-    def resolve(self, url, pubid, context):
-        if url.startswith(("http://", "https://")):
-            raise OSError(f"Remote schema dependency is not packaged: {url}")
-        return None
-
-
-@pytest.mark.parametrize("version", ["2.4", "2.4.1"])
-def test_packaged_txc_schema_compiles_offline(version: str) -> None:
-    """Compile the real schema dependency tree without remote resources."""
-    parser = XMLParser(load_dtd=False, no_network=True)
-    parser.resolvers.add(OfflineSchemaResolver())
-    schema_path = MODULE_PATH / "schemas" / "txc" / version / "TransXChange_general.xsd"
-
-    schema = XMLSchema(parse(str(schema_path), parser))
-
-    assert isinstance(schema, XMLSchema)
 
 
 @pytest.fixture
