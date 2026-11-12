@@ -19,6 +19,7 @@ from common_layer.xml.txc.models import (
     TXCJourneyPatternTimingLink,
     TXCVehicleJourney,
 )
+from common_layer.xml.txc.models.txc_types import ActivityT
 
 from ..helpers.types import LookupStopPoint, StopsLookup
 
@@ -42,6 +43,7 @@ class StopData:
 
     stop_usage: TXCJourneyPatternStopUsage
     naptan_stop: LookupStopPoint
+    activity_override: ActivityT | None = None
 
 
 @dataclass

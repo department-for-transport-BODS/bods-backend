@@ -58,6 +58,12 @@ class DynamoDB:
                 Key={"Key": {"S": key}},
             )
             item = response.get("Item", {})
+            item_ttl = item.get("ttl")
+            if (
+                item_ttl
+                and int(self._deserializer.deserialize(item_ttl)) <= time.time()
+            ):
+                return None
             item_value = item.get("Value", None)
             result = self._deserializer.deserialize(item_value) if item_value else None
             return result
@@ -78,7 +84,7 @@ class DynamoDB:
             }
             if ttl:
                 expiration_time = int(time.time()) + ttl
-                item["ttl"] = {"S": str(expiration_time)}
+                item["ttl"] = {"N": str(expiration_time)}
 
             self._client.put_item(
                 TableName=self._settings.DYNAMODB_TABLE_NAME, Item=item
