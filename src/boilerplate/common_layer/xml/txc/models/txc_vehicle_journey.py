@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from structlog.stdlib import get_logger
 
 from .txc_operating_profile import TXCOperatingProfile
-from .txc_types import ActivityT, CommercialBasisT, ModificationType, TimeDemandT
+from .txc_types import CommercialBasisT, ModificationType, TimeDemandT
 from .txc_validators import convert_runtime
 from .txc_vehicle_journey_common import TXCOperational
 
@@ -54,10 +54,6 @@ class TXCVehicleJourneyStopUsageStructure(BaseModel):
     From/To for TXCVehicleJourneyTimingLink
     """
 
-    Activity: ActivityT | None = Field(
-        default=None,
-        description="Overrides the journey-pattern activity for this departure.",
-    )
     WaitTime: str | None = Field(
         default=None, description="The total wait time at the stop."
     )
@@ -82,15 +78,17 @@ class TXCVehicleJourneyTimingLink(BaseModel):
     From: TXCVehicleJourneyStopUsageStructure | None = Field(
         default=None,
         description=(
-            "Overrides Activity, WaitTime or DynamicDestinationDisplay. "
-            "WaitTime shall match the WaitTime on the preceding To link."
+            "May be included in order to provide WaitTime or different DynamicDestinationDisplay."
+            "Other elements shall not be used."
+            "WaitTime shall match the WaitTime on the preceding To link"
         ),
     )
     To: TXCVehicleJourneyStopUsageStructure | None = Field(
         default=None,
         description=(
-            "Overrides Activity, WaitTime or DynamicDestinationDisplay. "
-            "WaitTime shall match the WaitTime on the following From link."
+            "May be included in order to provide WaitTime or different DynamicDestinationDisplay."
+            "Other elements shall not be used."
+            "WaitTime shall match the WaitTime on the following From link"
         ),
     )
     DutyCrewCode: str | None = Field(

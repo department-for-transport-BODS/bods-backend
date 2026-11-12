@@ -26,9 +26,9 @@ log = get_logger()
 
 def validate_schema_version(schema_version: str | None) -> str:
     """
-    Ensure the declared TransXChange schema version is supported.
+    Ensure that the Schema Version is
     """
-    if schema_version in ("2.4", "2.4.1"):
+    if schema_version == "2.4":
         return schema_version
     raise ValueError("SCHEMA_VERSION_NOT_SUPPORTED")
 

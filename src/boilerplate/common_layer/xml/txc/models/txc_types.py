@@ -76,16 +76,7 @@ TimeDemandT = Literal[
     "bankHoliday",
 ]
 CommercialBasisT = Literal["contracted", "notContracted", "partContracted", "unknown"]
-ActivityT = Literal[
-    "pickUpAndSetDown",
-    "pickUp",
-    "setDown",
-    "pass",
-    "pickUpDriverRequest",
-    "setDownDriverRequest",
-    "pickUpAndSetDownDriverRequest",
-    "noPickUpAndSetDown",
-]
+ActivityT = Literal["pickUpAndSetDown", "pickUp", "setDown", "pass"]
 LicenceClassificationT = Literal[
     "standardNational",
     "standardInternational",
