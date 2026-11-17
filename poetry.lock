@@ -110,7 +110,7 @@ version = "3.4.0"
 description = "Powertools for AWS Lambda (Python) is a developer toolkit to implement Serverless best practices and increase developer velocity."
 optional = false
 python-versions = "<4.0.0,>=3.8"
-groups = ["dev"]
+groups = ["boilerplate", "dev"]
 files = [
     {file = "aws_lambda_powertools-3.4.0-py3-none-any.whl", hash = "sha256:503e66b488e397085a819acf20816e1867214c0d163a1f9f8e550df932fca699"},
     {file = "aws_lambda_powertools-3.4.0.tar.gz", hash = "sha256:794a41a7595a98e7798bebaf957d37ad60a9736577c0a5ac66a1198742b4b109"},
@@ -221,7 +221,7 @@ version = "2.14.0"
 description = "The AWS X-Ray SDK for Python (the SDK) enables Python developers to record and emit information from within their applications to the AWS X-Ray service."
 optional = false
 python-versions = ">=3.7"
-groups = ["dev"]
+groups = ["boilerplate", "dev"]
 files = [
     {file = "aws_xray_sdk-2.14.0-py2.py3-none-any.whl", hash = "sha256:cfbe6feea3d26613a2a869d14c9246a844285c97087ad8f296f901633554ad94"},
     {file = "aws_xray_sdk-2.14.0.tar.gz", hash = "sha256:aab843c331af9ab9ba5cefb3a303832a19db186140894a523edafc024cc0493c"},
@@ -4240,7 +4240,7 @@ version = "1.17.0"
 description = "Module for decorators, wrappers and monkey patching."
 optional = false
 python-versions = ">=3.8"
-groups = ["dev"]
+groups = ["boilerplate", "dev"]
 files = [
     {file = "wrapt-1.17.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:2a0c23b8319848426f305f9cb0c98a6e32ee68a36264f45948ccf8e7d2b941f8"},
     {file = "wrapt-1.17.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b1ca5f060e205f72bec57faae5bd817a1560fcfc4af03f414b08fa29106b7e2d"},
@@ -4344,4 +4344,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "a78b00b1e4201bad71c5af126e1830d43058817e41558715c0608c36df3525ab"
+content-hash = "90b4c24629d7cc697e10348347ab8d8fab65173f01a02eec58fe28d722ae9bc1"
