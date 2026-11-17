@@ -50,7 +50,7 @@ version = "24.2.0"
 description = "Classes Without Boilerplate"
 optional = false
 python-versions = ">=3.7"
-groups = ["dev"]
+groups = ["dev", "pti"]
 files = [
     {file = "attrs-24.2.0-py3-none-any.whl", hash = "sha256:81921eb96de3191c8258c199618104dd27ac608d9366f5e35d011eae1867ede2"},
     {file = "attrs-24.2.0.tar.gz", hash = "sha256:5cfb1b9148b5b086569baec03f20d7b6bf3bcacc9a42bebf87ffaaca362f6346"},
@@ -4344,4 +4344,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "90b4c24629d7cc697e10348347ab8d8fab65173f01a02eec58fe28d722ae9bc1"
+content-hash = "02e4288510b0952862fd198a93b75df0a2df0eb5b2b583cc8ebd9fa8dcf182d9"
