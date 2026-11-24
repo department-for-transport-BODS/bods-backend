@@ -89,13 +89,11 @@ def insert_track_raw(
     wkt = coords_to_wkt_line(coords)
     with db.engine.begin() as conn:
         result = conn.execute(
-            text(
-                """
+            text("""
                 INSERT INTO transmodel_tracks (from_atco_code, to_atco_code, geometry)
                 VALUES (:from_code, :to_code, ST_GeomFromText(:wkt, 4326))
                 RETURNING id
-            """
-            ),
+            """),
             {"from_code": from_code, "to_code": to_code, "wkt": wkt},
         )
         return result.scalar_one()
