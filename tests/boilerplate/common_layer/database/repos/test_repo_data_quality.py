@@ -2,19 +2,34 @@
 Data Quality tests
 """
 
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 from common_layer.database.client import SqlDB
-from common_layer.database.models import DataQualityPTIObservation
+from common_layer.database.models import (
+    DataQualityPTIObservation,
+    DataQualitySchemaViolation,
+    ETLErrorCode,
+    FileProcessingResult,
+    PipelineErrorCode,
+    TaskState,
+)
 from common_layer.database.repos import (
     DataQualityPTIObservationRepo,
     OrganisationDatasetRevisionRepo,
+    create_violation_from_parse_error,
+    format_violation_details,
 )
 from common_layer.database.repos.operation_decorator import SQLDBClientError
+from common_layer.exceptions import SchemaViolationsFound
+from lxml import etree
 from pti.app.models.models_pti import PtiObservation, PtiRule, PtiViolation
 from sqlalchemy.exc import SQLAlchemyError
 
+from common_lambdas.schema_check.app.constants import XMLSchemaType
+from common_lambdas.schema_check.app.schema_check import lambda_handler
+from common_lambdas.schema_check.app.schema_loader import load_schema
 from tests.factories.database.organisation import OrganisationDatasetRevisionFactory
 
 
@@ -144,3 +159,127 @@ def test_create_observations_handles_error(
             session.query(DataQualityPTIObservation).filter_by(revision_id=789).count()
         )
         assert record_count == 0
+
+
+AUTHORITY_NAMES = ", ".join(f"'Authority{i}'" for i in range(185))
+AUTHORITY_NAME_ENUM_MESSAGE = (
+    "Element '{http://www.transxchange.org.uk/}AuthorityName': "
+    "[facet 'enumeration'] The value 'TransportforWales' is not an element "
+    f"of the set {{{AUTHORITY_NAMES}}}."
+)
+
+
+@pytest.mark.parametrize(
+    "message, expected",
+    [
+        pytest.param(
+            AUTHORITY_NAME_ENUM_MESSAGE,
+            "Element '{http://www.transxchange.org.uk/}AuthorityName': "
+            "[facet 'enumeration'] The value 'TransportforWales' is not an element "
+            "of the set of allowed values.",
+            id="Enumeration allowed values removed",
+        ),
+        pytest.param(
+            "x" * 3000,
+            "x" * 1021 + "...",
+            id="Long message truncated to column length",
+        ),
+        pytest.param(
+            "Element 'Journey': This element is not expected.",
+            "Element 'Journey': This element is not expected.",
+            id="Short message unchanged",
+        ),
+        pytest.param(
+            "Element 'Activity': [facet 'enumeration'] The value 'invalid' "
+            "is not an element of the set {'pickUp', 'setDown'}.",
+            "Element 'Activity': [facet 'enumeration'] The value 'invalid' "
+            "is not an element of the set {'pickUp', 'setDown'}.",
+            id="Short enumeration unchanged",
+        ),
+        pytest.param(
+            "x" * 1024,
+            "x" * 1024,
+            id="Message at column limit unchanged",
+        ),
+    ],
+)
+def test_format_violation_details(message: str, expected: str):
+    """
+    Test schema violation details are shortened to fit the details column
+    """
+    result = format_violation_details(message)
+
+    assert result == expected
+    assert len(result) <= 1024
+
+
+def test_create_violation_from_parse_error_truncates_long_message():
+    """
+    Test long parse error messages are truncated to fit the details column
+    """
+    exc = Exception()
+    exc.msg = "x" * 3000  # type: ignore[attr-defined]
+    exc.lineno = 5  # type: ignore[attr-defined]
+
+    violation = create_violation_from_parse_error(exc, 1, "file.xml")
+
+    assert len(violation.details) == 1024
+    assert violation.line == 5
+
+
+def test_invalid_authority_saves_violation_and_records_schema_error(test_db: SqlDB):
+    """Validate a real XML file and store its violation and processing result."""
+    xml_path = (
+        Path(__file__).resolve().parents[4]
+        / "timetables_etl/pti/validators/data/lines/bodp3613lineidpass.xml"
+    )
+    xml = xml_path.read_bytes()
+    line_ref = b"<LineRef>l_1</LineRef>"
+    authority = b"<AuthorityName>Bristol</AuthorityName>"
+    assert xml.count(line_ref) == 4
+    assert xml.count(authority) == 1
+    xml = xml.replace(line_ref, b"<LineRef>ABC:FIN50:L1:summer</LineRef>")
+    xml = xml.replace(authority, b"<AuthorityName>TransportforWales</AuthorityName>")
+    root = etree.fromstring(xml)
+    schema = load_schema(XMLSchemaType.TRANSXCHANGE, "2.4")
+    assert not schema.validate(root)
+    assert any(
+        "TransportforWales" in error.message and len(error.message) > 1024
+        for error in schema.error_log
+    )
+
+    revision = OrganisationDatasetRevisionRepo(test_db).insert(
+        OrganisationDatasetRevisionFactory.create()
+    )
+    event = {
+        "DatasetRevisionId": revision.id,
+        "Bucket": "test-bucket",
+        "ObjectKey": "uploads/invalid-authority.xml",
+    }
+    module = "common_lambdas.schema_check.app.schema_check"
+    with (
+        patch(f"{module}.SqlDB", return_value=test_db),
+        patch("common_layer.db.file_processing_result.SqlDB", return_value=test_db),
+        patch(f"{module}.parse_xml_from_s3", return_value=root),
+        pytest.raises(SchemaViolationsFound),
+    ):
+        lambda_handler(event, MagicMock())
+
+    with test_db.session_scope() as session:
+        violation = (
+            session.query(DataQualitySchemaViolation)
+            .filter_by(revision_id=revision.id)
+            .one()
+        )
+        result, error = (
+            session.query(FileProcessingResult, PipelineErrorCode)
+            .join(PipelineErrorCode)
+            .filter(FileProcessingResult.revision_id == revision.id)
+            .one()
+        )
+        assert violation.filename == "invalid-authority.xml"
+        assert "TransportforWales" in violation.details
+        assert "is not an element of the set of allowed values." in violation.details
+        assert len(violation.details) <= 1024
+        assert result.status == TaskState.FAILURE
+        assert error.error == ETLErrorCode.SCHEMA_ERROR.value

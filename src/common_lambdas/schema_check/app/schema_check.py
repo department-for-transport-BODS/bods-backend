@@ -9,6 +9,7 @@ from aws_lambda_powertools.utilities.typing import LambdaContext
 from botocore.exceptions import BotoCoreError, ClientError
 from common_layer.database.client import SqlDB
 from common_layer.database.models import DataQualitySchemaViolation
+from common_layer.database.repos.operation_decorator import SQLDBClientError
 from common_layer.db.constants import StepName
 from common_layer.db.file_processing_result import file_processing_result_to_db
 from common_layer.exceptions import SchemaMismatch, SchemaUnknown, SchemaViolationsFound
@@ -160,7 +161,16 @@ def lambda_handler(event: dict[str, Any], _context: LambdaContext) -> dict[str, 
         violations = process_schema_check(input_data)
 
         if violations:
-            add_violations_to_db(db, violations)
+            try:
+                add_violations_to_db(db, violations)
+            except SQLDBClientError:
+                # Still report the schema failure even if violations can't be saved
+                log.error(
+                    "Failed to save schema violations",
+                    revision_id=input_data.revision_id,
+                    count=len(violations),
+                    exc_info=True,
+                )
             raise SchemaViolationsFound(violations=len(violations))
     except Exception as e:
         log.error(
