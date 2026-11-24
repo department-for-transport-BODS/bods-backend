@@ -28,7 +28,7 @@ from common_layer.xml.utils import get_file_hash
             id="Large file larger than chunk size",
         ),
         pytest.param(
-            b"\x00\xFF\x00\xFF",
+            b"\x00\xff\x00\xff",
             "c2a9054a363999348c1203115ea0eb9b07fd1e2d",
             id="Binary file",
         ),
