@@ -8,6 +8,7 @@ from common_layer.database.models.model_data_quality import DataQualitySchemaVio
 from common_layer.database.repos.repo_data_quality import (
     add_schema_violations_to_db as add_violations_to_db,
     create_violation_from_parse_error,
+    format_violation_details,
 )
 from lxml.etree import _LogEntry  # type: ignore
 
@@ -27,7 +28,7 @@ def create_violation_from_error(
     return DataQualitySchemaViolation(
         filename=filename,
         line=error.line,
-        details=error.message,
+        details=format_violation_details(error.message),
         created=datetime.now(UTC),
         revision_id=revision_id,
     )

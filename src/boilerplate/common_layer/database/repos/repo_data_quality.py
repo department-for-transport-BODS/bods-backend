@@ -2,6 +2,7 @@
 SQL Alchemy Repos for Tables prefixed with data_quality_
 """
 
+import re
 from datetime import UTC, datetime
 
 from structlog.stdlib import get_logger
@@ -17,6 +18,22 @@ from .operation_decorator import handle_repository_errors
 from .repo_common import BaseRepositoryWithId
 
 logger = get_logger()
+
+SCHEMA_VIOLATION_DETAILS_MAX_LENGTH = 1024
+_ENUM_SET_PATTERN = re.compile(r"\s*is not an element of the set \{.*\}\.?", re.DOTALL)
+
+
+def format_violation_details(message: str) -> str:
+    """
+    Shorten enumeration messages and truncate details to fit the
+    data_quality_schemaviolation.details column
+    """
+    message = _ENUM_SET_PATTERN.sub(
+        " is not an element of the set of allowed values.", message
+    )
+    if len(message) > SCHEMA_VIOLATION_DETAILS_MAX_LENGTH:
+        message = message[: SCHEMA_VIOLATION_DETAILS_MAX_LENGTH - 3] + "..."
+    return message
 
 
 class DataQualitySchemaViolationRepo(BaseRepositoryWithId[DataQualitySchemaViolation]):
@@ -49,7 +66,9 @@ def create_violation_from_parse_error(
     return DataQualitySchemaViolation(
         filename=filename,
         line=line_number if isinstance(line_number, int) else 0,
-        details=message if isinstance(message, str) else str(exc),
+        details=format_violation_details(
+            message if isinstance(message, str) else str(exc)
+        ),
         created=datetime.now(UTC),
         revision_id=revision_id,
     )

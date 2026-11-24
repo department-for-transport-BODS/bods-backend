@@ -10,6 +10,8 @@ from common_layer.database.models import DataQualityPTIObservation
 from common_layer.database.repos import (
     DataQualityPTIObservationRepo,
     OrganisationDatasetRevisionRepo,
+    create_violation_from_parse_error,
+    format_violation_details,
 )
 from common_layer.database.repos.operation_decorator import SQLDBClientError
 from pti.app.models.models_pti import PtiObservation, PtiRule, PtiViolation
@@ -144,3 +146,57 @@ def test_create_observations_handles_error(
             session.query(DataQualityPTIObservation).filter_by(revision_id=789).count()
         )
         assert record_count == 0
+
+
+AUTHORITY_NAMES = ", ".join(f"'Authority{i}'" for i in range(185))
+AUTHORITY_NAME_ENUM_MESSAGE = (
+    "Element '{http://www.transxchange.org.uk/}AuthorityName': "
+    "[facet 'enumeration'] The value 'TransportforWales' is not an element "
+    f"of the set {{{AUTHORITY_NAMES}}}."
+)
+
+
+@pytest.mark.parametrize(
+    "message, expected",
+    [
+        pytest.param(
+            AUTHORITY_NAME_ENUM_MESSAGE,
+            "Element '{http://www.transxchange.org.uk/}AuthorityName': "
+            "[facet 'enumeration'] The value 'TransportforWales' is not an element "
+            "of the set of allowed values.",
+            id="Enumeration allowed values removed",
+        ),
+        pytest.param(
+            "x" * 3000,
+            "x" * 1021 + "...",
+            id="Long message truncated to column length",
+        ),
+        pytest.param(
+            "Element 'Journey': This element is not expected.",
+            "Element 'Journey': This element is not expected.",
+            id="Short message unchanged",
+        ),
+    ],
+)
+def test_format_violation_details(message: str, expected: str):
+    """
+    Test schema violation details are shortened to fit the details column
+    """
+    result = format_violation_details(message)
+
+    assert result == expected
+    assert len(result) <= 1024
+
+
+def test_create_violation_from_parse_error_truncates_long_message():
+    """
+    Test long parse error messages are truncated to fit the details column
+    """
+    exc = Exception()
+    exc.msg = "x" * 3000  # type: ignore[attr-defined]
+    exc.lineno = 5  # type: ignore[attr-defined]
+
+    violation = create_violation_from_parse_error(exc, 1, "file.xml")
+
+    assert len(violation.details) == 1024
+    assert violation.line == 5

@@ -9,6 +9,7 @@ from .repo_data_quality import (
     DataQualitySchemaViolationRepo,
     add_schema_violations_to_db,
     create_violation_from_parse_error,
+    format_violation_details,
 )
 from .repo_etl_task import (
     ETLTaskResultRepo,
@@ -76,6 +77,7 @@ __all__ = [
     "DataQualityPTIObservationRepo",
     "add_schema_violations_to_db",
     "create_violation_from_parse_error",
+    "format_violation_details",
     # ETL Task
     "ETLTaskResultRepo",
     "FileProcessingResultRepo",
