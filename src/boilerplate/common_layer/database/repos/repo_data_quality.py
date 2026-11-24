@@ -28,11 +28,12 @@ def format_violation_details(message: str) -> str:
     Shorten enumeration messages and truncate details to fit the
     data_quality_schemaviolation.details column
     """
-    message = _ENUM_SET_PATTERN.sub(
-        " is not an element of the set of allowed values.", message
-    )
     if len(message) > SCHEMA_VIOLATION_DETAILS_MAX_LENGTH:
-        message = message[: SCHEMA_VIOLATION_DETAILS_MAX_LENGTH - 3] + "..."
+        message = _ENUM_SET_PATTERN.sub(
+            " is not an element of the set of allowed values.", message
+        )
+        if len(message) > SCHEMA_VIOLATION_DETAILS_MAX_LENGTH:
+            message = message[: SCHEMA_VIOLATION_DETAILS_MAX_LENGTH - 3] + "..."
     return message
 
 

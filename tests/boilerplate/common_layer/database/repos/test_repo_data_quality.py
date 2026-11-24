@@ -2,11 +2,19 @@
 Data Quality tests
 """
 
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 from common_layer.database.client import SqlDB
-from common_layer.database.models import DataQualityPTIObservation
+from common_layer.database.models import (
+    DataQualityPTIObservation,
+    DataQualitySchemaViolation,
+    ETLErrorCode,
+    FileProcessingResult,
+    PipelineErrorCode,
+    TaskState,
+)
 from common_layer.database.repos import (
     DataQualityPTIObservationRepo,
     OrganisationDatasetRevisionRepo,
@@ -14,9 +22,14 @@ from common_layer.database.repos import (
     format_violation_details,
 )
 from common_layer.database.repos.operation_decorator import SQLDBClientError
+from common_layer.exceptions import SchemaViolationsFound
+from lxml import etree
 from pti.app.models.models_pti import PtiObservation, PtiRule, PtiViolation
 from sqlalchemy.exc import SQLAlchemyError
 
+from common_lambdas.schema_check.app.constants import XMLSchemaType
+from common_lambdas.schema_check.app.schema_check import lambda_handler
+from common_lambdas.schema_check.app.schema_loader import load_schema
 from tests.factories.database.organisation import OrganisationDatasetRevisionFactory
 
 
@@ -176,6 +189,18 @@ AUTHORITY_NAME_ENUM_MESSAGE = (
             "Element 'Journey': This element is not expected.",
             id="Short message unchanged",
         ),
+        pytest.param(
+            "Element 'Activity': [facet 'enumeration'] The value 'invalid' "
+            "is not an element of the set {'pickUp', 'setDown'}.",
+            "Element 'Activity': [facet 'enumeration'] The value 'invalid' "
+            "is not an element of the set {'pickUp', 'setDown'}.",
+            id="Short enumeration unchanged",
+        ),
+        pytest.param(
+            "x" * 1024,
+            "x" * 1024,
+            id="Message at column limit unchanged",
+        ),
     ],
 )
 def test_format_violation_details(message: str, expected: str):
@@ -200,3 +225,61 @@ def test_create_violation_from_parse_error_truncates_long_message():
 
     assert len(violation.details) == 1024
     assert violation.line == 5
+
+
+def test_invalid_authority_saves_violation_and_records_schema_error(test_db: SqlDB):
+    """Validate a real XML file and store its violation and processing result."""
+    xml_path = (
+        Path(__file__).resolve().parents[4]
+        / "timetables_etl/pti/validators/data/lines/bodp3613lineidpass.xml"
+    )
+    xml = xml_path.read_bytes()
+    line_ref = b"<LineRef>l_1</LineRef>"
+    authority = b"<AuthorityName>Bristol</AuthorityName>"
+    assert xml.count(line_ref) == 4
+    assert xml.count(authority) == 1
+    xml = xml.replace(line_ref, b"<LineRef>ABC:FIN50:L1:summer</LineRef>")
+    xml = xml.replace(authority, b"<AuthorityName>TransportforWales</AuthorityName>")
+    root = etree.fromstring(xml)
+    schema = load_schema(XMLSchemaType.TRANSXCHANGE, "2.4")
+    assert not schema.validate(root)
+    assert any(
+        "TransportforWales" in error.message and len(error.message) > 1024
+        for error in schema.error_log
+    )
+
+    revision = OrganisationDatasetRevisionRepo(test_db).insert(
+        OrganisationDatasetRevisionFactory.create()
+    )
+    event = {
+        "DatasetRevisionId": revision.id,
+        "Bucket": "test-bucket",
+        "ObjectKey": "uploads/invalid-authority.xml",
+    }
+    module = "common_lambdas.schema_check.app.schema_check"
+    with (
+        patch(f"{module}.SqlDB", return_value=test_db),
+        patch("common_layer.db.file_processing_result.SqlDB", return_value=test_db),
+        patch(f"{module}.parse_xml_from_s3", return_value=root),
+        pytest.raises(SchemaViolationsFound),
+    ):
+        lambda_handler(event, MagicMock())
+
+    with test_db.session_scope() as session:
+        violation = (
+            session.query(DataQualitySchemaViolation)
+            .filter_by(revision_id=revision.id)
+            .one()
+        )
+        result, error = (
+            session.query(FileProcessingResult, PipelineErrorCode)
+            .join(PipelineErrorCode)
+            .filter(FileProcessingResult.revision_id == revision.id)
+            .one()
+        )
+        assert violation.filename == "invalid-authority.xml"
+        assert "TransportforWales" in violation.details
+        assert "is not an element of the set of allowed values." in violation.details
+        assert len(violation.details) <= 1024
+        assert result.status == TaskState.FAILURE
+        assert error.error == ETLErrorCode.SCHEMA_ERROR.value
