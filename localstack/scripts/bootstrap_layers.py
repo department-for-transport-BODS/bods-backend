@@ -27,7 +27,9 @@ class SamTemplate:
                     for ref in function.layer_refs:
                         layer_name = ref.removesuffix("Arn")
                         if layer_name in self.layers:
-                            logger.info(f"Updating function build for {function.name} with layer {layer_name}")
+                            logger.info(
+                                f"Updating function build for {function.name} with layer {layer_name}"
+                            )
                             copy_tree(
                                 f".aws-sam/build/{layer_name}/python",
                                 f".aws-sam/build/{application_name}/{function.name}",
@@ -47,15 +49,21 @@ class SamTemplate:
 
             # If this is an Application, we parse the nested template to get the Functions/Layers for the Application
             if resource_type == "AWS::Serverless::Application":
-                nested_template_location = resource_values.get("Properties", {}).get("Location")
-                if nested_template_location and os.path.exists(nested_template_location):
+                nested_template_location = resource_values.get("Properties", {}).get(
+                    "Location"
+                )
+                if nested_template_location and os.path.exists(
+                    nested_template_location
+                ):
                     logger.info(f"Found nested template: {nested_template_location}")
                     nested_template = SamTemplate(nested_template_location)
                     self.applications[resource] = {
                         "functions": nested_template.functions,
                     }
                 else:
-                    logger.warning(f"Nested template {nested_template_location} not found")
+                    logger.warning(
+                        f"Nested template {nested_template_location} not found"
+                    )
 
             if resource_type == "AWS::Serverless::Function":
                 logger.debug(f"Found function {resource}")
@@ -63,6 +71,7 @@ class SamTemplate:
             elif resource_type == "AWS::Serverless::LayerVersion":
                 logger.debug(f"Found layer {resource}")
                 self.layers.append(resource)
+
 
 class Function:
     def __init__(self, name, values):
@@ -86,4 +95,6 @@ class Function:
 
 if __name__ == "__main__":
     template_path = Path(os.getcwd()) / "template.yaml"
-    template = SamTemplate(template_path)  # this should be the template.yaml in the top level directory
+    template = SamTemplate(
+        template_path
+    )  # this should be the template.yaml in the top level directory

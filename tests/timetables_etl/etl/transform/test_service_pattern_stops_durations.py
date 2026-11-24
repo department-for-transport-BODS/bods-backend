@@ -13,6 +13,22 @@ from timetables_etl.etl.app.transform.service_pattern_stops_durations import (
     "from_wait,to_wait,is_first_stop,is_last_stop,expected",
     [
         pytest.param(
+            "PT19M",
+            "PT0H0M0S",
+            False,
+            False,
+            "PT19M",
+            id="Normalized zero incoming wait uses outgoing wait",
+        ),
+        pytest.param(
+            "PT0H0M0S",
+            None,
+            True,
+            False,
+            None,
+            id="Normalized zero first stop wait is absent",
+        ),
+        pytest.param(
             "PT5M0S",
             None,
             True,

@@ -37,6 +37,93 @@ from timetables_etl.etl.app.transform.service_pattern_stops import (
 )
 
 
+@pytest.mark.parametrize(
+    "incoming_wait,outgoing_wait",
+    [
+        ("PT19M", "PT19M"),
+        ("PT19M", None),
+        (None, "PT19M"),
+        ("PT19M", "PT0S"),
+        ("PT0S", "PT19M"),
+    ],
+)
+@pytest.mark.parametrize("split_sections", [False, True])
+@pytest.mark.parametrize("vehicle_waits", [False, True])
+def test_wait_is_applied_once_at_its_stop(
+    journey_context_without_vjtl: JourneySectionContext,
+    incoming_wait: str | None,
+    outgoing_wait: str | None,
+    split_sections: bool,
+    vehicle_waits: bool,
+) -> None:
+    """Incoming To and outgoing From describe the wait at the same stop."""
+    journey_context_without_vjtl.txc_vehicle_journey.VehicleJourneyTimingLink = []
+    section = TXCJourneyPatternSectionFactory(
+        JourneyPatternTimingLink=[
+            TXCJourneyPatternTimingLinkFactory(
+                id="wait_1",
+                From=TXCJourneyPatternStopUsageFactory(
+                    StopPointRef="2400A001", WaitTime=None
+                ),
+                To=TXCJourneyPatternStopUsageFactory(
+                    StopPointRef="2400A002", WaitTime=incoming_wait
+                ),
+                RunTime="PT2M",
+            ),
+            TXCJourneyPatternTimingLinkFactory(
+                id="wait_2",
+                From=TXCJourneyPatternStopUsageFactory(
+                    StopPointRef="2400A002", WaitTime=outgoing_wait
+                ),
+                To=TXCJourneyPatternStopUsageFactory(
+                    StopPointRef="2400A003", WaitTime="PT25M"
+                ),
+                RunTime="PT1M",
+            ),
+        ]
+    )
+    if vehicle_waits:
+        journey_context_without_vjtl.txc_vehicle_journey.VehicleJourneyTimingLink = [
+            TXCVehicleJourneyTimingLink(
+                id="override_1",
+                JourneyPatternTimingLinkRef="wait_1",
+                RunTime="PT2M",
+                To=TXCVehicleJourneyStopUsageStructure(WaitTime=incoming_wait),
+            ),
+            TXCVehicleJourneyTimingLink(
+                id="override_2",
+                JourneyPatternTimingLinkRef="wait_2",
+                RunTime="PT1M",
+                From=TXCVehicleJourneyStopUsageStructure(WaitTime=outgoing_wait),
+            ),
+        ]
+        section.JourneyPatternTimingLink[0].To.WaitTime = "PT3M"
+        section.JourneyPatternTimingLink[1].From.WaitTime = "PT3M"
+
+    sections = (
+        [
+            TXCJourneyPatternSectionFactory(JourneyPatternTimingLink=[link])
+            for link in section.JourneyPatternTimingLink
+        ]
+        if split_sections
+        else [section]
+    )
+    state = SectionProcessingState(
+        current_time=time(6, 43), auto_sequence=0, pattern_stops=[]
+    )
+    for current_section in sections:
+        success, state = process_journey_pattern_section(
+            current_section, state, journey_context_without_vjtl
+        )
+        assert success
+
+    assert [stop.departure_time for stop in state.pattern_stops] == [
+        time(6, 43),
+        time(7, 4),
+        time(7, 5),
+    ]
+
+
 @pytest.fixture
 def service_pattern() -> TransmodelServicePattern:
     """Fixture for a sample Service Pattern"""

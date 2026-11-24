@@ -145,14 +145,10 @@ def process_journey_pattern_section(
     context: JourneySectionContext,
 ) -> tuple[bool, SectionProcessingState]:
     """
-    Process a single journey pattern section with enhanced wait time handling
+    Process a section, counting incoming To and outgoing From waits once per stop.
 
-    This implementation uses the custom wait time selection logic:
-    1. Add WaitTime either from the From or the To depending on where it is present
-    2. If both From and To are present, pick the <To> WaitTime
-    3. The first stop will always take the <From> WaitTime
-    4. The last stop will not take the <To> WaitTime
-    5. If a waittime is <WaitTime>PT0S</WaitTime> we consider that not present
+    Incoming To takes precedence. The first stop uses only From, and the final
+    stop records arrival without a wait.
     """
     log.info("Processing section", section_id=section.id)
 
@@ -171,6 +167,7 @@ def process_journey_pattern_section(
             next_link=next_link,
             is_first_stop=is_first_stop,
             is_last_stop=False,  # This is not the last stop since we're processing a From
+            previous_link=state.previous_link,
         )
 
         runtime, wait_time = get_pattern_timing(
@@ -218,11 +215,14 @@ def process_journey_pattern_section(
                 state.pattern_stops.append(stop)
                 state.auto_sequence += 1
         else:
+            state.pattern_stops[-1].departure_time = state.current_time
             log.debug(
                 "Skipping duplicate stop at section boundary",
                 atco_code=link.From.StopPointRef,
                 sequence=state.auto_sequence,
             )
+
+        state.previous_link = link
 
         # Add runtime after a stop is added to calculate the correct current_time for next stop
         state.current_time = calculate_next_time(

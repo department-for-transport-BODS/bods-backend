@@ -325,8 +325,8 @@ def test_process_schema_check_with_parse_error():
             assert violation.details == "Start tag expected, '<' not found"
             assert violation.revision_id == REVISION_ID
             assert violation.created == frozen_time
-
-
+            
+            
 def test_lambda_handler_raises_schema_error_when_saving_violations_fails():
     """
     Test a failure to save violations still reports a schema error, not a system error

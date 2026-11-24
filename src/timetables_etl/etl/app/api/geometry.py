@@ -4,7 +4,7 @@ OSRM Geometry API Client
 
 import requests
 from geoalchemy2 import WKBElement
-from geoalchemy2.shape import from_shape  # type:ignore
+from geoalchemy2.shape import from_shape  # type: ignore
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from shapely import LineString
