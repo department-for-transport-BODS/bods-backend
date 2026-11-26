@@ -6,7 +6,19 @@ from datetime import UTC, datetime
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
-from common_layer.exceptions import ETLException, SchemaMismatch, SchemaUnknown
+from common_layer.database.models import ETLErrorCode
+from common_layer.database.repos.operation_decorator import SQLDBClientError
+from common_layer.db.constants import StepName
+from common_layer.db.file_processing_result import (
+    ProcessingContext,
+    map_exception_to_error_code,
+)
+from common_layer.exceptions import (
+    ETLException,
+    SchemaMismatch,
+    SchemaUnknown,
+    SchemaViolationsFound,
+)
 from freezegun import freeze_time
 from lxml import etree
 from lxml.etree import _LogEntry  # type: ignore
@@ -16,6 +28,7 @@ from common_lambdas.schema_check.app.schema_check import (
     create_violation_from_error,
     create_violation_from_parse_error,
     get_schema_violations,
+    lambda_handler,
     process_schema_check,
     validate_schema_type,
 )
@@ -312,3 +325,34 @@ def test_process_schema_check_with_parse_error():
             assert violation.details == "Start tag expected, '<' not found"
             assert violation.revision_id == REVISION_ID
             assert violation.created == frozen_time
+            
+            
+def test_lambda_handler_raises_schema_error_when_saving_violations_fails():
+    """
+    Test a failure to save violations still reports a schema error, not a system error
+    """
+    event = {
+        "DatasetRevisionId": REVISION_ID,
+        "Bucket": "test-bucket",
+        "ObjectKey": "uploads/file.xml",
+    }
+    module = "common_lambdas.schema_check.app.schema_check"
+
+    with (
+        patch(
+            "common_layer.db.file_processing_result.initialize_processing",
+            return_value=ProcessingContext(
+                task_id="task", step_name=StepName.TIMETABLE_SCHEMA_CHECK
+            ),
+        ),
+        patch(f"{module}.SqlDB"),
+        patch(f"{module}.process_schema_check", return_value=[MagicMock()]),
+        patch(
+            f"{module}.add_violations_to_db",
+            side_effect=SQLDBClientError("insert failed"),
+        ),
+    ):
+        with pytest.raises(SchemaViolationsFound) as exc_info:
+            lambda_handler(event, MagicMock())
+
+    assert map_exception_to_error_code(exc_info.value) == ETLErrorCode.SCHEMA_ERROR
