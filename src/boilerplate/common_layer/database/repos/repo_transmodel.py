@@ -250,17 +250,13 @@ class TransmodelTrackRepo(BaseRepositoryWithId[TransmodelTracks]):
         Fetch all distinct stop point pairs with more than one row
         """
         with self._db.session_scope() as session:
-            result = session.execute(
-                text(
-                    """
+            result = session.execute(text("""
                     SELECT from_atco_code, to_atco_code
                     FROM transmodel_tracks
                     GROUP BY from_atco_code, to_atco_code
                     HAVING COUNT(*) > 1
                     ORDER BY COUNT(*) DESC
-                    """
-                )
-            )
+                    """))
             all_pairs = [(row[0], row[1]) for row in result]
 
             return all_pairs

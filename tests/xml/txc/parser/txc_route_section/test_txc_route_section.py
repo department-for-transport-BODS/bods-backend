@@ -381,7 +381,9 @@ def test_parse_route_section(xml_string: str, expected: TXCRouteSection) -> None
                                                 Latitude="51.9876543",
                                             ),
                                             TXCLocation(
-                                                id="loc2", Longitude="0.0", Latitude="0.0"
+                                                id="loc2",
+                                                Longitude="0.0",
+                                                Latitude="0.0",
                                             ),
                                         ]
                                     )

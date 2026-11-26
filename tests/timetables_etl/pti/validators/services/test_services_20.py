@@ -1,6 +1,6 @@
 """
 Test Services Observation 20
-Mandatory element incorrect in 'OperatingPeriod'. 
+Mandatory element incorrect in 'OperatingPeriod'.
 """
 
 from datetime import timedelta

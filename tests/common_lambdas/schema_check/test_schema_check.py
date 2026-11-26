@@ -312,4 +312,3 @@ def test_process_schema_check_with_parse_error():
             assert violation.details == "Start tag expected, '<' not found"
             assert violation.revision_id == REVISION_ID
             assert violation.created == frozen_time
-
